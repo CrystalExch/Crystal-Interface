@@ -4819,6 +4819,7 @@ function App() {
                     } catch (error) {
                     } finally {
                       setIsSigning(false);
+                      setTimeout(()=>refetch(), 500)
                     }
                   } else {
                     account.status != 'connected' ? setpopup(4) : switchChain(config, { chainId: activechain as any });
