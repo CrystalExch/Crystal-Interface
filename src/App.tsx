@@ -4677,16 +4677,6 @@ function App() {
                                 3,
                               ).toString()
                             );
-                            if (calculatedAmount === BigInt(0)) {
-                              setSendButton(0);
-                            } else if (!/^(0x[0-9a-fA-F]{40})$/.test(recipient)) {
-                              setSendButton(1);
-                            } else if (calculatedAmount <= tokenBalances[sendTokenIn]) {
-                              setSendButton(2);
-                            } else {
-                              setSendButton(3);
-                            }
-
                           }
                         } else {
                           const inputValue = BigInt(
@@ -4702,16 +4692,6 @@ function App() {
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
                           );
-
-                          if (inputValue === BigInt(0)) {
-                            setSendButton(0);
-                          } else if (!/^(0x[0-9a-fA-F]{40})$/.test(recipient)) {
-                            setSendButton(1);
-                          } else if (inputValue <= tokenBalances[sendTokenIn]) {
-                            setSendButton(2);
-                          } else {
-                            setSendButton(3);
-                          }
                         }
                       }
                     }}
@@ -4748,12 +4728,6 @@ function App() {
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
                           );
-
-                          if (!/^(0x[0-9a-fA-F]{40})$/.test(recipient)) {
-                            setSendButton(1);
-                          } else {
-                            setSendButton(2);
-                          }
                         }
                       }}
                     >
@@ -4802,15 +4776,6 @@ function App() {
                   onChange={(e) => {
                     if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
                       setrecipient(e.target.value);
-                      if (sendAmountIn === BigInt(0)) {
-                        setSendButton(0);
-                      } else if (!/^(0x[0-9a-fA-F]{40})$/.test(e.target.value)) {
-                        setSendButton(1);
-                      } else if (sendAmountIn <= tokenBalances[sendTokenIn]) {
-                        setSendButton(2);
-                      } else {
-                        setSendButton(3);
-                      }
                     }
                   }}
                   value={recipient}
@@ -4851,7 +4816,6 @@ function App() {
                       setSendInputAmount('');
                       setSendUsdValue('');
                       setSendAmountIn(BigInt(0));
-                      setSendButton(0);
                     } catch (error) {
                     } finally {
                       setIsSigning(false);
@@ -4873,18 +4837,18 @@ function App() {
                     <div className="loading-spinner" />
                     {t('signTransaction')}
                   </div>
-                ) : sendButton === 0 ? (
+                ) : sendAmountIn === BigInt(0) ? (
                   t('enterAmount')
-                ) : sendButton === 1 ? (
+                ) : !/^(0x[0-9a-fA-F]{40})$/.test(recipient) ? (
                   t('enterWalletAddress')
-                ) : sendButton === 2 ? (
-                  t('send')
-                ) : sendButton === 3 ? (
+                ) : account.status != 'connected' ? (
+                  t('connectWallet')
+                ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
                   t('insufficient') + (tokendict[sendTokenIn].ticker || '?') + ' ' + t('bal')
-                ) : sendButton === 4 ? (
+                ) : account.status === 'connected' && account.chainId != activechain ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
-                  t('connectWallet')
+                  t('send')
                 )}
               </button>
             </div>
