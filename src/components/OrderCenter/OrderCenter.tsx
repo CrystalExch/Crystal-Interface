@@ -454,10 +454,10 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
             {activeSection !== 'balances' && (
               <>
                 <FilterSelect filter={filter} setFilter={setFilter} />
+                <div className="oc-filter-divider"></div>
               </>
             )}
 
-            <div className="oc-filter-divider"></div>
 
             <MinSizeFilter
               minSizeEnabled={minSizeEnabled}

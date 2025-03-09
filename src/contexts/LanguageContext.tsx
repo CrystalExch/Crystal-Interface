@@ -610,6 +610,7 @@ export const translations: any = {
     back: '返回',
     at: '价格',
     leaderboard: '排行榜',
+    scale: '规模',
  
   },
   JP: {
@@ -916,6 +917,7 @@ export const translations: any = {
     back: '戻る',
     at: '価格',
     leaderboard: 'リーダーボード',
+    scale: 'スケール',
 
   },
   KR: {
@@ -1222,6 +1224,7 @@ export const translations: any = {
     back: '뒤로',
     at: '가격',
     leaderboard: '리더보드',
+    scale: '스케일',
 
   },
   ES: {
@@ -1528,6 +1531,7 @@ export const translations: any = {
     back: 'Volver',
     at: 'a',
     leaderboard: 'Leaderboard',
+    scale: 'Escala',
   }
 };
 

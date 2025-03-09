@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
 
 import MetricItem from '../MetricItem/MetricItem';
 import ScrollButton from '../ScrollButton/ScrollButton';
@@ -14,8 +14,11 @@ interface AdditionalMetricsProps {
 const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
   const [isMeasured, setIsMeasured] = useState(false);
   const metricsRef = useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLDivElement>(null);
 
   const scrollMetrics = (direction: 'left' | 'right') => {
     if (metricsRef.current) {
@@ -34,6 +37,14 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
       );
       setShowLeftArrow(showLeftArrow);
       setShowRightArrow(showRightArrow);
+      
+      const container = metricsRef.current;
+      const isScrollable = container.scrollWidth > container.clientWidth;
+      const isAtLeftEdge = container.scrollLeft <= 10; 
+      const isAtRightEdge = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10; 
+      
+      setShowLeftFade(isScrollable && !isAtLeftEdge);
+      setShowRightFade(isScrollable && !isAtRightEdge);
     }
   };
 
@@ -59,8 +70,15 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
     }
   }, []);
 
+  useEffect(() => {
+    updateArrowVisibility();
+  }, [metrics]);
+
   return (
-    <div className="right-section">
+    <div 
+      className={`right-section ${showLeftFade ? 'show-left-fade' : ''} ${showRightFade ? 'show-right-fade' : ''}`} 
+      ref={sectionRef}
+    >
       {isMeasured && showLeftArrow && (
         <ScrollButton direction="left" onClick={() => scrollMetrics('left')} />
       )}

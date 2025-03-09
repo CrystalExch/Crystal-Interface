@@ -87,6 +87,7 @@ import wallethaha from './assets/wallethaha.png'
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
 import Referrals from './components/Referrals/Referrals.tsx';
+import EarnVaults from './components/Earn/EarnVaults.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
@@ -107,7 +108,6 @@ import ToggleSwitch from './components/ToggleSwitch/ToggleSwitch.tsx';
 import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
-import EarnVaults from './components/Earn/EarnVaults.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -577,8 +577,7 @@ function App() {
     set: new Set(),
   });
   const emptyFunction = useCallback(() => {}, []);
-  const memoizedTokenList = useMemo(() => [], []);
-  const memoizedTokenList2 = useMemo(
+  const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
     [tokendict],
   );
@@ -2643,7 +2642,7 @@ function App() {
         // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base, original size quote, filled
         let filledorders: any = {};
         if (account.addresses?.[0]) {
-          const endpoint = 'https://gateway.thegraph.com/api/e6956d552c61fef8f871bbd50ad070ab/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r';
+          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
           let allLogs: any[] = [];
           let lastblockTimestamp = Math.floor(Date.now() / 1000);
           let count = 0
@@ -2949,7 +2948,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = 'https://gateway.thegraph.com/api/e6956d552c61fef8f871bbd50ad070ab/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r';
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
         let allLogs: any[] = [];
 
         const query = `
@@ -10197,7 +10196,7 @@ function App() {
                   tradehistory={tradehistory}
                   trades={tradesByMarket}
                   canceledorders={canceledorders}
-                  tokenList={memoizedTokenList2}
+                  tokenList={memoizedTokenList}
                   router={router}
                   address={account.addresses?.[0] ?? ''}
                   isBlurred={isBlurred}
@@ -10237,7 +10236,11 @@ function App() {
           />
           <Route
             path="/earn"
-            element={<EarnVaults />}
+            element={
+              <EarnVaults
+                tokenList={memoizedTokenList}
+              />
+            }
           />
           <Route
             path="/swap"

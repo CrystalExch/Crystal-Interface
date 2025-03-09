@@ -1366,6 +1366,7 @@ body:has(.right-column.show) .blur-background-popups {
   text-align: left;
   font-size: 0.7rem;
   color: #ffffff79;
+  width: 50px
 }
 .main-content-wrapper.simple-view .scale-order-total-label,
 .main-content-wrapper.simple-view .scale-order-size-label{
@@ -1376,6 +1377,7 @@ body:has(.right-column.show) .blur-background-popups {
   text-align: left;
   font-size: 0.7rem;
   color: #ffffff79;
+  width: 50px;
 }
 .scale-input{
   margin-left: auto;
@@ -1444,6 +1446,7 @@ body:has(.right-column.show) .blur-background-popups {
   color: #ffffff79;
   font-size: 0.7rem;
   text-align: left;
+  width: 50px;
 }
 .main-content-wrapper.simple-view .scale-order-start-label,
 .main-content-wrapper.simple-view .scale-order-end-label{
@@ -3785,7 +3788,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     left: 83.5%;
     background: #1a1a1dc9;
     border-radius: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.03);
     width: 34%;
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -3797,6 +3800,10 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
       left: calc(100% - 16.25vw);
       width: 32.5vw
     }
+    .main-content-wrapper.simple-view .navlink-dropdown{
+      width: 90px;
+    }
+
   }
   
   @keyframes dropdown-fade-in {

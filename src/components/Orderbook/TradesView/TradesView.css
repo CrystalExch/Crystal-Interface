@@ -4,6 +4,8 @@
   font-weight: 300;
   overflow: hidden;
   position: relative;
+  min-height: 200px;
+  background-color: transparent;
 }
 
 .trades-list {
@@ -12,4 +14,23 @@
   scrollbar-color: #888 #f1f1f1;
   scrollbar-width: none;
   user-select: none;
+  border-radius: 10px;
+  position: relative;
+}
+
+.trades-container::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(to bottom, rgba(15, 15, 18, 0.2), rgb(9, 9, 11));
+  pointer-events: none;
+  z-index: 10;
+  border-radius: 0 0 10px 10px; 
+}
+
+.trades-container.hidden {
+  display: none;
 }
