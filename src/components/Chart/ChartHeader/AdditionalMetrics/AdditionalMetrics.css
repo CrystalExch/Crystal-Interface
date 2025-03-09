@@ -1,0 +1,79 @@
+.liquidity-skeleton {
+  background: #2d2d3b;
+  border-radius: 4px;
+  height: 11px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  position: relative;
+  width: 110px;
+}
+
+.liquidity-skeleton::after {
+  animation: shimmer 2s infinite;
+  background-image: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0%) 0,
+    rgb(255 255 255 / 5%) 20%,
+    rgb(255 255 255 / 10%) 60%,
+    rgb(255 255 255 / 0%)
+  );
+  content: '';
+  inset: 0;
+  position: absolute;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.right-section {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+
+.right-section,
+.additional-metrics {
+  align-items: center;
+  display: flex;
+  height: 100%;
+  justify-content: flex-start;
+}
+
+.additional-metrics {
+  color: #fff;
+  flex-wrap: nowrap;
+  gap: 20px;
+  overflow: scroll;
+  -ms-overflow-style: none;
+  padding-left: 10px;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.additional-metrics::before,
+.additional-metrics::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+
+  width: 1vh;
+  z-index: 1;
+}
+
+.additional-metrics::-webkit-scrollbar {
+  display: none;
+}
+
+.long {
+  color: #50f08d;
+  margin-right: 8px;
+}
+
+.short {
+  color: rgb(255 108 108);
+}

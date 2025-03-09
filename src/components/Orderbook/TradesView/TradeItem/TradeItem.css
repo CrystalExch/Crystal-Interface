@@ -1,0 +1,67 @@
+.trade-item {
+  display: flex;
+  font-size: 0.72rem;
+  justify-content: space-between;
+  margin: 4px 6px;
+  transition: background-color 0.2s;
+}
+
+.mr-1 {
+  margin-right: 5px;
+  margin-top: 2px;
+}
+
+.trade-item:hover {
+  background-color: rgb(255 255 255 / 2.5%);
+}
+
+.trade-item-left {
+  padding-left: 2.5px;
+  text-align: left;
+  width: 33%;
+}
+
+.trade-item-left.buy {
+  color: rgb(67 254 154);
+}
+
+.trade-item-left.sell {
+  color: rgb(255 108 108);
+}
+
+.trade-item-center {
+  text-align: center;
+  width: 33%;
+}
+
+.trade-item-right {
+  align-items: center;
+  display: flex;
+  justify-content: flex-end;
+  text-align: right;
+  width: 33%;
+}
+
+.trade-item-right a {
+  align-items: center;
+  display: inline-flex;
+  padding: 0 4px;
+}
+
+.trade-item-right span {
+  margin-right: 0;
+}
+
+.trade-item-right .txn-link {
+  color: #b7bad8;
+  margin-left: 2px;
+  transition: color 0.2s;
+}
+
+.trade-item-right a:hover .txn-link {
+  color: #73758b;
+}
+
+.price-arrow-container {
+  display: flex;
+}

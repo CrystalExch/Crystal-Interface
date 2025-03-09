@@ -1,0 +1,9 @@
+.send-icon {
+  cursor: pointer;
+  height: 22.5px;
+  width: 22.5px;
+}
+
+.send-icon:hover {
+  transform: scale(1.05);
+}

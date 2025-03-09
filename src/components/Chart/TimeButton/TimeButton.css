@@ -1,0 +1,18 @@
+.chart-time-button {
+  background: none;
+  border: none;
+  color: #ffffff9e;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 400;
+  padding: 5px;
+  transition: color 0.3s ease;
+}
+
+.chart-time-button.active {
+  color: #9e9bc8;
+}
+
+.chart-time-button:hover {
+  opacity: 0.8;
+}

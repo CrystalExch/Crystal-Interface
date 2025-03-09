@@ -1,0 +1,57 @@
+
+  /* Container */
+  .earn-container {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 20px;
+  }
+  
+  /* Grid of vault cards */
+  .vaults-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+  }
+  
+  /* Vault card styling */
+  .vault-card {
+    background: #fff;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease;
+  }
+  
+  .vault-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .vault-title {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+    font-weight: bold;
+  }
+  
+  .vault-details p {
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+  }
+  
+  .vault-action {
+    text-align: right;
+  }
+  
+  .vault-action button {
+    background-color: #0077ff;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .vault-action button:hover {
+    background-color: #005bb5;
+  }
+  

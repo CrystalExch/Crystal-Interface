@@ -1,0 +1,13 @@
+.trades-header {
+  align-items: center;
+  box-shadow: 0 4px 4px #0f0f12;
+  color: #ffffff62;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 100;
+  justify-content: space-between;
+  margin-top: 3.5px;
+  padding: 0 0.6rem;
+  position: sticky;
+  z-index: 2;
+}

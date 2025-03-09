@@ -1,0 +1,24 @@
+.chartcontainer {
+  background: #0f0f12;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 64px);
+  margin-top: 25px;
+  overflow: hidden;
+  width: 100%;
+  z-index: 1;
+}
+
+.chartwrapper {
+  height: 100%;
+}
+
+.chart-options {
+  align-items: center;
+  display: flex;
+  height: 40px;
+  justify-content: space-between;
+  padding: 0 10px;
+  z-index: 2;
+}

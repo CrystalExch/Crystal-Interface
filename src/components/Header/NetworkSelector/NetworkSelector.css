@@ -1,0 +1,129 @@
+.network-selector {
+  align-items: center;
+  display: flex;
+  position: relative;
+}
+
+.network-selector-button {
+  align-items: center;
+  background: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  height: 34px;
+  justify-content: center;
+  overflow: hidden;
+  width: 34px;
+}
+
+.network-selector-button:active,
+.network-selector-button:hover {
+  opacity: 0.8;
+}
+
+.network-active-logo {
+  height: 16px;
+  opacity: 1;
+  transition: opacity 0.2s ease;
+  width: 16px;
+}
+
+.network-dropdown {
+  animation: dropdownSlide 0.2s cubic-bezier(0.2, 0, 0.1, 1);
+  backdrop-filter: blur(10px);
+  background: linear-gradient(180deg, #12121578 0%, #17171b79 100%);
+  border: 1px solid rgb(170 174 207 / 4%);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0/20%);
+  height: auto;
+  left: 0;
+  min-width: 160px;
+  overflow: hidden;
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 9999;
+}
+
+@keyframes dropdownSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.network-label {
+  color: rgb(255 255 255 / 40%);
+  font-size: 0.7rem;
+  font-weight: 450;
+  padding: 12px 10px 8px 10px;
+  text-transform: uppercase;
+}
+
+.network-option {
+  align-items: center;
+  color: rgb(255 255 255 / 70%);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin: 0;
+  margin-top: 5px;
+  overflow: hidden;
+  padding: 6px 0px 6px 12px;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.network-option.selected {
+  background: linear-gradient(
+    90deg,
+    rgb(170 174 207 / 5%) 0%,
+    rgb(170 174 207 / 2%) 100%
+  );
+  color: #d7d7d7;
+  font-weight: 400;
+}
+
+.network-option.selected::after {
+  animation: pulseDot 2s infinite ease-in-out;
+  background-color: #aaaecf;
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgb(170 174 207 / 40%);
+  content: '';
+  height: 6px;
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+}
+
+@keyframes pulseDot {
+  0% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+
+  50% {
+    opacity: 0.7;
+    transform: translateY(-50%) scale(1.2);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+.network-option-logo {
+  border-radius: 50%;
+  height: 17px;
+  margin-right: 7px;
+  width: 17px;
+}

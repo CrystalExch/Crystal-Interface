@@ -1,0 +1,400 @@
+.advanced-chart-container {
+  background-color: #0f0f12;
+  flex-grow: 1;
+  flex-grow: 1;
+  position: relative;
+  position: relative;
+}
+
+.advanced-chart-container > div {
+  height: 100%;
+  height: 100%;
+  left: 0;
+  left: 0;
+  position: absolute;
+  position: absolute;
+  top: 0;
+  top: 0;
+  width: 100%;
+  width: 100%;
+}
+
+.chart-page,
+.tv-chart-container,
+.chart-widget,
+.series-l31H9iuA .titlesWrapper-l31H9iuA {
+  font-family: 'Funnel Display', sans-serif !important;
+}
+
+.theme-dark:root {
+  --tv-color-platform-background: #0f0f12;
+  --tv-color-pane-background: #0f0f12;
+  --tv-color-toolbar-button-background-hover: rgb(255 255 255 / 10%);
+  --tv-color-toolbar-button-background-expanded: rgb(255 255 255 / 8%);
+  --tv-color-toolbar-button-background-active: rgb(255 255 255 / 8%);
+  --tv-color-toolbar-button-background-active-hover: rgb(255 255 255 / 12%);
+  --tv-color-popup-background: #0f0f12;
+  --tv-color-popup-element-text: #aaaecf;
+  --tv-color-popup-element-background-active: #aaaecf;
+  --priceScaleModeButtons-color: #aaaecf;
+  --priceScaleModeButtons-background: #0f0f12;
+  --priceScaleModeButtons-background-hover: #0f0f12;
+  --priceScaleModeButtons-border-hover: #0f0f12;
+  --priceScaleModeButtons-background-active: #0f0f12;
+  --priceScaleModeButtons-border-active: #0f0f12;
+  --priceScaleModeButtons-border: #0f0f12;
+  --priceScaleModeButtons-background-activated: #1a1a1c;
+  --tv-color-toolbar-button-text: rgb(255 255 255 / 70%);
+  --tv-color-toolbar-button-text-hover: #aaaecf;
+  --tv-color-toolbar-button-text-active: #aaaecf;
+  --tv-color-toolbar-button-text-active-hover: #aaaecf;
+  --tv-color-item-active-text: #aaaecf;
+  --tv-color-toolbar-toggle-button-background-active: rgb(255 255 255 / 20%);
+  --tv-color-toolbar-toggle-button-background-active-hover: rgb(
+    255 255 255 / 25%
+  );
+  --tv-color-toolbar-divider-background: rgb(255 255 255 / 12%);
+}
+
+html.theme-dark .dialog-aRAWUDhF,
+html.theme-dark .calendar-N6r5jhbE {
+  background-color: var(--themed-color-bg-primary, #0f0f12);
+  color: #aaaecf;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-default-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-default-bg,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-primary-default-content,
+    #0f0f12
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC:hover {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-hover-border,
+    #bbbddb
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-hover-bg,
+    #bbbddb
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC:active {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-active-bg,
+    #9194b3
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-default-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-default-bg,
+    #0000
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-secondary-default-content,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-default-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-default-bg,
+    #0f0f12
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-secondary-default-content,
+    #aaaecf
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:hover {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-hover-border,
+    #bbbddb
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-hover-bg,
+    rgb(170 174 207 / 10%)
+  ) !important;
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-hover-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-hover-bg,
+    #1e1e21
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:active {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-active-bg,
+    rgb(170 174 207 / 20%)
+  ) !important;
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-active-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-active-bg,
+    #2a2a2e
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC[disabled],
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC[disabled] {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-disabled-border,
+    rgb(170 174 207 / 30%)
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-disabled-bg,
+    rgb(170 174 207 / 30%)
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-disabled-content,
+    rgb(17 17 20 / 30%)
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC[disabled] {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-disabled-border,
+    rgb(170 174 207 / 30%)
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-disabled-bg,
+    rgb(17 17 20 / 30%)
+  ) !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC:focus {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-active-bg,
+    #9194b3
+  ) !important;
+
+  border-color: #9194b3 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC:focus-visible {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-active-bg,
+    #9194b3
+  ) !important;
+
+  border-color: #9194b3 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Secondary Button Input Active */
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:focus {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-active-bg,
+    rgb(170 174 207 / 20%)
+  ) !important;
+
+  border-color: #9194b3 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC:focus-visible {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-active-bg,
+    rgb(170 174 207 / 20%)
+  ) !important;
+
+  border-color: #9194b3 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.theme-dark .brand-D4RPB3ZC.primary-D4RPB3ZC,
+html.theme-dark .brand-D4RPB3ZC.secondary-D4RPB3ZC,
+html.theme-dark [class*='-D4RPB3ZC'] {
+  --ui-lib-button-default-color-border-outline: none !important;
+  --ui-lib-control-default-focus-ring-color: transparent !important;
+  --ui-lib-control-default-focus-ring-offset: 0 !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].primary-D4RPB3ZC {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-default-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-default-bg,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-primary-default-content,
+    #0f0f12
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].secondary-D4RPB3ZC {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-default-border,
+    #aaaecf
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-default-bg,
+    #0000
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-secondary-default-content,
+    #aaaecf
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC']:hover {
+  border-color: #bbbddb !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].primary-D4RPB3ZC:hover {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-hover-border,
+    #bbbddb
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-hover-bg,
+    #bbbddb
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].secondary-D4RPB3ZC:hover {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-hover-border,
+    #bbbddb
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-hover-bg,
+    rgb(170 174 207 / 10%)
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC']:focus,
+html.theme-dark [class*='-D4RPB3ZC']:focus-visible,
+html.theme-dark [class*='-D4RPB3ZC']:active {
+  border-color: #9194b3 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].primary-D4RPB3ZC:focus,
+html.theme-dark [class*='-D4RPB3ZC'].primary-D4RPB3ZC:focus-visible,
+html.theme-dark [class*='-D4RPB3ZC'].primary-D4RPB3ZC:active {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-primary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-primary-active-bg,
+    #9194b3
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'].secondary-D4RPB3ZC:focus,
+html.theme-dark [class*='-D4RPB3ZC'].secondary-D4RPB3ZC:focus-visible,
+html.theme-dark [class*='-D4RPB3ZC'].secondary-D4RPB3ZC:active {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-secondary-active-border,
+    #9194b3
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-secondary-active-bg,
+    rgb(170 174 207 / 20%)
+  ) !important;
+}
+
+html.theme-dark [class*='-D4RPB3ZC'][disabled] {
+  --ui-lib-button-default-color-border: var(
+    --themed-color-btn-brand-disabled-border,
+    rgb(170 174 207 / 30%)
+  ) !important;
+  --ui-lib-button-default-color-bg: var(
+    --themed-color-btn-brand-disabled-bg,
+    rgb(170 174 207 / 30%)
+  ) !important;
+  --ui-lib-button-default-color-content: var(
+    --themed-color-btn-brand-disabled-content,
+    rgb(17 17 20 / 30%)
+  ) !important;
+}
+
+.marketStatusOpen-Lgtz1OtS,
+html.theme-dark .marketStatusOpen-Lgtz1OtS {
+  background-color: #50f08d11;
+  color: #50f08d;
+}
+
+.container-zLVm6B4t,
+html.theme-dark .container-zLVm6B4t {
+  background: var(--themed-color-tooltip-wizard-bg, #aaaecf);
+  border-radius: 4px;
+}
+
+.text-kfvcmk8t,
+.closeButton-zLVm6B4t {
+  color: #0f0f12;
+}
+
+.icon-GwQQdU8S + .text-GwQQdU8S,
+.text-GwQQdU8S + .icon-GwQQdU8S {
+  place-self: center center;
+}
+
+.button-GwQQdU8S {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.icon-GwQQdU8S {
+  place-self: center center;
+}

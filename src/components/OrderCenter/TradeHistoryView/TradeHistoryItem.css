@@ -1,0 +1,28 @@
+.trade-history-oc-item {
+  align-items: center;
+  color: #ffffffca;
+  display: grid;
+  grid-template-columns:
+    40px minmax(120px, 0.9fr) minmax(115px, 1fr)
+    minmax(80px, 0.8fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
+  justify-content: flex-start;
+  margin: -3px 0;
+  min-width: 580px;
+  padding: 0;
+  text-align: left;
+  user-select: none;
+}
+
+.trade-history-oc-item:hover {
+  background: #ffffff04;
+}
+
+.trade-history-oc-item > *:not(:nth-last-child(1)) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.trade-history-oc-item > *:nth-last-child(1) {
+  justify-content: flex-end;
+  text-align: right;
+}

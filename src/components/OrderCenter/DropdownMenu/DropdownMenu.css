@@ -1,0 +1,86 @@
+.oc-dropdown-container {
+  position: relative;
+}
+
+.oc-dropdown-toggle {
+  align-items: center;
+  background: none;
+  border: none;
+  border-radius: 5px;
+  color: rgb(255 255 255 / 75%);
+  cursor: pointer;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 100;
+  margin: 6px 0;
+  padding: 4px 5px;
+  padding-left: 10px;
+  text-align: left;
+  width: 100%;
+}
+
+.oc-dropdown-icon {
+  margin-left: auto;
+  transition: transform 0.3s ease;
+}
+
+.oc-dropdown-icon.open {
+  transform: rotate(180deg);
+}
+
+.oc-dropdown-menu {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  color: #ffffffbc;
+  left: 0;
+  margin: 0;
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  right: 10px;
+  top: calc(100% - 4px);
+  transition:
+    max-height 0.3s ease,
+    opacity 0.3s ease;
+  width: max-content;
+  z-index: 3;
+}
+
+.oc-dropdown-menu.open {
+  animation: dropdownFadeIn 0.3s ease forwards;
+  max-height: 300px;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.oc-dropdown-item {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 100;
+  justify-content: space-between;
+  padding: 5px 12px;
+  text-wrap: nowrap;
+  transition: background-color 0.2s ease;
+}
+
+.oc-dropdown-item:hover {
+  background: rgb(255 255 255 / 10%);
+}

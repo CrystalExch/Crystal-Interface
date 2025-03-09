@@ -1,0 +1,44 @@
+.orders-oc-header {
+  align-items: center;
+  background: #0f0f12;
+  color: #ffffff70;
+  cursor: pointer;
+  display: grid;
+  font-size: 0.85rem;
+  grid-template-columns:
+    40px minmax(120px, 0.9fr) minmax(115px, 1fr) minmax(160px, 1fr)
+    minmax(145px, 1fr) minmax(145px, 0.8fr) minmax(100px, 0.3fr);
+  height: 35px;
+  min-height: 35px;
+  min-width: 825px;
+  padding: 0;
+  position: sticky;
+  top: 0;
+  user-select: none;
+  z-index: 2;
+}
+
+.orders-oc-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.cancel-all-oc-cell {
+  border-radius: 3px;
+  color: #aaaecf;
+  cursor: default;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 300;
+  justify-self: center;
+  overflow: hidden;
+  padding: 3px 20px;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 0;
+}
+.cancel-all-label:hover {
+  color: rgb(243 78 78);
+  cursor: pointer;
+}

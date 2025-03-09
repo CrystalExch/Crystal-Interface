@@ -1,0 +1,49 @@
+{
+  "name": "wagmi-project",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "lint": "biome check .",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/components/Footer/**/*.{js,jsx,ts,tsx}\" && stylelint --fix \"src/components/Footer/**/*.{css,scss}\" && postcss \"src/components/Footer/**/*.{css,scss}\" --replace",
+    "format-all": "prettier --write \"src/**/*.{tsx,ts,css,scss}\" \"!src/adv/**/*\" \"!src/contexts/LanguageContext.tsx\" && stylelint \"src/**/*.{css,scss}\" --fix && postcss \"src/**/*.css\" --replace"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.45.1",
+    "axios": "^1.7.4",
+    "graphql-request": "^7.1.2",
+    "lightweight-charts": "^4.2.0",
+    "lucide-react": "^0.447.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.0",
+    "recharts": "^2.13.0",
+    "viem": "latest",
+    "wagmi": "^2.12.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.8.0",
+    "@types/node": "^22.10.1",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/react-window": "^1.8.8",
+    "@vitejs/plugin-react": "^4.2.1",
+    "postcss": "^8.5.1",
+    "postcss-cli": "^11.0.0",
+    "postcss-combine-duplicated-selectors": "^10.0.3",
+    "postcss-merge-rules": "^7.0.4",
+    "postcss-sort-media-queries": "^5.2.0",
+    "prettier": "^3.4.2",
+    "prettier-plugin-organize-imports": "^4.1.0",
+    "react-window": "^1.8.11",
+    "stylelint": "^16.13.2",
+    "stylelint-config-prettier": "^9.0.5",
+    "stylelint-config-standard": "^37.0.0",
+    "stylelint-order": "^6.0.4",
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}

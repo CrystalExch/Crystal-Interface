@@ -1,0 +1,65 @@
+.online-status {
+  align-items: center;
+  border-radius: 4px;
+  display: flex;
+  gap: 6px;
+  padding: 1px 11px;
+  transition:
+    background 0.3s,
+    border-color 0.3s;
+  user-select: none;
+}
+
+.online-status.online {
+  background: rgb(44 191 125 / 11.2%);
+  border: none;
+  color: rgb(85 209 143);
+}
+
+.online-status.offline {
+  background: rgb(135 38 38 / 40%);
+  border: none;
+  color: #ff4d4d;
+}
+
+.status-dot {
+  border-radius: 50%;
+  height: 8px;
+  margin-left: -4px;
+  width: 8px;
+}
+
+.status-dot.online {
+  animation: infinitePulse 2s infinite;
+  background-color: #00ff9d;
+}
+
+@keyframes infinitePulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(0 255 157 / 70%);
+    transform: scale(0.95);
+  }
+
+  70% {
+    box-shadow: 0 0 0 6px rgb(0 255 157 / 0%);
+    transform: scale(1);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgb(0 255 157 / 0%);
+    transform: scale(0.95);
+  }
+}
+
+.status-dot.offline {
+  animation: none;
+  background-color: #ff4d4d;
+}
+
+.status-text.online {
+  color: rgb(141 198 162 / 67.8%);
+}
+
+.status-text.offline {
+  color: rgb(198 141 141 / 67.8%);
+}

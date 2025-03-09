@@ -1,0 +1,76 @@
+.interval-token-selector {
+  font-size: 0.75rem;
+  position: relative;
+}
+
+.interval-select-wrapper {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  padding: 2.5px 10px;
+}
+
+.interval-selected-value {
+  user-select: none;
+}
+
+.token-interval-arrow {
+  flex-shrink: 0;
+  margin-left: -5px;
+  margin-right: -10px;
+  transition: transform 0.3s ease;
+  width: 14px;
+}
+
+.token-interval-arrow.open {
+  transform: rotate(180deg);
+}
+
+.interval-options-list {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  font-size: 0.75rem;
+  list-style-type: none;
+  margin: 0;
+  margin-left: -14px;
+  min-width: 0;
+  opacity: 1;
+  overflow: hidden;
+  padding: 0;
+  z-index: 99999;
+}
+
+.interval-option {
+  align-items: center;
+  color: #ffffff97;
+  cursor: pointer;
+  display: flex;
+  gap: 4px;
+  justify-content: space-between;
+  padding: 2.5px 10px;
+  transition: background-color 0.3s;
+}
+
+.interval-option:hover {
+  background-color: rgb(255 255 255 / 20%);
+}
+
+.interval-option.selected {
+  color: #fff;
+}
+
+.token-checkmark {
+  flex-shrink: 0;
+  margin-left: auto;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  width: 12px;
+}
+
+.interval-option.selected .token-checkmark {
+  opacity: 1;
+}

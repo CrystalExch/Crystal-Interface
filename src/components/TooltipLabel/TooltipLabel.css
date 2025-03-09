@@ -1,0 +1,45 @@
+.tooltip-wrapper {
+  display: inline-block;
+  position: relative;
+}
+
+.swap-trade-header-tooltip {
+  -webkit-backdrop-filter: blur(15px);
+  backdrop-filter: blur(10px);
+  background: rgba(28, 28, 34, 0.7);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  margin-top: 7px;
+  will-change: transform, opacity;
+}
+
+.tooltip-entering {
+  opacity: 1 !important;
+}
+
+.tooltip-leaving {
+  opacity: 0 !important;
+}
+
+.trade-dotted-underline {
+  border-bottom: 1.5px dashed #ffffff51;
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.tooltip-description {
+  color: rgb(188, 188, 188);
+  font-size: 0.75rem;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-weight: 300;
+  line-height: 1.2;
+  max-width: 220px;
+  padding: 4px 6px;
+}
+
+@media (width <= 1000px) {
+  .swap-trade-header-tooltip {
+    display: none;
+  }
+}

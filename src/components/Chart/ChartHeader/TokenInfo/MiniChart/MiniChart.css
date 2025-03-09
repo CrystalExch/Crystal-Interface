@@ -1,0 +1,86 @@
+.mini-chart {
+  overflow: hidden;
+}
+
+.mini-chart-label {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: #9499a3;
+  letter-spacing: 0.5px;
+  z-index: 5;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.mini-chart-tooltip {
+  background-color: #17171a;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  color: #e5e7eb;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+}
+
+.mini-chart-tooltip p {
+  margin: 0;
+  padding: 0;
+}
+
+.mini-chart-time {
+  color: #9499a3;
+  font-size: 0.65rem;
+}
+
+.mini-chart-change {
+  border-radius: 2px;
+  font-size: 0.7rem;
+  padding: 1px 4px;
+  position: absolute;
+  right: 6px;
+  top: 6px;
+}
+
+.mini-chart-change.positive {
+  color: #50f08d;
+}
+
+.mini-chart-change.negative {
+  color: #ef5151;
+}
+
+.market-mini-chart-wrapper {
+  position: absolute;
+  right: -160px;
+  transform: translateY(-50%);
+  height: 70px;
+  width: 150px;
+  z-index: 20;
+  animation: fadeIn 0.2s ease-in-out;
+  }
+.market-item-container {
+  position: relative;
+}
+
+.market-item-container:hover .market-item {
+  background-color: #1e1e229d;
+}
+
+.market-mini-chart-wrapper::before {
+  content: '';
+  position: absolute;
+  left: -10px;
+  top: 50%;
+  width: 10px;
+  height: 1px;
+  background-color: #303036;
+}
+
+@media (max-width: 968px) {
+  .market-mini-chart-wrapper {
+    display: none;
+  }
+}
+

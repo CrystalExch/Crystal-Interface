@@ -1,0 +1,21 @@
+.token-info-button {
+  align-items: center;
+  background: none;
+  border: none;
+  color: #b8b7b7;
+  cursor: pointer;
+  display: flex;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.token-info-button:hover {
+  transform: scale(1.06);
+}
+
+.token-info-popup-icon {
+  height: 11px;
+  opacity: 0.75;
+  transform: scale(1.05);
+  width: 11px;
+}

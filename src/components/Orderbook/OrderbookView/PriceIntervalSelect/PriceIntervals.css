@@ -1,0 +1,74 @@
+.interval-selector {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin-right: -5px;
+  position: relative;
+}
+
+.spread-select-wrapper {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  padding: 2.5px 10px;
+}
+
+.spread-selected {
+  user-select: none;
+}
+
+.interval-arrow {
+  transition: transform 0.3s ease;
+  width: 14px;
+}
+
+.interval-arrow.open {
+  transform: rotate(180deg);
+}
+
+.spread-options-list {
+  backdrop-filter: blur(10px);
+  background-color: rgba(255, 255, 255, 0.05);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  font-size: 0.75rem;
+  list-style-type: none;
+  margin: 0;
+  min-width: 60px;
+  opacity: 1;
+  overflow: hidden;
+  padding: 0;
+  position: absolute;
+  right: 10px;
+  top: 100%;
+  z-index: 99999;
+}
+
+.option {
+  align-items: center;
+  color: #ffffff97;
+  cursor: pointer;
+  display: flex;
+  gap: 5px;
+  justify-content: space-between;
+  padding: 3px 8px 3px 10px;
+  transition: background-color 0.3s;
+}
+
+.option:hover {
+  background-color: rgb(255 255 255 / 20%);
+}
+
+.option.selected {
+  color: #fff;
+}
+
+.spread-checkmark {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  width: 12px;
+}
+
+.option.selected .spread-checkmark {
+  opacity: 1;
+}

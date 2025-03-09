@@ -1,0 +1,134 @@
+.portfolio-row {
+  display: grid;
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  grid-template-columns:
+    minmax(140px, 1.2fr) minmax(120px, 1.1fr) minmax(80px, 1fr)
+    minmax(70px, 0.3fr);
+  justify-items: start;
+  margin: -2px 0;
+  min-height: 45px;
+  min-width: 410px;
+  padding: 2px 15px 2px 10px;
+  position: relative;
+  user-select: none;
+}
+
+.portfolio-column {
+  align-items: center;
+  display: flex;
+  width: 100%;
+}
+
+.portfolio-column:first-child {
+  margin-left: 2px;
+}
+
+.portfolio-column:first-child,
+.portfolio-column:nth-child(2),
+.portfolio-column:nth-child(3) {
+  justify-content: flex-start;
+}
+
+.portfolio-column:last-child {
+  justify-content: center;
+  width: 100%;
+}
+
+.asset-icon {
+  border-radius: 360px;
+  height: 25px;
+  margin-right: 7px;
+  width: 25px;
+}
+
+.asset-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.asset-ticker {
+  color: white;
+  display: flex;
+  font-size: 0.8rem;
+  gap: 3px;
+  margin-bottom: -4px;
+}
+
+.asset-name {
+  color: rgb(255 255 255 / 50%);
+  font-size: 0.7rem;
+}
+
+.amount-details,
+.price-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.usd-asset-amount {
+  color: #ffffffca;
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin-bottom: -1px;
+}
+
+.asset-amount {
+  color: rgb(255 255 255 / 57.5%);
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.port-token-price {
+  color: #ffffffca;
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin-bottom: -1px;
+}
+
+.action-icons {
+  display: flex;
+  gap: 5px;
+}
+
+/* shared */
+
+.icon-container {
+  align-items: center;
+  cursor: pointer;
+  overflow: visible;
+  position: relative;
+}
+
+.asset-price-change {
+  font-size: 0.75rem;
+}
+
+.asset-price-change.positive {
+  color: #29ec97;
+}
+
+.asset-price-change.negative {
+  color: #ec4343;
+}
+
+@media (width >= 1720px) {
+  .asset-icon {
+    border-radius: 360px;
+    height: 26px;
+    margin-right: 8px;
+    width: 26px;
+  }
+
+  .asset-ticker {
+    color: white;
+    display: flex;
+    font-size: 0.75rem;
+    margin-bottom: -2px;
+  }
+
+  .asset-name {
+    color: rgb(255 255 255 / 70%);
+    font-size: 0.7rem;
+  }
+}

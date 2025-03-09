@@ -1,0 +1,54 @@
+.highlight-popup {
+  background-color: rgba(219, 221, 248, 0.03) !important;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
+  color: rgb(255 255 255 / 80%);
+  font-size: 0.7rem;
+  isolation: isolate;
+  min-width: 140px;
+  padding: 10px 14px;
+  pointer-events: none;
+  position: relative;
+  transition: opacity 0.5s ease-in-out;
+  white-space: nowrap;
+  z-index: 1000;
+  border: 1.5px solid rgb(255 255 255 / 3%);
+}
+
+.highlight-popup::after {
+  backdrop-filter: blur(15px);
+  border-radius: inherit;
+  content: '';
+  inset: 0;
+  position: absolute;
+  z-index: -1;
+}
+
+.highlight-popup div {
+  line-height: 1;
+  margin-bottom: 8px;
+  position: relative;
+  white-space: nowrap;
+}
+
+.highlight-popup div:last-child {
+  margin-bottom: 0;
+}
+
+.highlight-popup::before,
+.highlight-popup.left::before {
+  transform: translateY(-50%) translateX(-50%) rotate(45deg);
+}
+
+.highlight-popup.left::before {
+  border-bottom: 1px solid rgb(255 255 255 / 8.7%);
+  border-left: 1px solid rgb(255 255 255 / 8.7%);
+  border-right: none;
+  border-top: none;
+  clip-path: polygon(0 0, 100%, 100%, 0 100%);
+  left: 0.5px;
+}
+
+.text-white {
+  color: #fff9;
+}

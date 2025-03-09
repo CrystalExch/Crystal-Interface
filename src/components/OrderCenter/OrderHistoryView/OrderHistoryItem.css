@@ -1,0 +1,30 @@
+.order-history-oc-item {
+  align-items: center;
+  color: #ffffffca;
+  display: grid;
+  grid-template-columns:
+    40px minmax(120px, 0.9fr) minmax(115px, 1fr) minmax(80px, 1fr) minmax(
+      145px,
+      1fr
+    )
+    minmax(70px, 0.6fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
+  justify-content: flex-start;
+  margin: -3px 0;
+  min-width: 795px;
+  text-align: left;
+  user-select: none;
+}
+
+.order-history-oc-item:hover {
+  background: #ffffff04;
+}
+
+.order-history-oc-item > *:not(:nth-last-child(1)) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.order-history-oc-item > *:nth-last-child(1) {
+  justify-content: flex-end;
+  text-align: right;
+}

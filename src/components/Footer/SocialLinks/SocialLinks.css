@@ -1,0 +1,50 @@
+.social-links {
+  color: rgb(230 228 252 / 68%);
+  display: flex;
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.social-link-twitter,
+.social-link-docs {
+  align-items: center;
+  background-color: rgb(39 39 44 / 95%);
+  border-radius: 4px;
+  color: #a8a2a2;
+  display: flex;
+  height: 23px;
+  justify-content: center;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.social-link-docs {
+  margin-left: 5px;
+}
+
+.social-link-discord {
+  align-items: center;
+  background: rgb(44 191 125 / 11.2%);
+  border-radius: 4px;
+  color: rgb(85 209 143);
+  display: flex;
+  height: 23px;
+  justify-content: center;
+  margin-left: 5px;
+  padding: 0 10px;
+  text-decoration: none;
+}
+
+.social-link-discord:hover {
+  background: rgb(44 191 125 / 21.2%);
+}
+
+.social-link-twitter:hover,
+.social-link-docs:hover {
+  background-color: rgb(55 55 66);
+}
+
+.social-links a {
+  text-wrap: nowrap;
+}

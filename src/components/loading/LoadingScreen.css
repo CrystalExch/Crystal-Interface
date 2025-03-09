@@ -1,0 +1,38 @@
+.overlay {
+  align-items: center;
+  background: rgb(6, 6, 6);
+  color: white;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  left: 0;
+  overflow: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  width: 100%;
+  z-index: 100000000;
+}
+
+.logo-pulse {
+  animation: move 1.8s infinite;
+  user-select: none;
+  width: 15vh;
+}
+
+@keyframes move {
+  0% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+
+  100% {
+    opacity: 0.3;
+    transform: scale(0.95);
+  }
+}

@@ -1,0 +1,42 @@
+.ol-header {
+  color: #ffffff62;
+  font-size: 0.75rem;
+  font-weight: 100;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  min-height: 20px;
+  padding: 0 0.4rem;
+  z-index: 2;
+}
+
+.ol-header,
+.ol-header > span {
+  align-items: center;
+  display: flex;
+}
+
+.ol-header > span {
+  flex: 1;
+}
+
+.ol-header > span:first-child {
+  justify-content: flex-start;
+}
+
+.ol-header > span:nth-child(2) {
+  justify-content: center;
+}
+
+.ol-header > span:last-child {
+  justify-content: flex-end;
+  margin-right: -2px;
+}
+
+.ol-header .interval-select-wrapper {
+  height: 20px;
+  padding: 2px 6px;
+}
+
+.total-name {
+  margin-right: -3px;
+}

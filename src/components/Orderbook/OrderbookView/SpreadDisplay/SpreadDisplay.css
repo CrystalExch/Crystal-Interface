@@ -1,0 +1,29 @@
+.ob-spread {
+  background: #0f0f12;
+  border-bottom: 1px solid rgb(58 58 63 / 20%);
+  border-top: 1px solid rgb(58 58 63 / 20%);
+  font-size: 0.71rem;
+  height: 3%;
+  margin-top: -0.5px;
+  min-height: 25px;
+  position: sticky;
+  text-align: center;
+  text-wrap: nowrap;
+  user-select: none;
+  width: 100%;
+  z-index: 2;
+}
+
+.ob-spread,
+.ob-spread-inner {
+  align-items: center;
+  display: flex;
+  justify-content: center;
+}
+
+.ob-spread-inner {
+  gap: 1rem;
+  max-width: 100%;
+  overflow: hidden;
+  padding: 0 1rem;
+}

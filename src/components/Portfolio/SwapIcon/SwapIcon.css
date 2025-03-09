@@ -1,0 +1,10 @@
+.swap-icon {
+  cursor: pointer;
+  height: 22.5px;
+  rotate: 90deg;
+  width: 22.5px;
+}
+
+.swap-icon:hover {
+  transform: scale(1.05);
+}

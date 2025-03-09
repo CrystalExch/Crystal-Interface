@@ -1,0 +1,67 @@
+.market-toggle-switch-container {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  height: 14px;
+}
+
+.market-toggle-switch {
+  display: inline-block;
+  flex-shrink: 0;
+  height: 14px;
+  position: relative;
+  width: 28px;
+}
+
+.market-toggle-switch input[type='checkbox'] {
+  display: none;
+}
+
+.market-toggle-switch-background {
+  background-color: #26262e;
+  border-radius: 4px;
+  bottom: 0;
+  cursor: pointer;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+  transition: all 0.3s ease-in-out;
+}
+
+.market-toggle-switch-background.disabled {
+  cursor: not-allowed;
+}
+
+.market-toggle-switch-handle {
+  background-color: #ffffff;
+  border-radius: 3px;
+  box-shadow: 0 0px 2px rgba(0, 0, 0, 0.5);
+  height: 10px;
+  left: 2px;
+  position: absolute;
+  top: 2px;
+  transition: transform 0.3s ease-in-out;
+  width: 10px;
+}
+
+.market-toggle-switch
+  input[type='checkbox']:checked
+  + .market-toggle-switch-background {
+    background:rgb(159, 156, 198);
+  }
+
+.market-toggle-switch
+  input[type='checkbox']:checked
+  + .market-toggle-switch-background
+  .market-toggle-switch-handle {
+  transform: translateX(14px);
+}
+
+.only-current-market-label {
+  color: #ffffff96;
+  font-size: 0.7rem;
+  font-weight: 100;
+  user-select: none;
+}

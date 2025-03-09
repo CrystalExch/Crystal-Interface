@@ -1,0 +1,26 @@
+.orderlist {
+  overflow-y: hidden;
+  position: relative;
+}
+
+.orderlist,
+.order-list-items {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  height: 100%;
+}
+
+.order-list-items {
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+}
+
+.order-list-items.bottom-aligned {
+  justify-content: flex-end;
+}
+
+.order-list-items.top-aligned {
+  justify-content: flex-start;
+}

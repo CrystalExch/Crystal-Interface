@@ -1,0 +1,40 @@
+.ob-controls {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  padding-left: 2.5px;
+  padding-top: 2.5px;
+}
+
+.ob-lists-container {
+  height: 100%;
+  margin-bottom: 6px;
+  min-height: 200px;
+  position: relative;
+  top: -2px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.ob-lists-container,
+.view-both {
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}
+
+.view-both,
+.ob-sell-only,
+.ob-buy-only {
+  margin: 0;
+  width: 100%;
+}
+
+.ob-sell-only,
+.ob-buy-only {
+  display: flex;
+  flex-direction: column;
+  z-index: 1;
+}

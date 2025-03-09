@@ -1,0 +1,237 @@
+.txpopup {
+  background: #19191c80;
+  border: 1.5px solid rgba(255, 255, 255, 0.034);
+  border-radius: 10px;
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
+  height: auto;
+  opacity: 1;
+  overflow: hidden;
+  pointer-events: auto;
+  position: relative;
+  transition: all 0.3s ease;
+  width: 270px;
+}
+
+.txpopup-inner,
+.txpopup-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.txpopup-inner{
+  padding:10px
+}
+
+.txpopup-title{
+  display:flex;
+  color:#ffffffa4;
+  font-size:.75rem;
+  font-weight:300;
+  letter-spacing:-.2px
+}
+.txpopup-swap-details {
+  align-items: left;
+  display: flex;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.txpopup-token-group {
+  gap: 8px;
+}
+
+.txpopup-token-group,
+.txpopup-token-details {
+  align-items: center;
+  display: flex;
+}
+
+.txpopup-token-details {
+  gap: 5px;
+}
+
+.txpopup-details-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.txpopup-token-icon {
+  border-radius: 50%;
+  height: 17px;
+  width: 17px;
+}
+
+.txpopup-amount {
+  color: #ffffffcf;
+  font-weight: 400;
+  font-weight: 400;
+  text-wrap: nowrap;
+}
+
+.txpopup-amount,
+.txpopup-arrow {
+  font-size: 0.8rem;
+}
+
+.txpopup-arrow {
+  color: #ffffff7d;
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.txpopup-recipient {
+  color: #ffffffcf;
+  font-size: 0.8rem;
+  font-weight: 300;
+}
+
+.view-transaction {
+  color: #c3c6e6;
+  font-size: 0.75rem;
+  text-decoration: none;
+  transition: all 0.2s ease;
+  width: 0px;
+  text-wrap: nowrap;
+}
+
+.view-transaction:hover {
+  color: #c3c6e6;
+  opacity: 1;
+  text-decoration: underline;
+}
+
+.txpopup-item-time{
+  font-size:.75rem;
+  color:#ffffff80;
+  margin-left:auto
+}
+
+.txpopup-progress-container {
+  background-color: rgb(64 64 71 / 0%);
+  bottom: 0;
+  height: 1px;
+  left: 0;
+  overflow: hidden;
+  position: absolute;
+  width: 100%;
+}
+
+.txpopup-progress-bar {
+  background: linear-gradient(
+    90deg,
+    rgb(170 174 207 / 50%) 0%,
+    rgb(170 174 207 / 80%) 50%,
+    rgb(170 174 207 / 50%) 100%
+  );
+  box-shadow: 0 0 8px rgb(170 174 207 / 30%);
+  height: 100%;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-100px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes progressBar {
+  0% {
+    opacity: 1;
+    width: 0;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    width: 100%;
+  }
+}
+
+.txpopup-close-button {
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  transition: all 0.2s ease;
+  width: 24px;
+}
+
+.txpopup-close-button-icon {
+  height: 14px;
+  opacity: 0.6;
+  width: 14px;
+}
+
+.txpopup-price {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+  margin-left: 4px;
+  margin-top: 1px;
+}
+
+.txpopup-price-label {
+  color: #ffffff7d;
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.txpopup-price-value {
+  color: #ffffffcf;
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
+.txpopup.exit {
+  animation: slideOut 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes slideOut {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@media (max-width: 1020px) {
+  .txpopup.new {
+    animation: slideDown 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+  }
+}
+
+.txpopup.new {
+  animation: slideUp 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}

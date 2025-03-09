@@ -1,0 +1,80 @@
+.chart-orderbook-panel {
+  display: flex;
+  height: 100%;
+  overflow: visible;
+  position: relative;
+  width: calc(100vw - 302px);
+}
+
+.orderbook-container {
+  max-width: 300px;
+  overflow: hidden;
+}
+
+.chart-container {
+  flex: 1;
+  min-width: 0;
+  transition: flex 0.3s ease;
+}
+
+.spacer {
+  align-items: center;
+  display: flex;
+  flex-shrink: 0;
+  justify-content: center;
+  position: relative;
+  width: 4px;
+}
+
+.spacer.collapsed {
+  display: none;
+}
+
+.drag-handle {
+  background-color: transparent;
+  cursor: col-resize;
+  height: 100%;
+  position: absolute;
+  width: 4px;
+  z-index: 3;
+}
+
+.toggle-icon-container {
+  align-items: center;
+  background-color: #1b1b1f;
+  border: 1px solid rgb(255 255 255 / 5%);
+  border-radius: 5px;
+  cursor: pointer;
+  display: flex;
+  height: 24px;
+  justify-content: center;
+  position: absolute;
+  width: 16px;
+  z-index: 3;
+}
+
+.toggle-icon {
+  color: rgb(255 255 255 / 25%);
+  height: 13px;
+  transition:
+    color 0.2s ease,
+    transform 0.3s ease;
+  width: 13px;
+}
+
+.toggle-icon:hover {
+  color: rgb(255 255 255 / 50%);
+}
+
+.toggle-icon.left {
+  transform: rotate(90deg);
+}
+
+.toggle-icon.left.collapsed,
+.toggle-icon.right {
+  transform: rotate(270deg);
+}
+
+.toggle-icon.right.collapsed {
+  transform: rotate(90deg);
+}

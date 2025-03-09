@@ -1,0 +1,13 @@
+.ob-view-buttons {
+  align-items: center;
+  display: flex;
+  opacity: 0.6;
+}
+
+.ob-view-buttons button {
+  background: none;
+}
+
+.ob-view-buttons button:hover {
+  opacity: 9;
+}

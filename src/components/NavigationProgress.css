@@ -1,0 +1,24 @@
+.navigation-progress {
+  background: transparent;
+  height: 3px;
+  left: 0;
+  pointer-events: none;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 10000;
+}
+
+.navigation-progress__bar {
+  background: #b3aef1;
+  box-shadow: 0 0 8px rgb(172 168 237 / 40%);
+  height: 100%;
+  transition:
+    width 0.3s ease-out,
+    opacity 0.3s ease-out;
+  width: 100%;
+}
+
+.navigation-progress__bar.complete {
+  opacity: 0;
+}

@@ -1,0 +1,31 @@
+.orders-oc-item {
+  align-items: center;
+  color: #ffffffca;
+  display: grid;
+  grid-template-columns:
+    40px minmax(120px, 0.9fr) minmax(115px, 1fr) minmax(160px, 1fr)
+    minmax(145px, 1fr) minmax(145px, 0.8fr) minmax(100px, 0.3fr);
+  justify-content: flex-start;
+  margin: -3px 0;
+  min-width: 825px;
+  text-align: left;
+  user-select: none;
+}
+
+.orders-oc-item:hover {
+  background: #ffffff04;
+}
+
+.orders-oc-item > *:not(:nth-last-child(1)) {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.orders-oc-item > *:nth-last-child(1) {
+  justify-content: center;
+}
+
+.oc-cell.cancel-cell {
+  justify-self: center;
+  padding: 0;
+}
