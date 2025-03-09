@@ -104,6 +104,9 @@ const NavLinks: React.FC<NavLinksProps> = ({
           <Link to="/portfolio" className="nav-link" onClick={toggleMenu}>
             {t('portfolio')}
           </Link>
+          <Link to="/leaderboard" className="nav-link" onClick={toggleMenu}>
+            {t('leaderboard')}
+          </Link>
 
           <Link to="/referrals" className="nav-link" onClick={toggleMenu}>
             {t('referrals')}
@@ -218,6 +221,9 @@ const NavLinks: React.FC<NavLinksProps> = ({
 
           <Link to="/portfolio" className="nav-link">
             {t('portfolio')}
+          </Link>
+          <Link to="/leaderboard" className="nav-link">
+            {t('leaderboard')}
           </Link>
 
           <Link to="/referrals" className="nav-link">

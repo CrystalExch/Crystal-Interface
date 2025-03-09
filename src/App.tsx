@@ -82,6 +82,9 @@ import walletrabby from './assets/walletrabby.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
+import LeaderboardPfp1 from './assets/leaderboardpfp.jpeg';
+import LeaderboardPfp2 from './assets/leaderboardpfp4.jpg';
+import LeaderboardPfp3 from './assets/rubberbandz.png';
 
 
 // import routes
@@ -108,6 +111,7 @@ import ToggleSwitch from './components/ToggleSwitch/ToggleSwitch.tsx';
 import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
+import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -117,6 +121,105 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 
 function App() {
   // constants
+  const leaderboardData = {
+    totalXP: 500_000,
+    currentXP: 394_290,
+    username: 'meanboy123',
+    userXP: 0,
+    factions: [
+      {
+        id: 1,
+        name: 'rubberbandz',
+        xp: 103_200_000,
+        bonusXP: 19_710_000,
+        growthPercentage: 0.65,
+        logo:  LeaderboardPfp3,
+        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
+      },
+      {
+        id: 6,
+        name: 'Average random',
+        xp: 103_200_000,
+        bonusXP: 19_710_000,
+        growthPercentage: 0.65,
+        logo: LeaderboardPfp1,
+        badgeIcon: 'https://via.placeholder.com/20/9370DB/FFFFFF?text=P'
+      },
+      {
+        id: 2,
+        name: 'legion',
+        xp: 70_490_000,
+        bonusXP: 16_170_000,
+        growthPercentage: 0.36,
+        logo: LeaderboardPfp2,
+        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
+      },
+      {
+        id: 3,
+        name: 'jeremy',
+        xp: 21_950_000,
+        bonusXP: 9_230_000,
+        growthPercentage: 0.42,
+        logo: 'https://via.placeholder.com/50/3d934e/FFFFFF?text=D',
+        badgeIcon: 'https://via.placeholder.com/20/20B2AA/FFFFFF?text=G'
+      },
+      {
+        id: 4,
+        name: 'bh',
+        xp: 15_320_000,
+        bonusXP: 5_670_000,
+        growthPercentage: 0.28,
+        logo: 'https://via.placeholder.com/50/9c27b0/FFFFFF?text=C',
+        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
+      },
+      {
+        id: 5,
+        name: 'Yield Farmers',
+        xp: 8_940_000,
+        bonusXP: 3_210_000,
+        growthPercentage: 0.19,
+        logo: 'https://via.placeholder.com/50/607d8b/FFFFFF?text=Y',
+        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
+      },
+
+      {
+        id: 7,
+        name: 'Profit Papis',
+        xp: 70_490_000,
+        bonusXP: 16_170_000,
+        growthPercentage: 0.36,
+        logo: 'https://via.placeholder.com/50/e87638/FFFFFF?text=P',
+        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
+      },
+      {
+        id: 8,
+        name: 'Degen Capital',
+        xp: 21_950_000,
+        bonusXP: 9_230_000,
+        growthPercentage: 0.42,
+        logo: 'https://via.placeholder.com/50/3d934e/FFFFFF?text=D',
+        badgeIcon: 'https://via.placeholder.com/20/20B2AA/FFFFFF?text=G'
+      },
+      {
+        id: 9,
+        name: 'Crypto Chads',
+        xp: 15_320_000,
+        bonusXP: 5_670_000,
+        growthPercentage: 0.28,
+        logo: 'https://via.placeholder.com/50/9c27b0/FFFFFF?text=C',
+        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
+      },
+      {
+        id: 10,
+        name: 'Yield Farmers',
+        xp: 8_940_000,
+        bonusXP: 3_210_000,
+        growthPercentage: 0.19,
+        logo: 'https://via.placeholder.com/50/607d8b/FFFFFF?text=Y',
+        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
+      }
+    ]
+  };
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } =
@@ -1972,6 +2075,9 @@ function App() {
       case '/earn':
         title = 'Earn | Crystal';
         break;
+        case '/leaderboard':
+          title = 'Leaderboard | Crystal';
+          break;
       case '/swap':
       case '/limit':
       case '/send':
@@ -10187,6 +10293,13 @@ function App() {
               />
             }
           />
+                    <Route path="/leaderboard" element={<>           <Leaderboard 
+        totalXP={leaderboardData.totalXP}
+        currentXP={leaderboardData.currentXP}
+        username={leaderboardData.username}
+        userXP={leaderboardData.userXP}
+        factions={leaderboardData.factions}
+      /></>}></Route>
           <Route
             path="/portfolio"
             element={
