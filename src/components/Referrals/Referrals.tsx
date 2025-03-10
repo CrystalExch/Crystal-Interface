@@ -58,6 +58,7 @@ const Referrals: React.FC<ReferralProps> = ({
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
+  const [isSigning, setIsSigning] = useState(false);
   const [selectedFeatureIndex, setSelectedFeatureIndex] = useState<
     number | null
   >(null);
@@ -149,17 +150,23 @@ const Referrals: React.FC<ReferralProps> = ({
 
   const handleClaimFees = async () => {
     if (account.status === 'connected' && account.chainId === activechain) {
-      await writeContract(config, {
-        abi: CrystalRouterAbi,
-        address: router,
-        functionName: 'claimFees',
-        args: [
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`,
-          ),
-        ],
-      });
-      setTimeout(()=>refetch(), 500)
+      try {
+        setIsSigning(true);
+        await writeContract(config, {
+          abi: CrystalRouterAbi,
+          address: router,
+          functionName: 'claimFees',
+          args: [
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`,
+            ),
+          ],
+        });
+      } catch (error) {
+      } finally {
+        setIsSigning(false);
+        setTimeout(()=>refetch(), 500)
+      }
     } else {
       account.status !== 'connected'
         ? setpopup(4)
@@ -256,7 +263,7 @@ const Referrals: React.FC<ReferralProps> = ({
                       <div
                         className="action-button"
                         onClick={() => {
-                          const tweetText = 'Trade on Crystal Exchange! 🚀\n\n';
+                          const tweetText = 'Join me on Crystal, the EVM\'s first fully on-chain orderbook exchange, live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n';
                           const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
                           window.open(
                             `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`,
@@ -346,13 +353,18 @@ const Referrals: React.FC<ReferralProps> = ({
             <button
               className="claim-button"
               onClick={handleClaimFees}
-              disabled={
+              disabled={isSigning ||
                 totalClaimableFees === 0 ||
                 (account.status === 'connected' &&
                   account.chainId !== activechain)
               }
             >
-              {account.status === 'connected' && account.chainId === activechain
+              {isSigning ? (
+            <>
+              <div className="loading-spinner"></div>
+              {t('signTxn')}
+            </>
+          ) : account.status === 'connected' && account.chainId === activechain
                 ? totalClaimableFees === 0
                   ? t('nothingtoclaim')
                   : t('claimfees')

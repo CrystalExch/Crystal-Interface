@@ -120,7 +120,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
     setSortedTransactions((prev) => {
       let result = prev[0];
       if (walletAddress != prev[1]) {
-        setPendingNotifs(0);
+        setTimeout(() => {setPendingNotifs(0)}, 0);
         const cached = localStorage.getItem(`txHistory_${walletAddress}`);
         if (cached) {
           try {
