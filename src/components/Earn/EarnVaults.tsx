@@ -52,7 +52,7 @@ const vaults: Vault[] = [
     totalBorrowed: "132,382 ARB",
     balance: "0 ARB"
   },
-];
+]; 
 
 const EarnVaults = ({ tokenList }: EarnVaultsProps) => {
   const [showDepositModal, setShowDepositModal] = useState(false);
