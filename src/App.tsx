@@ -332,6 +332,9 @@ function App() {
     '/send',
     '/scale',
     '/portfolio',
+    '/leaderboard',
+    '/mint',
+
     '/referrals',
     '/earn',
     '/mint'

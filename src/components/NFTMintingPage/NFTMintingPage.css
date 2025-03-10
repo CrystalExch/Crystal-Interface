@@ -1,9 +1,10 @@
 .nft-main-content-wrapper{
     display: flex;
     gap: 10px;
-    max-width: 100%;
+    width: 100%;
     margin: 0 auto;
     padding: 20px;
+    max-width: 1500px;
 }
 
 .nft-swapmodal {

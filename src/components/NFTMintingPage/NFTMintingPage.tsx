@@ -102,18 +102,7 @@ const NFTMintingPage: React.FC = () => {
               </button>
             ) : (
               <div className="nft-mint-success-container">
-                <div className="nft-mint-success-icon">✓</div>
-                <h3 className="nft-mint-success-title">Successfully Minted!</h3>
-                <p className="nft-mint-success-text">Your NFT has been minted and sent to your wallet.</p>
-                <div className="nft-mint-transaction">
-                  <span>Transaction:</span>
-                  <a href={`https://etherscan.io/tx/${transaction}`} target="_blank" rel="noopener noreferrer" className="nft-mint-transaction-link">
-                    {transaction.substring(0, 6)}...{transaction.substring(transaction.length - 4)}
-                  </a>
-                </div>
-                <button className="nft-view-button" onClick={() => window.open("https://opensea.io", "_blank")}>
-                  View on OpenSea
-                </button>
+    
               </div>
             )}
           </div>
