@@ -87,7 +87,6 @@ import wallethaha from './assets/wallethaha.png'
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
 import Referrals from './components/Referrals/Referrals.tsx';
-import EarnVaults from './components/Earn/EarnVaults.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
@@ -10232,14 +10231,6 @@ function App() {
                   refetch={refetch}
                 />
               </>
-            }
-          />
-          <Route
-            path="/earn"
-            element={
-              <EarnVaults
-                tokenList={memoizedTokenList}
-              />
             }
           />
           <Route
