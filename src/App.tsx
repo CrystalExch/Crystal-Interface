@@ -82,8 +82,8 @@ import walletrabby from './assets/walletrabby.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
-import LeaderboardPfp1 from './assets/leaderboardpfp.jpeg';
-import LeaderboardPfp2 from './assets/leaderboardpfp4.jpg';
+import LeaderboardPfp1 from './assets/bh.png'
+import LeaderboardPfp2 from './assets/legion.png';
 import LeaderboardPfp3 from './assets/rubberbandz.png';
 
 
@@ -112,6 +112,7 @@ import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
+import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -138,7 +139,7 @@ function App() {
       },
       {
         id: 6,
-        name: 'Average random',
+        name: 'bh',
         xp: 103_200_000,
         bonusXP: 19_710_000,
         growthPercentage: 0.65,
@@ -333,6 +334,7 @@ function App() {
     '/portfolio',
     '/referrals',
     '/earn',
+    '/mint'
   ].includes(location.pathname);
   const sortConfig = undefined;
 
@@ -2078,6 +2080,9 @@ function App() {
         case '/leaderboard':
           title = 'Leaderboard | Crystal';
           break;
+          case '/mint':
+            title = 'Mint | Crystal';
+            break;
       case '/swap':
       case '/limit':
       case '/send':
@@ -10300,6 +10305,11 @@ function App() {
         userXP={leaderboardData.userXP}
         factions={leaderboardData.factions}
       /></>}></Route>
+      <Route path="/mint"
+      element={
+        <NFTMintingPage/> 
+      }>
+      </Route>
           <Route
             path="/portfolio"
             element={

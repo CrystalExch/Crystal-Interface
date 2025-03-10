@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './ChallengeIntro.css';
 import part1image from '../../assets/spreaddemo.png';
-import defaultProfilePic from '../../assets/leaderboardpfp.jpeg';
-import LeaderboardPfp2 from '../../assets/leaderboardpfp4.jpg';
+import defaultProfilePic from '../../assets/bh.png';
+import LeaderboardPfp2 from '../../assets/legion.png';
 import LeaderboardPfp3 from '../../assets/rubberbandz.png';
 
 
