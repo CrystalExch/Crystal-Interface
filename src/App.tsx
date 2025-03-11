@@ -2623,7 +2623,6 @@ function App() {
     amountOutScale,
   ]);
 
-  // initial address interaction info fetching
   useEffect(() => {
     setTimeout(() => {
       setTransactions([]);
@@ -2631,312 +2630,122 @@ function App() {
       setorders([]);
       setcanceledorders([]);
     }, 20);
+  
     (async () => {
       try {
-        // amountin, amountout, buy/sell, end price, market, hash, timestamp, market/limit
+        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.2.21";
+  
         let temptradehistory: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base, original size quote, open
         let temporders: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base at cancel, filled size quote, canceled:0/filled:1/open:2
         let tempcanceledorders: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base, original size quote, filled
-        let filledorders: any = {};
-        if (account.addresses?.[0]) {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-          let allLogs: any[] = [];
-          let lastblockTimestamp = Math.floor(Date.now() / 1000);
-          let count = 0
-
-          while (count < 5) {
-            let query
-            if (count == 0) {
-              query = `query fetchOrderFilleds($lastblockTimestamp: Int!) {
-                orderFilledBatches(first: 1000, orderDirection: desc, orderBy: id) {
-                  id
-                  total
-                  orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
-                    caller
-                    amountIn
-                    amountOut
-                    buySell
-                    price
-                    timeStamp
-                    transactionHash
-                    blockNumber
-                    contractAddress
-                  }
-                }
-                ordersUpdateds(
-                  first: 1000, 
-                  where: { timestamp_lt: $lastblockTimestamp, caller: "${account.addresses?.[0]}" }, 
-                  orderBy: timestamp, 
-                  orderDirection: desc
-                ) {
-                  transactionHash
-                  contractAddress
-                  caller
-                  timestamp
-                  orderData
-                }
-              }`;
+  
+        const query = `
+          query fetchData {
+            orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
+              id
+              total
+              orders(first: 1000) {
+                caller
+                amountIn
+                amountOut
+                buySell
+                price
+                timeStamp
+                transactionHash
+                blockNumber
+                contractAddress
+              }
             }
-            else {
-              query = `query fetchOrderFilleds($lastblockTimestamp: Int!) {
-                ordersUpdateds(
-                  first: 1000, 
-                  where: { timestamp_lt: $lastblockTimestamp, caller: "${account.addresses?.[0]}" }, 
-                  orderBy: timestamp, 
-                  orderDirection: desc
-                ) {
-                  transactionHash
-                  contractAddress
-                  caller
-                  timestamp
-                  orderData
-                }
-              }`;
-            }
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query, variables: { lastblockTimestamp }  }),
-            });
-
-            const result = await response.json();
-            const batches = result.data?.orderFilledBatches || [];
-            const ordersUpdateds = result.data.ordersUpdateds;
-
-            for (let batch of batches) {
-              allLogs = allLogs.concat(batch.orders);
-            }
-
-            allLogs = allLogs.concat(ordersUpdateds);
-
-            if (ordersUpdateds.length > 0) {
-              lastblockTimestamp = Number(
-                ordersUpdateds[ordersUpdateds.length - 1].timestamp,
-              );
-            }
-            count += 1
-            if (batches.length < 1000 && ordersUpdateds.length < 1000) {
-              break;
-            }
-          }
-          allLogs.reverse()
-          if (Array.isArray(allLogs)) {
-            for (const event of allLogs) {
-              if (addresstoMarket[event.contractAddress]) {
-                if (event.orderData) {
-                  let _timestamp = Number(event.timestamp);
-                  let _orderdata = event.orderData;
-                  for (let i = 2; i < _orderdata.length; i += 64) {
-                    let chunk = _orderdata.slice(i, i + 64);
-                    let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
-                    if (_isplace) {
-                      temporders.push([
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(20, 32), 16),
-                        parseInt(chunk.slice(32, 64), 16) /
-                          parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(0, 1), 16),
-                        addresstoMarket[event.contractAddress],
-                        event.transactionHash,
-                        _timestamp,
-                        0,
-                        parseInt(chunk.slice(32, 64), 16),
-                        2,
-                      ]);
-                    } else {
-                      let index = temporders.findIndex(
-                        (sublist) =>
-                          sublist[0] == parseInt(chunk.slice(1, 20), 16) &&
-                          sublist[1] == parseInt(chunk.slice(20, 32), 16) &&
-                          sublist[4] == addresstoMarket[event.contractAddress],
-                      );
-                      if (index != -1) {
-                        let canceledorder = temporders.splice(index, 1)[0];
-                        if (canceledorder) {
-                          tempcanceledorders.push([
-                            canceledorder[0],
-                            canceledorder[1],
-                            canceledorder[2],
-                            canceledorder[3],
-                            canceledorder[4],
-                            event.transactionHash,
-                            _timestamp,
-                            canceledorder[2] -
-                              parseInt(chunk.slice(32, 64), 16) /
-                                canceledorder[0],
-                            canceledorder[8] - parseInt(chunk.slice(32, 64), 16),
-                            0,
-                          ]);
-                        }
-                      }
-                    }
-                  }
-                } else {
-                  temptradehistory.push([
-                    event.amountIn,
-                    event.amountOut,
-                    event.buySell,
-                    event.price,
-                    addresstoMarket[event.contractAddress],
-                    event.transactionHash,
-                    event.timeStamp,
-                    1,
-                  ]);
-                }
+            orderBatches(first: 10, orderDirection: desc, orderBy: id) {
+              id
+              total
+              orders(first: 1000) {
+                id
+                caller
+                originalSizeBase
+                originalSizeQuote
+                filledAmountBase
+                filledSizeQuote
+                price
+                buySell
+                contractAddress
+                transactionHash
+                timestamp
+                status
               }
             }
           }
-          const orderbatch: any = {};
-          temporders.forEach((order) => {
-            const k = markets[order[4]].address;
-            if (k) {
-              if (!orderbatch[k]) {
-                orderbatch[k] = [];
-              }
-              orderbatch[k].push(order);
-            }
-          });
-          let currentlatest: any = { ...orderbatch };
-          filledorders = { ...orderbatch };
-          const orderlevels: any = {};
-          const seenPairs = new Set();
-          const uniqueOrders = temporders.filter((order: any) => {
-            const pair = `${order[4]}-${order[0]}`;
-            if (seenPairs.has(pair)) {
-              return false;
-            }
-            seenPairs.add(pair);
-            return true;
-          });
-          const getids = (await readContracts(config, {
-            contracts: uniqueOrders.map((order: any) => ({
-              abi: CrystalMarketAbi,
-              address: markets[order[4]].address as `0x${string}`,
-              functionName: 'priceLevels',
-              args: [order[0]],
-            })),
-          })) as any[];
-          uniqueOrders.forEach((order, index) => {
-            const k = markets[order[4]].address;
-            if (k) {
-              if (!orderlevels[k]) {
-                orderlevels[k] = [];
-              }
-              orderlevels[k].push(getids[index]);
-            }
-          });
-          Object.values(orderlevels).forEach((market: any, j: any) => {
-            const pricelevels = Array.from(
-              new Set(
-                (Object.values(orderbatch)[j] as any).map(
-                  (order: any) => order[0],
-                ),
-              ),
-            );
-            market.forEach((pricelevel: any, i: any) => {
-              const marketKey = Object.keys(orderbatch)[j];
-              currentlatest[marketKey] = currentlatest[marketKey].filter(
-                (order: any) =>
-                  order[0] != pricelevels[i] ||
-                  order[1] == pricelevel.result[1],
-              );
-              orderbatch[marketKey] = orderbatch[marketKey].filter(
-                (order: any) =>
-                  order[0] != pricelevels[i] || order[1] > pricelevel.result[1],
-              );
-            });
-          });
-          const getopen = (await readContracts(config, {
-            contracts: [
-              {
-                abi: CrystalDataHelperAbi as any,
-                address: balancegetter,
-                functionName: 'getOrderSizes',
-                args: Object.entries(currentlatest).reduce(
-                  ([values, keys], [key, batch]: any) => {
-                    batch.forEach((order: any) => {
-                      values.push(
-                        (BigInt(order[0]) << BigInt(128)) | BigInt(order[1]),
-                      );
-                      keys.push(key);
-                    });
-                    return [values, keys];
-                  },
-                  [[], []] as [BigInt[], any[]],
-                ),
-              },
-            ],
-          })) as any[];
-          let index = 0;
-          if (getopen[0].result) {
-            const groupedResults = Object.values(currentlatest).map(
-              (batch: any) => {
-                const result = getopen[0].result.slice(
-                  index,
-                  index + batch.length,
-                );
-                index += batch.length;
-                return result;
-              },
-            );
-            groupedResults.forEach((market, j) => {
-              const marketKey = Object.keys(currentlatest)[j];
-              market.forEach((openorder: any, i: any) => {
-                currentlatest[marketKey][i][7] =
-                  currentlatest[marketKey][i][2] -
-                  Number(openorder) / currentlatest[marketKey][i][0];
-              });
-            });
-          }
-          temporders = [
-            ...Object.values(currentlatest).flat(),
-            ...Object.values(orderbatch).flat(),
-          ];
-          Object.keys(filledorders).forEach((key) => {
-            filledorders[key] = filledorders[key].filter(
-              (item: any) =>
-                !orderbatch[key].includes(item) &&
-                !currentlatest[key].includes(item),
-            );
-            filledorders[key].forEach((filledorder: any, i: any) => {
-              filledorders[key][i][7] = filledorders[key][i][2];
-              filledorders[key][i][9] = 1;
+        `;
+  
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+  
+        const result = await response.json();
+        
+        console.log(result);
+
+        const filledBatches = result?.data?.orderFilledBatches || [];
+        for (const batch of filledBatches) {
+          const orders = batch.orders || [];
+          for (const event of orders) {
+            const marketKey = addresstoMarket[event.contractAddress];
+            if (marketKey) {
               temptradehistory.push([
-                filledorder[3] == 1
-                  ? (filledorder[2] * filledorder[0]) /
-                    Number(markets[filledorder[4]].scaleFactor)
-                  : filledorder[2],
-                filledorder[3] == 1
-                  ? filledorder[2]
-                  : (filledorder[2] * filledorder[0]) /
-                    Number(markets[filledorder[4]].scaleFactor),
-                filledorder[3],
-                filledorder[0],
-                filledorder[4],
-                filledorder[5],
-                filledorder[6],
-                0,
+                event.amountIn,
+                event.amountOut,
+                event.buySell,
+                event.price,
+                marketKey,
+                event.transactionHash,
+                event.timeStamp, 
+                1,
               ]);
-            });
-          });
+            }
+          }
         }
-        settradehistory((prev) => [ ...temptradehistory, ...prev]);
-        setorders((prev) => [ ...temporders, ...prev]);
-        setcanceledorders((prev) => [
-          ...temporders,
-          ...Object.values(filledorders).flat(),
-          ...tempcanceledorders, ...prev,
-        ]);
+  
+        const updatedBatches = result?.data?.orderBatches || [];
+        for (const batch of updatedBatches) {
+          const orders = batch.orders || [];
+          for (const order of orders) { 
+            const marketKey = addresstoMarket[order.contractAddress];
+            if (!marketKey) continue;
+  
+            const row = [
+              order.price,
+              parseInt(order.id, 10) || 0,
+              Number(order.originalSizeBase.toString()),
+              order.buySell,
+              marketKey,
+              order.transactionHash,
+              order.timestamp,
+              Number(order.filledAmountBase.toString()), 
+              Number(order.originalSizeQuote.toString()),
+              order.status,
+            ];
+  
+            if (order.status === 2) {
+              temporders.push(row);
+            } else {
+              tempcanceledorders.push(row);
+            }
+          }
+        }
+  
+        settradehistory((prev) => [...temptradehistory, ...prev]);
+        setorders((prev) => [...temporders, ...prev]);
+        setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
+  
         setaddressinfoloading(false);
       } catch (error) {
-        console.error('Error fetching logs:', error);
+        console.error("Error fetching logs:", error);
         setaddressinfoloading(false);
       }
     })();
-  }, [account.addresses?.[0], activechain]);
+  }, [account.addresses?.[0], activechain]);  
 
   // initial trade fetching
   useEffect(() => {
