@@ -3976,7 +3976,7 @@ body:has(.popup-blur) {
     left: 0;
     right: 0;
     bottom: 0;
-    padding-top: 55px; /* Account for header */
+    padding-top: 105px;
   }
   
   body:has(.popup-blur),
