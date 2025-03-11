@@ -3875,7 +3875,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 
 
-  /* Global fix for body when modals are active */
 body:has(.blur-background-popups.active), 
 body:has(.popup-blur) {
   overflow: hidden !important;
@@ -3887,7 +3886,6 @@ body:has(.popup-blur) {
 }
 
 
-/* Fix modal containers to have their own scrolling context */
 .tokenselectbg,
 .sendselectbg,
 .connect-wallet-background,
@@ -3904,7 +3902,6 @@ body:has(.popup-blur) {
   z-index: 1000;
 }
 
-/* Fix for the right column slide-up on mobile */
 .right-column.show {
   position: fixed;
   bottom: 0;
@@ -3916,3 +3913,40 @@ body:has(.popup-blur) {
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
+
+@media (max-width: 1020px) {
+  .right-column.show {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(0) !important;
+  }
+
+  .right-column.show .swapmodal {
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+  }
+
+  .app-container:has(.right-column.show) {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .mobile-trade-button {
+    z-index: 100;
+  }
+}
+
