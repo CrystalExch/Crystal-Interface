@@ -3937,17 +3937,6 @@ body:has(.popup-blur) {
     -webkit-overflow-scrolling: touch;
     width: 100% !important;
   }
-
-  .app-container:has(.right-column.show) {
-    position: fixed;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-  }
-
-  .mobile-trade-button {
-    z-index: 100;
-  }
 }
 
 
