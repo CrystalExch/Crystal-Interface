@@ -2501,7 +2501,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   border-top: 1px solid rgb(255 255 255/3%);
   flex-shrink: 0;
   margin-top: auto;
-  box-shadow: 0 -25px 25px rgba(0, 0, 0, 1);
 }
 
 .main-content-wrapper.simple-view {

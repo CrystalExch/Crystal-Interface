@@ -6,7 +6,7 @@ import { useClickOutside } from '../utils';
 
 import { useSharedContext } from '../../../contexts/SharedContext';
 
-import { settings } from '../../../config';
+import { settings } from '../../../settings.ts';
 
 import './NetworkSelector.css';
 

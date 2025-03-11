@@ -1,4 +1,4 @@
-import { settings } from '../../../../config';
+import { settings } from '../../../../settings.ts';
 
 import './TradeItem.css';
 

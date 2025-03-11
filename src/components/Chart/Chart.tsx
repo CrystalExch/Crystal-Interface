@@ -8,7 +8,7 @@ import ChartHeader from './ChartHeader/ChartHeader';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 
-import { settings } from '../../config';
+import { settings } from '../../settings.ts';
 import { calculatePriceMetrics, getBinancePair } from './utils';
 import {
   DataPoint,

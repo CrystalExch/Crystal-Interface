@@ -30,7 +30,13 @@ import { computePrice } from './components/Chart/utils/calculatePriceMetrics';
 import { calculate24hVolume } from './components/Chart/utils/ChartHeader/calculate24hVolume';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
-import { config } from './wagmi';
+import { config } from './wagmi.ts';
+import {
+  useAuthModal,
+  useLogout,
+  useSignerStatus,
+  useUser,
+} from "@account-kit/react";
 
 // import css
 import './App.css';
@@ -111,11 +117,15 @@ import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniCh
 // import config
 import { SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
-import { settings } from './config.ts';
+import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
 
 function App() {
   // constants
+  const user = useUser();
+  const { openAuthModal } = useAuthModal();
+  const signerStatus = useSignerStatus();
+  const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } =
@@ -7061,7 +7071,7 @@ function App() {
               }
             } else {
               account.status != 'connected'
-                ? setpopup(4)
+                ? openAuthModal()
                 : switchChain(config, { chainId: activechain as any });
             }
           }}
