@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import { settings } from '../../../config';
+import { settings } from '../../../settings.ts';
 
 import swapicon from '../../../assets/swap_icon.png';
 import './SwapIcon.css';

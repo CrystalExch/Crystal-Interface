@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useAccount } from 'wagmi';
 import closebutton from '../../assets/close_button.png';
-import { settings } from '../../config';
+import { settings } from '../../settings.ts';
 import { config } from '../../wagmi';
 import './CustomLinkModal.css';
 

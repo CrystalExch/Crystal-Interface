@@ -16,7 +16,7 @@ import {
 } from '../../../../utils/numberDisplayFormat';
 import { calculate24hVolume, computePrice } from '../../utils';
 
-import { settings } from '../../../../config';
+import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
 

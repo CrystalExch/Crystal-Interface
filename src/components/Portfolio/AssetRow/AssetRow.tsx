@@ -4,7 +4,7 @@ import CopyButton from '../../CopyButton/CopyButton';
 import SendIcon from '../SendIcon/SendIcon';
 import SwapIcon from '../SwapIcon/SwapIcon';
 
-import { settings } from '../../../config';
+import { settings } from '../../../settings.ts';
 import {
   formatBalance,
   formatSubscript,

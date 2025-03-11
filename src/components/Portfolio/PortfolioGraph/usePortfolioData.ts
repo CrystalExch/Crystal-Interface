@@ -7,7 +7,7 @@ import PortfolioCache from './portfolioCache';
 import { PortfolioData } from './types';
 
 import { CrystalDataHelperAbi } from '../../../abis/CrystalDataHelperAbi';
-import { settings } from '../../../config';
+import { settings } from '../../../settings.ts';
 import { fetchLatestPrice } from '../../../utils/getPrice';
 import normalizeTicker from '../../../utils/normalizeTicker';
 

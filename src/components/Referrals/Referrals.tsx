@@ -9,7 +9,7 @@ import FeatureModal from './FeatureModal';
 import ReferralStatsBar from './ReferralStatsBar';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { settings } from '../../config';
+import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
 import ReferralBackground from '../../assets/referral_background.png';
