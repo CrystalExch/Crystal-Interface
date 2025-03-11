@@ -2633,7 +2633,7 @@ function App() {
   
     (async () => {
       try {
-        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.2.21";
+        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.2.20";
   
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
@@ -2644,7 +2644,7 @@ function App() {
             orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000) {
+              orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
                 caller
                 amountIn
                 amountOut
@@ -2659,7 +2659,7 @@ function App() {
             orderBatches(first: 10, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000) {
+              orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
                 id
                 caller
                 originalSizeBase
@@ -2762,7 +2762,7 @@ function App() {
 
         const query = `
           query {
-            orderFilledBatches(first: 60, orderDirection: desc, orderBy: id) {
+            orderFilledBatches(first: 40, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000) {
