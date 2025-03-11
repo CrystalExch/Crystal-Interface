@@ -3872,3 +3872,47 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
 
 
+
+
+
+  /* Global fix for body when modals are active */
+body:has(.blur-background-popups.active), 
+body:has(.popup-blur) {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-overflow-scrolling: none;
+}
+
+
+/* Fix modal containers to have their own scrolling context */
+.tokenselectbg,
+.sendselectbg,
+.connect-wallet-background,
+.layout-settings-background,
+.search-markets-dropdown-popup,
+.send-popup-container,
+.connecting-popup {
+  position: fixed !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+/* Fix for the right column slide-up on mobile */
+.right-column.show {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 80;
+  height: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
