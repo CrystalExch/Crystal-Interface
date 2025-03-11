@@ -3871,3 +3871,90 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
 
 
+
+
+
+body:has(.blur-background-popups.active), 
+body:has(.popup-blur) {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-overflow-scrolling: none;
+}
+
+
+.tokenselectbg,
+.sendselectbg,
+.connect-wallet-background,
+.layout-settings-background,
+.search-markets-dropdown-popup,
+.send-popup-container,
+.connecting-popup {
+  position: fixed !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.right-column.show {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 80;
+  height: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1020px) {
+  .right-column.show {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(0) !important;
+  }
+
+  .right-column.show .swapmodal {
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+  }
+}
+
+
+
+@supports (-webkit-touch-callout: none) {
+  .main-content-wrapper.simple-view {
+    position: fixed;
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: auto;
+  }
+  
+  body:has(.main-content-wrapper.simple-view) {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
