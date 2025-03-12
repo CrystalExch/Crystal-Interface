@@ -34,7 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             </LanguageProvider>
           </SharedContextProvider>
         </Router>
-      </AlchemyAccountProvider>,
+      </AlchemyAccountProvider>
     </QueryClientProvider>
   </WagmiProvider>,
 );
