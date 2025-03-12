@@ -2633,7 +2633,7 @@ function App() {
   
     (async () => {
       try {
-        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.2.20";
+        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.3.1";
   
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
@@ -2641,7 +2641,7 @@ function App() {
   
         const query = `
           query fetchData {
-            orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
+            orderFilledBatches(first: 1000, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
@@ -2656,7 +2656,7 @@ function App() {
                 contractAddress
               }
             }
-            orderBatches(first: 10, orderDirection: desc, orderBy: id) {
+            orderBatches(first: 1000, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
