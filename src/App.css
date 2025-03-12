@@ -4100,3 +4100,8 @@ body:has(.popup-blur) {
 .text-xs{
   font-size: 0.7rem !important;
 }
+
+.bg-bg-surface-default {
+  background: none  !important;
+  border: 1.5px solid #ffffff10 !important;
+}

@@ -36,5 +36,5 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         </Router>
       </AlchemyAccountProvider>
     </QueryClientProvider>
-  </WagmiProvider>,
+  </WagmiProvider>
 );
