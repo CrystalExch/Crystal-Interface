@@ -27,3 +27,7 @@
   font-style: normal;
   src: url('/src/assets/FunnelDisplay.ttf') format('truetype');
 }
+
+.akui-modeL{
+  background-color: white;
+}
