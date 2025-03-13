@@ -8,12 +8,14 @@ interface CancelButtonProps {
   order: any;
   router: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
-const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch }) => {
+const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperation }) => {
   const handleCancel = async () => {
     try {
       await cancelOrder(
+        sendUserOperation,
         router,
         order[3] == 1
           ? markets[order[4]].quoteAddress

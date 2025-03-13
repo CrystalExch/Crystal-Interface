@@ -14,10 +14,6 @@
   top: -2px;
 }
 
-.hidden {
-  display: none !important;
-}
-
 .ob-lists-container,
 .view-both {
   display: flex;

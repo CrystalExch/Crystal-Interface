@@ -20,9 +20,10 @@ interface OrderItemProps {
   trades: TradesByMarket;
   router: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
-const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch }) => {
+const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperation }) => {
   const { favorites, toggleFavorite } = useSharedContext();
 
   const marketKey = order[4];
@@ -117,7 +118,7 @@ const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refet
       </div>
       <span className="oc-cell oc-time">{formatDateAndTime(order[6])}</span>
       <span className="oc-cell cancel-cell">
-        <CancelButton order={order} router={router} refetch={refetch} />
+        <CancelButton order={order} router={router} refetch={refetch} sendUserOperation={sendUserOperation}/>
       </span>
     </div>
   );
