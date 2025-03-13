@@ -89,6 +89,7 @@ import walletrabby from './assets/walletrabby.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
+import mobiletradeswap from './assets/mobile_trade_swap.png';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -176,7 +177,7 @@ function App() {
         if (
           (token1 == eth && token2 == weth) ||
           (token1 == weth && token2 == eth)
-        ) {
+        ) { 
           let market = { ...getMarket(eth, usdc) };
           market['path'] = [token1, token2];
           market['fee'] = BigInt(10000);
@@ -10161,7 +10162,7 @@ function App() {
                 }
               }}
             >
-              <img src={mobileswitch} className="mobile-switch" />
+              <img src={mobiletradeswap} className="trade-mobile-switch" />
             </button>
             <div className={`right-column ${showTrade ? 'show' : ''}`}>
               {activeTab == 'swap' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
