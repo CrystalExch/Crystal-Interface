@@ -3069,7 +3069,7 @@ function App() {
           document.body.style.overflow = 'auto'
           document.querySelector('.right-column')?.classList.add('hide');
           document.querySelector('.right-column')?.classList.remove('show');
-          document.querySelector('.mobile-switch')?.classList.remove('open');
+          document.querySelector('.trade-mobile-switch')?.classList.remove('open');
           setTimeout(() => {
             setShowTrade(false);
           }, 300);
@@ -3087,7 +3087,7 @@ function App() {
             document.body.style.overflow = 'auto'
             document.querySelector('.right-column')?.classList.add('hide');
             document.querySelector('.right-column')?.classList.remove('show');
-            document.querySelector('.mobile-switch')?.classList.remove('open');
+            document.querySelector('.trade-mobile-switch')?.classList.remove('open');
             setTimeout(() => {
               setShowTrade(false);
             }, 300);
@@ -10148,7 +10148,7 @@ function App() {
                     .querySelector('.right-column')
                     ?.classList.remove('show');
                   document
-                    .querySelector('.mobile-switch')
+                    .querySelector('.trade-mobile-switch')
                     ?.classList.remove('open');
                   setTimeout(() => {
                     setShowTrade(false);
@@ -10156,7 +10156,7 @@ function App() {
                 } else {
                   setShowTrade(true);
                   document
-                    .querySelector('.mobile-switch')
+                    .querySelector('.trade-mobile-switch')
                     ?.classList.add('open');
                 }
               }}
