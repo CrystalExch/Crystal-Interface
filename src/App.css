@@ -98,7 +98,7 @@ html {
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
-  margin-left: 11px;
+  margin-left: 12px;
   outline: 0;
   width: 0;
 }
@@ -423,6 +423,7 @@ html {
 .tokenlistticker {
   color: grey;
   font-size: 0.7rem;
+  margin-top: -3px;
 }
 
 .tokenlistbalance {
@@ -442,8 +443,9 @@ html {
   height: 30px;
   margin-left: -20px;
   margin-right: 7px;
-  margin-top: 8px;
-  width: 30px;
+  margin-top: 10px;
+  min-width: 30px;
+  min-height: 30px
 }
 
 .sendbutton1container {
@@ -498,6 +500,7 @@ html {
   cursor: pointer;
   opacity: 0.8;
   transition: opacity.2s ease;
+  margin: 0 5px; 
 }
 
 .limit-token-icon {
@@ -1637,7 +1640,7 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 412px;
+  min-height: 470px;
 }
 
 .connect-wallet-background.unconnected {
@@ -1878,7 +1881,6 @@ body:has(.right-column.show) .blur-background-popups {
   gap: 4px;
   min-height: 0;
   padding: 0 5px;
-  padding-bottom: 10px;
 }
 
 .tokenlistcontainer {
@@ -1914,10 +1916,12 @@ body:has(.right-column.show) .blur-background-popups {
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  min-height: 680px;
+  height: calc(100vh - 45px);
   overflow: auto;
 }
+
+
+
 
 body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   min-height: 965px;
@@ -1925,7 +1929,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .trade-container {
   box-sizing: border-box;
-  margin-bottom: 35px;
 }
 
 .chartandorderbookandordercenter,
@@ -2048,6 +2051,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: 105px;
   transition: all.2s ease;
   width: 50%;
+  padding: 0 5px;
 }
 
 .layout-option.active {
@@ -3515,7 +3519,13 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 @media (max-width: 1020px) {
   .app-container,
   .main-content-wrapper {
-    padding: 0;
+    padding: 0 !important;
+
+  }
+  .app-wrapper{
+    padding-bottom: 0 !important;
+    max-height: 100%;
+    height: 100%;
   }
   .app-wrapper::-webkit-scrollbar,
   .layout-options > div:nth-child(1),
@@ -3529,7 +3539,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     max-width: 100%;
     overflow-x: hidden;
     padding: 0;
-    padding-bottom: 10px;
   }
   .trade-container,
   .trade-mobile-view-container {
@@ -3562,9 +3571,9 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
   .chartandorderbookandordercenter {
     box-sizing: border-box;
-    height: calc(100vh - 100px);
     margin: 0;
     min-height: 550px;
+    height: calc(100vh - 100px);
     padding: 0 10px;
     top: 0;
     width: 100%;
@@ -3573,7 +3582,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     justify-content: center;
   }
   .app-wrapper {
-    min-height: 100% !important;
+    min-height: calc(100% + 10px) !important;
     overflow: hidden auto;
     -webkit-overflow-scrolling: touch;
     -ms-overflow-style: none;
@@ -3591,18 +3600,17 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     max-height: calc(100vh);
     width: 100%;
   }
-  .mobile-switch {
-    filter: invert(1);
-    height: 450px;
+  .trade-mobile-switch {
+    max-height: 23px;
+    max-width: 23px;
     pointer-events: none;
-    transform: rotate(0);
+    transform: rotate(90deg);
     transform-origin: center;
     transition: transform.3s ease;
-    width: 450px;
   }
-  .mobile-switch.open {
+  .trade-mobile-switch.open {
     outline: 0;
-    transform: rotate(180deg);
+    transform: rotate(270deg);
   }
   .mobile-trade-panel {
     background: #181820;
@@ -3907,7 +3915,7 @@ body:has(.popup-blur) {
   inset-inline: 0;
   z-index: 80;
   height: auto;
-  max-height: 90vh;
+  max-height: 100vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
@@ -3921,7 +3929,7 @@ body:has(.popup-blur) {
     right: 0;
     z-index: 80;
     height: auto;
-    max-height: 90vh;
+    max-height: 100vh;
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
@@ -4065,7 +4073,7 @@ body:has(.popup-blur) {
 }
 
 .gap-5{
-  gap: 0.5rem !important;
+  gap: 0.5  rem !important;
 }
 
 .gap-3{
