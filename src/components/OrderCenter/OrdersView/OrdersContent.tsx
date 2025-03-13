@@ -17,10 +17,11 @@ interface OrdersContentProps {
   address: any;
   trades: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperation }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
       orders,
       (order: any, column: string) => getOrderValue(order, column, markets),
@@ -137,6 +138,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 const param2 = m.map((market) => orderbatch[market][3]);
                 try {
                   await multiBatchOrders(
+                    sendUserOperation,
                     router,
                     BigInt(0),
                     m,
@@ -189,6 +191,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                   trades={trades}
                   router={router}
                   refetch={refetch}
+                  sendUserOperation={sendUserOperation}
                 />
               </div>
             );

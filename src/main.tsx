@@ -23,9 +23,9 @@ globalThis.Buffer = Buffer;
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <WagmiProvider config={config}>
-    <QueryClientProvider client={queryClient}>
-      <AlchemyAccountProvider config={alchemyconfig} queryClient={queryClient} initialState={initialState}>
+  <QueryClientProvider client={queryClient}>
+    <AlchemyAccountProvider config={alchemyconfig} queryClient={queryClient} initialState={initialState}>
+      <WagmiProvider config={config}>
         <Router>
           <SharedContextProvider>
             <LanguageProvider>
@@ -34,7 +34,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             </LanguageProvider>
           </SharedContextProvider>
         </Router>
-      </AlchemyAccountProvider>,
-    </QueryClientProvider>
-  </WagmiProvider>,
+      </WagmiProvider>
+    </AlchemyAccountProvider>
+  </QueryClientProvider>
 );

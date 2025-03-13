@@ -1,13 +1,16 @@
-import { writeContract } from '@wagmi/core';
 import { TokenAbi } from '../abis/TokenAbi';
-import { config } from '../wagmi';
+import { encodeFunctionData } from 'viem';
 
-const wrapeth = async (amount: bigint, weth: `0x${string}`) =>
-  writeContract(config, {
-    abi: TokenAbi,
-    address: weth,
-    functionName: 'deposit',
-    value: amount,
-  });
+const wrapeth = async (sendUserOperation: any, amount: bigint, weth: `0x${string}`) =>
+  sendUserOperation({
+    uo: {
+      target: weth,
+      data: encodeFunctionData({
+        abi: TokenAbi,
+        functionName: 'deposit',
+      }),
+      value: amount,
+    },
+  })
 
 export default wrapeth;

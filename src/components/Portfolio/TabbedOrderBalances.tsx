@@ -48,6 +48,7 @@ interface TabbedOrderBalancesProps {
   onlyThisMarket: boolean;
   setOnlyThisMarket: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
 const TabbedOrderBalances: React.FC<TabbedOrderBalancesProps> = ({
@@ -73,6 +74,7 @@ const TabbedOrderBalances: React.FC<TabbedOrderBalancesProps> = ({
   onlyThisMarket,
   setOnlyThisMarket,
   refetch,
+  sendUserOperation,
 }) => {
   return (
     <div className="portfolio-order-center-wrapper">
@@ -102,6 +104,7 @@ const TabbedOrderBalances: React.FC<TabbedOrderBalancesProps> = ({
         setOnlyThisMarket={setOnlyThisMarket}
         isPortfolio={true}
         refetch={refetch}
+        sendUserOperation={sendUserOperation}
       />
     </div>
   );

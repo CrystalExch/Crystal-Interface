@@ -19,12 +19,12 @@ export const settings: any = {
       rpcUrls: {
         default: {
           http: [
-            'https://monad-testnet.g.alchemy.com/v2/a49PoOS9UOj8z0LjKBzl9g7I_QVyl9tW',
+            'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
           ],
         },
         alchemy: {
           http: [
-            'https://monad-testnet.g.alchemy.com/v2/a49PoOS9UOj8z0LjKBzl9g7I_QVyl9tW',
+            'https://monad-testnet.g.alchemy.com/v2',
           ],
         },
       },

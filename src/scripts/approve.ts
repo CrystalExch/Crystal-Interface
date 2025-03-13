@@ -1,13 +1,17 @@
-import { writeContract } from '@wagmi/core';
 import { TokenAbi } from '../abis/TokenAbi';
-import { config } from '../wagmi';
+import { encodeFunctionData } from 'viem';
 
-const approve = async (x: `0x${string}`, y: `0x${string}`, z: bigint) =>
-  writeContract(config, {
-    abi: TokenAbi,
-    address: x,
-    functionName: 'approve',
-    args: [y, z],
-  });
+const approve = async (sendUserOperation: any, token: `0x${string}`, address: `0x${string}`, amount: bigint) =>
+  sendUserOperation({
+    uo: {
+      target: token,
+      data: encodeFunctionData({
+        abi: TokenAbi,
+        functionName: 'approve',
+        args: [address, amount],
+      }),
+      value: 0n,
+    },
+  })
 
 export default approve;
