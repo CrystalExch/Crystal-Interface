@@ -98,7 +98,7 @@ html {
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
-  margin-left: 12px;
+  margin-left: 13px;
   outline: 0;
   width: 0;
 }
@@ -657,6 +657,7 @@ html {
   display: flex;
   position: relative;
 }
+
 
 @keyframes fadeIn {
   from {
@@ -1258,13 +1259,17 @@ body:has(.right-column.show) .blur-background-popups {
 
 .inputbutton1container,
 .limitpricecontainer,
-.outputbutton2container,
+.outputbutton2container
+{  display: flex;
+  justify-content: space-between;
+  min-width: 270px;
+  height: 28px
+}
 .sendinputcontainer {
   display: flex;
   justify-content: space-between;
   min-width: 270px;
 }
-
 .Pay,
 .Recieve {
   background: 0 0;
@@ -1334,19 +1339,33 @@ body:has(.right-column.show) .blur-background-popups {
   margin-top: -1px;
 }
 
+
+.input::placeholder,
+.output::placeholder,
+.scale-bottom-input::placeholder,
+.scale-input::placeholder ,
+.send-input::placeholder,
+.send-output::placeholder{
+  color: #ededf571;
+  font-weight: 300  ;
+}
+
+
+
+
 .inputbg,
 .limitbg,
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid #4b4b5822;
+  border:1.5px solid #4b4b5822;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
 }
 
 .scalebgtop{
-  border: 1px solid #4b4b5822;
+  border: 1.5px solid #4b4b5822;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1357,7 +1376,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .scalebottombg{
-  border: 1px solid #4b4b5822;
+  border: 1.5px solid #4b4b5822;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1467,7 +1486,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex-grow: 1;
   font-size: 0.95rem;
   font-weight: 400;
-  margin-left: 11px;
+  margin-left: 13px;
   outline: 0;
   padding-bottom: 10px;
   width: 0;
@@ -1760,7 +1779,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .inputbg.active {
-  border: 1px solid #4b4b58;
+  border: 1.5px solid #4b4b58;
   box-shadow: 0 0 5px rgb(170 174 207/20%);
 }
 
@@ -1768,7 +1787,7 @@ body:has(.right-column.show) .blur-background-popups {
 .inputbg.exceed-balance,
 .sendbg.exceed-balance {
   background-color: #ff575709;
-  border: 1px solid #ff57576f !important;
+  border: 1.5px solid #ff57576f !important;
   box-shadow: 0 0 5px rgb(255 87 87/20%);
 }
 
@@ -2401,7 +2420,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   color: #ffffffcf;
   font-size: 0.75rem;
   outline: 0;
-  padding: 2px 16px 2px 4px;
+  padding: 0px 16px 0.5px 4px;
   text-align: right;
   transition: all.2s ease;
   width: 45px;
@@ -2535,7 +2554,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .outputbg,
 .main-content-wrapper.simple-view .sendaddressbg,
 .main-content-wrapper.simple-view .sendbg {
-  border: 1px solid transparent;
+  border: 1.5px solid transparent;
   border-radius: 7px;
   margin: 0;
   padding: 0;

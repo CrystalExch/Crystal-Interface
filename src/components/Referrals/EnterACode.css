@@ -72,7 +72,10 @@
   transition: all 0.2s;
   width: 100%;
 }
-
+.code-input::placeholder{
+  color: #ededf571;
+  font-weight: 300  ;
+}
 .code-input:focus {
   border-color: rgba(255, 255, 255, 0.2);
   outline: none;
