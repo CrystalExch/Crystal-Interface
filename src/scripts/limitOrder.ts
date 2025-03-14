@@ -1,8 +1,8 @@
-import { writeContract } from '@wagmi/core';
 import { CrystalRouterAbi } from '../abis/CrystalRouterAbi';
-import { config } from '../wagmi';
+import { encodeFunctionData } from 'viem';
 
 const limitOrder = async (
+  sendUserOperation: any,
   address: `0x${string}`,
   value: bigint,
   tokenIn: `0x${string}`,
@@ -10,12 +10,16 @@ const limitOrder = async (
   price: bigint,
   size: bigint,
 ) =>
-  writeContract(config, {
-    abi: CrystalRouterAbi,
-    address: address,
-    functionName: 'limitOrder',
-    args: [tokenIn, tokenOut, price, size],
-    value: value,
-  });
+  sendUserOperation({
+    uo: {
+      target: address,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: 'limitOrder',
+        args: [tokenIn, tokenOut, price, size],
+      }),
+      value: value,
+    },
+  })
 
 export default limitOrder;

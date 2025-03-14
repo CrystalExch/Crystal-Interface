@@ -1,13 +1,17 @@
-import { writeContract } from '@wagmi/core';
 import { TokenAbi } from '../abis/TokenAbi';
-import { config } from '../wagmi';
+import { encodeFunctionData } from 'viem';
 
-const unwrapeth = async (amount: bigint, weth: `0x${string}`) =>
-  writeContract(config, {
-    abi: TokenAbi,
-    address: weth,
-    functionName: 'withdraw',
-    args: [amount],
-  });
+const unwrapeth = async (sendUserOperation: any, amount: bigint, weth: `0x${string}`) =>
+  sendUserOperation({
+    uo: {
+      target: weth,
+      data: encodeFunctionData({
+        abi: TokenAbi,
+        functionName: 'withdraw',
+        args: [amount],
+      }),
+      value: 0n,
+    },
+  })
 
 export default unwrapeth;

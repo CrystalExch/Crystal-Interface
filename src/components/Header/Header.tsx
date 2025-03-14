@@ -13,6 +13,7 @@ import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
 import backgroundlesslogo from '../../assets/logo_clear.png';
+import { settings } from '../../settings';
 
 import './Header.css';
 
@@ -30,14 +31,13 @@ interface HeaderProps {
   settradesByMarket: (trades: Record<string, any[]>) => void;
   setcanceledorders: (orders: any[]) => void;
   setpopup: (value: number) => void;
-  switchChain: (config: any, params: { chainId: number }) => Promise<void>;
+  setChain: any;
   account: {
-    status: string;
-    addresses?: string[];
+    connected: boolean;
+    address?: string;
     chainId?: number;
   };
   activechain: number;
-  config: any;
   setShowTrade: (value: boolean) => void;
   simpleView: boolean;
   setSimpleView: (value: boolean) => void;
@@ -53,10 +53,9 @@ const Header: React.FC<HeaderProps> = ({
   settradesByMarket,
   setcanceledorders,
   setpopup,
-  switchChain,
+  setChain,
   account,
   activechain,
-  config,
   setShowTrade,
   simpleView,
   setSimpleView,
@@ -108,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({
               isSideMenu={false}
               setShowTrade={setShowTrade}
               toggleMenu={toggleMenu}
-              userWalletAddress={account.status === 'connected' ? account.addresses?.[0] : undefined}
+              userWalletAddress={account.connected ? account.address : undefined}
               simpleView={simpleView}
               setSimpleView={setSimpleView}
             />
@@ -178,24 +177,24 @@ const Header: React.FC<HeaderProps> = ({
           </div>
           <button
             type="button"
-            className={account.status === 'connected' ? 'transparent-button' : 'connect-button'}
+            className={account.connected ? 'transparent-button' : 'connect-button'}
             onClick={async () => {
-              if (account.status === 'connected' && account.chainId === activechain) {
+              if (account.connected && account.chainId === activechain) {
                 setpopup(4);
               } else {
-                account.status !== 'connected'
+                !account.connected
                   ? setpopup(4)
-                  : await switchChain(config, { chainId: activechain });
+                  : setChain({chain: settings.chains[0]});
               }
             }}
           >
             <div className="connect-content">
-              {account.status !== 'connected' ? (
+              {!account.connected ? (
                 'Connect Wallet'
               ) : (
                 <span className="transparent-button-container">
                   <img src={walleticon} className="wallet-icon"/>
-                  {`${account.addresses?.[0].slice(0, 6)}...${account.addresses?.[0].slice(-4)}`}
+                  {`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}
                 </span>
               )}
             </div>
@@ -220,7 +219,7 @@ const Header: React.FC<HeaderProps> = ({
         setPendingNotifs={setPendingNotifs}
         transactions={transactions || []}
         tokendict={tokendict}
-        walletAddress={account.addresses?.[0]}
+        walletAddress={account.address}
       />
 
       {isLanguageDropdownOpen && (

@@ -40,6 +40,7 @@ interface OrderCenterProps {
   setOnlyThisMarket: any;
   isPortfolio?: boolean;
   refetch: any;
+  sendUserOperation: any;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = memo(
@@ -70,6 +71,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     setOnlyThisMarket,
     isPortfolio,
     refetch,
+    sendUserOperation,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -244,6 +246,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               address={address}
               trades={trades}
               refetch={refetch}
+              sendUserOperation={sendUserOperation}
             />
           );
         case 'tradeHistory':
