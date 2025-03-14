@@ -303,7 +303,8 @@ export const translations: any = {
     gasPrice: 'Gas Price',
     totalFee: 'Total Fee',
     back: 'Back',
-    at: 'at'
+    at: 'at',
+    leaderboard: 'Leaderboard',
 
   },
   CN: {

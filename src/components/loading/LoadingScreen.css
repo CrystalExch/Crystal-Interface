@@ -3,21 +3,30 @@
   background: rgb(6, 6, 6);
   color: white;
   display: flex;
-  height: 100%;
+  height: 100vh; 
   justify-content: center;
   left: 0;
-  overflow: none;
-  position: absolute;
+  overflow: hidden;
+  position: fixed; 
   top: 0;
   user-select: none;
   width: 100%;
   z-index: 100000000;
 }
 
+body:has(.overlay) {
+  overflow: hidden;
+  position: fixed;
+  width: 100%;
+  height: 100%;
+}
+
 .logo-pulse {
   animation: move 1.8s infinite;
   user-select: none;
   width: 15vh;
+  max-width: 150px;
+  min-width: 80px;
 }
 
 @keyframes move {
@@ -25,14 +34,30 @@
     opacity: 0.3;
     transform: scale(0.95);
   }
-
+  
   50% {
     opacity: 0.8;
     transform: scale(1.05);
   }
-
+  
   100% {
     opacity: 0.3;
     transform: scale(0.95);
+  }
+}
+
+@supports (-webkit-touch-callout: none) {
+  .overlay {
+    height: 100%; 
+    position: fixed;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  body:has(.overlay) {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    touch-action: none;
   }
 }

@@ -104,10 +104,16 @@ const NavLinks: React.FC<NavLinksProps> = ({
           <Link to="/portfolio" className="nav-link" onClick={toggleMenu}>
             {t('portfolio')}
           </Link>
-
           <Link to="/referrals" className="nav-link" onClick={toggleMenu}>
             {t('referrals')}
           </Link>
+          <Link to="/leaderboard" className="nav-link" onClick={toggleMenu}>
+            {t('leaderboard')}
+          </Link>
+          <Link to="/mint" className="nav-link" onClick={toggleMenu}>
+            {t('Mint')}
+          </Link>
+
 
           <div className="side-menu-section">
             <button
@@ -219,10 +225,16 @@ const NavLinks: React.FC<NavLinksProps> = ({
           <Link to="/portfolio" className="nav-link">
             {t('portfolio')}
           </Link>
-
           <Link to="/referrals" className="nav-link">
             {t('referrals')}
           </Link>
+          <Link to="/leaderboard" className="nav-link">
+            {t('leaderboard')}
+          </Link>
+          <Link to="/mint" className="nav-link">
+            {t('Mint')}
+          </Link>
+
 
           <div
             onMouseLeave={() => handleMoreMouseToggle(false)}
