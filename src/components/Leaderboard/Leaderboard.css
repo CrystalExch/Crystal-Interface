@@ -46,6 +46,8 @@
     border-radius: 4px;
     text-decoration: none;
     font-weight: 600;
+    font-size: 0.85rem;
+
   }
   
   .leaderboard-banner {
@@ -73,15 +75,17 @@
   .view-rules-button {
     background: transparent;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.7);
-    padding: 8px 16px;
-    border-radius: 8px;
-    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    padding: 4px 16px;
+    border-radius: 6px;
+    font-weight: 300;
     align-self: flex-start;
     cursor: pointer;
     position: absolute;
     top: 15px;
     left: 15px;
+    font-size: 0.8rem;
+
   }
   
   .logo-container {
@@ -638,6 +642,8 @@
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 0.85rem;
+
 }
 
 .back-navigation-button:hover {
@@ -661,6 +667,8 @@
 }
 
 .delete-account-button {
+  display: flex;
+  align-items: center;
   background-color: rgba(239, 68, 68, 0.1);
   color: rgba(239, 68, 68, 0.8);
   border: 1px solid rgba(239, 68, 68, 0.2);
@@ -671,6 +679,7 @@
   margin-left: -10px;
   height: 20px;
   transition: all 0.2s ease;
+
 }
 
 .delete-account-button:hover {
@@ -741,6 +750,8 @@
   height: 35px;
   letter-spacing: -0.3px;
   transition: all 0.2s ease;
+  font-size: 0.85rem;
+
 }
 
 .guest-button:hover {

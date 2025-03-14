@@ -1,6 +1,8 @@
 
 
 .edit-account-button {
+  display: flex;
+  align-items: center;
     background-color: rgba(210, 217, 233, 0.1);
     color: rgba(232, 236, 241, 0.8);
     border: 1px solid rgba(218, 225, 236, 0.2);

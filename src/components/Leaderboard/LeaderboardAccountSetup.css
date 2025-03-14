@@ -195,12 +195,14 @@
   background-color: rgba(255, 255, 255, 0.01);
   border: 1.5px solid rgba(255, 255, 255, 0.1);
   color: white;
-  padding: 8px 16px;
+  padding: 4px 12px !important;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  height: 35px;
+  height: 32px;
   letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
 
 }
 
@@ -228,11 +230,13 @@
   border: none;
   color: #0f0f12;
   padding: 8px 16px;
-  height: 35px;
+  height: 32px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
 }
 
 .next-button:hover {
@@ -259,11 +263,13 @@
   border: none;
   color: #0f0f12;
   padding: 8px 16px;
-  height: 35px;
+  height: 32px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
   letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
 }
 
 .complete-button:hover {
@@ -291,7 +297,7 @@
   border-radius: 6px;
   color: #0f0f12;
   padding: 8px 16px;
-  height: 35px;
+  height: 32px;
   display: flex;
   align-items: center;
   font-weight: 500;

@@ -481,6 +481,7 @@
     cursor: pointer;
     font-weight: 500;
     letter-spacing: -0.3px;
+    font-size: 0.85rem;
   }
   
   .challenge-intro-container .next-button:hover {
@@ -500,6 +501,8 @@
     font-weight: 500;
     height: 35px;
     letter-spacing: -0.3px;
+    font-size: 0.85rem;
+
   }
   
   .challenge-intro-container .back-button:hover,
