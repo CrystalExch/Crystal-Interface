@@ -518,7 +518,6 @@ function App() {
     return saved ? parseInt(saved, 10) : 300;
   });
   const [stateloading, setstateloading] = useState(true);
-  const [ordersloading, setordersloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
@@ -620,7 +619,6 @@ function App() {
 
   const loading =
     stateloading ||
-    ordersloading ||
     tradesloading ||
     addressinfoloading
 
@@ -894,7 +892,7 @@ function App() {
         setStateIsLoading(true);
         debounceTimerRef.current = setTimeout(() => {
           setamountIn(amount);
-        }, 200);
+        }, 300);
       }
     },
     [amountIn],
@@ -910,7 +908,7 @@ function App() {
         setStateIsLoading(true);
         debounceTimerRef.current = setTimeout(() => {
           setamountOutSwap(amount);
-        }, 200);
+        }, 300);
       }
     },
     [amountOutSwap],
@@ -929,32 +927,9 @@ function App() {
     [tokenString],
   );
 
-  // fetch orders
-  const { data: orderdata, isLoading: obisloading } = useReadContracts({
-    batchSize: 0,
-    contracts: [
-      {
-        address: activeMarket?.address,
-        abi: CrystalMarketAbi,
-        functionName: 'getPriceLevelsFromMid',
-        args: [BigInt(1000000)],
-      },
-      {
-        address: balancegetter,
-        abi: CrystalDataHelperAbi as any,
-        functionName: 'getPrices',
-        args: [
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`,
-          ),
-        ],
-      },
-    ],
-    query: { refetchInterval: 1000, gcTime: 0 },
-  });
-
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
+    batchSize: 0,
     contracts: [
       {
         abi: CrystalRouterAbi,
@@ -987,8 +962,24 @@ function App() {
           ),
         ],
       },
+      {
+        address: activeMarket?.address,
+        abi: CrystalMarketAbi,
+        functionName: 'getPriceLevelsFromMid',
+        args: [BigInt(1000000)],
+      },
+      {
+        address: balancegetter,
+        abi: CrystalDataHelperAbi as any,
+        functionName: 'getPrices',
+        args: [
+          Object.values(markets).map(
+            (market) => market.address as `0x${string}`,
+          ),
+        ],
+      },
     ],
-    query: { refetchInterval: 4000, gcTime: 0 },
+    query: { refetchInterval: simpleView ? 5000 : 1000, gcTime: 0 },
   });
 
   // fetch ref data
@@ -2067,128 +2058,6 @@ function App() {
     }
   }, [refData, mids]);
 
-  // monitor active orders
-  useEffect(() => {
-    if (obisloading == false && orderdata) {
-      setordersloading(false);
-      let tempmids;
-      if (orderdata[1].result) {
-        tempmids = Object.keys(markets).reduce(
-          (acc, market, i) => {
-            const prices = [
-              (orderdata as any)[1].result?.[0][i],
-              (orderdata as any)[1].result?.[1][i],
-              (orderdata as any)[1].result?.[2][i],
-            ];
-            acc[market] = prices;
-            return acc;
-          },
-          {} as Record<string, any>,
-        );
-        setmids(tempmids);
-      }
-      if (orderdata[0].result) {
-        sethighestBid((orderdata as any)[0].result[0] || BigInt(0));
-        setlowestAsk((orderdata as any)[0].result[1] || BigInt(0));
-        const data = orderdata?.[0].result;
-
-        if (data && Array.isArray(data) && data.length >= 4) {
-          try {
-            const buyOrdersRaw: bigint[] = [];
-            const sellOrdersRaw: bigint[] = [];
-
-            for (let i = 2; i < data[2].length; i += 64) {
-              const chunk = data[2].slice(i, i + 64);
-              buyOrdersRaw.push(BigInt(`0x${chunk}`));
-            }
-
-            for (let i = 2; i < data[3].length; i += 64) {
-              const chunk = data[3].slice(i, i + 64);
-              sellOrdersRaw.push(BigInt(`0x${chunk}`));
-            }
-
-            const {
-              buyOrders: processedBuyOrders,
-              sellOrders: processedSellOrders,
-            } = processOrders(buyOrdersRaw, sellOrdersRaw);
-
-            if (tempmids && tempmids[activeMarketKey]) {
-              const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
-                processOrdersForDisplay(
-                  processedBuyOrders,
-                  amountsQuote,
-                  tempmids[activeMarketKey][0],
-                );
-              const {
-                roundedOrders: roundedSell,
-                defaultOrders: liquiditySell,
-              } = processOrdersForDisplay(
-                processedSellOrders,
-                amountsQuote,
-                tempmids[activeMarketKey][0],
-              );
-
-              const highestBid =
-                roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-              const lowestAsk =
-                roundedSell.length > 0 ? roundedSell[0].price : undefined;
-
-              const spread = {
-                spread:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? lowestAsk - highestBid
-                    : NaN,
-                averagePrice:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? Number(
-                        ((highestBid + lowestAsk) / 2).toFixed(
-                          Math.log10(Number(activeMarket.priceFactor)) + 1,
-                        ),
-                      )
-                    : NaN,
-              };
-
-              roundedBuy.forEach((order, index) => {
-                const match = roundedBuyOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              roundedSell.forEach((order, index) => {
-                const match = roundedSellOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              setSpreadData(spread);
-              setRoundedBuyOrders(roundedBuy);
-              setRoundedSellOrders(roundedSell);
-              setLiquidityBuyOrders(liquidityBuy);
-              setLiquiditySellOrders(liquiditySell);
-            }
-
-            setBaseInterval(1 / Number(activeMarket.priceFactor));
-            setOBInterval(
-              localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-                ? Number(
-                    localStorage.getItem(
-                      `${activeMarket.baseAsset}_ob_interval`,
-                    ),
-                  )
-                : 1 / Number(activeMarket.priceFactor),
-            );
-          } catch (error) {
-            console.error(error);
-          }
-        }
-      }
-    }
-  }, [orderdata, activechain, amountsQuote]);
-
   // spread data - separate to ensure it works on initial load
   useEffect(() => {
     setPriceFactor(Number(activeMarket.priceFactor));
@@ -2305,10 +2174,125 @@ function App() {
             `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
         }
       }
+      let tempmids;
+      if (data[4].result) {
+        tempmids = Object.keys(markets).reduce(
+          (acc, market, i) => {
+            const prices = [
+              (data as any)[4].result?.[0][i],
+              (data as any)[4].result?.[1][i],
+              (data as any)[4].result?.[2][i],
+            ];
+            acc[market] = prices;
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+        setmids(tempmids);
+      }
+      if (data[3].result) {
+        sethighestBid((data as any)[3].result[0] || BigInt(0));
+        setlowestAsk((data as any)[3].result[1] || BigInt(0));
+        const orderdata = data?.[3].result;
+
+        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4) {
+          try {
+            const buyOrdersRaw: bigint[] = [];
+            const sellOrdersRaw: bigint[] = [];
+
+            for (let i = 2; i < orderdata[2].length; i += 64) {
+              const chunk = orderdata[2].slice(i, i + 64);
+              buyOrdersRaw.push(BigInt(`0x${chunk}`));
+            }
+
+            for (let i = 2; i < orderdata[3].length; i += 64) {
+              const chunk = orderdata[3].slice(i, i + 64);
+              sellOrdersRaw.push(BigInt(`0x${chunk}`));
+            }
+
+            const {
+              buyOrders: processedBuyOrders,
+              sellOrders: processedSellOrders,
+            } = processOrders(buyOrdersRaw, sellOrdersRaw);
+
+            if (tempmids && tempmids[activeMarketKey]) {
+              const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
+                processOrdersForDisplay(
+                  processedBuyOrders,
+                  amountsQuote,
+                  tempmids[activeMarketKey][0],
+                );
+              const {
+                roundedOrders: roundedSell,
+                defaultOrders: liquiditySell,
+              } = processOrdersForDisplay(
+                processedSellOrders,
+                amountsQuote,
+                tempmids[activeMarketKey][0],
+              );
+
+              const highestBid =
+                roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
+              const lowestAsk =
+                roundedSell.length > 0 ? roundedSell[0].price : undefined;
+
+              const spread = {
+                spread:
+                  highestBid !== undefined && lowestAsk !== undefined
+                    ? lowestAsk - highestBid
+                    : NaN,
+                averagePrice:
+                  highestBid !== undefined && lowestAsk !== undefined
+                    ? Number(
+                        ((highestBid + lowestAsk) / 2).toFixed(
+                          Math.log10(Number(activeMarket.priceFactor)) + 1,
+                        ),
+                      )
+                    : NaN,
+              };
+
+              roundedBuy.forEach((order, index) => {
+                const match = roundedBuyOrders.find(
+                  (o) => o.price == order.price && o.size == order.size,
+                );
+                if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                  order.shouldFlash = true;
+                }
+              });
+              roundedSell.forEach((order, index) => {
+                const match = roundedSellOrders.find(
+                  (o) => o.price == order.price && o.size == order.size,
+                );
+                if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                  order.shouldFlash = true;
+                }
+              });
+              setSpreadData(spread);
+              setRoundedBuyOrders(roundedBuy);
+              setRoundedSellOrders(roundedSell);
+              setLiquidityBuyOrders(liquidityBuy);
+              setLiquiditySellOrders(liquiditySell);
+            }
+
+            setBaseInterval(1 / Number(activeMarket.priceFactor));
+            setOBInterval(
+              localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+                ? Number(
+                    localStorage.getItem(
+                      `${activeMarket.baseAsset}_ob_interval`,
+                    ),
+                  )
+                : 1 / Number(activeMarket.priceFactor),
+            );
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt]);
+  }, [data, activechain, isLoading, activeTab, dataUpdatedAt, amountsQuote]);
 
   // update display values when loading is finished
   useEffect(() => {
