@@ -29,6 +29,7 @@ interface ChartHeaderProps {
   };
   high24h: string;
   low24h: string;
+  volume: string;
   trades: any[];
   orderdata: any;
   markets: any;
@@ -48,6 +49,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   activeMarket,
   high24h,
   low24h,
+  volume,
   trades,
   orderdata,
   markets,
@@ -57,17 +59,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   universalTrades,
   setpopup,
 }) => {
-  const [volume, setVolume] = useState('0');
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
-
-  useEffect(() => {
-    if (activeMarket && trades && markets) {
-      setVolume(
-        formatCommas(calculate24hVolume(trades, activeMarket).toString()),
-      );
-    }
-  }, [activeMarket, trades, markets]);
 
   useEffect(() => {
     if (orderdata.liquidityBuyOrders || orderdata.liquiditySellOrders) {

@@ -2685,8 +2685,6 @@ function App() {
   
         const result = await response.json();
         
-        console.log(result);
-
         const filledBatches = result?.data?.orderFilledBatches || [];
         for (const batch of filledBatches) {
           const orders = batch.orders || [];
