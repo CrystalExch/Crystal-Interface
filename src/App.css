@@ -2962,7 +2962,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: 4px;
   left: 50%;
   position: absolute;
-  top: -10px;
+  top: -10.5px;
   transform: translateX(-50%);
   width: 5px;
 }
