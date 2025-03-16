@@ -12,6 +12,8 @@
     "format-all": "prettier --write \"src/**/*.{tsx,ts,css,scss}\" \"!src/adv/**/*\" \"!src/contexts/LanguageContext.tsx\" && stylelint \"src/**/*.{css,scss}\" --fix && postcss \"src/**/*.css\" --replace"
   },
   "dependencies": {
+    "@account-kit/infra": "^4.15.3",
+    "@account-kit/react": "^4.15.3",
     "@tanstack/react-query": "5.45.1",
     "axios": "^1.7.4",
     "graphql-request": "^7.1.2",
@@ -31,7 +33,8 @@
     "@types/react-dom": "^18.3.1",
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^4.2.1",
-    "postcss": "^8.5.1",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.3",
     "postcss-cli": "^11.0.0",
     "postcss-combine-duplicated-selectors": "^10.0.3",
     "postcss-merge-rules": "^7.0.4",
@@ -43,6 +46,7 @@
     "stylelint-config-prettier": "^9.0.5",
     "stylelint-config-standard": "^37.0.0",
     "stylelint-order": "^6.0.4",
+    "tailwindcss": "^3.4.17",
     "typescript": "^5.4.5",
     "vite": "^5.2.11"
   }

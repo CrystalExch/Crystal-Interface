@@ -1,7 +1,6 @@
 import { Eye } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useConnect, useDisconnect } from 'wagmi';
 
 import Overlay from '../loading/LoadingComponent';
 import TabbedOrderBalances from '../Portfolio/TabbedOrderBalances';
@@ -66,6 +65,7 @@ interface PortfolioProps {
   setOnlyThisMarket: any;
   account: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
 const Portfolio: React.FC<PortfolioProps> = ({
@@ -101,6 +101,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOnlyThisMarket,
   account,
   refetch,
+  sendUserOperation,
 }) => {
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -136,8 +137,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const { disconnect } = useDisconnect();
-  const { connectors } = useConnect();
   const { high, low, days, percentage, timeRange, setPercentage } =
     useSharedContext();
 
@@ -203,8 +202,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       <button
         className="control-button"
         onClick={() => {
-          disconnect({ connector: connectors[0] });
-          disconnect({ connector: account.connector });
+          account.logout()
         }}
       >
         <svg
@@ -396,6 +394,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         onlyThisMarket={onlyThisMarket}
         setOnlyThisMarket={setOnlyThisMarket}
         refetch={refetch}
+        sendUserOperation={sendUserOperation}
       />
     </div>
   );

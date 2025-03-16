@@ -98,7 +98,7 @@ html {
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
-  margin-left: 11px;
+  margin-left: 12px;
   outline: 0;
   width: 0;
 }
@@ -423,6 +423,7 @@ html {
 .tokenlistticker {
   color: grey;
   font-size: 0.7rem;
+  margin-top: -3px;
 }
 
 .tokenlistbalance {
@@ -442,8 +443,9 @@ html {
   height: 30px;
   margin-left: -20px;
   margin-right: 7px;
-  margin-top: 8px;
-  width: 30px;
+  margin-top: 10px;
+  min-width: 30px;
+  min-height: 30px
 }
 
 .sendbutton1container {
@@ -498,6 +500,7 @@ html {
   cursor: pointer;
   opacity: 0.8;
   transition: opacity.2s ease;
+  margin: 0 5px; 
 }
 
 .limit-token-icon {
@@ -1637,7 +1640,7 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 412px;
+  min-height: 470px;
 }
 
 .connect-wallet-background.unconnected {
@@ -1878,7 +1881,6 @@ body:has(.right-column.show) .blur-background-popups {
   gap: 4px;
   min-height: 0;
   padding: 0 5px;
-  padding-bottom: 10px;
 }
 
 .tokenlistcontainer {
@@ -1914,10 +1916,12 @@ body:has(.right-column.show) .blur-background-popups {
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  min-height: 680px;
+  height: calc(100vh - 45px);
   overflow: auto;
 }
+
+
+
 
 body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   min-height: 965px;
@@ -1925,7 +1929,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .trade-container {
   box-sizing: border-box;
-  margin-bottom: 35px;
 }
 
 .chartandorderbookandordercenter,
@@ -2048,6 +2051,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: 105px;
   transition: all.2s ease;
   width: 50%;
+  padding: 0 5px;
 }
 
 .layout-option.active {
@@ -2501,7 +2505,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   border-top: 1px solid rgb(255 255 255/3%);
   flex-shrink: 0;
   margin-top: auto;
-  box-shadow: 0 -25px 25px rgba(0, 0, 0, 1);
 }
 
 .main-content-wrapper.simple-view {
@@ -3516,7 +3519,13 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 @media (max-width: 1020px) {
   .app-container,
   .main-content-wrapper {
-    padding: 0;
+    padding: 0 !important;
+
+  }
+  .app-wrapper{
+    padding-bottom: 0 !important;
+    max-height: 100%;
+    height: 100%;
   }
   .app-wrapper::-webkit-scrollbar,
   .layout-options > div:nth-child(1),
@@ -3530,7 +3539,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     max-width: 100%;
     overflow-x: hidden;
     padding: 0;
-    padding-bottom: 10px;
   }
   .trade-container,
   .trade-mobile-view-container {
@@ -3563,9 +3571,9 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
   .chartandorderbookandordercenter {
     box-sizing: border-box;
-    height: calc(100vh - 100px);
     margin: 0;
     min-height: 550px;
+    height: calc(100vh - 100px);
     padding: 0 10px;
     top: 0;
     width: 100%;
@@ -3574,7 +3582,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     justify-content: center;
   }
   .app-wrapper {
-    min-height: 100% !important;
+    min-height: calc(100% + 10px) !important;
     overflow: hidden auto;
     -webkit-overflow-scrolling: touch;
     -ms-overflow-style: none;
@@ -3592,18 +3600,17 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     max-height: calc(100vh);
     width: 100%;
   }
-  .mobile-switch {
-    filter: invert(1);
-    height: 450px;
+  .trade-mobile-switch {
+    max-height: 23px;
+    max-width: 23px;
     pointer-events: none;
-    transform: rotate(0);
+    transform: rotate(90deg);
     transform-origin: center;
     transition: transform.3s ease;
-    width: 450px;
   }
-  .mobile-switch.open {
+  .trade-mobile-switch.open {
     outline: 0;
-    transform: rotate(180deg);
+    transform: rotate(270deg);
   }
   .mobile-trade-panel {
     background: #181820;
@@ -3872,3 +3879,229 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
 
 
+
+
+
+body:has(.blur-background-popups.active), 
+body:has(.popup-blur) {
+  overflow: hidden !important;
+  position: fixed !important;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  -webkit-overflow-scrolling: none;
+}
+
+
+.tokenselectbg,
+.sendselectbg,
+.connect-wallet-background,
+.layout-settings-background,
+.search-markets-dropdown-popup,
+.send-popup-container,
+.connecting-popup {
+  position: fixed !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.right-column.show {
+  position: fixed;
+  bottom: 0;
+  inset-inline: 0;
+  z-index: 80;
+  height: auto;
+  max-height: 100vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1020px) {
+  .right-column.show {
+    position: fixed !important;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 80;
+    height: auto;
+    max-height: 100vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transform: translateY(0) !important;
+  }
+
+  .right-column.show .swapmodal {
+    height: auto;
+    max-height: 90vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    width: 100% !important;
+  }
+}
+
+
+
+@supports (-webkit-touch-callout: none) {
+  .main-content-wrapper.simple-view {
+    position: fixed;
+    height: 100%;
+    overflow: hidden;
+    -webkit-overflow-scrolling: auto;
+  }
+  
+  body:has(.main-content-wrapper.simple-view) {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: auto;
+  }
+}
+
+
+
+.fixed.inset-0.bg-black\/80 {
+  background-color: rgba(21, 21, 25, 0.75) !important;
+}
+
+.akui-modal {
+  border: 1.5px solid #1a1a1de8 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
+  background-color:   #19191c80 !important;
+  backdrop-filter: blur(10px);
+  max-width: 300px !important;
+}
+
+.akui-input{
+  border: 1.5px solid #ffffff10 !important;
+  background: transparent !important;
+  height: 34px !important;
+  border-radius: 6px !important;
+}
+
+.font-semibold{
+  font-weight: 300 !important;
+}
+
+.text-lg{
+  font-size: 1rem !important;
+  margin-bottom: 0.3rem !important;
+}
+
+.hover\:bg-btn-secondary:hover {
+  background: transparent !important;
+}
+@media (min-width: 1024px) {
+  .lg\:h-\[16px\] {
+      height: 20px !important;
+      margin-top: 1rem;
+      
+  }
+}
+.gap-4{
+  gap: 0 !important;
+}
+.pt-5{
+  padding-top: 0.5rem !important;
+  height: 30px !important;
+  width: calc(100% + 20px)  !important;
+  margin-left: -10px;
+}
+.pt-2{
+  padding-bottom: 0.7rem !important;
+}
+.px-6{
+  padding: 0 1rem !important;
+}
+
+.akui-btn-primary{
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  ) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%) !important;
+    height: 35px !important;
+}
+
+.akui-btn-secondary{
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  ) !important;
+  border: none !important;
+  border-radius: 6px !important;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%) !important;
+    height: 30px !important;
+  color: black !important;
+  font-weight: 500 !important;
+  margin: 0.5rem 0 !important;
+  
+}
+
+
+
+.text-fg-secondary{
+  font-size: 0.75rem !important;
+  line-height: 1.3 !important;
+  font-weight: 300 !important;
+  color: rgba(255, 255, 255, 0.655)  !important;
+}
+
+.gap-5{
+  gap: 0.5  rem !important;
+}
+
+.gap-3{
+  gap: 0.5rem !important
+}
+.akui-btn-group > .akui-btn:first-child{
+  height: 30px !important;
+  border: none !important;
+  background-color:  rgb(205 212 247/3%)  !important;
+  border-radius: 6px !important;
+}
+.akui-btn-content{
+  font-size: 0.8rem !important;
+  font-weight: 400 !important;
+}
+
+.akui-btn-auth{
+  height: 30px !important;
+  border: none !important;
+  background-color:  rgb(205 212 247/3%)  !important;
+  border-radius: 6px !important;
+}
+
+.text-xs{
+  font-size: 0.7rem !important;
+}
+
+.bg-bg-surface-default {
+  background: none  !important;
+  border: 1.5px solid #ffffff10 !important;
+}

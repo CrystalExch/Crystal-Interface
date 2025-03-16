@@ -1,8 +1,8 @@
-import { writeContract } from '@wagmi/core';
 import { CrystalRouterAbi } from '../abis/CrystalRouterAbi';
-import { config } from '../wagmi';
+import { encodeFunctionData } from 'viem';
 
 const swapTokensForExactTokens = async (
+  sendUserOperation: any,
   address: `0x${string}`,
   amountOut: bigint,
   amountInMax: bigint,
@@ -11,11 +11,16 @@ const swapTokensForExactTokens = async (
   deadline: bigint,
   ref: `0x${string}`,
 ) =>
-  writeContract(config, {
-    abi: CrystalRouterAbi,
-    address: address,
-    functionName: 'swapTokensForExactTokens',
-    args: [amountOut, amountInMax, path, to, deadline, ref],
-  });
+  sendUserOperation({
+    uo: {
+      target: address,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: 'swapTokensForExactTokens',
+        args: [amountOut, amountInMax, path, to, deadline, ref],
+      }),
+      value: 0n,
+    },
+  })
 
 export default swapTokensForExactTokens;

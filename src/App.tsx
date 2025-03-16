@@ -1,10 +1,6 @@
 // import libraries
 import {
-  connect,
-  disconnect,
   getBlockNumber,
-  readContracts,
-  switchChain,
   waitForTransactionReceipt,
 } from '@wagmi/core';
 import React, {
@@ -25,12 +21,22 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { maxUint256 } from 'viem';
-import { useAccount, useReadContracts } from 'wagmi';
+import { useReadContracts } from 'wagmi';
 import { computePrice } from './components/Chart/utils/calculatePriceMetrics';
 import { calculate24hVolume } from './components/Chart/utils/ChartHeader/calculate24hVolume';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
-import { config } from './wagmi';
+import { config } from './wagmi.ts';
+import {
+  useAuthModal,
+  useLogout,
+  useSignerStatus,
+  useUser,
+  useChain,
+  useConnect,
+  useSmartAccountClient,
+  useSendUserOperation,
+} from "@account-kit/react";
 
 // import css
 import './App.css';
@@ -67,7 +73,6 @@ import { TokenAbi } from './abis/TokenAbi';
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
-import mobileswitch from './assets/mobile_switch.svg';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
@@ -82,12 +87,11 @@ import walletrabby from './assets/walletrabby.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
-
+import mobiletradeswap from './assets/mobile_trade_swap.png';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
 import Referrals from './components/Referrals/Referrals.tsx';
-import EarnVaults from './components/Earn/EarnVaults.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
@@ -112,16 +116,27 @@ import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniCh
 // import config
 import { SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
-import { settings } from './config.ts';
+import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
 
 function App() {
   // constants
+  const { chain, setChain } = useChain();
+  const { connectors, connect } = useConnect({});
+  const user = useUser();
+  const { openAuthModal } = useAuthModal();
+  const signerStatus = useSignerStatus();
+  const { client } = useSmartAccountClient({type: "LightAccount"});
+  const { sendUserOperation, isSendingUserOperation } = useSendUserOperation({
+    client,
+    waitForTxn: true,
+  });
+  const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { activechain, percentage, setPercentage, favorites } =
-    useSharedContext();
-  const account = useAccount();
+  const { activechain, percentage, setPercentage, favorites } = useSharedContext();
+  const address = user?.type == 'eoa' ? user?.address : client?.getAddress()
+  const connected = (signerStatus.status == 'CONNECTED' || user?.type == 'eoa')
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -160,7 +175,7 @@ function App() {
         if (
           (token1 == eth && token2 == weth) ||
           (token1 == weth && token2 == eth)
-        ) {
+        ) { 
           let market = { ...getMarket(eth, usdc) };
           market['path'] = [token1, token2];
           market['fee'] = BigInt(10000);
@@ -238,7 +253,7 @@ function App() {
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
   
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
-  const [isSigning, setIsSigning] = useState(false);
+  const [, setIsSigning] = useState(false);
   const [mobileView, setMobileView] = useState('chart');
   const [showTrade, setShowTrade] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
@@ -507,7 +522,7 @@ function App() {
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
   const { chartData, portChartLoading } = usePortfolioData(
-    account.addresses?.[0],
+    address,
     tradesByMarket,
     Object.values(tokendict),
     markets,
@@ -606,8 +621,7 @@ function App() {
     stateloading ||
     ordersloading ||
     tradesloading ||
-    addressinfoloading ||
-    account.status == 'reconnecting';
+    addressinfoloading
 
   const activeMarket = getMarket(tokenIn, tokenOut);
   const activeMarketKey = activeMarket.baseAsset + activeMarket.quoteAsset;
@@ -957,7 +971,7 @@ function App() {
         address: (tokenIn == eth ? weth : tokenIn) as `0x${string}`,
         functionName: 'allowance',
         args: [
-          account.addresses?.[0] as `0x${string}`,
+          address as `0x${string}`,
           getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
         ],
       },
@@ -966,7 +980,7 @@ function App() {
         address: balancegetter,
         functionName: 'batchBalanceOf',
         args: [
-          account.addresses?.[0] as `0x${string}`,
+          address as `0x${string}`,
           Object.values(tokendict).map(
             (token) => token.address as `0x${string}`,
           ),
@@ -987,13 +1001,13 @@ function App() {
         address: market.address as `0x${string}`,
         abi: CrystalMarketAbi,
         functionName: 'accumulatedFeeQuote',
-        args: [account.addresses?.[0] ?? undefined],
+        args: [address ?? undefined],
       })),
       ...Object.values(markets).flatMap((market: any) => ({
         address: market.address as `0x${string}`,
         abi: CrystalMarketAbi,
         functionName: 'accumulatedFeeBase',
-        args: [account.addresses?.[0] ?? undefined],
+        args: [address ?? undefined],
       })),
     ],
     query: { refetchInterval: 10000 },
@@ -1035,7 +1049,7 @@ function App() {
                 ],
               },
             ],
-          }, ...(account.addresses?.[0].slice(2) ? [{
+          }, ...(address?.slice(2) ? [{
             jsonrpc: '2.0',
             id: 0,
             method: 'eth_getLogs',
@@ -1051,7 +1065,7 @@ function App() {
                     '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
                   ],
                   [
-                    '0x000000000000000000000000' + account.addresses?.[0].slice(2),
+                    '0x000000000000000000000000' + address?.slice(2),
                   ],
                 ],
               },
@@ -1069,7 +1083,7 @@ function App() {
               for (const log of orderlogs) {
                 const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
                 if (!set.has(logIdentifier) && addresstoMarket[log['address']] && log['topics'][1].slice(26) ==
-                account.addresses?.[0].slice(2).toLowerCase()) {
+                address?.slice(2).toLowerCase()) {
                   if (queue.length >= 1000) {
                     const removed = queue.shift();
                     set.delete(removed!);
@@ -1242,7 +1256,7 @@ function App() {
                   const marketKey = addresstoMarket[log['address']];
                   if (
                     log['topics'][1].slice(26) ==
-                    account.addresses?.[0].slice(2).toLowerCase()
+                    address?.slice(2).toLowerCase()
                   ) {
                     settradehistory((tradehistory) => [
                       ...tradehistory,
@@ -1451,7 +1465,7 @@ function App() {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [HTTP_URL, account.addresses?.[0].slice(2)]);
+  }, [HTTP_URL, address?.slice(2)]);
 
   useEffect(() => {
     const processMarkets = async () => {
@@ -2402,11 +2416,11 @@ function App() {
             ((orderType == 1 || multihop) &&
               !isWrap &&
               BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
-            account.status === 'connected' &&
-            account.chainId == activechain,
+            connected &&
+            chain.id == activechain,
         );
         setSwapButton(
-          account.status === 'connected' && account.chainId == activechain
+          connected && chain.id == activechain
             ? (switched &&
                 amountOutSwap != BigInt(0) &&
                 amountIn == BigInt(0)) ||
@@ -2421,7 +2435,7 @@ function App() {
                     ? 6
                     : 2
                   : 3
-            : account.status === 'connected'
+            : connected
               ? 4
               : 5,
         );
@@ -2438,11 +2452,11 @@ function App() {
                 tokenIn == activeMarket.quoteAddress) ||
                 (limitPrice <= highestBid &&
                   tokenIn == activeMarket.baseAddress)))) &&
-            account.status === 'connected' &&
-            account.chainId == activechain,
+            connected &&
+            chain.id == activechain,
         );
         setLimitButton(
-          account.status === 'connected' && account.chainId == activechain
+          connected && chain.id == activechain
             ? amountIn === BigInt(0)
               ? 0
               : limitPrice == BigInt(0)
@@ -2468,7 +2482,7 @@ function App() {
                         ? 9
                         : 5
                   : 6
-            : account.status === 'connected'
+            : connected
               ? 7
               : 8,
         );
@@ -2476,11 +2490,11 @@ function App() {
           (amountIn === BigInt(0) ||
             amountIn > tokenBalances[tokenIn] ||
             !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-            account.status === 'connected' &&
-            account.chainId == activechain,
+            connected &&
+            chain.id == activechain,
         );
         setSendButton(
-          account.status === 'connected' && account.chainId == activechain
+          connected && chain.id == activechain
             ? amountIn === BigInt(0)
               ? 0
               : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
@@ -2488,7 +2502,7 @@ function App() {
                 : amountIn <= tokenBalances[tokenIn]
                   ? 2
                   : 3
-            : account.status === 'connected'
+            : connected
               ? 4
               : 5,
         );
@@ -2511,11 +2525,11 @@ function App() {
                     tokenIn == activeMarket.quoteAddress) ||
                     (scaleEnd <= highestBid &&
                       tokenIn == activeMarket.baseAddress)))) &&
-            account.status === 'connected' &&
-            account.chainId == activechain,
+            connected &&
+            chain.id == activechain,
         );
         setScaleButton(
-          account.status === 'connected' && account.chainId == activechain
+          connected && chain.id == activechain
             ? amountIn === BigInt(0)
               ? 0
               : scaleStart == BigInt(0)
@@ -2547,7 +2561,7 @@ function App() {
                         ? 13
                         : 14
                   : 10
-            : account.status === 'connected'
+            : connected
               ? 11
               : 12,
         );
@@ -2609,8 +2623,8 @@ function App() {
     activeMarket.baseAddress,
     orderType,
     slippage,
-    account.status,
-    account.chainId,
+    connected,
+    chain.id,
     tokenBalances[tokenIn],
     multihop,
     data?.[0].result?.at(0),
@@ -2644,7 +2658,7 @@ function App() {
             orderFilledBatches(first: 1000, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
+              orders(first: 1000, where: {caller: "${user?.address}"}) {
                 caller
                 amountIn
                 amountOut
@@ -2659,7 +2673,7 @@ function App() {
             orderBatches(first: 1000, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000, where: {caller: "${account.addresses?.[0]}"}) {
+              orders(first: 1000, where: {caller: "${user?.address}"}) {
                 id
                 caller
                 originalSizeBase
@@ -2743,7 +2757,7 @@ function App() {
         setaddressinfoloading(false);
       }
     })();
-  }, [account.addresses?.[0], activechain]);  
+  }, [user?.address, activechain]);
 
   // initial trade fetching
   useEffect(() => {
@@ -2861,7 +2875,7 @@ function App() {
           document.body.style.overflow = 'auto'
           document.querySelector('.right-column')?.classList.add('hide');
           document.querySelector('.right-column')?.classList.remove('show');
-          document.querySelector('.mobile-switch')?.classList.remove('open');
+          document.querySelector('.trade-mobile-switch')?.classList.remove('open');
           setTimeout(() => {
             setShowTrade(false);
           }, 300);
@@ -2879,7 +2893,7 @@ function App() {
             document.body.style.overflow = 'auto'
             document.querySelector('.right-column')?.classList.add('hide');
             document.querySelector('.right-column')?.classList.remove('show');
-            document.querySelector('.mobile-switch')?.classList.remove('open');
+            document.querySelector('.trade-mobile-switch')?.classList.remove('open');
             setTimeout(() => {
               setShowTrade(false);
             }, 300);
@@ -3209,7 +3223,7 @@ function App() {
       blurref.current.style.width = `${offsetWidth}px`;
       blurref.current.style.height = `${offsetHeight}px`;
     }
-  }, [popup, account.status]);
+  }, [popup, connected]);
 
   // input tokenlist
   const TokenList1 = (
@@ -4443,7 +4457,7 @@ function App() {
         {popup === 3 ? ( // send popup
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
-              <div className={`sendbg ${account.status === 'connected' && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
+              <div className={`sendbg ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
                 <div className="sendbutton1container">
                   <div className="send-Send">{t('send')}</div>
                   <button
@@ -4459,7 +4473,7 @@ function App() {
                 </div>
                 <div className="sendinputcontainer">
                   <input
-                    className={`send-input ${account.status === 'connected' && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    className={`send-input ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
                     onChange={(e) => {
                       if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
                         if (displayMode == 'usd') {
@@ -4589,13 +4603,13 @@ function App() {
                 />
               </div>
               <button
-                className={`send-swap-button ${isSigning ? 'signing' : ''}`}
+                className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
                 onClick={async () => {
-                  if (account.status === 'connected' && account.chainId === activechain) {
+                  if (connected && chain.id === activechain) {
                     setIsSigning(true);
                     try {
                       if (sendTokenIn == eth) {
-                        const hash = await sendeth(recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendeth(sendUserOperation, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
                           (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
                           'send',
@@ -4607,7 +4621,7 @@ function App() {
                           recipient
                         );
                       } else {
-                        const hash = await sendtokens(sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendtokens(sendUserOperation, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
                           (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
                           'send',
@@ -4628,18 +4642,18 @@ function App() {
                       setTimeout(()=>refetch(), 500)
                     }
                   } else {
-                    account.status != 'connected' ? setpopup(4) : switchChain(config, { chainId: activechain as any });
+                    !connected ? setpopup(4) : setChain({chain: settings.chains[0]})
                   }
                 }}
                 disabled={
                   (sendAmountIn === BigInt(0) ||
                     sendAmountIn > tokenBalances[sendTokenIn] ||
                     !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-                  account.status === 'connected' &&
-                  account.chainId == activechain
+                  connected &&
+                  chain.id == activechain
                 }
               >
-                {isSigning ? (
+                {isSendingUserOperation ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
                     {t('signTransaction')}
@@ -4648,11 +4662,11 @@ function App() {
                   t('enterAmount')
                 ) : !/^(0x[0-9a-fA-F]{40})$/.test(recipient) ? (
                   t('enterWalletAddress')
-                ) : account.status != 'connected' ? (
+                ) : !connected ? (
                   t('connectWallet')
                 ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
                   t('insufficient') + (tokendict[sendTokenIn].ticker || '?') + ' ' + t('bal')
-                ) : account.status === 'connected' && account.chainId != activechain ? (
+                ) : connected && chain.id != activechain ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
                   t('send')
@@ -4662,7 +4676,7 @@ function App() {
           </div>
         ) : null}
         {popup === 4 ? ( // connect wallet & port popup
-          account.status !== 'connected' ? (
+          !connected ? (
             <div ref={popupref} className="connect-wallet-background unconnected">
               <div className="connect-wallet-content-container">
                 <div className="wallet-header-container">
@@ -4684,21 +4698,21 @@ function App() {
                 </div>
                 <div className="connect-wallet-divider"> </div>
                 <div className="connect-wallet-content">
-                  {config.connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").length > 0 && (
+                  {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").length > 0 && (
                     <>
                       <div className="installed-wallet-section-title">
                         {t('installed')}
                       </div>
-                      {config.connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").map((connector) => (
+                      {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").map((connector) => (
                         <button
                           key={connector.id}
-                          className={`wallet-option ${config.connectors.slice(5).includes(connector) ? 'installed' : ''}`}
+                          className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
                           onClick={() => {
                             setSelectedConnector(connector);
                             setpopup(6);
                             setTimeout(async () => {
                               try {
-                                await connect(config, {
+                                await connect({
                                   connector,
                                   chainId: activechain as any,
                                 });
@@ -4729,15 +4743,15 @@ function App() {
                   <div className="popular-wallet-section-title">
                     {t('popular')}
                   </div>
-                  {config.connectors.find(connector => connector.name === "Rabby Wallet") ? <button
+                  {connectors.find(connector => connector.name === "Rabby Wallet") ? <button
                     className={`wallet-option`}
                     onClick={() => {
-                      let connector = config.connectors.find(connector => connector.name === "Rabby Wallet") || config.connectors[5]
+                      let connector = connectors.find(connector => connector.name === "Rabby Wallet") || connectors[5]
                       setSelectedConnector(connector);
                       setpopup(6);
                       setTimeout(async () => {
                         try {
-                          await connect(config, {
+                          await connect({
                             connector,
                             chainId: activechain as any,
                           });
@@ -4775,15 +4789,15 @@ function App() {
                       {'Rabby Wallet'}
                     </span>
                   </a>}
-                  {config.connectors.find(connector => connector.name === "Backpack") ? <button
+                  {connectors.find(connector => connector.name === "Backpack") ? <button
                     className={`wallet-option`}
                     onClick={() => {
-                      let connector = config.connectors.find(connector => connector.name === "Backpack") || config.connectors[5]
+                      let connector = connectors.find(connector => connector.name === "Backpack") || connectors[5]
                       setSelectedConnector(connector);
                       setpopup(6);
                       setTimeout(async () => {
                         try {
-                          await connect(config, {
+                          await connect({
                             connector,
                             chainId: activechain as any,
                           });
@@ -4821,15 +4835,15 @@ function App() {
                       {'Backpack'}
                     </span>
                   </a>}
-                  {config.connectors.find(connector => connector.name === "Tomo") ? <button
+                  {connectors.find(connector => connector.name === "Tomo") ? <button
                     className={`wallet-option`}
                     onClick={() => {
-                      let connector = config.connectors.find(connector => connector.name === "Tomo") || config.connectors[5]
+                      let connector = connectors.find(connector => connector.name === "Tomo") || connectors[5]
                       setSelectedConnector(connector);
                       setpopup(6);
                       setTimeout(async () => {
                         try {
-                          await connect(config, {
+                          await connect({
                             connector,
                             chainId: activechain as any,
                           });
@@ -4867,15 +4881,15 @@ function App() {
                       {'Tomo Wallet'}
                     </span>
                   </a>}
-                  {config.connectors.find(connector => connector.name === "HaHa Wallet") ? <button
+                  {connectors.find(connector => connector.name === "HaHa Wallet") ? <button
                     className={`wallet-option`}
                     onClick={() => {
-                      let connector = config.connectors.find(connector => connector.name === "HaHa Wallet") || config.connectors[5]
+                      let connector = connectors.find(connector => connector.name === "HaHa Wallet") || connectors[5]
                       setSelectedConnector(connector);
                       setpopup(6);
                       setTimeout(async () => {
                         try {
-                          await connect(config, {
+                          await connect({
                             connector,
                             chainId: activechain as any,
                           });
@@ -4913,16 +4927,16 @@ function App() {
                       {'HaHa Wallet'}
                     </span>
                   </a>}
-                  {config.connectors.slice(0, 5).map((connector) => (
+                  {connectors.slice(0, 5).map((connector) => (
                     <button
                       key={connector.id}
-                      className={`wallet-option ${config.connectors.slice(5).includes(connector) ? 'installed' : ''}`}
+                      className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
                       onClick={() => {
                         setSelectedConnector(connector);
                         setpopup(6);
                         setTimeout(async () => {
                           try {
-                            await connect(config, {
+                            await connect({
                               connector,
                               chainId: activechain as any,
                             });
@@ -4981,7 +4995,7 @@ function App() {
                   onClick={(e) => {
                     e.stopPropagation();
                     navigator.clipboard.writeText(
-                      account.addresses?.[0] || '',
+                      address || '',
                     );
                     setShowHoverTooltip(false);
                     setCopyTooltipVisible(true);
@@ -4989,8 +5003,8 @@ function App() {
                       setCopyTooltipVisible(false);
                     }, 2000);
                   }}>
-                  {account.status === 'connected' &&
-                    account.addresses?.[0] && (
+                  {connected &&
+                    address && (
                       <>
                         <div
                           className="wallet-popup-address-container"
@@ -5002,7 +5016,7 @@ function App() {
                               src={walleticon}
                               className="port-popup-wallet-icon"
                             />
-                            {`${account.addresses?.[0].slice(0, 6)}...${account.addresses?.[0].slice(-4)}`}
+                            {`${address.slice(0, 6)}...${address.slice(-4)}`}
                           </span>
 
                           {copyTooltipVisible && (
@@ -5038,8 +5052,7 @@ function App() {
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
-                    disconnect(config, { connector: config.connectors[0] });
-                    disconnect(config, { connector: account.connector });
+                    logout()
                   }}
                 >
                   <svg
@@ -5097,7 +5110,7 @@ function App() {
                   </div>
                   <div className="portfolio-popup-graph">
                     <PortfolioPopupGraph
-                      address={account.addresses?.[0]}
+                      address={address ?? ''}
                       onPercentageChange={setPercentage}
                       colorValue={portfolioColorValue}
                       setColorValue={setPortfolioColorValue}
@@ -5886,7 +5899,7 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${
-            account.status === 'connected' && amountIn > tokenBalances[tokenIn]
+            connected && amountIn > tokenBalances[tokenIn]
               ? 'exceed-balance'
               : ''
           }`}
@@ -5900,7 +5913,7 @@ function App() {
             ) : (
               <input
                 className={`input ${
-                  account.status === 'connected' &&
+                  connected &&
                   amountIn > tokenBalances[tokenIn]
                     ? 'exceed-balance'
                     : ''
@@ -6008,7 +6021,7 @@ function App() {
             )}
             <button
               className={`button1 ${
-                account.status === 'connected' &&
+                connected &&
                 amountIn > tokenBalances[tokenIn]
                   ? 'exceed-balance'
                   : ''
@@ -6506,16 +6519,16 @@ function App() {
           </div>
         </div>
         <button
-          className={`swap-button ${isSigning ? 'signing' : ''}`}
+          className={`swap-button ${isSendingUserOperation ? 'signing' : ''}`}
           onClick={async () => {
             if (
-              account.status === 'connected' &&
-              account.chainId === activechain
+              connected &&
+              chain.id === activechain
             ) {
               setIsSigning(true);
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  const hash = await wrapeth(amountIn, weth);
+                  const hash = await wrapeth(sendUserOperation, amountIn, weth);
                   newTxPopup(
                     (
                       await waitForTransactionReceipt(config, {
@@ -6537,7 +6550,7 @@ function App() {
                     '',
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  const hash = await unwrapeth(amountIn, weth);
+                  const hash = await unwrapeth(sendUserOperation, amountIn, weth);
                   newTxPopup(
                     (
                       await waitForTransactionReceipt(config, {
@@ -6563,18 +6576,20 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapExactETHForTokens(
+                          sendUserOperation,
                           router,
                           amountIn,
                           (amountOutSwap * slippage + 5000n) / 10000n,
                           activeMarket.path[0] == tokenIn
                             ? activeMarket.path
                             : [...activeMarket.path].reverse(),
-                          account.addresses?.[0] as `0x${string}`,
+                          address as `0x${string}`,
                           BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                           usedRefAddress as `0x${string}`,
                         );
                       } else {
                         await _swap(
+                          sendUserOperation,
                           router,
                           amountIn,
                           activeMarket.path[0] == tokenIn
@@ -6596,6 +6611,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
+                          sendUserOperation,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -6628,13 +6644,14 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForETH(
+                            sendUserOperation,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
                             activeMarket.path[0] == tokenIn
                               ? activeMarket.path
                               : [...activeMarket.path].reverse(),
-                            account.addresses?.[0] as `0x${string}`,
+                            address as `0x${string}`,
                             BigInt(
                               Math.floor(new Date().getTime() / 1000) + 300,
                             ),
@@ -6642,6 +6659,7 @@ function App() {
                           );
                         } else {
                           await _swap(
+                            sendUserOperation,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6665,13 +6683,14 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForTokens(
+                            sendUserOperation,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
                             activeMarket.path[0] == tokenIn
                               ? activeMarket.path
                               : [...activeMarket.path].reverse(),
-                            account.addresses?.[0] as `0x${string}`,
+                            address as `0x${string}`,
                             BigInt(
                               Math.floor(new Date().getTime() / 1000) + 300,
                             ),
@@ -6679,6 +6698,7 @@ function App() {
                           );
                         } else {
                           await _swap(
+                            sendUserOperation,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6705,18 +6725,20 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapETHForExactTokens(
+                          sendUserOperation,
                           router,
                           amountOutSwap,
                           (amountIn * 10000n + slippage / 2n) / slippage,
                           activeMarket.path[0] == tokenIn
                             ? activeMarket.path
                             : [...activeMarket.path].reverse(),
-                          account.addresses?.[0] as `0x${string}`,
+                          address as `0x${string}`,
                           BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                           usedRefAddress as `0x${string}`,
                         );
                       } else {
                         await _swap(
+                          sendUserOperation,
                           router,
                           BigInt(
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -6740,6 +6762,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
+                          sendUserOperation,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -6772,13 +6795,14 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactETH(
+                            sendUserOperation,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
                             activeMarket.path[0] == tokenIn
                               ? activeMarket.path
                               : [...activeMarket.path].reverse(),
-                            account.addresses?.[0] as `0x${string}`,
+                            address as `0x${string}`,
                             BigInt(
                               Math.floor(new Date().getTime() / 1000) + 300,
                             ),
@@ -6786,6 +6810,7 @@ function App() {
                           );
                         } else {
                           await _swap(
+                            sendUserOperation,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6809,13 +6834,14 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactTokens(
+                            sendUserOperation,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
                             activeMarket.path[0] == tokenIn
                               ? activeMarket.path
                               : [...activeMarket.path].reverse(),
-                            account.addresses?.[0] as `0x${string}`,
+                            address as `0x${string}`,
                             BigInt(
                               Math.floor(new Date().getTime() / 1000) + 300,
                             ),
@@ -6823,6 +6849,7 @@ function App() {
                           );
                         } else {
                           await _swap(
+                            sendUserOperation,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6868,14 +6895,14 @@ function App() {
                 setTimeout(()=>refetch(), 500)
               }
             } else {
-              account.status != 'connected'
-                ? setpopup(4)
-                : switchChain(config, { chainId: activechain as any });
+              !connected
+                ? openAuthModal()
+                : setChain({chain: settings.chains[0]})
             }
           }}
           disabled={swapButtonDisabled || displayValuesLoading}
         >
-          {isSigning ? (
+          {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {t('signTransaction')}
@@ -7172,7 +7199,7 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${
-            account.status === 'connected' &&
+            connected &&
             ((amountIn > tokenBalances[tokenIn] &&
               !isLoading &&
               !stateIsLoading) ||
@@ -7189,7 +7216,7 @@ function App() {
           <div className="inputbutton1container">
             <input
               className={`input ${
-                account.status === 'connected' &&
+                connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
                   !stateIsLoading) ||
@@ -7362,7 +7389,7 @@ function App() {
             />
             <button
               className={`button1 ${
-                account.status === 'connected' &&
+                connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
                   !stateIsLoading) ||
@@ -7830,7 +7857,7 @@ function App() {
 
         <div
           className={`limitbg ${
-            account.status === 'connected' &&
+            connected &&
             !(
               amountIn > tokenBalances[tokenIn] &&
               !isLoading &&
@@ -7879,7 +7906,7 @@ function App() {
           <div className="limitpricecontainer">
             <input
               className={`limit-order ${
-                account.status === 'connected' &&
+                connected &&
                 !(
                   amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
@@ -8128,17 +8155,18 @@ function App() {
           </div>
         </div>
         <button
-          className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
+          className={`limit-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
           onClick={async () => {
             if (
-              account.status === 'connected' &&
-              account.chainId === activechain
+              connected &&
+              chain.id === activechain
             ) {
               setIsSigning(true);
               try {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
                     await limitOrder(
+                      sendUserOperation,
                       router,
                       amountIn,
                       eth,
@@ -8148,6 +8176,7 @@ function App() {
                     );
                   } else {
                     await _swap(
+                      sendUserOperation,
                       router,
                       amountIn,
                       eth,
@@ -8163,6 +8192,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
+                      sendUserOperation,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -8195,6 +8225,7 @@ function App() {
 
                   if (addliquidityonly) {
                     await limitOrder(
+                      sendUserOperation,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8204,6 +8235,7 @@ function App() {
                     );
                   } else {
                     await _swap(
+                      sendUserOperation,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8237,14 +8269,14 @@ function App() {
                 setTimeout(()=>refetch(), 500)
               }
             } else {
-              account.status != 'connected'
+              !connected
                 ? setpopup(4)
-                : switchChain(config, { chainId: activechain as any });
+                : setChain({chain: settings.chains[0]})
             }
           }}
           disabled={limitButtonDisabled}
         >
-          {isSigning ? (
+          {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {t('signTransaction')}
@@ -8411,7 +8443,7 @@ function App() {
       <div className="swapmodal">
         <div
           className={`sendbg ${
-            account.status === 'connected' && amountIn > tokenBalances[tokenIn]
+            connected && amountIn > tokenBalances[tokenIn]
               ? 'exceed-balance'
               : ''
           }`}
@@ -8431,7 +8463,7 @@ function App() {
           <div className="sendinputcontainer">
             <input
               className={`send-input ${
-                account.status === 'connected' &&
+                connected &&
                 amountIn > tokenBalances[tokenIn]
                   ? 'exceed-balance'
                   : ''
@@ -8875,16 +8907,17 @@ function App() {
           />
         </div>
         <button
-          className={`send-swap-button ${isSigning ? 'signing' : ''}`}
+          className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
           onClick={async () => {
             if (
-              account.status === 'connected' &&
-              account.chainId === activechain
+              connected &&
+              chain.id === activechain
             ) {
               setIsSigning(true);
               try {
                 if (tokenIn == eth) {
                   const hash = await sendeth(
+                    sendUserOperation,
                     recipient as `0x${string}`,
                     amountIn,
                   );
@@ -8907,6 +8940,7 @@ function App() {
                   );
                 } else {
                   const hash = await sendtokens(
+                    sendUserOperation,
                     tokenIn as `0x${string}`,
                     recipient as `0x${string}`,
                     amountIn,
@@ -8949,14 +8983,14 @@ function App() {
                 setTimeout(()=>refetch(), 500)
               }
             } else {
-              account.status != 'connected'
+              !connected
                 ? setpopup(4)
-                : switchChain(config, { chainId: activechain as any });
+                : setChain({chain: settings.chains[0]})
             }
           }}
           disabled={sendButtonDisabled}
         >
-          {isSigning ? (
+          {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {t('signTransaction')}
@@ -9056,7 +9090,7 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${
-            account.status === 'connected' &&
+            connected &&
             ((amountIn > tokenBalances[tokenIn] &&
               !isLoading &&
               !stateIsLoading) ||
@@ -9073,7 +9107,7 @@ function App() {
           <div className="inputbutton1container">
             <input
               className={`input ${
-                account.status === 'connected' &&
+                connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
                   !stateIsLoading) ||
@@ -9136,7 +9170,7 @@ function App() {
             />
             <button
               className={`button1 ${
-                account.status === 'connected' &&
+                connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
                   !stateIsLoading) ||
@@ -9409,7 +9443,7 @@ function App() {
       <div className="scale-start-end-container"> 
         <div
           className={`scalebgtop ${
-            account.status === 'connected' &&
+            connected &&
             !(
               amountIn > tokenBalances[tokenIn] &&
               !isLoading &&
@@ -9432,7 +9466,7 @@ function App() {
           <span className="scale-order-start-label">{t('start')}</span>
             <input
               className={`scale-input ${
-                account.status === 'connected' &&
+                connected &&
                 !(
                   amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
@@ -9472,7 +9506,7 @@ function App() {
         </div>
         <div
           className={`scalebgtop ${
-            account.status === 'connected' &&
+            connected &&
             !(
               amountIn > tokenBalances[tokenIn] &&
               !isLoading &&
@@ -9495,7 +9529,7 @@ function App() {
           <span className="scale-order-end-label">{t('end')}</span>
             <input
               className={`scale-input ${
-                account.status === 'connected' &&
+                connected &&
                 !(
                   amountIn > tokenBalances[tokenIn] &&
                   !isLoading &&
@@ -9712,11 +9746,11 @@ function App() {
           </div>
         </div>
         <button
-          className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
+          className={`limit-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
           onClick={async () => {
             if (
-              account.status === 'connected' &&
-              account.chainId === activechain
+              connected &&
+              chain.id === activechain
             ) {
               setIsSigning(true);
               try {
@@ -9731,11 +9765,12 @@ function App() {
                   price[0].push(order[0]);
                   param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
                   param2[0].push(
-                    tokenIn == eth ? router : account.addresses?.[0]
+                    tokenIn == eth ? router : address
                   );
                 });
                 if (tokenIn == eth) {
                   await multiBatchOrders(
+                    sendUserOperation,
                     router,
                     BigInt(amountIn),
                     [activeMarket.address],
@@ -9747,6 +9782,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
+                      sendUserOperation,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -9778,6 +9814,7 @@ function App() {
                   }
 
                   await multiBatchOrders(
+                    sendUserOperation,
                     router,
                     BigInt(0),
                     [activeMarket.address],
@@ -9808,14 +9845,14 @@ function App() {
                 setTimeout(()=>refetch(), 500)
               }
             } else {
-              account.status != 'connected'
+              !connected
                 ? setpopup(4)
-                : switchChain(config, { chainId: activechain as any });
+                : setChain({chain: settings.chains[0]})
             }
           }}
           disabled={scaleButtonDisabled}
         >
-          {isSigning ? (
+          {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {t('signTransaction')}
@@ -9917,7 +9954,7 @@ function App() {
                     .querySelector('.right-column')
                     ?.classList.remove('show');
                   document
-                    .querySelector('.mobile-switch')
+                    .querySelector('.trade-mobile-switch')
                     ?.classList.remove('open');
                   setTimeout(() => {
                     setShowTrade(false);
@@ -9925,12 +9962,12 @@ function App() {
                 } else {
                   setShowTrade(true);
                   document
-                    .querySelector('.mobile-switch')
+                    .querySelector('.trade-mobile-switch')
                     ?.classList.add('open');
                 }
               }}
             >
-              <img src={mobileswitch} className="mobile-switch" />
+              <img src={mobiletradeswap} className="trade-mobile-switch" />
             </button>
             <div className={`right-column ${showTrade ? 'show' : ''}`}>
               {activeTab == 'swap' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
@@ -9948,15 +9985,14 @@ function App() {
             settradesByMarket={settradesByMarket}
             setcanceledorders={setcanceledorders}
             setpopup={setpopup}
-            switchChain={switchChain}
+            setChain={setChain}
             account={{
-              status: account.status,
-              addresses: account.addresses ? [...account.addresses] : undefined,
-              chainId: account.chainId,
+              connected: connected,
+              address: address,
+              chainId: chain.id,
             }}
             activechain={activechain}
             tokenIn={tokenIn}
-            config={config}
             setShowTrade={setShowTrade}
             simpleView={simpleView}
             setSimpleView={setSimpleView}
@@ -9977,7 +10013,7 @@ function App() {
                 tokenList={Object.values(tokendict)}
                 markets={markets}
                 router={router}
-                address={account.addresses?.[0] ?? undefined}
+                address={address ?? undefined}
                 usedRefLink={usedRefLink}
                 setUsedRefAddress={setUsedRefAddress}
                 setUsedRefLink={setUsedRefLink}
@@ -9987,9 +10023,13 @@ function App() {
                 setRefLink={setRefLink}
                 showModal={showReferralsModal}
                 setShowModal={setShowReferralsModal}
-                switchChain={switchChain}
+                setChain={setChain}
                 setpopup={setpopup}
-                account={account}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: chain.id,
+                }}
                 refetch={refRefetch}
               />
             }
@@ -10005,7 +10045,7 @@ function App() {
                   canceledorders={canceledorders}
                   tokenList={memoizedTokenList}
                   router={router}
-                  address={account.addresses?.[0] ?? ''}
+                  address={address ?? ''}
                   isBlurred={isBlurred}
                   setIsBlurred={setIsBlurred}
                   setTokenIn={setTokenIn}
@@ -10035,18 +10075,16 @@ function App() {
                   setFilter={setFilter}
                   onlyThisMarket={onlyThisMarket}
                   setOnlyThisMarket={setOnlyThisMarket}
-                  account={account}
+                  account={{
+                    connected: connected,
+                    address: address,
+                    chainId: chain.id,
+                    logout: logout,
+                  }}
                   refetch={refetch}
+                  sendUserOperation={sendUserOperation}
                 />
               </>
-            }
-          />
-          <Route
-            path="/earn"
-            element={
-              <EarnVaults
-                tokenList={memoizedTokenList}
-              />
             }
           />
           <Route
@@ -10117,8 +10155,8 @@ function App() {
                                     symbolOut,
                                   }}
                                   userWalletAddress={
-                                    account.status === 'connected'
-                                      ? account.addresses?.[0]
+                                    connected
+                                      ? address
                                       : undefined
                                   }
                                   mids={mids}
@@ -10161,8 +10199,8 @@ function App() {
                               tokendict={tokendict}
                               universalTrades={tradesByMarket}
                               userWalletAddress={
-                                account.status === 'connected'
-                                  ? account.addresses?.[0]
+                                connected
+                                  ? address
                                   : undefined
                               }
                               mids={mids}
@@ -10228,7 +10266,7 @@ function App() {
                             tradehistory={tradehistory}
                             canceledorders={canceledorders}
                             router={router}
-                            address={account.addresses?.[0]}
+                            address={address}
                             trades={tradesByMarket}
                             currentMarket={
                               activeMarketKey ==
@@ -10255,6 +10293,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10335,8 +10374,8 @@ function App() {
                                     symbolOut,
                                   }}
                                   userWalletAddress={
-                                    account.status === 'connected'
-                                      ? account.addresses?.[0]
+                                    connected
+                                      ? address
                                       : undefined
                                   }
                                   mids={mids}
@@ -10379,8 +10418,8 @@ function App() {
                               tokendict={tokendict}
                               universalTrades={tradesByMarket}
                               userWalletAddress={
-                                account.status === 'connected'
-                                  ? account.addresses?.[0]
+                                connected
+                                  ? address
                                   : undefined
                               }
                               mids={mids}
@@ -10445,7 +10484,7 @@ function App() {
                             tradehistory={tradehistory}
                             canceledorders={canceledorders}
                             router={router}
-                            address={account.addresses?.[0]}
+                            address={address}
                             trades={tradesByMarket}
                             currentMarket={
                               activeMarketKey ==
@@ -10472,6 +10511,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10552,8 +10592,8 @@ function App() {
                                     symbolOut,
                                   }}
                                   userWalletAddress={
-                                    account.status === 'connected'
-                                      ? account.addresses?.[0]
+                                    connected
+                                      ? address
                                       : undefined
                                   }
                                   mids={mids}
@@ -10596,8 +10636,8 @@ function App() {
                               tokendict={tokendict}
                               universalTrades={tradesByMarket}
                               userWalletAddress={
-                                account.status === 'connected'
-                                  ? account.addresses?.[0]
+                                connected
+                                  ? address
                                   : undefined
                               }
                               mids={mids}
@@ -10663,7 +10703,7 @@ function App() {
                             tradehistory={tradehistory}
                             canceledorders={canceledorders}
                             router={router}
-                            address={account.addresses?.[0]}
+                            address={address}
                             trades={tradesByMarket}
                             currentMarket={
                               activeMarketKey ==
@@ -10690,6 +10730,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10770,8 +10811,8 @@ function App() {
                                     symbolOut,
                                   }}
                                   userWalletAddress={
-                                    account.status === 'connected'
-                                      ? account.addresses?.[0]
+                                    connected
+                                      ? address
                                       : undefined
                                   }
                                   mids={mids}
@@ -10814,8 +10855,8 @@ function App() {
                               tokendict={tokendict}
                               universalTrades={tradesByMarket}
                               userWalletAddress={
-                                account.status === 'connected'
-                                  ? account.addresses?.[0]
+                                connected
+                                  ? address
                                   : undefined
                               }
                               mids={mids}
@@ -10880,7 +10921,7 @@ function App() {
                             tradehistory={tradehistory}
                             canceledorders={canceledorders}
                             router={router}
-                            address={account.addresses?.[0]}
+                            address={address}
                             trades={tradesByMarket}
                             currentMarket={
                               activeMarketKey ==
@@ -10907,6 +10948,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>

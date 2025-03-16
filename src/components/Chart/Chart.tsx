@@ -8,7 +8,7 @@ import ChartHeader from './ChartHeader/ChartHeader';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 
-import { settings } from '../../config';
+import { settings } from '../../settings.ts';
 import { calculatePriceMetrics, getBinancePair } from './utils';
 import {
   DataPoint,
@@ -379,9 +379,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         volume={volume}
         trades={trades}
         orderdata={orderdata}
-        markets={markets}
         tokendict={tokendict}
-        mids={mids}
         onMarketSelect={onMarketSelect}
         universalTrades={universalTrades}
         setpopup={setpopup}

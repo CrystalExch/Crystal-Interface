@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 
 import AssetRow from '../AssetRow/AssetRow.tsx';
 
-import { settings } from '../../../config.ts';
+import { settings } from '../../../settings.ts';
 import customRound from '../../../utils/customRound.tsx';
 import { fetchLatestPrice } from '../../../utils/getPrice.ts';
 import normalizeTicker from '../../../utils/normalizeTicker.ts';

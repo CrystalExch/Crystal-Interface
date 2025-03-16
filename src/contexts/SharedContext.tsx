@@ -7,7 +7,7 @@ import React, {
 } from 'react';
 
 import { getChainId } from '@wagmi/core';
-import { settings } from '../config';
+import { settings } from '../settings.ts';
 import { config } from '../wagmi';
 
 type sharedContextType = {

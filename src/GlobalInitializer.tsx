@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 
-import { settings } from './config';
+import { settings } from './settings.ts';
 import { useLanguage } from './contexts/LanguageContext';
 import { useSharedContext } from './contexts/SharedContext';
 

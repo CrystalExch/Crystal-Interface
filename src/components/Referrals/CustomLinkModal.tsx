@@ -1,8 +1,6 @@
 import { useState } from 'react';
-import { useAccount } from 'wagmi';
 import closebutton from '../../assets/close_button.png';
-import { settings } from '../../config';
-import { config } from '../../wagmi';
+import { settings } from '../../settings.ts';
 import './CustomLinkModal.css';
 
 const CustomLinkModal = ({
@@ -13,9 +11,10 @@ const CustomLinkModal = ({
   onCreateRef,
   refLink,
   setpopup,
-  switchChain,
+  setChain,
   error,
   setError,
+  account,
 }: {
   isOpen: boolean;
   onClose: () => void;
@@ -24,18 +23,17 @@ const CustomLinkModal = ({
   onCreateRef: () => Promise<boolean>;
   refLink: any;
   setpopup: any;
-  switchChain: any;
+  setChain: any;
   error: any;
   setError: any;
+  account: any;
 }) => {
   const [isSigning, setIsSigning] = useState(false);
-
-  const account = useAccount();
 
   if (!isOpen) return null;
 
   const handleCreate = async () => {
-    if (account.status === 'connected' && account.chainId === activechain) {
+    if (account.connected && account.chainId === activechain) {
       if (!isValidInput(refLinkString)) return;
       setIsSigning(true);
       const isSuccess = await onCreateRef();
@@ -44,9 +42,9 @@ const CustomLinkModal = ({
         onClose();
       }
     } else {
-      account.status != 'connected'
+      !account.connected
         ? setpopup(4)
-        : switchChain(config, { chainId: activechain as any });
+        : setChain({chain: settings.chains[0]});
     }
   };
 
@@ -108,10 +106,10 @@ const CustomLinkModal = ({
           onClick={handleCreate}
           disabled={
             isSigning ||
-            (account.status === 'connected' &&
+            (account.connected &&
               account.chainId == activechain &&
               !!error) ||
-            (account.status === 'connected' &&
+            (account.connected &&
               account.chainId !== activechain) ||
             !refLinkString
           }
@@ -121,10 +119,10 @@ const CustomLinkModal = ({
               <div className="loading-spinner"></div>
               {t('signTxn')}
             </>
-          ) : account.status === 'connected' &&
+          ) : account.connected &&
             account.chainId === activechain ? (
             <>{refLink ? t('customize') : t('create')}</>
-          ) : account.status === 'connected' ? (
+          ) : account.connected ? (
             `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
           ) : (
             t('connectWallet')

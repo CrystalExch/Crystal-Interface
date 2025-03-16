@@ -6,7 +6,7 @@ import {
   safe,
   walletConnect,
 } from 'wagmi/connectors';
-import { settings } from './config';
+import { settings } from './settings.ts';
 
 export const config = createConfig({
   chains: settings.chains,

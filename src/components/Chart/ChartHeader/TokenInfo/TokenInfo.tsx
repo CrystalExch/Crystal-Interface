@@ -3,7 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
-import MiniChart from './MiniChart/MiniChart'; 
+import MiniChart from './MiniChart/MiniChart';
 
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
@@ -14,9 +14,9 @@ import {
   formatCommas,
   formatSubscript,
 } from '../../../../utils/numberDisplayFormat';
-import { calculate24hVolume, computePrice } from '../../utils';
+import { DataPoint } from '../../utils/chartDataGenerator.ts';
 
-import { settings } from '../../../../config';
+import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
 
@@ -33,7 +33,6 @@ interface TokenInfoProps {
   activeMarket: any;
   onMarketSelect: any;
   tokendict: any;
-  mids: any;
   universalTrades: UniversalTrades;
   setpopup: (value: number) => void;
 }
@@ -45,7 +44,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   activeMarket,
   onMarketSelect,
   tokendict,
-  mids,
   universalTrades,
   setpopup,
 }) => {
@@ -101,6 +99,46 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   };
 
+  async function fetchLatestHourlyCandles(): Promise<any> {
+    const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+
+    const query = `
+      query {
+        series_collection(
+          where: {
+            id_gte: "series-1h-",
+            id_lte: "series-1h-ffffffffffffffffffffffffffffffffffffffff"
+          }
+        ) {
+          id
+          klines(first: 24, orderBy: time, orderDirection: desc) {
+            id
+            time
+            open
+            high
+            low
+            close
+            volume
+          }
+        }
+      }
+    `;
+
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query })
+    });
+
+    const json = await response.json();
+
+    json.data.series_collection.forEach((series: any) => {
+      series.klines.reverse();
+    });
+
+    return json.data.series_collection;
+  }
+
   useEffect(() => {
     if (isDropdownVisible && shouldFocus) {
       const focusInput = () => {
@@ -150,87 +188,75 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   useEffect(() => {
     const processMarkets = async () => {
-      const processedMarkets = await Promise.all(
-        Object.entries(markets || {}).map(async ([marketKey, market]) => {
-          const marketTrades = universalTrades[marketKey] || [];
-          const marketVolume = calculate24hVolume(marketTrades, market);
+      try {
+        const data = await fetchLatestHourlyCandles();
 
-          const now = Date.now();
-          const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        const processedMarkets = data
+          .map((series: any) => {
+            const idParts = series.id.split("-");
+            const address = idParts[2];
 
-          const cutoffIndex = marketTrades.findIndex(
-            (trade) => trade[6] * 1000 > oneDayAgo,
-          );
+            const match = Object.values(markets).find(
+              (m) => m.address.toLowerCase() === address.toLowerCase()
+            );
 
-          let recentTrades =
-            cutoffIndex === -1
-              ? [...marketTrades]
-              : marketTrades.slice(
-                  cutoffIndex > 0 ? cutoffIndex - 1 : cutoffIndex,
-                );
+            if (!match) return;
 
-          if (!recentTrades.some((trade) => trade[6] * 1000 > oneDayAgo)) {
-            recentTrades = [];
-          }
+            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 0);
+            const current = series.klines[series.klines.length - 1].close;
+            const first = series.klines[0].open;
+            const percentageChange = (current - first) / first * 100; 
 
-          const recentPrices = recentTrades.map((trade) =>
-            computePrice(
-              trade,
-              market,
-              Math.floor(Math.log10(Number(market.priceFactor))),
-            ),
-          );
-
-          let percentageChange = 0;
-          if (recentPrices.length > 0) {
-            const lastPrice = recentPrices[recentPrices.length - 1];
-            const firstPrice = recentPrices[0];
-            percentageChange = ((lastPrice - firstPrice) / firstPrice) * 100;
-          }
-
-          const currentMid = mids[marketKey]?.[0];
-          let currentPrice = '0';
-          if (
-            universalTrades[marketKey] &&
-            universalTrades[marketKey].length > 0 &&
-            market.priceFactor
-          ) {
-            const raw =
-              Number(
-                universalTrades[marketKey][
-                  universalTrades[marketKey].length - 1
-                ][3],
-              ) / Number(market.priceFactor);
-            currentPrice = raw.toFixed(Math.log10(Number(market.priceFactor)));
-          } else if (currentMid && market.priceFactor) {
-            const raw = Number(currentMid) / Number(market.priceFactor);
-            currentPrice = raw.toFixed(Math.log10(Number(market.priceFactor)));
-          }
-
-          return {
-            ...market,
-            pair: `${market.baseAsset}/${market.quoteAsset}`,
-            currentPrice,
-            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
-            volume: marketVolume,
-            marketKey,
-          };
-        }),
-      );
-      setMarketsData(processedMarkets);
+            return {
+              ...match,
+              pair: `${match.baseAsset}/${match.quoteAsset}`,
+              currentPrice: formatSubscript((current / Number(match.priceFactor)).toFixed(Math.log10(Number(match.priceFactor)))),
+              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
+              volume: formatCommas(marketVolume.toFixed(2)),
+              marketKey: `${match.baseAsset}${match.quoteAsset}`,
+              series: series.klines,
+              firstPrice: first,
+            };
+          });
+        
+        setMarketsData(processedMarkets);
+      } catch (error) {
+        console.error("error fetching candles:", error);
+      }
     };
 
     processMarkets();
-  }, [universalTrades, mids]);
+  }, [markets]);
+
+  useEffect(() => { 
+    setMarketsData((prevMarkets) =>
+      prevMarkets.map((market) => {
+        const trades = universalTrades[market.marketKey] || [];
+
+        if (trades.length === 0) return market;
+  
+        const latestTrade = trades[trades.length - 1];
+        const currentPriceRaw = Number(latestTrade[3]);
+        const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
+          
+        return {
+          ...market,
+          currentPrice: formatSubscript(
+            (currentPriceRaw / Number(market.priceFactor)).toFixed(
+              Math.log10(Number(market.priceFactor))
+            )
+          ),
+          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(
+            2
+          )}%`,
+        };
+      })
+    );
+  }, [universalTrades]);  
 
   const handleSort = (field: 'volume' | 'price' | 'change' | 'favorites') => {
     if (sortField === field) {
-      if (sortDirection === 'asc') {
-        setSortDirection('desc');
-      } else if (sortDirection === 'desc') {
-        setSortField(null);
-        setSortDirection(undefined);
-      }
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
       setSortDirection('asc');
@@ -248,39 +274,33 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const sortedMarkets = [...filteredMarkets].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
-
-    if (sortField === 'favorites') {
-      const aIsFavorite = favorites.includes(a.baseAddress?.toLowerCase());
-      const bIsFavorite = favorites.includes(b.baseAddress?.toLowerCase());
-      return sortDirection === 'asc'
-        ? aIsFavorite === bIsFavorite
-          ? 0
-          : aIsFavorite
-            ? -1
-            : 1
-        : aIsFavorite === bIsFavorite
-          ? 0
-          : aIsFavorite
-            ? 1
-            : -1;
+    
+    let aValue: number = 0;
+    let bValue: number = 0;
+    
+    switch (sortField) {
+      case 'volume':
+        aValue = parseFloat(a.volume.toString().replace(/,/g, ''));
+        bValue = parseFloat(b.volume.toString().replace(/,/g, ''));
+        break;
+      case 'price':
+        aValue = parseFloat(a.currentPrice.toString().replace(/,/g, ''));
+        bValue = parseFloat(b.currentPrice.toString().replace(/,/g, ''));
+        break;
+      case 'change':
+        aValue = parseFloat(a.priceChange.replace(/[+%]/g, ''));
+        bValue = parseFloat(b.priceChange.replace(/[+%]/g, ''));
+        break;
+      case 'favorites':
+        aValue = favorites.includes(a.baseAddress.toLowerCase()) ? 1 : 0;
+        bValue = favorites.includes(b.baseAddress.toLowerCase()) ? 1 : 0;
+        break;
+      default:
+        return 0;
     }
-
-    const aValue =
-      sortField === 'volume'
-        ? parseFloat(a.volume)
-        : sortField === 'change' ? parseFloat(a.priceChange) : parseFloat(a.currentPrice);
-    const bValue =
-      sortField === 'volume'
-        ? parseFloat(b.volume)
-        : sortField === 'change' ? parseFloat(b.priceChange) : parseFloat(b.currentPrice);
-
+    
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
-  
-  const getMarketTrades = (market: { marketKey: string | number; }) => {
-    if (!market || !market.marketKey) return [];
-    return universalTrades[market.marketKey] || [];
-  };
 
   return (
     <div
@@ -418,7 +438,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 className="markets-dropdown-chart-container"
                 onClick={() => handleSort('change')}
               >
-                {t('last') + ' ' +  t('day')}
+                {t('day')}
                 <SortArrow
                   sortDirection={
                     sortField === 'change' ? sortDirection : undefined
@@ -449,9 +469,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               {sortedMarkets.length > 0 ? (
                 sortedMarkets.map((market) => (
                   <div
-                  key={market.pair}
-                  className="market-item-container"
-                >
+                    key={market.pair}
+                    className="market-item-container"
+                  >
                     <div
                       className="market-item"
                       onClick={() => {
@@ -499,11 +519,12 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                         </div>
                       </div>
                       <div className="minichart-section">
-                        <MiniChart 
-                            market={market}
-                            trades={getMarketTrades(market)}
-                            isVisible={true}
-                          />
+                        <MiniChart
+                          market={market}
+                          series={market.series}
+                          priceChange={market.priceChange}
+                          isVisible={true}
+                        />
                       </div>
                       <div className="market-price-section">
                         <div className="market-price">

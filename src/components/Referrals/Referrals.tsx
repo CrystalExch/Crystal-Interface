@@ -9,7 +9,7 @@ import FeatureModal from './FeatureModal';
 import ReferralStatsBar from './ReferralStatsBar';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { settings } from '../../config';
+import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
 import ReferralBackground from '../../assets/referral_background.png';
@@ -31,7 +31,7 @@ interface ReferralProps {
   setRefLink: any;
   showModal: boolean;
   setShowModal: any;
-  switchChain: any;
+  setChain: any;
   setpopup: any;
   account: any;
   refetch: any;
@@ -51,7 +51,7 @@ const Referrals: React.FC<ReferralProps> = ({
   setRefLink,
   showModal,
   setShowModal,
-  switchChain,
+  setChain,
   setpopup,
   account,
   refetch,
@@ -149,7 +149,7 @@ const Referrals: React.FC<ReferralProps> = ({
   };
 
   const handleClaimFees = async () => {
-    if (account.status === 'connected' && account.chainId === activechain) {
+    if (account.connected && account.chainId === activechain) {
       try {
         setIsSigning(true);
         await writeContract(config, {
@@ -168,9 +168,9 @@ const Referrals: React.FC<ReferralProps> = ({
         setTimeout(()=>refetch(), 500)
       }
     } else {
-      account.status !== 'connected'
+      !account.connected
         ? setpopup(4)
-        : switchChain(config, { chainId: activechain });
+        : setChain({chain: settings.chains[0]});
     }
   };
 
@@ -355,7 +355,7 @@ const Referrals: React.FC<ReferralProps> = ({
               onClick={handleClaimFees}
               disabled={isSigning ||
                 totalClaimableFees === 0 ||
-                (account.status === 'connected' &&
+                (account.connected &&
                   account.chainId !== activechain)
               }
             >
@@ -364,11 +364,11 @@ const Referrals: React.FC<ReferralProps> = ({
               <div className="loading-spinner"></div>
               {t('signTxn')}
             </>
-          ) : account.status === 'connected' && account.chainId === activechain
+          ) : account.connected && account.chainId === activechain
                 ? totalClaimableFees === 0
                   ? t('nothingtoclaim')
                   : t('claimfees')
-                : account.status === 'connected'
+                : account.connected
                   ? `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                   : t('connectWallet')}
             </button>
@@ -383,9 +383,10 @@ const Referrals: React.FC<ReferralProps> = ({
           onCreateRef={handleCreateRef}
           refLink={refLink}
           setpopup={setpopup}
-          switchChain={switchChain}
+          setChain={setChain}
           setError={setError}
           error={error}
+          account={account}
         />
         {selectedFeatureIndex !== null && (
           <FeatureModal

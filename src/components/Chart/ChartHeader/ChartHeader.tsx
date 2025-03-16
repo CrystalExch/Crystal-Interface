@@ -4,7 +4,6 @@ import AdditionalMetrics from './AdditionalMetrics/AdditionalMetrics';
 import TokenInfo from './TokenInfo/TokenInfo.tsx';
 
 import { formatCommas } from '../../../utils/numberDisplayFormat';
-import { calculate24hVolume } from '../utils';
 
 import './ChartHeader.css';
 
@@ -32,9 +31,7 @@ interface ChartHeaderProps {
   volume: string;
   trades: any[];
   orderdata: any;
-  markets: any;
   tokendict: any;
-  mids: any;
   onMarketSelect: any;
   universalTrades: any[];
   setpopup: (value: number) => void;
@@ -52,9 +49,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   volume,
   trades,
   orderdata,
-  markets,
   tokendict,
-  mids,
   onMarketSelect,
   universalTrades,
   setpopup,
@@ -140,7 +135,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         activeMarket={activeMarket}
         onMarketSelect={onMarketSelect}
         tokendict={tokendict}
-        mids={mids}
         universalTrades={universalTrades as unknown as UniversalTrades}
         setpopup={setpopup}
       />

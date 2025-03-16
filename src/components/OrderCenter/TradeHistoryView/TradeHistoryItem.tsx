@@ -3,7 +3,7 @@ import React from 'react';
 import CopyButton from '../../CopyButton/CopyButton';
 import ViewButton from '../ExplorerViewButton/ExplorerViewButton';
 
-import { settings } from '../../../config';
+import { settings } from '../../../settings.ts';
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
 import {
