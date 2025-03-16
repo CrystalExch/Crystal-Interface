@@ -57,10 +57,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const searchInputRef = useRef<HTMLInputElement>(null);
   const [sortField, setSortField] = useState<
     'volume' | 'price' | 'change' | 'favorites' | null
-  >(null);
+  >('volume');
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
-  >(undefined);
+  >('desc');
 
   const { favorites, toggleFavorite, activechain } = useSharedContext();
 
@@ -202,7 +202,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
             if (!match) return;
 
-            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 0);
+            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 2);
             const current = series.klines[series.klines.length - 1].close;
             const first = series.klines[0].open;
             const percentageChange = (current - first) / first * 100; 
@@ -238,9 +238,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         const latestTrade = trades[trades.length - 1];
         const currentPriceRaw = Number(latestTrade[3]);
         const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
+        const tradeVolume = (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) / 10 ** Number(market.quoteDecimals);
           
         return {
           ...market,
+          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) +  tradeVolume).toFixed(2)),
           currentPrice: formatSubscript(
             (currentPriceRaw / Number(market.priceFactor)).toFixed(
               Math.log10(Number(market.priceFactor))
@@ -426,7 +428,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 {t('market')} / {t('volume')}
                 <SortArrow
                   sortDirection={
-                    sortField === 'volume' ? sortDirection : undefined
+                    sortField === 'volume' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
                   }
                   onClick={(e) => {
                     e.stopPropagation();
@@ -441,7 +443,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 {t('day')}
                 <SortArrow
                   sortDirection={
-                    sortField === 'change' ? sortDirection : undefined
+                    sortField === 'change' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
                   }
                   onClick={(e) => {
                     e.stopPropagation();
@@ -456,7 +458,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 {t('price')}
                 <SortArrow
                   sortDirection={
-                    sortField === 'price' ? sortDirection : undefined
+                    sortField === 'price' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
                   }
                   onClick={(e) => {
                     e.stopPropagation();

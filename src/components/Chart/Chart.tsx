@@ -357,13 +357,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     }
 
     updateChartData(selectedInterval, trades, activeMarket.baseAsset);
-
-    const intervalId = setInterval(() => {
-      updateChartData(selectedInterval, trades, activeMarket.baseAsset);
-    }, 1000);
-
-    return () => clearInterval(intervalId);
-  }, [selectedInterval, trades, activeMarket.baseAsset]);
+  }, [selectedInterval, activeMarket.baseAsset]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>

@@ -2647,7 +2647,7 @@ function App() {
   
     (async () => {
       try {
-        const endpoint = "https://api.studio.thegraph.com/query/104695/crystal/v0.3.1";
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
   
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
@@ -2771,40 +2771,114 @@ function App() {
         });
         const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
         let allLogs: any[] = [];
-
+        
         const query = `
           query {
-            orderFilledBatches(first: 40, orderDirection: desc, orderBy: id) {
+            orders1: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x3e186070cb7a1b2c498cd7347735859bc5ae278d" }
+            ) {
               id
-              total
-              orders(first: 1000) {
-                caller
-                amountIn
-                amountOut
-                buySell
-                price
-                timeStamp
-                transactionHash
-                blockNumber
-                contractAddress
-              }
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders2: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x3514e481e658533ee4d02a7de53c19a803f1783f" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders3: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x35e79dac2ef49abd319f50d028f99e7d0f1a3559" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders4: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x12b6179c20e9bac7398ab9d38be8997d1048d3c3" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders5: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x20db6a0db7b47539e513ce29ac4018fe504fbb2a" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
             }
           }
         `;
 
         const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
         });
+        
+        const json = await response.json();
+        
+        const orders =
+          json.data.orders1.concat(
+            json.data.orders2,
+            json.data.orders3,
+            json.data.orders4,
+            json.data.orders5
+          );
 
-        const result = await response.json();
-
-        const batches = result.data?.orderFilledBatches || [];
-
-        for (let batch of batches) {
-          allLogs = allLogs.concat(batch.orders);
-        }
+        allLogs = allLogs.concat(orders);
 
         if (Array.isArray(allLogs)) {
           for (const event of allLogs) {
