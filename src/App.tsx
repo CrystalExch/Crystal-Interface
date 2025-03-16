@@ -3287,6 +3287,7 @@ function App() {
       } else if (path == 'swap') {
         setCurrentProText(t('pro'));
       } else if (path == 'scale') {
+        setswitched(false);
         if (multihop || isWrap) {
           let token;
           for (const market in markets) {
@@ -10018,7 +10019,6 @@ function App() {
                     param2,
                   );
                 }
-                setTimeout(()=>refetch(), 500)
                 setInputString('');
                 setamountIn(BigInt(0));
                 setSliderPercent(0);
@@ -10033,6 +10033,14 @@ function App() {
                 setScaleOutputString('');
                 setScaleButtonDisabled(true);
                 setScaleButton(0);
+                setScaleStart(BigInt(0))
+                setScaleEnd(BigInt(0))
+                setScaleStartString('')
+                setScaleEndString('')
+                setScaleSkew(1)
+                setScaleSkewString('1.00')
+                setScaleOrders(BigInt(0))
+                setScaleOrdersString('')
               } catch (error) {
               } finally {
                 setIsSigning(false);
