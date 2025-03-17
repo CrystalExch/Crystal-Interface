@@ -2637,7 +2637,7 @@ function App() {
   
         const query = `
           query fetchData {
-            orderFilledBatches(first: 300, orderDirection: desc, orderBy: id) {
+            orderFilledBatches(first: 200, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000, where: {caller: "${address}"}) {
@@ -2652,7 +2652,7 @@ function App() {
                 contractAddress
               }
             }
-            orderBatches(first: 300, orderDirection: desc, orderBy: id) {
+            orderBatches(first: 200, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000, where: {caller: "${address}"}) {
@@ -2707,10 +2707,9 @@ function App() {
           for (const order of orders) { 
             const marketKey = addresstoMarket[order.contractAddress];
             if (!marketKey) continue;
-  
             const row = [
-              order.price,
-              parseInt(order.id, 10) || 0,
+              parseInt(order.id.split('-')[0], 10),
+              parseInt(order.id.split('-')[1], 10),
               Number(order.originalSizeBase.toString()),
               order.buySell,
               marketKey,
