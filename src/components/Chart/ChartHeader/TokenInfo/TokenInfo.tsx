@@ -440,7 +440,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 className="markets-dropdown-chart-container"
                 onClick={() => handleSort('change')}
               >
-                {t('day')}
+                {t('last')} {t('day')}
                 <SortArrow
                   sortDirection={
                     sortField === 'change' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined

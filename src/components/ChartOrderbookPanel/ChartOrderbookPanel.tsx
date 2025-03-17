@@ -10,7 +10,6 @@ interface ChartOrderbookPanelProps {
   tokendict: Record<string, any>;
   universalTrades: any[];
   userWalletAddress?: string | null;
-  mids: any;
   layoutSettings: string;
   orderbookPosition: string;
   trades: any[];
@@ -39,7 +38,6 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   tokendict,
   universalTrades,
   userWalletAddress,
-  mids,
   layoutSettings,
   orderbookPosition,
   trades,
@@ -170,7 +168,6 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
             activeMarket={activeMarket}
             orderdata={orderdata}
             userWalletAddress={userWalletAddress}
-            mids={mids}
             setpopup={setpopup}
             tradesloading={tradesloading}
           />

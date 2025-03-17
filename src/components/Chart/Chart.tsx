@@ -25,7 +25,6 @@ interface ChartComponentProps {
   activeMarket: any;
   orderdata: any;
   userWalletAddress?: string | null | undefined;
-  mids: any;
   setpopup: (value: number) => void;
   tradesloading: boolean;
 }
@@ -36,7 +35,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   universalTrades,
   activeMarket,
   orderdata,
-  mids,
   onMarketSelect,
   setpopup,
   tradesloading,
@@ -445,7 +443,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       return [updatedBars, existingIntervalLabel];
     });
   }, [trades]);
-  
 
   return (
     <div className="chartwrapper" ref={chartRef}>
@@ -459,7 +456,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         high24h={high24h}
         low24h={low24h}
         volume={volume}
-        trades={trades}
         orderdata={orderdata}
         tokendict={tokendict}
         onMarketSelect={onMarketSelect}

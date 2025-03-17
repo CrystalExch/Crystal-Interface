@@ -3892,7 +3892,6 @@ body:has(.popup-blur) {
   -webkit-overflow-scrolling: none;
 }
 
-
 .tokenselectbg,
 .sendselectbg,
 .connect-wallet-background,
@@ -3902,11 +3901,19 @@ body:has(.popup-blur) {
 .connecting-popup {
   position: fixed !important;
   max-height: 90vh;
-  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   transform: translate(-50%, -50%);
   z-index: 1000;
+}
+
+.tokenselectbg,
+.sendselectbg,
+.connect-wallet-background,
+.search-markets-dropdown-popup,
+.send-popup-container,
+.connecting-popup {
+  overflow-y: auto;
 }
 
 .right-column.show {

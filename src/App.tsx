@@ -5710,12 +5710,12 @@ function App() {
                       </div>
                     </div>
                     <div className="search-market-chart-section">
-                        <MiniChart 
-                            market={market}
-                            trades={tradesByMarket[market.baseAsset+market.quoteAsset]}
-                            isVisible={true}
-                          />
-                      </div>
+                      <MiniChart 
+                        market={market}
+                        trades={tradesByMarket[market.baseAsset+market.quoteAsset]}
+                        isVisible={true}
+                      />
+                    </div>
                     <div className="search-market-price-section">
                       <div className="search-market-price">
                         {formatSubscript(market.currentPrice)}
@@ -10225,7 +10225,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10269,7 +10268,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -10444,7 +10442,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10488,7 +10485,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -10662,7 +10658,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10706,7 +10701,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -10881,7 +10875,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10925,7 +10918,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}

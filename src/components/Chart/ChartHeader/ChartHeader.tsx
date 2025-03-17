@@ -30,7 +30,6 @@ interface ChartHeaderProps {
   high24h: string;
   low24h: string;
   volume: string;
-  trades: any[];
   orderdata: any;
   tokendict: any;
   onMarketSelect: any;
@@ -48,7 +47,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   high24h,
   low24h,
   volume,
-  trades,
   orderdata,
   tokendict,
   onMarketSelect,

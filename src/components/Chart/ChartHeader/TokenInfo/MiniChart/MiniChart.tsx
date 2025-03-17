@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
+
 import { ComposedChart, Line, Area, ResponsiveContainer, YAxis } from 'recharts';
+
 import './MiniChart.css';
 
 interface MiniChartProps {
