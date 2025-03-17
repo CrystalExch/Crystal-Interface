@@ -2637,10 +2637,10 @@ function App() {
   
         const query = `
           query fetchData {
-            orderFilledBatches(first: 1000, orderDirection: desc, orderBy: id) {
+            orderFilledBatches(first: 300, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000, where: {caller: "${user?.address}"}) {
+              orders(first: 1000, where: {caller: "${address}"}) {
                 caller
                 amountIn
                 amountOut
@@ -2652,10 +2652,10 @@ function App() {
                 contractAddress
               }
             }
-            orderBatches(first: 1000, orderDirection: desc, orderBy: id) {
+            orderBatches(first: 300, orderDirection: desc, orderBy: id) {
               id
               total
-              orders(first: 1000, where: {caller: "${user?.address}"}) {
+              orders(first: 1000, where: {caller: "${address}"}) {
                 id
                 caller
                 originalSizeBase
@@ -2739,7 +2739,7 @@ function App() {
         setaddressinfoloading(false);
       }
     })();
-  }, [user?.address, activechain]);
+  }, [address, activechain]);
 
   // initial trade fetching
   useEffect(() => {
