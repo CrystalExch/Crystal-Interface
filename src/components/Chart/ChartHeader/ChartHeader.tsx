@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import AdditionalMetrics from './AdditionalMetrics/AdditionalMetrics';
 import TokenInfo from './TokenInfo/TokenInfo.tsx';
@@ -12,6 +12,7 @@ interface UniversalTrades {
     [number, number, number, number, string, string, number]
   >;
 }
+
 interface ChartHeaderProps {
   in_icon: string;
   out_icon: string;
@@ -56,6 +57,87 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
+  const [isLoading, setIsLoading] = useState(false);
+  const [prevMarketId, setPrevMarketId] = useState(activeMarket?.id || '');
+  
+  const prevMetricsRef = useRef({
+    price,
+    priceChangeAmount,
+    priceChangePercent,
+    high24h,
+    low24h,
+    volume,
+    buyLiquidity: '0',
+    sellLiquidity: '0'
+  });
+  
+  const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  
+  useEffect(() => {
+    if (activeMarket?.id !== prevMarketId) {
+      setIsLoading(true);
+      setPrevMarketId(activeMarket?.id || '');
+      
+      prevMetricsRef.current = {
+        price,
+        priceChangeAmount,
+        priceChangePercent,
+        high24h,
+        low24h,
+        volume,
+        buyLiquidity,
+        sellLiquidity
+      };
+      
+      if (loadingTimeoutRef.current) {
+        clearTimeout(loadingTimeoutRef.current);
+      }
+      
+      loadingTimeoutRef.current = setTimeout(() => {
+        setIsLoading(false);
+      }, 3000);
+      
+      return () => {
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+        }
+      };
+    }
+  }, [activeMarket, prevMarketId]);
+  
+  useEffect(() => {
+    if (isLoading) {
+      const prevMetrics = prevMetricsRef.current;
+      
+      const hasMetricsChanged = 
+        price !== prevMetrics.price ||
+        priceChangeAmount !== prevMetrics.priceChangeAmount ||
+        high24h !== prevMetrics.high24h ||
+        low24h !== prevMetrics.low24h ||
+        volume !== prevMetrics.volume ||
+        buyLiquidity !== prevMetrics.buyLiquidity ||
+        sellLiquidity !== prevMetrics.sellLiquidity;
+      
+      if (hasMetricsChanged) {
+        setIsLoading(false);
+        
+        if (loadingTimeoutRef.current) {
+          clearTimeout(loadingTimeoutRef.current);
+          loadingTimeoutRef.current = null;
+        }
+      }
+    }
+  }, [
+    isLoading,
+    price,
+    priceChangeAmount,
+    priceChangePercent,
+    high24h,
+    low24h,
+    volume,
+    buyLiquidity,
+    sellLiquidity
+  ]);
 
   useEffect(() => {
     if (orderdata.liquidityBuyOrders || orderdata.liquiditySellOrders) {
@@ -67,7 +149,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         orderdata.liquiditySellOrders.length !== 0
           ? orderdata.liquiditySellOrders
           : [];
-
       if (roundedBuys.length !== 0) {
         const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
@@ -98,6 +179,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
           {priceChangeAmount} / {priceChangePercent}%
         </span>
       ),
+      isLoading,
     },
     {
       label: t('availableLiquidity'),
@@ -111,18 +193,22 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
           </span>
         </>
       ),
+      isLoading,
     },
     {
       label: t('dayVolume'),
       value: `$${volume}`,
+      isLoading,
     },
     {
       label: t('dayHigh'),
       value: high24h,
+      isLoading,
     },
     {
       label: t('dayLow'),
       value: low24h,
+      isLoading,
     },
   ];
 

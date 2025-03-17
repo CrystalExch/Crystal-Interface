@@ -1,13 +1,37 @@
-import React from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 
 import './PriceDisplay.css';
 
 interface PriceDisplayProps {
   price: string;
+  activeMarket: string;
 }
 
-const PriceDisplay: React.FC<PriceDisplayProps> = ({ price }) => {
-  const isLoading = price == undefined;
+const PriceDisplay: React.FC<PriceDisplayProps> = ({ price, activeMarket }) => {
+  const [isLoading, setIsLoading] = useState(price === undefined);
+  const prevPriceRef = useRef(price);
+  const prevMarketRef = useRef(activeMarket);
+  
+  useEffect(() => {
+    if (price === undefined) {
+      setIsLoading(true);
+      return;
+    }
+    
+    if (activeMarket !== prevMarketRef.current) {
+      setIsLoading(true);
+      prevMarketRef.current = activeMarket;
+      return;
+    }
+    
+    if (isLoading && price !== prevPriceRef.current) {
+      setTimeout(() => {
+        setIsLoading(false);
+      }, 100);
+    }
+    
+    prevPriceRef.current = price;
+  }, [price, activeMarket, isLoading]);
 
   if (isLoading) {
     return (

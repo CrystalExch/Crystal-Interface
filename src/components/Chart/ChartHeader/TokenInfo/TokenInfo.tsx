@@ -553,7 +553,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
       {activeMarket && (
         <div className="price-display-section">
-          <PriceDisplay price={price} />
+          <PriceDisplay price={price} activeMarket={activeMarket} />
         </div>
       )}
     </div>
