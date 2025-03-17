@@ -369,13 +369,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   };
 
   useEffect(() => {
-    if (tokendict[activeMarket.baseAddress]) {
-      setInPic(tokendict[activeMarket.baseAddress].image);
-    }
-    if (tokendict[activeMarket.quoteAddress]) {
-      setOutPic(tokendict[activeMarket.quoteAddress].image);
-    }
-
     updateChartData(selectedInterval, trades, activeMarket.baseAsset);
   }, [selectedInterval, activeMarket.baseAsset]);
 
@@ -447,8 +440,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   }, [trades]);
 
   useEffect(() => {
+    if (tokendict[activeMarket.baseAddress]) {
+      setInPic(tokendict[activeMarket.baseAddress].image);
+    }
+    if (tokendict[activeMarket.quoteAddress]) {
+      setOutPic(tokendict[activeMarket.quoteAddress].image);
+    }
     setData([[], '']);
-  }, [activeMarket]);
+  }, [activeMarket.baseAsset]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>

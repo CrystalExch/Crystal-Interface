@@ -6,9 +6,9 @@ import React, {
   useState,
 } from 'react';
 
-import { getChainId } from '@wagmi/core';
+import { getChain } from "@account-kit/core";
 import { settings } from '../settings.ts';
-import { config } from '../wagmi';
+import { alchemyconfig } from '../config';
 
 type sharedContextType = {
   activechain: number;
@@ -59,7 +59,7 @@ export const SharedContextProvider: React.FC<{ children: ReactNode }> = ({
   const [days, setDays] = useState<number>(1);
   const [percentage, setPercentage] = useState<number>(0.0);
   const [timeRange, setTimeRange] = useState<string>('24H');
-  const [activechain, setactivechain] = useState<number>(getChainId(config));
+  const [activechain, setactivechain] = useState<number>(getChain(alchemyconfig).id);
 
   const toggleFavorite = useCallback((tokenAddress: string) => {
     if (!tokenAddress) return;

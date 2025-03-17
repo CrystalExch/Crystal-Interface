@@ -1933,11 +1933,16 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .chartandorderbookandordercenter,
 .connect-wallet-content-container,
+.social-content-container,
 .trade-container {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.connect-wallet-content-container {
+  margin-top: 5px
 }
 
 .chartandorderbookandordercenter {

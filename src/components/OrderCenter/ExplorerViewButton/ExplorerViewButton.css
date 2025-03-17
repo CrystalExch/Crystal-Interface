@@ -26,10 +26,6 @@
   user-select: none;
 }
 
-.oc-view-button:active {
-  background-color: rgb(240 96 96);
-}
-
 .oc-view-button:focus {
   box-shadow: 0 0 0 1px rgb(240 96 96 / 10%);
   outline: none;

@@ -1,7 +1,7 @@
 // import libraries
 import {
   getBlockNumber,
-  waitForTransactionReceipt,
+  waitForTransactionReceipt
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -28,14 +28,14 @@ import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
 import {
-  useAuthModal,
   useLogout,
   useSignerStatus,
   useUser,
   useChain,
-  useConnect,
   useSmartAccountClient,
   useSendUserOperation,
+  useAlchemyAccountContext,
+  AuthCard,
 } from "@account-kit/react";
 
 // import css
@@ -121,15 +121,13 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 
 function App() {
   // constants
+  const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { chain, setChain } = useChain();
-  const { connectors, connect } = useConnect({});
   const user = useUser();
-  const { openAuthModal } = useAuthModal();
   const signerStatus = useSignerStatus();
   const { client } = useSmartAccountClient({type: "LightAccount"});
-  const { sendUserOperation, isSendingUserOperation } = useSendUserOperation({
+  const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
-    waitForTxn: true,
   });
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -4668,9 +4666,9 @@ function App() {
                     setIsSigning(true);
                     try {
                       if (sendTokenIn == eth) {
-                        const hash = await sendeth(sendUserOperation, recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendeth(sendUserOperationAsync, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           eth,
                           '',
@@ -4680,9 +4678,9 @@ function App() {
                           recipient
                         );
                       } else {
-                        const hash = await sendtokens(sendUserOperation, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendtokens(sendUserOperationAsync, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           sendTokenIn,
                           '',
@@ -4738,309 +4736,7 @@ function App() {
           !connected ? (
             <div ref={popupref} className="connect-wallet-background unconnected">
               <div className="connect-wallet-content-container">
-                <div className="wallet-header-container">
-                  <h2 className="connect-wallet-title">
-                    {t('connectWallet')}
-                  </h2>
-                  <button
-                    className="disconnected-wallet-close-button"
-                    onClick={() => {
-                      setpopup(0);
-                      settokenString('');
-                    }}
-                  >
-                    <img
-                      src={closebutton}
-                      className="close-button-icon"
-                    />
-                  </button>
-                </div>
-                <div className="connect-wallet-divider"> </div>
-                <div className="connect-wallet-content">
-                  {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").length > 0 && (
-                    <>
-                      <div className="installed-wallet-section-title">
-                        {t('installed')}
-                      </div>
-                      {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").map((connector) => (
-                        <button
-                          key={connector.id}
-                          className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
-                          onClick={() => {
-                            setSelectedConnector(connector);
-                            setpopup(6);
-                            setTimeout(async () => {
-                              try {
-                                await connect({
-                                  connector,
-                                  chainId: activechain as any,
-                                });
-                                setpopup(0);
-                                setSelectedConnector(null);
-                              } catch {
-                                setpopup(4);
-                                setSelectedConnector(null);
-                              }
-                            }, 500);
-                          }}
-                        >
-                          <img
-                            className="connect-wallet-icon"
-                            src={
-                              connector.name === 'Phantom'
-                                ? walletphantom: walletinjected
-                            }
-                          />
-                          <span className="wallet-name">
-                            {connector.name}
-                          </span>
-                        </button>
-                      ))}
-                    </>
-                  )}
-
-                  <div className="popular-wallet-section-title">
-                    {t('popular')}
-                  </div>
-                  {connectors.find(connector => connector.name === "Rabby Wallet") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Rabby Wallet") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletrabby
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Rabby Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://rabby.io/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletrabby
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Rabby Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "Backpack") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Backpack") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletbackpack
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Backpack'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://backpack.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletbackpack
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Backpack'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "Tomo") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Tomo") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallettomo
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Tomo Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://tomo.inc/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallettomo
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Tomo Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "HaHa Wallet") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "HaHa Wallet") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallethaha
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'HaHa Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://haha.me/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallethaha
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'HaHa Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.slice(0, 5).map((connector) => (
-                    <button
-                      key={connector.id}
-                      className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
-                      onClick={() => {
-                        setSelectedConnector(connector);
-                        setpopup(6);
-                        setTimeout(async () => {
-                          try {
-                            await connect({
-                              connector,
-                              chainId: activechain as any,
-                            });
-                            setpopup(0);
-                            setSelectedConnector(null);
-                          } catch {
-                            setpopup(4);
-                            setSelectedConnector(null);
-                          }
-                        }, 500);
-                      }}
-                    >
-                      <img
-                        className="connect-wallet-icon"
-                        src={
-                          connector.name === 'MetaMask'
-                            ? walletmetamask
-                            : connector.name === 'Coinbase Wallet'
-                              ? walletcoinbase
-                              : connector.name === 'WalletConnect'
-                                ? walletconnect
-                                : connector.name === 'Safe'
-                                  ? walletsafe
-                                  : walletinjected
-                        }
-                      />
-                      <span className="wallet-name">
-                        {connector.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="wallet-footer-container">
-                <div className="wallet-footer-text">
-                  <span>
-                    {t('noWallet')}
-                    <a
-                      href="https://docs.crystal.exchange/trading/onboarding"
-                      className="wallet-footer-link"
-                    >
-                      {t('createWallet')}
-                    </a>
-                  </span>
-                </div>
+                <AuthCard {...alchemyconfig.ui.auth} />
               </div>
             </div>
           ) : (
@@ -5712,8 +5408,9 @@ function App() {
                     <div className="search-market-chart-section">
                       <MiniChart 
                         market={market}
-                        trades={tradesByMarket[market.baseAsset+market.quoteAsset]}
+                        series={[]}
                         isVisible={true}
+                        priceChange={''}
                       />
                     </div>
                     <div className="search-market-price-section">
@@ -5752,12 +5449,11 @@ function App() {
         ) : null}
         {popup === 9 ? (
           <div ref={popupref} className="connect-wallet-background unconnected">
-            <div className="connect-wallet-content-container">
+            <div className="social-content-container">
               <div className="social-content">
                 <div className="social-banner-wrapper">
                   <img
                     src={SocialBanner}
-                    alt="Social Banner"
                     className="social-banner-image"
                   />
                 </div>
@@ -6587,13 +6283,9 @@ function App() {
               setIsSigning(true);
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  const hash = await wrapeth(sendUserOperation, amountIn, weth);
+                  const hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'wrap',
                     eth,
                     weth,
@@ -6609,13 +6301,9 @@ function App() {
                     '',
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  const hash = await unwrapeth(sendUserOperation, amountIn, weth);
+                  const hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'unwrap',
                     weth,
                     eth,
@@ -6635,7 +6323,7 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapExactETHForTokens(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountIn,
                           (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6648,7 +6336,7 @@ function App() {
                         );
                       } else {
                         await _swap(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountIn,
                           activeMarket.path[0] == tokenIn
@@ -6670,7 +6358,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -6679,11 +6367,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (
-                            await waitForTransactionReceipt(config, {
-                              hash: hash,
-                            })
-                          ).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -6703,7 +6387,7 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForETH(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6718,7 +6402,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6742,7 +6426,7 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForTokens(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6757,7 +6441,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6784,7 +6468,7 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapETHForExactTokens(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountOutSwap,
                           (amountIn * 10000n + slippage / 2n) / slippage,
@@ -6797,7 +6481,7 @@ function App() {
                         );
                       } else {
                         await _swap(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           BigInt(
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -6821,7 +6505,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -6830,11 +6514,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (
-                            await waitForTransactionReceipt(config, {
-                              hash: hash,
-                            })
-                          ).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -6854,7 +6534,7 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactETH(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -6869,7 +6549,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6893,7 +6573,7 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactTokens(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -6908,7 +6588,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6955,7 +6635,7 @@ function App() {
               }
             } else {
               !connected
-                ? openAuthModal()
+                ? setpopup(4)
                 : setChain({chain: settings.chains[0]})
             }
           }}
@@ -8225,7 +7905,7 @@ function App() {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
                     await limitOrder(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       amountIn,
                       eth,
@@ -8235,7 +7915,7 @@ function App() {
                     );
                   } else {
                     await _swap(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       amountIn,
                       eth,
@@ -8251,7 +7931,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -8260,11 +7940,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (
-                        await waitForTransactionReceipt(config, {
-                          hash: hash,
-                        })
-                      ).transactionHash,
+                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
@@ -8284,7 +7960,7 @@ function App() {
 
                   if (addliquidityonly) {
                     await limitOrder(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8294,7 +7970,7 @@ function App() {
                     );
                   } else {
                     await _swap(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8976,16 +8652,12 @@ function App() {
               try {
                 if (tokenIn == eth) {
                   const hash = await sendeth(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     recipient as `0x${string}`,
                     amountIn,
                   );
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     eth,
                     '',
@@ -8999,17 +8671,13 @@ function App() {
                   );
                 } else {
                   const hash = await sendtokens(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     tokenIn as `0x${string}`,
                     recipient as `0x${string}`,
                     amountIn,
                   );
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     tokenIn,
                     '',
@@ -9829,7 +9497,7 @@ function App() {
                 });
                 if (tokenIn == eth) {
                   await multiBatchOrders(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     router,
                     BigInt(amountIn),
                     [activeMarket.address],
@@ -9841,7 +9509,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -9850,11 +9518,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (
-                        await waitForTransactionReceipt(config, {
-                          hash: hash,
-                        })
-                      ).transactionHash,
+                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
@@ -9873,7 +9537,7 @@ function App() {
                   }
 
                   await multiBatchOrders(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     router,
                     BigInt(0),
                     [activeMarket.address],
@@ -10097,6 +9761,7 @@ function App() {
                   chainId: chain.id,
                 }}
                 refetch={refRefetch}
+                sendUserOperation={useCallback(sendUserOperationAsync, [])}
               />
             }
           />
@@ -10148,7 +9813,7 @@ function App() {
                     logout: logout,
                   }}
                   refetch={refetch}
-                  sendUserOperation={sendUserOperation}
+                  sendUserOperation={useCallback(sendUserOperationAsync, [])}
                 />
               </>
             }
@@ -10357,7 +10022,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -10573,7 +10238,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -10790,7 +10455,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -11006,7 +10671,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
