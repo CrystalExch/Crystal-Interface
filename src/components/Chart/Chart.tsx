@@ -384,6 +384,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     if (!trades || trades.length === 0) return;
   
     const lastTrade = trades[trades.length - 1];
+
+    if (lastTrade[4] !== activeMarket.baseAsset + activeMarket.quoteAsset) return;
   
     setData(([existingBars, existingIntervalLabel]) => {
       const updatedBars = [...existingBars];
@@ -443,6 +445,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       return [updatedBars, existingIntervalLabel];
     });
   }, [trades]);
+
+  useEffect(() => {
+    setData([[], '']);
+  }, [activeMarket]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>
