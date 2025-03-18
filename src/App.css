@@ -1904,9 +1904,10 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex: 1;
   gap: 4px;
-  min-height: 0;
+  min-height: 530px;
   padding: 0 5px;
 }
+
 
 .tokenlistcontainer {
   display: flex;
@@ -1942,7 +1943,6 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 45px);
-  height: calc(100vh - 45px);
   overflow: auto;
 }
 
@@ -1968,6 +1968,10 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.trade-container{
+  min-height: 530px;
 }
 
 .connect-wallet-content-container {
@@ -1997,7 +2001,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   display: flex;
   flex: 1;
   height: 100px;
-  min-height: 0;
+  
   transition: height.2s ease;
 }
 
@@ -2635,7 +2639,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .output {
   font-size: 1.6rem;
   font-weight: 400;
-  margin-left: 10px;
+  margin-left: 12px;
 }
 
 .main-content-wrapper.simple-view .output-skeleton {
