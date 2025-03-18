@@ -1,4 +1,4 @@
-import { readContracts, writeContract } from '@wagmi/core';
+import { readContracts } from '@wagmi/core';
 import { Share2, TrendingUp, Users, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { config } from '../../wagmi';
@@ -16,6 +16,7 @@ import ReferralBackground from '../../assets/referral_background.png';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 
 import './Referrals.css';
+import { encodeFunctionData } from 'viem';
 
 interface ReferralProps {
   tokenList: any;
@@ -35,6 +36,7 @@ interface ReferralProps {
   setpopup: any;
   account: any;
   refetch: any;
+  sendUserOperation: any;
 }
 
 const Referrals: React.FC<ReferralProps> = ({
@@ -55,6 +57,7 @@ const Referrals: React.FC<ReferralProps> = ({
   setpopup,
   account,
   refetch,
+  sendUserOperation,
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
@@ -135,12 +138,19 @@ const Referrals: React.FC<ReferralProps> = ({
 
   const handleCreateRef = async () => {
     try {
-      await writeContract(config, {
-        abi: CrystalRouterAbi,
-        address: router,
-        functionName: 'setReferral',
-        args: [refLinkString],
-      });
+      await sendUserOperation({
+        uo: {
+          target: router,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'setReferral',
+            args: [
+              refLinkString
+            ],
+          }),
+          value: 0n,
+        },
+      })
       setRefLink(refLinkString);
       return true;
     } catch (error) {
@@ -152,16 +162,21 @@ const Referrals: React.FC<ReferralProps> = ({
     if (account.connected && account.chainId === activechain) {
       try {
         setIsSigning(true);
-        await writeContract(config, {
-          abi: CrystalRouterAbi,
-          address: router,
-          functionName: 'claimFees',
-          args: [
-            Object.values(markets).map(
-              (market) => market.address as `0x${string}`,
-            ),
-          ],
-        });
+        await sendUserOperation({
+          uo: {
+            target: router,
+            data: encodeFunctionData({
+              abi: CrystalRouterAbi,
+              functionName: 'claimFees',
+              args: [
+                Object.values(markets).map(
+                  (market) => market.address as `0x${string}`,
+                ),
+              ],
+            }),
+            value: 0n,
+          },
+        })
       } catch (error) {
       } finally {
         setIsSigning(false);

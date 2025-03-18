@@ -148,11 +148,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
             const base = symbolInfo.name.split('/')[0];
             const key = base + resolution;
-            const initialDataRef = dataRef.current[key];
 
             await new Promise<void>((resolve) => {
               const intervalCheck = setInterval(() => {
-                if (dataRef.current[key] !== initialDataRef) {
+                if (dataRef.current[key]) {
                   clearInterval(intervalCheck);
                   resolve();
                 }

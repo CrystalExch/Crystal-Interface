@@ -1,6 +1,6 @@
-import { switchChain } from '@wagmi/core';
+import { setChain } from "@account-kit/core";
 import React, { useRef } from 'react';
-import { config } from '../../../wagmi';
+import { alchemyconfig } from '../../../config';
 
 import { useClickOutside } from '../utils';
 
@@ -54,10 +54,10 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
             <div
               key={chainId}
               className={`network-option ${activechain == Number(chainId) ? 'selected' : ''}`}
-              onClick={() => {
+              onClick={async () => {
                 setNetworkSelectorOpen(!isNetworkSelectorOpen);
                 if (activechain != Number(chainId)) {
-                  switchChain(config, { chainId: Number(chainId) });
+                  await setChain(alchemyconfig, settings.chains[0])
                   setactivechain(Number(chainId));
                   setTokenIn(settings.chainConfig[Number(chainId)].usdc);
                   setTokenOut(settings.chainConfig[Number(chainId)].eth);

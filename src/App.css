@@ -424,6 +424,7 @@ html {
   color: grey;
   font-size: 0.7rem;
   margin-top: -3px;
+  margin-top: -3px;
 }
 
 .tokenlistbalance {
@@ -443,6 +444,9 @@ html {
   height: 30px;
   margin-left: -20px;
   margin-right: 7px;
+  margin-top: 10px;
+  min-width: 30px;
+  min-height: 30px;
   margin-top: 10px;
   min-width: 30px;
   min-height: 30px
@@ -500,6 +504,7 @@ html {
   cursor: pointer;
   opacity: 0.8;
   transition: opacity.2s ease;
+  margin: 0 5px; 
   margin: 0 5px; 
 }
 
@@ -1660,6 +1665,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   flex-direction: column;
   min-height: 470px;
+  min-height: 470px;
 }
 
 .connect-wallet-background.unconnected {
@@ -1936,8 +1942,12 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex-direction: column;
   height: calc(100vh - 45px);
+  height: calc(100vh - 45px);
   overflow: auto;
 }
+
+
+
 
 
 
@@ -1952,11 +1962,16 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .chartandorderbookandordercenter,
 .connect-wallet-content-container,
+.social-content-container,
 .trade-container {
   display: flex;
   flex: 1;
   flex-direction: column;
   min-height: 0;
+}
+
+.connect-wallet-content-container {
+  margin-top: 5px
 }
 
 .chartandorderbookandordercenter {
@@ -2070,6 +2085,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: 105px;
   transition: all.2s ease;
   width: 50%;
+  padding: 0 5px;
   padding: 0 5px;
 }
 
@@ -3545,6 +3561,13 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     padding-bottom: 0 !important;
     max-height: 100%;
     height: 100%;
+    padding: 0 !important;
+
+  }
+  .app-wrapper{
+    padding-bottom: 0 !important;
+    max-height: 100%;
+    height: 100%;
   }
   .app-wrapper::-webkit-scrollbar,
   .layout-options > div:nth-child(1),
@@ -3593,6 +3616,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     margin: 0;
     min-height: 550px;
     height: calc(100vh - 100px);
+    height: calc(100vh - 100px);
     padding: 0 10px;
     top: 0;
     width: 100%;
@@ -3601,6 +3625,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     justify-content: center;
   }
   .app-wrapper {
+    min-height: calc(100% + 10px) !important;
     min-height: calc(100% + 10px) !important;
     overflow: hidden auto;
     -webkit-overflow-scrolling: touch;
@@ -3622,13 +3647,19 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   .trade-mobile-switch {
     max-height: 23px;
     max-width: 23px;
+  .trade-mobile-switch {
+    max-height: 23px;
+    max-width: 23px;
     pointer-events: none;
+    transform: rotate(90deg);
     transform: rotate(90deg);
     transform-origin: center;
     transition: transform.3s ease;
   }
   .trade-mobile-switch.open {
+  .trade-mobile-switch.open {
     outline: 0;
+    transform: rotate(270deg);
     transform: rotate(270deg);
   }
   .mobile-trade-panel {

@@ -1,8 +1,7 @@
 // import libraries
 import {
   getBlockNumber,
-  readContracts,
-  waitForTransactionReceipt,
+  waitForTransactionReceipt
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -29,14 +28,14 @@ import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
 import {
-  useAuthModal,
   useLogout,
   useSignerStatus,
   useUser,
   useChain,
-  useConnect,
   useSmartAccountClient,
   useSendUserOperation,
+  useAlchemyAccountContext,
+  AuthCard,
 } from "@account-kit/react";
 
 // import css
@@ -89,10 +88,6 @@ import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
-import LeaderboardPfp1 from './assets/bh.png'
-import LeaderboardPfp2 from './assets/legion.png';
-import LeaderboardPfp3 from './assets/rubberbandz.png';
-
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -128,116 +123,15 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 
 function App() {
   // constants
+  const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { chain, setChain } = useChain();
-  const { connectors, connect } = useConnect({});
   const user = useUser();
-  const { openAuthModal } = useAuthModal();
   const signerStatus = useSignerStatus();
   const { client } = useSmartAccountClient({type: "LightAccount"});
-  const { sendUserOperation, isSendingUserOperation } = useSendUserOperation({
+  const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
-    waitForTxn: true,
   });
   const { logout } = useLogout();
-  const leaderboardData = {
-    totalXP: 500_000,
-    currentXP: 394_290,
-    username: 'meanboy123',
-    userXP: 0,
-    factions: [
-      {
-        id: 1,
-        name: 'rubberbandz',
-        xp: 103_200_000,
-        bonusXP: 19_710_000,
-        growthPercentage: 0.65,
-        logo:  LeaderboardPfp3,
-        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
-      },
-      {
-        id: 6,
-        name: 'bh',
-        xp: 103_200_000,
-        bonusXP: 19_710_000,
-        growthPercentage: 0.65,
-        logo: LeaderboardPfp1,
-        badgeIcon: 'https://via.placeholder.com/20/9370DB/FFFFFF?text=P'
-      },
-      {
-        id: 2,
-        name: 'legion',
-        xp: 70_490_000,
-        bonusXP: 16_170_000,
-        growthPercentage: 0.36,
-        logo: LeaderboardPfp2,
-        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
-      },
-      {
-        id: 3,
-        name: 'jeremy',
-        xp: 21_950_000,
-        bonusXP: 9_230_000,
-        growthPercentage: 0.42,
-        logo: 'https://via.placeholder.com/50/3d934e/FFFFFF?text=D',
-        badgeIcon: 'https://via.placeholder.com/20/20B2AA/FFFFFF?text=G'
-      },
-      {
-        id: 4,
-        name: 'bh',
-        xp: 15_320_000,
-        bonusXP: 5_670_000,
-        growthPercentage: 0.28,
-        logo: 'https://via.placeholder.com/50/9c27b0/FFFFFF?text=C',
-        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
-      },
-      {
-        id: 5,
-        name: 'Yield Farmers',
-        xp: 8_940_000,
-        bonusXP: 3_210_000,
-        growthPercentage: 0.19,
-        logo: 'https://via.placeholder.com/50/607d8b/FFFFFF?text=Y',
-        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
-      },
-
-      {
-        id: 7,
-        name: 'Profit Papis',
-        xp: 70_490_000,
-        bonusXP: 16_170_000,
-        growthPercentage: 0.36,
-        logo: 'https://via.placeholder.com/50/e87638/FFFFFF?text=P',
-        badgeIcon: 'https://via.placeholder.com/20/4169E1/FFFFFF?text=B'
-      },
-      {
-        id: 8,
-        name: 'Degen Capital',
-        xp: 21_950_000,
-        bonusXP: 9_230_000,
-        growthPercentage: 0.42,
-        logo: 'https://via.placeholder.com/50/3d934e/FFFFFF?text=D',
-        badgeIcon: 'https://via.placeholder.com/20/20B2AA/FFFFFF?text=G'
-      },
-      {
-        id: 9,
-        name: 'Crypto Chads',
-        xp: 15_320_000,
-        bonusXP: 5_670_000,
-        growthPercentage: 0.28,
-        logo: 'https://via.placeholder.com/50/9c27b0/FFFFFF?text=C',
-        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
-      },
-      {
-        id: 10,
-        name: 'Yield Farmers',
-        xp: 8_940_000,
-        bonusXP: 3_210_000,
-        growthPercentage: 0.19,
-        logo: 'https://via.placeholder.com/50/607d8b/FFFFFF?text=Y',
-        badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=S'
-      }
-    ]
-  };
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
@@ -627,7 +521,6 @@ function App() {
     return saved ? parseInt(saved, 10) : 300;
   });
   const [stateloading, setstateloading] = useState(true);
-  const [ordersloading, setordersloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
@@ -729,7 +622,6 @@ function App() {
 
   const loading =
     stateloading ||
-    ordersloading ||
     tradesloading ||
     addressinfoloading
 
@@ -1003,7 +895,7 @@ function App() {
         setStateIsLoading(true);
         debounceTimerRef.current = setTimeout(() => {
           setamountIn(amount);
-        }, 200);
+        }, 300);
       }
     },
     [amountIn],
@@ -1019,7 +911,7 @@ function App() {
         setStateIsLoading(true);
         debounceTimerRef.current = setTimeout(() => {
           setamountOutSwap(amount);
-        }, 200);
+        }, 300);
       }
     },
     [amountOutSwap],
@@ -1038,32 +930,9 @@ function App() {
     [tokenString],
   );
 
-  // fetch orders
-  const { data: orderdata, isLoading: obisloading } = useReadContracts({
-    batchSize: 0,
-    contracts: [
-      {
-        address: activeMarket?.address,
-        abi: CrystalMarketAbi,
-        functionName: 'getPriceLevelsFromMid',
-        args: [BigInt(1000000)],
-      },
-      {
-        address: balancegetter,
-        abi: CrystalDataHelperAbi as any,
-        functionName: 'getPrices',
-        args: [
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`,
-          ),
-        ],
-      },
-    ],
-    query: { refetchInterval: 1000, gcTime: 0 },
-  });
-
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
+    batchSize: 0,
     contracts: [
       {
         abi: CrystalRouterAbi,
@@ -1096,8 +965,24 @@ function App() {
           ),
         ],
       },
+      {
+        address: activeMarket?.address,
+        abi: CrystalMarketAbi,
+        functionName: 'getPriceLevelsFromMid',
+        args: [BigInt(1000000)],
+      },
+      {
+        address: balancegetter,
+        abi: CrystalDataHelperAbi as any,
+        functionName: 'getPrices',
+        args: [
+          Object.values(markets).map(
+            (market) => market.address as `0x${string}`,
+          ),
+        ],
+      },
     ],
-    query: { refetchInterval: 4000, gcTime: 0 },
+    query: { refetchInterval: simpleView ? 5000 : 1000, gcTime: 0 },
   });
 
   // fetch ref data
@@ -2182,128 +2067,6 @@ function App() {
     }
   }, [refData, mids]);
 
-  // monitor active orders
-  useEffect(() => {
-    if (obisloading == false && orderdata) {
-      setordersloading(false);
-      let tempmids;
-      if (orderdata[1].result) {
-        tempmids = Object.keys(markets).reduce(
-          (acc, market, i) => {
-            const prices = [
-              (orderdata as any)[1].result?.[0][i],
-              (orderdata as any)[1].result?.[1][i],
-              (orderdata as any)[1].result?.[2][i],
-            ];
-            acc[market] = prices;
-            return acc;
-          },
-          {} as Record<string, any>,
-        );
-        setmids(tempmids);
-      }
-      if (orderdata[0].result) {
-        sethighestBid((orderdata as any)[0].result[0] || BigInt(0));
-        setlowestAsk((orderdata as any)[0].result[1] || BigInt(0));
-        const data = orderdata?.[0].result;
-
-        if (data && Array.isArray(data) && data.length >= 4) {
-          try {
-            const buyOrdersRaw: bigint[] = [];
-            const sellOrdersRaw: bigint[] = [];
-
-            for (let i = 2; i < data[2].length; i += 64) {
-              const chunk = data[2].slice(i, i + 64);
-              buyOrdersRaw.push(BigInt(`0x${chunk}`));
-            }
-
-            for (let i = 2; i < data[3].length; i += 64) {
-              const chunk = data[3].slice(i, i + 64);
-              sellOrdersRaw.push(BigInt(`0x${chunk}`));
-            }
-
-            const {
-              buyOrders: processedBuyOrders,
-              sellOrders: processedSellOrders,
-            } = processOrders(buyOrdersRaw, sellOrdersRaw);
-
-            if (tempmids && tempmids[activeMarketKey]) {
-              const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
-                processOrdersForDisplay(
-                  processedBuyOrders,
-                  amountsQuote,
-                  tempmids[activeMarketKey][0],
-                );
-              const {
-                roundedOrders: roundedSell,
-                defaultOrders: liquiditySell,
-              } = processOrdersForDisplay(
-                processedSellOrders,
-                amountsQuote,
-                tempmids[activeMarketKey][0],
-              );
-
-              const highestBid =
-                roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-              const lowestAsk =
-                roundedSell.length > 0 ? roundedSell[0].price : undefined;
-
-              const spread = {
-                spread:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? lowestAsk - highestBid
-                    : NaN,
-                averagePrice:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? Number(
-                        ((highestBid + lowestAsk) / 2).toFixed(
-                          Math.log10(Number(activeMarket.priceFactor)) + 1,
-                        ),
-                      )
-                    : NaN,
-              };
-
-              roundedBuy.forEach((order, index) => {
-                const match = roundedBuyOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              roundedSell.forEach((order, index) => {
-                const match = roundedSellOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              setSpreadData(spread);
-              setRoundedBuyOrders(roundedBuy);
-              setRoundedSellOrders(roundedSell);
-              setLiquidityBuyOrders(liquidityBuy);
-              setLiquiditySellOrders(liquiditySell);
-            }
-
-            setBaseInterval(1 / Number(activeMarket.priceFactor));
-            setOBInterval(
-              localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-                ? Number(
-                    localStorage.getItem(
-                      `${activeMarket.baseAsset}_ob_interval`,
-                    ),
-                  )
-                : 1 / Number(activeMarket.priceFactor),
-            );
-          } catch (error) {
-            console.error(error);
-          }
-        }
-      }
-    }
-  }, [orderdata, activechain, amountsQuote]);
-
   // spread data - separate to ensure it works on initial load
   useEffect(() => {
     setPriceFactor(Number(activeMarket.priceFactor));
@@ -2420,10 +2183,125 @@ function App() {
             `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
         }
       }
+      let tempmids;
+      if (data[4].result) {
+        tempmids = Object.keys(markets).reduce(
+          (acc, market, i) => {
+            const prices = [
+              (data as any)[4].result?.[0][i],
+              (data as any)[4].result?.[1][i],
+              (data as any)[4].result?.[2][i],
+            ];
+            acc[market] = prices;
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+        setmids(tempmids);
+      }
+      if (data[3].result) {
+        sethighestBid((data as any)[3].result[0] || BigInt(0));
+        setlowestAsk((data as any)[3].result[1] || BigInt(0));
+        const orderdata = data?.[3].result;
+
+        if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4) {
+          try {
+            const buyOrdersRaw: bigint[] = [];
+            const sellOrdersRaw: bigint[] = [];
+
+            for (let i = 2; i < orderdata[2].length; i += 64) {
+              const chunk = orderdata[2].slice(i, i + 64);
+              buyOrdersRaw.push(BigInt(`0x${chunk}`));
+            }
+
+            for (let i = 2; i < orderdata[3].length; i += 64) {
+              const chunk = orderdata[3].slice(i, i + 64);
+              sellOrdersRaw.push(BigInt(`0x${chunk}`));
+            }
+
+            const {
+              buyOrders: processedBuyOrders,
+              sellOrders: processedSellOrders,
+            } = processOrders(buyOrdersRaw, sellOrdersRaw);
+
+            if (tempmids && tempmids[activeMarketKey]) {
+              const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
+                processOrdersForDisplay(
+                  processedBuyOrders,
+                  amountsQuote,
+                  tempmids[activeMarketKey][0],
+                );
+              const {
+                roundedOrders: roundedSell,
+                defaultOrders: liquiditySell,
+              } = processOrdersForDisplay(
+                processedSellOrders,
+                amountsQuote,
+                tempmids[activeMarketKey][0],
+              );
+
+              const highestBid =
+                roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
+              const lowestAsk =
+                roundedSell.length > 0 ? roundedSell[0].price : undefined;
+
+              const spread = {
+                spread:
+                  highestBid !== undefined && lowestAsk !== undefined
+                    ? lowestAsk - highestBid
+                    : NaN,
+                averagePrice:
+                  highestBid !== undefined && lowestAsk !== undefined
+                    ? Number(
+                        ((highestBid + lowestAsk) / 2).toFixed(
+                          Math.log10(Number(activeMarket.priceFactor)) + 1,
+                        ),
+                      )
+                    : NaN,
+              };
+
+              roundedBuy.forEach((order, index) => {
+                const match = roundedBuyOrders.find(
+                  (o) => o.price == order.price && o.size == order.size,
+                );
+                if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                  order.shouldFlash = true;
+                }
+              });
+              roundedSell.forEach((order, index) => {
+                const match = roundedSellOrders.find(
+                  (o) => o.price == order.price && o.size == order.size,
+                );
+                if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                  order.shouldFlash = true;
+                }
+              });
+              setSpreadData(spread);
+              setRoundedBuyOrders(roundedBuy);
+              setRoundedSellOrders(roundedSell);
+              setLiquidityBuyOrders(liquidityBuy);
+              setLiquiditySellOrders(liquiditySell);
+            }
+
+            setBaseInterval(1 / Number(activeMarket.priceFactor));
+            setOBInterval(
+              localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+                ? Number(
+                    localStorage.getItem(
+                      `${activeMarket.baseAsset}_ob_interval`,
+                    ),
+                  )
+                : 1 / Number(activeMarket.priceFactor),
+            );
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt]);
+  }, [data, activechain, isLoading, activeTab, dataUpdatedAt, amountsQuote]);
 
   // update display values when loading is finished
   useEffect(() => {
@@ -2753,7 +2631,6 @@ function App() {
     amountOutScale,
   ]);
 
-  // initial address interaction info fetching
   useEffect(() => {
     setTimeout(() => {
       setTransactions([]);
@@ -2761,308 +2638,115 @@ function App() {
       setorders([]);
       setcanceledorders([]);
     }, 20);
+  
     (async () => {
       try {
-        // amountin, amountout, buy/sell, end price, market, hash, timestamp, market/limit
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+  
         let temptradehistory: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base, original size quote, open
         let temporders: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base at cancel, filled size quote, canceled:0/filled:1/open:2
         let tempcanceledorders: any[] = [];
-        // price, id, original size base, buy/sell, market, hash, timestamp, filled amount base, original size quote, filled
-        let filledorders: any = {};
-        if (address) {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-          let allLogs: any[] = [];
-          let lastblockTimestamp = Math.floor(Date.now() / 1000);
-          let count = 0
-
-          while (count < 10) {
-            let query
-            if (count == 0) {
-              query = `query fetchOrderFilleds($lastblockTimestamp: Int!) {
-                orderFilledBatches(first: 1000, orderDirection: desc, orderBy: id) {
-                  id
-                  total
-                  orders(first: 1000, where: {caller: "${address}"}) {
-                    caller
-                    amountIn
-                    amountOut
-                    buySell
-                    price
-                    timeStamp
-                    transactionHash
-                    blockNumber
-                    contractAddress
-                  }
-                }
-                ordersUpdateds(
-                  first: 1000, 
-                  where: { timestamp_lt: $lastblockTimestamp, caller: "${address}" }, 
-                  orderBy: timestamp, 
-                  orderDirection: desc
-                ) {
-                  transactionHash
-                  contractAddress
-                  caller
-                  timestamp
-                  orderData
-                }
-              }`;
+  
+        const query = `
+          query fetchData {
+            orderFilledBatches(first: 200, orderDirection: desc, orderBy: id) {
+              id
+              total
+              orders(first: 1000, where: {caller: "${address}"}) {
+                caller
+                amountIn
+                amountOut
+                buySell
+                price
+                timeStamp
+                transactionHash
+                blockNumber
+                contractAddress
+              }
             }
-            else {
-              query = `query fetchOrderFilleds($lastblockTimestamp: Int!) {
-                ordersUpdateds(
-                  first: 1000, 
-                  where: { timestamp_lt: $lastblockTimestamp, caller: "${address}" }, 
-                  orderBy: timestamp, 
-                  orderDirection: desc
-                ) {
-                  transactionHash
-                  contractAddress
-                  caller
-                  timestamp
-                  orderData
-                }
-              }`;
-            }
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ query, variables: { lastblockTimestamp }  }),
-            });
-
-            const result = await response.json();
-            const batches = result.data?.orderFilledBatches || [];
-            const ordersUpdateds = result.data.ordersUpdateds;
-
-            for (let batch of batches) {
-              allLogs = allLogs.concat(batch.orders);
-            }
-
-            allLogs = allLogs.concat(ordersUpdateds);
-
-            if (ordersUpdateds.length > 0) {
-              lastblockTimestamp = Number(
-                ordersUpdateds[ordersUpdateds.length - 1].timestamp,
-              );
-            }
-            count += 1
-            if (batches.length < 1000 && ordersUpdateds.length < 1000) {
-              break;
-            }
-          }
-          allLogs.reverse()
-          if (Array.isArray(allLogs)) {
-            for (const event of allLogs) {
-              if (addresstoMarket[event.contractAddress]) {
-                if (event.orderData) {
-                  let _timestamp = Number(event.timestamp);
-                  let _orderdata = event.orderData;
-                  for (let i = 2; i < _orderdata.length; i += 64) {
-                    let chunk = _orderdata.slice(i, i + 64);
-                    let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
-                    if (_isplace) {
-                      temporders.push([
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(20, 32), 16),
-                        parseInt(chunk.slice(32, 64), 16) /
-                          parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(0, 1), 16),
-                        addresstoMarket[event.contractAddress],
-                        event.transactionHash,
-                        _timestamp,
-                        0,
-                        parseInt(chunk.slice(32, 64), 16),
-                        2,
-                      ]);
-                    } else {
-                      let index = temporders.findIndex(
-                        (sublist) =>
-                          sublist[0] == parseInt(chunk.slice(1, 20), 16) &&
-                          sublist[1] == parseInt(chunk.slice(20, 32), 16) &&
-                          sublist[4] == addresstoMarket[event.contractAddress],
-                      );
-                      if (index != -1) {
-                        let canceledorder = temporders.splice(index, 1)[0];
-                        if (canceledorder) {
-                          tempcanceledorders.push([
-                            canceledorder[0],
-                            canceledorder[1],
-                            canceledorder[2],
-                            canceledorder[3],
-                            canceledorder[4],
-                            event.transactionHash,
-                            _timestamp,
-                            canceledorder[2] -
-                              parseInt(chunk.slice(32, 64), 16) /
-                                canceledorder[0],
-                            canceledorder[8] - parseInt(chunk.slice(32, 64), 16),
-                            0,
-                          ]);
-                        }
-                      }
-                    }
-                  }
-                } else {
-                  temptradehistory.push([
-                    event.amountIn,
-                    event.amountOut,
-                    event.buySell,
-                    event.price,
-                    addresstoMarket[event.contractAddress],
-                    event.transactionHash,
-                    event.timeStamp,
-                    1,
-                  ]);
-                }
+            orderBatches(first: 200, orderDirection: desc, orderBy: id) {
+              id
+              total
+              orders(first: 1000, where: {caller: "${address}"}) {
+                id
+                caller
+                originalSizeBase
+                originalSizeQuote
+                filledAmountBase
+                filledSizeQuote
+                price
+                buySell
+                contractAddress
+                transactionHash
+                timestamp
+                status
               }
             }
           }
-          const orderbatch: any = {};
-          temporders.forEach((order) => {
-            const k = markets[order[4]].address;
-            if (k) {
-              if (!orderbatch[k]) {
-                orderbatch[k] = [];
-              }
-              orderbatch[k].push(order);
-            }
-          });
-          let currentlatest: any = { ...orderbatch };
-          filledorders = { ...orderbatch };
-          const orderlevels: any = {};
-          const seenPairs = new Set();
-          const uniqueOrders = temporders.filter((order: any) => {
-            const pair = `${order[4]}-${order[0]}`;
-            if (seenPairs.has(pair)) {
-              return false;
-            }
-            seenPairs.add(pair);
-            return true;
-          });
-          const getids = (await readContracts(config, {
-            contracts: uniqueOrders.map((order: any) => ({
-              abi: CrystalMarketAbi,
-              address: markets[order[4]].address as `0x${string}`,
-              functionName: 'priceLevels',
-              args: [order[0]],
-            })),
-          })) as any[];
-          uniqueOrders.forEach((order, index) => {
-            const k = markets[order[4]].address;
-            if (k) {
-              if (!orderlevels[k]) {
-                orderlevels[k] = [];
-              }
-              orderlevels[k].push(getids[index]);
-            }
-          });
-          Object.values(orderlevels).forEach((market: any, j: any) => {
-            const pricelevels = Array.from(
-              new Set(
-                (Object.values(orderbatch)[j] as any).map(
-                  (order: any) => order[0],
-                ),
-              ),
-            );
-            market.forEach((pricelevel: any, i: any) => {
-              const marketKey = Object.keys(orderbatch)[j];
-              currentlatest[marketKey] = currentlatest[marketKey].filter(
-                (order: any) =>
-                  order[0] != pricelevels[i] ||
-                  order[1] == pricelevel.result[1],
-              );
-              orderbatch[marketKey] = orderbatch[marketKey].filter(
-                (order: any) =>
-                  order[0] != pricelevels[i] || order[1] > pricelevel.result[1],
-              );
-            });
-          });
-          const getopen = (await readContracts(config, {
-            contracts: [
-              {
-                abi: CrystalDataHelperAbi as any,
-                address: balancegetter,
-                functionName: 'getOrderSizes',
-                args: Object.entries(currentlatest).reduce(
-                  ([values, keys], [key, batch]: any) => {
-                    batch.forEach((order: any) => {
-                      values.push(
-                        (BigInt(order[0]) << BigInt(128)) | BigInt(order[1]),
-                      );
-                      keys.push(key);
-                    });
-                    return [values, keys];
-                  },
-                  [[], []] as [BigInt[], any[]],
-                ),
-              },
-            ],
-          })) as any[];
-          let index = 0;
-          if (getopen[0].result) {
-            const groupedResults = Object.values(currentlatest).map(
-              (batch: any) => {
-                const result = getopen[0].result.slice(
-                  index,
-                  index + batch.length,
-                );
-                index += batch.length;
-                return result;
-              },
-            );
-            groupedResults.forEach((market, j) => {
-              const marketKey = Object.keys(currentlatest)[j];
-              market.forEach((openorder: any, i: any) => {
-                currentlatest[marketKey][i][7] =
-                  currentlatest[marketKey][i][2] -
-                  Number(openorder) / currentlatest[marketKey][i][0];
-              });
-            });
-          }
-          temporders = [
-            ...Object.values(currentlatest).flat(),
-            ...Object.values(orderbatch).flat(),
-          ];
-          Object.keys(filledorders).forEach((key) => {
-            filledorders[key] = filledorders[key].filter(
-              (item: any) =>
-                !orderbatch[key].includes(item) &&
-                !currentlatest[key].includes(item),
-            );
-            filledorders[key].forEach((filledorder: any, i: any) => {
-              filledorders[key][i][7] = filledorders[key][i][2];
-              filledorders[key][i][9] = 1;
+        `;
+  
+        const response = await fetch(endpoint, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query }),
+        });
+  
+        const result = await response.json();
+        
+        const filledBatches = result?.data?.orderFilledBatches || [];
+        for (const batch of filledBatches) {
+          const orders = batch.orders || [];
+          for (const event of orders) {
+            const marketKey = addresstoMarket[event.contractAddress];
+            if (marketKey) {
               temptradehistory.push([
-                filledorder[3] == 1
-                  ? (filledorder[2] * filledorder[0]) /
-                    Number(markets[filledorder[4]].scaleFactor)
-                  : filledorder[2],
-                filledorder[3] == 1
-                  ? filledorder[2]
-                  : (filledorder[2] * filledorder[0]) /
-                    Number(markets[filledorder[4]].scaleFactor),
-                filledorder[3],
-                filledorder[0],
-                filledorder[4],
-                filledorder[5],
-                filledorder[6],
-                0,
+                event.amountIn,
+                event.amountOut,
+                event.buySell,
+                event.price,
+                marketKey,
+                event.transactionHash,
+                event.timeStamp, 
+                1,
               ]);
-            });
-          });
+            }
+          }
         }
-        settradehistory((prev) => [ ...temptradehistory, ...prev]);
-        setorders((prev) => [ ...temporders, ...prev]);
-        setcanceledorders((prev) => [
-          ...temporders,
-          ...Object.values(filledorders).flat(),
-          ...tempcanceledorders, ...prev,
-        ]);
+  
+        const updatedBatches = result?.data?.orderBatches || [];
+        for (const batch of updatedBatches) {
+          const orders = batch.orders || [];
+          for (const order of orders) { 
+            const marketKey = addresstoMarket[order.contractAddress];
+            if (!marketKey) continue;
+            const row = [
+              parseInt(order.id.split('-')[0], 10),
+              parseInt(order.id.split('-')[1], 10),
+              Number(order.originalSizeBase.toString()),
+              order.buySell,
+              marketKey,
+              order.transactionHash,
+              order.timestamp,
+              Number(order.filledAmountBase.toString()), 
+              Number(order.originalSizeQuote.toString()),
+              order.status,
+            ];
+  
+            if (order.status === 2) {
+              temporders.push(row);
+            } else {
+              tempcanceledorders.push(row);
+            }
+          }
+        }
+  
+        settradehistory((prev) => [...temptradehistory, ...prev]);
+        setorders((prev) => [...temporders, ...prev]);
+        setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
+  
         setaddressinfoloading(false);
       } catch (error) {
-        console.error('Error fetching logs:', error);
+        console.error("Error fetching logs:", error);
         setaddressinfoloading(false);
       }
     })();
@@ -3080,40 +2764,114 @@ function App() {
         });
         const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
         let allLogs: any[] = [];
-
+        
         const query = `
           query {
-            orderFilledBatches(first: 60, orderDirection: desc, orderBy: id) {
+            orders1: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x3e186070cb7a1b2c498cd7347735859bc5ae278d" }
+            ) {
               id
-              total
-              orders(first: 1000) {
-                caller
-                amountIn
-                amountOut
-                buySell
-                price
-                timeStamp
-                transactionHash
-                blockNumber
-                contractAddress
-              }
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders2: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x3514e481e658533ee4d02a7de53c19a803f1783f" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders3: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x35e79dac2ef49abd319f50d028f99e7d0f1a3559" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders4: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x12b6179c20e9bac7398ab9d38be8997d1048d3c3" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders5: orderFilleds(
+              first: 150,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x20db6a0db7b47539e513ce29ac4018fe504fbb2a" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
             }
           }
         `;
 
         const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ query }),
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ query })
         });
+        
+        const json = await response.json();
+        
+        const orders =
+          json.data.orders1.concat(
+            json.data.orders2,
+            json.data.orders3,
+            json.data.orders4,
+            json.data.orders5
+          );
 
-        const result = await response.json();
-
-        const batches = result.data?.orderFilledBatches || [];
-
-        for (let batch of batches) {
-          allLogs = allLogs.concat(batch.orders);
-        }
+        allLogs = allLogs.concat(orders);
 
         if (Array.isArray(allLogs)) {
           for (const event of allLogs) {
@@ -3402,6 +3160,7 @@ function App() {
       } else if (path == 'swap') {
         setCurrentProText(t('pro'));
       } else if (path == 'scale') {
+        setswitched(false);
         if (multihop || isWrap) {
           let token;
           for (const market in markets) {
@@ -4918,9 +4677,9 @@ function App() {
                     setIsSigning(true);
                     try {
                       if (sendTokenIn == eth) {
-                        const hash = await sendeth(sendUserOperation, recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendeth(sendUserOperationAsync, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           eth,
                           '',
@@ -4930,9 +4689,9 @@ function App() {
                           recipient
                         );
                       } else {
-                        const hash = await sendtokens(sendUserOperation, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
+                        const hash = await sendtokens(sendUserOperationAsync, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash })).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           sendTokenIn,
                           '',
@@ -4988,309 +4747,7 @@ function App() {
           !connected ? (
             <div ref={popupref} className="connect-wallet-background unconnected">
               <div className="connect-wallet-content-container">
-                <div className="wallet-header-container">
-                  <h2 className="connect-wallet-title">
-                    {t('connectWallet')}
-                  </h2>
-                  <button
-                    className="disconnected-wallet-close-button"
-                    onClick={() => {
-                      setpopup(0);
-                      settokenString('');
-                    }}
-                  >
-                    <img
-                      src={closebutton}
-                      className="close-button-icon"
-                    />
-                  </button>
-                </div>
-                <div className="connect-wallet-divider"> </div>
-                <div className="connect-wallet-content">
-                  {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").length > 0 && (
-                    <>
-                      <div className="installed-wallet-section-title">
-                        {t('installed')}
-                      </div>
-                      {connectors.slice(5).filter(connector => connector.name !== "Backpack" && connector.name !== "Tomo" && connector.name !== "HaHa Wallet" && connector.name !== "Rabby Wallet").map((connector) => (
-                        <button
-                          key={connector.id}
-                          className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
-                          onClick={() => {
-                            setSelectedConnector(connector);
-                            setpopup(6);
-                            setTimeout(async () => {
-                              try {
-                                await connect({
-                                  connector,
-                                  chainId: activechain as any,
-                                });
-                                setpopup(0);
-                                setSelectedConnector(null);
-                              } catch {
-                                setpopup(4);
-                                setSelectedConnector(null);
-                              }
-                            }, 500);
-                          }}
-                        >
-                          <img
-                            className="connect-wallet-icon"
-                            src={
-                              connector.name === 'Phantom'
-                                ? walletphantom: walletinjected
-                            }
-                          />
-                          <span className="wallet-name">
-                            {connector.name}
-                          </span>
-                        </button>
-                      ))}
-                    </>
-                  )}
-
-                  <div className="popular-wallet-section-title">
-                    {t('popular')}
-                  </div>
-                  {connectors.find(connector => connector.name === "Rabby Wallet") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Rabby Wallet") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletrabby
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Rabby Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://rabby.io/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletrabby
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Rabby Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "Backpack") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Backpack") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletbackpack
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Backpack'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://backpack.app/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        walletbackpack
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Backpack'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "Tomo") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "Tomo") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallettomo
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Tomo Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://tomo.inc/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallettomo
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'Tomo Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.find(connector => connector.name === "HaHa Wallet") ? <button
-                    className={`wallet-option`}
-                    onClick={() => {
-                      let connector = connectors.find(connector => connector.name === "HaHa Wallet") || connectors[5]
-                      setSelectedConnector(connector);
-                      setpopup(6);
-                      setTimeout(async () => {
-                        try {
-                          await connect({
-                            connector,
-                            chainId: activechain as any,
-                          });
-                          setpopup(0);
-                          setSelectedConnector(null);
-                        } catch {
-                          setpopup(4);
-                          setSelectedConnector(null);
-                        }
-                      }, 500);
-                    }}
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallethaha
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'HaHa Wallet'}
-                    </span>
-                  </button> : <a
-                    className={`wallet-option`}
-                    href="https://haha.me/"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    <img
-                      className="connect-wallet-icon"
-                      src={
-                        wallethaha
-                      }
-                    />
-                    <span className="wallet-name">
-                      {'HaHa Wallet'}
-                    </span>
-                  </a>}
-                  {connectors.slice(0, 5).map((connector) => (
-                    <button
-                      key={connector.id}
-                      className={`wallet-option ${connectors.slice(5).includes(connector) ? 'installed' : ''}`}
-                      onClick={() => {
-                        setSelectedConnector(connector);
-                        setpopup(6);
-                        setTimeout(async () => {
-                          try {
-                            await connect({
-                              connector,
-                              chainId: activechain as any,
-                            });
-                            setpopup(0);
-                            setSelectedConnector(null);
-                          } catch {
-                            setpopup(4);
-                            setSelectedConnector(null);
-                          }
-                        }, 500);
-                      }}
-                    >
-                      <img
-                        className="connect-wallet-icon"
-                        src={
-                          connector.name === 'MetaMask'
-                            ? walletmetamask
-                            : connector.name === 'Coinbase Wallet'
-                              ? walletcoinbase
-                              : connector.name === 'WalletConnect'
-                                ? walletconnect
-                                : connector.name === 'Safe'
-                                  ? walletsafe
-                                  : walletinjected
-                        }
-                      />
-                      <span className="wallet-name">
-                        {connector.name}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="wallet-footer-container">
-                <div className="wallet-footer-text">
-                  <span>
-                    {t('noWallet')}
-                    <a
-                      href="https://docs.crystal.exchange/trading/onboarding"
-                      className="wallet-footer-link"
-                    >
-                      {t('createWallet')}
-                    </a>
-                  </span>
-                </div>
+                <AuthCard {...alchemyconfig.ui.auth} />
               </div>
             </div>
           ) : (
@@ -5960,12 +5417,13 @@ function App() {
                       </div>
                     </div>
                     <div className="search-market-chart-section">
-                        <MiniChart 
-                            market={market}
-                            trades={tradesByMarket[market.baseAsset+market.quoteAsset]}
-                            isVisible={true}
-                          />
-                      </div>
+                      <MiniChart 
+                        market={market}
+                        series={[]}
+                        isVisible={true}
+                        priceChange={''}
+                      />
+                    </div>
                     <div className="search-market-price-section">
                       <div className="search-market-price">
                         {formatSubscript(market.currentPrice)}
@@ -6002,12 +5460,11 @@ function App() {
         ) : null}
         {popup === 9 ? (
           <div ref={popupref} className="connect-wallet-background unconnected">
-            <div className="connect-wallet-content-container">
+            <div className="social-content-container">
               <div className="social-content">
                 <div className="social-banner-wrapper">
                   <img
                     src={SocialBanner}
-                    alt="Social Banner"
                     className="social-banner-image"
                   />
                 </div>
@@ -6837,13 +6294,9 @@ function App() {
               setIsSigning(true);
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  const hash = await wrapeth(sendUserOperation, amountIn, weth);
+                  const hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'wrap',
                     eth,
                     weth,
@@ -6859,13 +6312,9 @@ function App() {
                     '',
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  const hash = await unwrapeth(sendUserOperation, amountIn, weth);
+                  const hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'unwrap',
                     weth,
                     eth,
@@ -6885,7 +6334,7 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapExactETHForTokens(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountIn,
                           (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6898,7 +6347,7 @@ function App() {
                         );
                       } else {
                         await _swap(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountIn,
                           activeMarket.path[0] == tokenIn
@@ -6920,7 +6369,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -6929,11 +6378,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (
-                            await waitForTransactionReceipt(config, {
-                              hash: hash,
-                            })
-                          ).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -6953,7 +6398,7 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForETH(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6968,7 +6413,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -6992,7 +6437,7 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapExactTokensForTokens(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
@@ -7007,7 +6452,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -7034,7 +6479,7 @@ function App() {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
                         await swapETHForExactTokens(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           amountOutSwap,
                           (amountIn * 10000n + slippage / 2n) / slippage,
@@ -7047,7 +6492,7 @@ function App() {
                         );
                       } else {
                         await _swap(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           router,
                           BigInt(
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -7071,7 +6516,7 @@ function App() {
                     } else {
                       if (allowance < amountIn) {
                         const hash = await approve(
-                          sendUserOperation,
+                          sendUserOperationAsync,
                           tokenIn as `0x${string}`,
                           getMarket(
                             activeMarket.path.at(0),
@@ -7080,11 +6525,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (
-                            await waitForTransactionReceipt(config, {
-                              hash: hash,
-                            })
-                          ).transactionHash,
+                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -7104,7 +6545,7 @@ function App() {
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactETH(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -7119,7 +6560,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -7143,7 +6584,7 @@ function App() {
                       } else {
                         if (orderType == 1 || multihop) {
                           await swapTokensForExactTokens(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             amountOutSwap,
                             (amountIn * 10000n + slippage / 2n) / slippage,
@@ -7158,7 +6599,7 @@ function App() {
                           );
                         } else {
                           await _swap(
-                            sendUserOperation,
+                            sendUserOperationAsync,
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn
@@ -7205,7 +6646,7 @@ function App() {
               }
             } else {
               !connected
-                ? openAuthModal()
+                ? setpopup(4)
                 : setChain({chain: settings.chains[0]})
             }
           }}
@@ -8475,7 +7916,7 @@ function App() {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
                     await limitOrder(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       amountIn,
                       eth,
@@ -8485,7 +7926,7 @@ function App() {
                     );
                   } else {
                     await _swap(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       amountIn,
                       eth,
@@ -8501,7 +7942,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -8510,11 +7951,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (
-                        await waitForTransactionReceipt(config, {
-                          hash: hash,
-                        })
-                      ).transactionHash,
+                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
@@ -8534,7 +7971,7 @@ function App() {
 
                   if (addliquidityonly) {
                     await limitOrder(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8544,7 +7981,7 @@ function App() {
                     );
                   } else {
                     await _swap(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -9226,16 +8663,12 @@ function App() {
               try {
                 if (tokenIn == eth) {
                   const hash = await sendeth(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     recipient as `0x${string}`,
                     amountIn,
                   );
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     eth,
                     '',
@@ -9249,17 +8682,13 @@ function App() {
                   );
                 } else {
                   const hash = await sendtokens(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     tokenIn as `0x${string}`,
                     recipient as `0x${string}`,
                     amountIn,
                   );
                   newTxPopup(
-                    (
-                      await waitForTransactionReceipt(config, {
-                        hash: hash,
-                      })
-                    ).transactionHash,
+                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     tokenIn,
                     '',
@@ -10079,7 +9508,7 @@ function App() {
                 });
                 if (tokenIn == eth) {
                   await multiBatchOrders(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     router,
                     BigInt(amountIn),
                     [activeMarket.address],
@@ -10091,7 +9520,7 @@ function App() {
                 } else {
                   if (allowance < amountIn) {
                     const hash = await approve(
-                      sendUserOperation,
+                      sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
@@ -10100,11 +9529,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (
-                        await waitForTransactionReceipt(config, {
-                          hash: hash,
-                        })
-                      ).transactionHash,
+                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
@@ -10123,7 +9548,7 @@ function App() {
                   }
 
                   await multiBatchOrders(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     router,
                     BigInt(0),
                     [activeMarket.address],
@@ -10133,7 +9558,6 @@ function App() {
                     param2,
                   );
                 }
-                setTimeout(()=>refetch(), 500)
                 setInputString('');
                 setamountIn(BigInt(0));
                 setSliderPercent(0);
@@ -10148,6 +9572,14 @@ function App() {
                 setScaleOutputString('');
                 setScaleButtonDisabled(true);
                 setScaleButton(0);
+                setScaleStart(BigInt(0))
+                setScaleEnd(BigInt(0))
+                setScaleStartString('')
+                setScaleEndString('')
+                setScaleSkew(1)
+                setScaleSkewString('1.00')
+                setScaleOrders(BigInt(0))
+                setScaleOrdersString('')
               } catch (error) {
               } finally {
                 setIsSigning(false);
@@ -10340,6 +9772,7 @@ function App() {
                   chainId: chain.id,
                 }}
                 refetch={refRefetch}
+                sendUserOperation={useCallback(sendUserOperationAsync, [])}
               />
             }
           />
@@ -10403,7 +9836,7 @@ function App() {
                     logout: logout,
                   }}
                   refetch={refetch}
-                  sendUserOperation={sendUserOperation}
+                  sendUserOperation={useCallback(sendUserOperationAsync, [])}
                 />
               </>
             }
@@ -10480,7 +9913,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10524,7 +9956,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -10614,7 +10045,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -10699,7 +10130,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10743,7 +10173,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -10832,7 +10261,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -10917,7 +10346,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -10961,7 +10389,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -11051,7 +10478,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>
@@ -11136,7 +10563,6 @@ function App() {
                                       ? address
                                       : undefined
                                   }
-                                  mids={mids}
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                 />
@@ -11180,7 +10606,6 @@ function App() {
                                   ? address
                                   : undefined
                               }
-                              mids={mids}
                               layoutSettings={layoutSettings}
                               orderbookPosition={orderbookPosition}
                               trades={tradesByMarket[activeMarketKey]}
@@ -11269,7 +10694,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
                           />
                         </div>
                       </div>

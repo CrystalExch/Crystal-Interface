@@ -8,7 +8,11 @@ import { scrollContainer, shouldShowArrows } from '../../utils';
 import './AdditionalMetrics.css';
 
 interface AdditionalMetricsProps {
-  metrics: Array<{ label: string; value: React.ReactNode }>;
+  metrics: Array<{ 
+    label: string; 
+    value: React.ReactNode;
+    isLoading?: boolean;
+  }>;
 }
 
 const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
@@ -37,12 +41,12 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
       );
       setShowLeftArrow(showLeftArrow);
       setShowRightArrow(showRightArrow);
-      
+     
       const container = metricsRef.current;
       const isScrollable = container.scrollWidth > container.clientWidth;
-      const isAtLeftEdge = container.scrollLeft <= 10; 
-      const isAtRightEdge = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10; 
-      
+      const isAtLeftEdge = container.scrollLeft <= 10;
+      const isAtRightEdge = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
+     
       setShowLeftFade(isScrollable && !isAtLeftEdge);
       setShowRightFade(isScrollable && !isAtRightEdge);
     }
@@ -53,15 +57,12 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
     if (metricsContainer) {
       metricsContainer.addEventListener('scroll', updateArrowVisibility);
       window.addEventListener('resize', updateArrowVisibility);
-
       const resizeObserver = new ResizeObserver(() => {
         updateArrowVisibility();
       });
       resizeObserver.observe(metricsContainer);
-
       updateArrowVisibility();
       setIsMeasured(true);
-
       return () => {
         metricsContainer.removeEventListener('scroll', updateArrowVisibility);
         window.removeEventListener('resize', updateArrowVisibility);
@@ -75,8 +76,8 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
   }, [metrics]);
 
   return (
-    <div 
-      className={`right-section ${showLeftFade ? 'show-left-fade' : ''} ${showRightFade ? 'show-right-fade' : ''}`} 
+    <div
+      className={`right-section ${showLeftFade ? 'show-left-fade' : ''} ${showRightFade ? 'show-right-fade' : ''}`}
       ref={sectionRef}
     >
       {isMeasured && showLeftArrow && (
@@ -84,7 +85,12 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
       )}
       <div className="additional-metrics" ref={metricsRef}>
         {metrics.map((metric, index) => (
-          <MetricItem key={index} label={metric.label} value={metric.value} />
+          <MetricItem 
+            key={index} 
+            label={metric.label} 
+            value={metric.value} 
+            isLoading={metric.isLoading}
+          />
         ))}
       </div>
       {isMeasured && showRightArrow && (
