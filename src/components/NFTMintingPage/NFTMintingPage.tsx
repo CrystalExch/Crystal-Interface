@@ -28,40 +28,31 @@ const NFTMintingPage: React.FC = () => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      // Target date: March 24, 2025 at 12:00:00 UTC
       const targetDate = new Date("2025-03-24T12:00:00Z");
       const now = new Date();
       
-      // Calculate the time difference in milliseconds
       const difference = targetDate.getTime() - now.getTime();
       
-      // If the target date has passed, just return zeros
       if (difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
       
-      // Calculate days, hours, minutes, and seconds
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
       
-      // For debugging, log the countdown values
-      console.log(`Countdown: ${days}d ${hours}h ${minutes}m ${seconds}s`);
       
       setTimeLeft({ days, hours, minutes, seconds });
     };
     
-    // Calculate immediately
     calculateTimeLeft();
     
-    // Set up interval to update every second
     const timer = setInterval(() => {
       calculateTimeLeft();
     }, 1000);
     
-    // Clear the interval when the component unmounts
     return () => {
       clearInterval(timer);
       console.log('Countdown timer cleared');
@@ -71,7 +62,6 @@ const NFTMintingPage: React.FC = () => {
   const handleMint = () => {
     setMintLoading(true);
     
-    // Simulate minting process
     setTimeout(() => {
       setMintLoading(false);
       setMintSuccess(true);
@@ -88,7 +78,7 @@ const NFTMintingPage: React.FC = () => {
           <img src={nftData.imageUrl} alt={nftData.name} className="nft-image" />
           <div className="nft-countdown-timer">
             <div className="nft-countdown-content">
-              {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s left
+              {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
             </div>
           </div>
         </div>
