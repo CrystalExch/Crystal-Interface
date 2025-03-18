@@ -131,6 +131,7 @@ function App() {
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
   });
+  const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -9849,7 +9850,7 @@ function App() {
                   chainId: chain.id,
                 }}
                 refetch={refRefetch}
-                sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                sendUserOperation={sendUserOperation}
               />
             }
           />
@@ -9920,7 +9921,7 @@ function App() {
                     logout: logout,
                   }}
                   refetch={refetch}
-                  sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                  sendUserOperation={sendUserOperation}
                 />
               </>
             }
@@ -10129,7 +10130,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10345,7 +10346,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10562,7 +10563,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
@@ -10778,7 +10779,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={useCallback(sendUserOperationAsync, [])}
+                            sendUserOperation={sendUserOperation}
                           />
                         </div>
                       </div>
