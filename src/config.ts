@@ -6,7 +6,7 @@ import { settings } from "./settings";
 const uiConfig: AlchemyAccountsUIConfig = {
   illustrationStyle: "outline",
   auth: {
-    sections: [[{"type":"email","emailMode":"otp"}],[{"type":"passkey"},{"type":"social","authProviderId":"google","mode":"popup"},{"type":"social","authProviderId":"auth0","mode":"popup","auth0Connection":"discord","displayName":"Discord","logoUrl":"/src/assets/discord.svg","scope":"openid profile"},{"type":"social","authProviderId":"auth0","mode":"popup","auth0Connection":"twitter","displayName":"Twitter","logoUrl":"/src/assets/twitter.svg","logoUrlDark":"/src/assets/twitter-dark.svg","scope":"openid profile"}],[{"type":"external_wallets","walletConnect":{"projectId":"0597989b7e463d2a373445b8fe44d4a3"}}]],
+    sections: [[{"type":"email","emailMode":"otp"}],[{"type":"passkey"},{"type":"social","authProviderId":"google","mode":"popup"},{"type":"social","authProviderId":"auth0","mode":"popup","auth0Connection":"discord","displayName":"Discord","logoUrl":"https://dev.crystal.exchange/discord.svg","scope":"openid profile"},{"type":"social","authProviderId":"auth0","mode":"popup","auth0Connection":"twitter","displayName":"Twitter","logoUrl":"https://dev.crystal.exchange/twitter.svg","logoUrlDark":"https://dev.crystal.exchange/twitter-dark.svg","scope":"openid profile"}],[{"type":"external_wallets","walletConnect":{"projectId":"0597989b7e463d2a373445b8fe44d4a3"}}]],
     addPasskeyOnSignup: false,
   },
   supportUrl: "https://discord.gg/CrystalExch"
