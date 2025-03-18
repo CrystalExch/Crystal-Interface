@@ -1,11 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './NFTMintingPage.css';
-import LeaderboardBanner from '../../assets/leaderboardbanner.png';
+import LeaderboardBanner from '../../assets/MintTeaser.png';
 
 const NFTMintingPage: React.FC = () => {
   const [mintLoading, setMintLoading] = useState(false);
   const [mintSuccess, setMintSuccess] = useState(false);
   const [transaction, setTransaction] = useState('');
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0
+  });
   
   // Mock NFT data
   const nftData = {
@@ -19,6 +25,48 @@ const NFTMintingPage: React.FC = () => {
     holders: 423,
     sales24h: 18
   };
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      // Target date: March 24, 2025 at 12:00:00 UTC
+      const targetDate = new Date("2025-03-24T12:00:00Z");
+      const now = new Date();
+      
+      // Calculate the time difference in milliseconds
+      const difference = targetDate.getTime() - now.getTime();
+      
+      // If the target date has passed, just return zeros
+      if (difference <= 0) {
+        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+        return;
+      }
+      
+      // Calculate days, hours, minutes, and seconds
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      
+      // For debugging, log the countdown values
+      console.log(`Countdown: ${days}d ${hours}h ${minutes}m ${seconds}s`);
+      
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+    
+    // Calculate immediately
+    calculateTimeLeft();
+    
+    // Set up interval to update every second
+    const timer = setInterval(() => {
+      calculateTimeLeft();
+    }, 1000);
+    
+    // Clear the interval when the component unmounts
+    return () => {
+      clearInterval(timer);
+      console.log('Countdown timer cleared');
+    };
+  }, []);
 
   const handleMint = () => {
     setMintLoading(true);
@@ -38,6 +86,11 @@ const NFTMintingPage: React.FC = () => {
       <div className="nft-main-content-wrapper">
         <div className="nft-image-container">
           <img src={nftData.imageUrl} alt={nftData.name} className="nft-image" />
+          <div className="nft-countdown-timer">
+            <div className="nft-countdown-content">
+              {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s left
+            </div>
+          </div>
         </div>
         <div className="nft-swapmodal">
           <div className="nft-header">
