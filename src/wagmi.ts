@@ -7,7 +7,7 @@ export const config = createConfig({
   transports: {
     [10143]: fallback([
       http(
-        'https://monad-testnet.g.alchemy.com/v2/a49PoOS9UOj8z0LjKBzl9g7I_QVyl9tW',
+        'https://testnet-rpc.monad.xyz',
         { batch: true },
       ),
     ]),

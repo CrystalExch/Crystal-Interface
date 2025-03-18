@@ -1,7 +1,6 @@
 import { AlchemyAccountsUIConfig, createConfig } from "@account-kit/react";
-import { alchemy } from "@account-kit/infra";
+import { monadTestnet, alchemy } from "@account-kit/infra";
 import { QueryClient } from "@tanstack/react-query";
-import { settings } from "./settings";
 
 const uiConfig: AlchemyAccountsUIConfig = {
   illustrationStyle: "outline",
@@ -14,7 +13,7 @@ const uiConfig: AlchemyAccountsUIConfig = {
 
 export const alchemyconfig = createConfig({
   transport: alchemy({ apiKey: "SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng" }),
-  chain: settings.chains[0],
+  chain: monadTestnet,
   ssr: false,
   enablePopupOauth: true,
 }, uiConfig);
