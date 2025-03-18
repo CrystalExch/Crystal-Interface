@@ -3647,6 +3647,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   .trade-mobile-switch {
     max-height: 23px;
     max-width: 23px;
+  }
   .trade-mobile-switch {
     max-height: 23px;
     max-width: 23px;
@@ -3656,7 +3657,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     transform-origin: center;
     transition: transform.3s ease;
   }
-  .trade-mobile-switch.open {
+
   .trade-mobile-switch.open {
     outline: 0;
     transform: rotate(270deg);
