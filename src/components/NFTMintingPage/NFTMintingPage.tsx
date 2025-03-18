@@ -145,7 +145,7 @@ const NFTMintingPage: React.FC = () => {
               </button>
             ) : (
               <div className="nft-mint-success-container">
-    
+                <p>Minting successful! Transaction: {transaction}</p>
               </div>
             )}
           </div>

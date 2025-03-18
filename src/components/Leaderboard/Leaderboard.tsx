@@ -7,14 +7,19 @@ import DeleteAccountPopup from './DeleteAccountPopup';
 import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
 
+// Updated to accept string IDs to match the data passed from App.tsx
 interface Faction {
-  id: number;
+  id: string; // Changed from number to string to match your data
   name: string;
-  xp: number;
-  bonusXP: number;
-  growthPercentage: number;
-  logo: string;
-  badgeIcon: string;
+  points: number;
+  level: number;
+  rank: number;
+  // The following properties are expected by your inner components
+  xp?: number;
+  bonusXP?: number;
+  growthPercentage?: number;
+  logo?: string;
+  badgeIcon?: string;
 }
 
 interface LeaderboardProps {
@@ -62,7 +67,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     logo: ""
   });
   const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
-  const [updatedFactions, setUpdatedFactions] = useState<Faction[]>([...factions]);
+  
+  // Process factions to ensure they have all required properties
+  const processedFactions = factions.map(faction => ({
+    ...faction,
+    xp: faction.xp || faction.points || 0,
+    bonusXP: faction.bonusXP || 0,
+    growthPercentage: faction.growthPercentage || 0,
+    logo: faction.logo || `https://via.placeholder.com/50/708090/FFFFFF?text=${faction.name.charAt(0)}`,
+    badgeIcon: faction.badgeIcon || 'https://via.placeholder.com/20/708090/FFFFFF?text=N'
+  }));
+  
+  const [updatedFactions, setUpdatedFactions] = useState<Faction[]>(processedFactions);
 
   useEffect(() => {
     const storedUserData = localStorage.getItem('leaderboard_user_data');
@@ -80,7 +96,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     }
   }, []);
 
-  const sortedFactions = [...updatedFactions].sort((a, b) => b.xp - a.xp);
+  // Sort by XP (points) in descending order for display
+  const sortedFactions = [...updatedFactions].sort((a, b) => (b.xp || b.points || 0) - (a.xp || a.points || 0));
   
   const topThreeUsers = sortedFactions.slice(0, 3);
   
@@ -145,9 +162,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: newUserData.image
     });
     
+    // Use string ID to match the existing interface
+    const maxId = Math.max(...updatedFactions.map(f => parseInt(f.id.toString()) || 0));
     const userFaction: Faction = {
-      id: updatedFactions.length + 1,
+      id: (maxId + 1).toString(),
       name: newUserData.username,
+      points: 0,
+      level: 1,
+      rank: updatedFactions.length + 1,
       xp: 0,
       bonusXP: 0,
       growthPercentage: 0,
@@ -170,7 +192,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: ""
     });
     
-    setUpdatedFactions(factions.filter(f => f.name !== userData.username));
+    setUpdatedFactions(processedFactions.filter(f => f.name !== userData.username));
     setShowDeleteConfirmation(false);
   }
   
@@ -356,7 +378,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="faction-info">
               <img src={faction.logo} alt={faction.name} className="faction-logo" />
               <div className="faction-name">{faction.name}</div>
-              <div className="faction-xp">{faction.xp.toLocaleString()} XP</div>
+              <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
             </div>
           </div>
         ))}
@@ -381,7 +403,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <span className="faction-row-name">{faction.name}</span>
               </div>
               <div className="row-xp">
-                <div className="xp-amount">{faction.xp.toLocaleString()}</div>
+                <div className="xp-amount">{(faction.xp || faction.points || 0).toLocaleString()}</div>
               </div>
             </div>
           ))}

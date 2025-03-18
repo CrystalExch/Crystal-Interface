@@ -9854,10 +9854,19 @@ function App() {
             }
           />
                     <Route path="/leaderboard" element={<>           <Leaderboard 
-            totalXP={leaderboardData.totalXP}
-            currentXP={leaderboardData.currentXP}
-            username={leaderboardData.username}
-            userXP={leaderboardData.userXP} factions={[]}      /></>}></Route>
+        totalXP={leaderboardData.totalXP}
+        currentXP={leaderboardData.currentXP}
+        username={leaderboardData.username}
+        userXP={leaderboardData.userXP}
+        factions={leaderboardData.factions.map(faction => ({
+          ...faction,
+          xp: faction.points,
+          bonusXP: 0,
+          growthPercentage: 0,
+          logo: '',
+          badgeIcon: ''
+        }))}
+      /></>}></Route>
       <Route path="/mint"
       element={
         <NFTMintingPage/> 
