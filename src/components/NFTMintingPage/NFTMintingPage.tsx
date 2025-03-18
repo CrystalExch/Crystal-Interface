@@ -4,8 +4,6 @@ import LeaderboardBanner from '../../assets/MintTeaser.png';
 
 const NFTMintingPage: React.FC = () => {
   const [mintLoading, setMintLoading] = useState(false);
-  const [mintSuccess, setMintSuccess] = useState(false);
-  const [transaction, setTransaction] = useState('');
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -15,15 +13,14 @@ const NFTMintingPage: React.FC = () => {
   
   // Mock NFT data
   const nftData = {
-    name: "Amethyst Ravine",
-    description: "A rare digital collectible. This NFT grants access to exclusive community events and future airdrops.",
+    name: "???",
+    description: "Trade on Crystal to become eligible for our first NFT drop, coming soon...",
     imageUrl: LeaderboardBanner,
-    price: 0.08,
-    remainingSupply: 117,
+    remainingSupply: 1000,
     totalSupply: 1000,
-    volume24h: 5.27,
-    holders: 423,
-    sales24h: 18
+    mints24h: 0,
+    holders: 0,
+    eligible: 0
   };
 
   useEffect(() => {
@@ -55,7 +52,6 @@ const NFTMintingPage: React.FC = () => {
     
     return () => {
       clearInterval(timer);
-      console.log('Countdown timer cleared');
     };
   }, []);
 
@@ -64,8 +60,6 @@ const NFTMintingPage: React.FC = () => {
     
     setTimeout(() => {
       setMintLoading(false);
-      setMintSuccess(true);
-      setTransaction('0x3a8d45ab67c9f4213d8324252f9c69b4382f7d98b45678c3d458f47c2d941589');
     }, 2000);
   };
 
@@ -97,16 +91,16 @@ const NFTMintingPage: React.FC = () => {
                 {/* Stats Grid */}
                 <div className="nft-stats-grid">
                   <div className="nft-stat-item">
-                    <div className="nft-stat-value">{nftData.volume24h} MON</div>
-                    <div className="nft-stat-label">24h Volume</div>
+                    <div className="nft-stat-value">{nftData.mints24h}</div>
+                    <div className="nft-stat-label">24h Mints</div>
                   </div>
                   <div className="nft-stat-item">
                     <div className="nft-stat-value">{nftData.holders}</div>
                     <div className="nft-stat-label">Holders</div>
                   </div>
                   <div className="nft-stat-item">
-                    <div className="nft-stat-value">{nftData.sales24h}</div>
-                    <div className="nft-stat-label">24h Sales</div>
+                    <div className="nft-stat-value">{nftData.eligible}</div>
+                    <div className="nft-stat-label">Eligible</div>
                   </div>
                 </div>
                 
@@ -122,17 +116,15 @@ const NFTMintingPage: React.FC = () => {
                 
                 <div className="nft-price-container">
                   <div className="nft-label-container">Price</div>
-                  <div className="nft-value-container">{nftData.price} MON</div>
+                  <div className="nft-value-container">Free</div>
                 </div>
                 
               </div>
             </div>
-            
-            {!mintSuccess ? (
-              <button 
+                          <button 
                 className={`nft-swap-button ${mintLoading ? 'nft-signing' : ''}`} 
                 onClick={handleMint}
-                disabled={mintLoading}
+                disabled={true}
               >
                 {mintLoading ? (
                   <div className="nft-button-content">
@@ -143,11 +135,6 @@ const NFTMintingPage: React.FC = () => {
                   "Mint NFT"
                 )}
               </button>
-            ) : (
-              <div className="nft-mint-success-container">
-                <p>Minting successful! Transaction: {transaction}</p>
-              </div>
-            )}
           </div>
         </div>
       </div>

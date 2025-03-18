@@ -4,7 +4,6 @@
     width: 100%;
     margin: 0 auto;
     padding: 20px;
-    max-width: 1500px;
 }
 
 .nft-swapmodal {
@@ -100,7 +99,7 @@
   margin-bottom: 15px;
   background-color: #ffffff08;
   border-radius: 8px;
-  padding: 12px 8px;
+  padding: 4px 8px;
   border: 1px solid #ffffff10;
 }
 
@@ -115,7 +114,6 @@
   font-size: 0.85rem;
   font-weight: 500;
   color: #ffffffde;
-  margin-bottom: 3px;
 }
 
 .nft-stat-label {

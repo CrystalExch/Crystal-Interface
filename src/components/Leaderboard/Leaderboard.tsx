@@ -74,8 +74,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     xp: faction.xp || faction.points || 0,
     bonusXP: faction.bonusXP || 0,
     growthPercentage: faction.growthPercentage || 0,
-    logo: faction.logo || `https://via.placeholder.com/50/708090/FFFFFF?text=${faction.name.charAt(0)}`,
-    badgeIcon: faction.badgeIcon || 'https://via.placeholder.com/20/708090/FFFFFF?text=N'
+    logo: faction.logo,
+    badgeIcon: faction.badgeIcon
   }));
   
   const [updatedFactions, setUpdatedFactions] = useState<Faction[]>(processedFactions);
@@ -174,7 +174,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       bonusXP: 0,
       growthPercentage: 0,
       logo: newUserData.image,
-      badgeIcon: 'https://via.placeholder.com/20/708090/FFFFFF?text=N'
+      badgeIcon: ''
     };
     
     setUpdatedFactions([...updatedFactions, userFaction]);
