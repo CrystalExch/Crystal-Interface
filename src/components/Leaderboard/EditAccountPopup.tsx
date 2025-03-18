@@ -20,7 +20,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   onClose 
 }) => {
   const [username, setUsername] = useState<string>(userData.username);
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(userData.image);
   const [error, setError] = useState<string>('');
 

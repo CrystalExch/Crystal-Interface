@@ -248,7 +248,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       {showAccountSetup && (
         <LeaderboardAccountSetup 
           onComplete={handleAccountSetupComplete}
-          onClose={() => setShowAccountSetup(false)}
           onBackToIntro={() => {
             setShowAccountSetup(false);
             setShowChallengeIntro(true);
@@ -285,7 +284,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       
       <div className="leaderboard-banner">
         <div className="banner-overlay">
-          <img src={LeaderboardImage} alt="Leaderboard" className="leaderboard-image" />
+          <img src={LeaderboardImage} className="leaderboard-image" />
           <button className="view-rules-button" onClick={handleViewRules}>View rules</button>
           
           <div className="countdown-timer">
@@ -306,13 +305,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </div>
           </div>
           
-          <div className="user-info">
+          <div className="leaderboard-user-info">
             <div className="info-column">
               <div className="column-header">Username</div>
               <div className="column-content">
                 <div className="username-container">
                   {userData.logo && (
-                    <img src={userData.logo} alt="User" className="username-logo" />
+                    <img src={userData.logo} className="username-logo" />
                   )}
                   <span className="username">@{userData.username || "Guest"}</span>
                 </div>
@@ -333,20 +332,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               </div>
             </div>
             {hasAccount ? (
-              <div className="account-buttons-container">
-                <button 
-                  className="edit-account-button"
-                  onClick={handleEditAccount}
-                >
-                  Edit Account
-                </button>
-                <button 
-                  className="delete-account-button"
-                  onClick={() => setShowDeleteConfirmation(true)}
-                >
-                  Delete Account
-                </button>
-              </div>
+              <button 
+                className="edit-account-button"
+                onClick={handleEditAccount}
+              >
+                Edit Account
+              </button>
             ) : isGuestMode ? (
               <button 
                 className="create-account-button"
@@ -371,12 +362,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div key={faction.id} className={`faction-card rank-${index + 1}`}>
             {index === 0 && (
               <div className="crown-icon-container">
-                <img src={CrownIcon} alt="Crown" className="crown-icon" />
+                <img src={CrownIcon} className="crown-icon" />
               </div>
             )}
             <div className="faction-rank">{index + 1}</div>
             <div className="faction-info">
-              <img src={faction.logo} alt={faction.name} className="faction-logo" />
+              <img src={faction.logo} className="faction-logo" />
               <div className="faction-name">{faction.name}</div>
               <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
             </div>
@@ -395,11 +386,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           {remainingUsers.map((faction, index) => (
             <div key={faction.id} className="leaderboard-row">
               <div className="row-rank">
-                <img src={faction.badgeIcon} alt="Badge" className="rank-badge" />
+                <img src={faction.badgeIcon} className="rank-badge" />
                 <span>{index + 4}</span>
               </div>
               <div className="row-faction">
-                <img src={faction.logo} alt={faction.name} className="faction-small-logo" />
+                <img src={faction.logo} className="faction-small-logo" />
                 <span className="faction-row-name">{faction.name}</span>
               </div>
               <div className="row-xp">

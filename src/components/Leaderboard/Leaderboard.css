@@ -73,8 +73,8 @@
   
   .view-rules-button {
     background: transparent;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.55);
+    border: 1.5px solid rgba(255, 255, 255, 0.1);
+    color: #ffffff;
     padding: 4px 16px;
     border-radius: 6px;
     font-weight: 300;
@@ -112,7 +112,6 @@
   
   .progress-container {
     position: absolute;
-    margin: 20px 0;
     margin-top: auto;
     width: calc(100% - 40px);
     bottom: 90px;
@@ -142,15 +141,14 @@
     color: rgba(255, 255, 255, 0.7);
   }
   
-  .user-info {
+  .leaderboard-user-info {
     position: absolute;
     display: flex;
     justify-content: space-between;
-    margin-top: auto;
     background-color: rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(3px);
     border-top: 1.5px solid rgba(255, 255, 255, 0.05);
-    padding: 20px 25px;
+    padding: 10px 25px 8px 25px;
     margin: 0;
     width: 100%;
     bottom: 0px;
@@ -164,7 +162,6 @@
   .column-header {
     font-size: 14px;
     color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 5px;
   }
   
   .column-content {
@@ -181,8 +178,6 @@
   .top-factions {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 10px;
-    margin-top: -10px;
     gap: 20px;
   }
 
@@ -465,7 +460,8 @@
     gap: 20px;
     perspective: 1500px;
     transform-style: preserve-3d;
-    padding: 20px 0;
+    padding: 20px 0 0 0;
+    margin-left: 5px;
   }
   
   .faction-card {

@@ -1,6 +1,6 @@
 .nft-main-content-wrapper{
     display: flex;
-    gap: 10px;
+    gap: 4px;
     width: 100%;
     margin: 0 auto;
     padding: 20px;
@@ -81,7 +81,7 @@
 .nft-name {
   font-size: 1rem;
   font-weight: 400;
-  color: #ffffffc7;
+  color: #aaaecf;
   margin: 0
 }
 
@@ -457,7 +457,6 @@
   display: flex;
   justify-content: center;
   overflow: hidden;
-  border: 2px solid #ffffff02;
   border-radius: 20px;
   animation: nft-fadeInSlideUp 0.5s ease forwards;
 }

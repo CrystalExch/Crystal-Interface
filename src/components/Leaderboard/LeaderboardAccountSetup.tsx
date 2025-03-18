@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent } from 'react';
+import React, { useState, ChangeEvent } from 'react';
 import './LeaderboardAccountSetup.css';
 import SideArrow from '../../assets/arrow.svg';
 
@@ -10,18 +10,16 @@ interface UserData {
 
 interface LeaderboardAccountSetupProps {
   onComplete: (userData: UserData) => void;
-  onClose: () => void;
   onBackToIntro?: () => void; 
 }
 
 const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({ 
   onComplete, 
-  onClose,
   onBackToIntro 
 }) => {
   const [step, setStep] = useState<number>(1);
   const [username, setUsername] = useState<string>('');
-  const [photo, setPhoto] = useState<File | null>(null);
+  const [, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [error, setError] = useState<string>('');
   
