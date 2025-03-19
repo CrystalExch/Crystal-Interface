@@ -1047,7 +1047,7 @@ function App() {
         address: activeMarket?.address,
         abi: CrystalMarketAbi,
         functionName: 'getPriceLevelsFromMid',
-        args: [BigInt(1000000)],
+        args: [BigInt(10000)],
       },
       {
         address: balancegetter,
