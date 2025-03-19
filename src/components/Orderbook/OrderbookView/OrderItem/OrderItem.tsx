@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
 
@@ -20,9 +20,10 @@ interface OrderItemProps {
   maxDecimals: number;
   updateLimitAmount: any;
   shouldFlash: boolean;
+  hasUserOrder?: boolean;
 }
 
-const OrderItem = forwardRef<HTMLLIElement, OrderItemProps>(
+const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
   (
     {
       price,
@@ -39,6 +40,7 @@ const OrderItem = forwardRef<HTMLLIElement, OrderItemProps>(
       maxDecimals,
       updateLimitAmount,
       shouldFlash,
+      hasUserOrder = false,
     },
     ref,
   ) => {
@@ -49,7 +51,7 @@ const OrderItem = forwardRef<HTMLLIElement, OrderItemProps>(
         const timeout = setTimeout(() => setFlash(false), 500);
         return () => clearTimeout(timeout);
       }
-    }, []);
+    }, [flash]);
 
     const totalSizeBarStyle = {
       width: `${width}%`,
@@ -88,6 +90,9 @@ const OrderItem = forwardRef<HTMLLIElement, OrderItemProps>(
           <div className="order-content">
             <span className="order-price" style={{ color }}>
               {formatCommas(price.toFixed(Math.log10(priceFactor)))}
+              {hasUserOrder && (
+                <span className="user-order-dot">•</span>
+              )}
             </span>
             <span className="order-size">
               {formatCommas(size.toFixed(maxDecimals))}

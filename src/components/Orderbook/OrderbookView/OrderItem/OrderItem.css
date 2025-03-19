@@ -109,3 +109,24 @@
     opacity: 0;
   }
 }
+
+
+/* User order dot indicator - Added to your original CSS */
+.user-order-dot {
+  display: inline-block;
+  margin-left: 4px;
+  font-size: 18px;
+  line-height: 0;
+  position: relative;
+  top: 2px;
+  font-weight: bold;
+}
+
+/* Keep dot colors consistent with order color */
+.buyOrder .user-order-dot {
+  color: inherit;
+}
+
+.sellOrder .user-order-dot {
+  color: inherit;
+}

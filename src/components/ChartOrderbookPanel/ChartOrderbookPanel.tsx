@@ -14,7 +14,7 @@ interface ChartOrderbookPanelProps {
   orderbookPosition: string;
   trades: any[];
   orderdata: any;
-  activeMarket: string;
+  activeMarket: any;
   isOrderbookVisible: boolean;
   orderbookWidth: number;
   setOrderbookWidth: (newWidth: number) => void;
@@ -31,6 +31,7 @@ interface ChartOrderbookPanelProps {
   setpopup: (value: number) => void;
   updateLimitAmount: any;
   tradesloading: boolean;
+  orders?: any[];
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -59,6 +60,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   setpopup,
   updateLimitAmount,
   tradesloading,
+  orders = [],
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -204,6 +206,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
             activeTab={activeTab}
             setActiveTab={setActiveTab}
             updateLimitAmount={updateLimitAmount}
+            userOrders={orders}
+            address={userWalletAddress}
           />
         </div>
       </>

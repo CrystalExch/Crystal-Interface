@@ -22,11 +22,14 @@ interface OrderBookProps {
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
   updateLimitAmount: any;
+  userOrders?: any[];
+  address?: string | null;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
   trades,
   orderdata,
+  activemarket,
   layoutSettings,
   orderbookPosition,
   hideHeader = false,
@@ -40,6 +43,8 @@ const OrderBook: React.FC<OrderBookProps> = ({
   activeTab,
   setActiveTab,
   updateLimitAmount,
+  userOrders = [],
+  address,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -52,6 +57,11 @@ const OrderBook: React.FC<OrderBookProps> = ({
   const spreadData = orderdata.spreadData;
   const symbolIn = orderdata.symbolIn;
   const symbolOut = orderdata.symbolOut;
+
+  const filteredUserOrders = userOrders.filter(order => {
+    return order[4] === (activemarket?.baseAsset + activemarket?.quoteAsset);
+  });
+
   const updateIndicator = () => {
     if (!headerRef.current || !indicatorRef.current) return;
 
@@ -99,14 +109,14 @@ const OrderBook: React.FC<OrderBookProps> = ({
               className={`ob-tab ${activeTab === 'orderbook' ? 'ob-active' : ''}`}
               onClick={() => handleTabClick('orderbook')}
             >
-              {t('orderbook')}
+              Orderbook
             </div>
             <div
               ref={(el) => (tabsRef.current[1] = el)}
               className={`ob-tab ${activeTab === 'trades' ? 'ob-active' : ''}`}
               onClick={() => handleTabClick('trades')}
             >
-              {t('trades')}
+              Trades
             </div>
           </div>
           <div ref={indicatorRef} className="ob-sliding-indicator" />
@@ -130,6 +140,8 @@ const OrderBook: React.FC<OrderBookProps> = ({
         setViewMode={setViewMode}
         show={activeTab === 'orderbook' ? true : false}
         updateLimitAmount={updateLimitAmount}
+        userOrders={filteredUserOrders}
+        activeMarket={activemarket?.baseAsset + activemarket?.quoteAsset}
       />
 
       <TradesView
