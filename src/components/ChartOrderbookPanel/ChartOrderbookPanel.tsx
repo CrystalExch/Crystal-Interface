@@ -207,7 +207,6 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
             setActiveTab={setActiveTab}
             updateLimitAmount={updateLimitAmount}
             userOrders={orders}
-            address={userWalletAddress}
           />
         </div>
       </>

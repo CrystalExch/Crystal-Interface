@@ -23,7 +23,6 @@ interface OrderBookProps {
   setActiveTab: any;
   updateLimitAmount: any;
   userOrders?: any[];
-  address?: string | null;
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
@@ -44,7 +43,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
   setActiveTab,
   updateLimitAmount,
   userOrders = [],
-  address,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
