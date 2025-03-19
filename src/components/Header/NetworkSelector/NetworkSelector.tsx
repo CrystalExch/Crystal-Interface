@@ -1,5 +1,4 @@
 import React, { useRef } from 'react';
-import { alchemyconfig } from '../../../config';
 
 import { useClickOutside } from '../utils';
 
