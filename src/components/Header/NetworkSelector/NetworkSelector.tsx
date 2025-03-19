@@ -1,4 +1,3 @@
-import { setChain } from "@account-kit/core";
 import React, { useRef } from 'react';
 import { alchemyconfig } from '../../../config';
 
@@ -19,6 +18,7 @@ interface NetworkSelectorProps {
   settradehistory: any;
   settradesByMarket: any;
   setcanceledorders: any;
+  setChain: any;
 }
 
 const NetworkSelector: React.FC<NetworkSelectorProps> = ({
@@ -30,6 +30,7 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
   settradehistory,
   settradesByMarket,
   setcanceledorders,
+  setChain,
 }) => {
   const networkSelectorRef = useRef<HTMLDivElement>(null);
   const { activechain, setactivechain } = useSharedContext();
@@ -57,7 +58,7 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
               onClick={async () => {
                 setNetworkSelectorOpen(!isNetworkSelectorOpen);
                 if (activechain != Number(chainId)) {
-                  await setChain(alchemyconfig, settings.chains[0])
+                  setChain()
                   setactivechain(Number(chainId));
                   setTokenIn(settings.chainConfig[Number(chainId)].usdc);
                   setTokenOut(settings.chainConfig[Number(chainId)].eth);

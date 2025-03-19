@@ -95,6 +95,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               <div className="min-size-input-container">
                 <div className="min-size-input-wrapper">
                   <input
+                    inputMode="decimal"
                     type="text"
                     value={minSizeValue}
                     onChange={handleInputChange}

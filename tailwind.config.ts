@@ -24,6 +24,7 @@ export default withAccountKitUi({
   colors: {
     "btn-primary": createColorSet("#19191c80", "#aaaecf"),
     "fg-accent-brand": createColorSet("#19191c80", "#aaaecf"),
-
+    "bg-surface-default": createColorSet("#19191c80", "#0f0f12"),
+    "bg-surface-inset": createColorSet("#19191c80", "#aaaecf30"),
   },
 })

@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef } from 'react';
 import {
   Area,
   CartesianGrid,
@@ -33,7 +33,6 @@ interface CustomTooltipProps extends TooltipProps<number, string> {
   chartDays: number;
 }
 
-// Custom tooltip component
 const CustomTooltip: React.FC<CustomTooltipProps> = ({
   active,
   payload,
@@ -42,11 +41,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
 }) => {
   if (!active || !payload || !payload.length) return null;
 
-  // Split date and hour
-  const parts = label ? label.split(' ') : ['', ''];
-  const date = parts[0] || '';
-  const hour = parts[1] || '';
-
+  const [date, hour] = label.split(' ');
   const formattedTime =
     chartDays === 1
       ? `${hour}:00`
@@ -101,197 +96,84 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
     setChartDays,
   }) => {
     const { setHigh, setLow, setDays, setTimeRange } = useSharedContext();
-    const gradientId = `colorValue-${isPopup ? 'popup' : 'main'}-${Math.random().toString(36).substring(2, 7)}`;
-    const [errorState, setErrorState] = useState<boolean>(false);
-    
-    // Format X-axis tick labels
+    const gradientId = `colorValue-${isPopup ? 'popup' : 'main'}`;
+
     const formatXAxisTick = (timeStr: string): string => {
-      try {
-        if (!timeStr) return '';
-        const parts = timeStr.split(' ');
-        if (parts.length < 2) return timeStr;
-        
-        const [date, hour] = parts;
-        const dateParts = date.split('-');
-        if (dateParts.length < 3) return timeStr;
-        
-        const [, month, day] = dateParts;
+      const [date, hour] = timeStr.split(' ');
+      const [, month, day] = date.split('-');
 
-        if (chartDays === 1) return `${hour}:00`;
-        if (chartDays < 7) return `${month}/${day} ${hour}:00`;
-        return `${month}/${day}`;
-      } catch (error) {
-        console.error("Error formatting tick:", error);
-        return timeStr || '';
-      }
+      if (chartDays === 1) return `${hour}:00`;
+      if (chartDays < 7) return `${month}/${day} ${hour}:00`;
+      return `${month}/${day}`;
     };
 
-    // Calculate X-axis interval (how many ticks to show)
     const calculateXAxisInterval = (): number => {
-      try {
-        // Calculate intervals based on window width and chart days
-        const dataPoints = chartData?.length || 0;
-        const windowWidth = window.innerWidth || 1000;
-        
-        // Determine how many ticks should be visible based on window width
-        const optimalTickCount = Math.min(12, Math.max(4, Math.floor(windowWidth / 100)));
-        
-        // Calculate interval to show approximately optimalTickCount ticks
-        const interval = Math.max(1, Math.floor(dataPoints / optimalTickCount));
-        
-        // Ensure there are not too many or too few ticks
-        return Math.max(1, Math.min(interval, dataPoints / 4));
-      } catch (error) {
-        console.error("Error calculating interval:", error);
-        return 4; // Default fallback
+      switch (chartDays) {
+        case 1:
+          return Math.floor(1 * 1736 / window.innerWidth);
+        case 7:
+          return Math.floor(7 * 1736 / window.innerWidth);
+        case 14:
+          return Math.floor(7 * 1736 / window.innerWidth);
+        case 30:
+          return Math.floor(1 * 1736 / window.innerWidth);
+        default:
+          return Math.floor(7 * 1736 / window.innerWidth);
       }
     };
 
-    // References for time period buttons and the indicator
     const timeButtonsRef = useRef<(HTMLButtonElement | null)[]>([]);
     const indicatorRef = useRef<HTMLDivElement>(null);
 
-    // Update the position of the sliding indicator
     const updateIndicator = () => {
-      try {
-        const activeButton = timeButtonsRef.current.find((btn) =>
-          btn?.classList.contains('active'),
-        );
-        if (activeButton && indicatorRef.current) {
-          indicatorRef.current.style.width = `${activeButton.offsetWidth - 4}px`;
-          indicatorRef.current.style.left = `${activeButton.offsetLeft + 2}px`;
-        }
-      } catch (error) {
-        console.error("Error updating indicator:", error);
+      const activeButton = timeButtonsRef.current.find((btn) =>
+        btn?.classList.contains('active'),
+      );
+      if (activeButton && indicatorRef.current) {
+        indicatorRef.current.style.width = `${activeButton.offsetWidth - 4}px`;
+        indicatorRef.current.style.left = `${activeButton.offsetLeft + 2}px`;
       }
     };
 
-    // Update indicator position on resize or chart day change
     useEffect(() => {
-      try {
-        updateIndicator();
-        window.addEventListener('resize', updateIndicator);
-        return () => window.removeEventListener('resize', updateIndicator);
-      } catch (error) {
-        console.error("Error in indicator effect:", error);
-      }
+      updateIndicator();
+      window.addEventListener('resize', updateIndicator);
+      return () => window.removeEventListener('resize', updateIndicator);
     }, [chartDays, portChartLoading]);
 
-    // Calculate percentage change and set graph colors
     useEffect(() => {
-      try {
-        if (chartData?.length > 0) {
-          // Filter out zero values
-          const validData = chartData.filter(point => point.value > 0);
-          
-          if (validData.length > 0) {
-            // Use first and last valid data points for calculating change
-            const firstValue = validData[0].value;
-            const lastValue = validData[validData.length - 1].value;
-            const change =
-              firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
-            
-            if (onPercentageChange) onPercentageChange(change);
-            if (setColorValue) setColorValue(change >= 0 ? '#00b894' : '#d63031');
-            
-            // Use all non-zero values for high/low calculation
-            const nonZeroValues = validData.map(d => d.value);
-            if (nonZeroValues.length > 0) {
-              const highValue = Math.max(...nonZeroValues);
-              const lowValue = Math.min(...nonZeroValues);
-              if (setHigh) setHigh(highValue);
-              if (setLow) setLow(lowValue);
-            }
-          } else {
-            // Set defaults for empty data
-            if (onPercentageChange) onPercentageChange(0);
-            if (setColorValue) setColorValue('#00b894');
-          }
-        } else {
-          // Set defaults for empty data
-          if (onPercentageChange) onPercentageChange(0);
-          if (setColorValue) setColorValue('#00b894');
-        }
-      } catch (error) {
-        console.error("Error processing chart data:", error);
-        setErrorState(true);
-        // Set safe defaults
-        if (onPercentageChange) onPercentageChange(0);
-        if (setColorValue) setColorValue('#00b894');
+      if (chartData?.length > 0) {
+        const firstValue = chartData[0].value;
+        const lastValue = chartData[chartData.length - 1].value;
+        const change =
+          firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
+        onPercentageChange?.(change);
+        setColorValue?.(change >= 0 ? '#00b894' : '#d63031');
+        setHigh(Math.max(...chartData.map((d) => d.value)) || 0);
+        setLow(Math.min(...chartData.map((d) => d.value)) || 0);
       }
-    }, [chartData, onPercentageChange, setColorValue, setHigh, setLow]);
+    }, [chartData]);
 
-    // If no address, show empty graph
     if (!address) {
-      try {
-        const startDate = new Date();
-        const stepHours =
-          chartDays === 1 ? 2 : // 2 hours for 1 day
-          chartDays === 7 ? 6 : // 6 hours for 7 days
-          chartDays === 14 ? 12 : // 12 hours for 14 days
-          24; // 24 hours for 30 days
-        
-        let dateRange: any[] = [];
-        const totalSteps = Math.ceil((chartDays * 24) / stepHours);
+      const startDate = new Date();
+      const stepHours =
+        chartDays === 1 ? 1 : chartDays === 7 ? 3 : chartDays === 14 ? 6 : 15;
+      let dateRange: any[] = [];
+      const totalSteps = Math.ceil((chartDays * 24) / stepHours);
 
-        for (let i = totalSteps - 1; i >= 0; i--) {
-          const date = new Date(
-            startDate.getTime() - i * stepHours * 60 * 60 * 1000,
-          );
-          dateRange.push({
-            time: `${date.toISOString().split('T')[0]} ${date.toISOString().split('T')[1].substring(0, 2)}`,
-            value: 0,
-          });
-        }
-        const emptyData = dateRange;
-        return (
-          <div className="portfolio-graph-container">
-            <div className="chart-days-dropdown">
-              {[
-                { value: 1, label: '24H' },
-                { value: 7, label: '7D' },
-                { value: 14, label: '14D' },
-                { value: 30, label: '30D' },
-              ].map((option, index) => (
-                <button
-                  key={option.value}
-                  ref={(el) => (timeButtonsRef.current[index] = el)}
-                  className={`time-period-button ${chartDays === option.value ? 'active' : ''}`}
-                  onClick={() => {
-                    if (setChartDays) setChartDays(option.value);
-                    if (setDays) setDays(option.value);
-                    if (setTimeRange) setTimeRange(option.label);
-                  }}
-                >
-                  {option.label}
-                </button>
-              ))}
-              <div ref={indicatorRef} className="time-period-sliding-indicator" />
-            </div>
-            <EmptyGraph
-              data={emptyData}
-              gradientId={gradientId}
-              isPopup={isPopup}
-              formatXAxisTick={formatXAxisTick}
-              calculateXAxisInterval={calculateXAxisInterval}
-            />
-          </div>
+      for (let i = totalSteps - 1; i >= 0; i--) {
+        const date = new Date(
+          startDate.getTime() - i * stepHours * 60 * 60 * 1000,
         );
-      } catch (error) {
-        console.error("Error rendering empty graph:", error);
-        return (
-          <div className="portfolio-graph-container">
-            <div className="error-message">Could not load portfolio graph</div>
-          </div>
-        );
+        dateRange.push({
+          time: `${date.toISOString().split('T')[0]} ${date.toISOString().split('T')[1].substring(0, 2)}`,
+          value: 0,
+        });
       }
-    }
-    
-    // Check for error state or empty chart data
-    if (errorState || !chartData || chartData.length === 0) {
+      const emptyData = dateRange;
       return (
         <div className="portfolio-graph-container">
-          <div className="chart-days-dropdown" style={isPopup ? {top: '-25px'} : {}}>
+          <div className="chart-days-dropdown">
             {[
               { value: 1, label: '24H' },
               { value: 7, label: '7D' },
@@ -303,9 +185,9 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                 ref={(el) => (timeButtonsRef.current[index] = el)}
                 className={`time-period-button ${chartDays === option.value ? 'active' : ''}`}
                 onClick={() => {
-                  if (setChartDays) setChartDays(option.value);
-                  if (setDays) setDays(option.value);
-                  if (setTimeRange) setTimeRange(option.label);
+                  setChartDays(option.value);
+                  setDays(option.value);
+                  setTimeRange(option.label);
                 }}
               >
                 {option.label}
@@ -313,14 +195,16 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
             ))}
             <div ref={indicatorRef} className="time-period-sliding-indicator" />
           </div>
-          <div className="graph-wrapper">
-            <div className="error-message">No data available</div>
-          </div>
+          <EmptyGraph
+            data={emptyData}
+            gradientId={gradientId}
+            isPopup={isPopup}
+            formatXAxisTick={formatXAxisTick}
+            calculateXAxisInterval={calculateXAxisInterval}
+          />
         </div>
       );
     }
-    
-    // Render chart with data
     return (
       <div className="portfolio-graph-container">
         <div className="chart-days-dropdown" style={isPopup ? {top: '-25px'} : {}}>
@@ -335,9 +219,9 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
               ref={(el) => (timeButtonsRef.current[index] = el)}
               className={`time-period-button ${chartDays === option.value ? 'active' : ''}`}
               onClick={() => {
-                if (setChartDays) setChartDays(option.value);
-                if (setDays) setDays(option.value);
-                if (setTimeRange) setTimeRange(option.label);
+                setChartDays(option.value);
+                setDays(option.value);
+                setTimeRange(option.label);
               }}
             >
               {option.label}
@@ -384,17 +268,10 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                 padding={{ left: 10 }}
               />
               <YAxis
-                // Always include 0 in the domain and add padding at the top
-                domain={[(_dataMin: number) => 0, (dataMax: number) => dataMax * 1.1]} 
+                domain={['auto', 'auto']} 
                 axisLine={false}
                 tickLine={false}
-                tickFormatter={(value) => {
-                  try {
-                    return `${Math.floor(value)}`;
-                  } catch (e) {
-                    return '$0';
-                  }
-                }}
+                tickFormatter={(value) => `$${value.toFixed(0)}`}
                 style={{ fontSize: '11px', fill: '#636e72' }}
                 orientation="right"
                 width={isPopup ? 20 : undefined}
@@ -410,15 +287,13 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                     chartDays={chartDays}
                   />
                 )}
-                isAnimationActive={false}
               />
               <Area
                 type="monotone"
                 dataKey="value"
                 stroke="none"
                 fill={`url(#${gradientId})`}
-                animationDuration={0}
-                isAnimationActive={false}
+                animationDuration={1000}
               />
               <Line
                 type="monotone"
@@ -432,9 +307,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                   strokeWidth: 2,
                   fill: '#16171c',
                 }}
-                animationDuration={0}
-                isAnimationActive={false}
-                connectNulls={true}
+                animationDuration={1000}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -444,13 +317,12 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
   },
 );
 
-// Empty graph component
 const EmptyGraph: React.FC<{
   data: { time: string; value: number }[];
   gradientId: string;
   isPopup: boolean;
   formatXAxisTick: (timeStr: string) => string;
-  calculateXAxisInterval: () => number;
+  calculateXAxisInterval: (totalPoints: number) => number;
 }> = memo(
   ({ data, gradientId, isPopup, formatXAxisTick, calculateXAxisInterval }) => (
     <div className="graph-wrapper">
@@ -482,7 +354,7 @@ const EmptyGraph: React.FC<{
             dataKey="time"
             axisLine={false}
             tickLine={false}
-            interval={calculateXAxisInterval()}
+            interval={calculateXAxisInterval(data.length)}
             tickFormatter={formatXAxisTick}
             style={{
               fontSize: '10px',
@@ -492,16 +364,10 @@ const EmptyGraph: React.FC<{
             padding={{ left: 10 }}
           />
           <YAxis
-            domain={[(_dataMin: number) => 0, (dataMax: number) => dataMax * 1.1]}
+            domain={[0, 100]}
             axisLine={false}
             tickLine={false}
-            tickFormatter={(value) => {
-              try {
-                return `${Math.floor(value)}`;
-              } catch (e) {
-                return '$0';
-              }
-            }}
+            tickFormatter={(value) => `$${value.toFixed(0)}`}
             style={{ fontSize: '10px', fill: '#636e72' }}
             tickMargin={10}
             orientation="right"
@@ -511,8 +377,7 @@ const EmptyGraph: React.FC<{
             dataKey="value"
             stroke="none"
             fill={`url(#${gradientId})`}
-            animationDuration={0}
-            isAnimationActive={false}
+            animationDuration={1000}
           />
           <Line
             type="monotone"
@@ -526,8 +391,7 @@ const EmptyGraph: React.FC<{
               strokeWidth: 2,
               fill: '#16171c',
             }}
-            animationDuration={0}
-            isAnimationActive={false}
+            animationDuration={1000}
           />
         </ComposedChart>
       </ResponsiveContainer>

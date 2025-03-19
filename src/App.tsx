@@ -1,7 +1,8 @@
 // import libraries
 import {
   getBlockNumber,
-  waitForTransactionReceipt
+  waitForTransactionReceipt,
+  switchChain,
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -29,8 +30,6 @@ import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
 import {
   useLogout,
-  useSignerStatus,
-  useUser,
   useChain,
   useSmartAccountClient,
   useSendUserOperation,
@@ -125,9 +124,7 @@ function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { chain, setChain } = useChain();
-  const user = useUser();
-  const signerStatus = useSignerStatus();
-  const { client } = useSmartAccountClient({type: "LightAccount"});
+  const { client, address } = useSmartAccountClient({type: "LightAccount"});
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
   });
@@ -136,8 +133,7 @@ function App() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
-  const address = user?.type == 'eoa' ? user?.address : client?.getAddress()
-  const connected = (signerStatus.status == 'CONNECTED' || user?.type == 'eoa')
+  const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
@@ -509,10 +505,6 @@ function App() {
     return '';
   });
   const [isComposing, setIsComposing] = useState(false);
-  const [isOutputComposing, setIsOutputComposing] = useState(false);
-  const [isLimitInputComposing, setIsLimitInputComposing] = useState(false);
-  const [isLimitOutputComposing, setIsLimitOutputComposing] = useState(false);
-  const [isSendComposing, setIsSendComposing] = useState(false);
   const [sendInputString, setsendInputString] = useState('');
   const [limitoutputString, setlimitoutputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
@@ -777,6 +769,14 @@ function App() {
     );
     return stored !== null ? JSON.parse(stored) : 0.1;
   });
+
+  const handleSetChain = useCallback(async () => {
+    if (client != undefined) {
+      return switchChain(config, { chainId: activechain as any });
+    } else {
+      return await setChain({ chain: settings.chains[0] });
+    }
+  }, [client, activechain]);
 
   function newTxPopup(
     _transactionHash: any,
@@ -2709,6 +2709,7 @@ function App() {
     amountOutScale,
   ]);
 
+  // fetch initial address info
   useEffect(() => {
     setTimeout(() => {
       setTransactions([]);
@@ -3363,14 +3364,26 @@ function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // popup
   useEffect(() => {
     if (popupref.current && blurref.current) {
-      const { offsetWidth, offsetHeight } = popupref.current;
-      blurref.current.style.width = `${offsetWidth}px`;
-      blurref.current.style.height = `${offsetHeight}px`;
+      const updateBlurSize = () => {
+        if (popupref.current && blurref.current) {
+          const { offsetWidth, offsetHeight } = popupref.current;
+          blurref.current.style.width = `${offsetWidth}px`;
+          blurref.current.style.height = `${offsetHeight}px`;
+        }
+      };
+  
+      updateBlurSize();
+  
+      const resizeObserver = new ResizeObserver(updateBlurSize);
+      resizeObserver.observe(popupref.current);
+  
+      return () => resizeObserver.disconnect();
     }
   }, [popup, connected]);
-
+  
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -4619,8 +4632,60 @@ function App() {
                 </div>
                 <div className="sendinputcontainer">
                   <input
+                    inputMode="decimal"
                     className={`send-input ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    onCompositionStart={() => {
+                      setIsComposing(true);
+                    }}
+                    onCompositionEnd={(
+                      e: React.CompositionEvent<HTMLInputElement>,
+                    ) => {
+                      setIsComposing(false);      
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.currentTarget.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                            setSendButton(0);
+                          } else {
+                            setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.currentTarget.value.replace(/^\$/, ''),
+                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.currentTarget.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.currentTarget.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
                     onChange={(e) => {
+                      if (isComposing) {
+                        setSendInputAmount(e.target.value);
+                        return;
+                      }
                       if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
                         if (displayMode == 'usd') {
                           if (e.target.value == '$') {
@@ -4788,7 +4853,7 @@ function App() {
                       setTimeout(()=>refetch(), 500)
                     }
                   } else {
-                    !connected ? setpopup(4) : setChain({chain: settings.chains[0]})
+                    !connected ? setpopup(4) : handleSetChain()
                   }
                 }}
                 disabled={
@@ -4959,13 +5024,13 @@ function App() {
                       colorValue={portfolioColorValue}
                       setColorValue={setPortfolioColorValue}
                       isPopup={true}
-                      chartData={[
+                      chartData={totalAccountValue ? [
                         ...chartData.slice(0, -1),
                         {
                           ...chartData[chartData.length - 1],
                           value: totalAccountValue,
                         },
-                      ]}
+                      ] : chartData}
                       portChartLoading={portChartLoading}
                       chartDays={chartDays}
                       setChartDays={setChartDays}
@@ -5756,6 +5821,7 @@ function App() {
               <div className="output-skeleton" />
             ) : (
               <input
+                inputMode="decimal"
                 className={`input ${
                   connected &&
                   amountIn > tokenBalances[tokenIn]
@@ -6072,14 +6138,15 @@ function App() {
               <div className="output-skeleton" />
             ) : (
               <input
+                inputMode="decimal"
                 className="output"
                 onCompositionStart={() => {
-                  setIsOutputComposing(true);
+                  setIsComposing(true);
                 }}
                 onCompositionEnd={(
                   e: React.CompositionEvent<HTMLInputElement>,
                 ) => {
-                  setIsOutputComposing(false);
+                  setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                     const outputValue = BigInt(
                       Math.round(
@@ -6097,7 +6164,7 @@ function App() {
                   }
                 }}
                 onChange={(e) => {
-                  if (isOutputComposing) {
+                  if (isComposing) {
                     setoutputString(e.target.value);
                     return;
                   }
@@ -6725,7 +6792,7 @@ function App() {
             } else {
               !connected
                 ? setpopup(4)
-                : setChain({chain: settings.chains[0]})
+                : handleSetChain()
             }
           }}
           disabled={swapButtonDisabled || displayValuesLoading}
@@ -6804,6 +6871,7 @@ function App() {
             </div>
             <div className="slippage-input-container">
               <input
+                inputMode="decimal"
                 className={`slippage-inline-input ${
                   parseFloat(slippageString) > 5 ? 'red' : ''
                 }`}
@@ -7043,6 +7111,7 @@ function App() {
           <div className="Pay">{t('pay')}</div>
           <div className="inputbutton1container">
             <input
+              inputMode="decimal"
               className={`input ${
                 connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
@@ -7057,12 +7126,12 @@ function App() {
                   : ''
               }`}
               onCompositionStart={() => {
-                setIsLimitInputComposing(true);
+                setIsComposing(true);
               }}
               onCompositionEnd={(
                 e: React.CompositionEvent<HTMLInputElement>,
               ) => {
-                setIsLimitInputComposing(false);
+                setIsComposing(false);
                 if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                   setInputString(e.currentTarget.value);
                   const inputValue = BigInt(
@@ -7135,7 +7204,7 @@ function App() {
                 }
               }}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (isLimitInputComposing) {
+                if (isComposing) {
                   setInputString(e.target.value);
                   return;
                 }
@@ -7406,14 +7475,15 @@ function App() {
           <div className="outputbutton2container">
             <>
               <input
+                inputMode="decimal"
                 className="output"
                 onCompositionStart={() => {
-                  setIsLimitOutputComposing(true);
+                  setIsComposing(true);
                 }}
                 onCompositionEnd={(
                   e: React.CompositionEvent<HTMLInputElement>,
                 ) => {
-                  setIsLimitOutputComposing(false);
+                  setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                     setlimitoutputString(e.currentTarget.value);
                     const outputValue = BigInt(
@@ -7492,7 +7562,7 @@ function App() {
                   }
                 }}
                 onChange={(e) => {
-                  if (isLimitOutputComposing) {
+                  if (isComposing) {
                     setlimitoutputString(e.target.value);
                     return;
                   }
@@ -7733,6 +7803,7 @@ function App() {
           </div>
           <div className="limitpricecontainer">
             <input
+              inputMode="decimal"
               className={`limit-order ${
                 connected &&
                 !(
@@ -8095,7 +8166,7 @@ function App() {
             } else {
               !connected
                 ? setpopup(4)
-                : setChain({chain: settings.chains[0]})
+                : handleSetChain()
             }
           }}
           disabled={limitButtonDisabled}
@@ -8286,6 +8357,7 @@ function App() {
           </div>
           <div className="sendinputcontainer">
             <input
+              inputMode="decimal"
               className={`send-input ${
                 connected &&
                 amountIn > tokenBalances[tokenIn]
@@ -8293,12 +8365,12 @@ function App() {
                   : ''
               }`}
               onCompositionStart={() => {
-                setIsSendComposing(true);
+                setIsComposing(true);
               }}
               onCompositionEnd={(
                 e: React.CompositionEvent<HTMLInputElement>,
               ) => {
-                setIsSendComposing(false);
+                setIsComposing(false);
                 const value = e.currentTarget.value;
 
                 if (/^\$?\d*\.?\d{0,18}$/.test(value)) {
@@ -8437,7 +8509,7 @@ function App() {
                 }
               }}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (isSendComposing) {
+                if (isComposing) {
                   if (displayMode === 'usd') {
                     setsendInputString(e.target.value);
                   } else {
@@ -8801,7 +8873,7 @@ function App() {
             } else {
               !connected
                 ? setpopup(4)
-                : setChain({chain: settings.chains[0]})
+                : handleSetChain()
             }
           }}
           disabled={sendButtonDisabled}
@@ -8922,6 +8994,7 @@ function App() {
           <div className="Pay">{t('pay')}</div>
           <div className="inputbutton1container">
             <input
+              inputMode="decimal"
               className={`input ${
                 connected &&
                 ((amountIn > tokenBalances[tokenIn] &&
@@ -8936,7 +9009,7 @@ function App() {
                   : ''
               }`}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                if (isLimitInputComposing) {
+                if (isComposing) {
                   setInputString(e.target.value);
                   return;
                 }
@@ -9148,6 +9221,7 @@ function App() {
           <div className="outputbutton2container">
             <>
               <input
+                inputMode="decimal"
                 className="output"
                 value={scaleOutputString}
                 placeholder="0.00"
@@ -9281,6 +9355,7 @@ function App() {
           <div className="scalepricecontainer">
           <span className="scale-order-start-label">{t('start')}</span>
             <input
+              inputMode="decimal"
               className={`scale-input ${
                 connected &&
                 !(
@@ -9344,6 +9419,7 @@ function App() {
           <div className="scalepricecontainer">
           <span className="scale-order-end-label">{t('end')}</span>
             <input
+              inputMode="decimal"
               className={`scale-input ${
                 connected &&
                 !(
@@ -9395,6 +9471,7 @@ function App() {
           <div className="scalebottomcontainer">
           <span className="scale-order-total-label">{t('orders')}</span>
             <input
+              inputMode="numeric" pattern="[0-9]*"
               className={`scale-bottom-input ${
                 scaleOrdersString == '1'
                 ? 'exceed-balance'
@@ -9424,6 +9501,7 @@ function App() {
           <div className="scalebottomcontainer">
           <span className="scale-order-size-label">{t('skew')}</span>
             <input
+              inputMode="decimal"
               className={`scale-bottom-input`}
               onChange={(e) => {
                 if (/^\d*\.?\d{0,2}$/.test(e.target.value) && Number(e.target.value) <= 100) {
@@ -9666,7 +9744,7 @@ function App() {
             } else {
               !connected
                 ? setpopup(4)
-                : setChain({chain: settings.chains[0]})
+                : handleSetChain()
             }
           }}
           disabled={scaleButtonDisabled}
@@ -9804,7 +9882,7 @@ function App() {
             settradesByMarket={settradesByMarket}
             setcanceledorders={setcanceledorders}
             setpopup={setpopup}
-            setChain={setChain}
+            setChain={handleSetChain}
             account={{
               connected: connected,
               address: address,
@@ -9842,7 +9920,7 @@ function App() {
                 setRefLink={setRefLink}
                 showModal={showReferralsModal}
                 setShowModal={setShowReferralsModal}
-                setChain={setChain}
+                setChain={handleSetChain}
                 setpopup={setpopup}
                 account={{
                   connected: connected,
@@ -9854,20 +9932,23 @@ function App() {
               />
             }
           />
-                    <Route path="/leaderboard" element={<>           <Leaderboard 
-        totalXP={leaderboardData.totalXP}
-        currentXP={leaderboardData.currentXP}
-        username={leaderboardData.username}
-        userXP={leaderboardData.userXP}
-        factions={leaderboardData.factions.map(faction => ({
-          ...faction,
-          xp: faction.points,
-          bonusXP: 0,
-          growthPercentage: 0,
-          logo: '',
-          badgeIcon: ''
-        }))}
-      /></>}></Route>
+          <Route path="/leaderboard" element={
+            <Leaderboard 
+                totalXP={leaderboardData.totalXP}
+                currentXP={leaderboardData.currentXP}
+                username={leaderboardData.username}
+                userXP={leaderboardData.userXP}
+                factions={leaderboardData.factions.map(faction => ({
+                  ...faction,
+                  xp: faction.points,
+                  bonusXP: 0,
+                  growthPercentage: 0,
+                  logo: '',
+                  badgeIcon: ''
+                }))}
+      />
+      }>
+      </Route>
       <Route path="/mint"
       element={
         <NFTMintingPage/> 
@@ -9876,54 +9957,52 @@ function App() {
           <Route
             path="/portfolio"
             element={
-              <>
-                <Portfolio
-                  orders={orders}
-                  tradehistory={tradehistory}
-                  trades={tradesByMarket}
-                  canceledorders={canceledorders}
-                  tokenList={memoizedTokenList}
-                  router={router}
-                  address={address ?? ''}
-                  isBlurred={isBlurred}
-                  setIsBlurred={setIsBlurred}
-                  setTokenIn={setTokenIn}
-                  setTokenOut={setTokenOut}
-                  setSendTokenIn={setSendTokenIn}
-                  setpopup={setpopup}
-                  tokenBalances={tokenBalances}
-                  totalAccountValue={totalAccountValue}
-                  setTotalVolume={setTotalVolume}
-                  totalVolume={totalVolume}
-                  chartData={[
-                    ...chartData.slice(0, -1),
-                    {
-                      ...chartData[chartData.length - 1],
-                      value: totalAccountValue,
-                    },
-                  ]}
-                  portChartLoading={portChartLoading}
-                  chartDays={chartDays}
-                  setChartDays={setChartDays}
-                  totalClaimableFees={totalClaimableFees}
-                  refLink={refLink}
-                  setShowRefModal={setShowReferralsModal}
-                  activeSection={activeSection}
-                  setActiveSection={setActiveSection}
-                  filter={filter}
-                  setFilter={setFilter}
-                  onlyThisMarket={onlyThisMarket}
-                  setOnlyThisMarket={setOnlyThisMarket}
-                  account={{
-                    connected: connected,
-                    address: address,
-                    chainId: chain.id,
-                    logout: logout,
-                  }}
-                  refetch={refetch}
-                  sendUserOperation={sendUserOperation}
-                />
-              </>
+              <Portfolio
+                orders={orders}
+                tradehistory={tradehistory}
+                trades={tradesByMarket}
+                canceledorders={canceledorders}
+                tokenList={memoizedTokenList}
+                router={router}
+                address={address ?? ''}
+                isBlurred={isBlurred}
+                setIsBlurred={setIsBlurred}
+                setTokenIn={setTokenIn}
+                setTokenOut={setTokenOut}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                tokenBalances={tokenBalances}
+                totalAccountValue={totalAccountValue}
+                setTotalVolume={setTotalVolume}
+                totalVolume={totalVolume}
+                chartData={totalAccountValue ? [
+                  ...chartData.slice(0, -1),
+                  {
+                    ...chartData[chartData.length - 1],
+                    value: totalAccountValue,
+                  },
+                ] : chartData}
+                portChartLoading={portChartLoading}
+                chartDays={chartDays}
+                setChartDays={setChartDays}
+                totalClaimableFees={totalClaimableFees}
+                refLink={refLink}
+                setShowRefModal={setShowReferralsModal}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: chain.id,
+                  logout: logout,
+                }}
+                refetch={refetch}
+                sendUserOperation={sendUserOperation}
+              />
             }
           />
           <Route
@@ -10120,7 +10199,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={undefined}
+                            sortConfig={{ column: 'name', direction: 'asc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -10336,7 +10415,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={undefined}
+                            sortConfig={{ column: 'name', direction: 'asc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -10553,7 +10632,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={undefined}
+                            sortConfig={{ column: 'name', direction: 'asc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -10769,7 +10848,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={undefined}
+                            sortConfig={{ column: 'name', direction: 'asc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}

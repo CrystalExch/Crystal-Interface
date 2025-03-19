@@ -44,7 +44,7 @@ const CustomLinkModal = ({
     } else {
       !account.connected
         ? setpopup(4)
-        : setChain({chain: settings.chains[0]});
+        : setChain()
     }
   };
 

@@ -13,7 +13,6 @@ import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
 import backgroundlesslogo from '../../assets/logo_clear.png';
-import { settings } from '../../settings';
 
 import './Header.css';
 
@@ -131,6 +130,7 @@ const Header: React.FC<HeaderProps> = ({
             settradehistory={settradehistory}
             settradesByMarket={settradesByMarket}
             setcanceledorders={setcanceledorders}
+            setChain={setChain}
           />
           <button
             type="button"
@@ -184,7 +184,7 @@ const Header: React.FC<HeaderProps> = ({
               } else {
                 !account.connected
                   ? setpopup(4)
-                  : setChain({chain: settings.chains[0]});
+                  : setChain()
               }
             }}
           >
