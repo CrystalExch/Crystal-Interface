@@ -1,7 +1,7 @@
-import React, {useMemo} from 'react';
+import React, {useEffect, useMemo} from 'react';
 
 import popupclose from '../../assets/close_button.png';
-
+import notificationSound from '../../assets/notification.wav';
 import './TransactionPopup.css';
 
 interface TransactionPopupProps {
@@ -104,6 +104,10 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
   isExiting,
   delay,
 }) => {
+  useEffect(() => {
+    const audio = new Audio(notificationSound);
+    audio.play().catch(error => console.error('Audio play failed:', error));
+  }, []);
   const memoizedDelay = useMemo(() => delay || 0, []);
   const renderTransactionDetails = () => {
     if (currentAction === 'swap') {
