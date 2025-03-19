@@ -3,7 +3,7 @@ import { CacheEntry, ScaledDataPoint } from './types';
 export class PortfolioCache {
   private static instance: PortfolioCache;
   private cache: Map<string, CacheEntry>;
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
+  private readonly CACHE_DURATION = 3 * 60 * 1000; 
 
   private constructor() {
     this.cache = new Map();
@@ -39,12 +39,16 @@ export class PortfolioCache {
     balanceResults: Record<string, any>,
     chartDays: number,
   ): void {
-    this.cache.set(key, {
-      data,
-      balanceResults,
-      timestamp: Date.now(),
-      chartDays,
-    });
+    // Only store in cache if we have valid data points
+    const hasValidData = data.some(point => point.value > 0);
+    if (hasValidData) {
+      this.cache.set(key, {
+        data,
+        balanceResults,
+        timestamp: Date.now(),
+        chartDays,
+      });
+    }
   }
 
   clear(): void {
