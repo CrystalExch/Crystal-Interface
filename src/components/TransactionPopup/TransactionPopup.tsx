@@ -105,9 +105,15 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
   delay,
 }) => {
   useEffect(() => {
-    const audio = new Audio(notificationSound);
-    audio.play().catch(error => console.error('Audio play failed:', error));
+    const isSoundEnabled = JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'true');
+  
+    if (isSoundEnabled) {
+      const audio = new Audio(notificationSound);
+      audio.volume = 0.5; 
+      audio.play().catch(error => console.error('Audio play failed:', error));
+    }
   }, []);
+  
   const memoizedDelay = useMemo(() => delay || 0, []);
   const renderTransactionDetails = () => {
     if (currentAction === 'swap') {

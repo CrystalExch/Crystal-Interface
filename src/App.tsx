@@ -4012,6 +4012,11 @@ function App() {
     </div>
   );
 
+  const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
+    return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'true'); // Default: true
+  });
+  
+
   // output tokenlist
   const TokenList2 = (
     <div className="tokenlistcontainer">
@@ -4504,6 +4509,7 @@ function App() {
       </ul>
     </div>
   );
+
 
   //popup modals
   const Modals = (
@@ -5166,6 +5172,16 @@ function App() {
                       }}
                     />
                   </div>
+                  <div className="audio-toggle-row">
+  <span className="audio-toggle-label">{t('audioNotifications')}</span>
+  <ToggleSwitch
+    checked={isAudioEnabled}
+    onChange={() => {
+      setIsAudioEnabled(!isAudioEnabled);
+      localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+    }}
+  />
+</div>
 
                   <button
                     className="revert-settings-button"
