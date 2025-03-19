@@ -1366,6 +1366,18 @@ body:has(.right-column.show) .blur-background-popups {
   flex-direction: column;
 }
 
+
+.inputbg{
+  border-radius: 0;
+  border-top-right-radius: 10px;
+  border-top-left-radius: 10px;
+}
+
+.outputbg{
+  border-radius: 0;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
 .scalebgtop{
   border: 1.5px solid #4b4b5822;
   border-radius: 6px;
