@@ -27,6 +27,8 @@ interface OrderListProps {
   spreadPrice?: number;
   orderbookPosition: string;
   updateLimitAmount: any;
+  userOrders?: any[];
+  activeMarket?: string;
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -41,6 +43,8 @@ const OrderList: React.FC<OrderListProps> = ({
   spreadPrice,
   orderbookPosition,
   updateLimitAmount,
+  userOrders = [],
+  activeMarket = '',
 }) => {
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -61,6 +65,66 @@ const OrderList: React.FC<OrderListProps> = ({
     }
     return 0;
   };
+
+  const userOrderPrices = useMemo(() => {
+    const priceMap: { [key: string]: boolean } = {};
+    
+    if (!userOrders || userOrders.length === 0 || !roundedOrders || roundedOrders.length === 0) {
+      return priceMap;
+    }
+    
+    const filteredOrders = userOrders.filter(order => {
+      const isBuy = Number(order[3]) === 1;
+      const matchesListType = isBuyOrderList ? isBuy : !isBuy;
+      const orderMarket = String(order[4]);
+      const matchesMarket = orderMarket === activeMarket;
+      
+      return matchesListType && matchesMarket;
+    });
+    
+    if (filteredOrders.length === 0) {
+      return priceMap;
+    }
+    
+    const displayedPrices = roundedOrders.map(order => order.price);
+    
+    let scalingFactor = 1;
+    if (filteredOrders.length > 0 && displayedPrices.length > 0) {
+      const sampleOrderPrice = Number(filteredOrders[0][0]);
+      const averageDisplayPrice = displayedPrices.reduce((sum, price) => sum + price, 0) / displayedPrices.length;
+      const rawScaling = sampleOrderPrice / averageDisplayPrice;
+      const powerOf10 = Math.round(Math.log10(rawScaling));
+      scalingFactor = Math.pow(10, powerOf10);
+    }
+    
+    filteredOrders.forEach(order => {
+      const rawOrderPrice = Number(order[0]);
+      const scaledOrderPrice = rawOrderPrice / scalingFactor;
+      
+      let closestPrice = displayedPrices[0];
+      let minDiff = Math.abs(scaledOrderPrice - closestPrice);
+      
+      for (let i = 1; i < displayedPrices.length; i++) {
+        const diff = Math.abs(scaledOrderPrice - displayedPrices[i]);
+        if (diff < minDiff) {
+          minDiff = diff;
+          closestPrice = displayedPrices[i];
+        }
+      }
+      
+      const bucketSpacing = displayedPrices.length > 1 
+        ? Math.abs(displayedPrices[1] - displayedPrices[0])
+        : 1;
+      
+      const tolerance = bucketSpacing * 0.5;
+      
+      if (minDiff <= tolerance) {
+        priceMap[closestPrice] = true;
+      }
+    });
+    
+    return priceMap;
+  }, [userOrders, roundedOrders, isBuyOrderList, activeMarket, priceFactor]);
 
   const displayedOrders = useMemo(() => {
     const updatedOrders = roundedOrders.map((order) => ({
@@ -162,32 +226,38 @@ const OrderList: React.FC<OrderListProps> = ({
       <ul
         className={`order-list-items ${isBuyOrderList ? 'top-aligned' : 'bottom-aligned'}`}
       >
-        {displayedOrders.map((order, index) => (
-          <OrderItem
-            key={`order-${index}-${order.price}-${order.size}-${order.price === 0 ? 'phantom' : 'real'}`}
-            ref={(el) => (orderRefs.current[index] = el)}
-            price={order.price}
-            size={order.size}
-            runningTotalSize={order.runningTotalSize || 0}
-            color={color}
-            width={(order.runningTotalSize / maxTotalSize) * 100}
-            extra={extra}
-            isBuyOrder={isBuyOrderList}
-            changeType={order.changeType}
-            priceFactor={priceFactor}
-            isHighlighted={(() => {
-              if (selectedIndex == null || order.price === 0) return false;
-              return isBuyOrderList
-                ? index <= selectedIndex
-                : index >= selectedIndex;
-            })()}
-            isBoundary={selectedIndex === index}
-            isPhantom={order.price === 0}
-            maxDecimals={maxDecimals}
-            updateLimitAmount={updateLimitAmount}
-            shouldFlash={order.shouldFlash}
-          />
-        ))}
+        {displayedOrders.map((order, index) => {
+          const price = order.price;
+          const hasUserOrder = userOrderPrices[price] === true;
+          
+          return (
+            <OrderItem
+              key={`order-${index}-${order.price}-${order.size}-${order.price === 0 ? 'phantom' : 'real'}`}
+              ref={(el) => (orderRefs.current[index] = el)}
+              price={order.price}
+              size={order.size}
+              runningTotalSize={order.runningTotalSize || 0}
+              color={color}
+              width={(order.runningTotalSize / maxTotalSize) * 100}
+              extra={extra}
+              isBuyOrder={isBuyOrderList}
+              changeType={order.changeType}
+              priceFactor={priceFactor}
+              isHighlighted={(() => {
+                if (selectedIndex == null || order.price === 0) return false;
+                return isBuyOrderList
+                  ? index <= selectedIndex
+                  : index >= selectedIndex;
+              })()}
+              isBoundary={selectedIndex === index}
+              isPhantom={order.price === 0}
+              maxDecimals={maxDecimals}
+              updateLimitAmount={updateLimitAmount}
+              shouldFlash={order.shouldFlash}
+              hasUserOrder={hasUserOrder}
+            />
+          );
+        })}
         {highlightData && (
           <OrderHighlightPopup
             mousePosition={mousePosition}

@@ -28,6 +28,9 @@ interface OrderbookViewProps {
   setViewMode: (mode: 'both' | 'buy' | 'sell') => void;
   show?: boolean;
   updateLimitAmount: any;
+  // Add props for user orders
+  userOrders?: any[];
+  activeMarket?: string;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -47,6 +50,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   setViewMode,
   updateLimitAmount,
   show = true,
+  userOrders = [], // Default to empty array if not provided
+  activeMarket = '',
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -191,6 +196,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              userOrders={userOrders}
+              activeMarket={activeMarket}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -209,6 +216,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              userOrders={userOrders}
+              activeMarket={activeMarket}
             />
           </div>
         )}
@@ -226,6 +235,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              userOrders={userOrders}
+              activeMarket={activeMarket}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -253,6 +264,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
+              userOrders={userOrders}
+              activeMarket={activeMarket}
             />
           </div>
         )}

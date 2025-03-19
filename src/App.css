@@ -2018,7 +2018,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
-  height: min(450px, 90vh);
+  height: min(480px, 90vh);
   left: 50%;
   position: fixed;
   top: 50%;
@@ -2298,7 +2298,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .orderbook-toggle-row,
 .ordercenter-toggle-row,
-.simple-view-row {
+.simple-view-row,
+.audio-toggle-row {
   align-items: center;
   display: flex;
   height: 25px;
@@ -2308,7 +2309,9 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .orderbook-toggle-label,
 .ordercenter-toggle-label,
-.simple-view-label {
+.simple-view-label,
+.audio-toggle-label 
+  {
   color: #ffffff8e;
   font-size: 0.8rem;
 }
@@ -2969,7 +2972,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: 4px;
   left: 50%;
   position: absolute;
-  top: -10.5px;
+  top: -10px;
   transform: translateX(-50%);
   width: 5px;
 }
