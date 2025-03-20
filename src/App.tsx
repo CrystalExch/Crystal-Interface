@@ -2719,7 +2719,7 @@ function App() {
 
     (async () => {
       try {
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/crystal/v0.3.3`;
 
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
@@ -2727,7 +2727,7 @@ function App() {
 
         const query = `
           query fetchData {
-            orderFilledBatches(first: 200, orderDirection: desc, orderBy: id) {
+            orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
               id
               total
               orders(first: 1000, where: {caller: "${address}"}) {
@@ -2742,22 +2742,25 @@ function App() {
                 contractAddress
               }
             }
-            orderBatches(first: 200, orderDirection: desc, orderBy: id) {
+            orderMaps(where:{caller: "${address}"}) {
               id
-              total
-              orders(first: 1000, where: {caller: "${address}"}) {
+              counter
+              batches(first: 10, orderDirection: desc, orderBy: id) {
                 id
-                caller
-                originalSizeBase
-                originalSizeQuote
-                filledAmountBase
-                filledSizeQuote
-                price
-                buySell
-                contractAddress
-                transactionHash
-                timestamp
-                status
+                orders(first: 1000) {
+                  id
+                  caller
+                  originalSizeBase
+                  originalSizeQuote
+                  filledAmountBase
+                  filledSizeQuote
+                  price
+                  buySell
+                  contractAddress
+                  transactionHash
+                  timestamp
+                  status
+                }
               }
             }
           }
@@ -2791,32 +2794,36 @@ function App() {
           }
         }
 
-        const updatedBatches = result?.data?.orderBatches || [];
-        for (const batch of updatedBatches) {
-          const orders = batch.orders || [];
-          for (const order of orders) {
-            const marketKey = addresstoMarket[order.contractAddress];
-            if (!marketKey) continue;
-            const row = [
-              parseInt(order.id.split('-')[0], 10),
-              parseInt(order.id.split('-')[1], 10),
-              Number(order.originalSizeBase.toString()),
-              order.buySell,
-              marketKey,
-              order.transactionHash,
-              order.timestamp,
-              Number(order.filledAmountBase.toString()),
-              Number(order.originalSizeQuote.toString()),
-              order.status,
-            ];
-
-            if (order.status === 2) {
-              temporders.push(row);
-            } else {
-              tempcanceledorders.push(row);
+        const updatedMaps = result?.data?.orderMaps || [];
+        for (const orderMap of updatedMaps) {
+          const batches = orderMap.batches || [];
+          for (const batch of batches) {
+            const orders = batch.orders || [];
+            for (const order of orders) {
+              const marketKey = addresstoMarket[order.contractAddress];
+              if (!marketKey) continue;
+              const row = [
+                parseInt(order.id.split('-')[0], 10),
+                parseInt(order.id.split('-')[2], 10),
+                Number(order.originalSizeBase.toString()),
+                order.buySell,
+                marketKey,
+                order.transactionHash,
+                order.timestamp,
+                Number(order.filledAmountBase.toString()),
+                Number(order.originalSizeQuote.toString()),
+                order.status,
+              ];
+        
+              if (order.status === 2) {
+                temporders.push(row);
+                tempcanceledorders.push(row);
+              } else {
+                tempcanceledorders.push(row);
+              }
             }
           }
-        }
+        }        
 
         settradehistory((prev) => [...temptradehistory, ...prev]);
         setorders((prev) => [...temporders, ...prev]);
