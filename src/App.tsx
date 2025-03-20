@@ -2722,7 +2722,7 @@ function App() {
 
     (async () => {
       try {
-        const endpoint = `https://api.studio.thegraph.com/query/104695/crystal/v0.3.5`;
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
 
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
