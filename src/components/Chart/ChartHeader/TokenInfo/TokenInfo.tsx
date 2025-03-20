@@ -35,6 +35,7 @@ interface TokenInfoProps {
   tokendict: any;
   universalTrades: UniversalTrades;
   setpopup: (value: number) => void;
+  dayKlines: any;
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -46,6 +47,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   tokendict,
   universalTrades,
   setpopup,
+  dayKlines,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -99,46 +101,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   };
 
-  async function fetchLatestHourlyCandles(): Promise<any> {
-    const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-
-    const query = `
-      query {
-        series_collection(
-          where: {
-            id_gte: "series-1h-",
-            id_lte: "series-1h-ffffffffffffffffffffffffffffffffffffffff"
-          }
-        ) {
-          id
-          klines(first: 24, orderBy: time, orderDirection: desc) {
-            id
-            time
-            open
-            high
-            low
-            close
-            volume
-          }
-        }
-      }
-    `;
-
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ query })
-    });
-
-    const json = await response.json();
-
-    json.data.series_collection.forEach((series: any) => {
-      series.klines.reverse();
-    });
-
-    return json.data.series_collection;
-  }
-
   useEffect(() => {
     if (isDropdownVisible && shouldFocus) {
       const focusInput = () => {
@@ -189,7 +151,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   useEffect(() => {
     const processMarkets = async () => {
       try {
-        const data = await fetchLatestHourlyCandles();
+        const data = dayKlines;
 
         const processedMarkets = data
           .map((series: any) => {
@@ -226,7 +188,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     };
 
     processMarkets();
-  }, [markets]);
+  }, [markets, dayKlines]);
 
   useEffect(() => { 
     setMarketsData((prevMarkets) =>

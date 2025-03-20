@@ -32,6 +32,7 @@ interface ChartOrderbookPanelProps {
   updateLimitAmount: any;
   tradesloading: boolean;
   orders?: any[];
+  dayKlines: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -61,6 +62,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   updateLimitAmount,
   tradesloading,
   orders = [],
+  dayKlines,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -172,6 +174,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
             userWalletAddress={userWalletAddress}
             setpopup={setpopup}
             tradesloading={tradesloading}
+            dayKlines={dayKlines}
           />
         </div>
 

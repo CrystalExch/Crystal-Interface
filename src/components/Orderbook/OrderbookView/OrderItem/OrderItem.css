@@ -113,17 +113,8 @@
 .user-order-dot {
   display: inline-block;
   margin-left: 4px;
-  font-size: 18px;
+  font-size: 14px;
   line-height: 0;
-  position: relative;
-  top: 2px;
   font-weight: bold;
-}
-
-.buyOrder .user-order-dot {
-  color: inherit;
-}
-
-.sellOrder .user-order-dot {
   color: inherit;
 }

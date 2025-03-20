@@ -35,6 +35,7 @@ interface ChartHeaderProps {
   onMarketSelect: any;
   universalTrades: any[];
   setpopup: (value: number) => void;
+  dayKlines: any;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -52,6 +53,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   onMarketSelect,
   universalTrades,
   setpopup,
+  dayKlines,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -221,6 +223,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         tokendict={tokendict}
         universalTrades={universalTrades as unknown as UniversalTrades}
         setpopup={setpopup}
+        dayKlines={dayKlines}
       />
       <AdditionalMetrics metrics={metrics} />
     </div>
