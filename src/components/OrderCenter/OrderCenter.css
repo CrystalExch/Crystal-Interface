@@ -4,7 +4,7 @@
 
 .oc-rectangle {
   background: #0f0f12;
-  border-radius: 8px;
+  border-radius: 10px;
   border-right: none;
   display: flex;
   flex-direction: column;

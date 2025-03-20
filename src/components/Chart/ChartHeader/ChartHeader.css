@@ -1,11 +1,11 @@
 .chart-header {
   align-items: center;
   background: #0f0f12;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   height: 60px;
   justify-content: flex-start;
-  margin-bottom: -21px;
+  margin-bottom: -20px;
   padding: 0 10px;
   user-select: none;
 }

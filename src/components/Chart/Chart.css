@@ -1,9 +1,9 @@
 .chartcontainer {
   background: #0f0f12;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 64px);
+  height: calc(100% - 65px);
   margin-top: 25px;
   overflow: hidden;
   width: 100%;

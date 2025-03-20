@@ -1360,7 +1360,7 @@ body:has(.right-column.show) .blur-background-popups {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border:1.5px solid #4b4b5822;
+  border:1.5px solid #18181a;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
@@ -1371,6 +1371,7 @@ body:has(.right-column.show) .blur-background-popups {
   border-radius: 0;
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
+  border-bottom: none;
 }
 
 .outputbg{
@@ -1490,7 +1491,7 @@ body:has(.right-column.show) .blur-background-popups {
   margin-top: 1px;
 }
 .limitbg {
-  margin: -6px 12px 13px;
+  margin: -8px 11px 13px;
 }
 
 .limit-order {
@@ -1596,7 +1597,7 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   height: 22px;
   justify-content: center;
-  margin: -10px 0;
+  margin: -12px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
@@ -1669,7 +1670,7 @@ body:has(.right-column.show) .blur-background-popups {
 .rectangle {
   background: #0f0f12;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -1912,7 +1913,7 @@ body:has(.right-column.show) .blur-background-popups {
   box-sizing: border-box;
   display: flex;
   flex: 1;
-  gap: 4px;
+  gap: 5px;
   min-height: 530px;
   padding: 0 5px;
 }
@@ -1980,6 +1981,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .chartandorderbookandordercenter {
   height: auto;
   overflow: hidden;
+  gap: 1px;
 }
 
 .chart-container {

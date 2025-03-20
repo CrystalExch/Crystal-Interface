@@ -56,13 +56,14 @@
 }
 
 .crystal-logo {
-  height: 2rem;
+  height: 1.8rem;
   height: 30px;
 }
 
 .crystal-name {
   font-family: Orbitron, sans-serif;
-  font-size: 1.1rem;
+  font-size: 1rem;
+  font-weight: 300;
 }
 
 .connect-button {
