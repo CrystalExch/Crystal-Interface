@@ -23,8 +23,6 @@ import {
 } from 'react-router-dom';
 import { maxUint256 } from 'viem';
 import { useReadContracts } from 'wagmi';
-import { computePrice } from './components/Chart/utils/calculatePriceMetrics';
-import { calculate24hVolume } from './components/Chart/utils/ChartHeader/calculate24hVolume';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
@@ -68,6 +66,9 @@ import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
 import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { TokenAbi } from './abis/TokenAbi';
+
+// import types
+import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
@@ -663,6 +664,7 @@ function App() {
       ? (stored as string)
       : 'Quote';
   });
+  const [dayKlines, setDayKlines] = useState([]);
   const [, setProcessedLogs] = useState<{ queue: string[]; set: Set<string> }>({
     queue: [],
     set: new Set(),
@@ -1543,79 +1545,77 @@ function App() {
     return () => clearInterval(interval);
   }, [HTTP_URL, address?.slice(2)]);
 
+  // tokeninfo data initial
   useEffect(() => {
     const processMarkets = async () => {
-      const processedMarkets = await Promise.all(
-        Object.entries(markets || {}).map(async ([marketKey, market]) => {
-          const marketTrades = tradesByMarket[marketKey] || [];
-          const marketVolume = calculate24hVolume(marketTrades, market);
+      try {
+        const data = dayKlines;
 
-          const now = Date.now();
-          const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        const processedMarkets = data
+          .map((series: any) => {
+            const idParts = series.id.split("-");
+            const address = idParts[2];
 
-          const cutoffIndex = marketTrades.findIndex(
-            (trade: any) => trade[6] * 1000 > oneDayAgo,
-          );
+            const match = Object.values(markets).find(
+              (m) => m.address.toLowerCase() === address.toLowerCase()
+            );
 
-          let recentTrades =
-            cutoffIndex === -1
-              ? [...marketTrades]
-              : marketTrades.slice(
-                cutoffIndex > 0 ? cutoffIndex - 1 : cutoffIndex,
-              );
+            if (!match) return;
 
-          if (!recentTrades.some((trade: any) => trade[6] * 1000 > oneDayAgo)) {
-            recentTrades = [];
-          }
+            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 2);
+            const current = series.klines[series.klines.length - 1].close;
+            const first = series.klines[0].open;
+            const percentageChange = (current - first) / first * 100; 
 
-          const recentPrices = recentTrades.map((trade: any) =>
-            computePrice(
-              trade,
-              market,
-              Math.floor(Math.log10(Number(market.priceFactor))),
-            ),
-          );
-
-          let percentageChange = 0;
-          if (recentPrices.length > 0) {
-            const lastPrice = recentPrices[recentPrices.length - 1];
-            const firstPrice = recentPrices[0];
-            percentageChange = ((lastPrice - firstPrice) / firstPrice) * 100;
-          }
-
-          const currentMid = mids[marketKey]?.[0];
-          let currentPrice = '0';
-          if (
-            tradesByMarket[marketKey] &&
-            tradesByMarket[marketKey].length > 0 &&
-            market.priceFactor
-          ) {
-            const raw =
-              Number(
-                tradesByMarket[marketKey][
-                tradesByMarket[marketKey].length - 1
-                ][3],
-              ) / Number(market.priceFactor);
-            currentPrice = raw.toFixed(Math.log10(Number(market.priceFactor)));
-          } else if (currentMid && market.priceFactor) {
-            const raw = Number(currentMid) / Number(market.priceFactor);
-            currentPrice = raw.toFixed(Math.log10(Number(market.priceFactor)));
-          }
-
-          return {
-            ...market,
-            pair: `${market.baseAsset}/${market.quoteAsset}`,
-            currentPrice,
-            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
-            volume: marketVolume,
-          };
-        }),
-      );
-      setMarketsData(processedMarkets);
+            return {
+              ...match,
+              pair: `${match.baseAsset}/${match.quoteAsset}`,
+              currentPrice: formatSubscript((current / Number(match.priceFactor)).toFixed(Math.log10(Number(match.priceFactor)))),
+              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
+              volume: formatCommas(marketVolume.toFixed(2)),
+              marketKey: `${match.baseAsset}${match.quoteAsset}`,
+              series: series.klines,
+              firstPrice: first,
+            };
+          });
+        
+        setMarketsData(processedMarkets);
+      } catch (error) {
+        console.error("error fetching candles:", error);
+      }
     };
 
     processMarkets();
-  }, [tradesByMarket, mids]);
+  }, [markets, dayKlines]);
+
+  // tokeninfo modal updating
+  useEffect(() => { 
+    setMarketsData((prevMarkets) =>
+      prevMarkets.map((market) => {
+        const trades = tradesByMarket[market.marketKey] || [];
+
+        if (trades.length === 0) return market;
+  
+        const latestTrade = trades[trades.length - 1];
+        const currentPriceRaw = Number(latestTrade[3]);
+        const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
+        const tradeVolume = (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) / 10 ** Number(market.quoteDecimals);
+          
+        return {
+          ...market,
+          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) +  tradeVolume).toFixed(2)),
+          currentPrice: formatSubscript(
+            (currentPriceRaw / Number(market.priceFactor)).toFixed(
+              Math.log10(Number(market.priceFactor))
+            )
+          ),
+          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(
+            2
+          )}%`,
+        };
+      })
+    );
+  }, [tradesByMarket]); 
 
   // search
   useEffect(() => {
@@ -2722,7 +2722,8 @@ function App() {
 
     (async () => {
       try {
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/crystal/v0.3.5`;
 
         let temptradehistory: any[] = [];
         let temporders: any[] = [];
@@ -2840,7 +2841,7 @@ function App() {
     })();
   }, [address, activechain]);
 
-  // initial trade fetching
+  // klines + trades
   useEffect(() => {
     (async () => {
       try {
@@ -2852,7 +2853,7 @@ function App() {
         });
         const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
         let allLogs: any[] = [];
-
+        
         const query = `
           query {
             orders1: orderFilleds(
@@ -2940,25 +2941,42 @@ function App() {
               blockNumber
               contractAddress
             }
+            series_collection(
+              where: {
+                id_gte: "series-1h-",
+                id_lte: "series-1h-ffffffffffffffffffffffffffffffffffffffff"
+              }
+            ) {
+              id
+              klines(first: 24, orderBy: time, orderDirection: desc) {
+                id
+                time
+                open
+                high
+                low
+                close
+                volume
+              }
+            }
           }
         `;
-
+      
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query })
+          body: JSON.stringify({ query }),
         });
-
+        
         const json = await response.json();
-
-        const orders =
-          json.data.orders1.concat(
+        
+        const orders = json.data.orders1
+          .concat(
             json.data.orders2,
             json.data.orders3,
             json.data.orders4,
             json.data.orders5
           );
-
+        
         allLogs = allLogs.concat(orders);
 
         if (Array.isArray(allLogs)) {
@@ -3006,8 +3024,10 @@ function App() {
             ).toFixed(2)}`,
           );
         }
+        
+        setDayKlines(json.data.series_collection);
       } catch (error) {
-        console.error('Error fetching logs:', error);
+        console.error("Error fetching data:", error);
         settradesloading(false);
       }
     })();
@@ -5581,9 +5601,9 @@ function App() {
                     <div className="search-market-chart-section">
                       <MiniChart
                         market={market}
-                        series={[]}
+                        series={market.series}
+                        priceChange={market.priceChange}
                         isVisible={true}
-                        priceChange={''}
                       />
                     </div>
                     <div className="search-market-price-section">
@@ -10072,6 +10092,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
+                                  dayKlines={dayKlines}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10144,6 +10165,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
+                              dayKlines={dayKlines}
                             />
                           )}
                         </div>
@@ -10290,6 +10312,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
+                                  dayKlines={dayKlines}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10362,6 +10385,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
+                              dayKlines={dayKlines}
                             />
                           )}
                         </div>
@@ -10507,6 +10531,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
+                                  dayKlines={dayKlines}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10579,7 +10604,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-
+                              dayKlines={dayKlines}
                             />
                           )}
                         </div>
@@ -10726,6 +10751,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
+                                  dayKlines={dayKlines}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10798,7 +10824,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-
+                              dayKlines={dayKlines}
                             />
                           )}
                         </div>

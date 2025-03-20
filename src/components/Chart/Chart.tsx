@@ -27,6 +27,7 @@ interface ChartComponentProps {
   userWalletAddress?: string | null | undefined;
   setpopup: (value: number) => void;
   tradesloading: boolean;
+  dayKlines: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -38,6 +39,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   onMarketSelect,
   setpopup,
   tradesloading,
+  dayKlines,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -466,6 +468,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         onMarketSelect={onMarketSelect}
         universalTrades={universalTrades}
         setpopup={setpopup}
+        dayKlines={dayKlines}
       />
       <div className="chartcontainer">
         {settings.useAdv ? (
