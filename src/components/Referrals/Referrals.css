@@ -195,7 +195,7 @@
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(3, 1fr);
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
 .feature-card {
@@ -297,9 +297,8 @@
   background: #0f0f12;
   border-radius: 8px;
   grid-row: span 2;
-  max-height: 24.1rem;
+  max-height: 23.1rem;
   padding: 0.5rem 1rem 0.7rem 1rem;
-  padding-top: 0.5rem;
 }
 
 .earnings-dashboard {
@@ -505,7 +504,7 @@
 .refer-section {
   background: #0f0f12;
   border-radius: 8px;
-  height: 16.7rem;
+  height: 15.7rem;
   padding: 1rem 1.5rem;
   padding-top: 0.5rem;
 }

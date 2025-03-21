@@ -812,10 +812,13 @@ function App() {
 
       return updatedTransactions;
     });
-    if (isAudioEnabled) {
-      audio.currentTime = 0;
-      audio.play();
-    }
+    setIsAudioEnabled((prev: any) => {
+      if (prev) {
+        audio.currentTime = 0;
+        audio.play();
+      }
+      return prev;
+    });
   }
 
   function handleSetOrderbookWidth(newWidth: number) {
