@@ -8,8 +8,24 @@ interface MetricItemProps {
   isLoading?: boolean;
 }
 
+function valueCheck(value: React.ReactNode): boolean {
+  if (typeof value === 'string') {
+    return value === 'n/a' || value === '$n/a';
+  }
+
+  if (React.isValidElement(value)) {
+    const children = value.props.children;
+
+    if (typeof children === 'string') {
+      return children === 'n/a' || children === '$n/a';
+    }
+  }
+
+  return false;
+}
+
 const MetricItem: React.FC<MetricItemProps> = ({ label, value, isLoading }) => {
-  const shouldShowLoading = value === undefined || isLoading === true;
+  const shouldShowLoading = valueCheck(value) || isLoading === true;
   
   return (
     <div className="metric-item">
