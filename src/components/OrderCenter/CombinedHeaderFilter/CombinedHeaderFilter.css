@@ -29,7 +29,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #24242d75;
+  background:none;
+  border: 1px solid rgb(170 174 207 / 8%);
   border-radius: 4px;
   padding: 2px 6px;
   color: #ffffff90;
@@ -40,9 +41,6 @@
   height: 20px;
 }
 
-.page-size-button:hover {
-  background: #2a2a2e8e;
-}
 
 .page-size-display {
   margin-right: 5px;
@@ -100,17 +98,14 @@
   justify-content: center;
   width: 23px;
   height: 20px;
-  background: #24242d75;
-  border-radius: 4px;
+  background:none;
+  border: 1px solid rgb(170 174 207 / 8%);  border-radius: 4px;
   color: #ffffff90;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.header-nav-button:hover:not(:disabled) {
-  background-color: #2a2a2e;
-}
 
 .header-nav-button:disabled {
   opacity: 0.5;
