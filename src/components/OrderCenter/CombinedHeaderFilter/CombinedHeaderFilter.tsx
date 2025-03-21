@@ -73,7 +73,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
           
           {isOpen && (
             <div className="page-size-dropdown">
-              {[10, 25, 50, 100].map(size => (
+              {[10, 25, 50].map(size => (
                 <div 
                   key={size} 
                   className={`page-size-option ${pageSize === size ? 'selected' : ''}`}

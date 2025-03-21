@@ -14,7 +14,7 @@ const SegmentedProgressBar = ({ percentFilled }: { percentFilled: number }) => {
             progress-segment 
             ${index < filledSegments ? 'filled' : 'empty'}
           `}
-          style={{animation: showAnimation && index >= filledSegments ? `pulse 4s infinite ${`${((index - filledSegments) * 0.15)}s`}` : ''
+          style={{animation: showAnimation && index >= filledSegments ? `pulse 4s infinite ${`${((index - filledSegments) * 0.08)}s`}` : ''
           }}
         />
       ))}

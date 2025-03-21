@@ -1075,11 +1075,8 @@ function App() {
   });
 
   // fetch ref data
-  const {
-    data: refData,
-    isLoading: refDataLoading,
-    refetch: refRefetch,
-  } = useReadContracts({
+  const { data: refData, isLoading: refDataLoading, refetch: refRefetch} = useReadContracts({
+    batchSize: 0,
     contracts: [
       ...Object.values(markets).flatMap((market: any) => ({
         address: market.address as `0x${string}`,
