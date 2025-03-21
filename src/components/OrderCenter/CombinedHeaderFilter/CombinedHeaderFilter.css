@@ -41,7 +41,7 @@
 }
 
 .page-size-button:hover {
-  background: #2a2a2e;
+  background: #2a2a2e8e;
 }
 
 .page-size-display {
@@ -80,12 +80,12 @@
 }
 
 .page-size-option:hover {
-  background: #2a2a2e85;
+  background: #2a2a2e8e;
   color: #ffffffd1;
 }
 
 .page-size-option.selected {
-  background: #2a2a2eb3;
+  background: #2a2a2e8e;
   color: #ffffff;
 }
 
