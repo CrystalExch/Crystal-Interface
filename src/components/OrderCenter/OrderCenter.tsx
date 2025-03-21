@@ -39,6 +39,7 @@ interface OrderCenterProps {
   isPortfolio?: boolean;
   refetch: any;
   sendUserOperation: any;
+  setChain: any;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = memo(
@@ -70,6 +71,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     isPortfolio,
     refetch,
     sendUserOperation,
+    setChain,
   }) => {
     // State management
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
@@ -290,6 +292,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               sendUserOperation={sendUserOperation}
               pageSize={pageSize}
               currentPage={currentPage}
+              setChain={setChain}
             />
           );
         case 'tradeHistory':

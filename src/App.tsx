@@ -3,6 +3,7 @@ import {
   getBlockNumber,
   waitForTransactionReceipt,
   switchChain,
+  getAccount,
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -28,7 +29,6 @@ import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
 import {
   useLogout,
-  useChain,
   useSmartAccountClient,
   useSendUserOperation,
   useAlchemyAccountContext,
@@ -125,7 +125,6 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { chain, setChain } = useChain();
   const { client, address } = useSmartAccountClient({type: "LightAccount"});
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
@@ -135,6 +134,8 @@ function App() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
+  const account = getAccount(config)
+  const userchain = account.chainId
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -775,12 +776,8 @@ function App() {
   });
 
   const handleSetChain = useCallback(async () => {
-    if (client != undefined) {
-      return switchChain(config, { chainId: activechain as any });
-    } else {
-      return await setChain({ chain: settings.chains[0] });
-    }
-  }, [client, activechain]);
+    return await switchChain(config, { chainId: activechain as any });
+  }, [activechain]);
 
   function newTxPopup(
     _transactionHash: any,
@@ -933,6 +930,12 @@ function App() {
     setlimitChase(true);
     setoutputString('');
     setamountOutSwap(BigInt(0));
+    setAmountOutScale(BigInt(0))
+    setScaleOutputString('')
+    setScaleStart(BigInt(0))
+    setScaleEnd(BigInt(0))
+    setScaleStartString('')
+    setScaleEndString('')
     const slider = document.querySelector('.balance-amount-slider');
     const popup = document.querySelector('.slider-percentage-popup');
     if (slider && popup) {
@@ -1007,17 +1010,14 @@ function App() {
   );
 
   // set token string
-  const debouncedSetTokenString = useCallback(
-    (value: string) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(() => {
-        settokenString(value);
-      }, 100);
-    },
-    [tokenString],
-  );
+  const debouncedSetTokenString = (value: string) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+    debounceTimerRef.current = setTimeout(() => {
+      settokenString(value);
+    }, 100);
+  }
 
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
@@ -2495,10 +2495,10 @@ function App() {
               !isWrap &&
               BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
           connected &&
-          chain.id == activechain,
+          userchain == activechain,
         );
         setSwapButton(
-          connected && chain.id == activechain
+          connected && userchain == activechain
             ? (switched &&
               amountOutSwap != BigInt(0) &&
               amountIn == BigInt(0)) ||
@@ -2531,10 +2531,10 @@ function App() {
                 (limitPrice <= highestBid &&
                   tokenIn == activeMarket.baseAddress)))) &&
           connected &&
-          chain.id == activechain,
+          userchain == activechain,
         );
         setLimitButton(
-          connected && chain.id == activechain
+          connected && userchain == activechain
             ? amountIn === BigInt(0)
               ? 0
               : limitPrice == BigInt(0)
@@ -2569,10 +2569,10 @@ function App() {
             amountIn > tokenBalances[tokenIn] ||
             !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
           connected &&
-          chain.id == activechain,
+          userchain == activechain,
         );
         setSendButton(
-          connected && chain.id == activechain
+          connected && userchain == activechain
             ? amountIn === BigInt(0)
               ? 0
               : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
@@ -2604,10 +2604,10 @@ function App() {
                 (scaleEnd <= highestBid &&
                   tokenIn == activeMarket.baseAddress)))) &&
           connected &&
-          chain.id == activechain,
+          userchain == activechain,
         );
         setScaleButton(
-          connected && chain.id == activechain
+          connected && userchain == activechain
             ? amountIn === BigInt(0)
               ? 0
               : scaleStart == BigInt(0)
@@ -2701,7 +2701,7 @@ function App() {
     orderType,
     slippage,
     connected,
-    chain.id,
+    userchain,
     tokenBalances[tokenIn],
     multihop,
     data?.[0].result?.at(0),
@@ -4847,7 +4847,7 @@ function App() {
               <button
                 className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
                 onClick={async () => {
-                  if (connected && chain.id === activechain) {
+                  if (connected && userchain === activechain) {
                     setIsSigning(true);
                     try {
                       if (sendTokenIn == eth) {
@@ -4892,7 +4892,7 @@ function App() {
                     sendAmountIn > tokenBalances[sendTokenIn] ||
                     !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
                   connected &&
-                  chain.id == activechain
+                  userchain == activechain
                 }
               >
                 {isSendingUserOperation ? (
@@ -4908,7 +4908,7 @@ function App() {
                   t('connectWallet')
                 ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
                   t('insufficient') + (tokendict[sendTokenIn].ticker || '?') + ' ' + t('bal')
-                ) : connected && chain.id != activechain ? (
+                ) : connected && userchain != activechain ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
                   t('send')
@@ -6470,7 +6470,7 @@ function App() {
           onClick={async () => {
             if (
               connected &&
-              chain.id === activechain
+              userchain === activechain
             ) {
               setIsSigning(true);
               try {
@@ -8087,7 +8087,7 @@ function App() {
           onClick={async () => {
             if (
               connected &&
-              chain.id === activechain
+              userchain === activechain
             ) {
               setIsSigning(true);
               try {
@@ -8831,7 +8831,7 @@ function App() {
           onClick={async () => {
             if (
               connected &&
-              chain.id === activechain
+              userchain === activechain
             ) {
               setIsSigning(true);
               try {
@@ -9659,7 +9659,7 @@ function App() {
           onClick={async () => {
             if (
               connected &&
-              chain.id === activechain
+              userchain === activechain
             ) {
               setIsSigning(true);
               try {
@@ -9901,7 +9901,7 @@ function App() {
             account={{
               connected: connected,
               address: address,
-              chainId: chain.id,
+              chainId: userchain,
             }}
             activechain={activechain}
             tokenIn={tokenIn}
@@ -9940,7 +9940,7 @@ function App() {
                 account={{
                   connected: connected,
                   address: address,
-                  chainId: chain.id,
+                  chainId: userchain,
                 }}
                 refetch={refRefetch}
                 sendUserOperation={sendUserOperation}
@@ -10012,11 +10012,12 @@ function App() {
                 account={{
                   connected: connected,
                   address: address,
-                  chainId: chain.id,
+                  chainId: userchain,
                   logout: logout,
                 }}
                 refetch={refetch}
                 sendUserOperation={sendUserOperation}
+                setChain={handleSetChain}
               />
             }
           />
@@ -10228,6 +10229,7 @@ function App() {
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
                             sendUserOperation={sendUserOperation}
+                            setChain={handleSetChain}
                           />
                         </div>
                       </div>
@@ -10447,6 +10449,7 @@ function App() {
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
                             sendUserOperation={sendUserOperation}
+                            setChain={handleSetChain}
                           />
                         </div>
                       </div>
@@ -10667,6 +10670,7 @@ function App() {
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
                             sendUserOperation={sendUserOperation}
+                            setChain={handleSetChain}
                           />
                         </div>
                       </div>
@@ -10886,6 +10890,7 @@ function App() {
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
                             sendUserOperation={sendUserOperation}
+                            setChain={handleSetChain}
                           />
                         </div>
                       </div>

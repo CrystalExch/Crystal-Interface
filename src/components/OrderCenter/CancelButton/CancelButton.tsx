@@ -9,11 +9,13 @@ interface CancelButtonProps {
   router: any;
   refetch: any;
   sendUserOperation: any;
+  setChain: any;
 }
 
-const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperation }) => {
+const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperation, setChain }) => {
   const handleCancel = async () => {
     try {
+      await setChain()
       await cancelOrder(
         sendUserOperation,
         router,

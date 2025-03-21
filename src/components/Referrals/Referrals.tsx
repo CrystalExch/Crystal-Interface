@@ -369,9 +369,7 @@ const Referrals: React.FC<ReferralProps> = ({
               className="claim-button"
               onClick={handleClaimFees}
               disabled={isSigning ||
-                totalClaimableFees === 0 ||
-                (account.connected &&
-                  account.chainId !== activechain)
+                totalClaimableFees === 0
               }
             >
               {isSigning ? (

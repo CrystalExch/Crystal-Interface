@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import closebutton from '../../assets/close_button.png';
 import { settings } from '../../settings.ts';
 import './CustomLinkModal.css';
@@ -29,6 +29,7 @@ const CustomLinkModal = ({
   account: any;
 }) => {
   const [isSigning, setIsSigning] = useState(false);
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   if (!isOpen) return null;
 
@@ -52,17 +53,23 @@ const CustomLinkModal = ({
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
   };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  
+  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setRefLinkString(value);
-
-    if (!isValidInput(value) && value.length > 0) {
-      setError(t('invalid'));
-    } else {
-      setError('');
+    if (value != refLinkString) {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = setTimeout(() => {
+        setRefLinkString(value);
+        if (!isValidInput(value) && value.length > 0) {
+          setError(t('invalid'));
+        } else {
+          setError('');
+        }
+      }, 300);
     }
-  };
+  }, [refLinkString]);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -108,10 +115,7 @@ const CustomLinkModal = ({
             isSigning ||
             (account.connected &&
               account.chainId == activechain &&
-              !!error) ||
-            (account.connected &&
-              account.chainId !== activechain) ||
-            !refLinkString
+              !!error) || !refLinkString
           }
         >
           {isSigning ? (

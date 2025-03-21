@@ -1,4 +1,4 @@
-import React, { memo, useState } from 'react';
+import React, { memo } from 'react';
 
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
@@ -17,19 +17,19 @@ interface OrdersContentProps {
   trades: any;
   refetch: any;
   sendUserOperation: any;
+  setChain: any;
   pageSize?: number;
   currentPage?: number;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch, sendUserOperation, pageSize = 10, currentPage = 1 }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperation, setChain, pageSize = 10, currentPage = 1 }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
       orders,
       (order: any, column: string) => getOrderValue(order, column, markets),
     );
     
     // Calculate pagination - using props from parent
-    const totalPages = Math.ceil(sortedItems.length / pageSize);
     const indexOfLastItem = currentPage * pageSize;
     const indexOfFirstItem = indexOfLastItem - pageSize;
     const currentItems = sortedItems.length > 0 ? 
@@ -143,6 +143,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 const param1 = m.map((market) => orderbatch[market][2]);
                 const param2 = m.map((market) => orderbatch[market][3]);
                 try {
+                  await setChain()
                   await multiBatchOrders(
                     sendUserOperation,
                     router,
@@ -174,6 +175,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 router={router}
                 refetch={refetch}
                 sendUserOperation={sendUserOperation}
+                setChain={setChain}
               />
             ))
           ) : (

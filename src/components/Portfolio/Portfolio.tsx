@@ -3,8 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import Overlay from '../loading/LoadingComponent';
-import TabbedOrderBalances from '../Portfolio/TabbedOrderBalances';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
+import OrderCenter from '../OrderCenter/OrderCenter';
 
 import { useSharedContext } from '../../contexts/SharedContext';
 import customRound from '../../utils/customRound';
@@ -66,6 +66,7 @@ interface PortfolioProps {
   account: any;
   refetch: any;
   sendUserOperation: any;
+  setChain: any;
 }
 
 const Portfolio: React.FC<PortfolioProps> = ({
@@ -102,6 +103,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   account,
   refetch,
   sendUserOperation,
+  setChain,
 }) => {
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -368,14 +370,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
   );
 
   const orderSection = (
-    <div className="order-section">
-      <TabbedOrderBalances
+    <div className="portfolio-order-center-wrapper">
+      <OrderCenter
         orders={orders}
         tradehistory={tradehistory}
         canceledorders={canceledorders}
         router={router}
         address={address}
         trades={trades}
+        currentMarket={''}
+        orderCenterHeight={orderCenterHeight}
         tokenList={tokenList}
         setTokenIn={setTokenIn}
         setTokenOut={setTokenOut}
@@ -384,15 +388,17 @@ const Portfolio: React.FC<PortfolioProps> = ({
         sortConfig={sortConfig}
         onSort={setSortConfig}
         tokenBalances={tokenBalances}
-        orderCenterHeight={orderCenterHeight}
+        hideMarketFilter={true}
         activeSection={activeSection}
         setActiveSection={setActiveSection}
         filter={filter}
         setFilter={setFilter}
         onlyThisMarket={onlyThisMarket}
         setOnlyThisMarket={setOnlyThisMarket}
+        isPortfolio={true}
         refetch={refetch}
         sendUserOperation={sendUserOperation}
+        setChain={setChain}
       />
     </div>
   );
