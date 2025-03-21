@@ -4854,7 +4854,7 @@ function App() {
                       if (sendTokenIn == eth) {
                         const hash = await sendeth(sendUserOperationAsync, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           eth,
                           '',
@@ -4866,7 +4866,7 @@ function App() {
                       } else {
                         const hash = await sendtokens(sendUserOperationAsync, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
                           sendTokenIn,
                           '',
@@ -6478,7 +6478,7 @@ function App() {
                 if (tokenIn == eth && tokenOut == weth) {
                   const hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'wrap',
                     eth,
                     weth,
@@ -6496,7 +6496,7 @@ function App() {
                 } else if (tokenIn == weth && tokenOut == eth) {
                   const hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'unwrap',
                     weth,
                     eth,
@@ -6560,7 +6560,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -6707,7 +6707,7 @@ function App() {
                           maxUint256,
                         );
                         newTxPopup(
-                          (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'approve',
                           tokenIn,
                           '',
@@ -8130,7 +8130,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                      (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
@@ -8843,7 +8843,7 @@ function App() {
                     amountIn,
                   );
                   newTxPopup(
-                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     eth,
                     '',
@@ -8863,7 +8863,7 @@ function App() {
                     amountIn,
                   );
                   newTxPopup(
-                    (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
                     tokenIn,
                     '',
@@ -9701,7 +9701,7 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                      (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                       'approve',
                       tokenIn,
                       '',
