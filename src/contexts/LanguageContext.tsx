@@ -305,6 +305,7 @@ export const translations: any = {
     back: 'Back',
     at: 'at',
     leaderboard: 'Leaderboard',
+    orderType: 'Order Type',
 
   },
   CN: {
@@ -612,6 +613,7 @@ export const translations: any = {
     at: '价格',
     leaderboard: '排行榜',
     scale: '规模',
+    orderType: '订单类型',
  
   },
   JP: {
@@ -919,6 +921,7 @@ export const translations: any = {
     at: '価格',
     leaderboard: 'リーダーボード',
     scale: 'スケール',
+    orderType: '注文タイプ',
 
   },
   KR: {
@@ -1226,6 +1229,7 @@ export const translations: any = {
     at: '가격',
     leaderboard: '리더보드',
     scale: '스케일',
+    orderType: '주문 유형',
 
   },
   ES: {
@@ -1533,6 +1537,7 @@ export const translations: any = {
     at: 'a',
     leaderboard: 'Leaderboard',
     scale: 'Escala',
+    orderType: 'Tipo de Orden',
   }
 };
 

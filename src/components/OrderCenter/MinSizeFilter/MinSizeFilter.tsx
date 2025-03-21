@@ -128,13 +128,10 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               <div className="filter-section-divider"></div>
             )}
 
-            {/* Market Filter Section */}
             {!hideMarketFilter && onlyThisMarket !== undefined && setOnlyThisMarket && (
               <>
                 <div className="filter-section">
-                  <div className="filter-section-header">
-                    {t("marketFilter")}
-                  </div>
+
                   <div className="filter-section-content">
                     <ToggleSwitch
                       checked={onlyThisMarket}
@@ -191,7 +188,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               </div>
             </div>
           </>
-        </div>
+        </div>  
       )}
     </div>
   );

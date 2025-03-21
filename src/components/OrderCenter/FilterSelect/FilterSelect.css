@@ -33,7 +33,7 @@
 .oc-filter-dropdown-list {
   animation: dropdownSlide 0.2s cubic-bezier(0.2, 0, 0.1, 1);
   backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: rgb(24, 24, 27);
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   color: #ffffffbc;
@@ -52,7 +52,7 @@
   transition:
     max-height 0.3s ease,
     opacity 0.3s ease;
-  z-index: 3;
+  width: 100%;
 }
 
 @keyframes dropdownSlide {

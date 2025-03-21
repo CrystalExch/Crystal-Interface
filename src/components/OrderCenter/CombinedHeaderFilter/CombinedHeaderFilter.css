@@ -29,7 +29,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #1a1a1d;
+  background: #24242d75;
   border-radius: 4px;
   padding: 2px 6px;
   color: #ffffff90;
@@ -100,7 +100,7 @@
   justify-content: center;
   width: 23px;
   height: 20px;
-  background-color: #222225;
+  background: #24242d75;
   border-radius: 4px;
   color: #ffffff90;
   font-size: 14px;
@@ -132,5 +132,5 @@
 .filter-right-arrow{
   width: 13px;
   transform: rotate(270deg);
-  opacity:0.8;
+  opacity:0.6;
 }

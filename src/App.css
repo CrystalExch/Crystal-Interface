@@ -1347,7 +1347,7 @@ body:has(.right-column.show) .blur-background-popups {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border:1.5px solid #18181a;
+  border:1.5px solid #161618;
   border-radius: 10px;
   display: flex;
   flex-direction: column;
