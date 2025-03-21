@@ -128,6 +128,7 @@ function App() {
   const { client, address } = useSmartAccountClient({type: "LightAccount"});
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
+    waitForTxn: true,
   });
   const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
@@ -135,7 +136,7 @@ function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const account = getAccount(config)
-  const userchain = account.chainId
+  const userchain = account.chainId || client?.chain?.id
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
