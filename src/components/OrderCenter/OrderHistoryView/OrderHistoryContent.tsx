@@ -135,10 +135,7 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
                 market={markets[item[4]]}
               />
             ))
-          ) : (
-            <div className="no-orders-message">
-              {t('noOrdersFound')}
-            </div>
+          ) : (null
           )}
         </div>
       </div>

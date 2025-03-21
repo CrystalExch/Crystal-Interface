@@ -89,10 +89,7 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
               market={markets[item[4]]}
             />
           ))
-        ) : (
-          <div className="no-items-message">
-            {t('noTradeHistory')}
-          </div>
+        ) : (null
         )}
       </div>
     </div>

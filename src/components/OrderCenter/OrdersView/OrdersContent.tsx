@@ -178,10 +178,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 setChain={setChain}
               />
             ))
-          ) : (
-            <div className="no-items-message">
-              {t('noOpenOrders')}
-            </div>
+          ) : (null
           )}
         </div>
       </div>
