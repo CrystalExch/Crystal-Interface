@@ -469,6 +469,8 @@ html {
   margin-right: 10px;
   margin-top: 5px;
   text-align: right;
+  padding: 1px 6px;
+  line-height: revert;
 }
 
 .send-button1pic {
@@ -1155,10 +1157,6 @@ body:has(.right-column.show) .blur-background-popups {
     opacity.3s ease;
 }
 
-.send-swap-button {
-  margin-top: 2px;
-}
-
 .limit-swap-button:hover:not(:disabled),
 .send-swap-button:hover:not(:disabled),
 .swap-button:hover:not(:disabled) {
@@ -1510,9 +1508,10 @@ body:has(.right-column.show) .blur-background-popups {
 .send-input {
   flex-grow: 1;
   font-size: 1.8rem;
-  padding-top: 45px;
+  padding: 45px 2px 1px 2px;
   text-align: center;
   width: 0;
+  line-height: revert;
 }
 
 .send-input,
