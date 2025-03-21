@@ -370,36 +370,38 @@ const Portfolio: React.FC<PortfolioProps> = ({
   );
 
   const orderSection = (
-    <div className="portfolio-order-center-wrapper">
-      <OrderCenter
-        orders={orders}
-        tradehistory={tradehistory}
-        canceledorders={canceledorders}
-        router={router}
-        address={address}
-        trades={trades}
-        currentMarket={''}
-        orderCenterHeight={orderCenterHeight}
-        tokenList={tokenList}
-        setTokenIn={setTokenIn}
-        setTokenOut={setTokenOut}
-        setSendTokenIn={setSendTokenIn}
-        setpopup={setpopup}
-        sortConfig={sortConfig}
-        onSort={setSortConfig}
-        tokenBalances={tokenBalances}
-        hideMarketFilter={true}
-        activeSection={activeSection}
-        setActiveSection={setActiveSection}
-        filter={filter}
-        setFilter={setFilter}
-        onlyThisMarket={onlyThisMarket}
-        setOnlyThisMarket={setOnlyThisMarket}
-        isPortfolio={true}
-        refetch={refetch}
-        sendUserOperation={sendUserOperation}
-        setChain={setChain}
-      />
+    <div className="order-section">
+      <div className="portfolio-order-center-wrapper">
+        <OrderCenter
+          orders={orders}
+          tradehistory={tradehistory}
+          canceledorders={canceledorders}
+          router={router}
+          address={address}
+          trades={trades}
+          currentMarket={''}
+          orderCenterHeight={orderCenterHeight}
+          tokenList={tokenList}
+          setTokenIn={setTokenIn}
+          setTokenOut={setTokenOut}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+          sortConfig={sortConfig}
+          onSort={setSortConfig}
+          tokenBalances={tokenBalances}
+          hideMarketFilter={true}
+          activeSection={activeSection}
+          setActiveSection={setActiveSection}
+          filter={filter}
+          setFilter={setFilter}
+          onlyThisMarket={onlyThisMarket}
+          setOnlyThisMarket={setOnlyThisMarket}
+          isPortfolio={true}
+          refetch={refetch}
+          sendUserOperation={sendUserOperation}
+          setChain={setChain}
+        />
+      </div>
     </div>
   );
 
