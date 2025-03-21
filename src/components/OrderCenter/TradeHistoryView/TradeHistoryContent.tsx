@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
@@ -25,7 +25,6 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   );
 
   // Calculate pagination
-  const totalPages = Math.ceil(sortedItems.length / pageSize);
   const indexOfLastItem = currentPage * pageSize;
   const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentItems = sortedItems.length > 0 ? 
