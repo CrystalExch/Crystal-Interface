@@ -1,5 +1,4 @@
-import React, { forwardRef, memo } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import React, { memo, useState } from 'react';
 
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
@@ -18,20 +17,27 @@ interface OrdersContentProps {
   trades: any;
   refetch: any;
   sendUserOperation: any;
+  pageSize?: number;
+  currentPage?: number;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch, sendUserOperation }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperation, pageSize = 10, currentPage = 1 }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
       orders,
       (order: any, column: string) => getOrderValue(order, column, markets),
     );
+    
+    // Calculate pagination - using props from parent
+    const totalPages = Math.ceil(sortedItems.length / pageSize);
+    const indexOfLastItem = currentPage * pageSize;
+    const indexOfFirstItem = indexOfLastItem - pageSize;
+    const currentItems = sortedItems.length > 0 ? 
+      sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
+      [];
 
-    const InnerElement = forwardRef<
-      HTMLDivElement,
-      React.HTMLAttributes<HTMLDivElement>
-    >((props, ref) => (
-      <div ref={ref} {...props}>
+    return (
+      <div className="orders-content-wrapper">
         <div className="orders-oc-header">
           <div className="ghost" />
           <SortableHeaderCell
@@ -157,46 +163,25 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
             </span>
           </div>
         </div>
-        {props.children}
-      </div>
-    ));
-
-    return (
-      <div className="orders-content-wrapper">
-        <List
-          height={
-            window.innerHeight > 1080
-              ? 326.4
-              : window.innerHeight > 960
-                ? 285.2
-                : window.innerHeight > 840
-                  ? 244
-                  : window.innerHeight > 720
-                    ? 202.8
-                    : 161.6
-          }
-          itemCount={sortedItems.length + 1}
-          itemSize={(index: number) => (index === 0 ? 35 : 41.2)}
-          innerElementType={InnerElement}
-          width="100%"
-        >
-          {({ index, style }) => {
-            if (index === 0) return <div style={style} />;
-            const item = sortedItems[index - 1];
-            return (
-              <div style={style}>
-                <OrderItem
-                  key={`${item[4]}-${item[0]}-${item[1]}-${index - 1}`}
-                  order={item}
-                  trades={trades}
-                  router={router}
-                  refetch={refetch}
-                  sendUserOperation={sendUserOperation}
-                />
-              </div>
-            );
-          }}
-        </List>
+        
+        <div className="order-items-container">
+          {currentItems.length > 0 ? (
+            currentItems.map((item, index) => (
+              <OrderItem
+                key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
+                order={item}
+                trades={trades}
+                router={router}
+                refetch={refetch}
+                sendUserOperation={sendUserOperation}
+              />
+            ))
+          ) : (
+            <div className="no-items-message">
+              {t('noOpenOrders')}
+            </div>
+          )}
+        </div>
       </div>
     );
   },

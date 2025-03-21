@@ -6,21 +6,26 @@ import './FilterSelect.css';
 interface FilterSelectProps {
   filter: 'all' | 'buy' | 'sell';
   setFilter: (value: 'all' | 'buy' | 'sell') => void;
+  inDropdown?: boolean;
 }
 
-const FilterSelect: React.FC<FilterSelectProps> = ({ filter, setFilter }) => {
+const FilterSelect: React.FC<FilterSelectProps> = ({ 
+  filter, 
+  setFilter,
+  inDropdown = false 
+}) => {
   const [isOpen, setIsOpen] = useState(false);
-
+  
   const dropdownRef = useRef<HTMLDivElement>(null);
-
+  
   const toggleDropdown = () => setIsOpen(!isOpen);
-
+  
   const handleItemClick = (value: 'all' | 'buy' | 'sell') => {
     localStorage.setItem('crystal_oc_filter', value);
     setFilter(value);
     setIsOpen(false);
   };
-
+  
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
@@ -30,12 +35,12 @@ const FilterSelect: React.FC<FilterSelectProps> = ({ filter, setFilter }) => {
         setIsOpen(false);
     };
     document.addEventListener('mousedown', handleClickOutside);
-
+    
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
+  
   return (
-    <div className="oc-filter-dropdown" ref={dropdownRef}>
+    <div className={`oc-filter-dropdown ${inDropdown ? 'in-filter-menu' : ''}`} ref={dropdownRef}>
       <div className="oc-filter-dropdown-header" onClick={toggleDropdown}>
         <span>{t(filter)}</span>
         <svg

@@ -420,3 +420,40 @@
     display: none;
   }
 }
+
+/* Add these styles to your OrderHistoryContent.css file */
+
+.orderhistory-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-width: 795px;
+  position: relative;
+}
+
+.order-history-oc-container {
+  flex: 1;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.order-history-items-container {
+  min-height: 200px;
+}
+
+.no-orders-message {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
+  color: #ffffff70;
+  font-size: 0.9rem;
+}
+
+.simple-pagination-info {
+  text-align: right;
+  padding: 6px 15px;
+  color: #ffffff70;
+  font-size: 0.75rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+}

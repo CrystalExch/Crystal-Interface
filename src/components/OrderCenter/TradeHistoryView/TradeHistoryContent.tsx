@@ -1,5 +1,4 @@
-import React, { forwardRef } from 'react';
-import { VariableSizeList as List } from 'react-window';
+import React, { useState } from 'react';
 
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
@@ -11,21 +10,30 @@ import './TradeHistoryContent.css';
 
 interface TradeHistoryContentProps {
   tradehistory: any[];
+  pageSize?: number;
+  currentPage?: number;
 }
 
 const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   tradehistory,
+  pageSize = 10,
+  currentPage = 1
 }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     tradehistory,
     (trade: any, column: string) => getTradeValue(trade, column, markets),
   );
 
-  const InnerElement = forwardRef<
-    HTMLDivElement,
-    React.HTMLAttributes<HTMLDivElement>
-  >((props, ref) => (
-    <div ref={ref} {...props}>
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedItems.length / pageSize);
+  const indexOfLastItem = currentPage * pageSize;
+  const indexOfFirstItem = indexOfLastItem - pageSize;
+  const currentItems = sortedItems.length > 0 ? 
+    sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
+    [];
+
+  return (
+    <div className="trades-content-wrapper">
       <div className="trade-history-oc-header">
         <div className="ghost" />
         <SortableHeaderCell
@@ -72,43 +80,22 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
         </SortableHeaderCell>
         <div className="oc-cell view">{t('view')}</div>
       </div>
-      {props.children}
-    </div>
-  ));
-
-  return (
-    <div className="trades-content-wrapper">
-      <List
-        height={
-          window.innerHeight > 1080
-            ? 326.4
-            : window.innerHeight > 960
-              ? 285.2
-              : window.innerHeight > 840
-                ? 244
-                : window.innerHeight > 720
-                  ? 202.8
-                  : 161.6
-        }
-        itemCount={sortedItems.length + 1}
-        itemSize={(index) => (index === 0 ? 35 : 41.2)}
-        innerElementType={InnerElement}
-        width="100%"
-      >
-        {({ index, style }) => {
-          if (index === 0) return <div style={style} />;
-          const item = sortedItems[index - 1];
-          return (
-            <div style={style}>
-              <TradeHistoryItem
-                key={`${item[4]}-${item[0]}-${item[1]}-${index - 1}`}
-                trade={item}
-                market={markets[item[4]]}
-              />
-            </div>
-          );
-        }}
-      </List>
+      
+      <div className="trade-history-items-container">
+        {currentItems.length > 0 ? (
+          currentItems.map((item, index) => (
+            <TradeHistoryItem
+              key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
+              trade={item}
+              market={markets[item[4]]}
+            />
+          ))
+        ) : (
+          <div className="no-items-message">
+            {t('noTradeHistory')}
+          </div>
+        )}
+      </div>
     </div>
   );
 };

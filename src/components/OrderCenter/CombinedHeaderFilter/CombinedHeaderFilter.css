@@ -1,0 +1,136 @@
+.combined-header-filter {
+  display: flex;
+  align-items: center;
+}
+
+.page-size-container {
+  display: flex;
+  align-items: center;
+  margin-right: 12px;
+}
+
+.show-text {
+  color: #ffffff70;
+  font-size: 0.75rem;
+  margin-right: 6px;
+}
+
+.per-page-text {
+  color: #ffffff70;
+  font-size: 0.75rem;
+  margin-left: 6px;
+}
+
+.page-size-section {
+  position: relative;
+}
+
+.page-size-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1a1a1d;
+  border-radius: 4px;
+  padding: 2px 6px;
+  color: #ffffff90;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 35px;
+  height: 20px;
+}
+
+.page-size-button:hover {
+  background: #2a2a2e;
+}
+
+.page-size-display {
+  margin-right: 5px;
+}
+
+.page-size-arrow {
+  transition: transform 0.2s ease;
+  margin-left: -2px;
+}
+
+.page-size-arrow.open {
+  transform: rotate(180deg);
+}
+
+.page-size-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  background-color: #1a1a1dbf;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  z-index: 10;
+  min-width: 100%;
+  backdrop-filter: blur(5px)
+}
+
+.page-size-option {
+  padding: 3px 12px;
+  color: #ffffff90;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  text-align: center;
+}
+
+.page-size-option:hover {
+  background: #2a2a2e85;
+  color: #ffffffd1;
+}
+
+.page-size-option.selected {
+  background: #2a2a2eb3;
+  color: #ffffff;
+}
+
+.header-navigation {
+  display: flex;
+  align-items: center;
+}
+
+.header-nav-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 23px;
+  height: 20px;
+  background-color: #222225;
+  border-radius: 4px;
+  color: #ffffff90;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.header-nav-button:hover:not(:disabled) {
+  background-color: #2a2a2e;
+}
+
+.header-nav-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.header-page-indicator {
+  margin: 0 8px;
+  color: #ffffff70;
+  font-size: 0.75rem;
+}
+
+.filter-left-arrow{
+  width: 13px;
+  transform: rotate(90deg);
+  opacity: 0.6;
+}
+
+.filter-right-arrow{
+  width: 13px;
+  transform: rotate(270deg);
+  opacity:0.8;
+}

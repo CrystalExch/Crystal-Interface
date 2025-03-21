@@ -1915,7 +1915,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   gap: 5px;
   min-height: 530px;
-  padding: 0 5px;
+  padding: 0 8px;
 }
 
 

@@ -2,14 +2,12 @@ import React, { memo, useEffect, useRef, useState } from 'react';
 
 import PortfolioContent from '../Portfolio/BalancesContent/BalancesContent';
 import PortfolioHeader from '../Portfolio/BalancesHeader/PortfolioHeader';
-import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
-import TooltipLabel from '../TooltipLabel/TooltipLabel';
 import DropdownMenu from './DropdownMenu/DropdownMenu';
-import FilterSelect from './FilterSelect/FilterSelect';
 import OrderHistoryContent from './OrderHistoryView/OrderHistoryContent';
 import OrdersContent from './OrdersView/OrdersContent';
 import TradeHistoryContent from './TradeHistoryView/TradeHistoryContent';
 import MinSizeFilter from './MinSizeFilter/MinSizeFilter';
+import CombinedHeaderFilter from './CombinedHeaderFilter/CombinedHeaderFilter';
 
 import './OrderCenter.css';
 
@@ -23,7 +21,7 @@ interface OrderCenterProps {
   currentMarket: string;
   orderCenterHeight: number;
   hideBalances?: boolean;
-  tokenList: TokenType[];
+  tokenList: any[];
   setTokenIn: (token: any) => void;
   setTokenOut: (token: any) => void;
   setSendTokenIn: any;
@@ -73,6 +71,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     refetch,
     sendUserOperation,
   }) => {
+    // State management
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
       typeof window !== 'undefined' ? window.innerWidth <= 1020 : false,
@@ -87,11 +86,18 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         ? localStorage.getItem('crystal_min_size_value') || '0'
         : '0',
     );
+    const [pageSize, setPageSize] = useState<number>(
+      typeof window !== 'undefined'
+        ? Number(localStorage.getItem('crystal_page_size') || '10')
+        : 10,
+    );
+    const [currentPage, setCurrentPage] = useState<number>(1);
 
     const indicatorRef = useRef<HTMLDivElement>(null);
     const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
 
+    // Tab change handler
     const handleTabChange = (
       section: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances',
     ) => {
@@ -100,12 +106,14 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
       setActiveSection(section);
       setIsDropdownOpen(false);
+      setCurrentPage(1); // Reset to first page when changing tabs
       const element = document.getElementsByClassName('oc-content')[0];
       if (element) {
         element.scrollTop = 0;
       }
     };
 
+    // Filter functions
     const matchesFilter = (sideValue: number) =>
       filter === 'all' ||
       (filter === 'buy' && sideValue === 1) ||
@@ -119,8 +127,10 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       return marketSymbol === currentMarket;
     };
 
+    // Debug flag
     const debugValue = false;
 
+    // Filtered data sets
     const filteredOrders = orders.filter((order) => {
       const sideMatch = matchesFilter(order[3]);
       const marketMatch = belongsToCurrentMarket(order[4]);
@@ -224,6 +234,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       return sideMatch && marketMatch && valueMatch;
     });
 
+    // Available tabs
     const availableTabs = [
       {
         key: 'orders',
@@ -236,6 +247,36 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       availableTabs.push({ key: 'balances', label: t('balances') });
     }
 
+    // Handle navigation for pagination
+    const handlePrevPage = () => {
+      setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
+    };
+  
+    const handleNextPage = () => {
+      let maxPages = getTotalPages();
+      setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
+    };
+    
+    // Reset current page when changing sections
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [activeSection]);
+    
+    // Get total pages for current section
+    const getTotalPages = (): number => {
+      switch (activeSection) {
+        case 'orders':
+          return Math.max(Math.ceil(filteredOrders.length / Number(pageSize)), 1);
+        case 'tradeHistory':
+          return Math.max(Math.ceil(filteredTradeHistory.length / Number(pageSize)), 1);
+        case 'orderHistory':
+          return Math.max(Math.ceil(filteredOrderHistory.length / Number(pageSize)), 1);
+        default:
+          return 1;
+      }
+    };
+    
+    // Render the appropriate content based on active section
     const renderContent = () => {
       switch (activeSection) {
         case 'orders':
@@ -247,16 +288,26 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               trades={trades}
               refetch={refetch}
               sendUserOperation={sendUserOperation}
+              pageSize={pageSize}
+              currentPage={currentPage}
             />
           );
         case 'tradeHistory':
-          return <TradeHistoryContent tradehistory={filteredTradeHistory} />;
+          return (
+            <TradeHistoryContent
+              tradehistory={filteredTradeHistory}
+              pageSize={pageSize}
+              currentPage={currentPage}
+            />
+          );
         case 'orderHistory':
           return (
             <OrderHistoryContent
               canceledorders={filteredOrderHistory}
               onlyThisMarket={hideMarketFilter ? false : onlyThisMarket}
               currentMarket={currentMarket}
+              pageSize={pageSize}
+              currentPage={currentPage}
             />
           );
         case 'balances':
@@ -282,6 +333,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     };
 
+    // Determine if there's no data to show
     let noData = false;
     let noDataMessage = '';
 
@@ -307,6 +359,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         break;
     }
 
+    // Update tab indicator position
     const updateIndicatorPosition = () => {
       if (isMobileView || !indicatorRef.current || !tabsRef.current) {
         if (indicatorRef.current) {
@@ -329,10 +382,12 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     };
 
+    // Update indicator on section change and window resize
     useEffect(() => {
       updateIndicatorPosition();
     }, [activeSection, isMobileView, filteredOrders.length]);
 
+    // Redirect from balances when not in portfolio
     useEffect(() => {
       if (!isPortfolio && activeSection === 'balances') {
         setActiveSection(
@@ -343,6 +398,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     }, [isPortfolio, activeSection, setActiveSection]);
 
+    // Set up resize observer for indicator
     useEffect(() => {
       if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
         const resizeObserver = new ResizeObserver(() => {
@@ -360,6 +416,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     }, [activeSection, isMobileView, filteredOrders.length]);
 
+    // Set up window resize handler
     useEffect(() => {
       const handleResize = () => {
         setIsMobileView(window.innerWidth <= 1020);
@@ -371,6 +428,11 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         window.removeEventListener('resize', handleResize);
       };
     }, []);
+
+    // Reset page when page size changes
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [pageSize]);
 
     return (
       <div
@@ -418,55 +480,28 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               />
             )}
           </div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '10px',
-            }}
-          >
-            {!hideMarketFilter && (
-              <div className="market-toggle-switch-container">
-                <ToggleSwitch
-                  checked={onlyThisMarket}
-                  onChange={() => {
-                    localStorage.setItem(
-                      'crystal_only_this_market',
-                      JSON.stringify(!onlyThisMarket),
-                    );
-                    setOnlyThisMarket(!onlyThisMarket);
-                  }}
-                  label={
-                    <TooltipLabel
-                      label={t('onlyCurrentMarket')}
-                      tooltipText={
-                        <div>
-                          <div className="tooltip-description">
-                            {t('onlyCurrentMarketHelp')}
-                          </div>
-                        </div>
-                      }
-                    />
-                  }
-                />
-                            <div className="oc-filter-divider"></div>
-
-              </div>
-              
-            )}
+          
+          <div className="oc-filters">
             {activeSection !== 'balances' && (
-              <>
-                <FilterSelect filter={filter} setFilter={setFilter} />
-                <div className="oc-filter-divider"></div>
-              </>
+              <CombinedHeaderFilter 
+                pageSize={Number(pageSize)} 
+                setPageSize={setPageSize}
+                currentPage={currentPage}
+                totalPages={getTotalPages()}
+                onPrevPage={handlePrevPage}
+                onNextPage={handleNextPage}
+              />
             )}
-
-
             <MinSizeFilter
               minSizeEnabled={minSizeEnabled}
               setMinSizeEnabled={setMinSizeEnabled}
               minSizeValue={minSizeValue}
               setMinSizeValue={setMinSizeValue}
+              filter={activeSection !== 'balances' ? filter : undefined}
+              setFilter={activeSection !== 'balances' ? setFilter : undefined}
+              onlyThisMarket={!hideMarketFilter ? onlyThisMarket : undefined}
+              setOnlyThisMarket={!hideMarketFilter ? setOnlyThisMarket : undefined}
+              hideMarketFilter={hideMarketFilter}
             />
           </div>
         </div>
