@@ -228,8 +228,10 @@ html {
   cursor: pointer;
   font-size: 0.75rem;
   height: 32px;
-  padding-top: 5px;
   width: 32px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .tokenlist,
@@ -400,7 +402,7 @@ html {
 }
 
 .send-popup-background,.send-popup-container {
-  border-radius: 10px;
+  border-radius: 8px;
   width: min(370px, 90vw);
 }
 
@@ -835,7 +837,7 @@ html {
 .main-content-wrapper.simple-view .navlink.active {
   background: 0 0;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   height: 100%;
   opacity: 1;
 }
@@ -901,7 +903,7 @@ body {
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 5px 20px 12px 37px;
+  padding: 4px 20px 10.5px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
@@ -986,7 +988,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .tokenselectbg,.sendselectbg {
-  border-radius: 10px;
+  border-radius: 8px;
   box-sizing: border-box;
   left: 50%;
   margin: 0 auto;
@@ -1015,7 +1017,7 @@ body:has(.right-column.show) .blur-background-popups {
   left: 50%;
   transform: translate(-50%, -50%);
   backdrop-filter: blur(10px);
-  border-radius: 10px;
+  border-radius: 8px;
   position: absolute;
   z-index: 10;
   animation: fadeIn .2s ease-out forwards;
@@ -1023,7 +1025,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .connect-wallet-background.connected {
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
   height: min(390px, 90vh);
   left: 50%;
@@ -1348,24 +1350,17 @@ body:has(.right-column.show) .blur-background-popups {
 .sendaddressbg,
 .sendbg {
   border:1.5px solid #161618;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
 }
 
 .outputbg {
   margin: 1px 12px 10px;
-  border-radius: 0;
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
 }
 
 .inputbg {
   margin: 5px 12px 0px;
-  border-radius: 0;
-  border-top-right-radius: 10px;
-  border-top-left-radius: 10px;
-  border-bottom: none;
 }
 
 .scalebgtop{
@@ -1480,7 +1475,7 @@ body:has(.right-column.show) .blur-background-popups {
   margin-top: 1px;
 }
 .limitbg {
-  margin: -8px 11px 13px;
+  margin: -6px 12px 13px;
 }
 
 .limit-order {
@@ -1587,7 +1582,7 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   height: 22px;
   justify-content: center;
-  margin: -12px 0;
+  margin: -10px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
@@ -1660,7 +1655,7 @@ body:has(.right-column.show) .blur-background-popups {
 .rectangle {
   background: #0f0f12;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -1669,7 +1664,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .connect-wallet-background.unconnected {
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   left: 50%;
@@ -1905,7 +1900,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   gap: 4px;
   min-height: 530px;
-  padding: 0 8px;
+  padding: 0 5px;
 }
 
 
@@ -2017,7 +2012,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .layout-settings-background {
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
@@ -2606,7 +2601,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .button2 {
   background: 0 0;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 1rem;
   gap: 4px;
 }
@@ -2839,7 +2834,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .connecting-popup {
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
@@ -3250,7 +3245,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .search-markets-dropdown-popup {
-  border-radius: 10px;
+  border-radius: 8px;
   background: #19191c80;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   left: 50%;

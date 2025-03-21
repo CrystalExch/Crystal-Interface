@@ -190,10 +190,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
       <button
         className="control-button"
         onClick={() => setIsBlurred(!isBlurred)}
-        aria-label="Toggle visibility"
       >
         <div style={{ position: 'relative' }}>
-          {' '}
           <Eye className="control-icon" size={12} />
           <div className={`port-eye-slash ${isBlurred ? '' : 'hidden'}`} />
         </div>

@@ -67,9 +67,10 @@ const NFTMintingPage: React.FC = () => {
   const percentageSold = (supplySold / nftData.totalSupply) * 100;
 
   return (
+    <div className="nft-scroll-wrapper">
       <div className="nft-main-content-wrapper">
         <div className="nft-image-container">
-          <img src={nftData.imageUrl} alt={nftData.name} className="nft-image" />
+          <img src={nftData.imageUrl} className="nft-image" />
           <div className="nft-countdown-timer">
             <div className="nft-countdown-content">
               {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
@@ -88,7 +89,6 @@ const NFTMintingPage: React.FC = () => {
                 <h2 className="nft-name">{nftData.name}</h2>
                 <p className="nft-description">{nftData.description}</p>
                 
-                {/* Stats Grid */}
                 <div className="nft-stats-grid">
                   <div className="nft-stat-item">
                     <div className="nft-stat-value">{nftData.mints24h}</div>
@@ -138,6 +138,7 @@ const NFTMintingPage: React.FC = () => {
           </div>
         </div>
       </div>
+    </div>
   );
 };
 

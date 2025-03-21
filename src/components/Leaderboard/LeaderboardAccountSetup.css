@@ -89,7 +89,7 @@
 .photo-preview {
   width: 128px;
   height: 128px;
-  border-radius: 10px;
+  border-radius: 8px;
   object-fit: cover;
   border: 2px solid #aaaecf;
 }
@@ -124,7 +124,7 @@
 .letter-avatar {
   width: 128px;
   height: 128px;
-  border-radius: 10px;
+  border-radius: 8px;
   background-color:none;
   border: 2px dashed rgba(255, 255, 255, 0.1);
   display: flex;

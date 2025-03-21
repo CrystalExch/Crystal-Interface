@@ -49,6 +49,7 @@
   font-weight: 400;
   padding: 5px;
   transition: color 0.3s ease;
+  line-height: revert;
 }
 
 .time-period-button:hover {
@@ -62,7 +63,7 @@
 .time-period-sliding-indicator {
   background-color: #ffffff0d;
   border-radius: 3px;
-  bottom: 7px;
+  bottom: 6px;
   height: 19px;
   position: absolute;
   transition:

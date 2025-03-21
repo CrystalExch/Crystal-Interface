@@ -107,14 +107,14 @@ const OrderBook: React.FC<OrderBookProps> = ({
               className={`ob-tab ${activeTab === 'orderbook' ? 'ob-active' : ''}`}
               onClick={() => handleTabClick('orderbook')}
             >
-              Orderbook
+              {t('orderbook')}
             </div>
             <div
               ref={(el) => (tabsRef.current[1] = el)}
               className={`ob-tab ${activeTab === 'trades' ? 'ob-active' : ''}`}
               onClick={() => handleTabClick('trades')}
             >
-              Trades
+              {t('trades')}
             </div>
           </div>
           <div ref={indicatorRef} className="ob-sliding-indicator" />

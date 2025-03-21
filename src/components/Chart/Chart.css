@@ -1,6 +1,6 @@
 .chartcontainer {
   background: #0f0f12;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
   height: calc(100% - 64px);

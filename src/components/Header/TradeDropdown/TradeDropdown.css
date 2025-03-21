@@ -8,7 +8,7 @@
   backdrop-filter: blur(15px);
   background: rgba(20, 20, 24, 0.7);
   border: 1px solid rgb(170 174 207 / 2%);
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 8px rgb(0 0 0/15%);
   display: flex;
   flex-direction: column;
@@ -95,7 +95,7 @@
 
 .tradedrop-markets {
   background: #1c1c20;
-  border-radius: 10px;
+  border-radius: 8px;
   height: 300px;
   left: calc(100% + 9px);
   opacity: 0;

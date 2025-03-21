@@ -88,6 +88,7 @@ import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
+import notificationSound from './assets/notification.wav';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -724,6 +725,9 @@ function App() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  const audio = new Audio(notificationSound);
+  audio.volume = 1;
+
   const filteredMarkets = marketsData.filter((market) => {
     const matchesSearch = market.pair
       .toLowerCase()
@@ -808,6 +812,10 @@ function App() {
 
       return updatedTransactions;
     });
+    if (isAudioEnabled) {
+      audio.currentTime = 0;
+      audio.play();
+    }
   }
 
   function handleSetOrderbookWidth(newWidth: number) {
