@@ -50,20 +50,17 @@
   display: flex;
   font-size: 1.1rem;
   font-weight: 500;
-  gap: 2px;
   margin-right: 5px;
   text-decoration: none;
 }
 
 .crystal-logo {
-  height: 1.8rem;
-  height: 30px;
+  height: 1.9rem;
 }
 
 .crystal-name {
   font-family: Orbitron, sans-serif;
-  font-size: 1rem;
-  font-weight: 300;
+  font-size: 1.1rem;
 }
 
 .connect-button {
