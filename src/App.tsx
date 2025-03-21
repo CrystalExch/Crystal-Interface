@@ -716,10 +716,10 @@ function App() {
   const [marketsData, setMarketsData] = useState<any[]>([]);
   const [sortField, setSortField] = useState<
     'volume' | 'price' | 'change' | 'favorites' | null
-  >(null);
+  >('volume');
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
-  >(undefined);
+  >('desc');
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -735,36 +735,31 @@ function App() {
 
   const sortedMarkets = [...filteredMarkets].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
-
-    if (sortField === 'favorites') {
-      const aIsFavorite = favorites.includes(
-        a.baseAddress?.toLowerCase() ?? '',
-      );
-      const bIsFavorite = favorites.includes(
-        b.baseAddress?.toLowerCase() ?? '',
-      );
-      return sortDirection === 'asc'
-        ? aIsFavorite === bIsFavorite
-          ? 0
-          : aIsFavorite
-            ? -1
-            : 1
-        : aIsFavorite === bIsFavorite
-          ? 0
-          : aIsFavorite
-            ? 1
-            : -1;
+    
+    let aValue: number = 0;
+    let bValue: number = 0;
+    
+    switch (sortField) {
+      case 'volume':
+        aValue = parseFloat(a.volume.toString().replace(/,/g, ''));
+        bValue = parseFloat(b.volume.toString().replace(/,/g, ''));
+        break;
+      case 'price':
+        aValue = parseFloat(a.currentPrice.toString().replace(/,/g, ''));
+        bValue = parseFloat(b.currentPrice.toString().replace(/,/g, ''));
+        break;
+      case 'change':
+        aValue = parseFloat(a.priceChange.replace(/[+%]/g, ''));
+        bValue = parseFloat(b.priceChange.replace(/[+%]/g, ''));
+        break;
+      case 'favorites':
+        aValue = favorites.includes(a.baseAddress.toLowerCase()) ? 1 : 0;
+        bValue = favorites.includes(b.baseAddress.toLowerCase()) ? 1 : 0;
+        break;
+      default:
+        return 0;
     }
-
-    const aValue =
-      sortField === 'volume'
-        ? parseFloat(a.volume)
-        : sortField === 'change' ? parseFloat(a.priceChange) : parseFloat(a.currentPrice);
-    const bValue =
-      sortField === 'volume'
-        ? parseFloat(b.volume)
-        : sortField === 'change' ? parseFloat(b.priceChange) : parseFloat(b.currentPrice);
-
+    
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
@@ -2722,8 +2717,7 @@ function App() {
 
     (async () => {
       try {
-        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-        const endpoint = `https://api.studio.thegraph.com/query/104695/crystal/v0.3.5`;
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
 
         let temptradehistory: any[] = [];
         let temporders: any[] = [];

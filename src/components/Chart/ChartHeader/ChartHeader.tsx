@@ -153,13 +153,13 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
       } else {
-        setBuyLiquidity('0');
+        setBuyLiquidity('n/a');
       }
       if (roundedSells.length !== 0) {
         const sellLiquidity = roundedSells[roundedSells.length - 1].totalSize;
         setSellLiquidity(formatCommas(sellLiquidity.toFixed(2)));
       } else {
-        setSellLiquidity('0');
+        setSellLiquidity('n/a');
       }
     }
   }, [orderdata]);
@@ -176,7 +176,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       label: t('dayChange'),
       value: (
         <span className={`price-change ${priceChangeClass}`}>
-          {priceChangeAmount} / {priceChangePercent}%
+          {priceChangeAmount !== 'n/a'
+            ? `${priceChangeAmount} / ${priceChangePercent}%`
+            : 'n/a'}
         </span>
       ),
       isLoading,

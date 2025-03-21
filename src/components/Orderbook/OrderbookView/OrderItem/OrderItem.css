@@ -97,7 +97,8 @@
 .order-price,
 .order-size,
 .total-size {
-  flex: 1;
+  display: flex;
+  align-items: center;
 }
 
 @keyframes flash-effect {
@@ -111,10 +112,8 @@
 }
 
 .user-order-dot {
-  display: inline-block;
   margin-left: 4px;
   font-size: 14px;
-  line-height: 0;
   font-weight: bold;
   color: inherit;
 }

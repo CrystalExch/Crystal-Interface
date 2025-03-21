@@ -1251,14 +1251,6 @@ body:has(.right-column.show) .blur-background-popups {
   width: 13px;
 }
 
-.outputbg {
-  margin: 1px 12px 10px;
-}
-
-.inputbg {
-  margin: 5px 12px 0px;
-}
-
 .inputbutton1container,
 .limitpricecontainer,
 .outputbutton2container
@@ -1352,9 +1344,6 @@ body:has(.right-column.show) .blur-background-popups {
   font-weight: 300  ;
 }
 
-
-
-
 .inputbg,
 .limitbg,
 .outputbg,
@@ -1366,19 +1355,21 @@ body:has(.right-column.show) .blur-background-popups {
   flex-direction: column;
 }
 
+.outputbg {
+  margin: 1px 12px 10px;
+  border-radius: 0;
+  border-bottom-right-radius: 10px;
+  border-bottom-left-radius: 10px;
+}
 
-.inputbg{
+.inputbg {
+  margin: 5px 12px 0px;
   border-radius: 0;
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
   border-bottom: none;
 }
 
-.outputbg{
-  border-radius: 0;
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
-}
 .scalebgtop{
   border: 1.5px solid #4b4b5822;
   border-radius: 6px;
@@ -1670,7 +1661,7 @@ body:has(.right-column.show) .blur-background-popups {
 .rectangle {
   background: #0f0f12;
   border: none;
-  border-radius: 10px;
+  border-radius: 8px;
   display: flex;
   flex: 1;
   flex-direction: column;
@@ -1913,7 +1904,7 @@ body:has(.right-column.show) .blur-background-popups {
   box-sizing: border-box;
   display: flex;
   flex: 1;
-  gap: 5px;
+  gap: 4px;
   min-height: 530px;
   padding: 0 8px;
 }
@@ -1981,7 +1972,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .chartandorderbookandordercenter {
   height: auto;
   overflow: hidden;
-  gap: 1px;
 }
 
 .chart-container {

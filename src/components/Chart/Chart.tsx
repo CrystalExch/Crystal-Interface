@@ -47,12 +47,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const [data, setData] = useState<[DataPoint[], string]>([[], '']);
   const [inPic, setInPic] = useState('');
   const [outPic, setOutPic] = useState('');
-  const [price, setPrice] = useState('0');
-  const [priceChange, setPriceChange] = useState('0');
-  const [change, setChange] = useState('0');
-  const [high24h, setHigh24h] = useState('0');
-  const [low24h, setLow24h] = useState('0');
-  const [volume, setVolume] = useState('0');
+  const [price, setPrice] = useState('n/a');
+  const [priceChange, setPriceChange] = useState('n/a');
+  const [change, setChange] = useState('n/a');
+  const [high24h, setHigh24h] = useState('n/a');
+  const [low24h, setLow24h] = useState('n/a');
+  const [volume, setVolume] = useState('n/a');
 
   const chartRef = useRef<HTMLDivElement>(null);
 

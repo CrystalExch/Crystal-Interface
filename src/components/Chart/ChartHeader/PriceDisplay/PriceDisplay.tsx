@@ -8,7 +8,7 @@ interface PriceDisplayProps {
 }
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({ price, activeMarket }) => {
-  const [isLoading, setIsLoading] = useState(price === undefined);
+  const [isLoading, setIsLoading] = useState(price === 'n/a');
   const prevPriceRef = useRef(price);
   const prevMarketRef = useRef(activeMarket);
   
