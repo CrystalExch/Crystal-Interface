@@ -80,10 +80,13 @@
   position: relative;
   width: 100%;
   z-index: 2;
+  align-items: center;
 }
 
 .order-price {
   text-align: left;
+  display: flex;
+  align-items: center;
 }
 
 .order-size {
@@ -97,8 +100,7 @@
 .order-price,
 .order-size,
 .total-size {
-  display: flex;
-  align-items: center;
+  flex: 1;
 }
 
 @keyframes flash-effect {
