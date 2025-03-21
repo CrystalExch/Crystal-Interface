@@ -1660,7 +1660,7 @@ body:has(.right-column.show) .blur-background-popups {
 .rectangle {
   background: #0f0f12;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   display: flex;
   flex: 1;
   flex-direction: column;
