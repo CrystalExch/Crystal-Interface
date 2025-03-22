@@ -105,7 +105,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     
     const maxRank = Math.max(...initialFactions.map(f => f.rank));
     
-    // RANDOM ACCOUNT GENERATOR FOR TESTING
     for (let i = maxRank + 1; i <= maxRank + 320; i++) {
       const nameIndex = Math.floor(Math.random() * baseNames.length);
       const suffixIndex = Math.floor(Math.random() * suffixes.length);
@@ -202,24 +201,29 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const topThreeUsers = allFactions.slice(0, 3);
   
   useEffect(() => {
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
-    
-    const timer = setInterval(() => {
+    const calculateTimeLeft = () => {
+      const targetDate = new Date("2025-03-28T12:00:00Z");
       const now = new Date();
-      const difference = endDate.getTime() - now.getTime();
+      
+      const difference = targetDate.getTime() - now.getTime();
       
       if (difference <= 0) {
-        clearInterval(timer);
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        
-        setTimeLeft({ days, hours, minutes, seconds });
+        return;
       }
+      
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      
+      setTimeLeft({ days, hours, minutes, seconds });
+    };
+    
+    calculateTimeLeft();
+    
+    const timer = setInterval(() => {
+      calculateTimeLeft();
     }, 1000);
     
     return () => clearInterval(timer);
