@@ -483,12 +483,6 @@
   text-decoration: underline;
 }
 
-@supports (-webkit-touch-callout: none) {
-  .portfolio-specific-page {
-    padding-bottom: 90px !important;
-  }
-}
-
 @media (width <=1020px) {
   .portfolio-layout {
     display: grid;

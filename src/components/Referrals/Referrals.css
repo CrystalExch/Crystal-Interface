@@ -8,11 +8,6 @@
   width: 100%;
 }
 
-@supports (-webkit-touch-callout: none) {
-  .referral-content {
-    padding-bottom: 81px !important;
-  }
-}
 
 .referral-content {
   display: flex;
