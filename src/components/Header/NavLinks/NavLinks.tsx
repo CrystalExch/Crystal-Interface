@@ -232,7 +232,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
             {t('leaderboard')}
           </Link>
           <Link to="/mint" className="nav-link">
-            {t('Mint')}
+            {t('mint')}
           </Link>
 
 

@@ -214,18 +214,18 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
 
   const steps = [
     {
-      title: "Precision Matters",
-      description: "Place your bids toward the mid to earn bonus points",
+      title: t("precisionMatters"),
+      description: t("placeYourBids"),
       image: part1image,
     },
     {
-      title: "Earn XP",
-      description: "Mids give you XP that contributes to your overall ranking",
+      title: t("earnXp"),
+      description: t("midsGiveYou"),
       image: "/assets/earn-xp.jpg",
     },
     {
-      title: "Claim Rewards",
-      description: "Compete on the leaderboards to win prizes when the countdown ends",
+      title: t("claimRewards"),
+      description: t("competeOnLeaderboards"),
       image: "/assets/rewards.jpg",
     }
   ];
@@ -249,8 +249,8 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
       <div className="account-setup-container challenge-intro-container">
         <div className="account-setup-header">
           <div className="account-setup-title-wrapper">
-            <h2 className="account-setup-title">Challenge Overview</h2>
-            <p className="account-setup-subtitle">Learn how to compete and earn rewards</p>
+          <h2 className="account-setup-title">{t("challengeOverview")}</h2>
+          <p className="account-setup-subtitle">{t("learnHowToCompete")}</p>
           </div>
           
           <div className="step-indicators">
@@ -339,19 +339,17 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
         
         <div className="account-setup-footer">
           {currentStep > 0 ? (
-            <button 
-              className="back-button"
-              onClick={handleBack}
-            >
-              Back
-            </button>
+            <button className="back-button" onClick={handleBack}>
+  {t("back")}
+</button>
+
           ) : (
             <button 
               className="skip-button"
               onClick={onComplete}
             >
-              Skip
-            </button>
+  {t("skip")}
+  </button>
           )}
           
           {currentStep === steps.length - 1 && !isLoggedIn ? (
@@ -360,14 +358,14 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                 className="guest-button"
                 onClick={onContinueAsGuest}
               >
-                Continue as Guest
-              </button>
+  {t("continueAsGuest")}
+  </button>
               <button 
                 className="next-button"
                 onClick={handleNext}
               >
-                Get Started
-              </button>
+    {t("getStarted")}
+    </button>
             </div>
           ) : (
             <button 
@@ -376,10 +374,10 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
             >
               {currentStep < steps.length - 1 ? (
                 <>
-                  Next
-                </>
+      {t("next")}
+      </>
               ) : (
-                'Get Started'
+                t("getStarted")
               )}
             </button>
           )}

@@ -137,11 +137,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return extendedFactions;
   };
   
-  const [allFactions, setAllFactions] = useState<Faction[]>(() => generateExtendedFactions());
+  const [allFactions] = useState<Faction[]>(() => generateExtendedFactions());
   const [updatedFactions, setUpdatedFactions] = useState<Faction[]>(allFactions);
   
   useEffect(() => {
     const storedUserData = localStorage.getItem('leaderboard_user_data');
+    const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro');
     
     if (storedUserData) {
       const parsedData = JSON.parse(storedUserData) as UserData;
@@ -151,6 +152,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         logo: parsedData.image
       });
       setHasAccount(true);
+      setShowChallengeIntro(false);
+    } else if (hasSeenIntro === 'true') {
+      setIsGuestMode(true);
+      setShowChallengeIntro(false);
     } else {
       setShowChallengeIntro(true);
       setIntroStep(0);
@@ -220,29 +225,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const isUserOnCurrentPage = () => {
-    const userPosition = findUserPosition();
-    if (userPosition === -1) return false;
-    
-    if (userPosition < 3) return false;
-    
-    const adjustedPosition = userPosition - 3;
-    const userPage = Math.floor(adjustedPosition / ITEMS_PER_PAGE);
-    return userPage === currentPage;
-  };
 
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
+    localStorage.setItem('has_seen_challenge_intro', 'true');
     
     if (!hasAccount && !isGuestMode) {
       setShowAccountSetup(true);
       setDirectAccountSetup(false); 
     }
   };
-  
   const handleContinueAsGuest = (): void => {
     setShowChallengeIntro(false);
     setIsGuestMode(true);
+    
+    localStorage.setItem('has_seen_challenge_intro', 'true');
     
     setUserData({
       username: "Guest",
@@ -250,7 +247,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: ""
     });
   };
-
+  
+  
   const handleAccountSetupComplete = (newUserData: UserData): void => {
     localStorage.setItem('leaderboard_user_data', JSON.stringify(newUserData));
     
@@ -292,8 +290,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     
     setUpdatedFactions(allFactions.filter(f => f.name !== userData.username));
     setShowDeleteConfirmation(false);
-  }
-  
+  };
   const handleEditAccount = (): void => {
     setShowEditAccount(true);
   };
@@ -499,7 +496,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         </div>
         
         <div className="leaderboard-rows">
-          {getCurrentPageItems().map((faction, index) => {
+          {getCurrentPageItems().map((faction) => {
             const absoluteRank = faction.rank;
             const isCurrentUser = faction.name === userData.username;
             
@@ -534,7 +531,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             onClick={goToUserPosition}
             disabled={!hasAccount || findUserPosition() === -1}
           >
-          View Your Position
+            {t("viewYourPosition")}
           </button>
           
           <div className="page-navigation">
@@ -547,7 +544,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
             
             <div className="page-indicator">
-              Page {currentPage + 1} of {totalPages}
+              {t("page")} {currentPage + 1} {t("of")} {totalPages}
             </div>
             
             <button 
