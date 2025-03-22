@@ -1,6 +1,7 @@
 import React, { useState, ChangeEvent } from 'react';
 import './EditAccountPopup.css';
 import SideArrow from '../../assets/arrow.svg';
+import closebutton from '../../assets/close_button.png';
 
 interface UserData {
   username: string;
@@ -127,7 +128,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
                 type="button"
                 aria-label="Change photo"
               >
-                ×
+                <img src={closebutton} className="edit-account-close-icon" />
               </button>
             </div>
             

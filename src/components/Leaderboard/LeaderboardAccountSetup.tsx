@@ -84,7 +84,6 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
       setError('');
       setStep(2);
     } else {
-      // This should only be callable when photoPreview exists
       if (photoPreview) {
         const userData: UserData = {
           username,
@@ -197,7 +196,7 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
                 onClick={handleBack}
                 className="back-button"
               >
-                <img className="back-button-arrow" src={SideArrow} />
+                <img className="back-button-arrow" src={SideArrow} alt="Back" />
                 Back
               </button>
               <button
@@ -205,7 +204,7 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
                 className="next-button"
               >
                 Next
-                <img className="next-button-arrow" src={SideArrow} />
+                <img className="next-button-arrow" src={SideArrow} alt="Next" />
               </button>
             </>
           ) : (
@@ -214,7 +213,7 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
                 onClick={handleBack}
                 className="back-button"
               >
-                <img className="back-button-arrow" src={SideArrow} />
+                <img className="back-button-arrow" src={SideArrow} alt="Back" />
                 Back
               </button>
               <div className="action-buttons">

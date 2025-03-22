@@ -60,6 +60,11 @@
     margin-bottom: 30px;
     border: 1.5px solid rgba(255, 255, 255, 0.05);
   }
+  @media(max-width: 800px) {
+    .leaderboard-banner {
+      height: 60vw;
+    }
+  }
   
   .banner-overlay {
     border-radius: 12px;
@@ -154,6 +159,28 @@
     bottom: 0px;
     z-index: 0;
   }
+
+@media (max-width: 700px) {
+  .leaderboard-user-info {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 10px;
+    padding: 15px 20px;
+  }
+  
+  .column-divider {
+    display: none;
+  }
+  
+  .info-column {
+    width: 100%;
+  }
+  .progress-container{
+    margin-bottom: 50px;
+  }
+
+}
   
   .info-column {
     flex: 1;
@@ -226,22 +253,21 @@
   }
   
   .full-leaderboard {
-    background-color: rgba(255, 255, 255, 0.02);
-    border: 1.5px solid rgba(255, 255, 255, 0.02);
+    background-color: #0f0f12;
     border-radius: 12px;
     overflow: hidden;
   }
   
   .leaderboard-headers {
     display: flex;
-    padding: 15px 20px;
-    background-color: rgba(0, 0, 0, 0.3);
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.6);
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.7);
   }
   
   .header-rank, .row-rank {
-    width: 100px;
+    width: 70px;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -266,8 +292,8 @@
   
   .leaderboard-row {
     display: flex;
-    padding: 15px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 10px 20px;
+    border-bottom: 1.5px solid rgba(255, 255, 255, 0.02);
     align-items: center;
   }
   
@@ -281,19 +307,21 @@
   }
   
   .faction-small-logo {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     object-fit: cover;
   }
   
   .faction-row-name {
-    font-weight: 400;
-  }
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+     }
   
   .xp-amount {
     font-weight: 300;
-    font-size: 16px;
+    font-size: 0.9rem;
     color: rgba(255, 255, 255, 0.7);
   }
   
@@ -817,4 +845,130 @@
   height: auto;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
   transition: 0.3s all; 
+}
+
+/* Add these styles to your Leaderboard.css file */
+
+/* User highlighting */
+.current-user-row {
+  background-color: rgba(171, 176, 224, 0.1);
+  position: relative;
+}
+
+.current-user-row::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background-color: #a7acd8;
+}
+
+.current-user-tag {
+  background-color: rgba(171, 176, 224, 0.2);
+  color: #a7acd8;
+  font-size: 0.7rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+.pagination-controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding:10px 15px;
+  background-color: rgba(0, 0, 0, 0.2);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 0 0 12px 12px;
+}
+
+.page-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pagination-arrow {
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.pagination-arrow:hover:not(:disabled) {
+  background-color: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.pagination-arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.go-to-user-position-button {
+  border: 1px solid rgba(171, 176, 224, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 200;
+  transition: all 0.2s ease;
+}
+
+.go-to-user-position-button:hover:not(:disabled) {
+  background-color: rgba(171, 176, 224, 0.1);
+  border-color: rgba(171, 176, 224, 0.2);
+}
+
+.go-to-user-position-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.user-faction {
+  box-shadow: 0 0 0 2px rgba(171, 176, 224, 0.5),
+              0 0 20px rgba(171, 176, 224, 0.2);
+}
+
+@media (max-width: 768px) {
+  .pagination-controls {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .page-navigation {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .go-to-user-position-button {
+    width: 100%;
+  }
+}
+.leaderboard-control-left-arrow{
+  width: 12px;
+  transform: rotate(90deg);
+  opacity: 0.7;
+}
+
+
+.leaderboard-control-right-arrow{
+  width: 12px;
+  transform: rotate(270deg);
+  opacity: 0.7;
 }

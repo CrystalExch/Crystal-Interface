@@ -5,11 +5,11 @@ import defaultProfilePic from '../../assets/bh.png';
 import LeaderboardPfp2 from '../../assets/legion.png';
 import LeaderboardPfp3 from '../../assets/rubberbandz.png';
 
-
 interface ChallengeIntroProps {
   onComplete: () => void;
   onContinueAsGuest: () => void;
   isLoggedIn?: boolean;
+  initialStep?: number; 
 }
 
 interface TimeLeft {
@@ -22,9 +22,10 @@ interface TimeLeft {
 const ChallengeIntro: React.FC<ChallengeIntroProps> = ({ 
   onComplete, 
   onContinueAsGuest,
-  isLoggedIn = true 
+  isLoggedIn = true,
+  initialStep = 0  
 }) => {
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [animationStarted, setAnimationStarted] = useState<boolean>(false);
   const [xpCount, setXpCount] = useState<number>(0);
   const xpAnimationRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -35,6 +36,10 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
     minutes: 0,
     seconds: 0
   });
+
+  useEffect(() => {
+    setCurrentStep(initialStep);
+  }, [initialStep]);
 
   useEffect(() => {
     if (currentStep === 0) {
