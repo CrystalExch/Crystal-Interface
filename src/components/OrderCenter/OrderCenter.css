@@ -410,8 +410,10 @@
 
 .oc-filter-divider{
   height: 15px;
-  width: 1.5px;
+  width: 1px;
   border-radius: 1px;
+  margin-left: 12px;
+  margin-right: -3px;
   background-color: rgba(255, 255, 255, 0.07);
 }
 

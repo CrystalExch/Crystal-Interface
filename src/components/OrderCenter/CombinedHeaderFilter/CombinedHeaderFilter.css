@@ -59,7 +59,7 @@
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  background-color: #1a1a1dbf;
+  background-color: #1a1a1f8f;
   border-radius: 4px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -70,7 +70,7 @@
 
 .page-size-option {
   padding: 3px 12px;
-  color: #ffffff90;
+  color: #ffffff6e;
   font-size: 0.75rem;
   cursor: pointer;
   transition: background 0.2s ease;
@@ -83,8 +83,7 @@
 }
 
 .page-size-option.selected {
-  background: #2a2a2e8e;
-  color: #ffffff;
+  color: #ffffffd2;
 }
 
 .header-navigation {

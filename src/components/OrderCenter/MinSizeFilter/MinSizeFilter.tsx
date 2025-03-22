@@ -111,7 +111,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
           }}
         >
           <>
-            {/* Buy/Sell Filter Section */}
                           {filter !== undefined && setFilter && (
               <div className="filter-section">
                 <div className="filter-section-header">
@@ -123,7 +122,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               </div>
             )}
             
-            {/* Divider */}
             {filter !== undefined && setFilter && (
               <div className="filter-section-divider"></div>
             )}
@@ -155,7 +153,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               </>
             )}
 
-            {/* Minimum Size Filter Section */}
             <div className="filter-section">
               <div className="filter-section-header">
                 {t("minimumSize")}

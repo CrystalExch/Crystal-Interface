@@ -495,6 +495,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
                 onNextPage={handleNextPage}
               />
             )}
+            <div className="oc-filter-divider"></div>
             <MinSizeFilter
               minSizeEnabled={minSizeEnabled}
               setMinSizeEnabled={setMinSizeEnabled}

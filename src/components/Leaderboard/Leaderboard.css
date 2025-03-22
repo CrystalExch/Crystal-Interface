@@ -65,6 +65,19 @@
       height: 60vw;
     }
   }
+
+  @media(max-width:600px) {
+    .leaderboard-banner {
+      height: 70vw;
+    }
+  }
+  @media(max-width:450px) {
+    .leaderboard-banner {
+      height: 80vw;
+    }
+  }
+
+  
   
   .banner-overlay {
     border-radius: 12px;
@@ -847,9 +860,6 @@
   transition: 0.3s all; 
 }
 
-/* Add these styles to your Leaderboard.css file */
-
-/* User highlighting */
 .current-user-row {
   background-color: rgba(171, 176, 224, 0.1);
   position: relative;
