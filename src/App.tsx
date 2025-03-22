@@ -335,7 +335,6 @@ function App() {
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
-  const [, setIsSigning] = useState(false);
   const [mobileView, setMobileView] = useState('chart');
   const [showTrade, setShowTrade] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
@@ -727,8 +726,11 @@ function App() {
 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
-  const audio = new Audio(notificationSound);
-  audio.volume = 1;
+  const audio = useMemo(() => {
+    const a = new Audio(notificationSound);
+    a.volume = 1;
+    return a;
+  }, []);
 
   const filteredMarkets = marketsData.filter((market) => {
     const matchesSearch = market.pair
@@ -2717,131 +2719,141 @@ function App() {
 
   // fetch initial address info
   useEffect(() => {
-    setTimeout(() => {
-      setTransactions([]);
-      settradehistory([]);
-      setorders([]);
-      setcanceledorders([]);
-    }, 20);
-
-    (async () => {
-      try {
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-
-        let temptradehistory: any[] = [];
-        let temporders: any[] = [];
-        let tempcanceledorders: any[] = [];
-
-        const query = `
-          query fetchData {
-            orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
-              id
-              total
-              orders(first: 1000, where: {caller: "${address}"}) {
-                caller
-                amountIn
-                amountOut
-                buySell
-                price
-                timeStamp
-                transactionHash
-                blockNumber
-                contractAddress
-              }
-            }
-            orderMaps(where:{caller: "${address}"}) {
-              id
-              counter
-              batches(first: 10, orderDirection: desc, orderBy: id) {
+    if (address) {
+      setTimeout(() => {
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+      }, 10);
+      (async () => {
+        try {
+          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+  
+          let temptradehistory: any[] = [];
+          let temporders: any[] = [];
+          let tempcanceledorders: any[] = [];
+  
+          const query = `
+            query {
+              orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
                 id
-                orders(first: 1000) {
-                  id
+                total
+                orders(first: 1000, where: {caller: "${address}"}) {
                   caller
-                  originalSizeBase
-                  originalSizeQuote
-                  filledAmountBase
-                  filledSizeQuote
-                  price
+                  amountIn
+                  amountOut
                   buySell
-                  contractAddress
+                  price
+                  timeStamp
                   transactionHash
-                  timestamp
-                  status
+                  blockNumber
+                  contractAddress
+                }
+              }
+              orderMaps(where:{caller: "${address}"}) {
+                id
+                counter
+                batches(first: 10, orderDirection: desc, orderBy: id) {
+                  id
+                  orders(first: 1000) {
+                    id
+                    caller
+                    originalSizeBase
+                    originalSizeQuote
+                    filledAmountBase
+                    filledSizeQuote
+                    price
+                    buySell
+                    contractAddress
+                    transactionHash
+                    timestamp
+                    status
+                  }
                 }
               }
             }
-          }
-        `;
-
-        const response = await fetch(endpoint, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ query }),
-        });
-
-        const result = await response.json();
-
-        const filledBatches = result?.data?.orderFilledBatches || [];
-        for (const batch of filledBatches) {
-          const orders = batch.orders || [];
-          for (const event of orders) {
-            const marketKey = addresstoMarket[event.contractAddress];
-            if (marketKey) {
-              temptradehistory.push([
-                event.amountIn,
-                event.amountOut,
-                event.buySell,
-                event.price,
-                marketKey,
-                event.transactionHash,
-                event.timeStamp,
-                1,
-              ]);
-            }
-          }
-        }
-
-        const updatedMaps = result?.data?.orderMaps || [];
-        for (const orderMap of updatedMaps) {
-          const batches = orderMap.batches || [];
-          for (const batch of batches) {
+          `;
+  
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query }),
+          });
+  
+          const result = await response.json();
+  
+          const filledBatches = result?.data?.orderFilledBatches || [];
+          for (const batch of filledBatches) {
             const orders = batch.orders || [];
-            for (const order of orders) {
-              const marketKey = addresstoMarket[order.contractAddress];
-              if (!marketKey) continue;
-              const row = [
-                parseInt(order.id.split('-')[0], 10),
-                parseInt(order.id.split('-')[2], 10),
-                Number(order.originalSizeBase.toString()),
-                order.buySell,
-                marketKey,
-                order.transactionHash,
-                order.timestamp,
-                Number(order.filledAmountBase.toString()),
-                Number(order.originalSizeQuote.toString()),
-                order.status,
-              ];
-        
-              if (order.status === 2) {
-                temporders.push(row);
-                tempcanceledorders.push(row);
-              } else {
-                tempcanceledorders.push(row);
+            for (const event of orders) {
+              const marketKey = addresstoMarket[event.contractAddress];
+              if (marketKey) {
+                temptradehistory.push([
+                  event.amountIn,
+                  event.amountOut,
+                  event.buySell,
+                  event.price,
+                  marketKey,
+                  event.transactionHash,
+                  event.timeStamp,
+                  1,
+                ]);
               }
             }
           }
-        }        
-
-        settradehistory((prev) => [...temptradehistory, ...prev]);
-        setorders((prev) => [...temporders, ...prev]);
-        setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
-
-        setaddressinfoloading(false);
-      } catch (error) {
-        console.error("Error fetching logs:", error);
-        setaddressinfoloading(false);
-      }
-    })();
+  
+          const updatedMaps = result?.data?.orderMaps || [];
+          for (const orderMap of updatedMaps) {
+            const batches = orderMap.batches || [];
+            for (const batch of batches) {
+              const orders = batch.orders || [];
+              for (const order of orders) {
+                const marketKey = addresstoMarket[order.contractAddress];
+                if (!marketKey) continue;
+                const row = [
+                  parseInt(order.id.split('-')[0], 10),
+                  parseInt(order.id.split('-')[2], 10),
+                  Number(order.originalSizeBase.toString()),
+                  order.buySell,
+                  marketKey,
+                  order.transactionHash,
+                  order.timestamp,
+                  Number(order.filledAmountBase.toString()),
+                  Number(order.originalSizeQuote.toString()),
+                  order.status,
+                ];
+          
+                if (order.status === 2) {
+                  temporders.push(row);
+                  tempcanceledorders.push(row);
+                } else {
+                  tempcanceledorders.push(row);
+                }
+              }
+            }
+          }        
+  
+          settradehistory((prev) => [...temptradehistory, ...prev]);
+          setorders((prev) => [...temporders, ...prev]);
+          setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
+  
+          setaddressinfoloading(false);
+        } catch (error) {
+          console.error("Error fetching logs:", error);
+          setaddressinfoloading(false);
+        }
+      })();
+    }
+    else {
+      setTimeout(() => {
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+      }, 500);
+      setaddressinfoloading(false);
+    }
   }, [address, activechain]);
 
   // klines + trades
@@ -4849,7 +4861,6 @@ function App() {
                 className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
                 onClick={async () => {
                   if (connected && userchain === activechain) {
-                    setIsSigning(true);
                     try {
                       if (sendTokenIn == eth) {
                         const hash = await sendeth(sendUserOperationAsync, recipient as `0x${string}`, sendAmountIn);
@@ -4881,7 +4892,6 @@ function App() {
                       setSendAmountIn(BigInt(0));
                     } catch (error) {
                     } finally {
-                      setIsSigning(false);
                       setTimeout(() => refetch(), 500)
                     }
                   } else {
@@ -4893,7 +4903,7 @@ function App() {
                     sendAmountIn > tokenBalances[sendTokenIn] ||
                     !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
                   connected &&
-                  userchain == activechain
+                  userchain == activechain || isSendingUserOperation
                 }
               >
                 {isSendingUserOperation ? (
@@ -6166,7 +6176,6 @@ function App() {
           <img src={tradearrow} className="switch-arrow" />
         </div>
         <div className="swap-container-divider" />
-
         <div className="outputbg">
           <div className="Recieve">{t('receive')}</div>
           <div className="outputbutton2container">
@@ -6473,7 +6482,6 @@ function App() {
               connected &&
               userchain === activechain
             ) {
-              setIsSigning(true);
               try {
                 if (tokenIn == eth && tokenOut == weth) {
                   const hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
@@ -6823,7 +6831,6 @@ function App() {
                 }
               } catch (error) {
               } finally {
-                setIsSigning(false);
                 setTimeout(() => refetch(), 500)
               }
             } else {
@@ -6832,7 +6839,7 @@ function App() {
                 : handleSetChain()
             }
           }}
-          disabled={swapButtonDisabled || displayValuesLoading}
+          disabled={swapButtonDisabled || displayValuesLoading || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
             <div className="button-content">
@@ -8090,7 +8097,6 @@ function App() {
               connected &&
               userchain === activechain
             ) {
-              setIsSigning(true);
               try {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
@@ -8190,7 +8196,6 @@ function App() {
                 setLimitButton(0);
               } catch (error) {
               } finally {
-                setIsSigning(false);
                 setTimeout(() => refetch(), 500)
               }
             } else {
@@ -8199,7 +8204,7 @@ function App() {
                 : handleSetChain()
             }
           }}
-          disabled={limitButtonDisabled}
+          disabled={limitButtonDisabled || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
             <div className="button-content">
@@ -8834,7 +8839,6 @@ function App() {
               connected &&
               userchain === activechain
             ) {
-              setIsSigning(true);
               try {
                 if (tokenIn == eth) {
                   const hash = await sendeth(
@@ -8892,7 +8896,6 @@ function App() {
                 }
               } catch (error) {
               } finally {
-                setIsSigning(false);
                 setTimeout(() => refetch(), 500)
               }
             } else {
@@ -8901,7 +8904,7 @@ function App() {
                 : handleSetChain()
             }
           }}
-          disabled={sendButtonDisabled}
+          disabled={sendButtonDisabled || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
             <div className="button-content">
@@ -9662,7 +9665,6 @@ function App() {
               connected &&
               userchain === activechain
             ) {
-              setIsSigning(true);
               try {
                 let o
                 o = calculateScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
@@ -9754,7 +9756,6 @@ function App() {
                 setScaleOrdersString('')
               } catch (error) {
               } finally {
-                setIsSigning(false);
                 setTimeout(() => refetch(), 500)
               }
             } else {
@@ -9763,7 +9764,7 @@ function App() {
                 : handleSetChain()
             }
           }}
-          disabled={scaleButtonDisabled}
+          disabled={scaleButtonDisabled || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
             <div className="button-content">
