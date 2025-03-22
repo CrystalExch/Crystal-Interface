@@ -85,14 +85,68 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
 
     let allCandles: any[] = [];
-
     const query = `
-      query getCandles($id: ID!, $first: Int!, $skip: Int!) {
-        series_collection(where: { id: $id }) {
-          id
-          klines(
-            first: $first,
-            skip: $skip,
+      query {
+        series_collection(where: { id: "${seriesId}" }) {
+          series1: klines(
+            first: 1000,
+            skip: 0,
+            orderBy: time,
+            orderDirection: desc
+          ) {
+            id
+            time
+            open
+            high
+            low
+            close
+            volume
+          }
+          series2: klines(
+            first: 1000,
+            skip: 1000,
+            orderBy: time,
+            orderDirection: desc
+          ) {
+            id
+            time
+            open
+            high
+            low
+            close
+            volume
+          }
+          series3: klines(
+            first: 1000,
+            skip: 2000,
+            orderBy: time,
+            orderDirection: desc
+          ) {
+            id
+            time
+            open
+            high
+            low
+            close
+            volume
+          }
+          series4: klines(
+            first: 1000,
+            skip: 3000,
+            orderBy: time,
+            orderDirection: desc
+          ) {
+            id
+            time
+            open
+            high
+            low
+            close
+            volume
+          }
+          series5: klines(
+            first: 1000,
+            skip: 4000,
             orderBy: time,
             orderDirection: desc
           ) {
@@ -113,35 +167,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query,
-          variables: {
-            id: seriesId,
-            first: 1000,
-            skip: 0,
-          },
+          query
         }),
       });
-      let json1 = await res1.json();
-      let candles = json1.data?.series_collection?.[0]?.klines || [];
-      allCandles = allCandles.concat(candles);
-
-      if (candles.length === 1000) {
-        let res2 = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            query,
-            variables: {
-              id: seriesId,
-              first: 500,
-              skip: 1000,
-            },
-          }),
-        });
-        let json2 = await res2.json();
-        let moreCandles = json2.data?.series_collection?.[0]?.klines || [];
-        allCandles = allCandles.concat(moreCandles);
-      }
+      const json = await res1.json();
+      allCandles = allCandles.concat(json.data.series_collection?.[0]?.series1).concat(json.data.series_collection?.[0]?.series2).concat(json.data.series_collection?.[0]?.series3).concat(json.data.series_collection?.[0]?.series4).concat(json.data.series_collection?.[0]?.series5);
     } catch (err) {
       console.error('Error fetching from subgraph:', err);
     }

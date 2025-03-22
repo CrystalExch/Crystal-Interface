@@ -1172,9 +1172,9 @@ body:has(.right-column.show) .blur-background-popups {
     0 1px 4px rgb(170 174 207/20%);
 }
 
-.limit-swap-button:disabled,
-.send-swap-button:disabled,
-.swap-button:disabled {
+.limit-swap-button:disabled:not(.signing),
+.send-swap-button:disabled:not(.signing),
+.swap-button:disabled:not(.signing) {
   color: #0f0f12;
   cursor: not-allowed;
   font-weight: 400;
