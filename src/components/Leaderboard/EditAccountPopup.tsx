@@ -95,14 +95,16 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     <div className="account-setup-overlay">
       <div className="account-setup-container">
         <div className="account-setup-header">
-          <h2 className="account-setup-title">Edit Your Account</h2>
-          <p className="account-setup-subtitle">Update your username or profile photo</p>
+          <h2 className="account-setup-title">      {t("editAccountTitle")}
+          </h2>
+          <p className="account-setup-subtitle">   {t("editAccountSubtitle")}
+          </p>
         </div>
         
         <div className="account-setup-form">
           <div className="form-group">
             <label className="form-label" htmlFor="edit-username">
-              Username
+            {t("username")}
             </label>
             <input
               id="edit-username"
@@ -134,7 +136,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             
             <label className="photo-upload-label">
               <span className="photo-upload-button">
-                Choose New Photo
+              {t("chooseNewPhoto")}
               </span>
               <input
                 type="file"
@@ -152,14 +154,14 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             className="back-button"
           >
             <img className="back-button-arrow" src={SideArrow} alt="Back" />
-            Cancel
-          </button>
+            {t("cancel")}
+            </button>
           <button
             onClick={handleSave}
             className="complete-button"
           >
-            Save Changes
-          </button>
+                {t("saveChanges")}
+                </button>
         </div>
       </div>
     </div>

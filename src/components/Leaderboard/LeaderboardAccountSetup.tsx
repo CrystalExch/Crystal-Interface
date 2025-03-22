@@ -176,7 +176,7 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
               
               <label className="photo-upload-label">
                 <span className="photo-upload-button">
-                  Choose Photo
+                {t("choosePhoto")}
                 </span>
                 <input
                   type="file"
@@ -197,13 +197,14 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
                 className="back-button"
               >
                 <img className="back-button-arrow" src={SideArrow} alt="Back" />
-                Back
+                {t("back")}
+
               </button>
               <button
                 onClick={handleNext}
                 className="next-button"
               >
-                Next
+                {t("next")}
                 <img className="next-button-arrow" src={SideArrow} alt="Next" />
               </button>
             </>
@@ -214,21 +215,21 @@ const LeaderboardAccountSetup: React.FC<LeaderboardAccountSetupProps> = ({
                 className="back-button"
               >
                 <img className="back-button-arrow" src={SideArrow} alt="Back" />
-                Back
+                {t("back")}
               </button>
               <div className="action-buttons">
                 <button
                   onClick={handleSkip}
                   className="skip-button"
                 >
-                  Skip
+                {t("skip")}
                 </button>
                 <button
                   onClick={handleNext}
                   className={`complete-button ${!photoPreview ? 'complete-button-disabled' : ''}`}
                   disabled={!photoPreview}
                 >
-                  Complete
+                {t("complete")}
                 </button>
               </div>
             </>

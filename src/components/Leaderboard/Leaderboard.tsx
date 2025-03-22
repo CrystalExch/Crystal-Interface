@@ -391,7 +391,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="leaderboard-banner">
         <div className="banner-overlay">
           <img src={LeaderboardImage} className="leaderboard-image" alt="Leaderboard Banner" />
-          <button className="view-rules-button" onClick={handleViewRules}>View rules</button>
+          <button className="view-rules-button" onClick={handleViewRules}>{t("viewRules")}</button>
           
           <div className="countdown-timer">
             <div className="countdown-time">
@@ -413,7 +413,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           
           <div className="leaderboard-user-info">
             <div className="info-column">
-              <div className="column-header">Username</div>
+              <div className="column-header">{t("username")}</div>
               <div className="column-content">
                 <div className="username-container">
                   {userData.logo && (
@@ -426,13 +426,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="column-divider"/>
             
             <div className="info-column">
-              <div className="column-header">XP Earned</div>
+              <div className="column-header">{t("xpEarned")}</div>
               <div className="column-content">{userData.userXP.toLocaleString()} XP</div>
             </div>
             <div className="column-divider"/>
             
             <div className="info-column">
-              <div className="column-header">Rank</div>
+              <div className="column-header">{t("rank")}</div>
               <div className="column-content">
                 #{hasAccount ? findUserPosition() + 1 || "N/A" : "N/A"}
               </div>
@@ -442,22 +442,22 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="edit-account-button"
                 onClick={handleEditAccount}
               >
-                Edit Account
+                {t("editAccount")}
               </button>
             ) : isGuestMode ? (
               <button 
                 className="create-account-button"
                 onClick={handleCreateAccount}
               >
-                Create Account
-              </button>
+                {t("createAccount")}
+                </button>
             ) : (
               <button 
                 className="create-account-button"
                 onClick={handleCreateAccount}
               >
-                Create Account
-              </button>
+                {t("createAccount")}
+                </button>
             )}
           </div>
         </div>
@@ -490,9 +490,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       
       <div className="full-leaderboard">
         <div className="leaderboard-headers">
-          <div className="header-rank">Rank</div>
-          <div className="header-faction">User</div>
-          <div className="header-bonus">Total XP</div>
+          <div className="header-rank">                {t("rank")}
+          </div>
+          <div className="header-faction">                {t("user")}
+          </div>
+          <div className="header-bonus">                {t("totalXP")}
+          </div>
         </div>
         
         <div className="leaderboard-rows">
