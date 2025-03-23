@@ -1,12 +1,20 @@
 .modal-overlay {
   align-items: center;
-  animation: fadeIn.2s ease-out forwards;
-  background-color: rgb(0 0 0 / 70%);
+  animation: bgFade.2s ease-out forwards;
   display: flex;
   inset: 0;
   justify-content: center;
   position: fixed;
   z-index: 80;
+}
+
+@keyframes bgFade {
+  from {
+    background-color: rgb(0 0 0 / 0%);
+  }
+  to {
+    background-color: rgb(0 0 0 / 70%);
+  }
 }
 
 .modal-container {
@@ -19,6 +27,7 @@
   background-color: #19191c80;
   backdrop-filter: blur(10px);
   border: 1.5px solid #1a1a1d5d;
+  animation: fadeIn.3s ease-out forwards;
 }
 
 .modal-header {

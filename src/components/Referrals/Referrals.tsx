@@ -278,7 +278,7 @@ const Referrals: React.FC<ReferralProps> = ({
                       <div
                         className="action-button"
                         onClick={() => {
-                          const tweetText = 'Join me on Crystal, the EVM\'s first fully on-chain orderbook exchange, live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n';
+                          const tweetText = 'Join me on @CrystalExch, the EVM\'s first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n';
                           const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
                           window.open(
                             `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`,
