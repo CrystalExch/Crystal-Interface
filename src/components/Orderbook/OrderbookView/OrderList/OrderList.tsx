@@ -125,7 +125,7 @@ const OrderList: React.FC<OrderListProps> = ({
     
     return priceMap;
   }, [userOrders, roundedOrders, isBuyOrderList, activeMarket, priceFactor]);
-
+  
   const displayedOrders = useMemo(() => {
     const updatedOrders = roundedOrders.map((order) => ({
       ...order,
@@ -229,10 +229,10 @@ const OrderList: React.FC<OrderListProps> = ({
         {displayedOrders.map((order, index) => {
           const price = order.price;
           const hasUserOrder = userOrderPrices[price] === true;
-          
+
           return (
             <OrderItem
-              key={`order-${index}-${order.price}-${order.size}-${order.price === 0 ? 'phantom' : 'real'}`}
+              key={`order-${index}-${order.price}-${order.size}-${order.isPhantom === true ? 'phantom' : 'real'}`}
               ref={(el) => (orderRefs.current[index] = el)}
               price={order.price}
               size={order.size}
@@ -250,7 +250,7 @@ const OrderList: React.FC<OrderListProps> = ({
                   : index >= selectedIndex;
               })()}
               isBoundary={selectedIndex === index}
-              isPhantom={order.price === 0}
+              isPhantom={order.isPhantom}
               maxDecimals={maxDecimals}
               updateLimitAmount={updateLimitAmount}
               shouldFlash={order.shouldFlash}

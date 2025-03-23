@@ -84,7 +84,6 @@ const groupOrders = (
   };
 
   const epsilon = 1e-8;
-
   orders.forEach(({ price, size, shouldFlash }) => {
     const intervalStart = isBuy
       ? Math.floor((price + epsilon) / interval) * interval
@@ -95,12 +94,10 @@ const groupOrders = (
     if (!grouped[roundedInterval]) {
       grouped[roundedInterval] = { size: 0, shouldFlash: false };
     }
-
     grouped[roundedInterval].size = preciseRound(
       grouped[roundedInterval].size + size,
       8,
     );
-
     if (shouldFlash) {
       grouped[roundedInterval].shouldFlash = true;
     }

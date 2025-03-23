@@ -130,7 +130,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setError(
         refs[2].result === '0x0000000000000000000000000000000000000000' ||
           refs[2].result == address
-          ? error
+          ? error == t('codeTaken') ? '' : error
           : t('codeTaken'),
       );
     })();

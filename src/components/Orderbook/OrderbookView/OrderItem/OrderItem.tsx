@@ -70,7 +70,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
         />
       );
     }
-
+    
     return (
       <li
         ref={ref}

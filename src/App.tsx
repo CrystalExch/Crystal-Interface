@@ -1029,9 +1029,8 @@ function App() {
   };
 
   // set amount for a token
-  const debouncedSetAmount = useCallback(
+  const debouncedSetAmount = 
     (amount: bigint) => {
-      if (amount != amountIn) {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
@@ -1039,15 +1038,11 @@ function App() {
         debounceTimerRef.current = setTimeout(() => {
           setamountIn(amount);
         }, 300);
-      }
-    },
-    [amountIn],
-  );
+    }
 
   // set amountout for a token
-  const debouncedSetAmountOut = useCallback(
+  const debouncedSetAmountOut = 
     (amount: bigint) => {
-      if (amount != amountOutSwap) {
         if (debounceTimerRef.current) {
           clearTimeout(debounceTimerRef.current);
         }
@@ -1055,10 +1050,7 @@ function App() {
         debounceTimerRef.current = setTimeout(() => {
           setamountOutSwap(amount);
         }, 300);
-      }
-    },
-    [amountOutSwap],
-  );
+    }
 
   // set token string
   const debouncedSetTokenString = (value: string) => {
@@ -10086,7 +10078,6 @@ function App() {
             </div>
           </>
         )}
-      {Modals}
       {
         <>
           <Header

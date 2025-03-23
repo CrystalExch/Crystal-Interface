@@ -710,7 +710,7 @@ html {
   top: 140%;
   transform: translateX(-50%);
   white-space: nowrap;
-  z-index: 1000000000000;
+  z-index: 13;
 }
 
 .eye-icon {
@@ -985,7 +985,7 @@ body:has(.right-column.show) .blur-background-popups {
   content: '';
   inset: 0;
   position: absolute;
-  z-index: 78;
+  z-index: 7;
 }
 
 .tokenselectbg {
@@ -1014,7 +1014,7 @@ body:has(.right-column.show) .blur-background-popups {
   content: '';
   inset: 0;
   position: absolute;
-  z-index: 88 !important;
+  z-index: 11 !important;
 }
 
 .popup-blur {
@@ -1665,8 +1665,7 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex: 1;
   flex-direction: column;
-  min-height: 470px;
-  min-height: 470px;
+  min-height: 480px;
 }
 
 .connect-wallet-background.unconnected {
@@ -2785,7 +2784,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .tokenselectbg {
   animation: fadeIn.2s ease-out;
   transform: translate(-50%, -50%);
-  z-index: 1000;
+  z-index: 12;
   transition: opacity.2s ease-out;
   border: 1.5px solid #1a1a1d5d;
   box-sizing: content-box;
@@ -2835,7 +2834,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   pointer-events: none;
   position: fixed;
   right: 15px;
-  z-index: 50;
+  z-index: 5;
 }
 
 .connecting-popup {
@@ -3049,7 +3048,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     visibility.2s ease;
   visibility: hidden;
   white-space: nowrap;
-  z-index: 100;
+  z-index: 13;
 }
 
 .slider-percentage-popup.visible {
@@ -3090,7 +3089,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   top: 4px;
   transition: all 0.2s ease;
   width: 10px;
-  z-index: 100;
+  z-index: 13;
 }
 
 .slider-track-container {
@@ -3392,7 +3391,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   padding: 5px;
   transition: color 0.2s;
   width: 25px;
-  z-index: 100;
+  z-index: 4;
 }
 
 .dropdown-market-favorite-button:hover {
@@ -3660,25 +3659,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     transform: rotate(270deg);
     transform: rotate(270deg);
   }
-  .mobile-trade-panel {
-    background: #181820;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    bottom: 0;
-    box-shadow: 0 -4px 20px rgb(0 0 0/20%);
-    height: 90vh;
-    left: 0;
-    overflow-y: auto;
-    padding: 20px;
-    position: fixed;
-    right: 0;
-    transform: translateY(100%);
-    transition: transform.3s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 999;
-  }
-  .mobile-trade-panel.show {
-    transform: translateY(0);
-  }
   .mobile-trade-button {
     align-items: center;
     background: linear-gradient(
@@ -3704,7 +3684,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     position: fixed;
     right: 20px;
     width: 50px;
-    z-index: 81;
+    z-index: 9;
   }
   .mobile-trade-button-text{
      position: absolute;
@@ -3748,7 +3728,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     position: fixed;
     right: 0;
     transform: translateY(100%);
-    z-index: 80;
+    z-index: 8;
   }
   .right-column .navlinkwrapper {
     background: #ffffff05;
@@ -3845,7 +3825,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.03);
     width: 34%;
-    z-index: 100;
+    z-index: 5;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     animation: dropdown-fade-in 0.2s ease-out forwards;
@@ -3913,7 +3893,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
   .main-content-wrapper.simple-view .navlinkwrapper {
     position: relative;
-    z-index: 10;
+    z-index: 5;
   }
 
 
@@ -3954,47 +3934,32 @@ body:has(.popup-blur) {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   transform: translate(-50%, -50%);
-  z-index: 1000;
+  z-index: 12;
 }
 
 .right-column.show {
-  position: fixed;
+  position: fixed !important;
   bottom: 0;
   inset-inline: 0;
-  z-index: 80;
+  left: 0;
+  right: 0;
+  z-index: 8;
   height: auto;
   max-height: 100vh;
   overflow-y: auto;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  transform: translateY(0) !important;
 }
 
-@media (max-width: 1020px) {
-  .right-column.show {
-    position: fixed !important;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    z-index: 80;
-    height: auto;
-    max-height: 100vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    transform: translateY(0) !important;
-  }
-
-  .right-column.show .swapmodal {
-    height: auto;
-    max-height: 90vh;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    -webkit-overflow-scrolling: touch;
-    width: 100% !important;
-  }
+.right-column.show .swapmodal {
+  height: auto;
+  max-height: 90vh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  width: 100% !important;
 }
-
-
 
 @supports (-webkit-touch-callout: none) {
   .main-content-wrapper.simple-view {
