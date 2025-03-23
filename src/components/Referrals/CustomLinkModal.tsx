@@ -29,9 +29,8 @@ const CustomLinkModal = ({
   account: any;
 }) => {
   const [isSigning, setIsSigning] = useState(false);
+  const [refLinkInput, setRefLinkInput] = useState(refLinkString);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-
-  if (!isOpen) return null;
 
   const handleCreate = async () => {
     if (account.connected && account.chainId === activechain) {
@@ -56,20 +55,19 @@ const CustomLinkModal = ({
   
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    if (value != refLinkString) {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(() => {
-        setRefLinkString(value);
-        if (!isValidInput(value) && value.length > 0) {
-          setError(t('invalid'));
-        } else {
-          setError('');
-        }
-      }, 300);
+    setRefLinkInput(value)
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    debounceTimerRef.current = setTimeout(() => {
+      setRefLinkString(value);
+      if (!isValidInput(value) && value.length > 0) {
+        setError(t('invalid'));
+      }
+    }, 300);
   }, [refLinkString]);
+
+  if (!isOpen) return null;
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -91,7 +89,7 @@ const CustomLinkModal = ({
         <div className="input-wrapper">
           <input
             className={`modal-input ${error ? 'has-error' : ''}`}
-            value={refLinkString}
+            value={refLinkInput}
             onChange={handleInputChange}
             placeholder={refLink ? t('enteracode') : t('createCode')}
             maxLength={20}
@@ -104,7 +102,7 @@ const CustomLinkModal = ({
           <br />
           <span className="ref-link-structure">
             https://app.crystal.exchange?ref={' '}
-            <div className="ref-url">{refLinkString}</div>
+            <div className="ref-url">{refLinkInput}</div>
           </span>
         </div>
 

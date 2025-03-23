@@ -1,7 +1,7 @@
 .trade-type-dropdown {
   margin: 10px 12px 1px;
   position: relative;
-  z-index: 5;
+  z-index: 4;
 }
 
 .dropdown-button {

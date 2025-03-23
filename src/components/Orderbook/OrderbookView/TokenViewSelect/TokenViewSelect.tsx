@@ -1,5 +1,4 @@
 import React, { useContext, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 
 import DropdownContext from '../DropdownContext/DropdownContext';
 
@@ -90,42 +89,40 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
         </svg>
       </div>
       {isOpen &&
-        createPortal(
-          <ul
-            ref={dropdownRef}
-            className={`interval-options-list ${isOpen ? 'open' : ''}`}
-            style={{
-              position: 'fixed',
-              ...calculateDropdownPosition(selectorRef),
-              width: 'auto',
-              minWidth: '60px',
+        <ul
+          ref={dropdownRef}
+          className={`interval-options-list ${isOpen ? 'open' : ''}`}
+          style={{
+            position: 'fixed',
+            ...calculateDropdownPosition(selectorRef),
+            width: 'auto',
+            minWidth: '60px',
+          }}
+        >
+          <li
+            className={`interval-option ${value === 'Quote' ? 'selected' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOptionClick('Quote');
+              localStorage.setItem('ob_amounts_quote', 'Quote');
             }}
           >
-            <li
-              className={`interval-option ${value === 'Quote' ? 'selected' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOptionClick('Quote');
-                localStorage.setItem('ob_amounts_quote', 'Quote');
-              }}
-            >
-              <span>USDC</span>
-              <CheckmarkIcon />
-            </li>
-            <li
-              className={`interval-option ${value === 'Base' ? 'selected' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleOptionClick('Base');
-                localStorage.setItem('ob_amounts_quote', 'Base');
-              }}
-            >
-              <span>{symbol}</span>
-              <CheckmarkIcon />
-            </li>
-          </ul>,
-          document.body,
-        )}
+            <span>USDC</span>
+            <CheckmarkIcon />
+          </li>
+          <li
+            className={`interval-option ${value === 'Base' ? 'selected' : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleOptionClick('Base');
+              localStorage.setItem('ob_amounts_quote', 'Base');
+            }}
+          >
+            <span>{symbol}</span>
+            <CheckmarkIcon />
+          </li>
+        </ul>
+      }
     </div>
   );
 };

@@ -155,7 +155,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     containerHeight,
     rowHeight,
   ]);
-
+  
   useEffect(() => {
     if (!spreadData) return;
     setSpread(spreadData.spread);
