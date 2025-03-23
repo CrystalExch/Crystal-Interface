@@ -3743,7 +3743,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     display: none !important;
   }
   .layout-settings-background {
-    height: min(150px, 90vh);
+    height: min(172px, 90vh);
   }
   .layout-settings-header {
     padding-bottom: 3px;

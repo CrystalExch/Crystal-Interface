@@ -9,6 +9,12 @@
   margin-right: 12px;
 }
 
+@media (max-width: 468px) {
+  .page-size-container {
+    display: none;
+  }
+}
+
 .show-text {
   color: #ffffff70;
   font-size: 0.75rem;

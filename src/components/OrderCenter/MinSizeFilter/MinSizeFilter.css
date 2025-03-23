@@ -43,11 +43,26 @@
   margin-bottom: 10px;
 }
 
+.only-filter-section {
+  margin-bottom: 10px;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.06);
+  padding-top: 8px;
+}
+
+
 .filter-section-header {
   color: #ffffff98;
   font-size: 0.75rem;
   font-weight: 400;
   padding-bottom: 5px;
+}
+.min-size-filter-section-header {
+  color: #ffffff98;
+  font-size: 0.75rem;
+  font-weight: 400;
+  padding-bottom: 5px;
+  padding-top: 3px;
+  border-top: 1.5px solid rgba(255, 255, 255, 0.06);
 }
 
 .filter-section-content {
