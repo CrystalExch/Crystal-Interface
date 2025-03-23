@@ -19,6 +19,7 @@ body::-webkit-scrollbar {
   display: none;
 }
 
+
 body,
 html {
   flex-direction: column;
@@ -833,6 +834,10 @@ html {
   color: #ffffffc4;
   opacity: 1;
 }
+.navlink.active{
+  pointer-events: none;
+  user-select: none;
+}
 
 .main-content-wrapper.simple-view .navlink.active {
   background: 0 0;
@@ -1524,6 +1529,7 @@ body:has(.right-column.show) .blur-background-popups {
   margin-left: 10px;
   padding-left: 15px;
   padding-top: 3px;
+  width: 100%;
 }
 
 .send-Send,
@@ -1817,6 +1823,7 @@ body:has(.right-column.show) .blur-background-popups {
   transform: perspective(1000px) translateZ(0);
   transition: transform.3s ease;
   z-index: 2;
+  
 }
 
 .mobile-nav[data-active='chart'] .mobile-sliding-indicator,
@@ -2316,11 +2323,10 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .revert-settings-button {
   align-items: center;
-  background: rgb(170 174 207 / 4%);
   border: none;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1.5px solid rgba(255, 255, 255, 0.04);
   border-radius: 5px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.5);
   cursor: pointer;
   display: flex;
   flex: 1;
@@ -2337,8 +2343,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .revert-settings-button:hover {
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(255, 255, 255, 0.06);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .revert-settings-button:active {
@@ -2688,7 +2694,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   border: none;
   height: 30px;
   margin: 0 0 5px;
-  max-width: 230px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.1s;
   opacity: 0;
@@ -2802,7 +2807,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .innernavlinkwrapper {
-  width: 100%;
+  min-width: 100%;
 }
 
 .sliding-tab-indicator {
@@ -3836,7 +3841,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
     backdrop-filter: blur(10px);
     top: calc(100%);
     left: 83.5%;
-    background: #1a1a1dc9;
+    background:#131317c9;
     border-radius: 5px;
     border: 1px solid rgba(255, 255, 255, 0.03);
     width: 34%;
@@ -3878,7 +3883,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
   
   .dropdown-item:hover {
-    background-color: rgba(170, 174, 207, 0.1);
+    background-color: rgba(170, 174, 207, 0.02);
     color: #ffffffd0;
   }
   
@@ -4009,6 +4014,9 @@ body:has(.popup-blur) {
   }
 }
 
+.bg-bg-surface-default{
+  background: transparent !important;
+}
 
 
 .fixed.inset-0.bg-black\/80 {
@@ -4052,6 +4060,17 @@ body:has(.popup-blur) {
 .gap-4{
   gap: 0 !important;
 }
+input[inputmode="numeric"][pattern="[0-9]*"] {
+  border-width: 1.5px !important; 
+  border-color: #ffffff16 !important;
+}
+
+
+input[name="email"], 
+input.text-base.sm\:text-sm, 
+input[type="email"] {
+  color: #ffffff !important; 
+}
 .pt-5{
   padding-top: 0.5rem !important;
   height: 30px !important;
@@ -4070,6 +4089,9 @@ body:has(.popup-blur) {
 [class="font-semibold text-lg"] {
   margin-bottom: 0.4rem !important;
   margin-top: 0.4rem !important;
+}
+[class="text-fg-primary text-center text-sm font-medium mb-5"] {
+  margin-bottom: 0.4rem !important;
 }
 [class="text-fg-primary text-center text-sm font-medium mb-5"] {
   margin-bottom: 0.4rem !important;
@@ -4161,4 +4183,36 @@ body:has(.popup-blur) {
   font-size: 0.7rem !important;
 }
 
+
+
+
+.main-content-wrapper.simple-view .simple-orders-button{
+  display: block;
+}
+
+
+
+
+
+.send-address-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.address-paste-button {
+  position: absolute;
+  right: 12px;
+  top: -18px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #ffffff80;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+}
 

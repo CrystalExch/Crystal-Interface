@@ -33,6 +33,8 @@ import {
   useSendUserOperation,
   useAlchemyAccountContext,
   AuthCard,
+  useUser,
+  useAccount 
 } from "@account-kit/react";
 
 // import css
@@ -115,6 +117,10 @@ import TransactionPopupManager from './components/TransactionPopupManager/Transa
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
+import GeneratingAddressPopup from './components/GeneratingAddressPopup';
+import DepositPage from './components/DepositPage/DepositPage';
+import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
+
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -130,6 +136,47 @@ function App() {
     client,
     waitForTxn: true,
   });
+
+  
+  const currentUser = useUser();
+  const [showDepositPage, setShowDepositPage] = useState(false);
+  const [isNewWallet, setIsNewWallet] = useState(false);
+  
+  const isGeneratingAddressVisible = currentUser && !address;
+  useEffect(() => {
+    if (currentUser && !address) {
+      setIsNewWallet(true);
+    }
+  }, [currentUser, address]);
+
+
+
+
+  const handleCloseDepositPage = () => {
+    setShowDepositPage(false);
+  };
+
+
+
+  
+  const isDepositPageVisible = showDepositPage && address;
+  
+
+
+
+  useEffect(() => {
+    if (address && isNewWallet && !showDepositPage) {
+      const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
+      
+      if (!hideDepositPage) {
+        setShowDepositPage(true);
+      }
+      setIsNewWallet(false);
+    }
+  }, [address, isNewWallet, showDepositPage]);
+
+
+  
   const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -526,6 +573,7 @@ function App() {
   const [priceImpact, setPriceImpact] = useState('');
   const [averagePrice, setAveragePrice] = useState('');
   const [tradeFee, setTradeFee] = useState('');
+  const [isOrdersVisible, setIsOrdersVisible] = useState(false);
   const [stateIsLoading, setStateIsLoading] = useState(true);
   const [displayValuesLoading, setDisplayValuesLoading] = useState(true);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
@@ -1097,6 +1145,7 @@ function App() {
     query: { refetchInterval: 10000 },
   });
 
+  
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -4844,99 +4893,158 @@ function App() {
                 </div>
               </div>
               <div className="swap-container-divider" />
-              <div className="sendaddressbg">
-                <div className="send-To">{t('to')}</div>
-                <input
-                  className="send-output"
-                  onChange={(e) => {
-                    if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
-                      setrecipient(e.target.value);
-                    }
-                  }}
-                  value={recipient}
-                  placeholder={t('enterWalletAddress')}
-                />
-              </div>
-              <button
-                className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
-                onClick={async () => {
-                  if (connected && userchain === activechain) {
-                    try {
-                      if (sendTokenIn == eth) {
-                        const hash = await sendeth(sendUserOperationAsync, recipient as `0x${string}`, sendAmountIn);
-                        newTxPopup(
-                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-                          'send',
-                          eth,
-                          '',
-                          customRound(Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-                          0,
-                          '',
-                          recipient
-                        );
-                      } else {
-                        const hash = await sendtokens(sendUserOperationAsync, sendTokenIn as `0x${string}`, recipient as `0x${string}`, sendAmountIn);
-                        newTxPopup(
-                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-                          'send',
-                          sendTokenIn,
-                          '',
-                          customRound(Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn].decimals), 3),
-                          0,
-                          '',
-                          recipient
-                        );
-                      }
-                      setSendInputAmount('');
-                      setSendUsdValue('');
-                      setSendAmountIn(BigInt(0));
-                    } catch (error) {
-                    } finally {
-                      setTimeout(() => refetch(), 500)
-                    }
-                  } else {
-                    !connected ? setpopup(4) : handleSetChain()
-                  }
-                }}
-                disabled={
-                  (sendAmountIn === BigInt(0) ||
-                    sendAmountIn > tokenBalances[sendTokenIn] ||
-                    !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-                  connected &&
-                  userchain == activechain || isSendingUserOperation
-                }
-              >
-                {isSendingUserOperation ? (
-                  <div className="button-content">
-                    <div className="loading-spinner" />
-                    {t('signTransaction')}
-                  </div>
-                ) : sendAmountIn === BigInt(0) ? (
-                  t('enterAmount')
-                ) : !/^(0x[0-9a-fA-F]{40})$/.test(recipient) ? (
-                  t('enterWalletAddress')
-                ) : !connected ? (
-                  t('connectWallet')
-                ) : sendAmountIn > tokenBalances[sendTokenIn] ? (
-                  t('insufficient') + (tokendict[sendTokenIn].ticker || '?') + ' ' + t('bal')
-                ) : connected && userchain != activechain ? (
-                  `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-                ) : (
-                  t('send')
-                )}
-              </button>
+<div className="sendaddressbg">
+  <div className="send-To">{t('to')}</div>
+  <div className="send-address-input-container">
+    <input
+      className="send-output"
+      onChange={(e) => {
+        if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+          setrecipient(e.target.value);
+        }
+      }}
+      value={recipient}
+      placeholder={t('enterWalletAddress')}
+    />
+    <button 
+      className="address-paste-button"
+      onClick={async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+            setrecipient(text);
+          }
+        } catch (err) {
+        }
+      }}
+      title={t('pasteAddress')}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+      </svg>
+    </button>
+  </div>
+</div>
+<button
+  className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+  onClick={async () => {
+    if (
+      connected &&
+      userchain === activechain
+    ) {
+      try {
+        if (tokenIn == eth) {
+          const hash = await sendeth(
+            sendUserOperationAsync,
+            recipient as `0x${string}`,
+            amountIn,
+          );
+          newTxPopup(
+            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+            'send',
+            eth,
+            '',
+            customRound(
+              Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
+              3,
+            ),
+            0,
+            '',
+            recipient,
+          );
+        } else {
+          const hash = await sendtokens(
+            sendUserOperationAsync,
+            tokenIn as `0x${string}`,
+            recipient as `0x${string}`,
+            amountIn,
+          );
+          newTxPopup(
+            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+            'send',
+            tokenIn,
+            '',
+            customRound(
+              Number(amountIn) /
+              10 ** Number(tokendict[tokenIn].decimals),
+              3,
+            ),
+            0,
+            '',
+            recipient,
+          );
+        }
+        setInputString('');
+        setsendInputString('');
+        setamountIn(BigInt(0));
+        setSliderPercent(0);
+        setSendButton(0);
+        setSendButtonDisabled(true);
+        const slider = document.querySelector('.balance-amount-slider');
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          (popup as HTMLElement).style.left = `${15 / 2}px`;
+        }
+      } catch (error) {
+      } finally {
+        setTimeout(() => refetch(), 500)
+      }
+    } else {
+      !connected
+        ? setpopup(4)
+        : handleSetChain()
+    }
+  }}
+  disabled={sendButtonDisabled || isSendingUserOperation}
+>
+  {isSendingUserOperation ? (
+    <div className="button-content">
+      <div className="loading-spinner" />
+      {t('signTransaction')}
+    </div>
+  ) : !connected ? (
+    t('connectWallet')
+  ) : sendButton == 0 ? (
+    t('enterAmount')
+  ) : sendButton == 1 ? (
+    t('enterWalletAddress')
+  ) : sendButton == 2 ? (
+    t('send')
+  ) : sendButton == 3 ? (
+    t('insufficient') +
+    (tokendict[tokenIn].ticker || '?') +
+    ' ' +
+    t('bal')
+  ) : sendButton == 4 ? (
+    `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+  ) : (
+    t('connectWallet')
+  )}
+</button>
             </div>
           </div>
         ) : null}
-        {popup === 4 ? ( // connect wallet & port popup
-          !connected ? (
-            <div ref={popupref} className="connect-wallet-background unconnected">
-              <div className="connect-wallet-content-container">
-                <AuthCard {...alchemyconfig.ui.auth} />
-              </div>
+     {popup === 4 && !isGeneratingAddressVisible && !isDepositPageVisible ? (
+        !connected ? (
+          <div ref={popupref} className="connect-wallet-background unconnected">
+            <div className="connect-wallet-content-container">
+              <AuthCard {...alchemyconfig.ui.auth} />
             </div>
-          ) : (
-            <div ref={popupref} className="connect-wallet-background connected">
+          </div>
+        ) : (
+        <div ref={popupref} className="connect-wallet-background connected">
               <div className="wallet-header">
                 <div className="wallet-info"
                   onMouseEnter={() =>
@@ -5790,6 +5898,8 @@ function App() {
   const swap = (
     <div className="rectangle">
       <div className="navlinkwrapper" data-active={activeTab}>
+
+    
         <div className="innernavlinkwrapper">
           <Link
             to="/swap"
@@ -5855,6 +5965,7 @@ function App() {
             </div>
           )}
         </div>
+
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -7061,6 +7172,18 @@ function App() {
             </div>
           ))}
       </div>
+  <div className="orders-info-rectangle">
+    <SimpleOrdersContainer 
+      orders={orders}
+      router={router}
+      address={address}
+      trades={tradesByMarket}
+      refetch={refetch}
+      sendUserOperation={sendUserOperation}
+      setChain={handleSetChain}
+    />
+  </div>
+
     </div>
   );
 
@@ -7133,6 +7256,7 @@ function App() {
             </div>
           )}
         </div>
+
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -8296,6 +8420,17 @@ function App() {
             </div>
           )}
       </div>
+      <div className="orders-info-rectangle">
+    <SimpleOrdersContainer 
+      orders={orders}
+      router={router}
+      address={address}
+      trades={tradesByMarket}
+      refetch={refetch}
+      sendUserOperation={sendUserOperation}
+      setChain={handleSetChain}
+    />
+  </div>
     </div>
   );
 
@@ -8818,117 +8953,159 @@ function App() {
         </div>
         <div className="swap-container-divider" />
 
-        <div className="sendaddressbg">
-          <div className="send-To">{t('to')}</div>
-          <input
-            className="send-output"
-            onChange={(e) => {
-              e.target.value === '' ||
-                /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)
-                ? setrecipient(e.target.value)
-                : null;
-            }}
-            value={recipient}
-            placeholder={t('enterWalletAddress')}
-          />
-        </div>
-        <button
-          className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
-          onClick={async () => {
-            if (
-              connected &&
-              userchain === activechain
-            ) {
-              try {
-                if (tokenIn == eth) {
-                  const hash = await sendeth(
-                    sendUserOperationAsync,
-                    recipient as `0x${string}`,
-                    amountIn,
-                  );
-                  newTxPopup(
-                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-                    'send',
-                    eth,
-                    '',
-                    customRound(
-                      Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
-                      3,
-                    ),
-                    0,
-                    '',
-                    recipient,
-                  );
-                } else {
-                  const hash = await sendtokens(
-                    sendUserOperationAsync,
-                    tokenIn as `0x${string}`,
-                    recipient as `0x${string}`,
-                    amountIn,
-                  );
-                  newTxPopup(
-                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-                    'send',
-                    tokenIn,
-                    '',
-                    customRound(
-                      Number(amountIn) /
-                      10 ** Number(tokendict[tokenIn].decimals),
-                      3,
-                    ),
-                    0,
-                    '',
-                    recipient,
-                  );
-                }
-                setInputString('');
-                setsendInputString('');
-                setamountIn(BigInt(0));
-                setSliderPercent(0);
-                setSendButton(0);
-                setSendButtonDisabled(true);
-                const slider = document.querySelector('.balance-amount-slider');
-                const popup = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (slider && popup) {
-                  (popup as HTMLElement).style.left = `${15 / 2}px`;
-                }
-              } catch (error) {
-              } finally {
-                setTimeout(() => refetch(), 500)
-              }
-            } else {
-              !connected
-                ? setpopup(4)
-                : handleSetChain()
-            }
-          }}
-          disabled={sendButtonDisabled || isSendingUserOperation}
-        >
-          {isSendingUserOperation ? (
-            <div className="button-content">
-              <div className="loading-spinner" />
-              {t('signTransaction')}
-            </div>
-          ) : sendButton == 0 ? (
-            t('enterAmount')
-          ) : sendButton == 1 ? (
-            t('enterWalletAddress')
-          ) : sendButton == 2 ? (
-            t('send')
-          ) : sendButton == 3 ? (
-            t('insufficient') +
-            (tokendict[tokenIn].ticker || '?') +
-            ' ' +
-            t('bal')
-          ) : sendButton == 4 ? (
-            `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-          ) : (
-            t('connectWallet')
-          )}
-        </button>
+<div className="sendaddressbg">
+  <div className="send-To">{t('to')}</div>
+  <div className="send-address-input-container">
+    <input
+      className="send-output"
+      onChange={(e) => {
+        if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+          setrecipient(e.target.value);
+        }
+      }}
+      value={recipient}
+      placeholder={t('enterWalletAddress')}
+    />
+    <button 
+      className="address-paste-button"
+      onClick={async () => {
+        try {
+          const text = await navigator.clipboard.readText();
+          if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+            setrecipient(text);
+          }
+        } catch (err) {
+          console.error('Failed to read clipboard: ', err);
+        }
+      }}
+      title={t('pasteAddress')}
+    >
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+      </svg>
+    </button>
+  </div>
+</div>
+<button
+  className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+  onClick={async () => {
+    if (
+      connected &&
+      userchain === activechain
+    ) {
+      try {
+        if (tokenIn == eth) {
+          const hash = await sendeth(
+            sendUserOperationAsync,
+            recipient as `0x${string}`,
+            amountIn,
+          );
+          newTxPopup(
+            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+            'send',
+            eth,
+            '',
+            customRound(
+              Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
+              3,
+            ),
+            0,
+            '',
+            recipient,
+          );
+        } else {
+          const hash = await sendtokens(
+            sendUserOperationAsync,
+            tokenIn as `0x${string}`,
+            recipient as `0x${string}`,
+            amountIn,
+          );
+          newTxPopup(
+            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+            'send',
+            tokenIn,
+            '',
+            customRound(
+              Number(amountIn) /
+              10 ** Number(tokendict[tokenIn].decimals),
+              3,
+            ),
+            0,
+            '',
+            recipient,
+          );
+        }
+        setInputString('');
+        setsendInputString('');
+        setamountIn(BigInt(0));
+        setSliderPercent(0);
+        setSendButton(0);
+        setSendButtonDisabled(true);
+        const slider = document.querySelector('.balance-amount-slider');
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          (popup as HTMLElement).style.left = `${15 / 2}px`;
+        }
+      } catch (error) {
+      } finally {
+        setTimeout(() => refetch(), 500)
+      }
+    } else {
+      !connected
+        ? setpopup(4)
+        : handleSetChain()
+    }
+  }}
+  disabled={sendButtonDisabled || isSendingUserOperation}
+>
+  {isSendingUserOperation ? (
+    <div className="button-content">
+      <div className="loading-spinner" />
+      {t('signTransaction')}
+    </div>
+  ) : !connected ? (
+    t('connectWallet')
+  ) : sendButton == 0 ? (
+    t('enterAmount')
+  ) : sendButton == 1 ? (
+    t('enterWalletAddress')
+  ) : sendButton == 2 ? (
+    t('send')
+  ) : sendButton == 3 ? (
+    t('insufficient') +
+    (tokendict[tokenIn].ticker || '?') +
+    ' ' +
+    t('bal')
+  ) : sendButton == 4 ? (
+    `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+  ) : (
+    t('connectWallet')
+  )}
+</button>
       </div>
+      <div className="orders-info-rectangle">
+    <SimpleOrdersContainer 
+      orders={orders}
+      router={router}
+      address={address}
+      trades={tradesByMarket}
+      refetch={refetch}
+      sendUserOperation={sendUserOperation}
+      setChain={handleSetChain}
+    />
+  </div>
     </div>
   );
 
@@ -9845,6 +10022,17 @@ function App() {
           </div>
         </div>
       </div>
+      <div className="orders-info-rectangle">
+    <SimpleOrdersContainer 
+      orders={orders}
+      router={router}
+      address={address}
+      trades={tradesByMarket}
+      refetch={refetch}
+      sendUserOperation={sendUserOperation}
+      setChain={handleSetChain}
+    />
+  </div>
     </div>
   );
 
@@ -9852,6 +10040,16 @@ function App() {
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
+      {currentUser && !address && (
+        <GeneratingAddressPopup isVisible={true} />
+      )}
+    {isDepositPageVisible && (
+        <DepositPage 
+          address={address}
+          onClose={handleCloseDepositPage}
+        />
+      )}
+      
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (

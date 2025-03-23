@@ -9,6 +9,7 @@ interface CombinedHeaderFilterProps {
   totalPages: number;
   onPrevPage: () => void;
   onNextPage: () => void;
+  onPageChange: (page: number) => void;
 }
 
 const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
@@ -17,10 +18,13 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   currentPage,
   totalPages,
   onPrevPage,
-  onNextPage
+  onNextPage,
+  onPageChange
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
+  const [pageInput, setPageInput] = useState<string>(currentPage.toString());
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -31,6 +35,10 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
     localStorage.setItem('crystal_page_size', size.toString());
     setIsOpen(false);
   };
+
+  useEffect(() => {
+    setPageInput(currentPage.toString());
+  }, [currentPage]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -47,6 +55,48 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    
+    if (value === '' || parseInt(value) <= totalPages || totalPages === 0) {
+      setPageInput(value);
+    }
+  };
+
+  const handlePageInputBlur = () => {
+    let newPage = parseInt(pageInput, 10);
+
+    if (isNaN(newPage) || newPage < 1) {
+      newPage = 1;
+    } else if (newPage > totalPages) {
+      newPage = totalPages;
+    }
+
+    setPageInput(newPage.toString());
+
+    onPageChange(newPage);
+  };
+
+  const handlePageInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      let newPage = parseInt(pageInput, 10);
+      
+      if (isNaN(newPage) || newPage < 1) {
+        newPage = 1;
+      } else if (newPage > totalPages) {
+        newPage = totalPages;
+      }
+      
+      setPageInput(newPage.toString());
+      
+      onPageChange(newPage);
+      
+      inputRef.current?.blur();
+    }
+  };
 
   return (
     <div className="combined-header-filter">
@@ -74,8 +124,8 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
           {isOpen && (
             <div className="page-size-dropdown">
               {[10, 25, 50].map(size => (
-                <div 
-                  key={size} 
+                <div
+                  key={size}
                   className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
                   onClick={() => handleSizeChange(size)}
                 >
@@ -90,22 +140,31 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
       
       <div className="header-navigation">
         <button 
-          className="header-nav-button" 
+          className="header-nav-button"
           onClick={onPrevPage}
           disabled={currentPage <= 1}
         >
-          <img className="filter-left-arrow" src={arrow}/>
+          <img className="filter-left-arrow" src={arrow} alt="Previous page"/>
         </button>
-        <span className="header-page-indicator">
-          {currentPage} / {Math.max(totalPages, 1)}
-        </span>
+        <div className="header-page-indicator">
+          <input
+            ref={inputRef}
+            type="text"
+            className="page-input"
+            value={pageInput}
+            onChange={handlePageInputChange}
+            onBlur={handlePageInputBlur}
+            onKeyDown={handlePageInputKeyDown}
+            aria-label="Current page"
+          />
+          <span> / {Math.max(totalPages, 1)}</span>
+        </div>
         <button 
-          className="header-nav-button" 
+          className="header-nav-button"
           onClick={onNextPage}
           disabled={currentPage >= totalPages || totalPages === 0}
-        >
-                    <img className="filter-right-arrow" src={arrow}/>
-
+        >          
+          <img className="filter-right-arrow" src={arrow} alt="Next page"/>
         </button>
       </div>
     </div>
