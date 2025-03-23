@@ -10032,16 +10032,16 @@ function App() {
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
+      {Modals}
       {currentUser && !address && (
         <GeneratingAddressPopup isVisible={true} />
       )}
-    {isDepositPageVisible && (
+      {isDepositPageVisible && (
         <DepositPage 
           address={address}
           onClose={handleCloseDepositPage}
         />
       )}
-      
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (
