@@ -73,7 +73,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     sendUserOperation,
     setChain,
   }) => {
-    // State management
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
       typeof window !== 'undefined' ? window.innerWidth <= 1020 : false,
@@ -99,7 +98,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // Tab change handler
     const handleTabChange = (
       section: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances',
     ) => {
@@ -108,14 +106,13 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
       setActiveSection(section);
       setIsDropdownOpen(false);
-      setCurrentPage(1); // Reset to first page when changing tabs
+      setCurrentPage(1); 
       const element = document.getElementsByClassName('oc-content')[0];
       if (element) {
         element.scrollTop = 0;
       }
     };
 
-    // Filter functions
     const matchesFilter = (sideValue: number) =>
       filter === 'all' ||
       (filter === 'buy' && sideValue === 1) ||
@@ -129,10 +126,8 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       return marketSymbol === currentMarket;
     };
 
-    // Debug flag
     const debugValue = false;
 
-    // Filtered data sets
     const filteredOrders = orders.filter((order) => {
       const sideMatch = matchesFilter(order[3]);
       const marketMatch = belongsToCurrentMarket(order[4]);
@@ -236,7 +231,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       return sideMatch && marketMatch && valueMatch;
     });
 
-    // Available tabs
     const availableTabs = [
       {
         key: 'orders',
@@ -249,7 +243,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       availableTabs.push({ key: 'balances', label: t('balances') });
     }
 
-    // Handle navigation for pagination
     const handlePrevPage = () => {
       setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
     };
@@ -259,12 +252,10 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
     };
     
-    // Reset current page when changing sections
     useEffect(() => {
       setCurrentPage(1);
     }, [activeSection]);
     
-    // Get total pages for current section
     const getTotalPages = (): number => {
       switch (activeSection) {
         case 'orders':
@@ -278,7 +269,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     };
     
-    // Render the appropriate content based on active section
     const renderContent = () => {
       switch (activeSection) {
         case 'orders':
@@ -336,7 +326,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     };
 
-    // Determine if there's no data to show
     let noData = false;
     let noDataMessage = '';
 
@@ -361,8 +350,10 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         noDataMessage = t('noTokensDetected');
         break;
     }
-
-    // Update tab indicator position
+    const handlePageChange = (page: number) => {
+      setCurrentPage(page);
+    };
+    
     const updateIndicatorPosition = () => {
       if (isMobileView || !indicatorRef.current || !tabsRef.current) {
         if (indicatorRef.current) {
@@ -385,12 +376,10 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     };
 
-    // Update indicator on section change and window resize
     useEffect(() => {
       updateIndicatorPosition();
     }, [activeSection, isMobileView, filteredOrders.length]);
 
-    // Redirect from balances when not in portfolio
     useEffect(() => {
       if (!isPortfolio && activeSection === 'balances') {
         setActiveSection(
@@ -401,7 +390,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     }, [isPortfolio, activeSection, setActiveSection]);
 
-    // Set up resize observer for indicator
     useEffect(() => {
       if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
         const resizeObserver = new ResizeObserver(() => {
@@ -419,7 +407,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       }
     }, [activeSection, isMobileView, filteredOrders.length]);
 
-    // Set up window resize handler
     useEffect(() => {
       const handleResize = () => {
         setIsMobileView(window.innerWidth <= 1020);
@@ -432,7 +419,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       };
     }, []);
 
-    // Reset page when page size changes
     useEffect(() => {
       setCurrentPage(1);
     }, [pageSize]);
@@ -487,13 +473,14 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
           <div className="oc-filters">
             {activeSection !== 'balances' && (
               <CombinedHeaderFilter 
-                pageSize={Number(pageSize)} 
-                setPageSize={setPageSize}
-                currentPage={currentPage}
-                totalPages={getTotalPages()}
-                onPrevPage={handlePrevPage}
-                onNextPage={handleNextPage}
-              />
+  pageSize={Number(pageSize)} 
+  setPageSize={setPageSize}
+  currentPage={currentPage}
+  totalPages={getTotalPages()}
+  onPrevPage={handlePrevPage}
+  onNextPage={handleNextPage}
+  onPageChange={handlePageChange}
+/>
             )}
             <div className="oc-filter-divider"></div>
             <MinSizeFilter

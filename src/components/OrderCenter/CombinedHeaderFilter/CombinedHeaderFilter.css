@@ -35,7 +35,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background:none;
+  background: none;
   border: 1px solid rgb(170 174 207 / 8%);
   border-radius: 4px;
   padding: 2px 6px;
@@ -46,8 +46,7 @@
   min-width: 35px;
   height: 20px;
 }
-
-
+ 
 .page-size-display {
   margin-right: 5px;
 }
@@ -103,34 +102,57 @@
   justify-content: center;
   width: 23px;
   height: 20px;
-  background:none;
-  border: 1px solid rgb(170 174 207 / 8%);  border-radius: 4px;
+  background: none;
+  border: 1px solid rgb(170 174 207 / 8%);
+  border-radius: 4px;
   color: #ffffff90;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
-
-
+ 
 .header-nav-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
 .header-page-indicator {
+  display: flex;
+  align-items: center;
   margin: 0 8px;
   color: #ffffff70;
   font-size: 0.75rem;
 }
 
-.filter-left-arrow{
+.page-input {
+  background: none;
+  border: none;
+  outline: none;
+  color: #ffffff90;
+  font-size: 0.75rem;
+  max-width: 24px;
+  text-align: right;
+  padding: 0;
+  padding-right: 3px;
+  padding-top: 1px;
+  border-bottom: 1px solid transparent;
+  transition: all 0.2s ease;
+  border-bottom: 1px solid #ffffff15;
+
+}
+
+.page-input:focus, .page-input:hover {
+  border-bottom: 1px solid #ffffff40;
+}
+
+.filter-left-arrow {
   width: 13px;
   transform: rotate(90deg);
   opacity: 0.6;
 }
 
-.filter-right-arrow{
+.filter-right-arrow {
   width: 13px;
   transform: rotate(270deg);
-  opacity:0.6;
+  opacity: 0.6;
 }
