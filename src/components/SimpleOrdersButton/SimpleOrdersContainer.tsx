@@ -9,7 +9,6 @@ interface SimpleOrdersContainerProps {
   orders: any[];
   router: `0x${string}`;
   address: string | undefined;
-  trades: Record<string, any[]>;
   refetch: () => void;
   sendUserOperation: any;
   setChain: () => Promise<void>;
@@ -19,7 +18,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
   orders,
   router,
   address,
-  trades,
   refetch,
   sendUserOperation,
   setChain,

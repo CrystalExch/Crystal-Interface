@@ -254,7 +254,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     
     useEffect(() => {
       setCurrentPage(1);
-    }, [activeSection]);
+    }, [activeSection, pageSize]);
     
     const getTotalPages = (): number => {
       switch (activeSection) {
@@ -419,10 +419,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       };
     }, []);
 
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [pageSize]);
-
     return (
       <div
         ref={containerRef}
@@ -473,14 +469,14 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
           <div className="oc-filters">
             {activeSection !== 'balances' && (
               <CombinedHeaderFilter 
-  pageSize={Number(pageSize)} 
-  setPageSize={setPageSize}
-  currentPage={currentPage}
-  totalPages={getTotalPages()}
-  onPrevPage={handlePrevPage}
-  onNextPage={handleNextPage}
-  onPageChange={handlePageChange}
-/>
+                pageSize={Number(pageSize)} 
+                setPageSize={setPageSize}
+                currentPage={currentPage}
+                totalPages={getTotalPages()}
+                onPrevPage={handlePrevPage}
+                onNextPage={handleNextPage}
+                onPageChange={handlePageChange}
+              />
             )}
             <div className="oc-filter-divider"></div>
             <MinSizeFilter

@@ -34,7 +34,6 @@ import {
   useAlchemyAccountContext,
   AuthCard,
   useUser,
-  useAccount
 } from "@account-kit/react";
 
 // import css
@@ -299,13 +298,6 @@ function App() {
     '/mint'
   ].includes(location.pathname);
   const sortConfig = undefined;
-  const [leaderboardData, setLeaderboardData] = useState({
-    totalXP: 1000000,
-    currentXP: 35000,
-    username: '',
-    userXP: 0,
-    factions: []
-  });
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -502,7 +494,6 @@ function App() {
   const [priceImpact, setPriceImpact] = useState('');
   const [averagePrice, setAveragePrice] = useState('');
   const [tradeFee, setTradeFee] = useState('');
-  const [isOrdersVisible, setIsOrdersVisible] = useState(false);
   const [stateIsLoading, setStateIsLoading] = useState(true);
   const [displayValuesLoading, setDisplayValuesLoading] = useState(true);
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
@@ -2706,7 +2697,7 @@ function App() {
 
           const query = `
             query {
-              orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
+              orderFilledBatches(first: 11, orderDirection: desc, orderBy: id) {
                 id
                 total
                 orders(first: 1000, where: {caller: "${address}"}) {
@@ -2724,7 +2715,7 @@ function App() {
               orderMaps(where:{caller: "${address}"}) {
                 id
                 counter
-                batches(first: 10, orderDirection: desc, orderBy: id) {
+                batches(first: 11, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000) {
                     id
@@ -7097,18 +7088,6 @@ function App() {
             </div>
           ))}
       </div>
-      <div className="orders-info-rectangle">
-        <SimpleOrdersContainer
-          orders={orders}
-          router={router}
-          address={address}
-          trades={tradesByMarket}
-          refetch={refetch}
-          sendUserOperation={sendUserOperation}
-          setChain={handleSetChain}
-        />
-      </div>
-
     </div>
   );
 
@@ -8348,17 +8327,16 @@ function App() {
             </div>
           )}
       </div>
-      <div className="orders-info-rectangle">
+      {simpleView && <div className="orders-info-rectangle">
         <SimpleOrdersContainer
           orders={orders}
           router={router}
           address={address}
-          trades={tradesByMarket}
           refetch={refetch}
           sendUserOperation={sendUserOperation}
           setChain={handleSetChain}
         />
-      </div>
+      </div>}
     </div>
   );
 
@@ -9024,17 +9002,6 @@ function App() {
             t('connectWallet')
           )}
         </button>
-      </div>
-      <div className="orders-info-rectangle">
-        <SimpleOrdersContainer
-          orders={orders}
-          router={router}
-          address={address}
-          trades={tradesByMarket}
-          refetch={refetch}
-          sendUserOperation={sendUserOperation}
-          setChain={handleSetChain}
-        />
       </div>
     </div>
   );
@@ -9954,17 +9921,16 @@ function App() {
           </div>
         </div>
       </div>
-      <div className="orders-info-rectangle">
+      {simpleView && <div className="orders-info-rectangle">
         <SimpleOrdersContainer
           orders={orders}
           router={router}
           address={address}
-          trades={tradesByMarket}
           refetch={refetch}
           sendUserOperation={sendUserOperation}
           setChain={handleSetChain}
         />
-      </div>
+      </div>}
     </div>
   );
 
@@ -10080,11 +10046,6 @@ function App() {
           />
 <Route path="/leaderboard" element={
   <Leaderboard
-    totalXP={leaderboardData.totalXP}
-    currentXP={leaderboardData.currentXP}
-    username={leaderboardData.username}
-    userXP={leaderboardData.userXP}
-    factions={leaderboardData.factions}
   />
 } />
           <Route path="/mint"

@@ -19,11 +19,6 @@ interface Faction {
 }
 
 interface LeaderboardProps {
-  totalXP: number;
-  currentXP: number;
-  username: string;
-  userXP: number;
-  factions: Faction[];
 }
 
 interface UserData {
@@ -48,11 +43,6 @@ interface TimeLeft {
 const ITEMS_PER_PAGE = 47;
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
-  totalXP,
-  currentXP,
-  username: initialUsername,
-  userXP: initialUserXP,
-  factions: initialFactions
 }) => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
@@ -60,8 +50,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<boolean>(false);
   const [showEditAccount, setShowEditAccount] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserDisplayData>({
-    username: initialUsername || "Guest",
-    userXP: initialUserXP || 0,
+    username: "Guest",
+    userXP: 0,
     logo: ""
   });
   const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
@@ -80,7 +70,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
     ws.onopen = () => {
-      console.log("Connected to WebSocket for live points");
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
@@ -94,7 +83,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       setLoading(false);
     };
     ws.onclose = () => {
-      console.log("WebSocket connection closed");
     };
 
     // Set a timeout to disable loading state if data doesn't load quickly
@@ -117,7 +105,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         level: Math.max(1, Math.floor(Number(points) / 1000)),
         rank: 0,
         xp: Number(points),
-        logo: `https://api.dicebear.com/6.x/bottts/svg?seed=${address}`
+        logo: ``
       }));
       
       liveEntries.sort((a, b) => b.points - a.points);
@@ -130,7 +118,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     }
   }, [liveLeaderboard]);
   
-  const [allFactions, setAllFactions] = useState<Faction[]>(initialFactions || []);
+  const [allFactions, setAllFactions] = useState<Faction[]>([]);
   
   useEffect(() => {
     const storedUserData = localStorage.getItem('leaderboard_user_data');
@@ -439,12 +427,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           
           <div className="progress-container">
             <div className="xp-display">
-              <span>{currentXP.toLocaleString()} / {totalXP.toLocaleString()} XP</span>
+              <span>{Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP</span>
             </div>
             <div className="progress-bar">
               <div
                 className="progress-fill"
-                style={{ width: `${(currentXP / totalXP) * 100}%` }}
+                style={{ width: `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -519,9 +507,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
                 <img 
-                  src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
+                  src={''} 
                   className="faction-logo" 
-                  alt={`Address avatar`} 
                 />
                 <div className="faction-name">{formatAddress(faction.name)}</div>
                 <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
@@ -555,9 +542,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   </div>
                   <div className="row-faction">
                     <img 
-                      src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
+                      src={''} 
                       className="faction-small-logo" 
-                      alt={`Address avatar`} 
                     />
                     <span className="faction-row-name">{formatAddress(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}

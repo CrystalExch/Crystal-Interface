@@ -3903,6 +3903,12 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
   .main-content-wrapper.simple-view .dropdown-item{
     font-size: 0.8rem;
+    background-color: #131317ef;
+  }
+
+  .main-content-wrapper.simple-view .dropdown-item:hover{
+    font-size: 0.8rem;
+    background-color: #1c1c20;
   }
 
 
