@@ -102,7 +102,13 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
           (trade[3] / priceFactor).toFixed(Math.log10(priceFactor)),
         )}
       </div>
-
+      <span className="oc-cell status">
+        {trade[7] === 0
+          ? t('limit')
+          : trade[7] === 1
+            ? t('market')
+            : t('trigger')}
+      </span>
       <span className="oc-cell oc-time">{formatDateAndTime(trade[6])}</span>
 
       <span className="oc-cell oc-view-cell">

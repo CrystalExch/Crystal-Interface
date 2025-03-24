@@ -30,7 +30,7 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
     sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
     [];
 
-  return (
+    return (
     <div className="trades-content-wrapper">
       <div className="trade-history-oc-header">
         <div className="ghost" />
@@ -41,14 +41,6 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
           onSort={handleSort}
         >
           {t('markets')}
-        </SortableHeaderCell>
-        <SortableHeaderCell
-          columnKey="type"
-          sortColumn={sortColumn}
-          sortOrder={sortOrder}
-          onSort={handleSort}
-        >
-          {t('type')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="tradeValue"
@@ -75,6 +67,14 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
           onSort={handleSort}
         >
           {t('price')}
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="type"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('type')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="time"

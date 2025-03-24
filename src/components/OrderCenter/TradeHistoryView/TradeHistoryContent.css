@@ -6,9 +6,10 @@
   display: grid;
   font-size: 0.85rem;
   grid-template-columns:
-    40px minmax(120px, 0.9fr) minmax(115px, 1fr)
-    minmax(80px, 0.8fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
+    40px minmax(120px, 1fr) minmax(125px, 1.1fr) minmax(115px, 1fr)
+    minmax(90px, 0.9fr) minmax(125px, 1fr) minmax(100px, 0.3fr);
   height: 35px;
+  justify-content: flex-start;
   min-height: 35px;
   min-width: 580px;
   padding: 0;
