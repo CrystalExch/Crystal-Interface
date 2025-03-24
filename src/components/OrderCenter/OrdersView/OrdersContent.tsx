@@ -29,7 +29,6 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
       (order: any, column: string) => getOrderValue(order, column, markets),
     );
     
-    // Calculate pagination - using props from parent
     const indexOfLastItem = currentPage * pageSize;
     const indexOfFirstItem = indexOfLastItem - pageSize;
     const currentItems = sortedItems.length > 0 ? 
