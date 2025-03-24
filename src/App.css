@@ -3831,9 +3831,13 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
       left: calc(100% - 16.25vw);
       width: 32.5vw
     }
+    
     .main-content-wrapper.simple-view .navlink-dropdown{
-      width: 90px;
+      width: 33.33%;
+      right: 0;
     }
+
+  
 
   }
   
@@ -3894,8 +3898,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 
   .main-content-wrapper.simple-view .navlink-dropdown{
-    left: calc(100% - 37px);
-    top: calc(100% + 5px)
+    top: calc(100% + 5px);
   }
 
   .main-content-wrapper.simple-view .dropdown-item{
