@@ -77,6 +77,31 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     minutes: 0,
     seconds: 0
   });
+  const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
+
+  useEffect(() => {
+    const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
+    ws.onopen = () => {
+      console.log("Connected to WebSocket for live points");
+    };
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      setLiveLeaderboard(data);
+    };
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log(liveLeaderboard);
+  }, [liveLeaderboard]);
   
   const generateExtendedFactions = () => {
     const baseNames = [
