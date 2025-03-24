@@ -1,5 +1,4 @@
 import React from 'react';
-
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
 import TradeHistoryItem from './TradeHistoryItem';
@@ -42,6 +41,14 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
           onSort={handleSort}
         >
           {t('markets')}
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="type"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('type')}
         </SortableHeaderCell>
         <SortableHeaderCell
           columnKey="tradeValue"
