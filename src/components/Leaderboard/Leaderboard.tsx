@@ -15,10 +15,7 @@ interface Faction {
   level: number;
   rank: number;
   xp?: number;
-  bonusXP?: number;
-  growthPercentage?: number;
   logo?: string;
-  badgeIcon?: string;
 }
 
 interface LeaderboardProps {
@@ -98,71 +95,30 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       ws.close();
     };
   }, []);
-
+  
   useEffect(() => {
-    console.log(liveLeaderboard);
+    if (Object.keys(liveLeaderboard).length > 0) {
+      const liveEntries = Object.entries(liveLeaderboard).map(([address, points]) => ({
+        id: address,
+        name: address,
+        points: Number(points),
+        level: Math.max(1, Math.floor(Number(points) / 1000)),
+        rank: 0,
+        xp: Number(points),
+        logo: `https://api.dicebear.com/6.x/bottts/svg?seed=${address}`
+      }));
+      
+      liveEntries.sort((a, b) => b.points - a.points);
+      
+      liveEntries.forEach((entry, index) => {
+        entry.rank = index + 1;
+      });
+      
+      setAllFactions(liveEntries);
+    }
   }, [liveLeaderboard]);
   
-  const generateExtendedFactions = () => {
-    const baseNames = [
-      "Astral", "Nebula", "Cosmic", "Galactic", "Quantum", "Celestial", "Void", "Solar", 
-      "Lunar", "Stellar", "Nova", "Eclipse", "Horizon", "Zenith", "Infinity", "Radiant",
-      "Ember", "Crystal", "Shadow", "Phoenix", "Dragon", "Titan", "Kraken", "Oracle",
-      "Frost", "Inferno", "Thunder", "Tempest", "Vortex", "Nexus", "Mystic", "Arcane"
-    ];
-    
-    const suffixes = [
-      "Keepers", "Guardians", "Hunters", "Warriors", "Knights", "Sentinels", "Vanguard", 
-      "Legion", "Disciples", "Lords", "Masters", "Watchers", "Protectors", "Seekers", 
-      "Arbiters", "Defenders", "Raiders", "Crusaders", "Wanderers", "Explorers"
-    ];
-    
-    const processedFactions = initialFactions.map(faction => ({
-      ...faction,
-      xp: faction.xp || faction.points || 0,
-      bonusXP: faction.bonusXP || 0,
-      growthPercentage: faction.growthPercentage || 0,
-      logo: faction.logo,
-      badgeIcon: faction.badgeIcon
-    }));
-
-    let extendedFactions: Faction[] = [...processedFactions];
-    
-    const maxRank = Math.max(...initialFactions.map(f => f.rank));
-    
-    for (let i = maxRank + 1; i <= maxRank + 320; i++) {
-      const nameIndex = Math.floor(Math.random() * baseNames.length);
-      const suffixIndex = Math.floor(Math.random() * suffixes.length);
-      const randomName = `${baseNames[nameIndex]} ${suffixes[suffixIndex]}`;
-      
-      const baseXP = Math.floor(9800 * Math.pow(0.995, i - maxRank));
-      const randomVariation = Math.floor(baseXP * 0.1 * (Math.random() - 0.5));
-      const xp = Math.max(100, baseXP + randomVariation);
-      
-      extendedFactions.push({
-        id: `gen-${i}`,
-        name: randomName,
-        points: xp,
-        level: Math.max(1, Math.floor(xp / 1000)),
-        rank: i,
-        xp: xp,
-        logo: `https://api.dicebear.com/6.x/bottts/svg?seed=${i}`,
-        badgeIcon: ''
-      });
-    }
-    
-    extendedFactions.sort((a, b) => (b.xp || b.points) - (a.xp || a.points));
-    
-    extendedFactions = extendedFactions.map((faction, index) => ({
-      ...faction,
-      rank: index + 1
-    }));
-    
-    return extendedFactions;
-  };
-  
-  const [allFactions] = useState<Faction[]>(() => generateExtendedFactions());
-  const [updatedFactions, setUpdatedFactions] = useState<Faction[]>(allFactions);
+  const [allFactions, setAllFactions] = useState<Faction[]>(initialFactions || []);
   
   useEffect(() => {
     const storedUserData = localStorage.getItem('leaderboard_user_data');
@@ -254,6 +210,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
+  const formatAddress = (address: string): string => {
+    if (!address) return "Guest";
+    if (address === "Guest") return "Guest";
+    
+    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+  };
 
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
@@ -264,6 +226,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       setDirectAccountSetup(false); 
     }
   };
+  
   const handleContinueAsGuest = (): void => {
     setShowChallengeIntro(false);
     setIsGuestMode(true);
@@ -277,7 +240,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     });
   };
   
-  
   const handleAccountSetupComplete = (newUserData: UserData): void => {
     localStorage.setItem('leaderboard_user_data', JSON.stringify(newUserData));
     
@@ -287,21 +249,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: newUserData.image
     });
     
-    const maxId = Math.max(...updatedFactions.map(f => parseInt(f.id.toString()) || 0));
-    const userFaction: Faction = {
-      id: (maxId + 1).toString(),
-      name: newUserData.username,
-      points: 0,
-      level: 1,
-      rank: updatedFactions.length + 1,
-      xp: 0,
-      bonusXP: 0,
-      growthPercentage: 0,
-      logo: newUserData.image,
-      badgeIcon: ''
-    };
-    
-    setUpdatedFactions([...updatedFactions, userFaction]);
     setHasAccount(true);
     setShowAccountSetup(false);
     setDirectAccountSetup(false);
@@ -317,9 +264,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: ""
     });
     
-    setUpdatedFactions(allFactions.filter(f => f.name !== userData.username));
     setShowDeleteConfirmation(false);
   };
+  
   const handleEditAccount = (): void => {
     setShowEditAccount(true);
   };
@@ -333,18 +280,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: updatedUserData.image
     });
     
-    const updatedFactionsList = updatedFactions.map(faction => {
-      if (faction.name === userData.username) {
-        return {
-          ...faction,
-          name: updatedUserData.username,
-          logo: updatedUserData.image
-        };
-      }
-      return faction;
-    });
-    
-    setUpdatedFactions(updatedFactionsList);
     setShowEditAccount(false);
   };
 
@@ -366,6 +301,28 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       setShowChallengeIntro(true);
       setIntroStep(2); 
     }
+  };
+
+  const t = (text: string): string => {
+    const translations: Record<string, string> = {
+      viewRules: "View Rules",
+      username: "Username",
+      xpEarned: "XP Earned",
+      rank: "Rank",
+      editAccount: "Edit Account",
+      createAccount: "Create Account",
+      page: "Page",
+      of: "of",
+      viewYourPosition: "View Your Position",
+      user: "User",
+      totalXP: "Total XP"
+    };
+    
+    return translations[text] || text;
+  };
+
+  const isUserAddress = (address: string): boolean => {
+    return userData.username === address;
   };
 
   return (
@@ -445,7 +402,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {userData.logo && (
                     <img src={userData.logo} className="username-logo" alt="User Avatar" />
                   )}
-                  <span className="username">@{userData.username || "Guest"}</span>
+                  <span className="username">
+                    {userData.username ? formatAddress(userData.username) : "Guest"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -493,7 +452,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         {topThreeUsers.map((faction, index) => (
           <div 
             key={faction.id} 
-            className={`faction-card rank-${index + 1} ${faction.name === userData.username ? 'user-faction' : ''}`}
+            className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
           >
             {index === 0 && (
               <div className="crown-icon-container">
@@ -505,9 +464,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <img 
                 src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
                 className="faction-logo" 
-                alt={`${faction.name} avatar`} 
+                alt={`Address avatar`} 
               />
-              <div className="faction-name">{faction.name}</div>
+              <div className="faction-name">{formatAddress(faction.name)}</div>
               <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
             </div>
           </div>
@@ -516,18 +475,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       
       <div className="full-leaderboard">
         <div className="leaderboard-headers">
-          <div className="header-rank">                {t("rank")}
-          </div>
-          <div className="header-faction">                {t("user")}
-          </div>
-          <div className="header-bonus">                {t("totalXP")}
-          </div>
+          <div className="header-rank">{t("rank")}</div>
+          <div className="header-faction">{t("user")}</div>
+          <div className="header-bonus">{t("totalXP")}</div>
         </div>
         
         <div className="leaderboard-rows">
           {getCurrentPageItems().map((faction) => {
             const absoluteRank = faction.rank;
-            const isCurrentUser = faction.name === userData.username;
+            const isCurrentUser = isUserAddress(faction.name);
             
             return (
               <div 
@@ -541,9 +497,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   <img 
                     src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
                     className="faction-small-logo" 
-                    alt={`${faction.name} avatar`} 
+                    alt={`Address avatar`} 
                   />
-                  <span className="faction-row-name">{faction.name}</span>
+                  <span className="faction-row-name">{formatAddress(faction.name)}</span>
                   {isCurrentUser && <span className="current-user-tag">You</span>}
                 </div>
                 <div className="row-xp">
@@ -569,11 +525,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               onClick={goToPreviousPage}
               disabled={currentPage === 0}
             >
-              <img src={arrow} className="leaderboard-control-left-arrow" />
+              <img src={arrow} className="leaderboard-control-left-arrow" alt="Previous" />
             </button>
             
             <div className="page-indicator">
-              {t("page")} {currentPage + 1} {t("of")} {totalPages}
+              {t("page")} {currentPage + 1} {t("of")} {totalPages || 1}
             </div>
             
             <button 
@@ -581,7 +537,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               onClick={goToNextPage}
               disabled={currentPage >= totalPages - 1}
             >
-              <img src={arrow} className="leaderboard-control-right-arrow" />
+              <img src={arrow} className="leaderboard-control-right-arrow" alt="Next" />
             </button>
           </div>
         </div>

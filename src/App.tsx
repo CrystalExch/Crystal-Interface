@@ -299,84 +299,13 @@ function App() {
     '/mint'
   ].includes(location.pathname);
   const sortConfig = undefined;
-  const leaderboardData = {
-    totalXP: 10000,
-    currentXP: 750,
-    username: "CryptoTrader42",
-    userXP: 750,
-    factions: [
-      {
-        id: "phoenix",
-        name: "Phoenix",
-        points: 8500,
-        level: 7,
-        rank: 3
-      },
-      {
-        id: "dragon",
-        name: "Dragon",
-        points: 9200,
-        level: 8,
-        rank: 2
-      },
-      {
-        id: "kraken",
-        name: "Kraken",
-        points: 7800,
-        level: 6,
-        rank: 4
-      },
-      {
-        id: "titan",
-        name: "Titan",
-        points: 9800,
-        level: 9,
-        rank: 1
-      },
-      {
-        id: "oracle",
-        name: "Oracle",
-        points: 7200,
-        level: 6,
-        rank: 5
-      },
-      {
-        id: "phantom",
-        name: "Phantom",
-        points: 6900,
-        level: 5,
-        rank: 6
-      },
-      {
-        id: "celestial",
-        name: "Celestial",
-        points: 6500,
-        level: 5,
-        rank: 7
-      },
-      {
-        id: "shadow",
-        name: "Shadow",
-        points: 6100,
-        level: 4,
-        rank: 8
-      },
-      {
-        id: "frost",
-        name: "Frost",
-        points: 5800,
-        level: 4,
-        rank: 9
-      },
-      {
-        id: "inferno",
-        name: "Inferno",
-        points: 5400,
-        level: 3,
-        rank: 10
-      }
-    ]
-  };
+  const [leaderboardData, setLeaderboardData] = useState({
+    totalXP: 1000000,
+    currentXP: 35000,
+    username: '',
+    userXP: 0,
+    factions: []
+  });
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -10149,23 +10078,15 @@ function App() {
               />
             }
           />
-          <Route path="/leaderboard" element={
-            <Leaderboard
-              totalXP={leaderboardData.totalXP}
-              currentXP={leaderboardData.currentXP}
-              username={leaderboardData.username}
-              userXP={leaderboardData.userXP}
-              factions={leaderboardData.factions.map(faction => ({
-                ...faction,
-                xp: faction.points,
-                bonusXP: 0,
-                growthPercentage: 0,
-                logo: '',
-                badgeIcon: ''
-              }))}
-            />
-          }>
-          </Route>
+<Route path="/leaderboard" element={
+  <Leaderboard
+    totalXP={leaderboardData.totalXP}
+    currentXP={leaderboardData.currentXP}
+    username={leaderboardData.username}
+    userXP={leaderboardData.userXP}
+    factions={leaderboardData.factions}
+  />
+} />
           <Route path="/mint"
             element={
               <NFTMintingPage />
