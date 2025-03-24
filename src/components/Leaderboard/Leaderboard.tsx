@@ -75,6 +75,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     seconds: 0
   });
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
@@ -84,15 +85,26 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setLiveLeaderboard(data);
+      // Set loading to false after receiving data
+      setTimeout(() => setLoading(false), 1500); // Adding a slight delay for better UX
     };
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
+      // Set loading to false even if there's an error
+      setLoading(false);
     };
     ws.onclose = () => {
       console.log("WebSocket connection closed");
     };
+
+    // Set a timeout to disable loading state if data doesn't load quickly
+    const loadingTimeout = setTimeout(() => {
+      setLoading(false);
+    }, 5000);
+
     return () => {
       ws.close();
+      clearTimeout(loadingTimeout);
     };
   }, []);
   
@@ -325,8 +337,51 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return userData.username === address;
   };
 
+  // Render top three loading placeholders
+  const renderLoadingTopThree = () => {
+    return [0, 1, 2].map((index) => (
+      <div 
+        key={`loading-top-${index}`} 
+        className={`faction-card rank-${index + 1}`}
+      >
+        {index === 0 && (
+          <div className="crown-icon-container">
+            <img src={CrownIcon} className="crown-icon" alt="Crown" />
+          </div>
+        )}
+        <div className="faction-rank">{index + 1}</div>
+        <div className="faction-info">
+          <div className="faction-logo loading-placeholder"></div>
+          <div className="faction-name loading-placeholder"></div>
+          <div className="faction-xp loading-placeholder"></div>
+        </div>
+      </div>
+    ));
+  };
+
+  // Render loading placeholders for the main leaderboard
+  const renderLoadingRows = () => {
+    return Array(ITEMS_PER_PAGE).fill(0).map((_, index) => (
+      <div 
+        key={`loading-row-${index}`} 
+        className="leaderboard-row"
+      >
+        <div className="row-rank">
+          <span className="loading-placeholder"></span>
+        </div>
+        <div className="row-faction">
+          <div className="faction-small-logo loading-placeholder"></div>
+          <span className="faction-row-name loading-placeholder"></span>
+        </div>
+        <div className="row-xp">
+          <div className="xp-amount loading-placeholder"></div>
+        </div>
+      </div>
+    ));
+  };
+
   return (
-    <div className="leaderboard-container">
+    <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
       {showChallengeIntro && (
         <ChallengeIntro 
           onComplete={handleChallengeIntroComplete} 
@@ -449,28 +504,31 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       </div>
       
       <div className="top-factions">
-        {topThreeUsers.map((faction, index) => (
-          <div 
-            key={faction.id} 
-            className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
-          >
-            {index === 0 && (
-              <div className="crown-icon-container">
-                <img src={CrownIcon} className="crown-icon" alt="Crown" />
+        {loading 
+          ? renderLoadingTopThree()
+          : topThreeUsers.map((faction, index) => (
+            <div 
+              key={faction.id} 
+              className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
+            >
+              {index === 0 && (
+                <div className="crown-icon-container">
+                  <img src={CrownIcon} className="crown-icon" alt="Crown" />
+                </div>
+              )}
+              <div className="faction-rank">{index + 1}</div>
+              <div className="faction-info">
+                <img 
+                  src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
+                  className="faction-logo" 
+                  alt={`Address avatar`} 
+                />
+                <div className="faction-name">{formatAddress(faction.name)}</div>
+                <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
               </div>
-            )}
-            <div className="faction-rank">{index + 1}</div>
-            <div className="faction-info">
-              <img 
-                src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
-                className="faction-logo" 
-                alt={`Address avatar`} 
-              />
-              <div className="faction-name">{formatAddress(faction.name)}</div>
-              <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
             </div>
-          </div>
-        ))}
+          ))
+        }
       </div>
       
       <div className="full-leaderboard">
@@ -481,40 +539,43 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         </div>
         
         <div className="leaderboard-rows">
-          {getCurrentPageItems().map((faction) => {
-            const absoluteRank = faction.rank;
-            const isCurrentUser = isUserAddress(faction.name);
-            
-            return (
-              <div 
-                key={faction.id} 
-                className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
-              >
-                <div className="row-rank">
-                  <span>{absoluteRank}</span>
+          {loading 
+            ? renderLoadingRows()
+            : getCurrentPageItems().map((faction) => {
+              const absoluteRank = faction.rank;
+              const isCurrentUser = isUserAddress(faction.name);
+              
+              return (
+                <div 
+                  key={faction.id} 
+                  className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
+                >
+                  <div className="row-rank">
+                    <span>{absoluteRank}</span>
+                  </div>
+                  <div className="row-faction">
+                    <img 
+                      src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
+                      className="faction-small-logo" 
+                      alt={`Address avatar`} 
+                    />
+                    <span className="faction-row-name">{formatAddress(faction.name)}</span>
+                    {isCurrentUser && <span className="current-user-tag">You</span>}
+                  </div>
+                  <div className="row-xp">
+                    <div className="xp-amount">{(faction.xp || faction.points || 0).toLocaleString()}</div>
+                  </div>
                 </div>
-                <div className="row-faction">
-                  <img 
-                    src={faction.logo || `https://api.dicebear.com/6.x/bottts/svg?seed=${faction.name}`} 
-                    className="faction-small-logo" 
-                    alt={`Address avatar`} 
-                  />
-                  <span className="faction-row-name">{formatAddress(faction.name)}</span>
-                  {isCurrentUser && <span className="current-user-tag">You</span>}
-                </div>
-                <div className="row-xp">
-                  <div className="xp-amount">{(faction.xp || faction.points || 0).toLocaleString()}</div>
-                </div>
-              </div>
-            );
-          })}
+              );
+            })
+          }
         </div>
         
         <div className="pagination-controls">
           <button 
             className="go-to-user-position-button"
             onClick={goToUserPosition}
-            disabled={!hasAccount || findUserPosition() === -1}
+            disabled={!hasAccount || findUserPosition() === -1 || loading}
           >
             {t("viewYourPosition")}
           </button>
@@ -523,19 +584,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <button 
               className="pagination-arrow prev-arrow"
               onClick={goToPreviousPage}
-              disabled={currentPage === 0}
+              disabled={currentPage === 0 || loading}
             >
               <img src={arrow} className="leaderboard-control-left-arrow" alt="Previous" />
             </button>
             
             <div className="page-indicator">
-              {t("page")} {currentPage + 1} {t("of")} {totalPages || 1}
+              {t("page")} {currentPage + 1} {t("of")} {loading ? "1" : (totalPages || 1)}
             </div>
             
             <button 
               className="pagination-arrow next-arrow"
               onClick={goToNextPage}
-              disabled={currentPage >= totalPages - 1}
+              disabled={currentPage >= totalPages - 1 || loading}
             >
               <img src={arrow} className="leaderboard-control-right-arrow" alt="Next" />
             </button>

@@ -114,7 +114,6 @@ const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refet
             {formatDisplay(customRound(amountFilled, 3))} (
             {customRound(percentFilled, 2)}%)
           </span>
-          <SegmentedProgressBar percentFilled={percentFilled} />
         </div>
       </div>
       <span className="oc-cell oc-time">{formatDateAndTime(order[6])}</span>

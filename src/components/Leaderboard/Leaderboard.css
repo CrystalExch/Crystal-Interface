@@ -982,3 +982,111 @@
   transform: rotate(270deg);
   opacity: 0.7;
 }
+
+
+/* Add these loading states to your existing Leaderboard.css file */
+
+@keyframes leaderboard-shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
+}
+
+.loading-placeholder {
+  background: linear-gradient(90deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 255, 255, 0.1) 20%, 
+    rgba(255, 255, 255, 0.05) 40%);
+  background-size: 1000px 100%;
+  animation: leaderboard-shimmer 2s infinite linear;
+  border-radius: 4px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Top 3 loading placeholders */
+.faction-card .faction-logo.loading-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+.faction-card .faction-name.loading-placeholder {
+  width: 100px;
+  height: 24px;
+  margin-top: 10px;
+}
+
+.faction-card .faction-xp.loading-placeholder {
+  width: 80px;
+  height: 22px;
+  margin-top: 5px;
+}
+
+/* Leaderboard rows loading placeholders */
+.leaderboard-row .row-rank .loading-placeholder {
+  width: 30px;
+  height: 20px;
+}
+
+.leaderboard-row .faction-small-logo.loading-placeholder {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+}
+
+.leaderboard-row .faction-row-name.loading-placeholder {
+  width: 120px;
+  height: 18px;
+  display: inline-block;
+  margin-left: 8px;
+}
+
+.leaderboard-row .xp-amount.loading-placeholder {
+  width: 70px;
+  height: 18px;
+  float: right;
+}
+
+/* Adjusted styles for loading states in top 3 */
+.rank-1 .faction-logo.loading-placeholder {
+  border: 3px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 
+    0 6px 12px rgba(0, 0, 0, 0.4),
+    0 0 15px rgba(255, 215, 0, 0.15);
+}
+
+.rank-2 .faction-logo.loading-placeholder {
+  border: 3px solid rgba(192, 192, 192, 0.3);
+  box-shadow: 
+    0 5px 10px rgba(0, 0, 0, 0.35),
+    0 0 12px rgba(192, 192, 192, 0.15);
+}
+
+.rank-3 .faction-logo.loading-placeholder {
+  border: 3px solid rgba(205, 127, 50, 0.3);
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    0 0 10px rgba(205, 127, 50, 0.15);
+}
+
+/* Only set min-height during loading state */
+.leaderboard-container.is-loading .leaderboard-rows {
+  min-height: calc(47 * 62px); /* ITEMS_PER_PAGE * approximate row height */
+}
+
+/* Reset min-height when not loading */
+.leaderboard-rows {
+  min-height: auto;
+}
+
+/* Ensure pagination controls are properly positioned */
+.pagination-controls {
+  position: relative;
+  bottom: 0;
+}
