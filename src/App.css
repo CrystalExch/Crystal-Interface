@@ -834,10 +834,6 @@ html {
   color: #ffffffc4;
   opacity: 1;
 }
-.navlink.active{
-  pointer-events: none;
-  user-select: none;
-}
 
 .main-content-wrapper.simple-view .navlink.active {
   background: 0 0;

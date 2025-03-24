@@ -34,7 +34,7 @@ import {
   useAlchemyAccountContext,
   AuthCard,
   useUser,
-  useAccount 
+  useAccount
 } from "@account-kit/react";
 
 // import css
@@ -131,17 +131,17 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address } = useSmartAccountClient({type: "LightAccount"});
+  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
     waitForTxn: true,
   });
 
-  
+
   const currentUser = useUser();
   const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
-  
+
   const isGeneratingAddressVisible = currentUser && !address;
   useEffect(() => {
     if (currentUser && !address) {
@@ -158,16 +158,16 @@ function App() {
 
 
 
-  
+
   const isDepositPageVisible = showDepositPage && address;
-  
+
 
 
 
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
       const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
-      
+
       if (!hideDepositPage) {
         setShowDepositPage(true);
       }
@@ -176,7 +176,7 @@ function App() {
   }, [address, isNewWallet, showDepositPage]);
 
 
-  
+
   const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -791,10 +791,10 @@ function App() {
 
   const sortedMarkets = [...filteredMarkets].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
-    
+
     let aValue: number = 0;
     let bValue: number = 0;
-    
+
     switch (sortField) {
       case 'volume':
         aValue = parseFloat(a.volume.toString().replace(/,/g, ''));
@@ -815,7 +815,7 @@ function App() {
       default:
         return 0;
     }
-    
+
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
@@ -1029,27 +1029,27 @@ function App() {
   };
 
   // set amount for a token
-  const debouncedSetAmount = 
+  const debouncedSetAmount =
     (amount: bigint) => {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        setStateIsLoading(true);
-        debounceTimerRef.current = setTimeout(() => {
-          setamountIn(amount);
-        }, 300);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      setStateIsLoading(true);
+      debounceTimerRef.current = setTimeout(() => {
+        setamountIn(amount);
+      }, 300);
     }
 
   // set amountout for a token
-  const debouncedSetAmountOut = 
+  const debouncedSetAmountOut =
     (amount: bigint) => {
-        if (debounceTimerRef.current) {
-          clearTimeout(debounceTimerRef.current);
-        }
-        setStateIsLoading(true);
-        debounceTimerRef.current = setTimeout(() => {
-          setamountOutSwap(amount);
-        }, 300);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      setStateIsLoading(true);
+      debounceTimerRef.current = setTimeout(() => {
+        setamountOutSwap(amount);
+      }, 300);
     }
 
   // set token string
@@ -1118,7 +1118,7 @@ function App() {
   });
 
   // fetch ref data
-  const { data: refData, isLoading: refDataLoading, refetch: refRefetch} = useReadContracts({
+  const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
     batchSize: 0,
     contracts: [
       ...Object.values(markets).flatMap((market: any) => ({
@@ -1137,7 +1137,7 @@ function App() {
     query: { refetchInterval: 10000 },
   });
 
-  
+
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -1612,7 +1612,7 @@ function App() {
             const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 2);
             const current = series.klines[series.klines.length - 1].close;
             const first = series.klines[0].open;
-            const percentageChange = (current - first) / first * 100; 
+            const percentageChange = (current - first) / first * 100;
 
             return {
               ...match,
@@ -1625,7 +1625,7 @@ function App() {
               firstPrice: first,
             };
           });
-        
+
         setMarketsData(processedMarkets);
       } catch (error) {
         console.error("error fetching candles:", error);
@@ -1636,21 +1636,21 @@ function App() {
   }, [markets, dayKlines]);
 
   // tokeninfo modal updating
-  useEffect(() => { 
+  useEffect(() => {
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
         const trades = tradesByMarket[market.marketKey] || [];
 
         if (trades.length === 0) return market;
-  
+
         const latestTrade = trades[trades.length - 1];
         const currentPriceRaw = Number(latestTrade[3]);
         const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
         const tradeVolume = (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) / 10 ** Number(market.quoteDecimals);
-          
+
         return {
           ...market,
-          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) +  tradeVolume).toFixed(2)),
+          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) + tradeVolume).toFixed(2)),
           currentPrice: formatSubscript(
             (currentPriceRaw / Number(market.priceFactor)).toFixed(
               Math.log10(Number(market.priceFactor))
@@ -1662,7 +1662,7 @@ function App() {
         };
       })
     );
-  }, [tradesByMarket]); 
+  }, [tradesByMarket]);
 
   // search
   useEffect(() => {
@@ -2770,11 +2770,11 @@ function App() {
       (async () => {
         try {
           const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-  
+
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
-  
+
           const query = `
             query {
               orderFilledBatches(first: 10, orderDirection: desc, orderBy: id) {
@@ -2815,15 +2815,15 @@ function App() {
               }
             }
           `;
-  
+
           const response = await fetch(endpoint, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ query }),
           });
-  
+
           const result = await response.json();
-  
+
           const filledBatches = result?.data?.orderFilledBatches || [];
           for (const batch of filledBatches) {
             const orders = batch.orders || [];
@@ -2843,7 +2843,7 @@ function App() {
               }
             }
           }
-  
+
           const updatedMaps = result?.data?.orderMaps || [];
           for (const orderMap of updatedMaps) {
             const batches = orderMap.batches || [];
@@ -2864,7 +2864,7 @@ function App() {
                   Number(order.originalSizeQuote.toString()),
                   order.status,
                 ];
-          
+
                 if (order.status === 2) {
                   temporders.push(row);
                   tempcanceledorders.push(row);
@@ -2873,12 +2873,12 @@ function App() {
                 }
               }
             }
-          }        
-  
+          }
+
           settradehistory((prev) => [...temptradehistory, ...prev]);
           setorders((prev) => [...temporders, ...prev]);
           setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
-  
+
           setaddressinfoloading(false);
         } catch (error) {
           console.error("Error fetching logs:", error);
@@ -2909,7 +2909,7 @@ function App() {
         });
         const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
         let allLogs: any[] = [];
-        
+
         const query = `
           query {
             orders1: orderFilleds(
@@ -3016,15 +3016,15 @@ function App() {
             }
           }
         `;
-      
+
         const response = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
-        
+
         const json = await response.json();
-        
+
         const orders = json.data.orders1
           .concat(
             json.data.orders2,
@@ -3032,7 +3032,7 @@ function App() {
             json.data.orders4,
             json.data.orders5
           );
-        
+
         allLogs = allLogs.concat(orders);
 
         if (Array.isArray(allLogs)) {
@@ -3080,7 +3080,7 @@ function App() {
             ).toFixed(2)}`,
           );
         }
-        
+
         setDayKlines(json.data.series_collection);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -3459,16 +3459,16 @@ function App() {
           blurref.current.style.height = `${offsetHeight}px`;
         }
       };
-  
+
       updateBlurSize();
-  
+
       const resizeObserver = new ResizeObserver(updateBlurSize);
       resizeObserver.observe(popupref.current);
-  
+
       return () => resizeObserver.disconnect();
     }
   }, [popup, connected]);
-  
+
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -4725,7 +4725,7 @@ function App() {
                     onCompositionEnd={(
                       e: React.CompositionEvent<HTMLInputElement>,
                     ) => {
-                      setIsComposing(false);      
+                      setIsComposing(false);
                       if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                         if (displayMode == 'usd') {
                           if (e.currentTarget.value == '$') {
@@ -4885,158 +4885,158 @@ function App() {
                 </div>
               </div>
               <div className="swap-container-divider" />
-<div className="sendaddressbg">
-  <div className="send-To">{t('to')}</div>
-  <div className="send-address-input-container">
-    <input
-      className="send-output"
-      onChange={(e) => {
-        if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
-          setrecipient(e.target.value);
-        }
-      }}
-      value={recipient}
-      placeholder={t('enterWalletAddress')}
-    />
-    <button 
-      className="address-paste-button"
-      onClick={async () => {
-        try {
-          const text = await navigator.clipboard.readText();
-          if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
-            setrecipient(text);
-          }
-        } catch (err) {
-        }
-      }}
-      title={t('pasteAddress')}
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-      </svg>
-    </button>
-  </div>
-</div>
-<button
-  className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
-  onClick={async () => {
-    if (
-      connected &&
-      userchain === activechain
-    ) {
-      try {
-        if (tokenIn == eth) {
-          const hash = await sendeth(
-            sendUserOperationAsync,
-            recipient as `0x${string}`,
-            amountIn,
-          );
-          newTxPopup(
-            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-            'send',
-            eth,
-            '',
-            customRound(
-              Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
-              3,
-            ),
-            0,
-            '',
-            recipient,
-          );
-        } else {
-          const hash = await sendtokens(
-            sendUserOperationAsync,
-            tokenIn as `0x${string}`,
-            recipient as `0x${string}`,
-            amountIn,
-          );
-          newTxPopup(
-            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-            'send',
-            tokenIn,
-            '',
-            customRound(
-              Number(amountIn) /
-              10 ** Number(tokendict[tokenIn].decimals),
-              3,
-            ),
-            0,
-            '',
-            recipient,
-          );
-        }
-        setInputString('');
-        setsendInputString('');
-        setamountIn(BigInt(0));
-        setSliderPercent(0);
-        setSendButton(0);
-        setSendButtonDisabled(true);
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector(
-          '.slider-percentage-popup',
-        );
-        if (slider && popup) {
-          (popup as HTMLElement).style.left = `${15 / 2}px`;
-        }
-      } catch (error) {
-      } finally {
-        setTimeout(() => refetch(), 500)
-      }
-    } else {
-      !connected
-        ? setpopup(4)
-        : handleSetChain()
-    }
-  }}
-  disabled={sendButtonDisabled || isSendingUserOperation}
->
-  {isSendingUserOperation ? (
-    <div className="button-content">
-      <div className="loading-spinner" />
-      {t('signTransaction')}
-    </div>
-  ) : !connected ? (
-    t('connectWallet')
-  ) : sendButton == 0 ? (
-    t('enterAmount')
-  ) : sendButton == 1 ? (
-    t('enterWalletAddress')
-  ) : sendButton == 2 ? (
-    t('send')
-  ) : sendButton == 3 ? (
-    t('insufficient') +
-    (tokendict[tokenIn].ticker || '?') +
-    ' ' +
-    t('bal')
-  ) : sendButton == 4 ? (
-    `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-  ) : (
-    t('connectWallet')
-  )}
-</button>
+              <div className="sendaddressbg">
+                <div className="send-To">{t('to')}</div>
+                <div className="send-address-input-container">
+                  <input
+                    className="send-output"
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+                        setrecipient(e.target.value);
+                      }
+                    }}
+                    value={recipient}
+                    placeholder={t('enterWalletAddress')}
+                  />
+                  <button
+                    className="address-paste-button"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+                          setrecipient(text);
+                        }
+                      } catch (err) {
+                      }
+                    }}
+                    title={t('pasteAddress')}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button
+                className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+                onClick={async () => {
+                  if (
+                    connected &&
+                    userchain === activechain
+                  ) {
+                    try {
+                      if (tokenIn == eth) {
+                        const hash = await sendeth(
+                          sendUserOperationAsync,
+                          recipient as `0x${string}`,
+                          amountIn,
+                        );
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          'send',
+                          eth,
+                          '',
+                          customRound(
+                            Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      } else {
+                        const hash = await sendtokens(
+                          sendUserOperationAsync,
+                          tokenIn as `0x${string}`,
+                          recipient as `0x${string}`,
+                          amountIn,
+                        );
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          'send',
+                          tokenIn,
+                          '',
+                          customRound(
+                            Number(amountIn) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      }
+                      setInputString('');
+                      setsendInputString('');
+                      setamountIn(BigInt(0));
+                      setSliderPercent(0);
+                      setSendButton(0);
+                      setSendButtonDisabled(true);
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        (popup as HTMLElement).style.left = `${15 / 2}px`;
+                      }
+                    } catch (error) {
+                    } finally {
+                      setTimeout(() => refetch(), 500)
+                    }
+                  } else {
+                    !connected
+                      ? setpopup(4)
+                      : handleSetChain()
+                  }
+                }}
+                disabled={sendButtonDisabled || isSendingUserOperation}
+              >
+                {isSendingUserOperation ? (
+                  <div className="button-content">
+                    <div className="loading-spinner" />
+                    {t('signTransaction')}
+                  </div>
+                ) : !connected ? (
+                  t('connectWallet')
+                ) : sendButton == 0 ? (
+                  t('enterAmount')
+                ) : sendButton == 1 ? (
+                  t('enterWalletAddress')
+                ) : sendButton == 2 ? (
+                  t('send')
+                ) : sendButton == 3 ? (
+                  t('insufficient') +
+                  (tokendict[tokenIn].ticker || '?') +
+                  ' ' +
+                  t('bal')
+                ) : sendButton == 4 ? (
+                  `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+                ) : (
+                  t('connectWallet')
+                )}
+              </button>
             </div>
           </div>
         ) : null}
-     {popup === 4 && !isGeneratingAddressVisible && !isDepositPageVisible ? (
-        !connected ? (
-          <div ref={popupref} className="connect-wallet-background unconnected">
-            <div className="connect-wallet-content-container">
-              <AuthCard {...alchemyconfig.ui.auth} />
+        {popup === 4 && !isGeneratingAddressVisible && !isDepositPageVisible ? (
+          !connected ? (
+            <div ref={popupref} className="connect-wallet-background unconnected">
+              <div className="connect-wallet-content-container">
+                <AuthCard {...alchemyconfig.ui.auth} />
+              </div>
             </div>
-          </div>
-        ) : (
-        <div ref={popupref} className="connect-wallet-background connected">
+          ) : (
+            <div ref={popupref} className="connect-wallet-background connected">
               <div className="wallet-header">
                 <div className="wallet-info"
                   onMouseEnter={() =>
@@ -5375,15 +5375,15 @@ function App() {
                     />
                   </div>
                   <div className="audio-toggle-row">
-                  <span className="audio-toggle-label">{t('audioNotifications')}</span>
-                  <ToggleSwitch
-                    checked={isAudioEnabled}
-                    onChange={() => {
-                      setIsAudioEnabled(!isAudioEnabled);
-                      localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
-                    }}
-                  />
-                </div>
+                    <span className="audio-toggle-label">{t('audioNotifications')}</span>
+                    <ToggleSwitch
+                      checked={isAudioEnabled}
+                      onChange={() => {
+                        setIsAudioEnabled(!isAudioEnabled);
+                        localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+                      }}
+                    />
+                  </div>
 
                   <button
                     className="revert-settings-button"
@@ -5891,17 +5891,23 @@ function App() {
     <div className="rectangle">
       <div className="navlinkwrapper" data-active={activeTab}>
 
-    
+
         <div className="innernavlinkwrapper">
           <Link
             to="/swap"
             className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            onClick={(e) => {
+              if (location.pathname === '/swap') {
+                e.preventDefault();
+              }
+            }}
           >
             {t('swap')}
           </Link>
           <Link
             to="/limit"
             className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+
           >
             {t('limit')}
           </Link>
@@ -5963,8 +5969,8 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${connected && amountIn > tokenBalances[tokenIn]
-              ? 'exceed-balance'
-              : ''
+            ? 'exceed-balance'
+            : ''
             }`}
         >
           <div className="Pay">{t('pay')}</div>
@@ -5976,9 +5982,8 @@ function App() {
             ) : (
               <input
                 inputMode="decimal"
-                className={`input ${
-                  connected &&
-                  amountIn > tokenBalances[tokenIn]
+                className={`input ${connected &&
+                    amountIn > tokenBalances[tokenIn]
                     ? 'exceed-balance'
                     : ''
                   }`}
@@ -6083,9 +6088,9 @@ function App() {
             )}
             <button
               className={`button1 ${connected &&
-                  amountIn > tokenBalances[tokenIn]
-                  ? 'exceed-balance'
-                  : ''
+                amountIn > tokenBalances[tokenIn]
+                ? 'exceed-balance'
+                : ''
                 }`}
               onClick={() => {
                 setpopup(1);
@@ -7019,9 +7024,8 @@ function App() {
             <div className="slippage-input-container">
               <input
                 inputMode="decimal"
-                className={`slippage-inline-input ${
-                  parseFloat(slippageString) > 5 ? 'red' : ''
-                }`}
+                className={`slippage-inline-input ${parseFloat(slippageString) > 5 ? 'red' : ''
+                  }`}
                 type="text"
                 value={slippageString}
                 onChange={(e) => {
@@ -7164,17 +7168,17 @@ function App() {
             </div>
           ))}
       </div>
-  <div className="orders-info-rectangle">
-    <SimpleOrdersContainer 
-      orders={orders}
-      router={router}
-      address={address}
-      trades={tradesByMarket}
-      refetch={refetch}
-      sendUserOperation={sendUserOperation}
-      setChain={handleSetChain}
-    />
-  </div>
+      <div className="orders-info-rectangle">
+        <SimpleOrdersContainer
+          orders={orders}
+          router={router}
+          address={address}
+          trades={tradesByMarket}
+          refetch={refetch}
+          sendUserOperation={sendUserOperation}
+          setChain={handleSetChain}
+        />
+      </div>
 
     </div>
   );
@@ -7193,6 +7197,11 @@ function App() {
           <Link
             to="/limit"
             className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            onClick={(e) => {
+              if (location.pathname === '/limit') {
+                e.preventDefault();
+              }
+            }}
           >
             {t('limit')}
           </Link>
@@ -7254,31 +7263,30 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${connected &&
-              ((amountIn > tokenBalances[tokenIn] &&
-                !isLoading &&
-                !stateIsLoading) ||
-                (amountIn != BigInt(0) &&
-                  (tokenIn == activeMarket.quoteAddress
-                    ? amountIn < activeMarket.minSize
-                    : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                    activeMarket.minSize)))
-              ? 'exceed-balance'
-              : ''
+            ((amountIn > tokenBalances[tokenIn] &&
+              !isLoading &&
+              !stateIsLoading) ||
+              (amountIn != BigInt(0) &&
+                (tokenIn == activeMarket.quoteAddress
+                  ? amountIn < activeMarket.minSize
+                  : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                  activeMarket.minSize)))
+            ? 'exceed-balance'
+            : ''
             }`}
         >
           <div className="Pay">{t('pay')}</div>
           <div className="inputbutton1container">
             <input
               inputMode="decimal"
-              className={`input ${
-                connected &&
-                ((amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading) ||
-                  (amountIn !== BigInt(0) &&
-                    (tokenIn === activeMarket.quoteAddress
-                      ? amountIn < activeMarket.minSize
-                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+              className={`input ${connected &&
+                  ((amountIn > tokenBalances[tokenIn] &&
+                    !isLoading &&
+                    !stateIsLoading) ||
+                    (amountIn !== BigInt(0) &&
+                      (tokenIn === activeMarket.quoteAddress
+                        ? amountIn < activeMarket.minSize
+                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
                         activeMarket.minSize)))
                   ? 'exceed-balance'
                   : ''
@@ -7444,16 +7452,16 @@ function App() {
             />
             <button
               className={`button1 ${connected &&
-                  ((amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading) ||
-                    (amountIn != BigInt(0) &&
-                      (tokenIn == activeMarket.quoteAddress
-                        ? amountIn < activeMarket.minSize
-                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                        activeMarket.minSize)))
-                  ? 'exceed-balance'
-                  : ''
+                ((amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading) ||
+                  (amountIn != BigInt(0) &&
+                    (tokenIn == activeMarket.quoteAddress
+                      ? amountIn < activeMarket.minSize
+                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                      activeMarket.minSize)))
+                ? 'exceed-balance'
+                : ''
                 }`}
               onClick={() => {
                 setpopup(1);
@@ -7910,23 +7918,23 @@ function App() {
 
         <div
           className={`limitbg ${connected &&
-              !(
-                amountIn > tokenBalances[tokenIn] &&
-                !isLoading &&
-                !stateIsLoading
-              ) &&
-              addliquidityonly &&
-              amountIn != BigInt(0) &&
-              ((limitPrice >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
-                (limitPrice <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)) &&
-              !(tokenIn == activeMarket.quoteAddress
-                ? amountIn < activeMarket.minSize
-                : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                activeMarket.minSize)
-              ? 'exceed-balance'
-              : ''
+            !(
+              amountIn > tokenBalances[tokenIn] &&
+              !isLoading &&
+              !stateIsLoading
+            ) &&
+            addliquidityonly &&
+            amountIn != BigInt(0) &&
+            ((limitPrice >= lowestAsk &&
+              tokenIn == activeMarket.quoteAddress) ||
+              (limitPrice <= highestBid &&
+                tokenIn == activeMarket.baseAddress)) &&
+            !(tokenIn == activeMarket.quoteAddress
+              ? amountIn < activeMarket.minSize
+              : (amountIn * limitPrice) / activeMarket.scaleFactor <
+              activeMarket.minSize)
+            ? 'exceed-balance'
+            : ''
             }`}
         >
           <div className="limit-label">
@@ -7958,22 +7966,21 @@ function App() {
           <div className="limitpricecontainer">
             <input
               inputMode="decimal"
-              className={`limit-order ${
-                connected &&
-                !(
-                  amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading
-                ) &&
-                addliquidityonly &&
-                amountIn != BigInt(0) &&
-                ((limitPrice >= lowestAsk &&
-                  tokenIn == activeMarket.quoteAddress) ||
-                  (limitPrice <= highestBid &&
-                    tokenIn == activeMarket.baseAddress)) &&
-                !(tokenIn == activeMarket.quoteAddress
-                  ? amountIn < activeMarket.minSize
-                  : (amountIn * limitPrice) / activeMarket.scaleFactor <
+              className={`limit-order ${connected &&
+                  !(
+                    amountIn > tokenBalances[tokenIn] &&
+                    !isLoading &&
+                    !stateIsLoading
+                  ) &&
+                  addliquidityonly &&
+                  amountIn != BigInt(0) &&
+                  ((limitPrice >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress) ||
+                    (limitPrice <= highestBid &&
+                      tokenIn == activeMarket.baseAddress)) &&
+                  !(tokenIn == activeMarket.quoteAddress
+                    ? amountIn < activeMarket.minSize
+                    : (amountIn * limitPrice) / activeMarket.scaleFactor <
                     activeMarket.minSize)
                   ? 'exceed-balance'
                   : ''
@@ -8413,16 +8420,16 @@ function App() {
           )}
       </div>
       <div className="orders-info-rectangle">
-    <SimpleOrdersContainer 
-      orders={orders}
-      router={router}
-      address={address}
-      trades={tradesByMarket}
-      refetch={refetch}
-      sendUserOperation={sendUserOperation}
-      setChain={handleSetChain}
-    />
-  </div>
+        <SimpleOrdersContainer
+          orders={orders}
+          router={router}
+          address={address}
+          trades={tradesByMarket}
+          refetch={refetch}
+          sendUserOperation={sendUserOperation}
+          setChain={handleSetChain}
+        />
+      </div>
     </div>
   );
 
@@ -8475,9 +8482,12 @@ function App() {
               <Link
                 to="/send"
                 className="dropdown-item"
-                onClick={() => {
+                onClick={(e) => {
                   setShowSendDropdown(false);
                   setCurrentProText(t('send'));
+                  if (location.pathname === '/send') {
+                    e.preventDefault();
+                  }
                 }}
               >
                 {t('send')}
@@ -8500,8 +8510,8 @@ function App() {
       <div className="swapmodal">
         <div
           className={`sendbg ${connected && amountIn > tokenBalances[tokenIn]
-              ? 'exceed-balance'
-              : ''
+            ? 'exceed-balance'
+            : ''
             }`}
         >
           <div className="sendbutton1container">
@@ -8519,9 +8529,8 @@ function App() {
           <div className="sendinputcontainer">
             <input
               inputMode="decimal"
-              className={`send-input ${
-                connected &&
-                amountIn > tokenBalances[tokenIn]
+              className={`send-input ${connected &&
+                  amountIn > tokenBalances[tokenIn]
                   ? 'exceed-balance'
                   : ''
                 }`}
@@ -8945,159 +8954,159 @@ function App() {
         </div>
         <div className="swap-container-divider" />
 
-<div className="sendaddressbg">
-  <div className="send-To">{t('to')}</div>
-  <div className="send-address-input-container">
-    <input
-      className="send-output"
-      onChange={(e) => {
-        if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
-          setrecipient(e.target.value);
-        }
-      }}
-      value={recipient}
-      placeholder={t('enterWalletAddress')}
-    />
-    <button 
-      className="address-paste-button"
-      onClick={async () => {
-        try {
-          const text = await navigator.clipboard.readText();
-          if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
-            setrecipient(text);
-          }
-        } catch (err) {
-          console.error('Failed to read clipboard: ', err);
-        }
-      }}
-      title={t('pasteAddress')}
-    >
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-      </svg>
-    </button>
-  </div>
-</div>
-<button
-  className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
-  onClick={async () => {
-    if (
-      connected &&
-      userchain === activechain
-    ) {
-      try {
-        if (tokenIn == eth) {
-          const hash = await sendeth(
-            sendUserOperationAsync,
-            recipient as `0x${string}`,
-            amountIn,
-          );
-          newTxPopup(
-            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-            'send',
-            eth,
-            '',
-            customRound(
-              Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
-              3,
-            ),
-            0,
-            '',
-            recipient,
-          );
-        } else {
-          const hash = await sendtokens(
-            sendUserOperationAsync,
-            tokenIn as `0x${string}`,
-            recipient as `0x${string}`,
-            amountIn,
-          );
-          newTxPopup(
-            (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-            'send',
-            tokenIn,
-            '',
-            customRound(
-              Number(amountIn) /
-              10 ** Number(tokendict[tokenIn].decimals),
-              3,
-            ),
-            0,
-            '',
-            recipient,
-          );
-        }
-        setInputString('');
-        setsendInputString('');
-        setamountIn(BigInt(0));
-        setSliderPercent(0);
-        setSendButton(0);
-        setSendButtonDisabled(true);
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector(
-          '.slider-percentage-popup',
-        );
-        if (slider && popup) {
-          (popup as HTMLElement).style.left = `${15 / 2}px`;
-        }
-      } catch (error) {
-      } finally {
-        setTimeout(() => refetch(), 500)
-      }
-    } else {
-      !connected
-        ? setpopup(4)
-        : handleSetChain()
-    }
-  }}
-  disabled={sendButtonDisabled || isSendingUserOperation}
->
-  {isSendingUserOperation ? (
-    <div className="button-content">
-      <div className="loading-spinner" />
-      {t('signTransaction')}
-    </div>
-  ) : !connected ? (
-    t('connectWallet')
-  ) : sendButton == 0 ? (
-    t('enterAmount')
-  ) : sendButton == 1 ? (
-    t('enterWalletAddress')
-  ) : sendButton == 2 ? (
-    t('send')
-  ) : sendButton == 3 ? (
-    t('insufficient') +
-    (tokendict[tokenIn].ticker || '?') +
-    ' ' +
-    t('bal')
-  ) : sendButton == 4 ? (
-    `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-  ) : (
-    t('connectWallet')
-  )}
-</button>
+        <div className="sendaddressbg">
+          <div className="send-To">{t('to')}</div>
+          <div className="send-address-input-container">
+            <input
+              className="send-output"
+              onChange={(e) => {
+                if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+                  setrecipient(e.target.value);
+                }
+              }}
+              value={recipient}
+              placeholder={t('enterWalletAddress')}
+            />
+            <button
+              className="address-paste-button"
+              onClick={async () => {
+                try {
+                  const text = await navigator.clipboard.readText();
+                  if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+                    setrecipient(text);
+                  }
+                } catch (err) {
+                  console.error('Failed to read clipboard: ', err);
+                }
+              }}
+              title={t('pasteAddress')}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+              </svg>
+            </button>
+          </div>
+        </div>
+        <button
+          className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+          onClick={async () => {
+            if (
+              connected &&
+              userchain === activechain
+            ) {
+              try {
+                if (tokenIn == eth) {
+                  const hash = await sendeth(
+                    sendUserOperationAsync,
+                    recipient as `0x${string}`,
+                    amountIn,
+                  );
+                  newTxPopup(
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    'send',
+                    eth,
+                    '',
+                    customRound(
+                      Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
+                      3,
+                    ),
+                    0,
+                    '',
+                    recipient,
+                  );
+                } else {
+                  const hash = await sendtokens(
+                    sendUserOperationAsync,
+                    tokenIn as `0x${string}`,
+                    recipient as `0x${string}`,
+                    amountIn,
+                  );
+                  newTxPopup(
+                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    'send',
+                    tokenIn,
+                    '',
+                    customRound(
+                      Number(amountIn) /
+                      10 ** Number(tokendict[tokenIn].decimals),
+                      3,
+                    ),
+                    0,
+                    '',
+                    recipient,
+                  );
+                }
+                setInputString('');
+                setsendInputString('');
+                setamountIn(BigInt(0));
+                setSliderPercent(0);
+                setSendButton(0);
+                setSendButtonDisabled(true);
+                const slider = document.querySelector('.balance-amount-slider');
+                const popup = document.querySelector(
+                  '.slider-percentage-popup',
+                );
+                if (slider && popup) {
+                  (popup as HTMLElement).style.left = `${15 / 2}px`;
+                }
+              } catch (error) {
+              } finally {
+                setTimeout(() => refetch(), 500)
+              }
+            } else {
+              !connected
+                ? setpopup(4)
+                : handleSetChain()
+            }
+          }}
+          disabled={sendButtonDisabled || isSendingUserOperation}
+        >
+          {isSendingUserOperation ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              {t('signTransaction')}
+            </div>
+          ) : !connected ? (
+            t('connectWallet')
+          ) : sendButton == 0 ? (
+            t('enterAmount')
+          ) : sendButton == 1 ? (
+            t('enterWalletAddress')
+          ) : sendButton == 2 ? (
+            t('send')
+          ) : sendButton == 3 ? (
+            t('insufficient') +
+            (tokendict[tokenIn].ticker || '?') +
+            ' ' +
+            t('bal')
+          ) : sendButton == 4 ? (
+            `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+          ) : (
+            t('connectWallet')
+          )}
+        </button>
       </div>
       <div className="orders-info-rectangle">
-    <SimpleOrdersContainer 
-      orders={orders}
-      router={router}
-      address={address}
-      trades={tradesByMarket}
-      refetch={refetch}
-      sendUserOperation={sendUserOperation}
-      setChain={handleSetChain}
-    />
-  </div>
+        <SimpleOrdersContainer
+          orders={orders}
+          router={router}
+          address={address}
+          trades={tradesByMarket}
+          refetch={refetch}
+          sendUserOperation={sendUserOperation}
+          setChain={handleSetChain}
+        />
+      </div>
     </div>
   );
 
@@ -9160,9 +9169,12 @@ function App() {
               <Link
                 to="/scale"
                 className="dropdown-item"
-                onClick={() => {
+                onClick={(e) => {
                   setShowSendDropdown(false);
                   setCurrentProText(t('scale'));
+                  if (location.pathname === '/scale') {
+                    e.preventDefault();
+                  }
                 }}
               >
                 {t('scale')}
@@ -9175,31 +9187,30 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${connected &&
-              ((amountIn > tokenBalances[tokenIn] &&
-                !isLoading &&
-                !stateIsLoading) ||
-                (amountIn != BigInt(0) &&
-                  (tokenIn == activeMarket.quoteAddress
-                    ? amountIn < activeMarket.minSize
-                    : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                    activeMarket.minSize)))
-              ? 'exceed-balance'
-              : ''
+            ((amountIn > tokenBalances[tokenIn] &&
+              !isLoading &&
+              !stateIsLoading) ||
+              (amountIn != BigInt(0) &&
+                (tokenIn == activeMarket.quoteAddress
+                  ? amountIn < activeMarket.minSize
+                  : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                  activeMarket.minSize)))
+            ? 'exceed-balance'
+            : ''
             }`}
         >
           <div className="Pay">{t('pay')}</div>
           <div className="inputbutton1container">
             <input
               inputMode="decimal"
-              className={`input ${
-                connected &&
-                ((amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading) ||
-                  (amountIn !== BigInt(0) &&
-                    (tokenIn === activeMarket.quoteAddress
-                      ? amountIn < activeMarket.minSize
-                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+              className={`input ${connected &&
+                  ((amountIn > tokenBalances[tokenIn] &&
+                    !isLoading &&
+                    !stateIsLoading) ||
+                    (amountIn !== BigInt(0) &&
+                      (tokenIn === activeMarket.quoteAddress
+                        ? amountIn < activeMarket.minSize
+                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
                         activeMarket.minSize)))
                   ? 'exceed-balance'
                   : ''
@@ -9255,16 +9266,16 @@ function App() {
             />
             <button
               className={`button1 ${connected &&
-                  ((amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading) ||
-                    (amountIn != BigInt(0) &&
-                      (tokenIn == activeMarket.quoteAddress
-                        ? amountIn < activeMarket.minSize
-                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                        activeMarket.minSize)))
-                  ? 'exceed-balance'
-                  : ''
+                ((amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading) ||
+                  (amountIn != BigInt(0) &&
+                    (tokenIn == activeMarket.quoteAddress
+                      ? amountIn < activeMarket.minSize
+                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                      activeMarket.minSize)))
+                ? 'exceed-balance'
+                : ''
                 }`}
               onClick={() => {
                 setpopup(1);
@@ -9528,22 +9539,22 @@ function App() {
         <div className="scale-start-end-container">
           <div
             className={`scalebgtop ${connected &&
-                !(
-                  amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading
-                ) &&
-                amountIn != BigInt(0) &&
-                ((scaleStart >= lowestAsk &&
-                  tokenIn == activeMarket.quoteAddress) ||
-                  (scaleStart <= highestBid &&
-                    tokenIn == activeMarket.baseAddress)) &&
-                !(tokenIn == activeMarket.quoteAddress
-                  ? amountIn < activeMarket.minSize
-                  : (amountIn * scaleStart) / activeMarket.scaleFactor <
-                  activeMarket.minSize)
-                ? 'exceed-balance'
-                : ''
+              !(
+                amountIn > tokenBalances[tokenIn] &&
+                !isLoading &&
+                !stateIsLoading
+              ) &&
+              amountIn != BigInt(0) &&
+              ((scaleStart >= lowestAsk &&
+                tokenIn == activeMarket.quoteAddress) ||
+                (scaleStart <= highestBid &&
+                  tokenIn == activeMarket.baseAddress)) &&
+              !(tokenIn == activeMarket.quoteAddress
+                ? amountIn < activeMarket.minSize
+                : (amountIn * scaleStart) / activeMarket.scaleFactor <
+                activeMarket.minSize)
+              ? 'exceed-balance'
+              : ''
               }`}
           >
             <div className="scalepricecontainer">
@@ -9551,22 +9562,22 @@ function App() {
               <input
                 inputMode="decimal"
                 className={`scale-input ${connected &&
-                    !(
-                      amountIn > tokenBalances[tokenIn] &&
-                      !isLoading &&
-                      !stateIsLoading
-                    ) &&
-                    amountIn != BigInt(0) &&
-                    ((scaleStart >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress) ||
-                      (scaleStart <= highestBid &&
-                        tokenIn == activeMarket.baseAddress)) &&
-                    !(tokenIn == activeMarket.quoteAddress
-                      ? amountIn < activeMarket.minSize
-                      : (amountIn * scaleStart) / activeMarket.scaleFactor <
-                      activeMarket.minSize)
-                    ? 'exceed-balance'
-                    : ''
+                  !(
+                    amountIn > tokenBalances[tokenIn] &&
+                    !isLoading &&
+                    !stateIsLoading
+                  ) &&
+                  amountIn != BigInt(0) &&
+                  ((scaleStart >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress) ||
+                    (scaleStart <= highestBid &&
+                      tokenIn == activeMarket.baseAddress)) &&
+                  !(tokenIn == activeMarket.quoteAddress
+                    ? amountIn < activeMarket.minSize
+                    : (amountIn * scaleStart) / activeMarket.scaleFactor <
+                    activeMarket.minSize)
+                  ? 'exceed-balance'
+                  : ''
                   }`}
                 onChange={(e) => {
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
@@ -9590,22 +9601,22 @@ function App() {
           </div>
           <div
             className={`scalebgtop ${connected &&
-                !(
-                  amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading
-                ) &&
-                amountIn != BigInt(0) &&
-                ((scaleEnd >= lowestAsk &&
-                  tokenIn == activeMarket.quoteAddress) ||
-                  (scaleEnd <= highestBid &&
-                    tokenIn == activeMarket.baseAddress)) &&
-                !(tokenIn == activeMarket.quoteAddress
-                  ? amountIn < activeMarket.minSize
-                  : (amountIn * scaleEnd) / activeMarket.scaleFactor <
-                  activeMarket.minSize)
-                ? 'exceed-balance'
-                : ''
+              !(
+                amountIn > tokenBalances[tokenIn] &&
+                !isLoading &&
+                !stateIsLoading
+              ) &&
+              amountIn != BigInt(0) &&
+              ((scaleEnd >= lowestAsk &&
+                tokenIn == activeMarket.quoteAddress) ||
+                (scaleEnd <= highestBid &&
+                  tokenIn == activeMarket.baseAddress)) &&
+              !(tokenIn == activeMarket.quoteAddress
+                ? amountIn < activeMarket.minSize
+                : (amountIn * scaleEnd) / activeMarket.scaleFactor <
+                activeMarket.minSize)
+              ? 'exceed-balance'
+              : ''
               }`}
           >
             <div className="scalepricecontainer">
@@ -9613,22 +9624,22 @@ function App() {
               <input
                 inputMode="decimal"
                 className={`scale-input ${connected &&
-                    !(
-                      amountIn > tokenBalances[tokenIn] &&
-                      !isLoading &&
-                      !stateIsLoading
-                    ) &&
-                    amountIn != BigInt(0) &&
-                    ((scaleEnd >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress) ||
-                      (scaleEnd <= highestBid &&
-                        tokenIn == activeMarket.baseAddress)) &&
-                    !(tokenIn == activeMarket.quoteAddress
-                      ? amountIn < activeMarket.minSize
-                      : (amountIn * scaleEnd) / activeMarket.scaleFactor <
-                      activeMarket.minSize)
-                    ? 'exceed-balance'
-                    : ''
+                  !(
+                    amountIn > tokenBalances[tokenIn] &&
+                    !isLoading &&
+                    !stateIsLoading
+                  ) &&
+                  amountIn != BigInt(0) &&
+                  ((scaleEnd >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress) ||
+                    (scaleEnd <= highestBid &&
+                      tokenIn == activeMarket.baseAddress)) &&
+                  !(tokenIn == activeMarket.quoteAddress
+                    ? amountIn < activeMarket.minSize
+                    : (amountIn * scaleEnd) / activeMarket.scaleFactor <
+                    activeMarket.minSize)
+                  ? 'exceed-balance'
+                  : ''
                   }`}
                 onChange={(e) => {
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
@@ -9654,8 +9665,8 @@ function App() {
         <div className="scale-size-skew">
           <div
             className={`scalebottombg ${scaleOrdersString == '1'
-                ? 'exceed-balance'
-                : ''
+              ? 'exceed-balance'
+              : ''
               }`}
           >
             <div className="scalebottomcontainer">
@@ -9663,8 +9674,8 @@ function App() {
               <input
                 inputMode="numeric" pattern="[0-9]*"
                 className={`scale-bottom-input ${scaleOrdersString == '1'
-                    ? 'exceed-balance'
-                    : ''
+                  ? 'exceed-balance'
+                  : ''
                   }`}
                 onChange={(e) => {
                   if (/^\d*$/.test(e.target.value) && Number(e.target.value) <= 100) {
@@ -10015,16 +10026,16 @@ function App() {
         </div>
       </div>
       <div className="orders-info-rectangle">
-    <SimpleOrdersContainer 
-      orders={orders}
-      router={router}
-      address={address}
-      trades={tradesByMarket}
-      refetch={refetch}
-      sendUserOperation={sendUserOperation}
-      setChain={handleSetChain}
-    />
-  </div>
+        <SimpleOrdersContainer
+          orders={orders}
+          router={router}
+          address={address}
+          trades={tradesByMarket}
+          refetch={refetch}
+          sendUserOperation={sendUserOperation}
+          setChain={handleSetChain}
+        />
+      </div>
     </div>
   );
 
@@ -10037,7 +10048,7 @@ function App() {
         <GeneratingAddressPopup isVisible={true} />
       )}
       {isDepositPageVisible && (
-        <DepositPage 
+        <DepositPage
           address={address}
           onClose={handleCloseDepositPage}
         />
@@ -10139,27 +10150,27 @@ function App() {
             }
           />
           <Route path="/leaderboard" element={
-            <Leaderboard 
-                totalXP={leaderboardData.totalXP}
-                currentXP={leaderboardData.currentXP}
-                username={leaderboardData.username}
-                userXP={leaderboardData.userXP}
-                factions={leaderboardData.factions.map(faction => ({
-                  ...faction,
-                  xp: faction.points,
-                  bonusXP: 0,
-                  growthPercentage: 0,
-                  logo: '',
-                  badgeIcon: ''
-                }))}
-      />
-      }>
-      </Route>
-      <Route path="/mint"
-      element={
-        <NFTMintingPage/> 
-      }>
-      </Route>
+            <Leaderboard
+              totalXP={leaderboardData.totalXP}
+              currentXP={leaderboardData.currentXP}
+              username={leaderboardData.username}
+              userXP={leaderboardData.userXP}
+              factions={leaderboardData.factions.map(faction => ({
+                ...faction,
+                xp: faction.points,
+                bonusXP: 0,
+                growthPercentage: 0,
+                logo: '',
+                badgeIcon: ''
+              }))}
+            />
+          }>
+          </Route>
+          <Route path="/mint"
+            element={
+              <NFTMintingPage />
+            }>
+          </Route>
           <Route
             path="/portfolio"
             element={

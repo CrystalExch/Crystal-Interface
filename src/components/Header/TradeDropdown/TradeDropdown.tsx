@@ -27,6 +27,9 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
 
   const handleViewChange = (view: 'simple' | 'pro') => {
     const isSimpleView = view === 'simple';
+    
+    const isTogglingSameView = (isSimpleView && simpleView) || (!isSimpleView && !simpleView);
+    
     setSimpleView(isSimpleView);
     localStorage.setItem('crystal_simple_view', JSON.stringify(isSimpleView));
     
@@ -40,10 +43,16 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
     
     window.dispatchEvent(new Event('resize'));
     onTradeDropdownClose();
+    
     if (setShowTrade) {
       setShowTrade(true);
     }
-    navigate('/swap');
+    
+    if (!isTogglingSameView || location.pathname !== '/swap') {
+      const currentParams = new URLSearchParams(location.search);
+      const targetPath = '/swap' + (currentParams.toString() ? `?${currentParams.toString()}` : '');
+      navigate(targetPath);
+    }
   };
 
   return (
