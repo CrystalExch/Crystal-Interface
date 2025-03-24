@@ -27,6 +27,7 @@
     border-radius: 8px;
     animation: fadeInSlideUp 0.2s ease forwards;
     display: none;
+    max-height: 200px;
   }
   .main-content-wrapper.simple-view .orders-info-rectangle {
     display: block;
@@ -86,7 +87,7 @@
   }
   
   .orders-table-body {
-    max-height: 180px;
+    max-height: 160px;
     overflow-y: auto;
     -ms-overflow-style: none;
     scrollbar-width: none;
