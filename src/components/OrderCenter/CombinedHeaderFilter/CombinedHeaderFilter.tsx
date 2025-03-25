@@ -41,6 +41,18 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   }, [currentPage]);
 
   useEffect(() => {
+    const adjustInputWidth = () => {
+      if (inputRef.current) {
+        const charWidth = 9; 
+        const contentWidth = `${Math.max(pageInput.length * charWidth, 8)}px`;
+        inputRef.current.style.width = contentWidth;
+      }
+    };
+    
+    adjustInputWidth();
+  }, [pageInput]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current && 

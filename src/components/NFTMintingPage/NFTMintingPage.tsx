@@ -11,7 +11,6 @@ const NFTMintingPage: React.FC = () => {
     seconds: 0
   });
   
-  // Mock NFT data
   const nftData = {
     name: "???",
     description: "Trade on Crystal to become eligible for our first NFT drop, coming soon...",
@@ -25,7 +24,7 @@ const NFTMintingPage: React.FC = () => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-03-24T12:00:00Z");
+      const targetDate = new Date("2025-03-31T12:00:00Z");
       const now = new Date();
       
       const difference = targetDate.getTime() - now.getTime();
