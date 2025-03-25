@@ -76,55 +76,60 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
-    ws.onopen = () => {
-      console.log("WebSocket connection established");
-    };
+    let isMounted = true;
+    let pollingInterval: NodeJS.Timeout;
     
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      // Transform the data to include username information
-      const transformedData: { [address: string]: LeaderboardEntry } = {};
-      
-      // Process each entry to ensure it has the right format
-      Object.entries(data).forEach(([address, pointsData]: [string, any]) => {
-        // Check if pointsData is a simple number or an object with points and username
-        if (typeof pointsData === 'number') {
-          transformedData[address] = {
-            address,
-            points: pointsData,
-            username: undefined // No username available
-          };
-        } else if (typeof pointsData === 'object') {
-          transformedData[address] = {
-            address,
-            points: pointsData.points || 0,
-            username: pointsData.username || undefined
-          };
+    const fetchPoints = async () => {
+      try {
+        const response = await fetch("https://points-backend-b5a062cda7cd.herokuapp.com/points");
+        
+        if (!isMounted) return;
+        
+        if (response.ok) {
+          const data = await response.json();
+          console.log(data);
+          
+          const transformedData: { [address: string]: LeaderboardEntry } = {};
+          
+          Object.entries(data).forEach(([address, pointsData]: [string, any]) => {
+            if (typeof pointsData === 'number') {
+              transformedData[address] = {
+                address,
+                points: pointsData,
+                username: undefined
+              };
+            } else if (typeof pointsData === 'object') {
+              transformedData[address] = {
+                address,
+                points: pointsData.points || 0,
+                username: pointsData.username || undefined
+              };
+            }
+          });
+          
+          setLiveLeaderboard(transformedData);
+          setTimeout(() => isMounted && setLoading(false), 1500); 
+        } else {
+          console.error("Error fetching points data:", response.statusText);
+          isMounted && setLoading(false);
         }
-      });
-      
-      setLiveLeaderboard(transformedData);
-      setTimeout(() => setLoading(false), 1500); // Adding a slight delay for better UX
+      } catch (error) {
+        console.error("Error fetching points data:", error);
+        isMounted && setLoading(false);
+      }
     };
     
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      // Set loading to false even if there's an error
-      setLoading(false);
-    };
+    fetchPoints();
     
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    // Set a timeout to disable loading state if data doesn't load quickly
+    pollingInterval = setInterval(fetchPoints, 3000);
+    
     const loadingTimeout = setTimeout(() => {
-      setLoading(false);
+      isMounted && setLoading(false);
     }, 5000);
-
+    
     return () => {
-      ws.close();
+      isMounted = false;
+      clearInterval(pollingInterval);
       clearTimeout(loadingTimeout);
     };
   }, []);
@@ -133,8 +138,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     if (Object.keys(liveLeaderboard).length > 0) {
       const liveEntries = Object.entries(liveLeaderboard).map(([address, entry]) => ({
         id: address,
-        name: address, // Keep address for reference
-        username: entry.username || address, // Use username if available, otherwise use address
+        name: address, 
+        username: entry.username || address,
         points: Number(entry.points),
         level: Math.max(1, Math.floor(Number(entry.points) / 1000)),
         rank: 0,
