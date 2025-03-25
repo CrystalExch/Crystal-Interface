@@ -2715,7 +2715,7 @@ function App() {
               orderMaps(where:{caller: "${address}"}) {
                 id
                 counter
-                batches(first: 11, orderDirection: desc, orderBy: id) {
+                batches(first: 10, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000) {
                     id
@@ -2731,6 +2731,24 @@ function App() {
                     timestamp
                     status
                   }
+                }
+              }
+              filledMaps(where:{caller: "${address}"}) {
+                id
+                counter
+                orders(first: 1000) {
+                  id
+                  caller
+                  originalSizeBase
+                  originalSizeQuote
+                  filledAmountBase
+                  filledSizeQuote
+                  price
+                  buySell
+                  contractAddress
+                  transactionHash
+                  timestamp
+                  status
                 }
               }
             }
@@ -2764,7 +2782,7 @@ function App() {
             }
           }
 
-          const updatedMaps = result?.data?.orderMaps || [];
+          const updatedMaps = (result?.data?.orderMaps || []).concat(result?.data?.filledMaps || []);
           for (const orderMap of updatedMaps) {
             const batches = orderMap.batches || [];
             for (const batch of batches) {
@@ -2787,6 +2805,19 @@ function App() {
 
                 if (order.status === 2) {
                   temporders.push(row);
+                  tempcanceledorders.push(row);
+                } else if (order.status === 1) {
+                  const row = [
+                    order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
+                    order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
+                    order.buySell,
+                    parseInt(order.id.split('-')[0], 10),
+                    marketKey,
+                    order.transactionHash,
+                    order.timestamp,
+                    0
+                  ]
+                  temptradehistory.push(row);
                   tempcanceledorders.push(row);
                 } else {
                   tempcanceledorders.push(row);
@@ -3010,7 +3041,7 @@ function App() {
   }, [activechain]);
 
   // click outside slippage and resize handler and click outside popup and showtrade esc
-  useEffect(() => {
+  useEffect(() => { 
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setpopup(0);
