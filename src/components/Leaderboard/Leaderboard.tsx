@@ -11,6 +11,7 @@ import ChallengeIntro from './ChallengeIntro';
 interface Faction {
   id: string; 
   name: string;
+  username: string; // Added username field
   points: number;
   level: number;
   rank: number;
@@ -40,6 +41,13 @@ interface TimeLeft {
   seconds: number;
 }
 
+// Interface for WebSocket data
+interface LeaderboardEntry {
+  address: string;
+  points: number;
+  username?: string; // username might be undefined
+}
+
 const ITEMS_PER_PAGE = 47;
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
@@ -64,24 +72,50 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     minutes: 0,
     seconds: 0
   });
-  const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
+  const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: LeaderboardEntry }>({});
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
     ws.onopen = () => {
+      console.log("WebSocket connection established");
     };
+    
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
-      setLiveLeaderboard(data);
+      // Transform the data to include username information
+      const transformedData: { [address: string]: LeaderboardEntry } = {};
+      
+      // Process each entry to ensure it has the right format
+      Object.entries(data).forEach(([address, pointsData]: [string, any]) => {
+        // Check if pointsData is a simple number or an object with points and username
+        if (typeof pointsData === 'number') {
+          transformedData[address] = {
+            address,
+            points: pointsData,
+            username: undefined // No username available
+          };
+        } else if (typeof pointsData === 'object') {
+          transformedData[address] = {
+            address,
+            points: pointsData.points || 0,
+            username: pointsData.username || undefined
+          };
+        }
+      });
+      
+      setLiveLeaderboard(transformedData);
       setTimeout(() => setLoading(false), 1500); // Adding a slight delay for better UX
     };
+    
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
       // Set loading to false even if there's an error
       setLoading(false);
     };
+    
     ws.onclose = () => {
+      console.log("WebSocket connection closed");
     };
 
     // Set a timeout to disable loading state if data doesn't load quickly
@@ -97,13 +131,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   
   useEffect(() => {
     if (Object.keys(liveLeaderboard).length > 0) {
-      const liveEntries = Object.entries(liveLeaderboard).map(([address, points]) => ({
+      const liveEntries = Object.entries(liveLeaderboard).map(([address, entry]) => ({
         id: address,
-        name: address,
-        points: Number(points),
-        level: Math.max(1, Math.floor(Number(points) / 1000)),
+        name: address, // Keep address for reference
+        username: entry.username || address, // Use username if available, otherwise use address
+        points: Number(entry.points),
+        level: Math.max(1, Math.floor(Number(entry.points) / 1000)),
         rank: 0,
-        xp: Number(points),
+        xp: Number(entry.points),
         logo: ``
       }));
       
@@ -142,7 +177,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   }, []);
   
   const findUserPosition = () => {
-    const userPosition = allFactions.findIndex(f => f.name === userData.username);
+    // Look for the user's position by name or address
+    const userPosition = allFactions.findIndex(f => 
+      f.name === userData.username || // Match by address
+      f.username === userData.username // Match by username
+    );
     return userPosition >= 0 ? userPosition : -1;
   };
   
@@ -209,11 +248,25 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const formatAddress = (address: string): string => {
+  const formatAddress = (address: string, username?: string): string => {
     if (!address) return "Guest";
     if (address === "Guest") return "Guest";
     
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    // If a username is provided and not empty, use it instead of the address
+    if (username && username.trim() !== "") {
+      // Check if the username is actually an ETH address (starts with 0x)
+      if (username.startsWith('0x') && username.length > 10) {
+        return `${username.substring(0, 6)}...${username.substring(username.length - 4)}`;
+      }
+      return username;
+    }
+    
+    // Otherwise, format the address if it looks like an ETH address
+    if (address.startsWith('0x') && address.length > 10) {
+      return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    }
+    
+    return address; // Return the original address if it doesn't look like an ETH address
   };
 
   const handleChallengeIntroComplete = (): void => {
@@ -279,7 +332,31 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       logo: updatedUserData.image
     });
     
+    // Also update the liveLeaderboard to reflect the username change
+    // Find the user's entry and update it
+    const userAddress = findUserAddressByUsername(userData.username);
+    if (userAddress) {
+      const updatedLeaderboard = { ...liveLeaderboard };
+      if (updatedLeaderboard[userAddress]) {
+        updatedLeaderboard[userAddress] = {
+          ...updatedLeaderboard[userAddress],
+          username: updatedUserData.username
+        };
+        setLiveLeaderboard(updatedLeaderboard);
+      }
+    }
+    
     setShowEditAccount(false);
+  };
+
+  // Helper function to find user's address by username
+  const findUserAddressByUsername = (username: string): string | null => {
+    for (const faction of allFactions) {
+      if (faction.username === username || faction.name === username) {
+        return faction.name; // The name property stores the address
+      }
+    }
+    return null;
   };
 
   const handleViewRules = (): void => {
@@ -320,8 +397,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return translations[text] || text;
   };
 
-  const isUserAddress = (address: string): boolean => {
-    return userData.username === address;
+  const isUserAddress = (address: string, username: string): boolean => {
+    return userData.username === address || userData.username === username;
+  };
+
+  // Calculate total XP from all entries
+  const getTotalXP = (): number => {
+    return Object.values(liveLeaderboard).reduce((sum, entry) => sum + entry.points, 0);
   };
 
   // Render top three loading placeholders
@@ -426,12 +508,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           
           <div className="progress-container">
             <div className="xp-display">
-              <span>{Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP</span>
+              <span>{getTotalXP().toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP</span>
             </div>
             <div className="progress-bar">
               <div
                 className="progress-fill"
-                style={{ width: `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%` }}
+                style={{ width: `${(getTotalXP() / 1000000000) * 100}%` }}
               ></div>
             </div>
           </div>
@@ -445,7 +527,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     <img src={userData.logo} className="username-logo" alt="User Avatar" />
                   )}
                   <span className="username">
-                    {userData.username ? formatAddress(userData.username) : "Guest"}
+                    {userData.username ? userData.username : "Guest"}
                   </span>
                 </div>
               </div>
@@ -496,7 +578,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           : topThreeUsers.map((faction, index) => (
             <div 
               key={faction.id} 
-              className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
+              className={`faction-card rank-${index + 1} ${isUserAddress(faction.name, faction.username) ? 'user-faction' : ''}`}
             >
               {index === 0 && (
                 <div className="crown-icon-container">
@@ -509,7 +591,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   src={''} 
                   className="faction-logo" 
                 />
-                <div className="faction-name">{formatAddress(faction.name)}</div>
+                <div className="faction-name">{formatAddress(faction.name, faction.username)}</div>
                 <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
               </div>
             </div>
@@ -529,7 +611,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             ? renderLoadingRows()
             : getCurrentPageItems().map((faction) => {
               const absoluteRank = faction.rank;
-              const isCurrentUser = isUserAddress(faction.name);
+              const isCurrentUser = isUserAddress(faction.name, faction.username);
               
               return (
                 <div 
@@ -544,7 +626,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       src={''} 
                       className="faction-small-logo" 
                     />
-                    <span className="faction-row-name">{formatAddress(faction.name)}</span>
+                    <span className="faction-row-name">{formatAddress(faction.name, faction.username)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
                   <div className="row-xp">
