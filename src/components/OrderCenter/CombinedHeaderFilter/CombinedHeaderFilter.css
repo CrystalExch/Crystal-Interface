@@ -130,20 +130,16 @@
   outline: none;
   color: #ffffff90;
   font-size: 0.75rem;
-  max-width: 24px;
+  width: auto;
+  min-width: 12px; 
   text-align: right;
   padding: 0;
   padding-right: 3px;
   padding-top: 1px;
   border-bottom: 1px solid transparent;
   transition: all 0.2s ease;
-  border-bottom: 1px solid #ffffff15;
-
 }
 
-.page-input:focus, .page-input:hover {
-  border-bottom: 1px solid #ffffff40;
-}
 
 .filter-left-arrow {
   width: 13px;
