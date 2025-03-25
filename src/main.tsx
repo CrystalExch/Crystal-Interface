@@ -18,7 +18,7 @@ const originalFetch = window.fetch;
 
 window.fetch = async (...args) => {
   const url = args[0];
-  if (typeof url === "string" && url.includes("segment.io")) {
+  if (typeof url === "string" && (url.includes("segment.io") || url.includes("google-analytics.com"))) {
     return Promise.resolve(new Response(null, { status: 204 }));
   }
   return originalFetch(...args);
