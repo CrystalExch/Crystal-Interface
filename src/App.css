@@ -3828,7 +3828,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
   @media (max-width: 1020px) {
     .navlink-dropdown {
-      left: calc(100% - 16.25vw);
       width: 32.5vw
     }
     
