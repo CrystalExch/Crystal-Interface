@@ -71,9 +71,7 @@ const Leaderboard: React.FC = () => {
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
-    ws.onopen = () => {
-      console.log("connect");
-    };
+    ws.onopen = () => {};
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setLiveLeaderboard(data);
@@ -84,9 +82,11 @@ const Leaderboard: React.FC = () => {
       setLoading(false);
     };
     ws.onclose = () => {};
+
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
     }, 5000);
+
     return () => {
       ws.close();
       clearTimeout(loadingTimeout);
@@ -97,7 +97,6 @@ const Leaderboard: React.FC = () => {
     fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames")
       .then((res) => res.json())
       .then((data: Record<string, UserInfo>) => {
-        console.log("Fetched user data:", data);
         const usernames = Object.fromEntries(
           Object.entries(data).map(([address, info]) => [address.toLowerCase(), { username: info.username }])
         );

@@ -101,8 +101,8 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       })
     })
       .then(res => res.json())
-      .then(response => {
-        console.log("Username update response:", response);
+      .then(result => {
+        console.log(result);
         onSaveChanges(updatedUserData);
       })
       .catch(err => {
