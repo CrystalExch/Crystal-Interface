@@ -4,9 +4,11 @@ import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
 import LeaderboardAccountSetup from './LeaderboardAccountSetup';
-import DeleteAccountPopup from './DeleteAccountPopup';
 import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
+import {
+  useSmartAccountClient,
+} from "@account-kit/react";
 
 interface Faction {
   id: string; 
@@ -48,7 +50,6 @@ const Leaderboard: React.FC = () => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [showAccountSetup, setShowAccountSetup] = useState<boolean>(false);
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState<boolean>(false);
   const [showEditAccount, setShowEditAccount] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserDisplayData>({
     username: "Guest",
@@ -68,7 +69,9 @@ const Leaderboard: React.FC = () => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<{ [address: string]: { username: string } }>({});
+  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
 
+  // Connect to WebSocket for live points updates
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
     ws.onopen = () => {};
@@ -93,17 +96,111 @@ const Leaderboard: React.FC = () => {
     };
   }, []);
 
+  // Fetch all usernames
   useEffect(() => {
-    fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames")
-      .then((res) => res.json())
-      .then((data: Record<string, UserInfo>) => {
-        const usernames = Object.fromEntries(
-          Object.entries(data).map(([address, info]) => [address.toLowerCase(), { username: info.username }])
-        );
-        setUserInfo(usernames);
-      })
-      .catch((err) => console.error("Error fetching user data:", err));
+    // Define a function to fetch usernames that we can call on load and after changes
+    const fetchUsernames = () => {
+      fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames")
+        .then((res) => res.json())
+        .then((data: Record<string, UserInfo>) => {
+          const usernames = Object.fromEntries(
+            Object.entries(data).map(([address, info]) => [address.toLowerCase(), { username: info.username }])
+          );
+          setUserInfo(usernames);
+        })
+        .catch((err) => console.error("Error fetching user data:", err));
+    };
+    
+    // Initial fetch
+    fetchUsernames();
+    
+    // Set up interval to refresh usernames every minute
+    // This ensures that after a page reload, all displayed usernames will be from the backend
+    const interval = setInterval(fetchUsernames, 60000);
+    
+    return () => {
+      clearInterval(interval);
+    };
   }, []);
+  
+  // Generate letter avatar helper function
+  const generateLetterAvatar = (name: string): string => {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.width = 200;
+    canvas.height = 200;
+
+    if (context) {
+      // Deterministic color based on username to prevent color changing on re-renders
+      // This uses a simple hash function to convert the name to a number
+      const getColorFromName = (name: string) => {
+        const colors = [
+          '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
+          '#9b59b6', '#1abc9c', '#34495e', '#16a085'
+        ];
+        
+        // Simple hash function
+        let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+          hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        // Make sure it's positive
+        hash = Math.abs(hash);
+        
+        // Use the hash to pick a color
+        return colors[hash % colors.length];
+      };
+
+      // Use deterministic color
+      context.fillStyle = getColorFromName(name);
+      context.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Font settings
+      context.font = 'bold 100px Arial';
+      context.fillStyle = 'white';
+      context.textAlign = 'center';
+      context.textBaseline = 'middle'; // This should center vertically
+      
+      // Add a small vertical adjustment to fine-tune the centering
+      // The value 105 instead of 100 (which would be canvas.height/2) adds a slight adjustment
+      context.fillText(name.charAt(0).toUpperCase(), canvas.width/2, canvas.height/2 + 5);
+    }
+
+    return canvas.toDataURL('image/png');
+  };
+  
+  // Check if current user has an account and fetch their data
+  useEffect(() => {
+    // Only run this if we have a connected address and userInfo has been loaded
+    if (address && Object.keys(userInfo).length > 0) {
+      const lowerCaseAddress = address.toLowerCase();
+      
+      // Check if the user has already seen the challenge intro
+      const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
+      
+      if (userInfo[lowerCaseAddress]) {
+        // User has an account in the backend
+        const points = liveLeaderboard[address] || 0;
+        
+        setUserData({
+          username: userInfo[lowerCaseAddress].username,
+          userXP: points,
+          logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
+        });
+        setHasAccount(true);
+        setShowChallengeIntro(false);
+      } else if (hasSeenIntro) {
+        // User has seen intro but doesn't have an account
+        setIsGuestMode(true);
+        setShowChallengeIntro(false);
+      } else {
+        // First time user - show challenge intro
+        setShowChallengeIntro(true);
+        setIntroStep(0);
+      }
+    }
+  }, [address, userInfo, liveLeaderboard]);
   
   useEffect(() => {
     if (Object.keys(liveLeaderboard).length > 0) {
@@ -126,27 +223,6 @@ const Leaderboard: React.FC = () => {
   }, [liveLeaderboard]);
   
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
-  
-  useEffect(() => {
-    const storedUserData = localStorage.getItem('leaderboard_user_data');
-    const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro');
-    if (storedUserData) {
-      const parsedData = JSON.parse(storedUserData) as UserData;
-      setUserData({
-        username: parsedData.username,
-        userXP: parsedData.xp,
-        logo: parsedData.image
-      });
-      setHasAccount(true);
-      setShowChallengeIntro(false);
-    } else if (hasSeenIntro === 'true') {
-      setIsGuestMode(true);
-      setShowChallengeIntro(false);
-    } else {
-      setShowChallengeIntro(true);
-      setIntroStep(0);
-    }
-  }, []);
   
   const findUserPosition = () => {
     const userPosition = allFactions.findIndex(f => f.name === userData.username);
@@ -211,7 +287,24 @@ const Leaderboard: React.FC = () => {
 
   const getDisplayName = (address: string): string => {
     const lowerAddr = address.toLowerCase();
-    return userInfo[lowerAddr]?.username || address;
+    
+    // If we have a username for this address, return it
+    if (userInfo[lowerAddr]?.username) {
+      return userInfo[lowerAddr].username;
+    }
+    
+    // Otherwise, check if it's an Ethereum address and format it
+    if (
+      address.startsWith('0x') && 
+      address.length === 42 && 
+      /^0x[0-9a-fA-F]{40}$/.test(address)
+    ) {
+      // Return the truncated address format: 0x1234...5678
+      return `${address.slice(0, 6)}...${address.slice(-4)}`;
+    }
+    
+    // If it's not an Ethereum address or doesn't match the pattern, return as is
+    return address;
   };
 
   const handleChallengeIntroComplete = (): void => {
@@ -234,40 +327,89 @@ const Leaderboard: React.FC = () => {
     });
   };
   
-  const handleAccountSetupComplete = (newUserData: UserData): void => {
-    localStorage.setItem('leaderboard_user_data', JSON.stringify(newUserData));
+  const handleAccountSetupComplete = async (newUserData: UserData): Promise<void> => {
+    // Immediately update UI for better user experience
     setUserData({
       username: newUserData.username,
-      userXP: newUserData.xp,
+      userXP: 0, // Initial XP value
       logo: newUserData.image
     });
     setHasAccount(true);
+    
+    if (address) {
+      // Update local userInfo state for consistency in the current session
+      setUserInfo(prevUserInfo => ({
+        ...prevUserInfo,
+        [address.toLowerCase()]: { username: newUserData.username }
+      }));
+      
+      try {
+        // Send the new user data to the backend
+        const response = await fetch('https://points-backend-b5a062cda7cd.herokuapp.com/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            address: address,
+            username: newUserData.username,
+            // Include other necessary data
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to register user with the backend');
+          // Consider showing an error message to the user
+        }
+      } catch (error) {
+        console.error('Error sending user data to backend:', error);
+      }
+    }
+    
     setShowAccountSetup(false);
     setDirectAccountSetup(false);
   };
 
-  const handleDeleteAccount = (): void => {
-    localStorage.removeItem('leaderboard_user_data');
-    setHasAccount(false);
-    setUserData({
-      username: "",
-      userXP: 0,
-      logo: ""
-    });
-    setShowDeleteConfirmation(false);
-  };
   
   const handleEditAccount = (): void => {
     setShowEditAccount(true);
   };
   
-  const handleSaveAccountChanges = (updatedUserData: UserData): void => {
-    localStorage.setItem('leaderboard_user_data', JSON.stringify(updatedUserData));
+  const handleSaveAccountChanges = async (updatedUserData: UserData): Promise<void> => {
     setUserData({
       username: updatedUserData.username,
       userXP: updatedUserData.xp,
       logo: updatedUserData.image
     });
+    
+    if (address) {
+      setUserInfo(prevUserInfo => ({
+        ...prevUserInfo,
+        [address.toLowerCase()]: { username: updatedUserData.username }
+      }));
+      
+      try {
+        const response = await fetch('https://points-backend-b5a062cda7cd.herokuapp.com/update-account', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            address: address,
+            username: updatedUserData.username,
+            // Include other necessary data
+          }),
+        });
+        
+        if (!response.ok) {
+          console.error('Failed to update user in the backend');
+          // Consider showing an error message to the user
+        }
+      } catch (error) {
+        console.error('Error updating user data in backend:', error);
+      }
+    }
+    
     setShowEditAccount(false);
   };
 
@@ -308,8 +450,9 @@ const Leaderboard: React.FC = () => {
     return translations[text] || text;
   };
 
-  const isUserAddress = (address: string): boolean => {
-    return userData.username === address;
+  const isUserAddress = (factionAddress: string): boolean => {
+    // Check if the user is connected and if this faction address matches the connected wallet
+    return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
   };
 
   const renderLoadingTopThree = () => {
@@ -353,6 +496,16 @@ const Leaderboard: React.FC = () => {
     ));
   };
 
+  // Show account setup if user is connected but doesn't have an account
+  useEffect(() => {
+    if (address && !hasAccount && !showChallengeIntro && !isGuestMode && Object.keys(userInfo).length > 0) {
+      const lowerCaseAddress = address.toLowerCase();
+      if (!userInfo[lowerCaseAddress]) {
+        setShowAccountSetup(true);
+      }
+    }
+  }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
+
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
       {showChallengeIntro && (
@@ -371,21 +524,6 @@ const Leaderboard: React.FC = () => {
         />
       )}
 
-      {showDeleteConfirmation && (
-        <DeleteAccountPopup
-          username={userData.username}
-          onConfirmDelete={handleDeleteAccount}
-          onClose={() => setShowDeleteConfirmation(false)}
-          onCreateNewAccount={() => {
-            setShowDeleteConfirmation(false);
-            setShowAccountSetup(true);
-            setDirectAccountSetup(true);
-          }}
-          onReturnHome={() => {
-            setShowDeleteConfirmation(false);
-          }}
-        />
-      )}
       
       {showEditAccount && (
         <EditAccountPopup

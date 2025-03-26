@@ -34,25 +34,32 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     canvas.height = 200;
 
     if (context) {
-      context.fillStyle = getRandomColor();
+      const getColorFromName = (name: string) => {
+        const colors = [
+          '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
+          '#9b59b6', '#1abc9c', '#d35400', '#c0392b'
+        ];
+                let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+          hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        hash = Math.abs(hash);
+        
+        return colors[hash % colors.length];
+      };
+
+      context.fillStyle = getColorFromName(name);
       context.fillRect(0, 0, canvas.width, canvas.height);
 
       context.font = 'bold 100px Arial';
       context.fillStyle = 'white';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2);
+      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2 + 5);
     }
 
     return canvas.toDataURL('image/png');
-  };
-
-  const getRandomColor = (): string => {
-    const colors = [
-      '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
-      '#9b59b6', '#1abc9c', '#d35400', '#c0392b'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -81,6 +88,11 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     
     if (username.length < 3) {
       setError('Username must be at least 3 characters');
+      return;
+    }
+    
+    if (username.length > 20) {
+      setError('Username cannot exceed 20 characters');
       return;
     }
     
@@ -131,6 +143,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              maxLength={20}
             />
             {error && <p className="form-error">{error}</p>}
           </div>
