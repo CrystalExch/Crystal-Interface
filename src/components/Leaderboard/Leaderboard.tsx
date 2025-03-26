@@ -44,8 +44,7 @@ interface UserInfo {
 
 const ITEMS_PER_PAGE = 47;
 
-const Leaderboard: React.FC = ({
-}) => {
+const Leaderboard: React.FC = () => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [showAccountSetup, setShowAccountSetup] = useState<boolean>(false);
@@ -84,13 +83,10 @@ const Leaderboard: React.FC = ({
       console.error("WebSocket error:", error);
       setLoading(false);
     };
-    ws.onclose = () => {
-    };
-
+    ws.onclose = () => {};
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
     }, 5000);
-
     return () => {
       ws.close();
       clearTimeout(loadingTimeout);
@@ -123,11 +119,9 @@ const Leaderboard: React.FC = ({
       }));
       
       liveEntries.sort((a, b) => b.points - a.points);
-      
       liveEntries.forEach((entry, index) => {
         entry.rank = index + 1;
       });
-      
       setAllFactions(liveEntries);
     }
   }, [liveLeaderboard]);
@@ -137,7 +131,6 @@ const Leaderboard: React.FC = ({
   useEffect(() => {
     const storedUserData = localStorage.getItem('leaderboard_user_data');
     const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro');
-    
     if (storedUserData) {
       const parsedData = JSON.parse(storedUserData) as UserData;
       setUserData({
@@ -199,44 +192,32 @@ const Leaderboard: React.FC = ({
     const calculateTimeLeft = () => {
       const targetDate = new Date("2025-03-28T12:00:00Z");
       const now = new Date();
-      
       const difference = targetDate.getTime() - now.getTime();
-      
       if (difference <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
-      
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-      
       setTimeLeft({ days, hours, minutes, seconds });
     };
-    
     calculateTimeLeft();
-    
     const timer = setInterval(() => {
       calculateTimeLeft();
     }, 1000);
-    
     return () => clearInterval(timer);
   }, []);
 
-  const formatAddress = (address: string): string => {
-    if (!address) return "Guest";
+  const getDisplayName = (address: string): string => {
     const lowerAddr = address.toLowerCase();
-    if (userInfo[lowerAddr]?.username && userInfo[lowerAddr].username !== lowerAddr) {
-      return userInfo[lowerAddr].username;
-    }
-    return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
+    return userInfo[lowerAddr]?.username || address;
   };
-  
+
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
     localStorage.setItem('has_seen_challenge_intro', 'true');
-    
     if (!hasAccount && !isGuestMode) {
       setShowAccountSetup(true);
       setDirectAccountSetup(false); 
@@ -246,9 +227,7 @@ const Leaderboard: React.FC = ({
   const handleContinueAsGuest = (): void => {
     setShowChallengeIntro(false);
     setIsGuestMode(true);
-    
     localStorage.setItem('has_seen_challenge_intro', 'true');
-    
     setUserData({
       username: "Guest",
       userXP: 0,
@@ -258,13 +237,11 @@ const Leaderboard: React.FC = ({
   
   const handleAccountSetupComplete = (newUserData: UserData): void => {
     localStorage.setItem('leaderboard_user_data', JSON.stringify(newUserData));
-    
     setUserData({
       username: newUserData.username,
       userXP: newUserData.xp,
       logo: newUserData.image
     });
-    
     setHasAccount(true);
     setShowAccountSetup(false);
     setDirectAccountSetup(false);
@@ -272,14 +249,12 @@ const Leaderboard: React.FC = ({
 
   const handleDeleteAccount = (): void => {
     localStorage.removeItem('leaderboard_user_data');
-    
     setHasAccount(false);
     setUserData({
       username: "",
       userXP: 0,
       logo: ""
     });
-    
     setShowDeleteConfirmation(false);
   };
   
@@ -289,13 +264,11 @@ const Leaderboard: React.FC = ({
   
   const handleSaveAccountChanges = (updatedUserData: UserData): void => {
     localStorage.setItem('leaderboard_user_data', JSON.stringify(updatedUserData));
-    
     setUserData({
       username: updatedUserData.username,
       userXP: updatedUserData.xp,
       logo: updatedUserData.image
     });
-    
     setShowEditAccount(false);
   };
 
@@ -333,7 +306,6 @@ const Leaderboard: React.FC = ({
       user: "User",
       totalXP: "Total XP"
     };
-    
     return translations[text] || text;
   };
 
@@ -460,7 +432,7 @@ const Leaderboard: React.FC = ({
                     <img src={userData.logo} className="username-logo" alt="User Avatar" />
                   )}
                   <span className="username">
-                    {userData.username ? formatAddress(userData.username) : "Guest"}
+                    {userData.username ? getDisplayName(userData.username) : "Guest"}
                   </span>
                 </div>
               </div>
@@ -492,14 +464,14 @@ const Leaderboard: React.FC = ({
                 onClick={handleCreateAccount}
               >
                 {t("createAccount")}
-                </button>
+              </button>
             ) : (
               <button 
                 className="create-account-button"
                 onClick={handleCreateAccount}
               >
                 {t("createAccount")}
-                </button>
+              </button>
             )}
           </div>
         </div>
@@ -524,7 +496,7 @@ const Leaderboard: React.FC = ({
                   src={''} 
                   className="faction-logo" 
                 />
-                <div className="faction-name">{formatAddress(faction.name)}</div>
+                <div className="faction-name">{getDisplayName(faction.name)}</div>
                 <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
               </div>
             </div>
@@ -545,7 +517,6 @@ const Leaderboard: React.FC = ({
             : getCurrentPageItems().map((faction) => {
               const absoluteRank = faction.rank;
               const isCurrentUser = isUserAddress(faction.name);
-              
               return (
                 <div 
                   key={faction.id} 
@@ -559,7 +530,7 @@ const Leaderboard: React.FC = ({
                       src={''} 
                       className="faction-small-logo" 
                     />
-                    <span className="faction-row-name">{formatAddress(faction.name)}</span>
+                    <span className="faction-row-name">{getDisplayName(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
                   <div className="row-xp">
