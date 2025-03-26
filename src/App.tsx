@@ -1517,7 +1517,7 @@ function App() {
           );
           if (!match) return;
   
-          const candles: DataPoint[] = series.klines;
+          const candles: DataPoint[] = series.klines.reverse();
           const last24hCandles = candles.filter((candle: DataPoint) => {
             const candleTime = new Date(candle.time).getTime();
             return candleTime >= oneDayAgo;
