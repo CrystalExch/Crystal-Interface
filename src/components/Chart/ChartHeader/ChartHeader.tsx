@@ -7,11 +7,6 @@ import { formatCommas } from '../../../utils/numberDisplayFormat';
 
 import './ChartHeader.css';
 
-interface UniversalTrades {
-  [key: string]: Array<
-    [number, number, number, number, string, string, number]
-  >;
-}
 
 interface ChartHeaderProps {
   in_icon: string;
@@ -33,9 +28,8 @@ interface ChartHeaderProps {
   orderdata: any;
   tokendict: any;
   onMarketSelect: any;
-  universalTrades: any[];
   setpopup: (value: number) => void;
-  dayKlines: any;
+  marketsData: any;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -51,9 +45,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   orderdata,
   tokendict,
   onMarketSelect,
-  universalTrades,
   setpopup,
-  dayKlines,
+  marketsData,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -223,9 +216,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         activeMarket={activeMarket}
         onMarketSelect={onMarketSelect}
         tokendict={tokendict}
-        universalTrades={universalTrades as unknown as UniversalTrades}
         setpopup={setpopup}
-        dayKlines={dayKlines}
+        marketsData={marketsData}
       />
       <AdditionalMetrics metrics={metrics} />
     </div>

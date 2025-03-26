@@ -1045,7 +1045,6 @@ function App() {
     query: { refetchInterval: 10000 },
   });
 
-
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -1562,21 +1561,43 @@ function App() {
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
         const trades = tradesByMarket[market.marketKey] || [];
-        if (trades.length === 0) return market;
-  
-        const latestTrade = trades[trades.length - 1];
-        const currentPriceRaw = Number(latestTrade[3]);
-        const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
-        const tradeVolume =
-          (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) /
-          10 ** Number(market.quoteDecimals);
+
+        const now = Date.now();
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+        const last24hTrades = trades.filter((trade: any) => {
+          if (!trade.time) return false;
+          return new Date(trade.time).getTime() >= oneDayAgo;
+        });
+        
+        if (last24hTrades.length === 0) return market;
+        
+        last24hTrades.sort(
+          (a: DataPoint, b: DataPoint) => new Date(a.time).getTime() - new Date(b.time).getTime()
+        );
+        
+        const firstTrade = last24hTrades[0];
+        const latestTrade = last24hTrades[last24hTrades.length - 1];
+        
+        const currentPriceRaw = Number(latestTrade[3] || latestTrade.close);
+        const firstPrice = Number(firstTrade[3] || firstTrade.close);
+        
+        const percentageChange =
+          firstPrice === 0 ? 0 : ((currentPriceRaw - firstPrice) / firstPrice) * 100;
+        
+        const totalVolume = last24hTrades.reduce((acc: number, trade: any) => {
+          if (trade.volume !== undefined) {
+            return acc + parseFloat(trade.volume.toString());
+          } else {
+            const vol = Number(trade[2] === 1 ? trade[0] : trade[1]);
+            return acc + vol;
+          }
+        }, 0);
+        
         const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
-  
+        
         return {
           ...market,
-          volume: formatCommas(
-            (parseFloat(market.volume.toString().replace(/,/g, '')) + tradeVolume).toFixed(2)
-          ),
+          volume: formatCommas(totalVolume.toFixed(2)),
           currentPrice: formatSubscript(
             (currentPriceRaw / Number(market.priceFactor)).toFixed(decimals)
           ),
@@ -10213,7 +10234,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
-                                  dayKlines={dayKlines}
+                                  marketsData={sortedMarkets}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10286,7 +10307,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-                              dayKlines={dayKlines}
+                              marketsData={sortedMarkets}
                             />
                           )}
                         </div>
@@ -10434,7 +10455,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
-                                  dayKlines={dayKlines}
+                                  marketsData={sortedMarkets}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10507,7 +10528,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-                              dayKlines={dayKlines}
+                              marketsData={sortedMarkets}
                             />
                           )}
                         </div>
@@ -10654,7 +10675,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
-                                  dayKlines={dayKlines}
+                                  marketsData={sortedMarkets}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10727,7 +10748,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-                              dayKlines={dayKlines}
+                              marketsData={sortedMarkets}
                             />
                           )}
                         </div>
@@ -10875,7 +10896,7 @@ function App() {
                                   }
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
-                                  dayKlines={dayKlines}
+                                  marketsData={sortedMarkets}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -10948,7 +10969,7 @@ function App() {
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
                               orders={orders}
-                              dayKlines={dayKlines}
+                              marketsData={sortedMarkets}
                             />
                           )}
                         </div>
