@@ -2,6 +2,7 @@ import React, { useState, ChangeEvent } from 'react';
 import './EditAccountPopup.css';
 import SideArrow from '../../assets/arrow.svg';
 import closebutton from '../../assets/close_button.png';
+import { useSmartAccountClient } from '@account-kit/react';
 
 interface UserData {
   username: string;
@@ -20,6 +21,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   onSaveChanges, 
   onClose 
 }) => {
+  const { address } = useSmartAccountClient({ type: "LightAccount" });
   const [username, setUsername] = useState<string>(userData.username);
   const [, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(userData.image);
@@ -39,7 +41,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       context.fillStyle = 'white';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(name.charAt(0).toUpperCase(), canvas.width/2, canvas.height/2);
+      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2);
     }
 
     return canvas.toDataURL('image/png');
@@ -88,23 +90,39 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       xp: userData.xp 
     };
     
-    onSaveChanges(updatedUserData);
+    fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        address: address?.toLowerCase(),
+        username: username
+      })
+    })
+      .then(res => res.json())
+      .then(response => {
+        console.log("Username update response:", response);
+        onSaveChanges(updatedUserData);
+      })
+      .catch(err => {
+        console.error("Error updating username:", err);
+        setError("Failed to update username. Please try again.");
+      });
   };
 
   return (
     <div className="account-setup-overlay">
       <div className="account-setup-container">
         <div className="account-setup-header">
-          <h2 className="account-setup-title">      {t("editAccountTitle")}
-          </h2>
-          <p className="account-setup-subtitle">   {t("editAccountSubtitle")}
-          </p>
+          <h2 className="account-setup-title">{t("editAccountTitle")}</h2>
+          <p className="account-setup-subtitle">{t("editAccountSubtitle")}</p>
         </div>
         
         <div className="account-setup-form">
           <div className="form-group">
             <label className="form-label" htmlFor="edit-username">
-            {t("username")}
+              {t("username")}
             </label>
             <input
               id="edit-username"
@@ -136,7 +154,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             
             <label className="photo-upload-label">
               <span className="photo-upload-button">
-              {t("chooseNewPhoto")}
+                {t("chooseNewPhoto")}
               </span>
               <input
                 type="file"
@@ -155,13 +173,13 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
           >
             <img className="back-button-arrow" src={SideArrow} alt="Back" />
             {t("cancel")}
-            </button>
+          </button>
           <button
             onClick={handleSave}
             className="complete-button"
           >
-                {t("saveChanges")}
-                </button>
+            {t("saveChanges")}
+          </button>
         </div>
       </div>
     </div>

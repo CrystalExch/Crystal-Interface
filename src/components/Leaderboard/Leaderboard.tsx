@@ -18,9 +18,6 @@ interface Faction {
   logo?: string;
 }
 
-interface LeaderboardProps {
-}
-
 interface UserData {
   username: string;
   image: string;
@@ -40,9 +37,14 @@ interface TimeLeft {
   seconds: number;
 }
 
+interface UserInfo {
+  points: number;
+  username: string;
+}
+
 const ITEMS_PER_PAGE = 47;
 
-const Leaderboard: React.FC<LeaderboardProps> = ({
+const Leaderboard: React.FC = ({
 }) => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
@@ -66,26 +68,25 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   });
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
+  const [userInfo, setUserInfo] = useState<{ [address: string]: { username: string } }>({});
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
     ws.onopen = () => {
+      console.log("connect");
     };
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       setLiveLeaderboard(data);
-      // Set loading to false after receiving data
-      setTimeout(() => setLoading(false), 1500); // Adding a slight delay for better UX
+      setTimeout(() => setLoading(false), 1500);
     };
     ws.onerror = (error) => {
       console.error("WebSocket error:", error);
-      // Set loading to false even if there's an error
       setLoading(false);
     };
     ws.onclose = () => {
     };
 
-    // Set a timeout to disable loading state if data doesn't load quickly
     const loadingTimeout = setTimeout(() => {
       setLoading(false);
     }, 5000);
@@ -94,6 +95,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       ws.close();
       clearTimeout(loadingTimeout);
     };
+  }, []);
+
+  useEffect(() => {
+    fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames")
+      .then((res) => res.json())
+      .then((data: Record<string, UserInfo>) => {
+        console.log("Fetched user data:", data);
+        const usernames = Object.fromEntries(
+          Object.entries(data).map(([address, info]) => [address.toLowerCase(), { username: info.username }])
+        );
+        setUserInfo(usernames);
+      })
+      .catch((err) => console.error("Error fetching user data:", err));
   }, []);
   
   useEffect(() => {
@@ -212,11 +226,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   const formatAddress = (address: string): string => {
     if (!address) return "Guest";
-    if (address === "Guest") return "Guest";
-    
+    const lowerAddr = address.toLowerCase();
+    if (userInfo[lowerAddr]?.username && userInfo[lowerAddr].username !== lowerAddr) {
+      return userInfo[lowerAddr].username;
+    }
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
   };
-
+  
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
     localStorage.setItem('has_seen_challenge_intro', 'true');
@@ -325,7 +341,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return userData.username === address;
   };
 
-  // Render top three loading placeholders
   const renderLoadingTopThree = () => {
     return [0, 1, 2].map((index) => (
       <div 
@@ -347,7 +362,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     ));
   };
 
-  // Render loading placeholders for the main leaderboard
   const renderLoadingRows = () => {
     return Array(ITEMS_PER_PAGE).fill(0).map((_, index) => (
       <div 
