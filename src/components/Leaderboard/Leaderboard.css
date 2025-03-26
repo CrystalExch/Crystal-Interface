@@ -1085,8 +1085,91 @@
   min-height: auto;
 }
 
-/* Ensure pagination controls are properly positioned */
 .pagination-controls {
   position: relative;
   bottom: 0;
+}
+
+.connect-wallet-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  backdrop-filter: blur(8px);
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.connect-wallet-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  padding: 40px;
+  text-align: center;
+  max-width: 450px;
+  width: 100%;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+
+.connect-wallet-content h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.8);
+  letter-spacing: -0.3px;
+
+}
+
+.connect-wallet-content p {
+  opacity: 0.7;
+  margin-top: 0;
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-bottom: 10px;
+
+}
+
+.connect-wallet-button {
+  align-items: center;
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  );
+  border: none;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+  color: #0f0f12;
+  cursor: pointer;
+  display: flex;
+  font-size: 0.9rem;
+  font-weight: 500;
+  height: 35px;
+  justify-content: center;
+  letter-spacing: -0.3px;
+  text-decoration: none;
+  transition: all.1s ease;
+  width: 140px;
+  z-index: 3;
+}
+
+.connect-wallet-button:hover {
+  filter: brightness(1.1);
 }

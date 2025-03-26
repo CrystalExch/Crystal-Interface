@@ -44,9 +44,13 @@ interface UserInfo {
   username: string;
 }
 
+interface LeaderboardProps {
+  setpopup?: (value: number) => void;
+}
+
 const ITEMS_PER_PAGE = 47;
 
-const Leaderboard: React.FC = () => {
+const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [showAccountSetup, setShowAccountSetup] = useState<boolean>(false);
@@ -177,6 +181,15 @@ const Leaderboard: React.FC = () => {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
+    } else {
+      // Reset to guest when wallet is disconnected
+      setUserData({
+        username: "Guest",
+        userXP: 0,
+        logo: ""
+      });
+      setHasAccount(false);
+      setIsGuestMode(true);
     }
   }, [address, userInfo, liveLeaderboard]);
   
@@ -473,11 +486,37 @@ const Leaderboard: React.FC = () => {
       if (!userInfo[lowerCaseAddress]) {
         setShowAccountSetup(true);
       }
+    } else if (!address) {
+      // Close any open popups when wallet disconnects
+      setShowAccountSetup(false);
+      setShowEditAccount(false);
     }
   }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
 
+  const handleConnectWallet = () => {
+    setpopup(4); // Assuming 4 is the wallet connection popup like in Header component
+  };
+
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
+      {!address && (
+        <div className="connect-wallet-overlay">
+          <div className="connect-wallet-content">
+            <h2>Connect Your Wallet</h2>
+            <p>Please connect your wallet to view the leaderboard</p>
+            <button 
+              type="button"
+              className="connect-wallet-button"
+              onClick={handleConnectWallet}
+            >
+              <div className="connect-content">
+                Connect Wallet
+              </div>
+            </button>
+          </div>
+        </div>
+      )}
+      
       {showChallengeIntro && (
         <ChallengeIntro 
           onComplete={handleChallengeIntroComplete} 

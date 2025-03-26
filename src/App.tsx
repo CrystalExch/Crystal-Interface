@@ -10099,10 +10099,15 @@ function App() {
               />
             }
           />
-<Route path="/leaderboard" element={
-  <Leaderboard
-  />
-} />
+
+<Route 
+  path="/leaderboard" 
+  element={
+    <Leaderboard 
+      setpopup={setpopup} 
+    />
+  } 
+/>
           <Route path="/mint"
             element={
               <NFTMintingPage />
