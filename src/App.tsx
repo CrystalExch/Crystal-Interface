@@ -1505,41 +1505,55 @@ function App() {
     const processMarkets = async () => {
       try {
         const data = dayKlines;
-
-        const processedMarkets = data
-          .map((series: any) => {
-            const idParts = series.id.split("-");
-            const address = idParts[2];
-
-            const match = Object.values(markets).find(
-              (m) => m.address.toLowerCase() === address.toLowerCase()
-            );
-
-            if (!match) return;
-
-            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 2);
-            const current = series.klines[series.klines.length - 1].close;
-            const first = series.klines[0].open;
-            const percentageChange = (current - first) / first * 100;
-
-            return {
-              ...match,
-              pair: `${match.baseAsset}/${match.quoteAsset}`,
-              currentPrice: formatSubscript((current / Number(match.priceFactor)).toFixed(Math.log10(Number(match.priceFactor)))),
-              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
-              volume: formatCommas(marketVolume.toFixed(2)),
-              marketKey: `${match.baseAsset}${match.quoteAsset}`,
-              series: series.klines,
-              firstPrice: first,
-            };
+        const now = Date.now();
+        const oneDayAgo = now - 24 * 60 * 60 * 1000;
+  
+        const processedMarkets = data.map((series: any) => {
+          const idParts = series.id.split("-");
+          const address = idParts[2];
+  
+          const match = Object.values(markets).find(
+            (m) => m.address.toLowerCase() === address.toLowerCase()
+          );
+          if (!match) return;
+  
+          const candles: DataPoint[] = series.klines;
+          const last24hCandles = candles.filter((candle: DataPoint) => {
+            const candleTime = new Date(candle.time).getTime();
+            return candleTime >= oneDayAgo;
           });
-
+          const relevantCandles = last24hCandles.length > 0 ? last24hCandles : candles;
+  
+          const highs = relevantCandles.map((c) => c.high);
+          const lows = relevantCandles.map((c) => c.low);
+          const high = Math.max(...highs);
+          const low = Math.min(...lows);
+          const firstPrice = relevantCandles[0].close;
+          const lastPrice = relevantCandles[relevantCandles.length - 1].close;
+          const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
+          const totalVolume = relevantCandles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
+          const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
+  
+          return {
+            ...match,
+            pair: `${match.baseAsset}/${match.quoteAsset}`,
+            currentPrice: formatSubscript((lastPrice / Number(match.priceFactor)).toFixed(decimals)),
+            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
+            volume: formatCommas(totalVolume.toFixed(2)),
+            marketKey: `${match.baseAsset}${match.quoteAsset}`,
+            series: candles,
+            firstPrice: firstPrice,
+            high24h: formatSubscript(high.toFixed(decimals)),
+            low24h: formatSubscript(low.toFixed(decimals)),
+          };
+        });
+  
         setMarketsData(processedMarkets);
       } catch (error) {
         console.error("error fetching candles:", error);
       }
     };
-
+  
     processMarkets();
   }, [markets, dayKlines]);
 
@@ -1548,25 +1562,25 @@ function App() {
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
         const trades = tradesByMarket[market.marketKey] || [];
-
         if (trades.length === 0) return market;
-
+  
         const latestTrade = trades[trades.length - 1];
         const currentPriceRaw = Number(latestTrade[3]);
         const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
-        const tradeVolume = (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) / 10 ** Number(market.quoteDecimals);
-
+        const tradeVolume =
+          (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) /
+          10 ** Number(market.quoteDecimals);
+        const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
+  
         return {
           ...market,
-          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) + tradeVolume).toFixed(2)),
-          currentPrice: formatSubscript(
-            (currentPriceRaw / Number(market.priceFactor)).toFixed(
-              Math.log10(Number(market.priceFactor))
-            )
+          volume: formatCommas(
+            (parseFloat(market.volume.toString().replace(/,/g, '')) + tradeVolume).toFixed(2)
           ),
-          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(
-            2
-          )}%`,
+          currentPrice: formatSubscript(
+            (currentPriceRaw / Number(market.priceFactor)).toFixed(decimals)
+          ),
+          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
         };
       })
     );
