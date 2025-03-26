@@ -136,7 +136,6 @@ function App() {
     waitForTxn: true,
   });
 
-
   const currentUser = useUser();
   const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
@@ -148,20 +147,11 @@ function App() {
     }
   }, [currentUser, address]);
 
-
-
-
   const handleCloseDepositPage = () => {
     setShowDepositPage(false);
   };
 
-
-
-
   const isDepositPageVisible = showDepositPage && address;
-
-
-
 
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
@@ -173,8 +163,6 @@ function App() {
       setIsNewWallet(false);
     }
   }, [address, isNewWallet, showDepositPage]);
-
-
 
   const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
@@ -2689,7 +2677,8 @@ function App() {
       }, 10);
       (async () => {
         try {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+          // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal/version/latest';
 
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
