@@ -358,7 +358,6 @@
     top: 15px;
     right: 15px;
     padding: 10px 15px;
-    z-index: 2;
   }
   
   .countdown-label {
@@ -1140,7 +1139,7 @@
 
 }
 
-.connect-wallet-button {
+.leaderboard-connect-wallet-button {
   align-items: center;
   background: linear-gradient(
     135deg,

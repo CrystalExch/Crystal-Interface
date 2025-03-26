@@ -506,7 +506,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
             <p>Please connect your wallet to view the leaderboard</p>
             <button 
               type="button"
-              className="connect-wallet-button"
+              className="leaderboard-connect-wallet-button"
               onClick={handleConnectWallet}
             >
               <div className="connect-content">
