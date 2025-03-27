@@ -10,7 +10,7 @@ export const getTradeValue = (trade: any, column: string, markets: any) => {
     case 'markets':
       return market.baseAsset + '-' + market.quoteAsset;
     case 'type':
-      return trade[2];
+      return trade[7];
     case 'oc-price':
       return trade[3] / priceFactor;
     case 'amount':

@@ -2713,7 +2713,7 @@ function App() {
       (async () => {
         try {
           // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal/version/latest';
+          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-v2/v0.0.4';
 
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
@@ -2721,19 +2721,24 @@ function App() {
 
           const query = `
             query {
-              orderFilledBatches(first: 11, orderDirection: desc, orderBy: id) {
+              marketFilledMaps(
+                where: {
+                  caller: "${address}"
+                }
+              ) {
                 id
-                total
-                orders(first: 1000, where: {caller: "${address}"}) {
+                caller
+                counter
+                orders {
+                  id
                   caller
                   amountIn
                   amountOut
                   buySell
                   price
-                  timeStamp
-                  transactionHash
-                  blockNumber
                   contractAddress
+                  transactionHash
+                  timeStamp
                 }
               }
               orderMaps(where:{caller: "${address}"}) {
@@ -2786,10 +2791,10 @@ function App() {
 
           const result = await response.json();
 
-          const filledBatches = result?.data?.orderFilledBatches || [];
-          for (const batch of filledBatches) {
-            const orders = batch.orders || [];
-            for (const event of orders) {
+          const map = result?.data?.marketFilledMaps || [];
+          for (const batch of map) {
+            for (const event of batch.orders) {
+              console.log(event);
               const marketKey = addresstoMarket[event.contractAddress];
               if (marketKey) {
                 temptradehistory.push([
@@ -2831,7 +2836,7 @@ function App() {
                   temporders.push(row);
                   tempcanceledorders.push(row);
                 } else if (order.status === 1) {
-                  const row = [
+                  const tradeRow = [
                     order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
                     order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
                     order.buySell,
@@ -2840,8 +2845,22 @@ function App() {
                     order.transactionHash,
                     order.timestamp,
                     0
-                  ]
-                  temptradehistory.push(row);
+                  ];
+
+                  const row = [
+                    parseInt(order.id.split('-')[0], 10),
+                    parseInt(order.id.split('-')[2], 10),
+                    Number(order.originalSizeBase.toString()),
+                    order.buySell,
+                    marketKey,
+                    order.transactionHash,
+                    order.timestamp,
+                    Number(order.filledAmountBase.toString()),
+                    Number(order.originalSizeQuote.toString()),
+                    order.status,
+                  ];
+
+                  temptradehistory.push(tradeRow);
                   tempcanceledorders.push(row);
                 } else {
                   tempcanceledorders.push(row);
