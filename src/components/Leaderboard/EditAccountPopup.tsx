@@ -21,13 +21,11 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   onSaveChanges, 
   onClose 
 }) => {
+  const { address } = useSmartAccountClient({ type: "LightAccount" });
   const [username, setUsername] = useState<string>(userData.username);
   const [, setPhoto] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string>(userData.image);
   const [error, setError] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const { address } = useSmartAccountClient({ type: "LightAccount" });
 
   const generateLetterAvatar = (name: string): string => {
     const canvas = document.createElement('canvas');
@@ -36,25 +34,32 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     canvas.height = 200;
 
     if (context) {
-      context.fillStyle = getRandomColor();
+      const getColorFromName = (name: string) => {
+        const colors = [
+          '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
+          '#9b59b6', '#1abc9c', '#d35400', '#c0392b'
+        ];
+                let hash = 0;
+        for (let i = 0; i < name.length; i++) {
+          hash = name.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        
+        hash = Math.abs(hash);
+        
+        return colors[hash % colors.length];
+      };
+
+      context.fillStyle = getColorFromName(name);
       context.fillRect(0, 0, canvas.width, canvas.height);
 
       context.font = 'bold 100px Arial';
       context.fillStyle = 'white';
       context.textAlign = 'center';
       context.textBaseline = 'middle';
-      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2);
+      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2 + 5);
     }
 
     return canvas.toDataURL('image/png');
-  };
-
-  const getRandomColor = (): string => {
-    const colors = [
-      '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
-      '#9b59b6', '#1abc9c', '#d35400', '#c0392b'
-    ];
-    return colors[Math.floor(Math.random() * colors.length)];
   };
 
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
@@ -69,70 +74,68 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       reader.readAsDataURL(file);
     }
   };
-
+  
   const clearPhoto = (): void => {
     setPhoto(null);
     setPhotoPreview(generateLetterAvatar(username));
   };
 
-  const handleSave = async (): Promise<void> => {
+  const handleSave = (): void => {
     if (!username.trim()) {
       setError('Please enter a username');
       return;
     }
-
+    
     if (username.length < 3) {
       setError('Username must be at least 3 characters');
       return;
     }
-
-    setLoading(true);
-
+    
+    if (username.length > 20) {
+      setError('Username cannot exceed 20 characters');
+      return;
+    }
+    
     const updatedUserData: UserData = {
       username,
       image: photoPreview,
       xp: userData.xp 
     };
-
-    try {
-      const response = await fetch('https://points-backend-b5a062cda7cd.herokuapp.com/set_username', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          address: address,
-          username
-        })
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-        // If username is updated successfully, update the UI and close the popup
+    
+    fetch("https://points-backend-b5a062cda7cd.herokuapp.com/usernames", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        address: address?.toLowerCase(),
+        username: username
+      })
+    })
+      .then(res => res.json())
+      .then(result => {
+        console.log(result);
         onSaveChanges(updatedUserData);
-        onClose();
-      } else {
-        setError(data.message || 'Failed to update username');
-      }
-    } catch (error) {
-      setError('Error updating username. Please try again.');
-      console.error('Error updating username:', error);
-    } finally {
-      setLoading(false);
-    }
+      })
+      .catch(err => {
+        console.error("Error updating username:", err);
+        setError("Failed to update username. Please try again.");
+      });
   };
 
   return (
     <div className="account-setup-overlay">
       <div className="account-setup-container">
         <div className="account-setup-header">
-          <h2 className="account-setup-title">Edit Account</h2>
-          <p className="account-setup-subtitle">Change your username and photo</p>
+          <h2 className="account-setup-title">{t("editAccountTitle")}</h2>
+          <p className="account-setup-subtitle">{t("editAccountSubtitle")}</p>
         </div>
-
+        
         <div className="account-setup-form">
           <div className="form-group">
-            <label className="form-label" htmlFor="edit-username">Username</label>
+            <label className="form-label" htmlFor="edit-username">
+              {t("username")}
+            </label>
             <input
               id="edit-username"
               type="text"
@@ -140,10 +143,11 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
               placeholder="Enter your username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              maxLength={20}
             />
             {error && <p className="form-error">{error}</p>}
           </div>
-
+          
           <div className="photo-upload-container">
             <div className="photo-preview-container">
               <img 
@@ -160,10 +164,10 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
                 <img src={closebutton} className="edit-account-close-icon" />
               </button>
             </div>
-
+            
             <label className="photo-upload-label">
               <span className="photo-upload-button">
-                Choose New Photo
+                {t("chooseNewPhoto")}
               </span>
               <input
                 type="file"
@@ -174,22 +178,20 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             </label>
           </div>
         </div>
-
+        
         <div className="account-setup-footer">
           <button
             onClick={onClose}
             className="back-button"
-            disabled={loading}
           >
             <img className="back-button-arrow" src={SideArrow} alt="Back" />
-            Cancel
+            {t("cancel")}
           </button>
           <button
             onClick={handleSave}
             className="complete-button"
-            disabled={loading}
           >
-            {loading ? 'Saving...' : 'Save Changes'}
+            {t("saveChanges")}
           </button>
         </div>
       </div>

@@ -14,17 +14,10 @@ import {
   formatCommas,
   formatSubscript,
 } from '../../../../utils/numberDisplayFormat';
-import { DataPoint } from '../../utils/chartDataGenerator.ts';
 
 import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
-
-interface UniversalTrades {
-  [key: string]: Array<
-    [number, number, number, number, string, string, number]
-  >;
-}
 
 interface TokenInfoProps {
   in_icon: string;
@@ -33,9 +26,9 @@ interface TokenInfoProps {
   activeMarket: any;
   onMarketSelect: any;
   tokendict: any;
-  universalTrades: UniversalTrades;
   setpopup: (value: number) => void;
-  dayKlines: any;
+  marketsData: any[];
+  isLoading?: boolean; 
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -45,14 +38,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   activeMarket,
   onMarketSelect,
   tokendict,
-  universalTrades,
   setpopup,
-  dayKlines,
+  marketsData,
+  isLoading = false, 
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [marketsData, setMarketsData] = useState<any[]>([]);
   const [shouldFocus, setShouldFocus] = useState(false);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -66,14 +58,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const { favorites, toggleFavorite, activechain } = useSharedContext();
 
-  const isLoading = !activeMarket;
+  const isComponentLoading = isLoading || !activeMarket;
   const marketAddress =
     activeMarket?.baseAddress || '0x0000000000000000000000000000000000000000';
 
   const tokenAddress =
     activeMarket?.baseAddress?.toLowerCase() ||
     '0x0000000000000000000000000000000000000000';
-
+  
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
       e.target instanceof Element &&
@@ -148,76 +140,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     };
   }, []);
 
-  useEffect(() => {
-    const processMarkets = async () => {
-      try {
-        const data = dayKlines;
-
-        const processedMarkets = data
-          .map((series: any) => {
-            const idParts = series.id.split("-");
-            const address = idParts[2];
-
-            const match = Object.values(markets).find(
-              (m) => m.address.toLowerCase() === address.toLowerCase()
-            );
-
-            if (!match) return;
-
-            const marketVolume = series.klines.reduce((acc: number, c: DataPoint) => acc + parseFloat(c.volume.toString()), 2);
-            const current = series.klines[series.klines.length - 1].close;
-            const first = series.klines[0].open;
-            const percentageChange = (current - first) / first * 100; 
-
-            return {
-              ...match,
-              pair: `${match.baseAsset}/${match.quoteAsset}`,
-              currentPrice: formatSubscript((current / Number(match.priceFactor)).toFixed(Math.log10(Number(match.priceFactor)))),
-              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
-              volume: formatCommas(marketVolume.toFixed(2)),
-              marketKey: `${match.baseAsset}${match.quoteAsset}`,
-              series: series.klines,
-              firstPrice: first,
-            };
-          });
-        
-        setMarketsData(processedMarkets);
-      } catch (error) {
-        console.error("error fetching candles:", error);
-      }
-    };
-
-    processMarkets();
-  }, [markets, dayKlines]);
-
-  useEffect(() => { 
-    setMarketsData((prevMarkets) =>
-      prevMarkets.map((market) => {
-        const trades = universalTrades[market?.marketKey] || [];
-
-        if (trades.length === 0) return market;
-  
-        const latestTrade = trades[trades.length - 1];
-        const currentPriceRaw = Number(latestTrade[3]);
-        const percentageChange = (currentPriceRaw - market.firstPrice) / market.firstPrice * 100;
-        const tradeVolume = (latestTrade[2] === 1 ? latestTrade[0] : latestTrade[1]) / 10 ** Number(market.quoteDecimals);
-          
-        return {
-          ...market,
-          volume: formatCommas((parseFloat(market.volume.toString().replace(/,/g, '')) +  tradeVolume).toFixed(2)),
-          currentPrice: formatSubscript(
-            (currentPriceRaw / Number(market.priceFactor)).toFixed(
-              Math.log10(Number(market.priceFactor))
-            )
-          ),
-          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(
-            2
-          )}%`,
-        };
-      })
-    );
-  }, [universalTrades]);  
-
   const handleSort = (field: 'volume' | 'price' | 'change' | 'favorites') => {
     if (sortField === field) {
       setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
@@ -238,10 +160,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const sortedMarkets = [...filteredMarkets].sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
-    
+
     let aValue: number = 0;
     let bValue: number = 0;
-    
+
     switch (sortField) {
       case 'volume':
         aValue = parseFloat(a.volume.toString().replace(/,/g, ''));
@@ -262,7 +184,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       default:
         return 0;
     }
-    
+
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
@@ -304,7 +226,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       <TokenIcons inIcon={in_icon} outIcon={out_icon} />
 
       <div className="token-details">
-        {isLoading ? (
+        {isComponentLoading ? (
           <>
             <div className="symbol-skeleton" />
             <div className="pair-skeleton" />
@@ -515,7 +437,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
       {activeMarket && (
         <div className="price-display-section">
-          <PriceDisplay price={price} activeMarket={activeMarket} />
+          <PriceDisplay 
+            price={price} 
+            activeMarket={activeMarket} 
+            isLoading={isComponentLoading} 
+          />
         </div>
       )}
     </div>

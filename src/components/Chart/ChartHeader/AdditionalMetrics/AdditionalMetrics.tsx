@@ -1,5 +1,4 @@
 import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
-
 import MetricItem from '../MetricItem/MetricItem';
 import ScrollButton from '../ScrollButton/ScrollButton';
 
@@ -8,14 +7,18 @@ import { scrollContainer, shouldShowArrows } from '../../utils';
 import './AdditionalMetrics.css';
 
 interface AdditionalMetricsProps {
-  metrics: Array<{ 
-    label: string; 
+  metrics: Array<{
+    label: string;
     value: React.ReactNode;
     isLoading?: boolean;
   }>;
+  isLoading?: boolean; // Add global loading state
 }
 
-const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
+const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ 
+  metrics,
+  isLoading = false // Default to false if not provided
+}) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
   const [showLeftFade, setShowLeftFade] = useState(false);
@@ -41,12 +44,12 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
       );
       setShowLeftArrow(showLeftArrow);
       setShowRightArrow(showRightArrow);
-     
+      
       const container = metricsRef.current;
       const isScrollable = container.scrollWidth > container.clientWidth;
       const isAtLeftEdge = container.scrollLeft <= 10;
       const isAtRightEdge = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-     
+      
       setShowLeftFade(isScrollable && !isAtLeftEdge);
       setShowRightFade(isScrollable && !isAtRightEdge);
     }
@@ -86,10 +89,10 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ metrics }) => {
       <div className="additional-metrics" ref={metricsRef}>
         {metrics.map((metric, index) => (
           <MetricItem 
-            key={index} 
-            label={metric.label} 
-            value={metric.value} 
-            isLoading={metric.isLoading}
+            key={index}
+            label={metric.label}
+            value={metric.value}
+            isLoading={isLoading || metric.isLoading}
           />
         ))}
       </div>

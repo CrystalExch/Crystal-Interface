@@ -1,5 +1,4 @@
 import React from 'react';
-
 import './MetricItem.css';
 
 interface MetricItemProps {
@@ -25,7 +24,7 @@ function valueCheck(value: React.ReactNode): boolean {
 }
 
 const MetricItem: React.FC<MetricItemProps> = ({ label, value, isLoading }) => {
-  const shouldShowLoading = valueCheck(value) || isLoading === true;
+  const shouldShowLoading = isLoading === true || valueCheck(value);
   
   return (
     <div className="metric-item">
