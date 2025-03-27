@@ -16,14 +16,14 @@ interface OrdersContentProps {
   address: any;
   trades: any;
   refetch: any;
-  sendUserOperation: any;
+  sendUserOperationAsync: any;
   setChain: any;
   pageSize?: number;
   currentPage?: number;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch, sendUserOperation, setChain, pageSize = 10, currentPage = 1 }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize = 10, currentPage = 1 }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
       orders,
       (order: any, column: string) => getOrderValue(order, column, markets),
@@ -144,7 +144,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 try {
                   await setChain()
                   await multiBatchOrders(
-                    sendUserOperation,
+                    sendUserOperationAsync,
                     router,
                     BigInt(0),
                     m,
@@ -173,7 +173,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 trades={trades}
                 router={router}
                 refetch={refetch}
-                sendUserOperation={sendUserOperation}
+                sendUserOperationAsync={sendUserOperationAsync}
                 setChain={setChain}
               />
             ))

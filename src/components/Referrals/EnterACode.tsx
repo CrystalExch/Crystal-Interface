@@ -2,20 +2,19 @@ import React, { useState } from 'react';
 import './EnterACode.css';
 
 interface EnterACodeProps {
-  setUsedRefLink: (refLink: string) => void;
+  handleSetRef: any;
   usedRefLink: string;
   refLink: string;
 }
 
 const EnterACode: React.FC<EnterACodeProps> = ({
-  setUsedRefLink,
+  handleSetRef,
   usedRefLink,
   refLink,
 }) => {
   const [refCode, setRefCode] = useState<string>(usedRefLink);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>(refCode ? ` ${refCode}` : '');
-  const [isSet, setIsSet] = useState<boolean>(!!usedRefLink);
 
   const handleSubmit = async (): Promise<void> => {
     if (!refCode) {
@@ -26,20 +25,19 @@ const EnterACode: React.FC<EnterACodeProps> = ({
       setError(t('noSelfRefer'));
       return;
     }
-
-    setUsedRefLink(refCode);
-    localStorage.setItem('ref', refCode);
-    setSuccess(`${refCode}`);
-    setIsSet(true);
+    const succeed = await handleSetRef(refCode);
+    if (succeed) {
+      setSuccess(`${refCode}`);
+    }
   };
 
-  const handleClear = (): void => {
-    setRefCode('');
-    setUsedRefLink('');
-    localStorage.removeItem('ref');
-    setError('');
-    setSuccess('');
-    setIsSet(false);
+  const handleClear = async (): Promise<void> => {
+    const succeed = await handleSetRef('');
+    if (succeed) {
+      setRefCode('')
+      setError('');
+      setSuccess('');
+    }
   };
 
   return (
@@ -48,7 +46,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
         {error && <span className="error-message">{error}</span>}
         <div className="header-container">
           <h2 className="code-title">
-            {isSet ? t('usingCode') : t('enterReferralCode')}
+            {usedRefLink ? t('usingCode') : t('enterReferralCode')}
           </h2>
         </div>
         <p className="referral-subtitle">
@@ -69,18 +67,18 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             <div className="input-with-clear">
               <input
                 type="text"
-                value={isSet ? success : refCode}
+                value={usedRefLink ? success : refCode}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (!isSet) {
+                  if (!usedRefLink) {
                     setRefCode(e.target.value);
                     setError('');
                   }
                 }}
                 placeholder={t('enteracode')}
-                className={isSet ? 'code-input-success' : 'code-input'}
-                readOnly={isSet}
+                className={usedRefLink ? 'code-input-success' : 'code-input'}
+                readOnly={usedRefLink != ''}
               />
-              {isSet && (
+              {usedRefLink && (
                 <button
                   onClick={handleClear}
                   className="clear-icon-button"
@@ -92,7 +90,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             </div>
             <button
               onClick={handleSubmit}
-              disabled={isSet}
+              disabled={usedRefLink != ''}
               className="code-button"
             >
               {t('setRef')}

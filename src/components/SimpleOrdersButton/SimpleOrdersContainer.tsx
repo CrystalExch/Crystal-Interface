@@ -10,7 +10,7 @@ interface SimpleOrdersContainerProps {
   router: `0x${string}`;
   address: string | undefined;
   refetch: () => void;
-  sendUserOperation: any;
+  sendUserOperationAsync: any;
   setChain: () => Promise<void>;
 }
 
@@ -19,7 +19,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
   router,
   address,
   refetch,
-  sendUserOperation,
+  sendUserOperationAsync,
   setChain,
 }) => {
   const { t } = useLanguage();
@@ -45,7 +45,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
       await setChain();
       
         await cancelOrder(
-        sendUserOperation,
+          sendUserOperationAsync,
         router as `0x${string}`,
         order[3] == 1
           ? markets[order[4]].quoteAddress
@@ -103,7 +103,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
       
 
       await multiBatchOrders(
-        sendUserOperation,
+        sendUserOperationAsync,
         router as `0x${string}`,
         BigInt(0),
         m,

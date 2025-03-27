@@ -130,7 +130,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
+  const { client, address } = useSmartAccountClient({});
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
     waitForTxn: true,
@@ -174,9 +174,6 @@ function App() {
     }
   }, [address, isNewWallet, showDepositPage]);
 
-
-
-  const sendUserOperation = useCallback(sendUserOperationAsync, []);
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -701,11 +698,11 @@ function App() {
   }, []);
 
   const filteredMarkets = marketsData.filter((market) => {
-    const matchesSearch = market.pair
+    const matchesSearch = market?.pair
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const notWeth =
-      market.baseAddress !== settings.chainConfig[activechain].weth;
+      market?.baseAddress !== settings.chainConfig[activechain].weth;
     return matchesSearch && notWeth;
   });
 
@@ -1559,7 +1556,7 @@ function App() {
   useEffect(() => {
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
-        const trades = tradesByMarket[market.marketKey] || [];
+        const trades = tradesByMarket[market?.marketKey] || [];
 
         if (trades.length === 0) return market;
 
@@ -8364,7 +8361,7 @@ function App() {
           router={router}
           address={address}
           refetch={refetch}
-          sendUserOperation={sendUserOperation}
+          sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
         />
       </div>}
@@ -9958,7 +9955,7 @@ function App() {
           router={router}
           address={address}
           refetch={refetch}
-          sendUserOperation={sendUserOperation}
+          sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
         />
       </div>}
@@ -10071,7 +10068,7 @@ function App() {
                   chainId: userchain,
                 }}
                 refetch={refRefetch}
-                sendUserOperation={sendUserOperation}
+                sendUserOperationAsync={sendUserOperationAsync}
               />
             }
           />
@@ -10131,7 +10128,7 @@ function App() {
                   logout: logout,
                 }}
                 refetch={refetch}
-                sendUserOperation={sendUserOperation}
+                sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
               />
             }
@@ -10343,7 +10340,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
                           />
                         </div>
@@ -10563,7 +10560,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
                           />
                         </div>
@@ -10784,7 +10781,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
                           />
                         </div>
@@ -11004,7 +11001,7 @@ function App() {
                             onlyThisMarket={onlyThisMarket}
                             setOnlyThisMarket={setOnlyThisMarket}
                             refetch={refetch}
-                            sendUserOperation={sendUserOperation}
+                            sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
                           />
                         </div>

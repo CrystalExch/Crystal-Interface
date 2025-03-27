@@ -65,7 +65,7 @@ interface PortfolioProps {
   setOnlyThisMarket: any;
   account: any;
   refetch: any;
-  sendUserOperation: any;
+  sendUserOperationAsync: any;
   setChain: any;
 }
 
@@ -102,7 +102,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setOnlyThisMarket,
   account,
   refetch,
-  sendUserOperation,
+  sendUserOperationAsync,
   setChain,
 }) => {
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
@@ -398,7 +398,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           setOnlyThisMarket={setOnlyThisMarket}
           isPortfolio={true}
           refetch={refetch}
-          sendUserOperation={sendUserOperation}
+          sendUserOperationAsync={sendUserOperationAsync}
           setChain={setChain}
         />
       </div>

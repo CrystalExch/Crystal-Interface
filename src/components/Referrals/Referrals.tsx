@@ -36,7 +36,7 @@ interface ReferralProps {
   setpopup: any;
   account: any;
   refetch: any;
-  sendUserOperation: any;
+  sendUserOperationAsync: any;
 }
 
 const Referrals: React.FC<ReferralProps> = ({
@@ -57,7 +57,7 @@ const Referrals: React.FC<ReferralProps> = ({
   setpopup,
   account,
   refetch,
-  sendUserOperation,
+  sendUserOperationAsync,
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
@@ -121,12 +121,19 @@ const Referrals: React.FC<ReferralProps> = ({
             functionName: 'refToAddress',
             args: [refLinkString.toLowerCase()],
           },
+          {
+            abi: CrystalRouterAbi,
+            address: router,
+            functionName: 'addressToUsedRef',
+            args: [address ?? '0x0000000000000000000000000000000000000000'],
+          },
         ],
       })) as any[];
       setRefLink(refs[0].result);
       setUsedRefAddress(
         refs[1].result || '0x0000000000000000000000000000000000000000',
       );
+      setUsedRefLink(refs[3].result ? refs[3].result : '')
       setError(
         refs[2].result === '0x0000000000000000000000000000000000000000' ||
           refs[2].result == address
@@ -134,11 +141,34 @@ const Referrals: React.FC<ReferralProps> = ({
           : t('codeTaken'),
       );
     })();
-  }, [usedRefLink, address, refLinkString]);
+  }, [address, usedRefLink, refLinkString]);
+
+  const handleSetRef = async (refCode: string) => {
+    try {
+      await sendUserOperationAsync({
+        uo: {
+          target: router,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'setUsedRef',
+            args: [
+              refCode
+            ],
+          }),
+          value: 0n,
+        },
+      })
+      setUsedRefLink(refCode);
+      localStorage.setItem('ref', refCode);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 
   const handleCreateRef = async () => {
     try {
-      await sendUserOperation({
+      await sendUserOperationAsync({
         uo: {
           target: router,
           data: encodeFunctionData({
@@ -162,7 +192,7 @@ const Referrals: React.FC<ReferralProps> = ({
     if (account.connected && account.chainId === activechain) {
       try {
         setIsSigning(true);
-        await sendUserOperation({
+        await sendUserOperationAsync({
           uo: {
             target: router,
             data: encodeFunctionData({
@@ -314,7 +344,7 @@ const Referrals: React.FC<ReferralProps> = ({
             </div>
             <EnterCode
               usedRefLink={usedRefLink}
-              setUsedRefLink={setUsedRefLink}
+              handleSetRef={handleSetRef}
               refLink={refLink}
             />
           </div>

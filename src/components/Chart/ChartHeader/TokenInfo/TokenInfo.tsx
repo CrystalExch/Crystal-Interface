@@ -193,7 +193,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   useEffect(() => { 
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
-        const trades = universalTrades[market.marketKey] || [];
+        const trades = universalTrades[market?.marketKey] || [];
 
         if (trades.length === 0) return market;
   
@@ -228,11 +228,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   };
 
   const filteredMarkets = marketsData.filter((market) => {
-    const matchesSearch = market.pair
+    const matchesSearch = market?.pair
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const notWeth =
-      market.baseAddress !== settings.chainConfig[activechain].weth;
+      market?.baseAddress !== settings.chainConfig[activechain].weth;
     return matchesSearch && notWeth;
   });
 
