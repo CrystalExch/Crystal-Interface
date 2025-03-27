@@ -73,7 +73,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<{ [address: string]: { username: string } }>({});
-  const { address } = useSmartAccountClient({ type: "LightAccount" });
+  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
@@ -158,40 +158,41 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     return canvas.toDataURL('image/png');
   };
   
-  useEffect(() => {
-    if (address && Object.keys(userInfo).length > 0) {
-      const lowerCaseAddress = address.toLowerCase();
-      
-      const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
-      
-      if (userInfo[lowerCaseAddress]) {
-        const points = liveLeaderboard[address] || 0;
-        
-        setUserData({
-          username: userInfo[lowerCaseAddress].username,
-          userXP: points,
-          logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
-        });
-        setHasAccount(true);
-        setShowChallengeIntro(false);
-      } else if (hasSeenIntro) {
-        setIsGuestMode(true);
-        setShowChallengeIntro(false);
-      } else {
-        setShowChallengeIntro(true);
-        setIntroStep(0);
-      }
-    } else {
-      setUserData({
-        username: "Guest",
-        userXP: 0,
-        logo: ""
-      });
-      setHasAccount(false);
-      setIsGuestMode(true);
-    }
-  }, [address, userInfo, liveLeaderboard]);
+useEffect(() => {
+  if (address && Object.keys(userInfo).length > 0) {
+    const lowerCaseAddress = address.toLowerCase();
+    
+    const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
+    
+    if (userInfo[lowerCaseAddress]) {
   
+      
+      const points = liveLeaderboard[lowerCaseAddress] || 0;
+      
+      setUserData({
+        username: userInfo[lowerCaseAddress].username,
+        userXP: points,
+        logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
+      });
+      setHasAccount(true);
+      setShowChallengeIntro(false);
+    } else if (hasSeenIntro) {
+      setIsGuestMode(true);
+      setShowChallengeIntro(false);
+    } else {
+      setShowChallengeIntro(true);
+      setIntroStep(0);
+    }
+  } else {
+    setUserData({
+      username: "Guest",
+      userXP: 0,
+      logo: ""
+    });
+    setHasAccount(false);
+    setIsGuestMode(true);
+  }
+}, [address, userInfo, liveLeaderboard]);
   useEffect(() => {
     if (Object.keys(liveLeaderboard).length > 0) {
       const liveEntries = Object.entries(liveLeaderboard).map(([address, points]) => ({
@@ -492,7 +493,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
 
   const handleConnectWallet = () => {
-    setpopup(4);
+    setpopup(4); 
   };
 
   return (

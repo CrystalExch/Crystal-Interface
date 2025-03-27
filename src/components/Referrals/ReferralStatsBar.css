@@ -8,7 +8,6 @@
 .stats-bar-wrapper {
   align-items: center;
   backdrop-filter: blur(5px);
-  background: rgba(17, 17, 20, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   display: flex;
