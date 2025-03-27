@@ -73,7 +73,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<{ [address: string]: { username: string } }>({});
-  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
+  const { address } = useSmartAccountClient({ type: "LightAccount" });
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
@@ -182,7 +182,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         setIntroStep(0);
       }
     } else {
-      // Reset to guest when wallet is disconnected
       setUserData({
         username: "Guest",
         userXP: 0,
@@ -487,14 +486,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         setShowAccountSetup(true);
       }
     } else if (!address) {
-      // Close any open popups when wallet disconnects
       setShowAccountSetup(false);
       setShowEditAccount(false);
     }
   }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
 
   const handleConnectWallet = () => {
-    setpopup(4); // Assuming 4 is the wallet connection popup like in Header component
+    setpopup(4);
   };
 
   return (
