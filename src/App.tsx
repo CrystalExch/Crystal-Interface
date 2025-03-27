@@ -2818,7 +2818,6 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {
             for (const event of batch.orders) {
-              console.log(event);
               const marketKey = addresstoMarket[event.contractAddress];
               if (marketKey) {
                 temptradehistory.push([
