@@ -190,6 +190,7 @@ function App() {
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const account = getAccount(config)
   const userchain = account.chainId || client?.chain?.id
+  console.log(client, address, currentUser, account)
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -328,7 +329,6 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
     {},
   );
-  const [dontShowAgain, setDontShowAgain] = useState(false);
 
   const [tokenIn, setTokenIn] = useState(() => {
     if (activeTab == 'send') {
@@ -5044,7 +5044,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             </div>
           </div>
         ) : null}
-        {popup === 4 && !isGeneratingAddressVisible && !isDepositPageVisible ? (
+        {popup === 4 ? (
           !connected ? (
             <div ref={popupref} className="connect-wallet-background unconnected">
               <div className="connect-wallet-content-container">
@@ -5899,57 +5899,24 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
           </div>
         ) : null}
 {popup === 11 ? (
-  <div ref={popupref} className="generating-address-overlay">
-    <div className="generating-address-popup">
+    <div ref={popupref} className="generating-address-popup">
       <span className="loader"></span>
       <h2 className="generating-address-title">Fetching Your Wallet</h2>
       <p className="generating-address-text">
         Please wait while we set up your secure wallet address...
       </p>
     </div>
-  </div>
 ) : null}
 
 {popup === 12 ? (
-  <div ref={popupref} className="deposit-page-overlay">
-    <div className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
+    <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
       <div className="deposit-page-header">
         <h2>Deposit</h2>
         <button className="deposit-close-button" onClick={handleCloseDepositPage}>
           <img src={closebutton} className="deposit-close-icon" alt="Close" />
         </button>
       </div>
-      
-      
-      <div className="deposit-address-container">
-        <label>Ethereum (ERC20) Address</label>
-        <div className="deposit-address-box">
-          <span className="deposit-address">{address}</span>
-          <button
-            className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
-            onClick={() => {
-              navigator.clipboard.writeText(address || '');
-              setCopyTooltipVisible(true);
-              setTimeout(() => setCopyTooltipVisible(false), 2000);
-            }}
-          >
-            {copyTooltipVisible ? 
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> : 
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-              </svg>
-            }
-          </button>
-        </div>
-      </div>
-      
-      <div className="deposit-warning">
-        <span>Your deposit must be sent on the Monad Testnet network to be processed.</span>
-      </div>
-<div className="token-dropdown-container">
+      <div className="token-dropdown-container">
   <div 
     className="selected-token-display"
     onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -5992,6 +5959,34 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
     </div>
   )}
 </div>
+      
+      <div className="deposit-address-container">
+        <div className="deposit-address-box">
+          <span className="deposit-address">{address}</span>
+          <button
+            className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
+            onClick={() => {
+              navigator.clipboard.writeText(address || '');
+              setCopyTooltipVisible(true);
+              setTimeout(() => setCopyTooltipVisible(false), 2000);
+            }}
+          >
+            {copyTooltipVisible ? 
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> : 
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+      
+      <div className="deposit-warning">
+        <span>Your deposit must be sent on the Monad Testnet network. All deposits are processed instantly and remain self-custodial.</span>
+      </div>
       <div className="deposit-qr-container">
         <QRCodeSVG
           value={address || ''}
@@ -6003,18 +5998,6 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
         />
       </div>
       
-      <div className="dont-show-again-container">
-        <label className="dont-show-again-label">
-          <input
-            type="checkbox"
-            checked={dontShowAgain}
-            onChange={(e) => setDontShowAgain(e.target.checked)}
-            className="dont-show-again-checkbox"
-          />
-          <span className="dont-show-again-text">Don't show again</span>
-        </label>
-      </div>
-      
       <button 
         className="deposit-done-button" 
         onClick={handleCloseDepositPage}
@@ -6022,7 +6005,6 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
         Done
       </button>
     </div>
-  </div>
 ) : null}
       </div>
     </>
