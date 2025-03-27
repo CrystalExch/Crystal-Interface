@@ -28,6 +28,7 @@ interface TokenInfoProps {
   tokendict: any;
   setpopup: (value: number) => void;
   marketsData: any[];
+  isLoading?: boolean; 
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -39,6 +40,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   tokendict,
   setpopup,
   marketsData,
+  isLoading = false, 
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -56,7 +58,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const { favorites, toggleFavorite, activechain } = useSharedContext();
 
-  const isLoading = !activeMarket;
+  const isComponentLoading = isLoading || !activeMarket;
   const marketAddress =
     activeMarket?.baseAddress || '0x0000000000000000000000000000000000000000';
 
@@ -224,7 +226,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       <TokenIcons inIcon={in_icon} outIcon={out_icon} />
 
       <div className="token-details">
-        {isLoading ? (
+        {isComponentLoading ? (
           <>
             <div className="symbol-skeleton" />
             <div className="pair-skeleton" />
@@ -435,7 +437,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
       {activeMarket && (
         <div className="price-display-section">
-          <PriceDisplay price={price} activeMarket={activeMarket} />
+          <PriceDisplay 
+            price={price} 
+            activeMarket={activeMarket} 
+            isLoading={isComponentLoading} 
+          />
         </div>
       )}
     </div>

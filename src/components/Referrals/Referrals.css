@@ -345,9 +345,11 @@
   background: rgba(255, 255, 255, 0.9);
   background-clip: text;
   font-size: 1.4rem;
-  font-weight: 400;
+  font-weight: 500;
   -webkit-text-fill-color: transparent;
-  text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+  letter-spacing: -0.5px;
+  transform: scaleX(1.07);
+  padding-left: 8px;
 }
 
 .token-breakdown-title {
@@ -372,7 +374,6 @@
   overflow-y: scroll;
   padding: 3px 0;
   scrollbar-color: #aaaecfe4 transparent;
-  scrollbar-width: thin;
 }
 
 .token-breakdown::-webkit-scrollbar {
@@ -664,4 +665,9 @@
   .referral-link-box {
     height: 40px;
   }
+}
+
+
+.lightning{
+  width: 27px;
 }

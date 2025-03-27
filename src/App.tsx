@@ -116,8 +116,6 @@ import TransactionPopupManager from './components/TransactionPopupManager/Transa
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
-import GeneratingAddressPopup from './components/GeneratingAddressPopup';
-import DepositPage from './components/DepositPage/DepositPage';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 
 
@@ -126,6 +124,7 @@ import { SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
+import { QRCodeSVG } from 'qrcode.react';
 
 function App() {
   // constants
@@ -147,10 +146,31 @@ function App() {
     }
   }, [currentUser, address]);
 
+  useEffect(() => {
+    if (currentUser && !address) {
+      setpopup(11);
+    } else if (popup === 11) {
+      setpopup(0);
+    }
+  }, [currentUser, address]);
+  
+  useEffect(() => {
+    if (address && isNewWallet && !showDepositPage) {
+      const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
+  
+      if (!hideDepositPage) {
+        setShowDepositPage(true);
+        setpopup(12); 
+      }
+      setIsNewWallet(false);
+    }
+  }, [address, isNewWallet, showDepositPage]);
+  
   const handleCloseDepositPage = () => {
     setShowDepositPage(false);
+    setpopup(0);
   };
-
+  
   const isDepositPageVisible = showDepositPage && address;
 
   useEffect(() => {
@@ -291,6 +311,8 @@ function App() {
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
   const [mobileView, setMobileView] = useState('chart');
   const [showTrade, setShowTrade] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
@@ -307,6 +329,8 @@ function App() {
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
     {},
   );
+  const [dontShowAgain, setDontShowAgain] = useState(false);
+
   const [tokenIn, setTokenIn] = useState(() => {
     if (activeTab == 'send') {
       const token = searchParams.get('token');
@@ -5857,6 +5881,132 @@ function App() {
             </ul>
           </div>
         ) : null}
+{popup === 11 ? (
+  <div ref={popupref} className="generating-address-overlay">
+    <div className="generating-address-popup">
+      <span className="loader"></span>
+      <h2 className="generating-address-title">Fetching Your Wallet</h2>
+      <p className="generating-address-text">
+        Please wait while we set up your secure wallet address...
+      </p>
+    </div>
+  </div>
+) : null}
+
+{popup === 12 ? (
+  <div ref={popupref} className="deposit-page-overlay">
+    <div className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
+      <div className="deposit-page-header">
+        <h2>Deposit</h2>
+        <button className="deposit-close-button" onClick={handleCloseDepositPage}>
+          <img src={closebutton} className="deposit-close-icon" alt="Close" />
+        </button>
+      </div>
+      
+      
+      <div className="deposit-address-container">
+        <label>Ethereum (ERC20) Address</label>
+        <div className="deposit-address-box">
+          <span className="deposit-address">{address}</span>
+          <button
+            className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
+            onClick={() => {
+              navigator.clipboard.writeText(address || '');
+              setCopyTooltipVisible(true);
+              setTimeout(() => setCopyTooltipVisible(false), 2000);
+            }}
+          >
+            {copyTooltipVisible ? 
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg> : 
+              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+              </svg>
+            }
+          </button>
+        </div>
+      </div>
+      
+      <div className="deposit-warning">
+        <span>Your deposit must be sent on the Monad Testnet network to be processed.</span>
+      </div>
+<div className="token-dropdown-container">
+  <div 
+    className="selected-token-display"
+    onClick={() => setDropdownOpen(!dropdownOpen)}
+  >
+    <div className="selected-token-info">
+      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+      <span className="deposit-token-name">{tokendict[selectedDepositToken].ticker}</span>
+    </div>
+    <div className="selected-token-balance">
+      {formatDisplayValue(
+        tokenBalances[selectedDepositToken] || 0, 
+        Number(tokendict[selectedDepositToken].decimals || 18)
+      )}
+    </div>
+  </div>
+  
+  {dropdownOpen && (
+    <div className="token-dropdown-list">
+      {Object.entries(tokendict).map(([address, token]) => (
+        <div 
+          key={address} 
+          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+          onClick={() => {
+            setSelectedDepositToken(address);
+            setDropdownOpen(false);
+          }}
+        >
+          <div className="dropdown-token-info">
+            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+            <span className="deposit-token-name">{token.ticker}</span>
+          </div>
+          <span className="deposit-token-balance">
+            {formatDisplayValue(
+              tokenBalances[address] || 0, 
+              Number(token.decimals || 18)
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+      <div className="deposit-qr-container">
+        <QRCodeSVG
+          value={address || ''}
+          size={170}
+          level="H"
+          includeMargin={true}
+          bgColor="#000000"
+          fgColor="#ffffff"
+        />
+      </div>
+      
+      <div className="dont-show-again-container">
+        <label className="dont-show-again-label">
+          <input
+            type="checkbox"
+            checked={dontShowAgain}
+            onChange={(e) => setDontShowAgain(e.target.checked)}
+            className="dont-show-again-checkbox"
+          />
+          <span className="dont-show-again-text">Don't show again</span>
+        </label>
+      </div>
+      
+      <button 
+        className="deposit-done-button" 
+        onClick={handleCloseDepositPage}
+      >
+        Done
+      </button>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
@@ -9994,15 +10144,6 @@ function App() {
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
       {Modals}
-      {currentUser && !address && (
-        <GeneratingAddressPopup isVisible={true} />
-      )}
-      {isDepositPageVisible && (
-        <DepositPage
-          address={address}
-          onClose={handleCloseDepositPage}
-        />
-      )}
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (

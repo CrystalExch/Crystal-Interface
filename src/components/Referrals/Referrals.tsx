@@ -12,8 +12,9 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-import ReferralBackground from '../../assets/referral_background.png';
+import ReferralBackground from '../../assets/referrals_bg.png';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
+import lightning from '../../assets/LightningIcon.png';
 
 import './Referrals.css';
 import { encodeFunctionData } from 'viem';

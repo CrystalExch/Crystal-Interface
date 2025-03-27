@@ -1,37 +1,43 @@
 import React, { useEffect, useState, useRef } from 'react';
-
 import './PriceDisplay.css';
 
 interface PriceDisplayProps {
   price: string;
   activeMarket: string;
+  isLoading?: boolean; 
 }
 
-const PriceDisplay: React.FC<PriceDisplayProps> = ({ price, activeMarket }) => {
-  const [isLoading, setIsLoading] = useState(price === 'n/a');
+const PriceDisplay: React.FC<PriceDisplayProps> = ({ 
+  price, 
+  activeMarket,
+  isLoading: externalLoading = false 
+}) => {
+  const [internalLoading, setInternalLoading] = useState(price === 'n/a');
   const prevPriceRef = useRef(price);
   const prevMarketRef = useRef(activeMarket);
   
+  const isLoading = externalLoading || internalLoading;
+  
   useEffect(() => {
     if (price === undefined) {
-      setIsLoading(true);
+      setInternalLoading(true);
       return;
     }
     
     if (activeMarket !== prevMarketRef.current) {
-      setIsLoading(true);
+      setInternalLoading(true);
       prevMarketRef.current = activeMarket;
       return;
     }
     
-    if (isLoading && price !== prevPriceRef.current) {
+    if (internalLoading && price !== prevPriceRef.current) {
       setTimeout(() => {
-        setIsLoading(false);
+        setInternalLoading(false);
       }, 100);
     }
     
     prevPriceRef.current = price;
-  }, [price, activeMarket, isLoading]);
+  }, [price, activeMarket, internalLoading]);
 
   if (isLoading) {
     return (

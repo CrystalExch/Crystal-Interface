@@ -6,6 +6,7 @@ import arrow from '../../assets/arrow.svg';
 import LeaderboardAccountSetup from './LeaderboardAccountSetup';
 import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
+import crystalxp from '../../assets/crystalxp.png';
 import {
   useSmartAccountClient,
 } from "@account-kit/react";
@@ -158,41 +159,41 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     return canvas.toDataURL('image/png');
   };
   
-  useEffect(() => {
-    if (address && Object.keys(userInfo).length > 0) {
-      const lowerCaseAddress = address.toLowerCase();
-      
-      const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
-      
-      if (userInfo[lowerCaseAddress]) {
-        const points = liveLeaderboard[address] || 0;
-        
-        setUserData({
-          username: userInfo[lowerCaseAddress].username,
-          userXP: points,
-          logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
-        });
-        setHasAccount(true);
-        setShowChallengeIntro(false);
-      } else if (hasSeenIntro) {
-        setIsGuestMode(true);
-        setShowChallengeIntro(false);
-      } else {
-        setShowChallengeIntro(true);
-        setIntroStep(0);
-      }
-    } else {
-      // Reset to guest when wallet is disconnected
-      setUserData({
-        username: "Guest",
-        userXP: 0,
-        logo: ""
-      });
-      setHasAccount(false);
-      setIsGuestMode(true);
-    }
-  }, [address, userInfo, liveLeaderboard]);
+useEffect(() => {
+  if (address && Object.keys(userInfo).length > 0) {
+    const lowerCaseAddress = address.toLowerCase();
+    
+    const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
+    
+    if (userInfo[lowerCaseAddress]) {
   
+      
+      const points = liveLeaderboard[lowerCaseAddress] || 0;
+      
+      setUserData({
+        username: userInfo[lowerCaseAddress].username,
+        userXP: points,
+        logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
+      });
+      setHasAccount(true);
+      setShowChallengeIntro(false);
+    } else if (hasSeenIntro) {
+      setIsGuestMode(true);
+      setShowChallengeIntro(false);
+    } else {
+      setShowChallengeIntro(true);
+      setIntroStep(0);
+    }
+  } else {
+    setUserData({
+      username: "Guest",
+      userXP: 0,
+      logo: ""
+    });
+    setHasAccount(false);
+    setIsGuestMode(true);
+  }
+}, [address, userInfo, liveLeaderboard]);
   useEffect(() => {
     if (Object.keys(liveLeaderboard).length > 0) {
       const liveEntries = Object.entries(liveLeaderboard).map(([address, points]) => ({
@@ -487,14 +488,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         setShowAccountSetup(true);
       }
     } else if (!address) {
-      // Close any open popups when wallet disconnects
       setShowAccountSetup(false);
       setShowEditAccount(false);
     }
   }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
 
   const handleConnectWallet = () => {
-    setpopup(4); // Assuming 4 is the wallet connection popup like in Header component
+    setpopup(4); 
   };
 
   return (
