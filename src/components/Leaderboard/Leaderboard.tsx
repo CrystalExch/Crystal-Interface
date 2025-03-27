@@ -6,7 +6,6 @@ import arrow from '../../assets/arrow.svg';
 import LeaderboardAccountSetup from './LeaderboardAccountSetup';
 import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
-import crystalxp from '../../assets/crystalxp.png';
 import {
   useSmartAccountClient,
 } from "@account-kit/react";
@@ -74,7 +73,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [userInfo, setUserInfo] = useState<{ [address: string]: { username: string } }>({});
-  const { address } = useSmartAccountClient({ type: "LightAccount" });
+  const { client, address } = useSmartAccountClient({ type: "LightAccount" });
 
   useEffect(() => {
     const ws = new WebSocket("wss://points-backend-b5a062cda7cd.herokuapp.com/ws/points");
