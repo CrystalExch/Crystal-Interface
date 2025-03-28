@@ -31,6 +31,7 @@ import {
   useSmartAccountClient,
   useSendUserOperation,
   useAlchemyAccountContext,
+  useUser,
   AuthCard,
 } from "@account-kit/react";
 
@@ -134,20 +135,21 @@ function App() {
   });
   const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
+  const currentUser = useUser();
 
   useEffect(() => {
-    if (!address) {
+    if (!address && currentUser) {
       setIsNewWallet(true);
     }
-  }, [address]);
+  }, [address, currentUser]);
 
   useEffect(() => {
-    if (!address) {
+    if (!address && currentUser) {
       setpopup(11);
     } else if (popup === 11) {
       setpopup(0);
     }
-  }, [address]);
+  }, [address, currentUser]);
   
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
@@ -176,7 +178,6 @@ function App() {
       setIsNewWallet(false);
     }
   }, [address, isNewWallet, showDepositPage]);
-
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
