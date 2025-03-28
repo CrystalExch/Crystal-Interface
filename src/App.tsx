@@ -181,7 +181,7 @@ function App() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
-  const userchain = alchemyconfig._internal.wagmiConfig.state.connections.entries().next().value[1].chainId || client?.chain?.id
+  const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
