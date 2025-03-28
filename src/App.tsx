@@ -139,7 +139,6 @@ function App() {
   const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
 
-  const isGeneratingAddressVisible = currentUser && !address;
   useEffect(() => {
     if (currentUser && !address) {
       setIsNewWallet(true);
@@ -171,8 +170,6 @@ function App() {
     setpopup(0);
   };
   
-  const isDepositPageVisible = showDepositPage && address;
-
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
       const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
@@ -190,7 +187,7 @@ function App() {
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const account = getAccount(config)
   const userchain = account.chainId || client?.chain?.id
-  console.log(client, address, currentUser, account)
+  // console.log(client, address, currentUser, account)
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -1117,7 +1114,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                 ),
                 topics: [
                   [
-                    '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                    '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4',
                   ],
                   [
                     '0x000000000000000000000000' + address?.slice(2),
@@ -1127,7 +1124,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             ],
           }] : [])]),
         });
-        const result = await req.json()
+        const result = await req.json();
         blockNumber = result[0].result;
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
@@ -1145,8 +1142,8 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                   }
                   queue.push(logIdentifier);
                   set.add(logIdentifier);
-                  let _timestamp = parseInt(log['data'].slice(2, 66), 16);
-                  let _orderdata = log['data'].slice(194);
+                  let _timestamp = parseInt(log['blockTimestamp'], 16);
+                  let _orderdata = log['data'].slice(130);
                   for (let i = 0; i < _orderdata.length; i += 64) {
                     let chunk = _orderdata.slice(i, i + 64);
                     let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
@@ -1306,7 +1303,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                   }
                   queue.push(logIdentifier);
                   set.add(logIdentifier);
-                  let _timestamp = parseInt(log['data'].slice(67, 98), 16);
+                  let _timestamp = parseInt(log['blockTimestamp'], 16);
                   let _orderdata = log['data'].slice(258);
                   const marketKey = addresstoMarket[log['address']];
                   if (
@@ -2736,7 +2733,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
       (async () => {
         try {
           // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-v2/v0.0.4';
+          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-v2/v0.0.9';
 
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
@@ -2923,7 +2920,8 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-v2/v0.0.9';
         let allLogs: any[] = [];
 
         const query = `
@@ -2932,7 +2930,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               first: 150,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x3e186070cb7a1b2c498cd7347735859bc5ae278d" }
+              where: { contractAddress: "0x7f231c00f6b31a60c603b2d0ed6f871917aaef65" }
             ) {
               id
               caller
@@ -2949,7 +2947,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               first: 150,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x3514e481e658533ee4d02a7de53c19a803f1783f" }
+              where: { contractAddress: "0x1ae258bb116bb161e29d5b8152847d8e08a94c40" }
             ) {
               id
               caller
@@ -2966,7 +2964,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               first: 150,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x35e79dac2ef49abd319f50d028f99e7d0f1a3559" }
+              where: { contractAddress: "0x6adedea6377a8db6e8b8399e439a6faaf47dd6d2" }
             ) {
               id
               caller
@@ -2983,7 +2981,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               first: 150,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x12b6179c20e9bac7398ab9d38be8997d1048d3c3" }
+              where: { contractAddress: "0xe49828789d843abafa00dc020e8daa170805ce92" }
             ) {
               id
               caller
@@ -3000,7 +2998,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               first: 150,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x20db6a0db7b47539e513ce29ac4018fe504fbb2a" }
+              where: { contractAddress: "0xac27392ff5be714fa79c6e933debb7f8a2a9da6d" }
             ) {
               id
               caller

@@ -196,10 +196,10 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       value: (
         <>
           <span className="long">
-            {'↗\uFE0E'} ${buyLiquidity}
+            {'↗\uFE0E'} ${buyLiquidity === 'n/a' ? '0.00' : buyLiquidity}
           </span>
           <span className="short">
-            {'↘\uFE0E'} ${sellLiquidity}
+            {'↘\uFE0E'} ${sellLiquidity === 'n/a' ? '0.00' : sellLiquidity}
           </span>
         </>
       ),

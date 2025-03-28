@@ -80,6 +80,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     ws.onopen = () => {};
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
+      console.log(data);
       setLiveLeaderboard(data);
       setTimeout(() => setLoading(false), 1500);
     };
