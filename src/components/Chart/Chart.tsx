@@ -81,8 +81,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     contractAddress: string
   ): Promise<DataPoint[]> {
     const seriesId = `series-${interval}-${contractAddress}`.toLowerCase();
-    // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BDU1hP5UVEeYcvWME3eApDa24oBteAfmupPHktgSzu5r`;
-    const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-v2/v0.0.9';
+    const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
 
     let allCandles: any[] = [];
     const query = `
