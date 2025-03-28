@@ -1,6 +1,6 @@
 import { getBlockNumber, readContract } from '@wagmi/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { config } from '../../../wagmi';
+import { config } from '../../../wagmi2.ts';
 
 import PortfolioCache from './portfolioCache';
 
@@ -208,8 +208,6 @@ export const usePortfolioData = (
   }, [tokenList, tokenBalances, trades, markets]);
 
   useEffect(() => {
-    let mounted = true;
-
     const fetchData = async () => {
       if (!address) {
         setState((prev) => ({
@@ -235,9 +233,8 @@ export const usePortfolioData = (
       setState((prev) => ({ ...prev, portChartLoading: true }));
 
       try {
-        const balanceResults = await fetchBalances();
-        if (!mounted) return;
         if (Object.keys(trades).length > 0 && tradesloading == false) {
+          const balanceResults = await fetchBalances();
           const chartData = calculateChartData(balanceResults);
           cache.set(cacheKey, chartData, balanceResults, chartDays);
 
@@ -249,16 +246,13 @@ export const usePortfolioData = (
         }
       } catch (error) {
         console.error('Error fetching portfolio data:', error);
-        if (mounted) {
-          setState((prev) => ({ ...prev, portChartLoading: false }));
-        }
+        setState((prev) => ({ ...prev, portChartLoading: false }));
       }
     };
 
     fetchData();
 
     return () => {
-      mounted = false;
       abortControllerRef.current?.abort();
     };
   }, [address, chartDays, Object.keys(trades).length > 0, tradesloading]);

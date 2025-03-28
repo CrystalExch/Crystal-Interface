@@ -3,7 +3,6 @@ import {
   getBlockNumber,
   waitForTransactionReceipt,
   switchChain,
-  getAccount,
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -33,7 +32,6 @@ import {
   useSendUserOperation,
   useAlchemyAccountContext,
   AuthCard,
-  useUser,
 } from "@account-kit/react";
 
 // import css
@@ -134,24 +132,22 @@ function App() {
     client,
     waitForTxn: true,
   });
-
-  const currentUser = useUser();
   const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
 
   useEffect(() => {
-    if (currentUser && !address) {
+    if (!address) {
       setIsNewWallet(true);
     }
-  }, [currentUser, address]);
+  }, [address]);
 
   useEffect(() => {
-    if (currentUser && !address) {
+    if (!address) {
       setpopup(11);
     } else if (popup === 11) {
       setpopup(0);
     }
-  }, [currentUser, address]);
+  }, [address]);
   
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
@@ -185,9 +181,7 @@ function App() {
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
-  const account = getAccount(config)
-  const userchain = account.chainId || client?.chain?.id
-  // console.log(client, address, currentUser, account)
+  const userchain = alchemyconfig._internal.wagmiConfig.state.connections.entries().next().value[1].chainId || client?.chain?.id
   const connected = address != undefined
   const location = useLocation();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -989,7 +983,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
       settokenString(value);
     }, 100);
   }
-
+  
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
     batchSize: 0,
@@ -1029,7 +1023,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
         address: activeMarket?.address,
         abi: CrystalMarketAbi,
         functionName: 'getPriceLevelsFromMid',
-        args: [BigInt(10000)],
+        args: [BigInt(1000000)],
       },
       {
         address: balancegetter,
@@ -1125,7 +1119,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
           }] : [])]),
         });
         const result = await req.json();
-        blockNumber = result[0].result;
+        blockNumber = '0x' + (parseInt(result[0].result, 16) - 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs(({ queue, set }: { queue: string[]; set: Set<string> }) => {
