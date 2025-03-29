@@ -31,7 +31,7 @@ interface ChartOrderbookPanelProps {
   setpopup: (value: number) => void;
   updateLimitAmount: any;
   tradesloading: boolean;
-  orders?: any[];
+  orders: any[];
   marketsData: any;
 }
 

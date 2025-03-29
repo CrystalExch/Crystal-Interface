@@ -8356,7 +8356,7 @@ function App() {
                 setLimitButton(0);
               } catch (error) {
                 newTxPopup(
-                  hash.hash,
+                  result ? hash.hash : hash.hash,
                   "limitFailed",
                   tokenIn == eth ? eth : tokenIn,
                   tokenOut == eth ? eth : tokenOut,
@@ -10379,6 +10379,7 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
+                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -10600,6 +10601,7 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
+                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -10820,6 +10822,7 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
+                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -11041,6 +11044,7 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
+                                    userOrders={orders}
                                   />
                                 )}
                             </div>

@@ -22,7 +22,7 @@ interface OrderBookProps {
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
   updateLimitAmount: any;
-  userOrders?: any[];
+  userOrders: any[];
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
