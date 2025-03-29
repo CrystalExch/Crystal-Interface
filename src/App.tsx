@@ -9112,9 +9112,10 @@ function App() {
               connected &&
               userchain === activechain
             ) {
+              let hash;
               try {
                 if (tokenIn == eth) {
-                  const hash = await sendeth(
+                  hash = await sendeth(
                     sendUserOperationAsync,
                     recipient as `0x${string}`,
                     amountIn,
@@ -9133,7 +9134,7 @@ function App() {
                     recipient,
                   );
                 } else {
-                  const hash = await sendtokens(
+                  hash = await sendtokens(
                     sendUserOperationAsync,
                     tokenIn as `0x${string}`,
                     recipient as `0x${string}`,
@@ -9168,6 +9169,7 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
+                console.log(hash.hash)
               } finally {
                 setTimeout(() => refetch(), 500)
               }
