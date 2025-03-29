@@ -141,9 +141,10 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 const price = m.map((market) => orderbatch[market][1]);
                 const param1 = m.map((market) => orderbatch[market][2]);
                 const param2 = m.map((market) => orderbatch[market][3]);
+                let hash;
                 try {
                   await setChain()
-                  await multiBatchOrders(
+                  hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
                     BigInt(0),
@@ -153,9 +154,9 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                     param1,
                     param2,
                   );
-                  setTimeout(()=>refetch(), 500)
                 } catch (error) {
-                  console.error(error);
+                } finally {
+                  setTimeout(() => refetch(), 500)
                 }
               }}
             >

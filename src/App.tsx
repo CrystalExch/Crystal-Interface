@@ -2,7 +2,6 @@
 import {
   getBlockNumber,
   waitForTransactionReceipt,
-  switchChain,
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -750,7 +749,7 @@ function App() {
   });
 
   const handleSetChain = useCallback(async () => {
-    return await switchChain(config, { chainId: activechain as any });
+    return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
   }, [activechain]);
 
   function newTxPopup(

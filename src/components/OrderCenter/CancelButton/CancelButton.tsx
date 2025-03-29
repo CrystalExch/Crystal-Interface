@@ -14,9 +14,10 @@ interface CancelButtonProps {
 
 const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperationAsync, setChain }) => {
   const handleCancel = async () => {
+    let hash;
     try {
       await setChain()
-      await cancelOrder(
+      hash = await cancelOrder(
         sendUserOperationAsync,
         router,
         order[3] == 1
@@ -28,8 +29,10 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
         BigInt(order[0]),
         BigInt(order[1]),
       );
-      setTimeout(()=>refetch(), 500)
-    } catch (error) {}
+    } catch (error) {
+    } finally {
+      setTimeout(() => refetch(), 500)
+    }
   };
 
   return (
