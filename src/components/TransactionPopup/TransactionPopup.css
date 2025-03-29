@@ -407,7 +407,3 @@
     filter: blur(3px);
   }
 }
-
-.txpopup.failed {
-  border: 1.5px solid rgba(255, 107, 107, 0.3);
-}

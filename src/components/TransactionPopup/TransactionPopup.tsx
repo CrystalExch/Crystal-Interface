@@ -518,8 +518,10 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
             <div className="txpopup-swap-details">
               <div className="txpopup-token-group">
                 <img src={tokenIn.image} className="txpopup-token-icon" />
+                {tokenIn.ticker}
                 <span className="txpopup-arrow">→</span>
                 <img src={tokenOut.image} className="txpopup-token-icon" />
+                {tokenOut.ticker}
               </div>
               {price && (
                 <div className="txpopup-error-message">
