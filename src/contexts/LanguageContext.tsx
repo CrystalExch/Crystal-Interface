@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState } from 'react';
+import limitOrder from '../scripts/limitOrder';
 
 export const translations: any = {
   EN: {
@@ -336,6 +337,7 @@ export const translations: any = {
     page: "Page",
     viewYourPosition: "View Your Position",
     mint: "Mint",
+    limitFailed: 'Limit Order Failed',
 
   },
   CN: {
@@ -674,6 +676,7 @@ export const translations: any = {
     page: "页",
     viewYourPosition: "查看您的排名",
     mint: "铸造",
+    limitFailed: '限价订单失败',
  
   },
   JP: {
@@ -1012,6 +1015,7 @@ export const translations: any = {
     page: "ページ",
     viewYourPosition: "あなたの位置を表示",
     mint: "鋳造",
+    limitFailed: '指値注文失敗',
 
   },
   KR: {
@@ -1350,6 +1354,7 @@ export const translations: any = {
     page: "페이지",
     viewYourPosition: "위치 보기",
     mint: "제조",
+    limitFailed: '지정가 주문 실패',
 
   },
   ES: {
@@ -1688,6 +1693,7 @@ export const translations: any = {
     page: 'Página',
     viewYourPosition: "Ver tu posición",
     mint: "Mint",
+    limitFailed: 'Orden Límite Fallida',
   }
 };
 

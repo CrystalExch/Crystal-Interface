@@ -503,9 +503,18 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
     
     if (currentAction === 'limitFailed') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('limitFailed')}</div>
+        <div className="txpopup-inner-failed">
+          <div className="txpopup-error-x-container">
+            <div className="txpopup-error-x-glow"></div>
+            <div className="txpopup-error-x">
+              <div className="txpopup-error-circle"></div>
+              <div className="txpopup-error-x-line1"></div>
+              <div className="txpopup-error-x-line2"></div>
+            </div>
+          </div>
+          
+          <div className="txpopup-failed-content">
+            <div className="txpopup-title-failed">{t('limitFailed')}</div>
             <div className="txpopup-swap-details">
               <div className="txpopup-token-group">
                 <img src={tokenIn.image} className="txpopup-token-icon" />
@@ -518,24 +527,23 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
                 </div>
               )}
             </div>
+            <a
+              className="view-transaction"
+              href={explorerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('viewOnExplorer')}
+            </a>
           </div>
-          <a
-            className="view-transaction"
-            href={explorerLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('viewOnExplorer')}
-          </a>
         </div>
       );
     }
 
     return null;
   };
-
   return (
-    <div className={`txpopup ${isNew ? 'new' : ''} ${isExiting ? 'exit' : ''}`}>
+    <div className={`txpopup ${isNew ? 'new' : ''} ${isExiting ? 'exit' : ''} ${currentAction.includes('Failed') ? 'failed' : ''}`}>
       <div className="txpopup-progress-container">
         <div 
           className="txpopup-progress-bar" 

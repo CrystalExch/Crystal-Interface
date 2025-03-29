@@ -30,6 +30,8 @@
   font-weight:300;
   letter-spacing:-.2px
 }
+
+
 .txpopup-swap-details {
   align-items: left;
   display: flex;
@@ -129,6 +131,15 @@
   height: 100%;
 }
 
+.txpopup.failed .txpopup-progress-bar {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 107, 107, 0.5) 0%,
+    rgba(255, 107, 107, 0.8) 50%,
+    rgba(255, 107, 107, 0.5) 100%
+  );
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+}
 @keyframes slideUp {
   from {
     opacity: 0;
@@ -234,4 +245,169 @@
 
 .txpopup.new {
   animation: slideUp 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+
+
+
+
+
+.txpopup-failed-content{
+  padding-left: 60px;
+}
+
+.txpopup-title-failed{
+  display:flex;
+  color:#ffffffa4;
+  font-size:.75rem;
+  font-weight:300;
+  letter-spacing:-.2px;
+  margin-bottom: 5px;
+}
+.txpopup-inner-failed{
+  padding: 5px;
+}
+
+.txpopup-error-x-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding-left: 25px;
+  z-index: 1;
+}
+
+.txpopup-error-x {
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.txpopup-error-circle {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-sizing: border-box;
+  animation: circleAnimation 1.5s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
+}
+
+@keyframes circleAnimation {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+    border-color: rgba(255, 107, 107, 0);
+  }
+  50% {
+    opacity: 1;
+    border-color: rgba(255, 107, 107, 0.8);
+  }
+  70% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    border-color: rgba(255, 107, 107, 0.8);
+    box-shadow: 0 0 12px rgba(255, 107, 107, 0.5);
+  }
+}
+
+.txpopup-error-x-line1 {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff6b6b, #ff9b8f, #ff6b6b);
+  background-size: 200% 200%;
+  border-radius: 2px;
+  transform: rotate(45deg);
+  transform-origin: center;
+  animation: 
+    gradientShift 3s infinite linear,
+    xLine1Animation 1s cubic-bezier(0.19, 1, 0.22, 1) forwards;
+  box-shadow: 0 0 4px rgba(255, 107, 107, 0.6);
+}
+
+.txpopup-error-x-line2 {
+  position: absolute;
+  width: 100%;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9b8f, #ff6b6b, #ff9b8f);
+  background-size: 200% 200%;
+  border-radius: 2px;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  animation: 
+    gradientShift 3s infinite linear reverse,
+    xLine2Animation 1s cubic-bezier(0.19, 1, 0.22, 1) 0.2s forwards;
+  box-shadow: 0 0 4px rgba(255, 107, 107, 0.6);
+  opacity: 0;
+}
+
+.txpopup-error-x-glow {
+  position: absolute;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 107, 107, 0.3) 0%, rgba(255, 107, 107, 0) 70%);
+  animation: pulseGlow 2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes xLine1Animation {
+  0% {
+    transform: rotate(45deg) scaleX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(45deg) scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes xLine2Animation {
+  0% {
+    transform: rotate(-45deg) scaleX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: rotate(-45deg) scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes pulseGlow {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.3;
+    filter: blur(3px);
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.6;
+    filter: blur(5px);
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0.3;
+    filter: blur(3px);
+  }
+}
+
+.txpopup.failed {
+  border: 1.5px solid rgba(255, 107, 107, 0.3);
 }
