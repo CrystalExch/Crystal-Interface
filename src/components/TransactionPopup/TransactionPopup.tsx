@@ -429,6 +429,108 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
       );
     }
 
+    if (currentAction === 'sendFailed') {
+      return (
+        <div className="txpopup-inner">
+          <div className="txpopup-main-content">
+            <div className="txpopup-title">{t('sendFailed')}</div>
+            <div className="txpopup-token-details">
+              <img src={tokenIn.image} className="txpopup-token-icon" />
+              <div className="txpopup-token-group">
+                <span className="txpopup-amount">
+                  {formatBalance(
+                    amountIn,
+                    tokenIn.ticker === 'USDC' ? 'usd' : 'token',
+                  ) +
+                    ' ' +
+                    tokenIn.ticker}
+                </span>
+                <span className="txpopup-arrow">→</span>
+                <div className="txpopup-recipient">{`${address.slice(0, 6)}...${address.slice(-4)}`}</div>
+              </div>
+            </div>
+            {price && <div className="txpopup-error-message">{price}</div>}
+          </div>
+          <a
+            className="view-transaction"
+            href={explorerLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('viewOnExplorer')}
+          </a>
+        </div>
+      );
+    }   
+    
+    if (currentAction === 'swapFailed') {
+      return (
+        <div className="txpopup-inner">
+          <div className="txpopup-main-content">
+            <div className="txpopup-title">{t('swapFailed')}</div>
+            <div className="txpopup-swap-details">
+              <div className="txpopup-token-group">
+                <img src={tokenIn.image} className="txpopup-token-icon" />
+                <span className="txpopup-amount">
+                  {formatBalance(
+                    amountIn,
+                    tokenIn.ticker === 'USDC' ? 'usd' : 'token'
+                  ) + ' ' + tokenIn.ticker}
+                </span>
+                <span className="txpopup-arrow">→</span>
+                <img src={tokenOut.image} className="txpopup-token-icon" />
+                <span className="txpopup-amount">
+                  {formatBalance(
+                    amountOut,
+                    tokenOut.ticker === 'USDC' ? 'usd' : 'token'
+                  ) + ' ' + tokenOut.ticker}
+                </span>
+              </div>
+              {price && <div className="txpopup-error-message">{price}</div>}
+            </div>
+          </div>
+          <a
+            className="view-transaction"
+            href={explorerLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('viewOnExplorer')}
+          </a>
+        </div>
+      );
+    }   
+    
+    if (currentAction === 'limitFailed') {
+      return (
+        <div className="txpopup-inner">
+          <div className="txpopup-main-content">
+            <div className="txpopup-title">{t('limitFailed')}</div>
+            <div className="txpopup-swap-details">
+              <div className="txpopup-token-group">
+                <img src={tokenIn.image} className="txpopup-token-icon" />
+                <span className="txpopup-arrow">→</span>
+                <img src={tokenOut.image} className="txpopup-token-icon" />
+              </div>
+              {price && (
+                <div className="txpopup-error-message">
+                  {price}
+                </div>
+              )}
+            </div>
+          </div>
+          <a
+            className="view-transaction"
+            href={explorerLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('viewOnExplorer')}
+          </a>
+        </div>
+      );
+    }
+
     return null;
   };
 
