@@ -2540,7 +2540,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   flex-direction: column;
   height: auto;
   inset: 0;
-  margin: 50px auto;
+  margin: auto;
+  margin-top: 30px;
   max-width: 420px;
   position: relative;
   width: 100%;
