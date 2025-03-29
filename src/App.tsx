@@ -150,24 +150,24 @@ function App() {
       setpopup(0);
     }
   }, [address, currentUser]);
-  
+
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
       const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
-  
+
       if (!hideDepositPage) {
         setShowDepositPage(true);
-        setpopup(12); 
+        setpopup(12);
       }
       setIsNewWallet(false);
     }
   }, [address, isNewWallet, showDepositPage]);
-  
+
   const handleCloseDepositPage = () => {
     setShowDepositPage(false);
     setpopup(0);
   };
-  
+
   useEffect(() => {
     if (address && isNewWallet && !showDepositPage) {
       const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
@@ -304,7 +304,7 @@ function App() {
 
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
+  const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
   const [mobileView, setMobileView] = useState('chart');
   const [showTrade, setShowTrade] = useState(false);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
@@ -984,7 +984,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
       settokenString(value);
     }, 100);
   }
-  
+
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
     batchSize: 0,
@@ -1521,23 +1521,23 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
         const data = dayKlines;
         const now = Date.now();
         const oneDayAgo = now - 24 * 60 * 60 * 1000;
-  
+
         const processedMarkets = data.map((series: any) => {
           const idParts = series.id.split("-");
           const address = idParts[2];
-  
+
           const match = Object.values(markets).find(
             (m) => m.address.toLowerCase() === address.toLowerCase()
           );
           if (!match) return;
-  
+
           const candles: DataPoint[] = series.klines.reverse();
           const last24hCandles = candles.filter((candle: DataPoint) => {
             const candleTime = new Date(candle.time).getTime();
             return candleTime >= oneDayAgo;
           });
           const relevantCandles = last24hCandles.length > 0 ? last24hCandles : candles;
-  
+
           const highs = relevantCandles.map((c) => c.high);
           const lows = relevantCandles.map((c) => c.low);
           const high = Math.max(...highs);
@@ -1547,7 +1547,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
           const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
           const totalVolume = relevantCandles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
           const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
-  
+
           return {
             ...match,
             pair: `${match.baseAsset}/${match.quoteAsset}`,
@@ -1561,13 +1561,13 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             low24h: formatSubscript(low.toFixed(decimals)),
           };
         });
-  
+
         setMarketsData(processedMarkets);
       } catch (error) {
         console.error("error fetching candles:", error);
       }
     };
-  
+
     processMarkets();
   }, [markets, dayKlines]);
 
@@ -1583,22 +1583,22 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
           if (!trade.time) return false;
           return new Date(trade.time).getTime() >= oneDayAgo;
         });
-        
+
         if (last24hTrades.length === 0) return market;
-        
+
         last24hTrades.sort(
           (a: DataPoint, b: DataPoint) => new Date(a.time).getTime() - new Date(b.time).getTime()
         );
-        
+
         const firstTrade = last24hTrades[0];
         const latestTrade = last24hTrades[last24hTrades.length - 1];
-        
+
         const currentPriceRaw = Number(latestTrade[3] || latestTrade.close);
         const firstPrice = Number(firstTrade[3] || firstTrade.close);
-        
+
         const percentageChange =
           firstPrice === 0 ? 0 : ((currentPriceRaw - firstPrice) / firstPrice) * 100;
-        
+
         const totalVolume = last24hTrades.reduce((acc: number, trade: any) => {
           if (trade.volume !== undefined) {
             return acc + parseFloat(trade.volume.toString());
@@ -1607,9 +1607,9 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             return acc + vol;
           }
         }, 0);
-        
+
         const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
-        
+
         return {
           ...market,
           volume: formatCommas(totalVolume.toFixed(2)),
@@ -1771,7 +1771,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
     let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
     if (tokenIn == activeMarket.quoteAddress) {
       if (totalUsdValue != amountIn) {
-        orderUsdValues[-1] -= (amountIn - totalUsdValue)
+        orderUsdValues[orderUsdValues.length - 1] += (amountIn - totalUsdValue)
         totalUsdValue = amountIn
       }
       setAmountOutScale(BigInt(totalTokenValue))
@@ -1789,7 +1789,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
     }
     else {
       if (totalTokenValue != amountIn) {
-        orderSizes[-1] -= (amountIn - totalTokenValue)
+        orderSizes[orderSizes.length - 1] += (amountIn - totalTokenValue)
         totalTokenValue = amountIn
       }
       setAmountOutScale(BigInt(totalUsdValue))
@@ -1850,13 +1850,13 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
     let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
     if (tokenIn == activeMarket.quoteAddress) {
       if (totalUsdValue != amountIn) {
-        orderUsdValues[-1] -= (amountIn - totalUsdValue)
+        orderUsdValues[orderUsdValues.length - 1] += (amountIn - totalUsdValue)
         totalUsdValue = amountIn
       }
     }
     else {
       if (totalTokenValue != amountIn) {
-        orderSizes[-1] -= (amountIn - totalTokenValue)
+        orderSizes[orderSizes.length - 1] += (amountIn - totalTokenValue)
         totalTokenValue = amountIn
       }
     }
@@ -3097,7 +3097,7 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
   }, [activechain]);
 
   // click outside slippage and resize handler and click outside popup and showtrade esc
-  useEffect(() => { 
+  useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setpopup(0);
@@ -5889,114 +5889,114 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             </ul>
           </div>
         ) : null}
-{popup === 11 ? (
-    <div ref={popupref} className="generating-address-popup">
-      <span className="loader"></span>
-      <h2 className="generating-address-title">Fetching Your Wallet</h2>
-      <p className="generating-address-text">
-        Please wait while we set up your secure wallet address...
-      </p>
-    </div>
-) : null}
-
-{popup === 12 ? (
-    <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
-      <div className="deposit-page-header">
-        <h2>Deposit</h2>
-        <button className="deposit-close-button" onClick={handleCloseDepositPage}>
-          <img src={closebutton} className="deposit-close-icon" alt="Close" />
-        </button>
-      </div>
-      <div className="token-dropdown-container">
-  <div 
-    className="selected-token-display"
-    onClick={() => setDropdownOpen(!dropdownOpen)}
-  >
-    <div className="selected-token-info">
-      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
-      <span className="deposit-token-name">{tokendict[selectedDepositToken].ticker}</span>
-    </div>
-    <div className="selected-token-balance">
-      {formatDisplayValue(
-        tokenBalances[selectedDepositToken] || 0, 
-        Number(tokendict[selectedDepositToken].decimals || 18)
-      )}
-    </div>
-  </div>
-  
-  {dropdownOpen && (
-    <div className="token-dropdown-list">
-      {Object.entries(tokendict).map(([address, token]) => (
-        <div 
-          key={address} 
-          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
-          onClick={() => {
-            setSelectedDepositToken(address);
-            setDropdownOpen(false);
-          }}
-        >
-          <div className="dropdown-token-info">
-            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
-            <span className="deposit-token-name">{token.ticker}</span>
+        {popup === 11 ? (
+          <div ref={popupref} className="generating-address-popup">
+            <span className="loader"></span>
+            <h2 className="generating-address-title">Fetching Your Wallet</h2>
+            <p className="generating-address-text">
+              Please wait while we set up your secure wallet address...
+            </p>
           </div>
-          <span className="deposit-token-balance">
-            {formatDisplayValue(
-              tokenBalances[address] || 0, 
-              Number(token.decimals || 18)
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
-      
-      <div className="deposit-address-container">
-        <div className="deposit-address-box">
-          <span className="deposit-address">{address}</span>
-          <button
-            className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
-            onClick={() => {
-              navigator.clipboard.writeText(address || '');
-              setCopyTooltipVisible(true);
-              setTimeout(() => setCopyTooltipVisible(false), 2000);
-            }}
-          >
-            {copyTooltipVisible ? 
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-                <polyline points="20 6 9 17 4 12"></polyline>
-              </svg> : 
-              <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-              </svg>
-            }
-          </button>
-        </div>
-      </div>
-      
-      <div className="deposit-warning">
-        <span>Your deposit must be sent on the Monad Testnet network. All deposits are processed instantly and remain self-custodial.</span>
-      </div>
-      <div className="deposit-qr-container">
-        <QRCodeSVG
-          value={address || ''}
-          size={170}
-          level="H"
-          includeMargin={true}
-          bgColor="#000000"
-          fgColor="#ffffff"
-        />
-      </div>
-      
-      <button 
-        className="deposit-done-button" 
-        onClick={handleCloseDepositPage}
-      >
-        Done
-      </button>
-    </div>
-) : null}
+        ) : null}
+
+        {popup === 12 ? (
+          <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
+            <div className="deposit-page-header">
+              <h2>Deposit</h2>
+              <button className="deposit-close-button" onClick={handleCloseDepositPage}>
+                <img src={closebutton} className="deposit-close-icon" alt="Close" />
+              </button>
+            </div>
+            <div className="token-dropdown-container">
+              <div
+                className="selected-token-display"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <div className="selected-token-info">
+                  <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+                  <span className="deposit-token-name">{tokendict[selectedDepositToken].ticker}</span>
+                </div>
+                <div className="selected-token-balance">
+                  {formatDisplayValue(
+                    tokenBalances[selectedDepositToken] || 0,
+                    Number(tokendict[selectedDepositToken].decimals || 18)
+                  )}
+                </div>
+              </div>
+
+              {dropdownOpen && (
+                <div className="token-dropdown-list">
+                  {Object.entries(tokendict).map(([address, token]) => (
+                    <div
+                      key={address}
+                      className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedDepositToken(address);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <div className="dropdown-token-info">
+                        <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+                        <span className="deposit-token-name">{token.ticker}</span>
+                      </div>
+                      <span className="deposit-token-balance">
+                        {formatDisplayValue(
+                          tokenBalances[address] || 0,
+                          Number(token.decimals || 18)
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="deposit-address-container">
+              <div className="deposit-address-box">
+                <span className="deposit-address">{address}</span>
+                <button
+                  className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
+                  onClick={() => {
+                    navigator.clipboard.writeText(address || '');
+                    setCopyTooltipVisible(true);
+                    setTimeout(() => setCopyTooltipVisible(false), 2000);
+                  }}
+                >
+                  {copyTooltipVisible ?
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg> :
+                    <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" strokeWidth="2" fill="none">
+                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                      <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                    </svg>
+                  }
+                </button>
+              </div>
+            </div>
+
+            <div className="deposit-warning">
+              <span>Your deposit must be sent on the Monad Testnet network. All deposits are processed instantly and remain self-custodial.</span>
+            </div>
+            <div className="deposit-qr-container">
+              <QRCodeSVG
+                value={address || ''}
+                size={170}
+                level="H"
+                includeMargin={true}
+                bgColor="#000000"
+                fgColor="#ffffff"
+              />
+            </div>
+
+            <button
+              className="deposit-done-button"
+              onClick={handleCloseDepositPage}
+            >
+              Done
+            </button>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -6098,9 +6098,9 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
               <input
                 inputMode="decimal"
                 className={`input ${connected &&
-                    amountIn > tokenBalances[tokenIn]
-                    ? 'exceed-balance'
-                    : ''
+                  amountIn > tokenBalances[tokenIn]
+                  ? 'exceed-balance'
+                  : ''
                   }`}
                 onCompositionStart={() => {
                   setIsComposing(true);
@@ -7383,16 +7383,16 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             <input
               inputMode="decimal"
               className={`input ${connected &&
-                  ((amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading) ||
-                    (amountIn !== BigInt(0) &&
-                      (tokenIn === activeMarket.quoteAddress
-                        ? amountIn < activeMarket.minSize
-                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                        activeMarket.minSize)))
-                  ? 'exceed-balance'
-                  : ''
+                ((amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading) ||
+                  (amountIn !== BigInt(0) &&
+                    (tokenIn === activeMarket.quoteAddress
+                      ? amountIn < activeMarket.minSize
+                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                      activeMarket.minSize)))
+                ? 'exceed-balance'
+                : ''
                 }`}
               onCompositionStart={() => {
                 setIsComposing(true);
@@ -8089,14 +8089,18 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                   : ''
                 }`}
               onChange={(e) => {
-                if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                if (
+                  new RegExp(
+                    `^\\d*\\.?\\d{0,${Math.log10(Number(activeMarket.priceFactor))}}$`
+                  ).test(e.target.value)
+                ) {
                   setlimitChase(false);
                   setlimitPriceString(e.target.value);
                   let price = BigInt(
                     Math.round(
                       (parseFloat(e.target.value || '0') || 0) *
-                      Number(activeMarket.priceFactor),
-                    ),
+                      Number(activeMarket.priceFactor)
+                    )
                   );
                   setlimitPrice(price);
                   setamountOutLimit(
@@ -8106,35 +8110,37 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                         (activeMarket.scaleFactor || BigInt(1))
                         : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
                         price
-                      : BigInt(0),
+                      : BigInt(0)
                   );
                   setlimitoutputString(
-                    (price != BigInt(0) && amountIn != BigInt(0)
-                      ? tokenIn === activeMarket?.baseAddress
-                        ? customRound(
-                          Number(
-                            (amountIn * price) /
-                            (activeMarket.scaleFactor || BigInt(1)),
-                          ) /
-                          10 ** Number(tokendict[tokenOut].decimals),
-                          3,
-                        )
-                        : customRound(
-                          Number(
-                            (amountIn *
-                              (activeMarket.scaleFactor || BigInt(1))) /
-                            price,
-                          ) /
-                          10 ** Number(tokendict[tokenOut].decimals),
-                          3,
-                        )
-                      : ''
-                    ).toString(),
+                    (
+                      price != BigInt(0) && amountIn != BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number(
+                              (amountIn * price) /
+                              (activeMarket.scaleFactor || BigInt(1))
+                            ) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3
+                          )
+                          : customRound(
+                            Number(
+                              (amountIn *
+                                (activeMarket.scaleFactor || BigInt(1))) /
+                              price
+                            ) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3
+                          )
+                        : ''
+                    ).toString()
                   );
                 }
               }}
               placeholder="0.00"
               value={limitPriceString}
+              step={1 / Math.pow(10, Math.log10(Number(activeMarket.priceFactor)))}
             />
             <span className="limit-order-usd-label">USDC</span>
           </div>
@@ -8632,9 +8638,9 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             <input
               inputMode="decimal"
               className={`send-input ${connected &&
-                  amountIn > tokenBalances[tokenIn]
-                  ? 'exceed-balance'
-                  : ''
+                amountIn > tokenBalances[tokenIn]
+                ? 'exceed-balance'
+                : ''
                 }`}
               onCompositionStart={() => {
                 setIsComposing(true);
@@ -9295,16 +9301,16 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             <input
               inputMode="decimal"
               className={`input ${connected &&
-                  ((amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading) ||
-                    (amountIn !== BigInt(0) &&
-                      (tokenIn === activeMarket.quoteAddress
-                        ? amountIn < activeMarket.minSize
-                        : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                        activeMarket.minSize)))
-                  ? 'exceed-balance'
-                  : ''
+                ((amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading) ||
+                  (amountIn !== BigInt(0) &&
+                    (tokenIn === activeMarket.quoteAddress
+                      ? amountIn < activeMarket.minSize
+                      : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                      activeMarket.minSize)))
+                ? 'exceed-balance'
+                : ''
                 }`}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 if (isComposing) {
@@ -9671,17 +9677,27 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                   : ''
                   }`}
                 onChange={(e) => {
-                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                  if (
+                    new RegExp(
+                      `^\\d*\\.?\\d{0,${Math.log10(Number(activeMarket.priceFactor))}}$`
+                    ).test(e.target.value)
+                  ) {
                     setScaleStartString(e.target.value);
                     let price = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
-                        Number(activeMarket.priceFactor),
-                      ),
+                        Number(activeMarket.priceFactor)
+                      )
                     );
                     setScaleStart(price);
                     if (price && scaleEnd && scaleOrders && scaleSkew) {
-                      setScaleOutput(Number(amountIn), Number(price), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                      setScaleOutput(
+                        Number(amountIn),
+                        Number(price),
+                        Number(scaleEnd),
+                        Number(scaleOrders),
+                        Number(scaleSkew)
+                      );
                     }
                   }
                 }}
@@ -9733,17 +9749,27 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
                   : ''
                   }`}
                 onChange={(e) => {
-                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                  if (
+                    new RegExp(
+                      `^\\d*\\.?\\d{0,${Math.log10(Number(activeMarket.priceFactor))}}$`
+                    ).test(e.target.value)
+                  ) {
                     setScaleEndString(e.target.value);
                     let price = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
-                        Number(activeMarket.priceFactor),
-                      ),
+                        Number(activeMarket.priceFactor)
+                      )
                     );
                     setScaleEnd(price);
                     if (price && scaleStart && scaleOrders && scaleSkew) {
-                      setScaleOutput(Number(amountIn), Number(scaleStart), Number(price), Number(scaleOrders), Number(scaleSkew))
+                      setScaleOutput(
+                        Number(amountIn),
+                        Number(scaleStart),
+                        Number(price),
+                        Number(scaleOrders),
+                        Number(scaleSkew)
+                      );
                     }
                   }
                 }}
@@ -10231,14 +10257,14 @@ const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.ke
             }
           />
 
-<Route 
-  path="/leaderboard" 
-  element={
-    <Leaderboard 
-      setpopup={setpopup} 
-    />
-  } 
-/>
+          <Route
+            path="/leaderboard"
+            element={
+              <Leaderboard
+                setpopup={setpopup}
+              />
+            }
+          />
           <Route path="/mint"
             element={
               <NFTMintingPage />
