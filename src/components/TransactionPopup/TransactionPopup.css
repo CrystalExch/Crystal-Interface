@@ -41,7 +41,8 @@
 }
 
 .txpopup-token-group {
-  gap: 8px;
+  gap: 4px;
+  font-size: 0.8rem;
 }
 
 .txpopup-token-group,

@@ -104,6 +104,19 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
   delay,
 }) => {
   const memoizedDelay = useMemo(() => delay || 0, []);
+  
+  // Helper function to render the error X animation
+  const renderErrorX = () => (
+    <div className="txpopup-error-x-container">
+      <div className="txpopup-error-x-glow"></div>
+      <div className="txpopup-error-x">
+        <div className="txpopup-error-circle"></div>
+        <div className="txpopup-error-x-line1"></div>
+        <div className="txpopup-error-x-line2"></div>
+      </div>
+    </div>
+  );
+  
   const renderTransactionDetails = () => {
     if (currentAction === 'swap') {
       return (
@@ -431,43 +444,40 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
 
     if (currentAction === 'sendFailed') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('sendFailed')}</div>
+        <div className="txpopup-inner-failed">
+          {renderErrorX()}
+          <div className="txpopup-failed-content">
+            <div className="txpopup-title-failed">{t('sendFailed')}</div>
             <div className="txpopup-token-details">
               <img src={tokenIn.image} className="txpopup-token-icon" />
               <div className="txpopup-token-group">
                 <span className="txpopup-amount">
-                  {formatBalance(
-                    amountIn,
-                    tokenIn.ticker === 'USDC' ? 'usd' : 'token',
-                  ) +
-                    ' ' +
-                    tokenIn.ticker}
+                  {tokenIn.ticker}
                 </span>
                 <span className="txpopup-arrow">→</span>
                 <div className="txpopup-recipient">{`${address.slice(0, 6)}...${address.slice(-4)}`}</div>
               </div>
             </div>
             {price && <div className="txpopup-error-message">{price}</div>}
+            <a
+              className="view-transaction"
+              href={explorerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('viewOnExplorer')}
+            </a>
           </div>
-          <a
-            className="view-transaction"
-            href={explorerLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('viewOnExplorer')}
-          </a>
         </div>
       );
     }   
     
     if (currentAction === 'swapFailed') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('swapFailed')}</div>
+        <div className="txpopup-inner-failed">
+          {renderErrorX()}
+          <div className="txpopup-failed-content">
+            <div className="txpopup-title-failed">{t('swapFailed')}</div>
             <div className="txpopup-swap-details">
               <div className="txpopup-token-group">
                 <img src={tokenIn.image} className="txpopup-token-icon" />
@@ -488,15 +498,15 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
               </div>
               {price && <div className="txpopup-error-message">{price}</div>}
             </div>
+            <a
+              className="view-transaction"
+              href={explorerLink}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('viewOnExplorer')}
+            </a>
           </div>
-          <a
-            className="view-transaction"
-            href={explorerLink}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('viewOnExplorer')}
-          </a>
         </div>
       );
     }   
@@ -504,15 +514,7 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
     if (currentAction === 'limitFailed') {
       return (
         <div className="txpopup-inner-failed">
-          <div className="txpopup-error-x-container">
-            <div className="txpopup-error-x-glow"></div>
-            <div className="txpopup-error-x">
-              <div className="txpopup-error-circle"></div>
-              <div className="txpopup-error-x-line1"></div>
-              <div className="txpopup-error-x-line2"></div>
-            </div>
-          </div>
-          
+          {renderErrorX()}
           <div className="txpopup-failed-content">
             <div className="txpopup-title-failed">{t('limitFailed')}</div>
             <div className="txpopup-swap-details">

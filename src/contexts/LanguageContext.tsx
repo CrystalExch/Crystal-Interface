@@ -1,5 +1,4 @@
 import React, { createContext, useContext, useState } from 'react';
-import limitOrder from '../scripts/limitOrder';
 
 export const translations: any = {
   EN: {
@@ -338,6 +337,7 @@ export const translations: any = {
     viewYourPosition: "View Your Position",
     mint: "Mint",
     limitFailed: 'Limit Order Failed',
+    sendFailed: 'Send Transaction Failed'
 
   },
   CN: {
