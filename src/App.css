@@ -4187,6 +4187,9 @@ input[type="email"] {
 }
 
 .generating-address-popup {
+  display: flex;
+  flex-direction: column;
+  justify-self: center;
   border: 1.5px solid #1a1a1d5d;
   backdrop-filter: blur(10px);
   box-sizing: content-box;
@@ -4197,6 +4200,7 @@ input[type="email"] {
   width: 90%;
   max-width: 320px;
   animation: scaleIn 0.3s ease;
+  transform: translateY(200%);
 }
 
 
@@ -4238,12 +4242,15 @@ input[type="email"] {
 
 
 .loader {
+  display: flex;
+  align-self: center;
   width: 48px;
   height: 48px;
   border-radius: 50%;
   display: inline-block;
   position: relative;
   border: 3px solid;
+  margin-bottom: 8px;
   border-color: #aaaecf #aaaecf transparent transparent;
   box-sizing: border-box;
   animation: rotation 1s linear infinite;
@@ -4292,6 +4299,7 @@ input[type="email"] {
 }
     
 .deposit-page-container {
+
   border-radius: 8px;
   width: 90%;
   max-width: 380px;
@@ -4302,7 +4310,9 @@ input[type="email"] {
   border: 1.5px solid #1a1a1d5d;
   backdrop-filter: blur(10px);
   box-sizing: content-box;
+  justify-self: center;
   background: #19191c80;
+  transforM: translateY(50%);
 }
     
 .deposit-page-header {

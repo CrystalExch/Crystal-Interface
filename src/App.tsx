@@ -144,7 +144,7 @@ function App() {
   }, [address, currentUser]);
 
   useEffect(() => {
-    if (!address && currentUser) {
+    if (true) {
       setpopup(11);
     } else if (popup === 11) {
       setpopup(0);
