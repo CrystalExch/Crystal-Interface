@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 
 import TooltipLabel from '../../../components/TooltipLabel/TooltipLabel.tsx';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
@@ -34,6 +34,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
     const currentItems = sortedItems.length > 0 ? 
       sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
       [];
+    const [isSigning, setIsSigning] = useState(false);
 
     return (
       <div className="orders-content-wrapper">
@@ -110,8 +111,9 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
             {t('time')}
           </SortableHeaderCell>
           <div
-            className={`cancel-all-oc-cell ${orders.length === 0 ? 'disabled' : ''}`}
+            className={`cancel-all-oc-cell ${orders.length === 0 ? 'disabled' : ''}  ${isSigning ? 'signing' : ''}`}
           >
+            {!isSigning ? (
             <span
               className="cancel-all-label"
               onClick={async () => {
@@ -144,6 +146,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 let hash;
                 try {
                   await setChain()
+                  setIsSigning(true);
                   hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
@@ -156,12 +159,14 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                   );
                 } catch (error) {
                 } finally {
+                  setIsSigning(false);
                   setTimeout(() => refetch(), 500)
                 }
               }}
             >
               {t('cancelAll')}
             </span>
+            ) : (<div className="cancel-all-loading-spinner"></div>)}
           </div>
         </div>
         

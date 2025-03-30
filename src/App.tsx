@@ -123,45 +123,17 @@ import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortf
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
+import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address } = useSmartAccountClient({});
+  const { client, address} = useSmartAccountClient({});
   const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
     client,
     waitForTxn: true,
   });
-  const [isNewWallet, setIsNewWallet] = useState(false);
-  const currentUser = useUser();
-
-  useEffect(() => {
-    if (!address && currentUser) {
-      setIsNewWallet(true);
-      setpopup(11);
-    } else if (popup === 11) {
-      setpopup(0);
-    }
-  }, [address, currentUser]);
-
-  useEffect(() => {
-    if (address && isNewWallet) {
-
-      setpopup(12);
-      setIsNewWallet(false);
-    }
-  }, [address, isNewWallet]);
-
-  const handleCloseDepositPage = () => {
-    setpopup(0);
-  };
-
-  useEffect(() => {
-    if (address && isNewWallet) {
-
-      setIsNewWallet(false);
-    }
-  }, [address, isNewWallet]);
+  const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -639,6 +611,8 @@ function App() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [showDeposit, setShowDeposit] = useState(false);
 
   // more constants
   const languageOptions = [
@@ -1657,13 +1631,7 @@ function App() {
       searchInputRef.current.focus();
     }
   }, [isSearchPopupOpen]);
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const handleCopyTokenAddress = () => {
-    navigator.clipboard.writeText(selectedDepositToken || '');
-    setCopyTooltipVisible(true);
-    setTimeout(() => setCopyTooltipVisible(false), 2000);
-  };
-  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
+
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -2906,7 +2874,7 @@ function App() {
         }
       })();
     }
-    else {
+    else if (!user) {
       setTimeout(() => {
         setTransactions([]);
         settradehistory([]);
@@ -3470,6 +3438,12 @@ function App() {
 
   // popup
   useEffect(() => {
+    if (user && !connected && !loading) {
+      setpopup(11)
+    }
+    else if (connected && popup == 11) {
+      setpopup(12)
+    }
     if (popupref.current && blurref.current) {
       const updateBlurSize = () => {
         if (popupref.current && blurref.current) {
@@ -3486,7 +3460,7 @@ function App() {
 
       return () => resizeObserver.disconnect();
     }
-  }, [popup, connected]);
+  }, [popup, connected, user != null, loading]);
 
   // input tokenlist
   const TokenList1 = (
@@ -5000,7 +4974,7 @@ function App() {
                       setSendPopupButtonDisabled(true);
                     } catch (error) {
                     } finally {
-                      setTimeout(() => refetch(), 500)
+                      setTimeout(() => refetch(), 0)
                     }
                   } else {
                     !connected
@@ -5112,6 +5086,27 @@ function App() {
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
+                    setpopup(12)
+                  }}
+                >
+                  <svg
+                    className="disconnect-icon"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ transform: 'rotate(-90deg)' }}
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                    <polyline points="16 17 21 12 16 7"></polyline>
+                    <line x1="21" y1="12" x2="9" y2="12"></line>
+                  </svg>
+                </button>
+                <button
+                  className="popup-disconnect-button"
+                  onClick={() => {
                     logout()
                   }}
                 >
@@ -5129,7 +5124,6 @@ function App() {
                     <line x1="21" y1="12" x2="9" y2="12"></line>
                   </svg>
                 </button>
-
                 <div className="header-actions">
                   <button
                     className="connect-wallet-close-button"
@@ -5891,53 +5885,32 @@ function App() {
           </div>
         ) : null}
         {popup === 11 ? (
-          <div  className="generating-address-popup">
+          <div ref={popupref} className="generating-address-popup">
             <span className="loader"></span>
-            <h2 className="generating-address-title">Fetching Your Wallet</h2>
+            <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
             <p className="generating-address-text">
-              Please wait while we set up your secure wallet address...
+              Please wait while your smart wallet address is being loaded...
             </p>
           </div>
         ) : null}
-
         {popup === 12 ? (
           <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
             <div className="deposit-page-header">
               <h2>Deposit</h2>
-              <button className="deposit-close-button" onClick={handleCloseDepositPage}>
-                <img src={closebutton} className="deposit-close-icon" alt="Close" />
+              <button className="deposit-close-button" onClick={() => {setpopup(0)}}>
+                <img src={closebutton} className="deposit-close-icon" />
               </button>
             </div>
-            <span className="deposit-subtitle">Currency</span>
             <div className="token-dropdown-container">
   <div
     className="selected-token-display"
     onClick={() => setDropdownOpen(!dropdownOpen)}
   >
     <div className="selected-token-info">
-      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} />
       <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
       <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
-      <button 
-        className={`token-copy-button ${tokenCopyTooltipVisible ? 'success' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.clipboard.writeText(selectedDepositToken || '');
-          setTokenCopyTooltipVisible(true);
-          setTimeout(() => setTokenCopyTooltipVisible(false), 2000);
-        }}
-        title="Copy token address"
-      >
-        {tokenCopyTooltipVisible ? 
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg> :
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-          </svg>
-        }
-      </button>
+      <CopyButton textToCopy={selectedDepositToken}/>
     </div>
     <div className="selected-token-balance">
       {formatDisplayValue(
@@ -5960,6 +5933,7 @@ function App() {
         <polyline points="6 9 12 15 18 9"></polyline>
       </svg>
     </div>
+    
   </div>
 
   {dropdownOpen && (
@@ -5974,9 +5948,10 @@ function App() {
           }}
         >
           <div className="dropdown-token-info">
-            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+            <img className="deposit-token-icon" src={token.image} />
             <span className="deposit-token-name">{token.name}</span>
             <span className="deposit-token-ticker">({token.ticker})</span>
+            <CopyButton textToCopy={address}/>
           </div>
           <span className="deposit-token-balance">
             {formatDisplayValue(
@@ -5989,7 +5964,7 @@ function App() {
     </div>
   )}
 </div>
-            <span className="deposit-subtitle">Address</span>
+            <span className="deposit-subtitle">{t('sendTo')}</span>
             <div className="deposit-address-container">
               <div className="deposit-address-box">
                 <span className="deposit-address">{address}</span>
@@ -6015,7 +5990,7 @@ function App() {
             </div>
 
             <div className="deposit-warning">
-              <span>Your deposit must be sent on the Monad Testnet network. All deposits are processed instantly and remain self-custodial.</span>
+              <span>Your deposit must be sent on the Monad Network. Your smart account is self-custodial; Crystal can't access your funds.</span>
             </div>
             <div className="deposit-qr-container">
               <QRCodeSVG
@@ -6030,9 +6005,9 @@ function App() {
 
             <button
               className="deposit-done-button"
-              onClick={handleCloseDepositPage}
+              onClick={() => {setpopup(4)}}
             >
-              Done
+              {t('done')}
             </button>
           </div>
         ) : null}
@@ -7020,7 +6995,7 @@ function App() {
                   address
                 );
               } finally {
-                setTimeout(() => refetch(), 500);
+                setTimeout(() => refetch(), 0);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
@@ -8408,7 +8383,7 @@ function App() {
                   ).address,
                 );
               } finally {
-                setTimeout(() => refetch(), 500);
+                setTimeout(() => refetch(), 0);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
@@ -9164,7 +9139,7 @@ function App() {
                 );
                 return;
               } finally {
-                setTimeout(() => refetch(), 500)
+                setTimeout(() => refetch(), 0)
               }
             } else {
               !connected
@@ -10048,7 +10023,7 @@ function App() {
                 setScaleOrdersString('')
               } catch (error) {
               } finally {
-                setTimeout(() => refetch(), 500)
+                setTimeout(() => refetch(), 0)
               }
             } else {
               !connected

@@ -649,7 +649,8 @@ html {
   display: flex;
   gap: 8px;
   margin-left: 8px;
-  padding: 5.5px 8px;
+  padding: 4px 8px;
+  height: 32px;
 }
 
 .port-popup-wallet-icon {
@@ -4192,10 +4193,10 @@ input[type="email"] {
   text-align: center;
   width: 90%;
   max-width: 320px;
-  animation: fadeIn.2s ease-out;
+  animation: fadeIn .2s ease-out;
   transform: translate(-50%, -50%);
   z-index: 12;
-  transition: opacity.2s ease-out;
+  transition: opacity .2s ease-out;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -4427,7 +4428,7 @@ input[type="email"] {
   display: flex;
   justify-content: center;
   padding: 2px;
-  background-color: rgba(255, 255, 255, 0.087);
+  background-color: rgb(102 107 150 / 10%);
   border-radius: 4px;
   width: fit-content;
   margin: 0 auto;
@@ -4494,10 +4495,12 @@ input[type="email"] {
   margin-top: 8px;
 }
 
-
+.deposit-done-button:hover {
+  filter: brightness(1.1);
+}
 
 .token-dropdown-container {
-  width: 100%;
+  width: 80%;
   position: relative;
 }
 
@@ -4506,12 +4509,12 @@ input[type="email"] {
   justify-content: space-between;
   align-items: center;
   background-color: #0000006c;
+  border: 1px solid rgba(111, 115, 150, 0.597);
   border-radius: 8px;
   padding: 6px 8px;
   cursor: pointer;
   transition: background-color 0.2s;
 }
-
 
 .selected-token-info {
   display: flex;
@@ -4546,9 +4549,8 @@ input[type="email"] {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: #18181de8;
+  background-color: #18181d;
   border: 1px solid #1a1a1d;
-  backdrop-filter: blur(10px);
   border-radius: 8px;
   overflow: hidden;
   z-index: 10;
@@ -4563,7 +4565,6 @@ input[type="email"] {
   align-items: center;
   padding: 8px 8px;
   cursor: pointer;
-  transition: background-color 0.2s;
   border-bottom: 1px solid #2d2f3975;
 }
 
@@ -4572,11 +4573,7 @@ input[type="email"] {
 }
 
 .token-dropdown-item:hover {
-  background-color: rgb(59, 61, 70)06;
-}
-
-.token-dropdown-item.selected {
-  background-color: #0c0d0e06;
+  background-color: rgb(59, 61, 70, 0.6);
 }
 
 .dropdown-token-info {

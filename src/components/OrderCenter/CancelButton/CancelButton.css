@@ -46,20 +46,21 @@
   opacity: 0.7;
 }
 
-.button-content {
+.cancel-button-content {
   align-items: center;
   display: flex;
   gap: 5px;
   justify-content: center;
+  height: 1.05rem;
 }
 
-.loading-spinner {
+.cancel-button-loading-spinner {
   animation: spin 1s linear infinite;
   border: 2px solid #0f0f12;
   border-radius: 50%;
   border-top-color: #0f0f1230;
-  height: 12px;
-  width: 12px;
+  height: 14px;
+  width: 14px;
 }
 
 @keyframes spin {

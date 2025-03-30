@@ -16,10 +16,10 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
   const handleCancel = async () => {
     if (isSigning) return;
     
-    setIsSigning(true);
     let hash;
     try {
       await setChain();
+      setIsSigning(true);
       hash = await cancelOrder(
         sendUserOperationAsync,
         router,
@@ -32,10 +32,11 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
         BigInt(order[0]),
         BigInt(order[1]),
       );
+    } catch (error) {
     } finally {
+      setIsSigning(false);
       setTimeout(() => {
         refetch();
-        setIsSigning(false);
       }, 500);
     }
   };
@@ -43,9 +44,8 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
   return (
     <div className={`cancel-button ${isSigning ? 'signing' : ''}`} onClick={handleCancel}>
       {isSigning ? (
-        <div className="button-content">
-          <div className="loading-spinner"></div>
-          <span>{t('cancel')}</span>
+                <div className="cancel-button-content">
+        <div className="cancel-button-loading-spinner"></div>
         </div>
       ) : (
         <span>{t('cancel')}</span>

@@ -8,7 +8,8 @@ interface CopyButtonProps {
 const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
   const [copySuccess, setCopySuccess] = useState(false);
 
-  const handleCopy = () => {
+  const handleCopy = (e: any) => {
+    e.stopPropagation()
     navigator.clipboard.writeText(textToCopy);
     setCopySuccess(true);
 
@@ -18,7 +19,7 @@ const CopyButton: React.FC<CopyButtonProps> = ({ textToCopy }) => {
   };
 
   return (
-    <div className="copy-wrapper" onClick={handleCopy}>
+    <div className="copy-wrapper" onClick={(e) => {handleCopy(e)}}>
       <div className="icon-container">
         <svg
           className={`copy-icon ${copySuccess ? 'hidden' : ''}`}
