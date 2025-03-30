@@ -1,7 +1,5 @@
-import React from 'react';
-
+import React, { useState } from 'react';
 import cancelOrder from '../../../scripts/cancelOrder';
-
 import './CancelButton.css';
 
 interface CancelButtonProps {
@@ -13,10 +11,15 @@ interface CancelButtonProps {
 }
 
 const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperationAsync, setChain }) => {
+  const [isSigning, setIsSigning] = useState(false);
+
   const handleCancel = async () => {
+    if (isSigning) return;
+    
+    setIsSigning(true);
     let hash;
     try {
-      await setChain()
+      await setChain();
       hash = await cancelOrder(
         sendUserOperationAsync,
         router,
@@ -29,15 +32,24 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
         BigInt(order[0]),
         BigInt(order[1]),
       );
-    } catch (error) {
     } finally {
-      setTimeout(() => refetch(), 500)
+      setTimeout(() => {
+        refetch();
+        setIsSigning(false);
+      }, 500);
     }
   };
 
   return (
-    <div className="cancel-button" onClick={handleCancel}>
-      <span>{t('cancel')}</span>
+    <div className={`cancel-button ${isSigning ? 'signing' : ''}`} onClick={handleCancel}>
+      {isSigning ? (
+        <div className="button-content">
+          <div className="loading-spinner"></div>
+          <span>{t('cancel')}</span>
+        </div>
+      ) : (
+        <span>{t('cancel')}</span>
+      )}
     </div>
   );
 };

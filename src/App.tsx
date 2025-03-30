@@ -1658,7 +1658,12 @@ function App() {
     }
   }, [isSearchPopupOpen]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-
+  const handleCopyTokenAddress = () => {
+    navigator.clipboard.writeText(selectedDepositToken || '');
+    setCopyTooltipVisible(true);
+    setTimeout(() => setCopyTooltipVisible(false), 2000);
+  };
+  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -5886,7 +5891,7 @@ function App() {
           </div>
         ) : null}
         {popup === 11 ? (
-          <div ref={popupref} className="generating-address-popup">
+          <div  className="generating-address-popup">
             <span className="loader"></span>
             <h2 className="generating-address-title">Fetching Your Wallet</h2>
             <p className="generating-address-text">
@@ -5903,50 +5908,88 @@ function App() {
                 <img src={closebutton} className="deposit-close-icon" alt="Close" />
               </button>
             </div>
+            <span className="deposit-subtitle">Currency</span>
             <div className="token-dropdown-container">
-              <div
-                className="selected-token-display"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                <div className="selected-token-info">
-                  <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
-                  <span className="deposit-token-name">{tokendict[selectedDepositToken].ticker}</span>
-                </div>
-                <div className="selected-token-balance">
-                  {formatDisplayValue(
-                    tokenBalances[selectedDepositToken] || 0,
-                    Number(tokendict[selectedDepositToken].decimals || 18)
-                  )}
-                </div>
-              </div>
+  <div
+    className="selected-token-display"
+    onClick={() => setDropdownOpen(!dropdownOpen)}
+  >
+    <div className="selected-token-info">
+      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+      <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
+      <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
+      <button 
+        className={`token-copy-button ${tokenCopyTooltipVisible ? 'success' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(selectedDepositToken || '');
+          setTokenCopyTooltipVisible(true);
+          setTimeout(() => setTokenCopyTooltipVisible(false), 2000);
+        }}
+        title="Copy token address"
+      >
+        {tokenCopyTooltipVisible ? 
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg> :
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        }
+      </button>
+    </div>
+    <div className="selected-token-balance">
+      {formatDisplayValue(
+        tokenBalances[selectedDepositToken] || 0,
+        Number(tokendict[selectedDepositToken].decimals || 18)
+      )}
 
-              {dropdownOpen && (
-                <div className="token-dropdown-list">
-                  {Object.entries(tokendict).map(([address, token]) => (
-                    <div
-                      key={address}
-                      className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedDepositToken(address);
-                        setDropdownOpen(false);
-                      }}
-                    >
-                      <div className="dropdown-token-info">
-                        <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
-                        <span className="deposit-token-name">{token.ticker}</span>
-                      </div>
-                      <span className="deposit-token-balance">
-                        {formatDisplayValue(
-                          tokenBalances[address] || 0,
-                          Number(token.decimals || 18)
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      <svg
+        className="deposit-button-arrow"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </div>
+  </div>
 
+  {dropdownOpen && (
+    <div className="token-dropdown-list">
+      {Object.entries(tokendict).map(([address, token]) => (
+        <div
+          key={address}
+          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+          onClick={() => {
+            setSelectedDepositToken(address);
+            setDropdownOpen(false);
+          }}
+        >
+          <div className="dropdown-token-info">
+            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+            <span className="deposit-token-name">{token.name}</span>
+            <span className="deposit-token-ticker">({token.ticker})</span>
+          </div>
+          <span className="deposit-token-balance">
+            {formatDisplayValue(
+              tokenBalances[address] || 0,
+              Number(token.decimals || 18)
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+            <span className="deposit-subtitle">Address</span>
             <div className="deposit-address-container">
               <div className="deposit-address-box">
                 <span className="deposit-address">{address}</span>

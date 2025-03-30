@@ -337,7 +337,8 @@ export const translations: any = {
     viewYourPosition: "View Your Position",
     mint: "Mint",
     limitFailed: 'Limit Order Failed',
-    sendFailed: 'Send Transaction Failed'
+    sendFailed: 'Send Transaction Failed',
+    sendingTransaction: 'Sending Transaction',
 
   },
   CN: {
@@ -677,6 +678,7 @@ export const translations: any = {
     viewYourPosition: "查看您的排名",
     mint: "铸造",
     limitFailed: '限价订单失败',
+    sendingTransaction: '发送交易',
  
   },
   JP: {
@@ -1016,6 +1018,7 @@ export const translations: any = {
     viewYourPosition: "あなたの位置を表示",
     mint: "鋳造",
     limitFailed: '指値注文失敗',
+    sendingTransaction: '取引送信中',
 
   },
   KR: {
@@ -1355,6 +1358,7 @@ export const translations: any = {
     viewYourPosition: "위치 보기",
     mint: "제조",
     limitFailed: '지정가 주문 실패',
+    sendingTransaction: '거래 전송 중',
 
   },
   ES: {
@@ -1694,6 +1698,7 @@ export const translations: any = {
     viewYourPosition: "Ver tu posición",
     mint: "Mint",
     limitFailed: 'Orden Límite Fallida',
+    sendingTransaction: 'Sending Transaction',
   }
 };
 
