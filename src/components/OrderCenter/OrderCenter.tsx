@@ -8,8 +8,13 @@ import OrdersContent from './OrdersView/OrdersContent';
 import TradeHistoryContent from './TradeHistoryView/TradeHistoryContent';
 import MinSizeFilter from './MinSizeFilter/MinSizeFilter';
 import CombinedHeaderFilter from './CombinedHeaderFilter/CombinedHeaderFilter';
+import FilterSelect from './FilterSelect/FilterSelect';
+import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
 import './OrderCenter.css';
+
+const BREAKPOINT_HIDE_MARKET = 1250;
+const BREAKPOINT_HIDE_TYPE = 800;
 
 interface OrderCenterProps {
   orders: any[];
@@ -77,6 +82,11 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     const [isMobileView, setIsMobileView] = useState<boolean>(
       typeof window !== 'undefined' ? window.innerWidth <= 1020 : false,
     );
+    
+    const [windowWidth, setWindowWidth] = useState<number>(
+      typeof window !== 'undefined' ? window.innerWidth : 1200
+    );
+    
     const [minSizeEnabled, setMinSizeEnabled] = useState<boolean>(
       typeof window !== 'undefined'
         ? localStorage.getItem('crystal_min_size_enabled') === 'true'
@@ -97,6 +107,14 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     const indicatorRef = useRef<HTMLDivElement>(null);
     const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
     const containerRef = useRef<HTMLDivElement>(null);
+
+    const showMarketOutside = windowWidth > BREAKPOINT_HIDE_MARKET;
+    const showTypeOutside = windowWidth > BREAKPOINT_HIDE_TYPE;
+    
+    const showSizeInDropdown = true;
+    
+    const showMarketInDropdown = !showMarketOutside && !hideMarketFilter && onlyThisMarket !== undefined;
+    const showTypeInDropdown = !showTypeOutside && filter !== undefined;
 
     const handleTabChange = (
       section: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances',
@@ -409,7 +427,9 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
 
     useEffect(() => {
       const handleResize = () => {
-        setIsMobileView(window.innerWidth <= 1020);
+        const width = window.innerWidth;
+        setIsMobileView(width <= 1020);
+        setWindowWidth(width);
         updateIndicatorPosition();
       };
       window.addEventListener('resize', handleResize);
@@ -468,27 +488,49 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
           
           <div className="oc-filters">
             {activeSection !== 'balances' && (
-              <CombinedHeaderFilter 
-                pageSize={Number(pageSize)} 
-                setPageSize={setPageSize}
-                currentPage={currentPage}
-                totalPages={getTotalPages()}
-                onPrevPage={handlePrevPage}
-                onNextPage={handleNextPage}
-                onPageChange={handlePageChange}
-              />
+              <>
+                {showTypeOutside && filter !== undefined && setFilter && (
+                  <div className="oc-filter-item type-filter">
+                    <FilterSelect filter={filter} setFilter={setFilter} inDropdown={false} />
+                  </div>
+                )}
+                
+                {showMarketOutside && !hideMarketFilter && onlyThisMarket !== undefined && setOnlyThisMarket && (
+                  <div className="oc-filter-item market-filter">
+                    <ToggleSwitch
+                      checked={onlyThisMarket}
+                      onChange={() => setOnlyThisMarket(!onlyThisMarket)}
+                      label={t('onlyCurrentMarket')}
+                    />
+                  </div>
+                )}
+                
+                <CombinedHeaderFilter 
+                  pageSize={Number(pageSize)} 
+                  setPageSize={setPageSize}
+                  currentPage={currentPage}
+                  totalPages={getTotalPages()}
+                  onPrevPage={handlePrevPage}
+                  onNextPage={handleNextPage}
+                  onPageChange={handlePageChange}
+                />
+              </>
             )}
-            <div className="oc-filter-divider"></div>
+            
             <MinSizeFilter
               minSizeEnabled={minSizeEnabled}
               setMinSizeEnabled={setMinSizeEnabled}
               minSizeValue={minSizeValue}
               setMinSizeValue={setMinSizeValue}
-              filter={activeSection !== 'balances' ? filter : undefined}
-              setFilter={activeSection !== 'balances' ? setFilter : undefined}
-              onlyThisMarket={!hideMarketFilter ? onlyThisMarket : undefined}
-              setOnlyThisMarket={!hideMarketFilter ? setOnlyThisMarket : undefined}
+              filter={showTypeInDropdown ? filter : undefined}
+              setFilter={showTypeInDropdown ? setFilter : undefined}
+              onlyThisMarket={showMarketInDropdown ? onlyThisMarket : undefined}
+              setOnlyThisMarket={showMarketInDropdown ? setOnlyThisMarket : undefined}
               hideMarketFilter={hideMarketFilter}
+              showMarketFilter={showMarketInDropdown}
+              showTypeFilter={showTypeInDropdown}
+              showSizeFilter={showSizeInDropdown}
+              alwaysShowButton={true}
             />
           </div>
         </div>

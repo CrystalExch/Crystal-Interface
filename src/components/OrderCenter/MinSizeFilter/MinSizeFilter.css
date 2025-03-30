@@ -39,16 +39,13 @@
   border: 1.5px solid rgb(58 58 63 / 10%);
 }
 
-.filter-section {
-  margin-bottom: 10px;
-}
 
 .only-filter-section {
   margin-bottom: 10px;
-  border-top: 1.5px solid rgba(255, 255, 255, 0.06);
   padding-top: 8px;
+  padding-bottom:  12px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
 }
-
 
 .filter-section-header {
   color: #ffffff98;
@@ -61,8 +58,6 @@
   font-size: 0.75rem;
   font-weight: 400;
   padding-bottom: 5px;
-  padding-top: 3px;
-  border-top: 1.5px solid rgba(255, 255, 255, 0.06);
 }
 
 .filter-section-content {
