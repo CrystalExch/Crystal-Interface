@@ -884,11 +884,12 @@ body {
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 4px 20px 13.5px 37px;
+  padding: 6px 20px 12px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
   width: calc(100%);
+  align-items: center;
 }
 
 .tokenbutton:hover {
@@ -1249,6 +1250,13 @@ body:has(.right-column.show) .blur-background-popups {
   opacity: 0.8;
   transition: transform.3s cubic-bezier(0.2, 0, 0.1, 1);
   width: 13px;
+}
+.deposit-button-arrow{
+  height: 16px;
+  margin-left: 2px;
+  opacity: 0.8;
+  transition: transform.3s cubic-bezier(0.2, 0, 0.1, 1);
+  width: 16px;
 }
 
 .inputbutton1container,
@@ -4059,6 +4067,13 @@ input[type="email"] {
 [class="flex flex-col gap-5 items-center w-full"] {
   margin-top: -0.54rem !important;
 }
+
+[class="w-[24px] h-[24px] lg:w-[16px] lg:h-[16px]"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin-top: 1rem !important;
+}
+
 .akui-btn-primary{
   background: linear-gradient(
     135deg,
@@ -4326,6 +4341,7 @@ input[type="email"] {
 .deposit-close-icon {
   width: 18px;
   margin-right: 5px;
+  opacity: 0.7;
 }
   
 .deposit-address-container {
@@ -4504,15 +4520,20 @@ input[type="email"] {
 }
 
 .deposit-token-icon {
-  width: 17px;
-  height: 17px;
+  width: 15px;
+  height: 15px;
   border-radius: 50%;
 }
 
 .deposit-token-name {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: #ffffffe4;
+}
+.deposit-token-ticker{
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #ffffffbd;
 }
 
 .dropdown-arrow {
@@ -4525,7 +4546,8 @@ input[type="email"] {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: #121215e8;
+  background-color: #18181de8;
+  border: 1px solid #1a1a1d;
   backdrop-filter: blur(10px);
   border-radius: 8px;
   overflow: hidden;
@@ -4539,7 +4561,7 @@ input[type="email"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
+  padding: 8px 8px;
   cursor: pointer;
   transition: background-color 0.2s;
   border-bottom: 1px solid #2d2f3975;
@@ -4570,8 +4592,53 @@ input[type="email"] {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+.deposit-subtitle{
+  display: flex;
+  align-self: left;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+  margin-left: 2px;
+  margin-bottom: -4px;
+}
 .selected-token-balance {
+  display: flex;
+  align-items: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
   font-weight: 300;
+}
+
+
+.token-copy-button {
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  width: 12px;
+}
+
+.token-copy-button:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background-color: rgba(255, 255, 255, 0.05);
+}
+
+.token-copy-button.success {
+  color: #aaaecf;
+}
+
+.selected-token-balance {
+  display: flex;
+  align-items: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.85rem;
+  font-weight: 300;
+}
+
+  .token-dropdown-container .deposit-button-arrow {
+  margin-left: 0;
 }

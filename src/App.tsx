@@ -285,7 +285,6 @@ function App() {
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
-
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
@@ -682,6 +681,8 @@ function App() {
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  let isAddressInfoFetching = false;
 
   const audio = useMemo(() => {
     const a = new Audio(notificationSound);
@@ -1657,7 +1658,12 @@ function App() {
     }
   }, [isSearchPopupOpen]);
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-
+  const handleCopyTokenAddress = () => {
+    navigator.clipboard.writeText(selectedDepositToken || '');
+    setCopyTooltipVisible(true);
+    setTimeout(() => setCopyTooltipVisible(false), 2000);
+  };
+  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -2731,6 +2737,7 @@ function App() {
         setorders([]);
         setcanceledorders([]);
       }, 10);
+      isAddressInfoFetching = true;
       (async () => {
         try {
           const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
@@ -2810,7 +2817,7 @@ function App() {
           });
 
           const result = await response.json();
-
+          if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {
             for (const event of batch.orders) {
@@ -2891,8 +2898,8 @@ function App() {
           settradehistory((prev) => [...temptradehistory, ...prev]);
           setorders((prev) => [...temporders, ...prev]);
           setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
-
           setaddressinfoloading(false);
+          isAddressInfoFetching = false
         } catch (error) {
           console.error("Error fetching logs:", error);
           setaddressinfoloading(false);
@@ -2908,6 +2915,7 @@ function App() {
       }, 500);
       setaddressinfoloading(false);
     }
+    return () => { isAddressInfoFetching = false; };
   }, [address, activechain]);
 
   // klines + trades
@@ -3105,7 +3113,7 @@ function App() {
   // click outside slippage and resize handler and click outside popup and showtrade esc
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && popup != 11) {
         setpopup(0);
         setSendUsdValue('');
         setSendInputAmount('');
@@ -3143,7 +3151,7 @@ function App() {
           }
         }
 
-        if (!popupref.current?.contains(e.target as Node)) {
+        if (!popupref.current?.contains(e.target as Node) && popup != 11) {
           setIsLanguageDropdownOpen(false);
           setSendUsdValue('');
           setSendInputAmount('');
@@ -5883,7 +5891,7 @@ function App() {
           </div>
         ) : null}
         {popup === 11 ? (
-          <div ref={popupref} className="generating-address-popup">
+          <div  className="generating-address-popup">
             <span className="loader"></span>
             <h2 className="generating-address-title">Fetching Your Wallet</h2>
             <p className="generating-address-text">
@@ -5900,50 +5908,88 @@ function App() {
                 <img src={closebutton} className="deposit-close-icon" alt="Close" />
               </button>
             </div>
+            <span className="deposit-subtitle">Currency</span>
             <div className="token-dropdown-container">
-              <div
-                className="selected-token-display"
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-              >
-                <div className="selected-token-info">
-                  <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
-                  <span className="deposit-token-name">{tokendict[selectedDepositToken].ticker}</span>
-                </div>
-                <div className="selected-token-balance">
-                  {formatDisplayValue(
-                    tokenBalances[selectedDepositToken] || 0,
-                    Number(tokendict[selectedDepositToken].decimals || 18)
-                  )}
-                </div>
-              </div>
+  <div
+    className="selected-token-display"
+    onClick={() => setDropdownOpen(!dropdownOpen)}
+  >
+    <div className="selected-token-info">
+      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+      <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
+      <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
+      <button 
+        className={`token-copy-button ${tokenCopyTooltipVisible ? 'success' : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          navigator.clipboard.writeText(selectedDepositToken || '');
+          setTokenCopyTooltipVisible(true);
+          setTimeout(() => setTokenCopyTooltipVisible(false), 2000);
+        }}
+        title="Copy token address"
+      >
+        {tokenCopyTooltipVisible ? 
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+            <polyline points="20 6 9 17 4 12"></polyline>
+          </svg> :
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        }
+      </button>
+    </div>
+    <div className="selected-token-balance">
+      {formatDisplayValue(
+        tokenBalances[selectedDepositToken] || 0,
+        Number(tokendict[selectedDepositToken].decimals || 18)
+      )}
 
-              {dropdownOpen && (
-                <div className="token-dropdown-list">
-                  {Object.entries(tokendict).map(([address, token]) => (
-                    <div
-                      key={address}
-                      className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
-                      onClick={() => {
-                        setSelectedDepositToken(address);
-                        setDropdownOpen(false);
-                      }}
-                    >
-                      <div className="dropdown-token-info">
-                        <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
-                        <span className="deposit-token-name">{token.ticker}</span>
-                      </div>
-                      <span className="deposit-token-balance">
-                        {formatDisplayValue(
-                          tokenBalances[address] || 0,
-                          Number(token.decimals || 18)
-                        )}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+      <svg
+        className="deposit-button-arrow"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="24"
+        height="24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </div>
+  </div>
 
+  {dropdownOpen && (
+    <div className="token-dropdown-list">
+      {Object.entries(tokendict).map(([address, token]) => (
+        <div
+          key={address}
+          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+          onClick={() => {
+            setSelectedDepositToken(address);
+            setDropdownOpen(false);
+          }}
+        >
+          <div className="dropdown-token-info">
+            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+            <span className="deposit-token-name">{token.name}</span>
+            <span className="deposit-token-ticker">({token.ticker})</span>
+          </div>
+          <span className="deposit-token-balance">
+            {formatDisplayValue(
+              tokenBalances[address] || 0,
+              Number(token.decimals || 18)
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  )}
+</div>
+            <span className="deposit-subtitle">Address</span>
             <div className="deposit-address-container">
               <div className="deposit-address-box">
                 <span className="deposit-address">{address}</span>
