@@ -4500,7 +4500,7 @@ input[type="email"] {
 }
 
 .token-dropdown-container {
-  width: 80%;
+  width: 100%;
   position: relative;
 }
 
@@ -4508,8 +4508,7 @@ input[type="email"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background-color: #0000006c;
-  border: 1px solid rgba(111, 115, 150, 0.597);
+  background-color: #00000076;
   border-radius: 8px;
   padding: 6px 8px;
   cursor: pointer;
