@@ -627,6 +627,8 @@ function App() {
     queue: [],
     set: new Set(),
   });
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
@@ -656,7 +658,7 @@ function App() {
   const loading =
     stateloading ||
     tradesloading ||
-    addressinfoloading
+    addressinfoloading;
 
   const activeMarket = getMarket(tokenIn, tokenOut);
   const activeMarketKey = activeMarket.baseAsset + activeMarket.quoteAsset;
@@ -667,7 +669,7 @@ function App() {
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
   const [sendUsdValue, setSendUsdValue] = useState('');
-  const [sendTokenIn, setSendTokenIn] = useState(eth)
+  const [sendTokenIn, setSendTokenIn] = useState(eth);
 
   const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -777,12 +779,12 @@ function App() {
       }
       return prev;
     });
-  }
+  };
 
   function handleSetOrderbookWidth(newWidth: number) {
     setOrderbookWidth(newWidth);
     localStorage.setItem('orderbookWidth', newWidth.toString());
-  }
+  };
 
   const formatDisplayValue = (
     rawAmount: bigint,
@@ -939,28 +941,26 @@ function App() {
   };
 
   // set amount for a token
-  const debouncedSetAmount =
-    (amount: bigint) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      setStateIsLoading(true);
-      debounceTimerRef.current = setTimeout(() => {
-        setamountIn(amount);
-      }, 300);
+  const debouncedSetAmount = (amount: bigint) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    setStateIsLoading(true);
+    debounceTimerRef.current = setTimeout(() => {
+      setamountIn(amount);
+    }, 300);
+  };
 
   // set amountout for a token
-  const debouncedSetAmountOut =
-    (amount: bigint) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      setStateIsLoading(true);
-      debounceTimerRef.current = setTimeout(() => {
-        setamountOutSwap(amount);
-      }, 300);
+  const debouncedSetAmountOut = (amount: bigint) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    setStateIsLoading(true);
+    debounceTimerRef.current = setTimeout(() => {
+      setamountOutSwap(amount);
+    }, 300);
+  };
 
   // set token string
   const debouncedSetTokenString = (value: string) => {
@@ -970,7 +970,7 @@ function App() {
     debounceTimerRef.current = setTimeout(() => {
       settokenString(value);
     }, 100);
-  }
+  };
 
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
@@ -1657,13 +1657,7 @@ function App() {
       searchInputRef.current.focus();
     }
   }, [isSearchPopupOpen]);
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const handleCopyTokenAddress = () => {
-    navigator.clipboard.writeText(selectedDepositToken || '');
-    setCopyTooltipVisible(true);
-    setTimeout(() => setCopyTooltipVisible(false), 2000);
-  };
-  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
+
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -2580,7 +2574,7 @@ function App() {
         );
         setSendPopupButtonDisabled(
           (sendAmountIn === BigInt(0) ||
-          sendAmountIn > tokenBalances[sendTokenIn] ||
+            sendAmountIn > tokenBalances[sendTokenIn] ||
             !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
           connected &&
           userchain == activechain,
@@ -5891,7 +5885,7 @@ function App() {
           </div>
         ) : null}
         {popup === 11 ? (
-          <div  className="generating-address-popup">
+          <div className="generating-address-popup">
             <span className="loader"></span>
             <h2 className="generating-address-title">Fetching Your Wallet</h2>
             <p className="generating-address-text">
@@ -5910,85 +5904,85 @@ function App() {
             </div>
             <span className="deposit-subtitle">Currency</span>
             <div className="token-dropdown-container">
-  <div
-    className="selected-token-display"
-    onClick={() => setDropdownOpen(!dropdownOpen)}
-  >
-    <div className="selected-token-info">
-      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
-      <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
-      <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
-      <button 
-        className={`token-copy-button ${tokenCopyTooltipVisible ? 'success' : ''}`}
-        onClick={(e) => {
-          e.stopPropagation();
-          navigator.clipboard.writeText(selectedDepositToken || '');
-          setTokenCopyTooltipVisible(true);
-          setTimeout(() => setTokenCopyTooltipVisible(false), 2000);
-        }}
-        title="Copy token address"
-      >
-        {tokenCopyTooltipVisible ? 
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
-            <polyline points="20 6 9 17 4 12"></polyline>
-          </svg> :
-          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
-            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
-          </svg>
-        }
-      </button>
-    </div>
-    <div className="selected-token-balance">
-      {formatDisplayValue(
-        tokenBalances[selectedDepositToken] || 0,
-        Number(tokendict[selectedDepositToken].decimals || 18)
-      )}
+              <div
+                className="selected-token-display"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <div className="selected-token-info">
+                  <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} alt={tokendict[selectedDepositToken].ticker} />
+                  <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
+                  <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
+                  <button
+                    className={`token-copy-button ${tokenCopyTooltipVisible ? 'success' : ''}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigator.clipboard.writeText(selectedDepositToken || '');
+                      setTokenCopyTooltipVisible(true);
+                      setTimeout(() => setTokenCopyTooltipVisible(false), 2000);
+                    }}
+                    title="Copy token address"
+                  >
+                    {tokenCopyTooltipVisible ?
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg> :
+                      <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" strokeWidth="2" fill="none">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+                      </svg>
+                    }
+                  </button>
+                </div>
+                <div className="selected-token-balance">
+                  {formatDisplayValue(
+                    tokenBalances[selectedDepositToken] || 0,
+                    Number(tokendict[selectedDepositToken].decimals || 18)
+                  )}
 
-      <svg
-        className="deposit-button-arrow"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </div>
-  </div>
+                  <svg
+                    className="deposit-button-arrow"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
+              </div>
 
-  {dropdownOpen && (
-    <div className="token-dropdown-list">
-      {Object.entries(tokendict).map(([address, token]) => (
-        <div
-          key={address}
-          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
-          onClick={() => {
-            setSelectedDepositToken(address);
-            setDropdownOpen(false);
-          }}
-        >
-          <div className="dropdown-token-info">
-            <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
-            <span className="deposit-token-name">{token.name}</span>
-            <span className="deposit-token-ticker">({token.ticker})</span>
-          </div>
-          <span className="deposit-token-balance">
-            {formatDisplayValue(
-              tokenBalances[address] || 0,
-              Number(token.decimals || 18)
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+              {dropdownOpen && (
+                <div className="token-dropdown-list">
+                  {Object.entries(tokendict).map(([address, token]) => (
+                    <div
+                      key={address}
+                      className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedDepositToken(address);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <div className="dropdown-token-info">
+                        <img className="deposit-token-icon" src={token.image} alt={token.ticker} />
+                        <span className="deposit-token-name">{token.name}</span>
+                        <span className="deposit-token-ticker">({token.ticker})</span>
+                      </div>
+                      <span className="deposit-token-balance">
+                        {formatDisplayValue(
+                          tokenBalances[address] || 0,
+                          Number(token.decimals || 18)
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <span className="deposit-subtitle">Address</span>
             <div className="deposit-address-container">
               <div className="deposit-address-box">
@@ -7008,24 +7002,25 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
-                console.error("Swap failed:", error);
-                newTxPopup(
-                  "",
-                  "swapFailed",
-                  tokenIn == eth ? eth : tokenIn,
-                  tokenOut == eth ? eth : tokenOut,
-                  customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-                  customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
-                  "",
-                  address
-                );
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    "",
+                    "swapFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                    customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    "",
+                    address
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 500);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
-          }}          
+          }}
           disabled={swapButtonDisabled || displayValuesLoading || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
@@ -8034,23 +8029,23 @@ function App() {
             <input
               inputMode="decimal"
               className={`limit-order ${connected &&
-                  !(
-                    amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading
-                  ) &&
-                  addliquidityonly &&
-                  amountIn != BigInt(0) &&
-                  ((limitPrice >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
-                    (limitPrice <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
-                  !(tokenIn == activeMarket.quoteAddress
-                    ? amountIn < activeMarket.minSize
-                    : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                    activeMarket.minSize)
-                  ? 'exceed-balance'
-                  : ''
+                !(
+                  amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading
+                ) &&
+                addliquidityonly &&
+                amountIn != BigInt(0) &&
+                ((limitPrice >= lowestAsk &&
+                  tokenIn == activeMarket.quoteAddress) ||
+                  (limitPrice <= highestBid &&
+                    tokenIn == activeMarket.baseAddress)) &&
+                !(tokenIn == activeMarket.quoteAddress
+                  ? amountIn < activeMarket.minSize
+                  : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                  activeMarket.minSize)
+                ? 'exceed-balance'
+                : ''
                 }`}
               onChange={(e) => {
                 if (
@@ -8341,7 +8336,7 @@ function App() {
                       '',
                       customRound(
                         Number(amountIn) /
-                          10 ** Number(tokendict[tokenIn].decimals),
+                        10 ** Number(tokendict[tokenIn].decimals),
                         3,
                       ),
                       0,
@@ -8352,7 +8347,7 @@ function App() {
                       ).address,
                     );
                   }
-          
+
                   if (addliquidityonly) {
                     hash = await limitOrder(
                       sendUserOperationAsync,
@@ -8394,26 +8389,28 @@ function App() {
                 setLimitButtonDisabled(true);
                 setLimitButton(0);
               } catch (error) {
-                newTxPopup(
-                  result ? hash.hash : hash.hash,
-                  "limitFailed",
-                  tokenIn == eth ? eth : tokenIn,
-                  tokenOut == eth ? eth : tokenOut,
-                  "",
-                  0,
-                  "",
-                  getMarket(
-                    activeMarket.path.at(0),
-                    activeMarket.path.at(1),
-                  ).address,
-                );
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    result ? hash.hash : hash.hash,
+                    "limitFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    "",
+                    0,
+                    "",
+                    getMarket(
+                      activeMarket.path.at(0),
+                      activeMarket.path.at(1),
+                    ).address,
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 500);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
-          }}          
+          }}
           disabled={limitButtonDisabled || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
@@ -9147,22 +9144,21 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
-                console.log(amountIn)
-                console.log(error instanceof TransactionExecutionError)
-                newTxPopup(
-                  hash.hash,
-                  "sendFailed",
-                  tokenIn === eth ? eth : tokenIn,
-                  "",
-                  customRound(
-                    Number(amountIn) / 10 ** Number(tokendict[tokenIn === eth ? eth : tokenIn].decimals),
-                    3,
-                  ),
-                  0,
-                  "",
-                  recipient,
-                );
-                return;
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    hash.hash,
+                    "sendFailed",
+                    tokenIn === eth ? eth : tokenIn,
+                    "",
+                    customRound(
+                      Number(amountIn) / 10 ** Number(tokendict[tokenIn === eth ? eth : tokenIn].decimals),
+                      3,
+                    ),
+                    0,
+                    "",
+                    recipient,
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 500)
               }
@@ -9957,6 +9953,7 @@ function App() {
               connected &&
               userchain === activechain
             ) {
+              let hash;
               try {
                 let o
                 o = calculateScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
@@ -9973,7 +9970,7 @@ function App() {
                   );
                 });
                 if (tokenIn == eth) {
-                  await multiBatchOrders(
+                  hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
                     BigInt(amountIn),
@@ -9985,7 +9982,7 @@ function App() {
                   );
                 } else {
                   if (allowance < amountIn) {
-                    const hash = await approve(
+                    hash = await approve(
                       sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
@@ -10013,7 +10010,7 @@ function App() {
                     );
                   }
 
-                  await multiBatchOrders(
+                  hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
                     BigInt(0),
@@ -10047,6 +10044,7 @@ function App() {
                 setScaleOrders(BigInt(0))
                 setScaleOrdersString('')
               } catch (error) {
+                console.log(error);
               } finally {
                 setTimeout(() => refetch(), 500)
               }
