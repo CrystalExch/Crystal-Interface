@@ -15,6 +15,10 @@ interface MinSizeFilterProps {
   filter?: 'all' | 'buy' | 'sell';
   setFilter?: any;
   hideMarketFilter?: boolean;
+  showMarketFilter?: boolean;
+  showTypeFilter?: boolean;
+  showSizeFilter?: boolean;
+  alwaysShowButton?: boolean;
 }
 
 const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
@@ -27,6 +31,10 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
   filter,
   setFilter,
   hideMarketFilter = false,
+  showMarketFilter = true,
+  showTypeFilter = true,
+  showSizeFilter = true,
+  alwaysShowButton = false,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -87,16 +95,23 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
     };
   }, []);
 
+  const shouldShowButton = alwaysShowButton || 
+                          (showTypeFilter && filter !== undefined) || 
+                          (showMarketFilter && !hideMarketFilter && onlyThisMarket !== undefined) || 
+                          showSizeFilter;
+
   return (
     <div className="min-size-filter-container">
-      <div 
-        ref={buttonRef}
-        className="min-size-filter-button" 
-        onClick={toggleDropdown}
-        title="Filters"
-      >
-        <img className="min-size-filter-dots" src={dotsicon} alt="Filters" />
-      </div>
+      {shouldShowButton && (
+        <div 
+          ref={buttonRef}
+          className="min-size-filter-button" 
+          onClick={toggleDropdown}
+          title="Filters"
+        >
+          <img className="min-size-filter-dots" src={dotsicon} alt="Filters" />
+        </div>
+      )}
       
       {isOpen && (
         <div 
@@ -111,7 +126,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
           }}
         >
           <>
-                          {filter !== undefined && setFilter && (
+            {showTypeFilter && filter !== undefined && setFilter && (
               <div className="filter-section">
                 <div className="filter-section-header">
                   {t("orderType")}
@@ -122,9 +137,9 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               </div>
             )}
             
-            {!hideMarketFilter && onlyThisMarket !== undefined && setOnlyThisMarket && (
+            {showMarketFilter && !hideMarketFilter && onlyThisMarket !== undefined && setOnlyThisMarket && (
               <>
-                <div className="only-filter-section">
+                <div className={`only-filter-section ${!showTypeFilter ? '' : ''}`}>
                   <div className="filter-section-content">
                     <ToggleSwitch
                       checked={onlyThisMarket}
@@ -147,7 +162,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
               </>
             )}
 
-            <div className="filter-section">
+            <div className={`filter-section ${(!showTypeFilter && !showMarketFilter) ? '' : ''}`}>
               <div className="min-size-filter-section-header">
                 {t("minimumSize")}
               </div>

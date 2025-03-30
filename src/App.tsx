@@ -599,6 +599,8 @@ function App() {
     queue: [],
     set: new Set(),
   });
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
@@ -630,7 +632,7 @@ function App() {
   const loading =
     stateloading ||
     tradesloading ||
-    addressinfoloading
+    addressinfoloading;
 
   const activeMarket = getMarket(tokenIn, tokenOut);
   const activeMarketKey = activeMarket.baseAsset + activeMarket.quoteAsset;
@@ -641,10 +643,11 @@ function App() {
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
   const [sendUsdValue, setSendUsdValue] = useState('');
-  const [sendTokenIn, setSendTokenIn] = useState(eth)
+  const [sendTokenIn, setSendTokenIn] = useState(eth);
 
   const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
   const [marketsData, setMarketsData] = useState<any[]>([]);
   const [sortField, setSortField] = useState<
     'volume' | 'price' | 'change' | 'favorites' | null
@@ -751,12 +754,12 @@ function App() {
       }
       return prev;
     });
-  }
+  };
 
   function handleSetOrderbookWidth(newWidth: number) {
     setOrderbookWidth(newWidth);
     localStorage.setItem('orderbookWidth', newWidth.toString());
-  }
+  };
 
   const formatDisplayValue = (
     rawAmount: bigint,
@@ -913,28 +916,26 @@ function App() {
   };
 
   // set amount for a token
-  const debouncedSetAmount =
-    (amount: bigint) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      setStateIsLoading(true);
-      debounceTimerRef.current = setTimeout(() => {
-        setamountIn(amount);
-      }, 300);
+  const debouncedSetAmount = (amount: bigint) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    setStateIsLoading(true);
+    debounceTimerRef.current = setTimeout(() => {
+      setamountIn(amount);
+    }, 300);
+  };
 
   // set amountout for a token
-  const debouncedSetAmountOut =
-    (amount: bigint) => {
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      setStateIsLoading(true);
-      debounceTimerRef.current = setTimeout(() => {
-        setamountOutSwap(amount);
-      }, 300);
+  const debouncedSetAmountOut = (amount: bigint) => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
     }
+    setStateIsLoading(true);
+    debounceTimerRef.current = setTimeout(() => {
+      setamountOutSwap(amount);
+    }, 300);
+  };
 
   // set token string
   const debouncedSetTokenString = (value: string) => {
@@ -944,7 +945,7 @@ function App() {
     debounceTimerRef.current = setTimeout(() => {
       settokenString(value);
     }, 100);
-  }
+  };
 
   // fetch state
   const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
@@ -1823,6 +1824,32 @@ function App() {
     return prices.map((price, i) => [price, orderSizes[i], orderUsdValues[i]])
   }
 
+  const calculateScaleInput = (
+    desiredOutput: number,
+    startPrice: number,
+    endPrice: number,
+    numOrders: number,
+    skew: number,
+  ): number => {
+    const prices: number[] = Array.from({ length: numOrders }, (_, i) =>
+      Math.round(startPrice + ((endPrice - startPrice) * i) / (numOrders - 1))
+    );
+    const weights: number[] = Array.from({ length: numOrders }, (_, i) =>
+      1 + ((skew - 1) * i) / (numOrders - 1)
+    );
+
+    const S_p = prices.reduce((sum, price, i) => sum + price * weights[i], 0);
+    const S_w = weights.reduce((sum, w) => sum + w, 0);
+    
+    let requiredInput: number;
+    if (tokenIn === activeMarket.quoteAddress) {
+      requiredInput = (desiredOutput * S_p) / (Number(activeMarket.scaleFactor) * S_w);
+    } else {
+      requiredInput = (desiredOutput * Number(activeMarket.scaleFactor) * S_w) / S_p;
+    }
+    return Math.round(requiredInput);
+  };
+
   // oc resizers
   const handleVertMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -2548,7 +2575,7 @@ function App() {
         );
         setSendPopupButtonDisabled(
           (sendAmountIn === BigInt(0) ||
-          sendAmountIn > tokenBalances[sendTokenIn] ||
+            sendAmountIn > tokenBalances[sendTokenIn] ||
             !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
           connected &&
           userchain == activechain,
@@ -6983,24 +7010,25 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
-                console.error("Swap failed:", error);
-                newTxPopup(
-                  "",
-                  "swapFailed",
-                  tokenIn == eth ? eth : tokenIn,
-                  tokenOut == eth ? eth : tokenOut,
-                  customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-                  customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
-                  "",
-                  address
-                );
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    "",
+                    "swapFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                    customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    "",
+                    address
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 0);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
-          }}          
+          }}
           disabled={swapButtonDisabled || displayValuesLoading || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
@@ -8009,23 +8037,23 @@ function App() {
             <input
               inputMode="decimal"
               className={`limit-order ${connected &&
-                  !(
-                    amountIn > tokenBalances[tokenIn] &&
-                    !isLoading &&
-                    !stateIsLoading
-                  ) &&
-                  addliquidityonly &&
-                  amountIn != BigInt(0) &&
-                  ((limitPrice >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
-                    (limitPrice <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
-                  !(tokenIn == activeMarket.quoteAddress
-                    ? amountIn < activeMarket.minSize
-                    : (amountIn * limitPrice) / activeMarket.scaleFactor <
-                    activeMarket.minSize)
-                  ? 'exceed-balance'
-                  : ''
+                !(
+                  amountIn > tokenBalances[tokenIn] &&
+                  !isLoading &&
+                  !stateIsLoading
+                ) &&
+                addliquidityonly &&
+                amountIn != BigInt(0) &&
+                ((limitPrice >= lowestAsk &&
+                  tokenIn == activeMarket.quoteAddress) ||
+                  (limitPrice <= highestBid &&
+                    tokenIn == activeMarket.baseAddress)) &&
+                !(tokenIn == activeMarket.quoteAddress
+                  ? amountIn < activeMarket.minSize
+                  : (amountIn * limitPrice) / activeMarket.scaleFactor <
+                  activeMarket.minSize)
+                ? 'exceed-balance'
+                : ''
                 }`}
               onChange={(e) => {
                 if (
@@ -8316,7 +8344,7 @@ function App() {
                       '',
                       customRound(
                         Number(amountIn) /
-                          10 ** Number(tokendict[tokenIn].decimals),
+                        10 ** Number(tokendict[tokenIn].decimals),
                         3,
                       ),
                       0,
@@ -8327,7 +8355,7 @@ function App() {
                       ).address,
                     );
                   }
-          
+
                   if (addliquidityonly) {
                     hash = await limitOrder(
                       sendUserOperationAsync,
@@ -8369,26 +8397,28 @@ function App() {
                 setLimitButtonDisabled(true);
                 setLimitButton(0);
               } catch (error) {
-                newTxPopup(
-                  result ? hash.hash : hash.hash,
-                  "limitFailed",
-                  tokenIn == eth ? eth : tokenIn,
-                  tokenOut == eth ? eth : tokenOut,
-                  "",
-                  0,
-                  "",
-                  getMarket(
-                    activeMarket.path.at(0),
-                    activeMarket.path.at(1),
-                  ).address,
-                );
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    result ? hash.hash : hash.hash,
+                    "limitFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    "",
+                    0,
+                    "",
+                    getMarket(
+                      activeMarket.path.at(0),
+                      activeMarket.path.at(1),
+                    ).address,
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 0);
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
-          }}          
+          }}
           disabled={limitButtonDisabled || isSendingUserOperation}
         >
           {isSendingUserOperation ? (
@@ -9122,22 +9152,21 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
-                console.log(amountIn)
-                console.log(error instanceof TransactionExecutionError)
-                newTxPopup(
-                  hash.hash,
-                  "sendFailed",
-                  tokenIn === eth ? eth : tokenIn,
-                  "",
-                  customRound(
-                    Number(amountIn) / 10 ** Number(tokendict[tokenIn === eth ? eth : tokenIn].decimals),
-                    3,
-                  ),
-                  0,
-                  "",
-                  recipient,
-                );
-                return;
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    hash.hash,
+                    "sendFailed",
+                    tokenIn === eth ? eth : tokenIn,
+                    "",
+                    customRound(
+                      Number(amountIn) / 10 ** Number(tokendict[tokenIn === eth ? eth : tokenIn].decimals),
+                      3,
+                    ),
+                    0,
+                    "",
+                    recipient,
+                  );
+                }
               } finally {
                 setTimeout(() => refetch(), 0)
               }
@@ -9496,10 +9525,33 @@ function App() {
               <input
                 inputMode="decimal"
                 className="output"
-                value={scaleOutputString}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setScaleOutputString(e.currentTarget.value);
+                    setIsOutputBasedScaleOrder(true);
+                    const outputValue =
+                      Number(e.currentTarget.value || "0") *
+                      10 ** Number(tokendict[tokenOut].decimals);
+                    if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                      const requiredInput = calculateScaleInput(
+                        Number(outputValue),
+                        Number(scaleStart),
+                        Number(scaleEnd),
+                        Number(scaleOrders),
+                        Number(scaleSkew)
+                      );
+                      setamountIn(BigInt(requiredInput));
+                      setInputString(
+                        customRound(
+                          requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                          3
+                        ).toString()
+                      );
+                    }
+                  }
+                }}
                 placeholder="0.00"
-                disabled={true}
-                style={{ cursor: 'not-allowed' }}
+                value={scaleOutputString}
               />
               <button
                 className="button2"
@@ -9508,7 +9560,7 @@ function App() {
                 }}
               >
                 <img className="button2pic" src={tokendict[tokenOut].image} />
-                <span>{tokendict[tokenOut].ticker || '?'}</span>
+                <span>{tokendict[tokenOut].ticker || "?"}</span>
                 <svg
                   className="button-arrow"
                   xmlns="http://www.w3.org/2000/svg"
@@ -9529,64 +9581,63 @@ function App() {
           <div className="balance1maxcontainer">
             <div className="output-usd-value">
               {amountOutScale === BigInt(0)
-                ? '$0.00'
+                ? "$0.00"
                 : (() => {
                   const outputUSD = calculateUSDValue(
                     amountOutScale,
                     tradesByMarket[
                     getMarket(
                       activeMarket.path.at(-2),
-                      activeMarket.path.at(-1),
+                      activeMarket.path.at(-1)
                     ).baseAsset +
                     getMarket(
                       activeMarket.path.at(-2),
-                      activeMarket.path.at(-1),
+                      activeMarket.path.at(-1)
                     ).quoteAsset
                     ],
                     tokenOut,
                     getMarket(
                       activeMarket.path.at(-2),
-                      activeMarket.path.at(-1),
-                    ),
+                      activeMarket.path.at(-1)
+                    )
                   );
 
                   const inputUSD = calculateUSDValue(
                     BigInt(
                       Math.round(
-                        (parseFloat(inputString || '0') || 0) *
-                        10 ** Number(tokendict[tokenIn].decimals),
-                      ),
+                        (parseFloat(inputString || "0") || 0) *
+                        10 ** Number(tokendict[tokenIn].decimals)
+                      )
                     ),
                     tradesByMarket[
                     getMarket(
                       activeMarket.path.at(0),
-                      activeMarket.path.at(1),
+                      activeMarket.path.at(1)
                     ).baseAsset +
                     getMarket(
                       activeMarket.path.at(0),
-                      activeMarket.path.at(1),
+                      activeMarket.path.at(1)
                     ).quoteAsset
                     ],
                     tokenIn,
                     getMarket(
                       activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ),
+                      activeMarket.path.at(1)
+                    )
                   );
 
                   const percentageDiff =
-                    inputUSD > 0
-                      ? ((outputUSD - inputUSD) / inputUSD) * 100
-                      : 0;
+                    inputUSD > 0 ? ((outputUSD - inputUSD) / inputUSD) * 100 : 0;
 
                   return (
                     <div className="output-usd-container">
                       <span>{formatUSDDisplay(outputUSD)}</span>
                       {inputUSD > 0 && (
                         <span
-                          className={`output-percentage ${percentageDiff >= 0 ? 'positive' : 'negative'}`}
+                          className={`output-percentage ${percentageDiff >= 0 ? "positive" : "negative"
+                            }`}
                         >
-                          ({percentageDiff >= 0 ? '+' : ''}
+                          ({percentageDiff >= 0 ? "+" : ""}
                           {percentageDiff.toFixed(2)}%)
                         </span>
                       )}
@@ -9595,10 +9646,10 @@ function App() {
                 })()}
             </div>
             <div className="balance2">
-              <img src={walleticon} className="balance-wallet-icon" />{' '}
+              <img src={walleticon} className="balance-wallet-icon" />{" "}
               {formatDisplayValue(
                 tokenBalances[tokenOut],
-                Number(tokendict[tokenOut].decimals),
+                Number(tokendict[tokenOut].decimals)
               )}
             </div>
           </div>
@@ -9928,13 +9979,29 @@ function App() {
         <button
           className={`limit-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
           onClick={async () => {
-            if (
-              connected &&
-              userchain === activechain
-            ) {
+            if (connected && userchain === activechain) {
+              let hash;
               try {
-                let o
-                o = calculateScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                let finalAmountIn = Number(amountIn);
+                if (isOutputBasedScaleOrder) {
+                  const desiredOutput =
+                    Number(scaleOutputString) *
+                    10 ** Number(tokendict[tokenOut].decimals);
+                  finalAmountIn = calculateScaleInput(
+                    desiredOutput,
+                    Number(scaleStart),
+                    Number(scaleEnd),
+                    Number(scaleOrders),
+                    Number(scaleSkew)
+                  );
+                }
+                let o = calculateScaleOutput(
+                  finalAmountIn,
+                  Number(scaleStart),
+                  Number(scaleEnd),
+                  Number(scaleOrders),
+                  Number(scaleSkew)
+                );
                 let action: any = [[]];
                 let price: any = [[]];
                 let param1: any = [[]];
@@ -9943,15 +10010,13 @@ function App() {
                   action[0].push(tokenIn == activeMarket.quoteAddress ? 1 : 2);
                   price[0].push(order[0]);
                   param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
-                  param2[0].push(
-                    tokenIn == eth ? router : address
-                  );
+                  param2[0].push(tokenIn == eth ? router : address);
                 });
                 if (tokenIn == eth) {
-                  await multiBatchOrders(
+                  hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
-                    BigInt(amountIn),
+                    BigInt(finalAmountIn),
                     [activeMarket.address],
                     action,
                     price,
@@ -9959,8 +10024,8 @@ function App() {
                     param2,
                   );
                 } else {
-                  if (allowance < amountIn) {
-                    const hash = await approve(
+                  if (allowance < finalAmountIn) {
+                    hash = await approve(
                       sendUserOperationAsync,
                       tokenIn as `0x${string}`,
                       getMarket(
@@ -9970,12 +10035,15 @@ function App() {
                       maxUint256,
                     );
                     newTxPopup(
-                      (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                      (client
+                        ? hash.hash
+                        : await waitForTransactionReceipt(config, { hash: hash.hash })
+                      ).transactionHash,
                       'approve',
                       tokenIn,
                       '',
                       customRound(
-                        Number(amountIn) /
+                        Number(finalAmountIn) /
                         10 ** Number(tokendict[tokenIn].decimals),
                         3,
                       ),
@@ -9987,8 +10055,7 @@ function App() {
                       ).address,
                     );
                   }
-
-                  await multiBatchOrders(
+                  hash = await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
                     BigInt(0),
@@ -10003,9 +10070,7 @@ function App() {
                 setamountIn(BigInt(0));
                 setSliderPercent(0);
                 const slider = document.querySelector('.balance-amount-slider');
-                const popup = document.querySelector(
-                  '.slider-percentage-popup',
-                );
+                const popup = document.querySelector('.slider-percentage-popup');
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
@@ -10013,22 +10078,21 @@ function App() {
                 setScaleOutputString('');
                 setScaleButtonDisabled(true);
                 setScaleButton(0);
-                setScaleStart(BigInt(0))
-                setScaleEnd(BigInt(0))
-                setScaleStartString('')
-                setScaleEndString('')
-                setScaleSkew(1)
-                setScaleSkewString('1.00')
-                setScaleOrders(BigInt(0))
-                setScaleOrdersString('')
+                setScaleStart(BigInt(0));
+                setScaleEnd(BigInt(0));
+                setScaleStartString('');
+                setScaleEndString('');
+                setScaleSkew(1);
+                setScaleSkewString('1.00');
+                setScaleOrders(BigInt(0));
+                setScaleOrdersString('');
               } catch (error) {
+                console.log(error);
               } finally {
                 setTimeout(() => refetch(), 0)
               }
             } else {
-              !connected
-                ? setpopup(4)
-                : handleSetChain()
+              !connected ? setpopup(4) : handleSetChain();
             }
           }}
           disabled={scaleButtonDisabled || isSendingUserOperation}
@@ -10059,17 +10123,16 @@ function App() {
           ) : scaleButton == 9 ? (
             t('enterSkew')
           ) : scaleButton == 10 ? (
-            t('insufficient') +
-            (tokendict[tokenIn].ticker || '?') +
-            ' ' +
-            t('bal')
+            t('insufficient') + (tokendict[tokenIn].ticker || '?') + ' ' + t('bal')
           ) : scaleButton == 11 ? (
             `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
           ) : scaleButton == 12 ? (
             t('connectWallet')
           ) : scaleButton == 13 ? (
             client ? t('placeOrder') : t('approve')
-          ) : t('placeOrder')}
+          ) : (
+            t('placeOrder')
+          )}
         </button>
       </div>
       <div className="limit-info-rectangle">

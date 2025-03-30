@@ -82,6 +82,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           const updatedUserInfo = Object.fromEntries(
             Object.entries(normalizedData).map(([addr, info]) => [addr, { username: info.username }])
           );
+          console.log(normalizedData);
           setUserInfo(updatedUserInfo);
           const updatedLiveLeaderboard = Object.fromEntries(
             Object.entries(normalizedData).map(([addr, info]) => [addr, info.points])
@@ -348,25 +349,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         ...prevUserInfo,
         [address.toLowerCase()]: { username: updatedUserData.username }
       }));
-
-      try {
-        const response = await fetch('https://points-backend-b5a062cda7cd.herokuapp.com/update-account', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            address: address,
-            username: updatedUserData.username,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to update user in the backend');
-        }
-      } catch (error) {
-        console.error('Error updating user data in backend:', error);
-      }
     }
 
     setShowEditAccount(false);
