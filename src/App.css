@@ -884,11 +884,12 @@ body {
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 4px 20px 13.5px 37px;
+  padding: 6px 20px 12px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
   width: calc(100%);
+  align-items: center;
 }
 
 .tokenbutton:hover {
@@ -4059,6 +4060,13 @@ input[type="email"] {
 [class="flex flex-col gap-5 items-center w-full"] {
   margin-top: -0.54rem !important;
 }
+
+[class="w-[24px] h-[24px] lg:w-[16px] lg:h-[16px]"] {
+  width: 16px !important;
+  height: 16px !important;
+  margin-top: 1rem !important;
+}
+
 .akui-btn-primary{
   background: linear-gradient(
     135deg,

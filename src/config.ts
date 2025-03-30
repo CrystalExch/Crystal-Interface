@@ -17,6 +17,9 @@ export const alchemyconfig = createConfig({
   chain: settings.chains[0],
   ssr: false,
   enablePopupOauth: true,
+  sessionConfig: {
+    expirationTimeMs: 1000 * 60 * 60 * 24 * 7 * 365
+  }
 }, uiConfig);
 
 export const queryClient = new QueryClient();

@@ -285,7 +285,6 @@ function App() {
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
-
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
@@ -682,6 +681,8 @@ function App() {
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  let isAddressInfoFetching = false;
 
   const audio = useMemo(() => {
     const a = new Audio(notificationSound);
@@ -2731,6 +2732,7 @@ function App() {
         setorders([]);
         setcanceledorders([]);
       }, 10);
+      isAddressInfoFetching = true;
       (async () => {
         try {
           const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
@@ -2810,7 +2812,7 @@ function App() {
           });
 
           const result = await response.json();
-
+          if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {
             for (const event of batch.orders) {
@@ -2891,8 +2893,8 @@ function App() {
           settradehistory((prev) => [...temptradehistory, ...prev]);
           setorders((prev) => [...temporders, ...prev]);
           setcanceledorders((prev) => [...tempcanceledorders, ...prev]);
-
           setaddressinfoloading(false);
+          isAddressInfoFetching = false
         } catch (error) {
           console.error("Error fetching logs:", error);
           setaddressinfoloading(false);
@@ -2908,6 +2910,7 @@ function App() {
       }, 500);
       setaddressinfoloading(false);
     }
+    return () => { isAddressInfoFetching = false; };
   }, [address, activechain]);
 
   // klines + trades
@@ -3105,7 +3108,7 @@ function App() {
   // click outside slippage and resize handler and click outside popup and showtrade esc
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && popup != 11) {
         setpopup(0);
         setSendUsdValue('');
         setSendInputAmount('');
@@ -3143,7 +3146,7 @@ function App() {
           }
         }
 
-        if (!popupref.current?.contains(e.target as Node)) {
+        if (!popupref.current?.contains(e.target as Node) && popup != 11) {
           setIsLanguageDropdownOpen(false);
           setSendUsdValue('');
           setSendInputAmount('');

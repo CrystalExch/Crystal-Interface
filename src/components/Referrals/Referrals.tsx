@@ -210,7 +210,7 @@ const Referrals: React.FC<ReferralProps> = ({
       } catch (error) {
       } finally {
         setIsSigning(false);
-        setTimeout(()=>refetch(), 500)
+        setTimeout(()=>refetch(), 1000)
       }
     } else {
       !account.connected
