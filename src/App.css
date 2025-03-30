@@ -1250,6 +1250,13 @@ body:has(.right-column.show) .blur-background-popups {
   transition: transform.3s cubic-bezier(0.2, 0, 0.1, 1);
   width: 13px;
 }
+.deposit-button-arrow{
+  height: 16px;
+  margin-left: 2px;
+  opacity: 0.8;
+  transition: transform.3s cubic-bezier(0.2, 0, 0.1, 1);
+  width: 16px;
+}
 
 .inputbutton1container,
 .limitpricecontainer,
@@ -4514,6 +4521,11 @@ input[type="email"] {
   font-weight: 400;
   color: #ffffffe4;
 }
+.deposit-token-ticker{
+  font-size: 0.75rem;
+  font-weight: 400;
+  color: #ffffffbd;
+}
 
 .dropdown-arrow {
   color: #6c7284;
@@ -4526,6 +4538,7 @@ input[type="email"] {
   left: 0;
   right: 0;
   background-color: #121215e8;
+  border: 1.5px solid #1a1a1d;
   backdrop-filter: blur(10px);
   border-radius: 8px;
   overflow: hidden;
@@ -4539,7 +4552,7 @@ input[type="email"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 6px 8px;
+  padding: 8px 8px;
   cursor: pointer;
   transition: background-color 0.2s;
   border-bottom: 1px solid #2d2f3975;
@@ -4570,7 +4583,18 @@ input[type="email"] {
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
+.deposit-subtitle{
+  display: flex;
+  align-self: left;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 300;
+  margin-left: 2px;
+  margin-bottom: -4px;
+}
 .selected-token-balance {
+  display: flex;
+  align-items: center;
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
   font-weight: 300;
