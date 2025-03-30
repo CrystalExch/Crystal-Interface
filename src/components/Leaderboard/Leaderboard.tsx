@@ -412,7 +412,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const isUserAddress = (factionAddress: string): boolean => {
     return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
   };
-
   const renderLoadingTopThree = () => {
     return [0, 1, 2].map((index) => (
       <div
@@ -426,9 +425,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         )}
         <div className="faction-rank">{index + 1}</div>
         <div className="faction-info">
-          <div className="faction-logo loading-placeholder"></div>
-          <div className="faction-name loading-placeholder"></div>
-          <div className="faction-xp loading-placeholder"></div>
+          <div className="account-top-logo-loading account-loading-animation"></div>
+          <div className="account-top-name-loading account-loading-animation"></div>
+          <div className="account-top-xp-loading account-loading-animation"></div>
         </div>
       </div>
     ));
@@ -530,24 +529,26 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           </div>
 
           <div className="progress-container">
-            <div className="xp-display">
-              <span>
-                {Object.values(liveLeaderboard)
-                  .reduce((sum: number, value: number) => sum + value, 0)
-                  .toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
-              </span>
-            </div>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${(Object.values(liveLeaderboard)
-                    .reduce((sum: number, value: number) => sum + value, 0) / 1000000000) * 100}%`
-                }}
-              ></div>
-            </div>
-          </div>
-
+  <div className={`xp-display ${loading ? 'loading' : ''}`}>
+    {loading ? (
+      <div className="total-xp-loading"></div>
+    ) : (
+      <span>
+        {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
+      </span>
+    )}
+  </div>
+  <div className="progress-bar">
+    <div
+      className="progress-fill"
+      style={{ 
+        width: loading 
+          ? '5%'  
+          : `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%` 
+      }}
+    ></div>
+  </div>
+</div>
           <div className="leaderboard-user-info">
             <div className="info-column">
               <div className="column-header">{t("username")}</div>
@@ -562,14 +563,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 </div>
               </div>
             </div>
-            <div className="column-divider" />
-
+            <div className="column-divider"/>
+            
             <div className="info-column">
               <div className="column-header">{t("xpEarned")}</div>
               <div className="column-content">{userData.userXP.toLocaleString()} XP</div>
             </div>
-            <div className="column-divider" />
-
+            <div className="column-divider"/>
+            
             <div className="info-column">
               <div className="column-header">{t("rank")}</div>
               <div className="column-content">
@@ -577,21 +578,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               </div>
             </div>
             {hasAccount ? (
-              <button
+              <button 
                 className="edit-account-button"
                 onClick={handleEditAccount}
               >
                 {t("editAccount")}
               </button>
             ) : isGuestMode ? (
-              <button
+              <button 
                 className="create-account-button"
                 onClick={handleCreateAccount}
               >
                 {t("createAccount")}
               </button>
             ) : (
-              <button
+              <button 
                 className="create-account-button"
                 onClick={handleCreateAccount}
               >

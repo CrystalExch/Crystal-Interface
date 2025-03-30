@@ -4199,7 +4199,6 @@ input[type="email"] {
   text-align: center;
   width: 90%;
   max-width: 320px;
-  animation: scaleIn 0.3s ease;
   transform: translateY(200%);
 }
 
@@ -4229,16 +4228,7 @@ input[type="email"] {
   }
 }
 
-@keyframes scaleIn {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
+
 
 
 .loader {
