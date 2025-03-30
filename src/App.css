@@ -4293,7 +4293,7 @@ input[type="email"] {
 .deposit-page-container {
   border-radius: 8px;
   width: 90%;
-  max-width: 380px;
+  max-width: 390px;
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -4379,7 +4379,6 @@ input[type="email"] {
   scrollbar-width: none;
   -ms-overflow-style: none;
   width: calc(100% - 30px);
-  padding-right: 8px;
 }
 
 .deposit-address::-webkit-scrollbar {
@@ -4504,6 +4503,14 @@ input[type="email"] {
   position: relative;
 }
 
+
+.deposit-button-arrow {
+  transition: transform 0.3s ease;
+}
+
+.token-dropdown-container.open .deposit-button-arrow {
+  transform: rotate(180deg);
+}
 .selected-token-display {
   display: flex;
   justify-content: space-between;
@@ -4513,6 +4520,7 @@ input[type="email"] {
   padding: 6px 8px;
   cursor: pointer;
   transition: background-color 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.1)
 }
 
 .selected-token-info {
@@ -4522,18 +4530,18 @@ input[type="email"] {
 }
 
 .deposit-token-icon {
-  width: 15px;
-  height: 15px;
+  width: 17px;
+  height: 17px;
   border-radius: 50%;
 }
 
 .deposit-token-name {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   font-weight: 400;
   color: #ffffffe4;
 }
 .deposit-token-ticker{
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   font-weight: 400;
   color: #ffffffbd;
 }
@@ -4548,21 +4556,38 @@ input[type="email"] {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: #18181d;
+  background-color: #121214;
   border: 1px solid #1a1a1d;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   z-index: 10;
-  max-height: 300px;
+  max-height: 205px;
   overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  scrollbar-width: thin;
+  scrollbar-color: #1a1a1d #131317;
+  animation: dropdownAppear 0.25s ease-out forwards;
+  transform-origin: top center;
 }
+
+@keyframes dropdownAppear {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
 
 .token-dropdown-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 8px;
+  padding: 10px 8px;
   cursor: pointer;
   border-bottom: 1px solid #2d2f3975;
 }
@@ -4572,7 +4597,7 @@ input[type="email"] {
 }
 
 .token-dropdown-item:hover {
-  background-color: rgb(59, 61, 70, 0.6);
+  background-color: rgb(59, 61, 70, 0.3);
 }
 
 .dropdown-token-info {
@@ -4603,6 +4628,7 @@ input[type="email"] {
   color: rgba(255, 255, 255, 0.5);
   font-size: 0.85rem;
   font-weight: 300;
+  gap: 5px
 }
 
 
