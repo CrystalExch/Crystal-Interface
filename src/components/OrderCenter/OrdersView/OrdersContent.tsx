@@ -28,13 +28,11 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
       orders,
       (order: any, column: string) => getOrderValue(order, column, markets),
     );
-    
-    const indexOfLastItem = currentPage * pageSize;
-    const indexOfFirstItem = indexOfLastItem - pageSize;
-    const currentItems = sortedItems.length > 0 ? 
-      sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
-      [];
     const [isSigning, setIsSigning] = useState(false);
+    
+    const currentItems = sortedItems.length > 0 ? 
+    sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
+    [];
 
     return (
       <div className="orders-content-wrapper">
@@ -158,6 +156,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                     param2,
                   );
                 } catch (error) {
+                  console.log(hash)
                 } finally {
                   setIsSigning(false);
                   setTimeout(() => refetch(), 500)

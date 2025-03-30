@@ -33,6 +33,7 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
         BigInt(order[1]),
       );
     } catch (error) {
+      console.log(hash)
     } finally {
       setIsSigning(false);
       setTimeout(() => {

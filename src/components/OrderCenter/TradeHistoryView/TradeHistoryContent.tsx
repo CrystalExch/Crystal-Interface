@@ -23,11 +23,8 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
     (trade: any, column: string) => getTradeValue(trade, column, markets),
   );
 
-  // Calculate pagination
-  const indexOfLastItem = currentPage * pageSize;
-  const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentItems = sortedItems.length > 0 ? 
-    sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
+    sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
     [];
 
     return (

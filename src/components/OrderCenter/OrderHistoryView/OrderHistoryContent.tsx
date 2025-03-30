@@ -35,11 +35,8 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
       getOrderHistoryValue(order, column, markets),
   );
 
-  // Calculate pagination
-  const indexOfLastItem = currentPage * pageSize;
-  const indexOfFirstItem = indexOfLastItem - pageSize;
   const currentItems = sortedItems.length > 0 ? 
-    sortedItems.slice(indexOfFirstItem, indexOfLastItem) : 
+    sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
     [];
 
   return (

@@ -600,7 +600,6 @@ function App() {
     set: new Set(),
   });
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [tokenCopyTooltipVisible, setTokenCopyTooltipVisible] = useState(false);
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
@@ -613,8 +612,6 @@ function App() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
-  const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [showDeposit, setShowDeposit] = useState(false);
 
   // more constants
   const languageOptions = [
