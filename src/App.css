@@ -990,7 +990,6 @@ body:has(.right-column.show) .blur-background-popups {
 
 .tokenselectbg,.sendselectbg {
   border-radius: 8px;
-  box-sizing: border-box;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -3238,13 +3237,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   }
 }
 
-.transparent-button,
-.connect-button {
-  border-radius: 4px;
-  cursor: pointer;
-  padding: 6px 12px;
-}
-
 .search-markets-dropdown-popup {
   border-radius: 8px;
   background: #19191c80;
@@ -3397,14 +3389,6 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .dropdown-market-favorite-button.active {
   color: #aaaecf;
-}
-
-.search-backslash {
-  background-color: #3131367a;
-  border-radius: 3px;
-  color: #aaacb1;
-  font-size: 0.9rem;
-  padding: 0 5px;
 }
 
 .favorites-sort-icon {
@@ -4160,10 +4144,6 @@ input[type="email"] {
   display: block;
 }
 
-
-
-
-
 .send-address-input-container {
   position: relative;
   display: flex;
@@ -4189,17 +4169,23 @@ input[type="email"] {
 .generating-address-popup {
   display: flex;
   flex-direction: column;
-  justify-self: center;
   border: 1.5px solid #1a1a1d5d;
-  backdrop-filter: blur(10px);
   box-sizing: content-box;
   background: #19191c80;
-  border-radius: 12px;
+  border-radius: 8px;
   padding: 20px 0px;
   text-align: center;
   width: 90%;
   max-width: 320px;
-  transform: translateY(200%);
+  animation: fadeIn.2s ease-out;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+  transition: opacity.2s ease-out;
+  left: 50%;
+  margin: 0 auto;
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
 }
 
 
@@ -4289,7 +4275,6 @@ input[type="email"] {
 }
     
 .deposit-page-container {
-
   border-radius: 8px;
   width: 90%;
   max-width: 380px;
@@ -4298,11 +4283,23 @@ input[type="email"] {
   flex-direction: column;
   gap: 8px;
   border: 1.5px solid #1a1a1d5d;
-  backdrop-filter: blur(10px);
   box-sizing: content-box;
-  justify-self: center;
   background: #19191c80;
-  transforM: translateY(50%);
+  display: flex;
+  flex-direction: column;
+  border: 1.5px solid #1a1a1d5d;
+  box-sizing: content-box;
+  background: #19191c80;
+  text-align: center;
+  animation: fadeIn.2s ease-out;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+  transition: opacity.2s ease-out;
+  left: 50%;
+  margin: 0 auto;
+  overflow: hidden;
+  position: fixed;
+  top: 50%;
 }
     
 .deposit-page-header {

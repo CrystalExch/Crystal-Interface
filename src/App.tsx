@@ -20,7 +20,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { maxUint256 } from 'viem';
+import { TransactionExecutionError, maxUint256 } from 'viem';
 import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -132,18 +132,12 @@ function App() {
     client,
     waitForTxn: true,
   });
-  const [showDepositPage, setShowDepositPage] = useState(false);
   const [isNewWallet, setIsNewWallet] = useState(false);
   const currentUser = useUser();
 
   useEffect(() => {
     if (!address && currentUser) {
       setIsNewWallet(true);
-    }
-  }, [address, currentUser]);
-
-  useEffect(() => {
-    if (!address && currentUser) {
       setpopup(11);
     } else if (popup === 11) {
       setpopup(0);
@@ -151,32 +145,23 @@ function App() {
   }, [address, currentUser]);
 
   useEffect(() => {
-    if (address && isNewWallet && !showDepositPage) {
-      const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
+    if (address && isNewWallet) {
 
-      if (!hideDepositPage) {
-        setShowDepositPage(true);
-        setpopup(12);
-      }
+      setpopup(12);
       setIsNewWallet(false);
     }
-  }, [address, isNewWallet, showDepositPage]);
+  }, [address, isNewWallet]);
 
   const handleCloseDepositPage = () => {
-    setShowDepositPage(false);
     setpopup(0);
   };
 
   useEffect(() => {
-    if (address && isNewWallet && !showDepositPage) {
-      const hideDepositPage = localStorage.getItem('hideDepositPage') === 'true';
+    if (address && isNewWallet) {
 
-      if (!hideDepositPage) {
-        setShowDepositPage(true);
-      }
       setIsNewWallet(false);
     }
-  }, [address, isNewWallet, showDepositPage]);
+  }, [address, isNewWallet]);
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -526,6 +511,8 @@ function App() {
   const [limitButtonDisabled, setLimitButtonDisabled] = useState(true);
   const [sendButton, setSendButton] = useState(5);
   const [sendButtonDisabled, setSendButtonDisabled] = useState(true);
+  const [sendPopupButton, setSendPopupButton] = useState(5);
+  const [sendPopupButtonDisabled, setSendPopupButtonDisabled] = useState(true);
   const [amountOutScale, setAmountOutScale] = useState(BigInt(0));
   const [scaleOutputString, setScaleOutputString] = useState('');
   const [scaleStart, setScaleStart] = useState(BigInt(0));
@@ -2585,6 +2572,26 @@ function App() {
               ? 4
               : 5,
         );
+        setSendPopupButtonDisabled(
+          (sendAmountIn === BigInt(0) ||
+          sendAmountIn > tokenBalances[sendTokenIn] ||
+            !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
+          connected &&
+          userchain == activechain,
+        );
+        setSendPopupButton(
+          connected && userchain == activechain
+            ? sendAmountIn === BigInt(0)
+              ? 0
+              : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
+                ? 1
+                : sendAmountIn <= tokenBalances[sendTokenIn]
+                  ? 2
+                  : 3
+            : connected
+              ? 4
+              : 5,
+        );
         setScaleButtonDisabled(
           (amountIn === BigInt(0) ||
             scaleStart == BigInt(0) || scaleEnd == BigInt(0) || scaleOrders == BigInt(0) || scaleOrders == BigInt(1) || scaleSkew == 0 ||
@@ -3103,7 +3110,6 @@ function App() {
         setSendUsdValue('');
         setSendInputAmount('');
         setSendAmountIn(BigInt(0));
-        setSendButton(0);
         setIsLanguageDropdownOpen(false);
         settokenString('');
         setSelectedConnector(null);
@@ -3142,7 +3148,6 @@ function App() {
           setSendUsdValue('');
           setSendInputAmount('');
           setSendAmountIn(BigInt(0));
-          setSendButton(0);
           settokenString('');
           return 0;
         }
@@ -4738,7 +4743,6 @@ function App() {
                             setSendUsdValue('');
                             setSendInputAmount('');
                             setSendAmountIn(BigInt(0));
-                            setSendButton(0);
                           } else {
                             setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
                             const calculatedAmount = calculateTokenAmount(
@@ -4783,7 +4787,6 @@ function App() {
                             setSendUsdValue('');
                             setSendInputAmount('');
                             setSendAmountIn(BigInt(0));
-                            setSendButton(0);
                           } else {
                             setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
                             const calculatedAmount = calculateTokenAmount(
@@ -4941,11 +4944,11 @@ function App() {
                     userchain === activechain
                   ) {
                     try {
-                      if (tokenIn == eth) {
+                      if (sendTokenIn == eth) {
                         const hash = await sendeth(
                           sendUserOperationAsync,
                           recipient as `0x${string}`,
-                          amountIn,
+                          sendAmountIn,
                         );
                         newTxPopup(
                           (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
@@ -4953,7 +4956,7 @@ function App() {
                           eth,
                           '',
                           customRound(
-                            Number(amountIn) / 10 ** Number(tokendict[eth].decimals),
+                            Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals),
                             3,
                           ),
                           0,
@@ -4963,18 +4966,18 @@ function App() {
                       } else {
                         const hash = await sendtokens(
                           sendUserOperationAsync,
-                          tokenIn as `0x${string}`,
+                          sendTokenIn as `0x${string}`,
                           recipient as `0x${string}`,
-                          amountIn,
+                          sendAmountIn,
                         );
                         newTxPopup(
                           (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
-                          tokenIn,
+                          sendTokenIn,
                           '',
                           customRound(
-                            Number(amountIn) /
-                            10 ** Number(tokendict[tokenIn].decimals),
+                            Number(sendAmountIn) /
+                            10 ** Number(tokendict[sendTokenIn].decimals),
                             3,
                           ),
                           0,
@@ -4982,19 +4985,11 @@ function App() {
                           recipient,
                         );
                       }
-                      setInputString('');
-                      setsendInputString('');
-                      setamountIn(BigInt(0));
-                      setSliderPercent(0);
-                      setSendButton(0);
-                      setSendButtonDisabled(true);
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
-                      if (slider && popup) {
-                        (popup as HTMLElement).style.left = `${15 / 2}px`;
-                      }
+                      setSendUsdValue('')
+                      setSendInputAmount('');
+                      setSendAmountIn(BigInt(0));
+                      setSendPopupButton(0);
+                      setSendPopupButtonDisabled(true);
                     } catch (error) {
                     } finally {
                       setTimeout(() => refetch(), 500)
@@ -5005,27 +5000,27 @@ function App() {
                       : handleSetChain()
                   }
                 }}
-                disabled={sendButtonDisabled || isSendingUserOperation}
+                disabled={sendPopupButtonDisabled || isSendingUserOperation}
               >
                 {isSendingUserOperation ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
-                    {t('signTransaction')}
+                    {client ? t('sendingTransaction') : t('signTransaction')}
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
-                ) : sendButton == 0 ? (
+                ) : sendPopupButton == 0 ? (
                   t('enterAmount')
-                ) : sendButton == 1 ? (
+                ) : sendPopupButton == 1 ? (
                   t('enterWalletAddress')
-                ) : sendButton == 2 ? (
+                ) : sendPopupButton == 2 ? (
                   t('send')
-                ) : sendButton == 3 ? (
+                ) : sendPopupButton == 3 ? (
                   t('insufficient') +
-                  (tokendict[tokenIn].ticker || '?') +
+                  (tokendict[sendTokenIn].ticker || '?') +
                   ' ' +
                   t('bal')
-                ) : sendButton == 4 ? (
+                ) : sendPopupButton == 4 ? (
                   `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
                 ) : (
                   t('connectWallet')
@@ -5863,7 +5858,6 @@ function App() {
                       setSendUsdValue('');
                       setSendInputAmount('');
                       setSendAmountIn(BigInt(0));
-                      setSendButton(0);
                       settokenString('');
                       setpopup(3);
                     }}
@@ -6973,9 +6967,9 @@ function App() {
                   "",
                   "swapFailed",
                   tokenIn == eth ? eth : tokenIn,
-                  "",
+                  tokenOut == eth ? eth : tokenOut,
                   customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-                  0,
+                  customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
                   "",
                   address
                 );
@@ -6991,7 +6985,7 @@ function App() {
           {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {t('signTransaction')}
+              {client ? t('sendingTransaction') : t('signTransaction')}
             </div>
           ) : swapButton == 0 ? (
             t('insufficientLiquidity')
@@ -7009,7 +7003,7 @@ function App() {
           ) : swapButton == 5 ? (
             t('connectWallet')
           ) : (
-            t('approve')
+            client ? t('swap') : t('approve')
           )}
         </button>
       </div>
@@ -8379,7 +8373,7 @@ function App() {
           {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {t('signTransaction')}
+              {client ? t('sendingTransaction') : t('signTransaction')}
             </div>
           ) : limitButton == 0 ? (
             t('enterAmount')
@@ -8403,7 +8397,7 @@ function App() {
           ) : limitButton == 8 ? (
             t('connectWallet')
           ) : (
-            t('approve')
+            client ? t('placeOrder') : t('approve')
           )}
         </button>
       </div>
@@ -9107,6 +9101,8 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
+                console.log(amountIn)
+                console.log(error instanceof TransactionExecutionError)
                 newTxPopup(
                   hash.hash,
                   "sendFailed",
@@ -9135,7 +9131,7 @@ function App() {
           {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {t('signTransaction')}
+              {client ? t('sendingTransaction') : t('signTransaction')}
             </div>
           ) : !connected ? (
             t('connectWallet')
@@ -10019,7 +10015,7 @@ function App() {
           {isSendingUserOperation ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {t('signTransaction')}
+              {client ? t('sendingTransaction') : t('signTransaction')}
             </div>
           ) : scaleButton == 0 ? (
             t('enterAmount')
@@ -10051,7 +10047,7 @@ function App() {
           ) : scaleButton == 12 ? (
             t('connectWallet')
           ) : scaleButton == 13 ? (
-            t('approve')
+            client ? t('placeOrder') : t('approve')
           ) : t('placeOrder')}
         </button>
       </div>

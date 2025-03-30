@@ -82,7 +82,7 @@
   color: #0f0f12;
   cursor: pointer;
   display: flex;
-  font-size: 0.75rem;
+  font-size: 0.775rem;
   font-weight: 600;
   height: 30px;
   justify-content: center;
@@ -91,6 +91,7 @@
   transition: all.1s ease;
   width: 120px;
   z-index: 3;
+  padding: 6px 12px;
 }
 
 .connect-button:hover {
@@ -101,9 +102,7 @@
   background: none;
   border: none;
   border: 1.5px solid rgba(255, 255, 255, 0.07);
-  border-radius: 0;
   border-radius: 5px;
-  color: #e0dede;
   color: #fff;
   cursor: pointer;
   display: flex;
@@ -111,9 +110,8 @@
   font-weight: 300;
   height: 34px;
   overflow: hidden;
-  padding: 0;
+  padding: 0 8px;
   transition: all.1s ease;
-  width: 135px;
 }
 
 .transparent-button:active,
@@ -214,10 +212,10 @@
   color: #ffffff;
   cursor: pointer;
   display: flex;
-  font-size: 0.82rem;
-  padding: 0 7px;
+  font-size: 0.83rem;
+  padding: 0 8px 0 7px;
   height: 34px;
-  gap: 4px;
+  gap: 6px;
   justify-content: center;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
 }
@@ -225,6 +223,14 @@
 .search-button:active,
 .search-button:hover {
   opacity: 0.8;
+}
+
+.search-backslash {
+  background-color: #3131367a;
+  border-radius: 3px;
+  color: #aaacb1;
+  font-size: 0.85rem;
+  padding: 0 5px;
 }
 
 .history-icon {
