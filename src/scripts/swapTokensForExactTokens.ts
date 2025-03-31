@@ -1,8 +1,7 @@
 import { CrystalRouterAbi } from '../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
 
-const swapTokensForExactTokens = async (
-  sendUserOperation: any,
+const swapTokensForExactTokens = (
   address: `0x${string}`,
   amountOut: bigint,
   amountInMax: bigint,
@@ -10,9 +9,8 @@ const swapTokensForExactTokens = async (
   to: `0x${string}`,
   deadline: bigint,
   ref: `0x${string}`,
-) =>
-  sendUserOperation({
-    uo: {
+) => {
+  return {
       target: address,
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
@@ -20,7 +18,7 @@ const swapTokensForExactTokens = async (
         args: [amountOut, amountInMax, path, to, deadline, ref],
       }),
       value: 0n,
-    },
-  })
+    }
+  }
 
 export default swapTokensForExactTokens;

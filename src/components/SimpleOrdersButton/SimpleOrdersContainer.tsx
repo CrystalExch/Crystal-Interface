@@ -33,7 +33,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
       return;
     }
     const orderId = order[0].toString();
-    setLoadingOrders((prev) => ({ ...prev, [orderId]: true }));
     try {
       
 
@@ -43,7 +42,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
       }
       
       await setChain();
-      
+      setLoadingOrders((prev) => ({ ...prev, [orderId]: true }));
         await cancelOrder(
           sendUserOperationAsync,
         router as `0x${string}`,
@@ -56,54 +55,51 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         BigInt(order[0]),
         BigInt(order[1]),
       );
-      
-      setTimeout(() => refetch(), 500);
     } catch (error) {
     } finally {
       setLoadingOrders((prev) => ({ ...prev, [orderId]: false }));
+      refetch()
     }
   };
 
   const cancelAllOrders = async () => {
     if (!orders || orders.length === 0 || !address) {
       return;
-    }
-    setCancelAllLoading(true);
+    }      
+
+    const orderbatch: Record<string, { 0: any[]; 1: any[]; 2: any[]; 3: any[] }> = {};
+    
+    orders.forEach((order) => {
+      if (!order || !order[4] || !markets[order[4]]) {
+        return;
+      }
+      
+      const k = markets[order[4]].address;
+      if (!orderbatch[k]) {
+        orderbatch[k] = { 0: [], 1: [], 2: [], 3: [] };
+      }
+      
+      orderbatch[k][0].push(0);
+      orderbatch[k][1].push(order[0]);
+      orderbatch[k][2].push(order[1]);
+      orderbatch[k][3].push(
+        markets[order[4]].baseAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && 
+        order[3] === 0
+          ? router
+          : address
+      );
+    });
+    
+    const m = Object.keys(orderbatch) as `0x${string}`[];
+    const action = m.map((market) => orderbatch[market][0]);
+    const price = m.map((market) => orderbatch[market][1]);
+    const param1 = m.map((market) => orderbatch[market][2]);
+    const param2 = m.map((market) => orderbatch[market][3]);
+
     try {
       await setChain();
-      
-      const orderbatch: Record<string, { 0: any[]; 1: any[]; 2: any[]; 3: any[] }> = {};
-      
-      orders.forEach((order) => {
-        if (!order || !order[4] || !markets[order[4]]) {
-          return;
-        }
-        
-        const k = markets[order[4]].address;
-        if (!orderbatch[k]) {
-          orderbatch[k] = { 0: [], 1: [], 2: [], 3: [] };
-        }
-        
-        orderbatch[k][0].push(0);
-        orderbatch[k][1].push(order[0]);
-        orderbatch[k][2].push(order[1]);
-        orderbatch[k][3].push(
-          markets[order[4]].baseAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' && 
-          order[3] === 0
-            ? router
-            : address
-        );
-      });
-      
-      const m = Object.keys(orderbatch) as `0x${string}`[];
-      const action = m.map((market) => orderbatch[market][0]);
-      const price = m.map((market) => orderbatch[market][1]);
-      const param1 = m.map((market) => orderbatch[market][2]);
-      const param2 = m.map((market) => orderbatch[market][3]);
-      
-
-      await multiBatchOrders(
-        sendUserOperationAsync,
+      setCancelAllLoading(true);
+      await sendUserOperationAsync({uo: multiBatchOrders(
         router as `0x${string}`,
         BigInt(0),
         m,
@@ -111,12 +107,11 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         price,
         param1,
         param2
-      );
-      
-      setTimeout(() => refetch(), 500);
+      )})
     } catch (error) {
     } finally {
       setCancelAllLoading(false);
+      refetch()
     }
   };
 

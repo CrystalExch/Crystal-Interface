@@ -144,8 +144,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 try {
                   await setChain()
                   setIsSigning(true);
-                  await multiBatchOrders(
-                    sendUserOperationAsync,
+                  await sendUserOperationAsync({uo: multiBatchOrders(
                     router,
                     BigInt(0),
                     m,
@@ -153,7 +152,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                     price,
                     param1,
                     param2,
-                  );
+                  )})
                 } catch (error) {
                 } finally {
                   setIsSigning(false);

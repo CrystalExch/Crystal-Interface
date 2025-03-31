@@ -1,8 +1,7 @@
 import { CrystalRouterAbi } from '../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
 
-const multiBatchOrders = async (
-  sendUserOperation: any,
+const multiBatchOrders = (
   address: `0x${string}`,
   value: bigint,
   markets: `0x${string}`[],
@@ -10,9 +9,8 @@ const multiBatchOrders = async (
   price: bigint[][],
   param1: bigint[][],
   param2: `0x${string}`[][],
-) =>
-  sendUserOperation({
-    uo: {
+) => {
+  return {
       target: address,
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
@@ -20,7 +18,7 @@ const multiBatchOrders = async (
         args: [markets, action, price, param1, param2],
       }),
       value: value,
-    },
-  })
+    }
+  }
 
 export default multiBatchOrders;

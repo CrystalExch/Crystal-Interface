@@ -121,12 +121,6 @@ const Referrals: React.FC<ReferralProps> = ({
             functionName: 'refToAddress',
             args: [refLinkString.toLowerCase()],
           },
-          {
-            abi: CrystalRouterAbi,
-            address: router,
-            functionName: 'addressToUsedRef',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
         ],
       })) as any[];
       setRefLink(refs[0].result);
@@ -139,33 +133,8 @@ const Referrals: React.FC<ReferralProps> = ({
           ? error == t('codeTaken') ? '' : error
           : t('codeTaken'),
       );
-      setUsedRefLink(refs[3].result)
-      console.log(refs)
     })();
-  }, [address, usedRefLink, refLinkString]);
-
-  const handleSetRef = async (refCode: string) => {
-    try {
-      await sendUserOperationAsync({
-        uo: {
-          target: router,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: 'setUsedRef',
-            args: [
-              refCode
-            ],
-          }),
-          value: 0n,
-        },
-      })
-      setUsedRefLink(refCode);
-      localStorage.setItem('ref', refCode);
-      return true;
-    } catch (error) {
-      return false;
-    }
-  };
+  }, [usedRefLink, address, refLinkString]);
 
   const handleCreateRef = async () => {
     try {
@@ -345,7 +314,7 @@ const Referrals: React.FC<ReferralProps> = ({
             </div>
             <EnterCode
               usedRefLink={usedRefLink}
-              handleSetRef={handleSetRef}
+              setUsedRefLink={setUsedRefLink}
               refLink={refLink}
             />
           </div>
