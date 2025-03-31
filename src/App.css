@@ -978,7 +978,6 @@ body {
 }
 
 body:has(.right-column.show) .blur-background-popups {
-  animation: fadeIn.2s ease-out forwards;
   background-color: rgb(0 0 0/70%);
   content: '';
   inset: 0;
@@ -1006,7 +1005,6 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .blur-background-popups.active {
-  animation: fadeIn.2s ease-out forwards;
   background-color: rgb(0 0 0/70%);
   content: '';
   inset: 0;
@@ -3238,7 +3236,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .blur-background-popups {
   overflow: hidden;
   -webkit-overflow-scrolling: none;
-  transition: background-color .2s ease-out;
+  transition: background-color .25s ease-out;
 }
 
 @supports (-webkit-touch-callout: none) {
@@ -3923,7 +3921,6 @@ body:has(.popup-blur) {
 .tokenselectbg,
 .sendselectbg,
 .connect-wallet-background,
-.layout-settings-background,
 .search-markets-dropdown-popup,
 .send-popup-container,
 .connecting-popup {
@@ -4294,7 +4291,7 @@ input[type="email"] {
 .deposit-page-container {
   border-radius: 8px;
   width: 90%;
-  max-width: 390px;
+  max-width: 400px;
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -4364,8 +4361,7 @@ input[type="email"] {
   align-items: center;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  padding: 0px 12px;
-  padding-right: 6px;
+  padding: 0px 6px 0px 12px;
   height: 35px;
   position: relative;
 }
@@ -4536,7 +4532,7 @@ input[type="email"] {
 .deposit-token-name {
   font-size: 0.85rem;
   font-weight: 400;
-  color: #ffffffe4;
+  color: #fff;
 }
 .deposit-token-ticker{
   font-size: 0.8rem;
@@ -4560,12 +4556,12 @@ input[type="email"] {
   overflow: hidden;
   z-index: 10;
   max-height: 205px;
-  overflow-y: auto;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   scrollbar-width: thin;
   scrollbar-color: #1a1a1d #131317;
   animation: dropdownAppear 0.25s ease-out forwards;
   transform-origin: top center;
+  transition: background-color 0.2s;
 }
 
 @keyframes dropdownAppear {
@@ -4606,7 +4602,7 @@ input[type="email"] {
 
 .deposit-token-balance {
   font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: #ffffffb5;
   font-weight: 300;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -4620,15 +4616,6 @@ input[type="email"] {
   margin-left: 2px;
   margin-bottom: -4px;
 }
-.selected-token-balance {
-  display: flex;
-  align-items: center;
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.85rem;
-  font-weight: 300;
-  gap: 5px
-}
-
 
 .token-copy-button {
   background: none;
@@ -4654,9 +4641,10 @@ input[type="email"] {
 .selected-token-balance {
   display: flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.5);
+  color: rgba(255, 255, 255, 0.7);
   font-size: 0.85rem;
   font-weight: 300;
+  gap: 5px
 }
 
   .token-dropdown-container .deposit-button-arrow {

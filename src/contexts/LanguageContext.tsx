@@ -350,8 +350,8 @@ attemptedSend: 'Attempted Send',
 sendTo: 'Send to',
 done: 'Done', 
 deposit: 'Deposit',
-depositWarning: "Your deposit must be sent on the Monad Network. Your smart account is self-custodial; Crystal can't access your funds.",
-
+depositWarning: "Your deposit must be sent on the Monad network. Your smart account is self-custodial; Crystal cannot access your funds.",
+  audioNotifications: "Enable Audio Notifications"
   },
   CN: {
     trade: '交易',
@@ -703,7 +703,7 @@ sentTo: '发送至',
 done: '完成',
 deposit: '存款',
 depositWarning: "您的存款必须在 Monad 网络上发送。您的智能账户是自托管的；Crystal 无法访问您的资金。",
- 
+audioNotifications: "启用音频通知",
   },
   JP: {
     trade: '取引',
@@ -1055,6 +1055,7 @@ sendTo: '送信先',
 done: '完了',
 deposit: '入金',
 depositWarning: "入金はMonadネットワーク上で行われます。あなたのスマートアカウントは自己管理型であり、Crystalはあなたの資金にアクセスできません。",
+audioNotifications: "オーディオ通知を有効にする",
 
   },
   KR: {
@@ -1407,7 +1408,7 @@ sendTo: '전송 대상',
 done: '완료',
 deposit: '입금',
 depositWarning: "입금은 Monad 네트워크에서 이루어집니다. 스마트 계정은 자가 관리형이며, Crystal은 귀하의 자금에 접근할 수 없습니다.",
-
+audioNotifications: "오디오 알림 활성화",
   },
   ES: {
     trade: 'Operar',
@@ -1759,6 +1760,7 @@ sendTo: 'Enviar A',
 done: 'Hecho',
 Deposit: 'Depositar',
 depositWarning: "Los depósitos se realizan en la red Monad. Las cuentas inteligentes son autogestionadas y Crystal no tiene acceso a tus fondos.",
+audioNotifications: "Habilitar Notificaciones de Audio",
   }
 };
 
