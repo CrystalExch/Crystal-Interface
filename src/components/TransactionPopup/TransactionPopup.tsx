@@ -447,16 +447,6 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
           {renderErrorX()}
           <div className="txpopup-failed-content">
             <div className="txpopup-title-failed">{t('sendFailed')}</div>
-            <div className="txpopup-token-details">
-              <img src={tokenIn.image} className="txpopup-token-icon" />
-              <div className="txpopup-token-group">
-                <span className="txpopup-amount">
-                  {tokenIn.ticker}
-                </span>
-                <span className="txpopup-arrow">→</span>
-                <div className="txpopup-recipient">{`${address.slice(0, 6)}...${address.slice(-4)}`}</div>
-              </div>
-            </div>
             <a
               className="view-transaction"
               href={explorerLink}
@@ -476,26 +466,7 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
           {renderErrorX()}
           <div className="txpopup-failed-content">
             <div className="txpopup-title-failed">{t('swapFailed')}</div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
-                  {formatBalance(
-                    amountIn,
-                    tokenIn.ticker === 'USDC' ? 'usd' : 'token'
-                  ) + ' ' + tokenIn.ticker}
-                </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
-                  {formatBalance(
-                    amountOut,
-                    tokenOut.ticker === 'USDC' ? 'usd' : 'token'
-                  ) + ' ' + tokenOut.ticker}
-                </span>
-              </div>
-              {price && <div className="txpopup-error-message">{price}</div>}
-            </div>
+
             <a
               className="view-transaction"
               href={explorerLink}
@@ -515,15 +486,6 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
           {renderErrorX()}
           <div className="txpopup-failed-content">
             <div className="txpopup-title-failed">{t('limitFailed')}</div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                {tokenIn.ticker}
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                {tokenOut.ticker}
-              </div>
-            </div>
             <a
               className="view-transaction"
               href={explorerLink}

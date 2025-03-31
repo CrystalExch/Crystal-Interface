@@ -176,28 +176,36 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
     const tokenIn = tokendict[tx.tokenIn];
     const tokenOut = tx.tokenOut ? tokendict[tx.tokenOut] : null;
 
+    const renderErrorX = () => (
+      <div className="txhistory-error-x-container">
+        <div className="txhistory-error-circle"></div>
+        <div className="txhistory-error-x-line1"></div>
+        <div className="txhistory-error-x-line2"></div>
+      </div>
+    );
+
     if (tx.currentAction === 'swap') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('swapComplete')}
-              <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+            <div className="txhistory-title">{t('swapComplete')}
+              <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -206,30 +214,30 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'limit') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-          <div className="txpopup-title">{t('limitComplete')}
-            <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+          <div className="txhistory-title">{t('limitComplete')}
+            <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
           </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
-              <div className="txpopup-price">
-                <span className="txpopup-price-label">{t('at')}</span>
-                <span className="txpopup-price-value">{tx.price}</span>
+              <div className="txhistory-price">
+                <span className="txhistory-price-label">{t('at')}</span>
+                <span className="txhistory-price-value">{tx.price}</span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -238,25 +246,25 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'send') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-          <div className="txpopup-title">{t('sendComplete')}
-            <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+          <div className="txhistory-title">{t('sendComplete')}
+            <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
           </div>
-            <div className="txpopup-token-details">
-              <img src={tokenIn.image} className="txpopup-token-icon" />
-              <div className="txpopup-token-group">
-                <span className="txpopup-amount">
+            <div className="txhistory-token-details">
+              <img src={tokenIn.image} className="txhistory-token-icon" />
+              <div className="txhistory-token-group">
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <div className="txpopup-recipient">
+                <span className="txhistory-arrow">→</span>
+                <div className="txhistory-recipient">
                   {tx.address ? `${tx.address.slice(0, 6)}...${tx.address.slice(-4)}` : 'N/A'}
                 </div>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -265,30 +273,30 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'cancel') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-          <div className="txpopup-title">{t('limitCancelled')}
-            <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+          <div className="txhistory-title">{t('limitCancelled')}
+            <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
           </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
-              <div className="txpopup-price">
-                <span className="txpopup-price-label">{t('at')}</span>
-                <span className="txpopup-price-value">{tx.price}</span>
+              <div className="txhistory-price">
+                <span className="txhistory-price-label">{t('at')}</span>
+                <span className="txhistory-price-value">{tx.price}</span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -297,30 +305,30 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'fill') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-          <div className="txpopup-title">{t('fillComplete')}
-            <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+          <div className="txhistory-title">{t('fillComplete')}
+            <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
           </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
-              <div className="txpopup-price">
-                <span className="txpopup-price-label">{t('filledAt')}</span>
-                <span className="txpopup-price-value">{tx.price}</span>
+              <div className="txhistory-price">
+                <span className="txhistory-price-label">{t('filledAt')}</span>
+                <span className="txhistory-price-value">{tx.price}</span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -329,26 +337,26 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'wrap') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('wrapComplete')}
-              <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+            <div className="txhistory-title">{t('wrapComplete')}
+              <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -357,26 +365,26 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'unwrap') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('unwrapComplete')}  
-              <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+            <div className="txhistory-title">{t('unwrapComplete')}  
+              <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
-            <div className="txpopup-swap-details">
-              <div className="txpopup-token-group">
-                <img src={tokenIn.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <img src={tokenOut.image} className="txpopup-token-icon" />
-                <span className="txpopup-amount">
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
                 </span>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
         </div>
@@ -385,27 +393,82 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'approve') {
       return (
-        <div className="txpopup-inner">
-          <div className="txpopup-main-content">
-            <div className="txpopup-title">{t('approveComplete')}
-              <div className="txpopup-item-time">{formatTimeAgo(tx.timestamp)}</div>
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+            <div className="txhistory-title">{t('approveComplete')}
+              <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
-            <div className="txpopup-token-details">
-              <img src={tokenIn.image} className="txpopup-token-icon" />
-              <div className="txpopup-token-group">
-                <span className="txpopup-amount">
+            <div className="txhistory-token-details">
+              <img src={tokenIn.image} className="txhistory-token-icon" />
+              <div className="txhistory-token-group">
+                <span className="txhistory-amount">
                   {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
                 </span>
-                <span className="txpopup-arrow">→</span>
-                <div className="txpopup-recipient">
+                <span className="txhistory-arrow">→</span>
+                <div className="txhistory-recipient">
                   {tx.address ? `${tx.address.slice(0, 6)}...${tx.address.slice(-4)}` : 'N/A'}
                 </div>
               </div>
             </div>
           </div>
-          <a className="view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
             {t('viewOnExplorer')}
           </a>
+        </div>
+      );
+    }
+
+    // Failed transaction popups
+    if (tx.currentAction === 'sendFailed') {
+      return (
+        <div className="txhistory-inner-failed">
+          <div className="txhistory-error-wrapper">
+            {renderErrorX()}
+            <div className="txhistory-failed-content">
+              <div className="txhistory-title-failed">{t('sendFailed')}
+                <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
+              </div>
+              <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+                {t('viewOnExplorer')}
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }   
+    
+    if (tx.currentAction === 'swapFailed') {
+      return (
+        <div className="txhistory-inner-failed">
+          <div className="txhistory-error-wrapper">
+            {renderErrorX()}
+            <div className="txhistory-failed-content">
+              <div className="txhistory-title-failed">{t('swapFailed')}
+                <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
+              </div>
+              <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+                {t('viewOnExplorer')}
+              </a>
+            </div>
+          </div>
+        </div>
+      );
+    }   
+    
+    if (tx.currentAction === 'limitFailed') {
+      return (
+        <div className="txhistory-inner-failed">
+          <div className="txhistory-error-wrapper">
+            {renderErrorX()}
+            <div className="txhistory-failed-content">
+              <div className="txhistory-title-failed">{t('limitFailed')}
+                <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
+              </div>
+              <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+                {t('viewOnExplorer')}
+              </a>
+            </div>
+          </div>
         </div>
       );
     }
@@ -429,8 +492,21 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       case 'wrap': actionTitle = t('wrapDetails'); break;
       case 'unwrap': actionTitle = t('unwrapDetails'); break;
       case 'approve': actionTitle = t('approveDetails'); break;
+      case 'swapFailed': actionTitle = t('swapFailedDetails'); break;
+      case 'sendFailed': actionTitle = t('sendFailedDetails'); break;
+      case 'limitFailed': actionTitle = t('limitFailedDetails'); break;
       default: actionTitle = t('transactionDetails');
     }
+
+    const isFailed = tx.currentAction.includes('Failed');
+
+    const renderErrorX = () => (
+      <div className="txdetail-error-x-container">
+        <div className="txdetail-error-circle"></div>
+        <div className="txdetail-error-x-line1"></div>
+        <div className="txdetail-error-x-line2"></div>
+      </div>
+    );
 
     return (
       <div className="tx-detail-view">
@@ -442,7 +518,10 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
             <img src={backarrow} className="back-arrow"/>
             <span className="tx-detail-back-text">{t('back')}</span>
           </div>
-          <div className="tx-detail-title">{actionTitle}</div>
+          <div className={`tx-detail-title ${isFailed ? 'txdetail-title-failed' : ''}`}>
+            {isFailed && <span className="txdetail-failed-indicator">!</span>}
+            {actionTitle}
+          </div>
         </div>
         
         <div className="tx-detail-content">
@@ -450,17 +529,30 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
             <div className="tx-detail-section-title">{t('generalInfo')}</div>
             <div className="tx-detail-row">
               <div className="tx-detail-label">{t('txType')}</div>
-              <div className="tx-detail-value">{tx.currentAction.charAt(0).toUpperCase() + tx.currentAction.slice(1)}</div>
+              <div className="tx-detail-value">
+                {isFailed ? 
+                  <span className="txdetail-status-failed">
+                    {tx.currentAction.replace('Failed', '')} ({t('failed')})
+                  </span> : 
+                  tx.currentAction.charAt(0).toUpperCase() + tx.currentAction.slice(1)
+                }
+              </div>
             </div>
             <div className="tx-detail-row">
               <div className="tx-detail-label">{t('txTime')}</div>
               <div className="tx-detail-value">{formatFullDate(tx.timestamp)}</div>
             </div>
+            {isFailed && (
+              <div className="tx-detail-row">
+                <div className="tx-detail-label">{t('status')}</div>
+                <div className="tx-detail-value txdetail-status-failed">{t('failed')}</div>
+              </div>
+            )}
           </div>
           
-{(tx.currentAction === 'swap' || tx.currentAction === 'limit' || 
+{(!isFailed && (tx.currentAction === 'swap' || tx.currentAction === 'limit' || 
   tx.currentAction === 'fill' || tx.currentAction === 'wrap' || 
-  tx.currentAction === 'unwrap') && (
+  tx.currentAction === 'unwrap')) && (
   <div className="tx-detail-section">
     <div className="tx-detail-section-title">{t('tokenInfo')}</div>
     
@@ -495,8 +587,41 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
     )}
   </div>
 )}
-          
-          {(tx.currentAction === 'send' || tx.currentAction === 'approve') && tx.address && (
+
+{(isFailed && (tx.currentAction === 'swapFailed' || tx.currentAction === 'limitFailed')) && (
+  <div className="tx-detail-section txdetail-failed-section">
+    <div className="tx-detail-section-title">{t('attemptedSwap')}</div>
+    
+    {tokenIn && (
+      <div className="tx-detail-row">
+        <div className="tx-detail-label">{t('fromToken')}</div>
+        <div className="tx-detail-value tx-detail-token">
+          <img src={tokenIn.image} className="tx-detail-token-icon-small" />
+          <span>{formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token')} {tokenIn.ticker}</span>
+        </div>
+      </div>
+    )}
+    
+    {tokenOut && (
+      <div className="tx-detail-row">
+        <div className="tx-detail-label">{t('toToken')}</div>
+        <div className="tx-detail-value tx-detail-token">
+          <img src={tokenOut.image} className="tx-detail-token-icon-small" />
+          <span>{formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token')} {tokenOut.ticker}</span>
+        </div>
+      </div>
+    )}
+    
+    {tx.price && (
+      <div className="tx-detail-row">
+        <div className="tx-detail-label">{t('price')}</div>
+        <div className="tx-detail-value">{tx.price}</div>
+      </div>
+    )}
+  </div>
+)}
+
+          {(!isFailed && (tx.currentAction === 'send' || tx.currentAction === 'approve') && tx.address) && (
             <div className="tx-detail-section">
               <div className="tx-detail-section-title">
                 {tx.currentAction === 'send' ? t('recipientInfo') : t('contractInfo')}
@@ -505,7 +630,6 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
                 <div className="tx-detail-label">{t('address')}</div>
                 <div className="tx-detail-send-value tx-detail-hash">
                   {tx.address}
-
                 </div>
               </div>
               <div className="tx-detail-row">
@@ -520,8 +644,46 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
               </div>
             </div>
           )}
+
+          {(isFailed && tx.currentAction === 'sendFailed' && tx.address) && (
+            <div className="tx-detail-section txdetail-failed-section">
+              <div className="tx-detail-section-title">{t('attemptedSend')}</div>
+              {tx.address && (
+                <div className="tx-detail-address-row">
+                  <div className="tx-detail-label">{t('address')}</div>
+                  <div className="tx-detail-send-value tx-detail-hash">
+                    {tx.address}
+                  </div>
+                </div>
+              )}
+              {tokenIn && (
+                <>
+                  <div className="tx-detail-row">
+                    <div className="tx-detail-label">{t('token')}</div>
+                    <div className="tx-detail-value">{tokenIn.name} ({tokenIn.ticker})</div>
+                  </div>
+                  <div className="tx-detail-row">
+                    <div className="tx-detail-label">{t('amount')}</div>
+                    <div className="tx-detail-value">
+                      {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token')} {tokenIn.ticker}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
+
+          {tx.errorMessage && (
+            <div className="tx-detail-section txdetail-error-section">
+              <div className="tx-detail-section-title">{t('errorInfo')}</div>
+              <div className="tx-detail-row">
+                <div className="txdetail-error-message">{tx.errorMessage}</div>
+              </div>
+            </div>
+          )}
+
           <a 
-            className="view-transaction" 
+            className="txhistory-view-transaction tx-detail-explorer-link" 
             href={tx.explorerLink} 
             target="_blank" 
             rel="noopener noreferrer"

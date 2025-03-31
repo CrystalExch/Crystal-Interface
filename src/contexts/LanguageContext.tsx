@@ -339,6 +339,14 @@ export const translations: any = {
     limitFailed: 'Limit Order Failed',
     sendFailed: 'Send Transaction Failed',
     sendingTransaction: 'Sending Transaction',
+    swapFailed: 'Swap Transaction Failed',
+    swapFailedDetails: 'Swap Failure Details',
+sendFailedDetails: 'Send Failure Details',
+limitFailedDetails: 'Limit Failure Details',
+failed: 'Failed',
+errorInfo: 'Error Information',
+attemptedSwap: 'Attempted Swap',
+attemptedSend: 'Attempted Send',
 
   },
   CN: {
@@ -679,6 +687,14 @@ export const translations: any = {
     mint: "铸造",
     limitFailed: '限价订单失败',
     sendingTransaction: '发送交易',
+    swapFailed: '兑换交易失败',
+    swapFailedDetails: '兑换失败详情',
+sendFailedDetails: '发送失败详情',
+limitFailedDetails: '限价失败详情',
+failed: '失败',
+errorInfo: '错误信息',
+attemptedSwap: '尝试兑换',
+attemptedSend: '尝试发送',
  
   },
   JP: {
@@ -1019,6 +1035,14 @@ export const translations: any = {
     mint: "鋳造",
     limitFailed: '指値注文失敗',
     sendingTransaction: '取引送信中',
+    swapFailed: 'スワップ失敗',
+    swapFailedDetails: 'スワップ失敗詳細',
+sendFailedDetails: '送信失敗詳細',
+limitFailedDetails: '指値失敗詳細',
+failed: '失敗',
+errorInfo: 'エラー情報',
+attemptedSwap: '試行されたスワップ',
+attemptedSend: '試行された送信',
 
   },
   KR: {
@@ -1359,6 +1383,14 @@ export const translations: any = {
     mint: "제조",
     limitFailed: '지정가 주문 실패',
     sendingTransaction: '거래 전송 중',
+    swapFailed: '스왑 실패',
+    swapFailedDetails: '스왑 실패 상세',
+sendFailedDetails: '전송 실패 상세',
+limitFailedDetails: '지정가 실패 상세',
+failed: '실패',
+errorInfo: '오류 정보',
+attemptedSwap: '시도된 스왑',
+attemptedSend: '시도된 전송',
 
   },
   ES: {
@@ -1699,6 +1731,14 @@ export const translations: any = {
     mint: "Mint",
     limitFailed: 'Orden Límite Fallida',
     sendingTransaction: 'Sending Transaction',
+    swapFailed: 'Swap Fallido',
+    swapFailedDetails: 'Detalles de Fallo en Swap',
+sendFailedDetails: 'Detalles de Fallo en Envío',
+limitFailedDetails: 'Detalles de Fallo en Orden Límite',
+failed: 'Fallido',
+errorInfo: 'Información de Error',
+attemptedSwap: 'Swap Intentado',
+attemptedSend: 'Envío Intentado',
   }
 };
 
