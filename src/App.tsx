@@ -5938,7 +5938,7 @@ function App() {
         {popup === 12 ? (
           <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
             <div className="deposit-page-header">
-              <h2>Deposit</h2>
+              <h2>{t("deposit")}</h2>
               <button className="deposit-close-button" onClick={() => {setpopup(0)}}>
                 <img src={closebutton} className="deposit-close-icon" />
               </button>
@@ -6032,7 +6032,7 @@ function App() {
             </div>
 
             <div className="deposit-warning">
-              <span>Your deposit must be sent on the Monad Network. Your smart account is self-custodial; Crystal can't access your funds.</span>
+              {t("depositWarning")}
             </div>
             <div className="deposit-qr-container">
               <QRCodeSVG
