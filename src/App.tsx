@@ -1467,11 +1467,14 @@ function App() {
     };
 
     let interval: any;
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       interval = setInterval(fetchData, 1000);
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    }
   }, [HTTP_URL, address]);
 
   // tokeninfo data initial
@@ -5918,6 +5921,57 @@ function App() {
                         <span className="token-address">
                           {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
                         </span>
+                        <div
+                      className="copy-address-button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigator.clipboard.writeText(token.address);
+                        const copyIcon =
+                          e.currentTarget.querySelector('.copy-icon');
+                        const checkIcon =
+                          e.currentTarget.querySelector('.check-icon');
+                        if (copyIcon && checkIcon) {
+                          copyIcon.classList.add('hidden');
+                          checkIcon.classList.add('visible');
+                          setTimeout(() => {
+                            copyIcon.classList.remove('hidden');
+                            checkIcon.classList.remove('visible');
+                          }, 2000);
+                        }
+                      }}
+                    >
+                      <svg
+                        className="copy-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect
+                          x="9"
+                          y="9"
+                          width="13"
+                          height="13"
+                          rx="2"
+                          ry="2"
+                        ></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      </svg>
+                      <svg
+                        className="check-icon"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <path d="M8 12l3 3 6-6" />
+                      </svg>
+                    </div>
                       </div>
                     </div>
                   </button>
