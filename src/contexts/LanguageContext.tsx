@@ -1,4 +1,3 @@
-import { accessSync } from 'fs';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {

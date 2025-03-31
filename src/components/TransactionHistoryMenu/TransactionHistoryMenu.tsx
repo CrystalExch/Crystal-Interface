@@ -500,14 +500,6 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     const isFailed = tx.currentAction.includes('Failed');
 
-    const renderErrorX = () => (
-      <div className="txdetail-error-x-container">
-        <div className="txdetail-error-circle"></div>
-        <div className="txdetail-error-x-line1"></div>
-        <div className="txdetail-error-x-line2"></div>
-      </div>
-    );
-
     return (
       <div className="tx-detail-view">
         <div className="tx-detail-header">
