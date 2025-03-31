@@ -1,8 +1,7 @@
 import { CrystalRouterAbi } from '../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
 
-const swap = async (
-  sendUserOperation: any,
+const swap = (
   address: `0x${string}`,
   value: bigint,
   tokenIn: `0x${string}`,
@@ -13,26 +12,25 @@ const swap = async (
   worstPrice: bigint,
   deadline: bigint,
   ref: `0x${string}`,
-) =>
-  sendUserOperation({
-    uo: {
-      target: address,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: 'swap',
-        args: [
-          exactInput,
-          tokenIn,
-          tokenOut,
-          orderType,
-          size,
-          worstPrice,
-          deadline,
-          ref,
-        ],
-      }),
-      value: value,
-    },
-  })
+) => {
+  return {
+    target: address,
+    data: encodeFunctionData({
+      abi: CrystalRouterAbi,
+      functionName: 'swap',
+      args: [
+        exactInput,
+        tokenIn,
+        tokenOut,
+        orderType,
+        size,
+        worstPrice,
+        deadline,
+        ref,
+      ],
+    }),
+    value: value,
+  }
+};
 
 export default swap;

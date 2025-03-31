@@ -3039,9 +3039,7 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
-        console.log(response)
         const json = await response.json();
-        console.log(json)
         const orders = json.data.orders1
           .concat(
             json.data.orders2,
@@ -4969,7 +4967,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
                           'send',
                           eth,
                           '',
@@ -4992,7 +4990,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          (client ? hash.hash : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
                           'send',
                           sendTokenIn,
                           '',
@@ -6759,7 +6757,6 @@ function App() {
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
-              let result;
               setIsSigning(true)
               if (client) {
                 txPending.current = true
@@ -6768,9 +6765,9 @@ function App() {
                 if (tokenIn == eth && tokenOut == weth) {
                   hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    client
+                    (client
                       ? hash.hash
-                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
                     'wrap',
                     eth,
                     weth,
@@ -6782,9 +6779,9 @@ function App() {
                 } else if (tokenIn == weth && tokenOut == eth) {
                   hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
                   newTxPopup(
-                    client
+                    (client
                       ? hash.hash
-                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
                     'unwrap',
                     weth,
                     eth,
@@ -6808,8 +6805,7 @@ function App() {
                           usedRefAddress as `0x${string}`
                         );
                       } else {
-                        hash = await _swap(
-                          sendUserOperationAsync,
+                        hash = await sendUserOperationAsync({uo: _swap(
                           router,
                           amountIn,
                           activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
@@ -6822,16 +6818,15 @@ function App() {
                             : (highestBid * slippage + 5000n) / 10000n,
                           BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                           usedRefAddress as `0x${string}`
-                        );
+                        )})
                       }
                     } else {
                       if (allowance < amountIn) {
-                        hash = await approve(
-                          sendUserOperationAsync,
+                        hash = await sendUserOperationAsync({uo: approve(
                           tokenIn as `0x${string}`,
                           getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
                           maxUint256
-                        );
+                        )})
                         newTxPopup(
                           client
                             ? hash.hash
@@ -6847,8 +6842,7 @@ function App() {
                       }
                       if (tokenOut == eth) {
                         if (orderType == 1 || multihop) {
-                          hash = await swapExactTokensForETH(
-                            sendUserOperationAsync,
+                          hash = await sendUserOperationAsync({uo: swapExactTokensForETH(
                             router,
                             amountIn,
                             (amountOutSwap * slippage + 5000n) / 10000n,
@@ -6856,10 +6850,9 @@ function App() {
                             address as `0x${string}`,
                             BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                             usedRefAddress as `0x${string}`
-                          );
+                          )})
                         } else {
-                          hash = await _swap(
-                            sendUserOperationAsync,
+                          hash = await sendUserOperationAsync({uo: _swap(
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
@@ -6872,7 +6865,7 @@ function App() {
                               : (highestBid * slippage + 5000n) / 10000n,
                             BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                             usedRefAddress as `0x${string}`
-                          );
+                          )})
                         }
                       } else {
                         if (orderType == 1 || multihop) {
@@ -6887,8 +6880,7 @@ function App() {
                             usedRefAddress as `0x${string}`
                           );
                         } else {
-                          hash = await _swap(
-                            sendUserOperationAsync,
+                          hash = await sendUserOperationAsync({uo: _swap(
                             router,
                             BigInt(0),
                             activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
@@ -6901,7 +6893,7 @@ function App() {
                               : (highestBid * slippage + 5000n) / 10000n,
                             BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                             usedRefAddress as `0x${string}`
-                          );
+                          )})
                         }
                       }
                     }
@@ -6919,8 +6911,7 @@ function App() {
                           usedRefAddress as `0x${string}`
                         );
                       } else {
-                        hash = await _swap(
-                          sendUserOperationAsync,
+                        hash = await sendUserOperationAsync({uo: _swap(
                           router,
                           BigInt((amountIn * 10000n + slippage / 2n) / slippage),
                           activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
@@ -6933,86 +6924,162 @@ function App() {
                             : (highestBid * slippage + 5000n) / 10000n,
                           BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                           usedRefAddress as `0x${string}`
-                        );
+                        )})
                       }
                     } else {
                       if (allowance < amountIn) {
-                        hash = await approve(
-                          sendUserOperationAsync,
-                          tokenIn as `0x${string}`,
-                          getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                          maxUint256
-                        );
-                        newTxPopup(
-                          client
-                            ? hash.hash
-                            : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
-                          'approve',
-                          tokenIn,
-                          '',
-                          customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                          0,
-                          '',
-                          getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
-                        );
-                      }
-                      if (tokenOut == eth) {
-                        if (orderType == 1 || multihop) {
-                          hash = await swapTokensForExactETH(
-                            sendUserOperationAsync,
-                            router,
-                            amountOutSwap,
-                            (amountIn * 10000n + slippage / 2n) / slippage,
-                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                            address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                            usedRefAddress as `0x${string}`
-                          );
-                        } else {
-                          hash = await _swap(
-                            sendUserOperationAsync,
-                            router,
-                            BigInt(0),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                            true,
-                            BigInt(0),
-                            amountOutSwap,
-                            tokenIn == activeMarket.quoteAddress
-                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                              : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                            usedRefAddress as `0x${string}`
+                        if (client) {
+                          let uo = []
+                          uo.push(approve(
+                            tokenIn as `0x${string}`,
+                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                            maxUint256
+                          ))
+                          if (tokenOut == eth) {
+                            if (orderType == 1 || multihop) {
+                              hash = await swapTokensForExactETH(
+                                sendUserOperationAsync,
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              );
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          } else {
+                            if (orderType == 1 || multihop) {
+                              hash = await swapTokensForExactTokens(
+                                sendUserOperationAsync,
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              );
+                            } else {
+                              uo.push(_swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              ))
+                            }
+                          }
+                          newTxPopup(
+                            hash.hash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
                           );
                         }
-                      } else {
-                        if (orderType == 1 || multihop) {
-                          hash = await swapTokensForExactTokens(
-                            sendUserOperationAsync,
-                            router,
-                            amountOutSwap,
-                            (amountIn * 10000n + slippage / 2n) / slippage,
-                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                            address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                            usedRefAddress as `0x${string}`
+                        else {
+                          hash = await sendUserOperationAsync({uo: approve(
+                            tokenIn as `0x${string}`,
+                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                            maxUint256
+                          )})
+                          newTxPopup(
+                            client
+                              ? hash.hash
+                              : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                            'approve',
+                            tokenIn,
+                            '',
+                            customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
+                            0,
+                            '',
+                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
                           );
+                        }
+                      }
+                      if (!client || !(allowance < amountIn)) {
+                        if (tokenOut == eth) {
+                          if (orderType == 1 || multihop) {
+                            hash = await swapTokensForExactETH(
+                              sendUserOperationAsync,
+                              router,
+                              amountOutSwap,
+                              (amountIn * 10000n + slippage / 2n) / slippage,
+                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                              address as `0x${string}`,
+                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                              usedRefAddress as `0x${string}`
+                            );
+                          } else {
+                            hash = await sendUserOperationAsync({uo: _swap(
+                              router,
+                              BigInt(0),
+                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                              true,
+                              BigInt(0),
+                              amountOutSwap,
+                              tokenIn == activeMarket.quoteAddress
+                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                : (highestBid * slippage + 5000n) / 10000n,
+                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                              usedRefAddress as `0x${string}`
+                            )})
+                          }
                         } else {
-                          hash = await _swap(
-                            sendUserOperationAsync,
-                            router,
-                            BigInt(0),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                            true,
-                            BigInt(0),
-                            amountOutSwap,
-                            tokenIn == activeMarket.quoteAddress
-                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                              : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                            usedRefAddress as `0x${string}`
-                          );
+                          if (orderType == 1 || multihop) {
+                            hash = await swapTokensForExactTokens(
+                              sendUserOperationAsync,
+                              router,
+                              amountOutSwap,
+                              (amountIn * 10000n + slippage / 2n) / slippage,
+                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                              address as `0x${string}`,
+                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                              usedRefAddress as `0x${string}`
+                            );
+                          } else {
+                            hash = await sendUserOperationAsync({uo: _swap(
+                              router,
+                              BigInt(0),
+                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                              true,
+                              BigInt(0),
+                              amountOutSwap,
+                              tokenIn == activeMarket.quoteAddress
+                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                : (highestBid * slippage + 5000n) / 10000n,
+                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                              usedRefAddress as `0x${string}`
+                            )})
+                          }
                         }
                       }
                     }
@@ -7020,7 +7087,7 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTransactionReceipt(config, { hash: hash.hash });
                 }
                 await refetch()
                 txPending.current = false
@@ -8328,7 +8395,6 @@ function App() {
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
-              let result;
               setIsSigning(true)
               if (client) {
                 txPending.current = true
@@ -8346,8 +8412,7 @@ function App() {
                       amountIn,
                     );
                   } else {
-                    hash = await _swap(
-                      sendUserOperationAsync,
+                    hash = await sendUserOperationAsync({uo: _swap(
                       router,
                       amountIn,
                       eth,
@@ -8358,19 +8423,18 @@ function App() {
                       limitPrice,
                       BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                       usedRefAddress as `0x${string}`,
-                    );
+                    )})
                   }
                 } else {
                   if (allowance < amountIn) {
-                    hash = await approve(
-                      sendUserOperationAsync,
+                    hash = await sendUserOperationAsync({uo: approve(
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
                         activeMarket.path.at(1),
                       ).address,
                       maxUint256,
-                    );
+                    )})
                     newTxPopup(
                       client
                         ? hash.hash
@@ -8399,8 +8463,7 @@ function App() {
                       amountIn,
                     );
                   } else {
-                    hash = await _swap(
-                      sendUserOperationAsync,
+                    hash = await sendUserOperationAsync({uo: _swap(
                       router,
                       BigInt(0),
                       tokenIn as `0x${string}`,
@@ -8411,12 +8474,12 @@ function App() {
                       limitPrice,
                       BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                       usedRefAddress as `0x${string}`,
-                    );
+                    )})
                   }
                 }
                 if (!client) {
                   txPending.current = true
-                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTransactionReceipt(config, { hash: hash.hash });
                 }
                 await refetch()
                 txPending.current = false
@@ -10028,7 +10091,6 @@ function App() {
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
-              let result;
               setIsSigning(true)
               if (client) {
                 txPending.current = true
@@ -10077,20 +10139,19 @@ function App() {
                   );
                 } else {
                   if (allowance < finalAmountIn) {
-                    hash = await approve(
-                      sendUserOperationAsync,
+                    hash = await sendUserOperationAsync({uo: approve(
                       tokenIn as `0x${string}`,
                       getMarket(
                         activeMarket.path.at(0),
                         activeMarket.path.at(1),
                       ).address,
                       maxUint256,
-                    );
+                    )})
                     newTxPopup(
                       (client
                         ? hash.hash
-                        : await waitForTransactionReceipt(config, { hash: hash.hash })
-                      ).transactionHash,
+                        : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash
+                      ),
                       'approve',
                       tokenIn,
                       '',
@@ -10117,7 +10178,7 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTransactionReceipt(config, { hash: hash.hash });
                 }
                 await refetch()
                 txPending.current = false
