@@ -131,7 +131,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
             type="button"
             disabled={cancelAllLoading}
           >
-            {cancelAllLoading ? <div className="spinner"></div> : t('cancelAll')}
+            {cancelAllLoading ? <div className="orders-cancel-all-spinner"></div> : t('cancelAll')}
           </button>
         )}
       </div>
@@ -147,7 +147,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
             const isBuy = order[3] === 1;
             
             const value = order[8] && market.scaleFactor && market.quoteDecimals
-              ? Number(order[8]) / (Number(market.scaleFactor) * Math.pow(10, Number(market.quoteDecimals)) * 1000)
+              ? Number(order[8]) / (Number(market.scaleFactor) * Math.pow(10, Number(market.quoteDecimals)))
               : 0;
             
             const orderKey = order[0].toString();
@@ -179,7 +179,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                   <span>{Math.round(filledPercent)}%</span>
                 </div>
                 <div
-                  className="simple-cancel-button"
+                  className={`simple-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
                   onClick={() => handleCancelOrder(order)}
                   title={t('cancel')}
                 >

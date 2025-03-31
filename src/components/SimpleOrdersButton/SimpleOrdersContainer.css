@@ -56,12 +56,14 @@
     padding: 2px 8px;
     border-radius: 3px;
     background-color: #ff6c6c1a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .orders-cancel-all:hover {
     opacity: 0.8;
   }
-
   
   .sort-header {
     font-size: 0.7rem;
@@ -192,6 +194,10 @@
     color: #ff6c6c;
     background-color: rgba(255, 108, 108, 0.1);
   }
+
+  .simple-cancel-button.signing {
+    cursor: default;
+  }
   
   .no-orders-message {
     display: flex;
@@ -230,6 +236,15 @@
     border-radius: 50%;
     width: 14px;
     height: 14px;
+    animation: spin 1s linear infinite;
+  }
+
+  .orders-cancel-all-spinner {
+    border: 2px solid #2a2a2c; 
+    border-top: 2px solid #aaaecf;
+    border-radius: 50%;
+    width: 1.05rem;
+    height: 1.05rem;
     animation: spin 1s linear infinite;
   }
   

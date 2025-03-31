@@ -129,7 +129,7 @@ function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address} = useSmartAccountClient({});
-  const { sendUserOperationAsync, isSendingUserOperation } = useSendUserOperation({
+  const { sendUserOperationAsync } = useSendUserOperation({
     client,
     waitForTxn: true,
   });
@@ -612,6 +612,7 @@ function App() {
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
+  const txPending = useRef(false);
 
   // more constants
   const languageOptions = [
@@ -641,7 +642,7 @@ function App() {
   const [sendInputAmount, setSendInputAmount] = useState('');
   const [sendUsdValue, setSendUsdValue] = useState('');
   const [sendTokenIn, setSendTokenIn] = useState(eth);
-
+  const [isSigning, setIsSigning] = useState(false);
   const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
@@ -2176,81 +2177,83 @@ function App() {
   // update state variables when data is loaded
   useEffect(() => {
     if (!isLoading && data) {
-      setStateIsLoading(false);
-      setstateloading(false);
-      setallowance(data[1].result || BigInt(0));
-      let tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
-        const balance = data[2].result?.[i] || BigInt(0);
-        acc[token.address] = balance;
-        return acc;
-      }, {});
-      if (stateloading) {
-        const percentage = !tempbalances[tokenIn]
-          ? 0
-          : Math.min(
-            100,
-            Math.floor(
-              Number((amountIn * BigInt(100)) / tempbalances[tokenIn]),
-            ),
-          );
-        setSliderPercent(percentage);
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector('.slider-percentage-popup');
-        if (slider && popup) {
-          const rect = slider.getBoundingClientRect();
-          (popup as HTMLElement).style.left =
-            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
-        }
-      }
-      setTokenBalances(tempbalances);
-      if (switched == false && !isWrap) {
-        const outputValue = BigInt(data?.[0].result?.at(-1) || BigInt(0));
-        setamountOutSwap(outputValue);
-        setoutputString(
-          outputValue === BigInt(0)
-            ? ''
-            : parseFloat(
-              customRound(
-                Number(outputValue) /
-                10 ** Number(tokendict[tokenOut].decimals),
-                3,
+      if (!txPending.current) {
+        setStateIsLoading(false);
+        setstateloading(false);
+        setallowance(data[1].result || BigInt(0));
+        let tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
+          const balance = data[2].result?.[i] || BigInt(0);
+          acc[token.address] = balance;
+          return acc;
+        }, {});
+        if (stateloading) {
+          const percentage = !tempbalances[tokenIn]
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number((amountIn * BigInt(100)) / tempbalances[tokenIn]),
               ),
-            ).toString(),
-        );
-      } else if (!isWrap) {
-        let inputValue;
-        if (BigInt(data?.[0].result?.at(-1) || BigInt(0)) != amountOutSwap) {
-          inputValue = BigInt(0);
-        } else {
-          inputValue = BigInt(data?.[0].result?.[0] || BigInt(0));
+            );
+          setSliderPercent(percentage);
+          const slider = document.querySelector('.balance-amount-slider');
+          const popup = document.querySelector('.slider-percentage-popup');
+          if (slider && popup) {
+            const rect = slider.getBoundingClientRect();
+            (popup as HTMLElement).style.left =
+              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+          }
         }
-        setamountIn(inputValue);
-        setInputString(
-          inputValue == BigInt(0)
-            ? ''
-            : parseFloat(
-              customRound(
-                Number(inputValue) /
-                10 ** Number(tokendict[tokenIn].decimals),
-                3,
-              ),
-            ).toString(),
-        );
-        const percentage = !tempbalances[tokenIn]
-          ? 0
-          : Math.min(
-            100,
-            Math.floor(
-              Number((inputValue * BigInt(100)) / tempbalances[tokenIn]),
-            ),
+        setTokenBalances(tempbalances);
+        if (switched == false && !isWrap) {
+          const outputValue = BigInt(data?.[0].result?.at(-1) || BigInt(0));
+          setamountOutSwap(outputValue);
+          setoutputString(
+            outputValue === BigInt(0)
+              ? ''
+              : parseFloat(
+                customRound(
+                  Number(outputValue) /
+                  10 ** Number(tokendict[tokenOut].decimals),
+                  3,
+                ),
+              ).toString(),
           );
-        setSliderPercent(percentage);
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector('.slider-percentage-popup');
-        if (slider && popup) {
-          const rect = slider.getBoundingClientRect();
-          (popup as HTMLElement).style.left =
-            `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+        } else if (!isWrap) {
+          let inputValue;
+          if (BigInt(data?.[0].result?.at(-1) || BigInt(0)) != amountOutSwap) {
+            inputValue = BigInt(0);
+          } else {
+            inputValue = BigInt(data?.[0].result?.[0] || BigInt(0));
+          }
+          setamountIn(inputValue);
+          setInputString(
+            inputValue == BigInt(0)
+              ? ''
+              : parseFloat(
+                customRound(
+                  Number(inputValue) /
+                  10 ** Number(tokendict[tokenIn].decimals),
+                  3,
+                ),
+              ).toString(),
+          );
+          const percentage = !tempbalances[tokenIn]
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number((inputValue * BigInt(100)) / tempbalances[tokenIn]),
+              ),
+            );
+          setSliderPercent(percentage);
+          const slider = document.querySelector('.balance-amount-slider');
+          const popup = document.querySelector('.slider-percentage-popup');
+          if (slider && popup) {
+            const rect = slider.getBoundingClientRect();
+            (popup as HTMLElement).style.left =
+              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+          }
         }
       }
       let tempmids;
@@ -2926,7 +2929,7 @@ function App() {
         const query = `
           query {
             orders1: orderFilleds(
-              first: 150,
+              first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
               where: { contractAddress: "0x5074A547ffd3B42dA002C57cF1BDf2052F3B4022" }
@@ -2943,7 +2946,7 @@ function App() {
               contractAddress
             }
             orders2: orderFilleds(
-              first: 150,
+              first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
               where: { contractAddress: "0x147299E1DfF2F68CD57813Eea230889C0991715F" }
@@ -2960,7 +2963,7 @@ function App() {
               contractAddress
             }
             orders3: orderFilleds(
-              first: 150,
+              first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
               where: { contractAddress: "0x08B2139B8Dc767131797c28af21a658709CA8dDe" }
@@ -2977,7 +2980,7 @@ function App() {
               contractAddress
             }
             orders4: orderFilleds(
-              first: 150,
+              first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
               where: { contractAddress: "0x95c949191787F016d23663d0dFdAB933875f440d" }
@@ -2994,7 +2997,7 @@ function App() {
               contractAddress
             }
             orders5: orderFilleds(
-              first: 150,
+              first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
               where: { contractAddress: "0x2FB2E3Cb0baD8C136C7dfE1Dc3286Efd8E4D2480" }
@@ -3035,9 +3038,9 @@ function App() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
-
+        console.log(response)
         const json = await response.json();
-
+        console.log(json)
         const orders = json.data.orders1
           .concat(
             json.data.orders2,
@@ -4943,19 +4946,27 @@ function App() {
                 </div>
               </div>
               <button
-                className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+                className={`send-swap-button ${isSigning ? 'signing' : ''}`}
                 onClick={async () => {
                   if (
                     connected &&
                     userchain === activechain
                   ) {
+                    let hash;
+                    setIsSigning(true)
+                    if (client) {
+                      txPending.current = true
+                    }
                     try {
                       if (sendTokenIn == eth) {
-                        const hash = await sendeth(
+                        hash = await sendeth(
                           sendUserOperationAsync,
                           recipient as `0x${string}`,
                           sendAmountIn,
                         );
+                        if (!client) {
+                          txPending.current = true
+                        }
                         newTxPopup(
                           (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
@@ -4970,12 +4981,15 @@ function App() {
                           recipient,
                         );
                       } else {
-                        const hash = await sendtokens(
+                        hash = await sendtokens(
                           sendUserOperationAsync,
                           sendTokenIn as `0x${string}`,
                           recipient as `0x${string}`,
                           sendAmountIn,
                         );
+                        if (!client) {
+                          txPending.current = true
+                        }
                         newTxPopup(
                           (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                           'send',
@@ -4991,14 +5005,32 @@ function App() {
                           recipient,
                         );
                       }
+                      await refetch()
+                      txPending.current = false
                       setSendUsdValue('')
                       setSendInputAmount('');
                       setSendAmountIn(BigInt(0));
                       setSendPopupButton(0);
                       setSendPopupButtonDisabled(true);
                     } catch (error) {
+                      if (!(error instanceof TransactionExecutionError)) {
+                        newTxPopup(
+                          hash.hash,
+                          "sendFailed",
+                          sendTokenIn === eth ? eth : sendTokenIn,
+                          "",
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn === eth ? eth : sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          "",
+                          recipient,
+                        );
+                      }
                     } finally {
-                      setTimeout(() => refetch(), 0)
+                      txPending.current = false
+                      setIsSigning(false)
                     }
                   } else {
                     !connected
@@ -5006,9 +5038,9 @@ function App() {
                       : handleSetChain()
                   }
                 }}
-                disabled={sendPopupButtonDisabled || isSendingUserOperation}
+                disabled={sendPopupButtonDisabled || isSigning}
               >
-                {isSendingUserOperation ? (
+                {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
                     {client ? t('sendingTransaction') : t('signTransaction')}
@@ -6735,10 +6767,15 @@ function App() {
           </div>
         </div>
         <button
-          className={`swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+          className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
+              let result;
+              setIsSigning(true)
+              if (client) {
+                txPending.current = true
+              }
               try {
                 if (tokenIn == eth && tokenOut == weth) {
                   hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
@@ -6993,10 +7030,20 @@ function App() {
                     }
                   }
                 }
+                if (!client) {
+                  txPending.current = true
+                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                }
+                await refetch()
+                txPending.current = false
+                setTimeout(() => setoutputString(''), 0);
+                setTimeout(() => setamountOutSwap(BigInt(0)), 0);
+                setTimeout(() => setInputString(''), 0);
+                setTimeout(() => setamountIn(BigInt(0)), 0);
                 setswitched(false);
                 setInputString('');
                 setamountIn(BigInt(0));
-                setoutputString('');
+                setoutputString('')
                 setamountOutSwap(BigInt(0));
                 setSliderPercent(0);
                 setSwapButtonDisabled(true);
@@ -7007,28 +7054,30 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
+                console.log(error)
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    "",
+                    hash.hash,
                     "swapFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
                     customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
                     customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
                     "",
-                    address
+                    "",
                   );
                 }
               } finally {
-                setTimeout(() => refetch(), 0);
+                txPending.current = false
+                setIsSigning(false)
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
           }}
-          disabled={swapButtonDisabled || displayValuesLoading || isSendingUserOperation}
+          disabled={swapButtonDisabled || displayValuesLoading || isSigning}
         >
-          {isSendingUserOperation ? (
+          {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {client ? t('sendingTransaction') : t('signTransaction')}
@@ -8287,11 +8336,15 @@ function App() {
           </div>
         </div>
         <button
-          className={`limit-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+          className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
               let result;
+              setIsSigning(true)
+              if (client) {
+                txPending.current = true
+              }
               try {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
@@ -8304,7 +8357,6 @@ function App() {
                       limitPrice,
                       amountIn,
                     );
-                    result = await waitForTransactionReceipt(config, { hash: hash.hash });
                   } else {
                     hash = await _swap(
                       sendUserOperationAsync,
@@ -8319,7 +8371,6 @@ function App() {
                       BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                       usedRefAddress as `0x${string}`,
                     );
-                    result = await waitForTransactionReceipt(config, { hash: hash.hash });
                   }
                 } else {
                   if (allowance < amountIn) {
@@ -8346,13 +8397,9 @@ function App() {
                       ),
                       0,
                       '',
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).address,
+                      activeMarket.address,
                     );
                   }
-
                   if (addliquidityonly) {
                     hash = await limitOrder(
                       sendUserOperationAsync,
@@ -8363,7 +8410,6 @@ function App() {
                       limitPrice,
                       amountIn,
                     );
-                    result = await waitForTransactionReceipt(config, { hash: hash.hash });
                   } else {
                     hash = await _swap(
                       sendUserOperationAsync,
@@ -8378,47 +8424,50 @@ function App() {
                       BigInt(Math.floor(new Date().getTime() / 1000) + 300),
                       usedRefAddress as `0x${string}`,
                     );
-                    result = await waitForTransactionReceipt(config, { hash: hash.hash });
                   }
                 }
+                if (!client) {
+                  txPending.current = true
+                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                }
+                await refetch()
+                txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
+                setamountOutLimit(BigInt(0));
+                setlimitoutputString('');
+                setLimitButtonDisabled(true);
+                setLimitButton(0);
                 setSliderPercent(0);
                 const slider = document.querySelector('.balance-amount-slider');
                 const popup = document.querySelector('.slider-percentage-popup');
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
-                setamountOutLimit(BigInt(0));
-                setlimitoutputString('');
-                setLimitButtonDisabled(true);
-                setLimitButton(0);
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    result ? hash.hash : hash.hash,
+                    hash.hash,
                     "limitFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                    customRound(Number(amountOutLimit) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    `${limitPrice / activeMarket.priceFactor} ${activeMarket.quoteAsset}`,
                     "",
-                    0,
-                    "",
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).address,
                   );
                 }
               } finally {
-                setTimeout(() => refetch(), 0);
+                txPending.current = false
+                setIsSigning(false)
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
           }}
-          disabled={limitButtonDisabled || isSendingUserOperation}
+          disabled={limitButtonDisabled || isSigning}
         >
-          {isSendingUserOperation ? (
+          {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {client ? t('sendingTransaction') : t('signTransaction')}
@@ -9086,13 +9135,17 @@ function App() {
           </div>
         </div>
         <button
-          className={`send-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+          className={`send-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
             if (
               connected &&
               userchain === activechain
             ) {
               let hash;
+              setIsSigning(true)
+              if (client) {
+                txPending.current = true
+              }
               try {
                 if (tokenIn == eth) {
                   hash = await sendeth(
@@ -9100,6 +9153,9 @@ function App() {
                     recipient as `0x${string}`,
                     amountIn,
                   );
+                  if (!client) {
+                    txPending.current = true
+                  }
                   newTxPopup(
                     (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
@@ -9120,6 +9176,9 @@ function App() {
                     recipient as `0x${string}`,
                     amountIn,
                   );
+                  if (!client) {
+                    txPending.current = true
+                  }
                   newTxPopup(
                     (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
                     'send',
@@ -9135,6 +9194,8 @@ function App() {
                     recipient,
                   );
                 }
+                await refetch()
+                txPending.current = false
                 setInputString('');
                 setsendInputString('');
                 setamountIn(BigInt(0));
@@ -9165,7 +9226,8 @@ function App() {
                   );
                 }
               } finally {
-                setTimeout(() => refetch(), 0)
+                txPending.current = false
+                setIsSigning(false)
               }
             } else {
               !connected
@@ -9173,9 +9235,9 @@ function App() {
                 : handleSetChain()
             }
           }}
-          disabled={sendButtonDisabled || isSendingUserOperation}
+          disabled={sendButtonDisabled || isSigning}
         >
-          {isSendingUserOperation ? (
+          {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {client ? t('sendingTransaction') : t('signTransaction')}
@@ -9974,10 +10036,15 @@ function App() {
           </div>
         </div>
         <button
-          className={`limit-swap-button ${isSendingUserOperation ? 'signing' : ''}`}
+          className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
             if (connected && userchain === activechain) {
               let hash;
+              let result;
+              setIsSigning(true)
+              if (client) {
+                txPending.current = true
+              }
               try {
                 let finalAmountIn = Number(amountIn);
                 if (isOutputBasedScaleOrder) {
@@ -10046,10 +10113,7 @@ function App() {
                       ),
                       0,
                       '',
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).address,
+                      activeMarket.address,
                     );
                   }
                   hash = await multiBatchOrders(
@@ -10063,14 +10127,14 @@ function App() {
                     param2,
                   );
                 }
+                if (!client) {
+                  txPending.current = true
+                  result = await waitForTransactionReceipt(config, { hash: hash.hash });
+                }
+                await refetch()
+                txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
-                setSliderPercent(0);
-                const slider = document.querySelector('.balance-amount-slider');
-                const popup = document.querySelector('.slider-percentage-popup');
-                if (slider && popup) {
-                  (popup as HTMLElement).style.left = `${15 / 2}px`;
-                }
                 setAmountOutScale(BigInt(0));
                 setScaleOutputString('');
                 setScaleButtonDisabled(true);
@@ -10083,18 +10147,36 @@ function App() {
                 setScaleSkewString('1.00');
                 setScaleOrders(BigInt(0));
                 setScaleOrdersString('');
+                setSliderPercent(0);
+                const slider = document.querySelector('.balance-amount-slider');
+                const popup = document.querySelector('.slider-percentage-popup');
+                if (slider && popup) {
+                  (popup as HTMLElement).style.left = `${15 / 2}px`;
+                }
               } catch (error) {
-                console.log(error);
+                if (!(error instanceof TransactionExecutionError)) {
+                  newTxPopup(
+                    hash.hash,
+                    "limitFailed",
+                    tokenIn == eth ? eth : tokenIn,
+                    tokenOut == eth ? eth : tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
+                    customRound(Number(amountOutScale) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    "",
+                    "",
+                  );
+                }
               } finally {
-                setTimeout(() => refetch(), 0)
+                txPending.current = false
+                setIsSigning(false)
               }
             } else {
               !connected ? setpopup(4) : handleSetChain();
             }
           }}
-          disabled={scaleButtonDisabled || isSendingUserOperation}
+          disabled={scaleButtonDisabled || isSigning}
         >
-          {isSendingUserOperation ? (
+          {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
               {client ? t('sendingTransaction') : t('signTransaction')}

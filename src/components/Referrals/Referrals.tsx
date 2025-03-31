@@ -133,13 +133,14 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefAddress(
         refs[1].result || '0x0000000000000000000000000000000000000000',
       );
-      setUsedRefLink(refs[3].result ? refs[3].result : '')
       setError(
         refs[2].result === '0x0000000000000000000000000000000000000000' ||
           refs[2].result == address
           ? error == t('codeTaken') ? '' : error
           : t('codeTaken'),
       );
+      setUsedRefLink(refs[3].result)
+      console.log(refs)
     })();
   }, [address, usedRefLink, refLinkString]);
 

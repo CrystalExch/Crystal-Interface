@@ -105,7 +105,6 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
 }) => {
   const memoizedDelay = useMemo(() => delay || 0, []);
   
-  // Helper function to render the error X animation
   const renderErrorX = () => (
     <div className="txpopup-error-x-container">
       <div className="txpopup-error-x-glow"></div>
@@ -458,7 +457,6 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
                 <div className="txpopup-recipient">{`${address.slice(0, 6)}...${address.slice(-4)}`}</div>
               </div>
             </div>
-            {price && <div className="txpopup-error-message">{price}</div>}
             <a
               className="view-transaction"
               href={explorerLink}
@@ -525,11 +523,6 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
                 <img src={tokenOut.image} className="txpopup-token-icon" />
                 {tokenOut.ticker}
               </div>
-              {price && (
-                <div className="txpopup-error-message">
-                  {price}
-                </div>
-              )}
             </div>
             <a
               className="view-transaction"

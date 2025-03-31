@@ -141,11 +141,10 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 const price = m.map((market) => orderbatch[market][1]);
                 const param1 = m.map((market) => orderbatch[market][2]);
                 const param2 = m.map((market) => orderbatch[market][3]);
-                let hash;
                 try {
                   await setChain()
                   setIsSigning(true);
-                  hash = await multiBatchOrders(
+                  await multiBatchOrders(
                     sendUserOperationAsync,
                     router,
                     BigInt(0),
@@ -156,10 +155,9 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                     param2,
                   );
                 } catch (error) {
-                  console.log(hash)
                 } finally {
                   setIsSigning(false);
-                  setTimeout(() => refetch(), 500)
+                  refetch()
                 }
               }}
             >
