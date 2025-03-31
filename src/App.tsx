@@ -72,6 +72,7 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
+import depositicon from './assets/deposit_icon.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
@@ -5145,20 +5146,7 @@ function App() {
                     setpopup(12)
                   }}
                 >
-                  <svg
-                    className="disconnect-icon"
-                    viewBox="0 0 24 24"
-                    width="24"
-                    height="24"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    style={{ transform: 'rotate(-90deg)' }}
-                  >
-                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                    <polyline points="16 17 21 12 16 7"></polyline>
-                    <line x1="21" y1="12" x2="9" y2="12"></line>
-                  </svg>
+                  <img className="disconnect-icon" src={depositicon}></img>
                 </button>
                 <button
                   className="popup-disconnect-button"
@@ -5957,8 +5945,8 @@ function App() {
                 <img src={closebutton} className="deposit-close-icon" />
               </button>
             </div>
-            <div className="token-dropdown-container">
-  <div
+            <div className={`token-dropdown-container ${dropdownOpen ? 'open' : ''}`}>
+            <div
     className="selected-token-display"
     onClick={() => setDropdownOpen(!dropdownOpen)}
   >
