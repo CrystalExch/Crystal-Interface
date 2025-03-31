@@ -8,7 +8,6 @@ import iconwmonad from './assets/iconwmonad.png';
 import MonadLogo from './assets/monad.svg';
 
 export const settings: any = {
-  useOurData: true,
   useAdv: true,
   graphKey: 'e6956d552c61fef8f871bbd50ad070ab',
   chains: [

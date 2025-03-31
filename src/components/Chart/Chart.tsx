@@ -1,4 +1,3 @@
-import axios from 'axios';
 import React, { useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
@@ -9,7 +8,7 @@ import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 
 import { settings } from '../../settings.ts';
-import { calculatePriceMetrics, getBinancePair } from './utils';
+import { calculatePriceMetrics } from './utils';
 import {
   DataPoint,
   generateChartDataFromTrades,
@@ -129,34 +128,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             close
             volume
           }
-          series4: klines(
-            first: 1000,
-            skip: 3000,
-            orderBy: time,
-            orderDirection: desc
-          ) {
-            id
-            time
-            open
-            high
-            low
-            close
-            volume
-          }
-          series5: klines(
-            first: 1000,
-            skip: 4000,
-            orderBy: time,
-            orderDirection: desc
-          ) {
-            id
-            time
-            open
-            high
-            low
-            close
-            volume
-          }
         }
       }
     `;
@@ -170,7 +141,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         }),
       });
       const json = await res1.json();
-      allCandles = allCandles.concat(json.data.series_collection?.[0]?.series1).concat(json.data.series_collection?.[0]?.series2).concat(json.data.series_collection?.[0]?.series3).concat(json.data.series_collection?.[0]?.series4).concat(json.data.series_collection?.[0]?.series5);
+      allCandles = allCandles.concat(json.data.series_collection?.[0]?.series1).concat(json.data.series_collection?.[0]?.series2).concat(json.data.series_collection?.[0]?.series3);
     } catch (err) {
       console.error('Error fetching from subgraph:', err);
     }
@@ -223,150 +194,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           setPriceChange,
           setVolume
         );
-      } else {
-        const binancePair = getBinancePair(
-          activeMarket.baseAsset === settings.chainConfig[activechain]?.wethticker
-            ? settings.chainConfig[activechain]?.ethticker
-            : activeMarket.baseAsset,
-          activeMarket.quoteAsset
-        );
-
-        try {
-          const klinesResponse = await axios.get(
-            'https://api.binance.com/api/v3/klines',
-            {
-              params: {
-                symbol:
-                  binancePair === 'WSOLUSDT'
-                    ? 'SOLUSDT'
-                    : binancePair === 'WETHUSDT'
-                    ? 'ETHUSDT'
-                    : binancePair === 'WBTCUSDT'
-                    ? 'BTCUSDT'
-                    : binancePair,
-                interval: interval,
-                limit: 1000,
-              },
-            }
-          );
-          const chartData: DataPoint[] = klinesResponse.data.map((kline: any) => ({
-            time: new Date(kline[0]).toISOString(),
-            open: parseFloat(kline[1]),
-            high: parseFloat(kline[2]),
-            low: parseFloat(kline[3]),
-            close: parseFloat(kline[4]),
-            volume: parseFloat(kline[5]),
-          }));
-          setData([
-            chartData,
-            token +
-              (interval === '1d'
-                ? '1D'
-                : interval === '4h'
-                ? '240'
-                : interval === '1h'
-                ? '60'
-                : interval.slice(0, -1)),
-          ]);
-          calculatePriceMetrics(
-            chartData,
-            activeMarket,
-            setPrice,
-            setHigh24h,
-            setLow24h,
-            setChange,
-            setPriceChange,
-            setVolume
-          );
-        } catch {
-          if (tradesArr && !tradesloading) {
-            const chartData = generateChartDataFromTrades(
-              tradesArr,
-              interval,
-              activeMarket
-            );
-            setData([
-              chartData,
-              token +
-                (interval === '1d'
-                  ? '1D'
-                  : interval === '4h'
-                  ? '240'
-                  : interval === '1h'
-                  ? '60'
-                  : interval.slice(0, -1)),
-            ]);
-            calculatePriceMetrics(
-              chartData,
-              activeMarket,
-              setPrice,
-              setHigh24h,
-              setLow24h,
-              setChange,
-              setPriceChange,
-              setVolume
-            );
-          }
-        }
       }
-    } catch (err) {
-      console.error('Error fetching subgraph candles:', err);
-
-      const binancePair = getBinancePair(
-        activeMarket.baseAsset === settings.chainConfig[activechain]?.wethticker
-          ? settings.chainConfig[activechain]?.ethticker
-          : activeMarket.baseAsset,
-        activeMarket.quoteAsset
-      );
-
-      try {
-        const klinesResponse = await axios.get(
-          'https://api.binance.com/api/v3/klines',
-          {
-            params: {
-              symbol:
-                binancePair === 'WSOLUSDT'
-                  ? 'SOLUSDT'
-                  : binancePair === 'WETHUSDT'
-                  ? 'ETHUSDT'
-                  : binancePair === 'WBTCUSDT'
-                  ? 'BTCUSDT'
-                  : binancePair,
-              interval: interval,
-              limit: 1000,
-            },
-          }
-        );
-        const chartData: DataPoint[] = klinesResponse.data.map((kline: any) => ({
-          time: new Date(kline[0]).toISOString(),
-          open: parseFloat(kline[1]),
-          high: parseFloat(kline[2]),
-          low: parseFloat(kline[3]),
-          close: parseFloat(kline[4]),
-          volume: parseFloat(kline[5]),
-        }));
-        setData([
-          chartData,
-          token +
-            (interval === '1d'
-              ? '1D'
-              : interval === '4h'
-              ? '240'
-              : interval === '1h'
-              ? '60'
-              : interval.slice(0, -1)),
-        ]);
-        calculatePriceMetrics(
-          chartData,
-          activeMarket,
-          setPrice,
-          setHigh24h,
-          setLow24h,
-          setChange,
-          setPriceChange,
-          setVolume
-        );
-      } catch {
+      else {
         if (tradesArr && !tradesloading) {
           const chartData = generateChartDataFromTrades(tradesArr, interval, activeMarket);
           setData([
@@ -391,6 +220,33 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             setVolume
           );
         }
+      }
+    } catch (err) {
+      console.error('Error fetching subgraph candles:', err);
+
+      if (tradesArr && !tradesloading) {
+        const chartData = generateChartDataFromTrades(tradesArr, interval, activeMarket);
+        setData([
+          chartData,
+          token +
+            (interval === '1d'
+              ? '1D'
+              : interval === '4h'
+              ? '240'
+              : interval === '1h'
+              ? '60'
+              : interval.slice(0, -1)),
+        ]);
+        calculatePriceMetrics(
+          chartData,
+          activeMarket,
+          setPrice,
+          setHigh24h,
+          setLow24h,
+          setChange,
+          setPriceChange,
+          setVolume
+        );
       }
     }
 
