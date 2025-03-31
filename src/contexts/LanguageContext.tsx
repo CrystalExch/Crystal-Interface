@@ -1,3 +1,4 @@
+import { accessSync } from 'fs';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {
@@ -339,6 +340,18 @@ export const translations: any = {
     limitFailed: 'Limit Order Failed',
     sendFailed: 'Send Transaction Failed',
     sendingTransaction: 'Sending Transaction',
+    swapFailed: 'Swap Transaction Failed',
+    swapFailedDetails: 'Swap Failure Details',
+sendFailedDetails: 'Send Failure Details',
+limitFailedDetails: 'Limit Failure Details',
+failed: 'Failed',
+errorInfo: 'Error Information',
+attemptedSwap: 'Attempted Swap',
+attemptedSend: 'Attempted Send',
+sendTo: 'Send to',
+done: 'Done', 
+deposit: 'Deposit',
+depositWarning: "Your deposit must be sent on the Monad Network. Your smart account is self-custodial; Crystal can't access your funds.",
 
   },
   CN: {
@@ -679,6 +692,18 @@ export const translations: any = {
     mint: "铸造",
     limitFailed: '限价订单失败',
     sendingTransaction: '发送交易',
+    swapFailed: '兑换交易失败',
+    swapFailedDetails: '兑换失败详情',
+sendFailedDetails: '发送失败详情',
+limitFailedDetails: '限价失败详情',
+failed: '失败',
+errorInfo: '错误信息',
+attemptedSwap: '尝试兑换',
+attemptedSend: '尝试发送',
+sentTo: '发送至',
+done: '完成',
+deposit: '存款',
+depositWarning: "您的存款必须在 Monad 网络上发送。您的智能账户是自托管的；Crystal 无法访问您的资金。",
  
   },
   JP: {
@@ -1019,6 +1044,18 @@ export const translations: any = {
     mint: "鋳造",
     limitFailed: '指値注文失敗',
     sendingTransaction: '取引送信中',
+    swapFailed: 'スワップ失敗',
+    swapFailedDetails: 'スワップ失敗詳細',
+sendFailedDetails: '送信失敗詳細',
+limitFailedDetails: '指値失敗詳細',
+failed: '失敗',
+errorInfo: 'エラー情報',
+attemptedSwap: '試行されたスワップ',
+attemptedSend: '試行された送信',
+sendTo: '送信先',
+done: '完了',
+deposit: '入金',
+depositWarning: "入金はMonadネットワーク上で行われます。あなたのスマートアカウントは自己管理型であり、Crystalはあなたの資金にアクセスできません。",
 
   },
   KR: {
@@ -1359,6 +1396,18 @@ export const translations: any = {
     mint: "제조",
     limitFailed: '지정가 주문 실패',
     sendingTransaction: '거래 전송 중',
+    swapFailed: '스왑 실패',
+    swapFailedDetails: '스왑 실패 상세',
+sendFailedDetails: '전송 실패 상세',
+limitFailedDetails: '지정가 실패 상세',
+failed: '실패',
+errorInfo: '오류 정보',
+attemptedSwap: '시도된 스왑',
+attemptedSend: '시도된 전송',
+sendTo: '전송 대상',
+done: '완료',
+deposit: '입금',
+depositWarning: "입금은 Monad 네트워크에서 이루어집니다. 스마트 계정은 자가 관리형이며, Crystal은 귀하의 자금에 접근할 수 없습니다.",
 
   },
   ES: {
@@ -1699,6 +1748,18 @@ export const translations: any = {
     mint: "Mint",
     limitFailed: 'Orden Límite Fallida',
     sendingTransaction: 'Sending Transaction',
+    swapFailed: 'Swap Fallido',
+    swapFailedDetails: 'Detalles de Fallo en Swap',
+sendFailedDetails: 'Detalles de Fallo en Envío',
+limitFailedDetails: 'Detalles de Fallo en Orden Límite',
+failed: 'Fallido',
+errorInfo: 'Información de Error',
+attemptedSwap: 'Swap Intentado',
+attemptedSend: 'Envío Intentado',
+sendTo: 'Enviar A',
+done: 'Hecho',
+Deposit: 'Depositar',
+depositWarning: "Los depósitos se realizan en la red Monad. Las cuentas inteligentes son autogestionadas y Crystal no tiene acceso a tus fondos.",
   }
 };
 
