@@ -217,11 +217,8 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
             <button
               key={option.value}
               ref={(el) => (timeButtonsRef.current[index] = el)}
-              className={`time-period-button ${chartDays === option.value ? 'active' : ''}`}
+              className={`time-period-button ${chartDays === option.value ? 'active' : 'disabled'}`}
               onClick={() => {
-                setChartDays(option.value);
-                setDays(option.value);
-                setTimeRange(option.label);
               }}
             >
               {option.label}

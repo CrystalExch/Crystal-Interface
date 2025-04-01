@@ -1,6 +1,6 @@
 import { getBlockNumber, readContract } from '@wagmi/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { config } from '../../../wagmi2.ts';
+import { config } from '../../../wagmi.ts';
 
 import PortfolioCache from './portfolioCache';
 
@@ -65,7 +65,7 @@ export const usePortfolioData = (
         decimals: token.decimals,
       }));
 
-      const batchSize = 200;
+      const batchSize = 1;
       for (let i = 0; i < dateRange.length; i += batchSize) {
         if (signal.aborted) throw new Error('Operation cancelled');
 

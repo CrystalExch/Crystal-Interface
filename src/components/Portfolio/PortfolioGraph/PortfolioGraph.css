@@ -52,15 +52,21 @@
   line-height: revert;
 }
 
-.time-period-button:hover {
+.time-period-button:not(.active):not(.disabled):hover {
   opacity: 0.8;
 }
 
 .time-period-button.active {
   color: #ffffffc9;
+  cursor: default;
+}
+
+.time-period-button.disabled {
+  cursor: not-allowed;
 }
 
 .time-period-sliding-indicator {
+  cursor: pointer;
   background-color: #ffffff0d;
   border-radius: 3px;
   bottom: 6px;
