@@ -932,3 +932,333 @@
   display:flex;
   justify-content:flex-end
 }
+
+
+.account-setup-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.account-setup-container {
+  background-color: #19191c80;
+  backdrop-filter: blur(10px);
+  border: 1.5px solid #1a1a1d9f;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  padding: 15px 24px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+}
+
+.account-setup-header {
+  margin-bottom: 16px;
+}
+
+.account-setup-title {
+  font-size: 1.1rem;
+  font-weight: 400;
+  color: white;
+  margin: 0;
+}
+
+.account-setup-subtitle {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.account-setup-form {
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-label {
+  display: block;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.8rem;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  width: 100%;
+  background: none;
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: white;
+  font-size: 0.8rem;
+}
+
+.form-input:focus {
+  outline: none;
+}
+
+.form-error {
+  color: #ef5151;
+  font-size: 0.75rem;
+  margin-top: 4px;
+  margin-bottom: -10px;
+}
+
+.photo-upload-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.photo-preview-container {
+  margin-bottom: 16px;
+  position: relative;
+  width: 128px;
+  height: 128px;
+}
+
+.photo-preview {
+  width: 128px;
+  height: 128px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 2px solid #aaaecf;
+}
+
+.clear-photo-button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  background-color: rgba(25, 25, 28, 0.8);
+  color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-weight: bold;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+.clear-photo-button:hover {
+  background-color: rgba(40, 40, 45, 0.9);
+  color: white;
+}
+
+.letter-avatar {
+  width: 128px;
+  height: 128px;
+  border-radius: 8px;
+  background-color:none;
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.letter-avatar-text {
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 3rem;
+  font-weight: 700;
+}
+
+.photo-upload-label {
+  display: block;
+  text-align: center;
+  width: 100%;
+}
+
+.photo-upload-button {
+  background: linear-gradient(
+      135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%
+    );
+    border: none;
+    border-radius: 6px;
+    box-shadow:
+      inset 0 1px 1px rgb(255 255 255/35%),
+      inset 0 -1px 1px rgb(0 0 0/55%),
+      0 2px 8px rgb(170 174 207/10%);      
+  color: #0f0f12;
+  padding: 8px 16px;
+  border-radius: 6px;
+  display: inline-block;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.85rem;
+  letter-spacing: -0.3px;
+
+}
+
+.photo-upload-button:hover {
+  filter: brightness(1.1);
+}
+
+.hidden-input {
+  display: none;
+}
+
+.account-setup-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 10px;
+}
+
+.leaderboard-spacer {
+  width: 80px;
+}
+
+.back-button, .skip-button {
+  display: flex;
+  align-items: center;
+  background-color: rgba(255, 255, 255, 0.01);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 4px 8px !important;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 400;
+  height: 32px;
+  letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
+
+}
+
+.cancel-button:hover, .back-button:hover, .skip-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.next-button {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(
+      135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%
+    );
+    border: none;
+    border-radius: 6px;
+    box-shadow:
+      inset 0 1px 1px rgb(255 255 255/35%),
+      inset 0 -1px 1px rgb(0 0 0/55%),
+      0 2px 8px rgb(170 174 207/10%);    
+  border: none;
+  color: #0f0f12;
+  padding: 8px 16px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
+}
+
+.next-button:hover {
+  filter: brightness(1.1);
+}
+
+.complete-button {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(
+      135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%
+    );
+    border: none;
+    border-radius: 6px;
+    box-shadow:
+      inset 0 1px 1px rgb(255 255 255/35%),
+      inset 0 -1px 1px rgb(0 0 0/55%),
+      0 2px 8px rgb(170 174 207/10%);    
+  border: none;
+  color: #0f0f12;
+  padding: 8px 16px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+  font-size: 0.85rem;
+
+}
+
+.complete-button:hover {
+  filter: brightness(1.1);
+}
+
+.complete-button-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(70%);
+  box-shadow: none;
+  background: linear-gradient(
+      135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%
+    );
+    box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%); 
+  border: none;
+  border-radius: 6px;
+  color: #0f0f12;
+  padding: 8px 16px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  letter-spacing: -0.3px;
+}
+
+.complete-button-disabled:hover {
+  filter: grayscale(70%);
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.next-button-arrow{
+  filter: invert(1);
+  width: 16px;
+  rotate: 270deg;
+  margin-left: 2px;
+  margin-top: 1px;
+}
+
+.back-button-arrow{
+  width: 16px;
+  rotate: 90deg;
+  margin-right: 3px;
+  margin-top: 1px;
+}
