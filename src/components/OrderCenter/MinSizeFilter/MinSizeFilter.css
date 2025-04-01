@@ -40,6 +40,12 @@
 }
 
 
+.market-type-filter-section{
+  padding-bottom: 10px;
+  margin-bottom: 2px;
+  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
+
+}
 .only-filter-section {
   margin-bottom: 10px;
   padding-top: 8px;

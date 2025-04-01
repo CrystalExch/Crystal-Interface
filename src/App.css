@@ -2741,19 +2741,24 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .trade-container {
   height: 500px;
 }
-
 .ordercenter-drag-handle {
+  height: 4px;
   background-color: transparent;
   cursor: row-resize;
-  height: 4px;
   position: absolute;
   width: 100%;
   z-index: 3;
   border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
-.ordercenter-drag-handle:hover{
-  background-color: rgba(171, 177, 210, 0.2);
+.ordercenter-drag-handle:hover, 
+.isVertDragging .ordercenter-drag-handle {
+  background-color: rgba(171, 177, 210, 0.15);
+}
+
+body[style*="cursor: row-resize"] .ordercenter-drag-handle {
+  background-color: rgba(171, 177, 210, 0.15);
 }
 
 

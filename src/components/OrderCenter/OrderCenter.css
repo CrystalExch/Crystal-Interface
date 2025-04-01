@@ -468,8 +468,8 @@
 }
 
 .type-filter {
-  margin-right: 13px;
-  padding-right: 13px;
+  margin-right: 11px;
+  padding-right: 11px;
 }
 
 .type-filter::after {
@@ -484,8 +484,8 @@
 }
 
 .market-filter {
-  margin-right: 13px;
-  padding-right: 13px;
+  margin-right: 11px;
+  padding-right: 11px;
 }
 
 .market-filter::after {

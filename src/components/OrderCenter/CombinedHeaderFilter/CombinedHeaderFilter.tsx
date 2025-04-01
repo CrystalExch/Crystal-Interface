@@ -10,6 +10,7 @@ interface CombinedHeaderFilterProps {
   onPrevPage: () => void;
   onNextPage: () => void;
   onPageChange: (page: number) => void;
+  showPageSize?: boolean;
 }
 
 const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
@@ -19,7 +20,8 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   totalPages,
   onPrevPage,
   onNextPage,
-  onPageChange
+  onPageChange,
+  showPageSize = true
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [pageInput, setPageInput] = useState<string>(currentPage.toString());
@@ -112,43 +114,45 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
 
   return (
     <div className="combined-header-filter">
-      <div className="page-size-container">
-        <span className="show-text">Show</span>
-        <div className="page-size-section" ref={dropdownRef}>
-          <div className="page-size-button" onClick={toggleDropdown}>
-            <span className="page-size-display">{pageSize}</span>
-            <svg
-              className={`page-size-arrow ${isOpen ? 'open' : ''}`}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </div>
-          
-          {isOpen && (
-            <div className="page-size-dropdown">
-              {[10, 25, 50, 100].map(size => (
-                <div
-                  key={size}
-                  className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
-                  onClick={() => handleSizeChange(size)}
-                >
-                  {size}
-                </div>
-              ))}
+      {showPageSize && (
+        <div className="page-size-container">
+          <span className="show-text">Show</span>
+          <div className="page-size-section" ref={dropdownRef}>
+            <div className="page-size-button" onClick={toggleDropdown}>
+              <span className="page-size-display">{pageSize}</span>
+              <svg
+                className={`page-size-arrow ${isOpen ? 'open' : ''}`}
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="6 9 12 15 18 9"></polyline>
+              </svg>
             </div>
-          )}
+            
+            {isOpen && (
+              <div className="page-size-dropdown">
+                {[10, 25, 50, 100].map(size => (
+                  <div
+                    key={size}
+                    className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
+                    onClick={() => handleSizeChange(size)}
+                  >
+                    {size}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <span className="per-page-text">per page</span>
         </div>
-        <span className="per-page-text">per page</span>
-      </div>
+      )}
       
       <div className="header-navigation">
         <button 

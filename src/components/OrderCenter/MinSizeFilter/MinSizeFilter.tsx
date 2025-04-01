@@ -127,7 +127,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
         >
           <>
             {showTypeFilter && filter !== undefined && setFilter && (
-              <div className="filter-section">
+              <div className="market-type-filter-section">
                 <div className="filter-section-header">
                   {t("orderType")}
                 </div>

@@ -10854,29 +10854,22 @@ function App() {
                           )}
                         </div>
 
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                            style={{
-                              position: 'relative',
-                              width: '100%',
-                              cursor: 'row-resize',
-                            }}
-                          />
-                        </div>
+                        <div 
+  className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
+>
+  <div
+    className="ordercenter-drag-handle"
+    onMouseDown={handleVertMouseDown}
+  />
+</div>
 
-                        <div
-                          className="app-ordercenter-wrapper"
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging
-                              ? 'none'
-                              : 'height 0.1s ease',
-                          }}
-                        >
+<div
+  className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
+  style={{
+    height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
+    transition: isVertDragging ? 'none' : 'height 0.1s ease',
+  }}
+>
                           <OrderCenter
                             orders={orders}
                             tradehistory={tradehistory}

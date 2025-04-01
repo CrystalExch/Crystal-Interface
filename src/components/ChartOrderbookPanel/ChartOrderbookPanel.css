@@ -40,10 +40,14 @@
   z-index: 3;
 }
 
-.drag-handle:hover{
-  background-color: rgba(171, 177, 210, 0.2);
+.drag-handle:hover, 
+.isDragging .drag-handle {
+  background-color: rgba(171, 177, 210, 0.15);
 }
 
+body[style*="cursor: col-resize"] .drag-handle {
+  background-color: rgba(171, 177, 210, 0.15);
+}
 
 .toggle-icon-container {
   align-items: center;
@@ -76,8 +80,7 @@
   transform: rotate(90deg);
 }
 
-.toggle-icon.left.collapsed,
-.toggle-icon.right {
+.toggle-icon.left.collapsed, .toggle-icon.right {
   transform: rotate(270deg);
 }
 

@@ -154,67 +154,68 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
     transition: isDragging ? 'none' : 'width 0.1s ease',
   };
 
-  return (
-    <div
-      className="chart-orderbook-panel"
-      ref={widthRef}
-      style={{
-        flexDirection: orderbookPosition == 'left' ? 'row-reverse' : 'row',
-      }}
-    >
-      <>
-        <div className="chart-container">
-          <ChartComponent
-            onMarketSelect={onMarketSelect}
-            tokendict={tokendict}
-            trades={trades}
-            universalTrades={universalTrades}
-            activeMarket={activeMarket}
-            orderdata={orderdata}
-            userWalletAddress={userWalletAddress}
-            setpopup={setpopup}
-            tradesloading={tradesloading}
-            marketsData={marketsData}
-          />
-        </div>
 
-        <div className={`spacer ${!isOrderbookVisible ? 'collapsed' : ''}`}>
-          <div
-            className="drag-handle"
-            onMouseDown={handleMouseDown}
-            role="separator"
-            aria-label="Resize orderbook"
-            tabIndex={0}
-          />
-        </div>
+return (
+  <div
+    className={`chart-orderbook-panel ${isDragging ? 'isDragging' : ''}`}
+    ref={widthRef}
+    style={{
+      flexDirection: orderbookPosition == 'left' ? 'row-reverse' : 'row',
+    }}
+  >
+    <>
+      <div className="chart-container">
+        <ChartComponent
+          onMarketSelect={onMarketSelect}
+          tokendict={tokendict}
+          trades={trades}
+          universalTrades={universalTrades}
+          activeMarket={activeMarket}
+          orderdata={orderdata}
+          userWalletAddress={userWalletAddress}
+          setpopup={setpopup}
+          tradesloading={tradesloading}
+          marketsData={marketsData}
+        />
+      </div>
 
+      <div className={`spacer ${!isOrderbookVisible ? 'collapsed' : ''}`}>
         <div
-          className={`orderbook-container ${!isOrderbookVisible ? 'collapsed' : ''}`}
-          style={orderBookStyle}
-        >
-          <OrderBook
-            trades={obtrades}
-            orderdata={orderdata}
-            activemarket={activeMarket}
-            layoutSettings={layoutSettings}
-            orderbookPosition={orderbookPosition}
-            hideHeader={false}
-            interval={baseInterval}
-            amountsQuote={amountsQuote}
-            setAmountsQuote={setAmountsQuote}
-            obInterval={obInterval}
-            setOBInterval={setOBInterval}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            activeTab={activeTab}
-            setActiveTab={setActiveTab}
-            updateLimitAmount={updateLimitAmount}
-            userOrders={orders}
-          />
-        </div>
-      </>
-    </div>
-  );
+          className="drag-handle"
+          onMouseDown={handleMouseDown}
+          role="separator"
+          aria-label="Resize orderbook"
+          tabIndex={0}
+        />
+      </div>
+
+      <div
+        className={`orderbook-container ${!isOrderbookVisible ? 'collapsed' : ''}`}
+        style={orderBookStyle}
+      >
+        <OrderBook
+          trades={obtrades}
+          orderdata={orderdata}
+          activemarket={activeMarket}
+          layoutSettings={layoutSettings}
+          orderbookPosition={orderbookPosition}
+          hideHeader={false}
+          interval={baseInterval}
+          amountsQuote={amountsQuote}
+          setAmountsQuote={setAmountsQuote}
+          obInterval={obInterval}
+          setOBInterval={setOBInterval}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          updateLimitAmount={updateLimitAmount}
+          userOrders={orders}
+        />
+      </div>
+    </>
+  </div>
+);
 };
 
 export default ChartOrderbookPanel;

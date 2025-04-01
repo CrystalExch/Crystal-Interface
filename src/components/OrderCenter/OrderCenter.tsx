@@ -15,6 +15,7 @@ import './OrderCenter.css';
 
 const BREAKPOINT_HIDE_MARKET = 1250;
 const BREAKPOINT_HIDE_TYPE = 800;
+const BREAKPOINT_HIDE_PAGE_SIZE = 1070;
 
 interface OrderCenterProps {
   orders: any[];
@@ -110,6 +111,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
 
     const showMarketOutside = windowWidth > BREAKPOINT_HIDE_MARKET;
     const showTypeOutside = windowWidth > BREAKPOINT_HIDE_TYPE;
+    const showPageSize = windowWidth > BREAKPOINT_HIDE_PAGE_SIZE;
     
     const showSizeInDropdown = true;
     
@@ -513,6 +515,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
                   onPrevPage={handlePrevPage}
                   onNextPage={handleNextPage}
                   onPageChange={handlePageChange}
+                  showPageSize={showPageSize}
                 />
               </>
             )}
