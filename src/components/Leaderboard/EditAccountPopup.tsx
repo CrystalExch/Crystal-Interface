@@ -1,8 +1,8 @@
-import React, { useState, ChangeEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import './EditAccountPopup.css';
 import SideArrow from '../../assets/arrow.svg';
-import closebutton from '../../assets/close_button.png';
 import { useSmartAccountClient } from '@account-kit/react';
+import defaultpfp from '../../assets/defaultpfp.webp';
 
 interface UserData {
   username: string;
@@ -23,62 +23,13 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
 }) => {
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const [username, setUsername] = useState<string>(userData.username);
-  const [, setPhoto] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string>(userData.image);
   const [error, setError] = useState<string>('');
-
-  const generateLetterAvatar = (name: string): string => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = 200;
-    canvas.height = 200;
-
-    if (context) {
-      const getColorFromName = (name: string) => {
-        const colors = [
-          '#3498db', '#2ecc71', '#e74c3c', '#f39c12', 
-          '#9b59b6', '#1abc9c', '#d35400', '#c0392b'
-        ];
-                let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-          hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-        
-        hash = Math.abs(hash);
-        
-        return colors[hash % colors.length];
-      };
-
-      context.fillStyle = getColorFromName(name);
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      context.font = 'bold 100px Arial';
-      context.fillStyle = 'white';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2 + 5);
-    }
-
-    return canvas.toDataURL('image/png');
-  };
-
-  const handleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
-    const files = e.target.files;
-    if (files && files[0]) {
-      const file = files[0];
-      setPhoto(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPhotoPreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
+  const [isUsernameChanged, setIsUsernameChanged] = useState<boolean>(false);
   
-  const clearPhoto = (): void => {
-    setPhoto(null);
-    setPhotoPreview(generateLetterAvatar(username));
-  };
+  // Check if username has changed from original
+  useEffect(() => {
+    setIsUsernameChanged(username !== userData.username);
+  }, [username, userData.username]);
 
   const handleSave = (): void => {
     if (!username.trim()) {
@@ -98,7 +49,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     
     const updatedUserData: UserData = {
       username,
-      image: photoPreview,
+      image: defaultpfp, // Always use default profile picture
       xp: userData.xp 
     };
     
@@ -121,6 +72,17 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
         console.error("Error updating username:", err);
         setError("Failed to update username. Please try again.");
       });
+  };
+
+  const t = (text: string): string => {
+    const translations: Record<string, string> = {
+      editAccountTitle: "Edit Account",
+      editAccountSubtitle: "Update your username",
+      username: "Username",
+      cancel: "Cancel",
+      saveChanges: "Save Changes"
+    };
+    return translations[text] || text;
   };
 
   return (
@@ -148,41 +110,13 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             {error && <p className="form-error">{error}</p>}
           </div>
           
-          <div className="photo-upload-container">
-            <div className="photo-preview-container">
-              <img 
-                src={photoPreview} 
-                alt="Preview" 
-                className="photo-preview"
-              />
-              <button 
-                className="clear-photo-button" 
-                onClick={clearPhoto}
-                type="button"
-                aria-label="Change photo"
-              >
-                <img src={closebutton} className="edit-account-close-icon" />
-              </button>
-            </div>
-            
-            <label className="photo-upload-label">
-              <span className="photo-upload-button">
-                {t("chooseNewPhoto")}
-              </span>
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden-input"
-                onChange={handleFileChange}
-              />
-            </label>
-          </div>
         </div>
         
         <div className="account-setup-footer">
           <button
             onClick={onClose}
             className="back-button"
+            type="button"
           >
             <img className="back-button-arrow" src={SideArrow} alt="Back" />
             {t("cancel")}
@@ -190,6 +124,8 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
           <button
             onClick={handleSave}
             className="complete-button"
+            type="button"
+            disabled={!isUsernameChanged}
           >
             {t("saveChanges")}
           </button>

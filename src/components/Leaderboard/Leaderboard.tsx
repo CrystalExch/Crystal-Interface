@@ -3,9 +3,8 @@ import './Leaderboard.css';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
-import LeaderboardAccountSetup from './LeaderboardAccountSetup';
-import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
+import EditAccountPopup from './EditAccountPopup';
 import { useSmartAccountClient } from "@account-kit/react";
 import defaultpfp from '../../assets/defaultpfp.webp';
 
@@ -45,17 +44,14 @@ interface LeaderboardProps {
 const ITEMS_PER_PAGE = 47;
 
 const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
-  const [hasAccount, setHasAccount] = useState<boolean>(false);
+  const [hasAccount, setHasAccount] = useState<boolean>(true);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
-  const [showAccountSetup, setShowAccountSetup] = useState<boolean>(false);
   const [showEditAccount, setShowEditAccount] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserDisplayData>({
-    username: "Guest",
+    username: "",
     userXP: 0,
     logo: defaultpfp
   });
-  const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
-  const [directAccountSetup, setDirectAccountSetup] = useState<boolean>(false);
   const [introStep, setIntroStep] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
@@ -104,32 +100,43 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     if (address && Object.keys(userInfo).length > 0) {
       const lowerCaseAddress = address.toLowerCase();
       const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
+      const points = liveLeaderboard[lowerCaseAddress] || 0;
+      
+      const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      const displayName = userInfo[lowerCaseAddress]?.username || truncatedAddress;
+      
+      setUserData({
+        username: displayName,
+        userXP: points,
+        logo: defaultpfp
+      });
+      setHasAccount(true);
 
-      if (userInfo[lowerCaseAddress]) {
-        const points = liveLeaderboard[lowerCaseAddress] || 0;
-        // Replace the generated letter avatar with defaultpfp
-        setUserData({
-          username: userInfo[lowerCaseAddress].username,
-          userXP: points,
-          logo: defaultpfp
-        });
-        setHasAccount(true);
-        setShowChallengeIntro(false);
-      } else if (hasSeenIntro) {
-        setIsGuestMode(true);
-        setShowChallengeIntro(false);
-      } else {
+      if (!hasSeenIntro) {
+        setShowChallengeIntro(true);
+        setIntroStep(0);
+      }
+    } else if (address) {
+      const truncatedAddress = `${address.slice(0, 6)}...${address.slice(-4)}`;
+      setUserData({
+        username: truncatedAddress,
+        userXP: 0,
+        logo: defaultpfp
+      });
+      setHasAccount(true);
+      
+      const hasSeenIntro = localStorage.getItem('has_seen_challenge_intro') === 'true';
+      if (!hasSeenIntro) {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
     } else {
       setUserData({
-        username: "Guest",
+        username: "",
         userXP: 0,
         logo: defaultpfp
       });
       setHasAccount(false);
-      setIsGuestMode(true);
     }
   }, [address, userInfo, liveLeaderboard]);
 
@@ -142,7 +149,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         level: Math.max(1, Math.floor(Number(points) / 1000)),
         rank: 0,
         xp: Number(points),
-        logo: defaultpfp  // Use defaultpfp for each faction
+        logo: defaultpfp  
       }));
 
       liveEntries.sort((a, b) => b.points - a.points);
@@ -228,70 +235,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       return userInfo[lowerAddr].username;
     }
   
-    if (address.startsWith("0x") && address.length > 20) {
+    if (address.startsWith("0x")) {
       return `${address.slice(0, 6)}...${address.slice(-4)}`;
     }
   
     return address;
   };
   
-
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
     localStorage.setItem('has_seen_challenge_intro', 'true');
-    if (!hasAccount && !isGuestMode) {
-      setShowAccountSetup(true);
-      setDirectAccountSetup(false);
-    }
-  };
-
-  const handleContinueAsGuest = (): void => {
-    setShowChallengeIntro(false);
-    setIsGuestMode(true);
-    localStorage.setItem('has_seen_challenge_intro', 'true');
-    setUserData({
-      username: "Guest",
-      userXP: 0,
-      logo: defaultpfp
-    });
-  };
-
-  const handleAccountSetupComplete = async (newUserData: UserData): Promise<void> => {
-    setUserData({
-      username: newUserData.username,
-      userXP: 0,
-      logo: newUserData.image || defaultpfp
-    });
-    setHasAccount(true);
-
-    if (address) {
-      setUserInfo(prevUserInfo => ({
-        ...prevUserInfo,
-        [address.toLowerCase()]: { username: newUserData.username }
-      }));
-
-      try {
-        const response = await fetch('https://points-backend-b5a062cda7cd.herokuapp.com/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            address: address,
-            username: newUserData.username,
-          }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to register user with the backend');
-        }
-      } catch (error) {
-        console.error('Error sending user data to backend:', error);
-      }
-    }
-
-    setShowAccountSetup(false);
-    setDirectAccountSetup(false);
+    setShowEditAccount(true);
   };
 
   const handleEditAccount = (): void => {
@@ -302,7 +256,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     setUserData({
       username: updatedUserData.username,
       userXP: updatedUserData.xp,
-      logo: updatedUserData.image || defaultpfp
+      logo: defaultpfp 
     });
 
     if (address) {
@@ -320,21 +274,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     setIntroStep(0);
   };
 
-  const handleCreateAccount = (): void => {
-    setShowAccountSetup(true);
-    setDirectAccountSetup(true);
-  };
-
-  const handleAccountSetupBack = (): void => {
-    if (directAccountSetup) {
-      setShowAccountSetup(false);
-    } else {
-      setShowAccountSetup(false);
-      setShowChallengeIntro(true);
-      setIntroStep(2);
-    }
-  };
-
   const t = (text: string): string => {
     const translations: Record<string, string> = {
       viewRules: "View Rules",
@@ -342,7 +281,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       xpEarned: "XP Earned",
       rank: "Rank",
       editAccount: "Edit Account",
-      createAccount: "Create Account",
       page: "Page",
       of: "of",
       viewYourPosition: "View Your Position",
@@ -398,16 +336,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   };
 
   useEffect(() => {
-    if (address && !hasAccount && !showChallengeIntro && !isGuestMode && Object.keys(userInfo).length > 0) {
+    if (address && !showChallengeIntro && Object.keys(userInfo).length > 0) {
       const lowerCaseAddress = address.toLowerCase();
-      if (!userInfo[lowerCaseAddress]) {
-        setShowAccountSetup(true);
+      // Only show challenge intro if user hasn't seen it yet
+      if (!localStorage.getItem('has_seen_challenge_intro')) {
+        setShowChallengeIntro(true);
       }
     } else if (!address) {
-      setShowAccountSetup(false);
       setShowEditAccount(false);
     }
-  }, [address, hasAccount, userInfo, showChallengeIntro, isGuestMode]);
+  }, [address, userInfo, showChallengeIntro]);
 
   const handleConnectWallet = () => {
     setpopup(4);
@@ -436,16 +374,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       {showChallengeIntro && (
         <ChallengeIntro
           onComplete={handleChallengeIntroComplete}
-          onContinueAsGuest={handleContinueAsGuest}
-          isLoggedIn={hasAccount}
+          onContinueAsGuest={handleChallengeIntroComplete} // Both functions do the same thing now
+          isLoggedIn={true} // Always true as we're using wallet address
           initialStep={introStep}
-        />
-      )}
-
-      {showAccountSetup && (
-        <LeaderboardAccountSetup
-          onComplete={handleAccountSetupComplete}
-          onBackToIntro={handleAccountSetupBack}
         />
       )}
 
@@ -453,7 +384,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         <EditAccountPopup
           userData={{
             username: userData.username,
-            image: userData.logo,
+            image: defaultpfp,
             xp: userData.userXP
           }}
           onSaveChanges={handleSaveAccountChanges}
@@ -500,7 +431,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                 <div className="username-container">
                   <img src={userData.logo || defaultpfp} className="username-logo" alt="User Avatar" />
                   <span className="username">
-                    {userData.username ? getDisplayName(userData.username) : "Guest"}
+                    {userData.username || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "")}
                   </span>
                 </div>
               </div>
@@ -516,29 +447,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
             <div className="info-column">
               <div className="column-header">{t("rank")}</div>
               <div className="column-content">
-                #{hasAccount ? findUserPosition() + 1 || "N/A" : "N/A"}
+                #{findUserPosition() + 1 || "N/A"}
               </div>
             </div>
-            {hasAccount ? (
+            {address && (
               <button 
                 className="edit-account-button"
                 onClick={handleEditAccount}
               >
                 {t("editAccount")}
-              </button>
-            ) : isGuestMode ? (
-              <button 
-                className="create-account-button"
-                onClick={handleCreateAccount}
-              >
-                {t("createAccount")}
-              </button>
-            ) : (
-              <button 
-                className="create-account-button"
-                onClick={handleCreateAccount}
-              >
-                {t("createAccount")}
               </button>
             )}
           </div>
@@ -616,7 +533,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
           <button
             className="go-to-user-position-button"
             onClick={goToUserPosition}
-            disabled={!hasAccount || findUserPosition() === -1 || loading}
+            disabled={findUserPosition() === -1 || loading}
           >
             {t("viewYourPosition")}
           </button>

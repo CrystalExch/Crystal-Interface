@@ -7,7 +7,7 @@ import LeaderboardPfp3 from '../../assets/rubberbandz.png';
 
 interface ChallengeIntroProps {
   onComplete: () => void;
-  onContinueAsGuest: () => void;
+  onContinueAsGuest: () => void; // Keep for backward compatibility
   isLoggedIn?: boolean;
   initialStep?: number; 
 }
@@ -21,7 +21,7 @@ interface TimeLeft {
 
 const ChallengeIntro: React.FC<ChallengeIntroProps> = ({ 
   onComplete, 
-  onContinueAsGuest,
+  onContinueAsGuest, // Kept but not used
   isLoggedIn = true,
   initialStep = 0  
 }) => {
@@ -244,13 +244,14 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
     }
   };
 
+
   return (
     <div className="account-setup-overlay">
       <div className="account-setup-container challenge-intro-container">
         <div className="account-setup-header">
           <div className="account-setup-title-wrapper">
-          <h2 className="account-setup-title">{t("challengeOverview")}</h2>
-          <p className="account-setup-subtitle">{t("learnHowToCompete")}</p>
+            <h2 className="account-setup-title">{t("challengeOverview")}</h2>
+            <p className="account-setup-subtitle">{t("learnHowToCompete")}</p>
           </div>
           
           <div className="step-indicators">
@@ -340,47 +341,23 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
         <div className="account-setup-footer">
           {currentStep > 0 ? (
             <button className="back-button" onClick={handleBack}>
-  {t("back")}
-</button>
-
+              {t("back")}
+            </button>
           ) : (
             <button 
               className="skip-button"
               onClick={onComplete}
             >
-  {t("skip")}
-  </button>
-          )}
-          
-          {currentStep === steps.length - 1 && !isLoggedIn ? (
-            <div className="footer-buttons">
-              <button 
-                className="guest-button"
-                onClick={onContinueAsGuest}
-              >
-  {t("continueAsGuest")}
-  </button>
-              <button 
-                className="next-button"
-                onClick={handleNext}
-              >
-    {t("getStarted")}
-    </button>
-            </div>
-          ) : (
-            <button 
-              className="next-button"
-              onClick={handleNext}
-            >
-              {currentStep < steps.length - 1 ? (
-                <>
-      {t("next")}
-      </>
-              ) : (
-                t("getStarted")
-              )}
+              {t("skip")}
             </button>
           )}
+          
+          <button 
+            className="next-button"
+            onClick={handleNext}
+          >
+            {currentStep < steps.length - 1 ? t("next") : t("getStarted")}
+          </button>
         </div>
       </div>
     </div>
