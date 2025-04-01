@@ -2749,7 +2749,14 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   position: absolute;
   width: 100%;
   z-index: 3;
+  border-radius: 4px;
 }
+
+.ordercenter-drag-handle:hover{
+  background-color: rgba(171, 177, 210, 0.2);
+}
+
+
 
 .oc-spacer {
   align-items: center;

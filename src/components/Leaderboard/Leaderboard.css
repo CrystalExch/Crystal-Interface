@@ -415,7 +415,8 @@
   transition:all.4s cubic-bezier(.175,.885,.32,1.275);
   transform-style:preserve-3d;
   backface-visibility:hidden;
-  max-width:305px
+  max-width:305px;
+  min-height: 185px;
 }
 .faction-rank{
   position:absolute;

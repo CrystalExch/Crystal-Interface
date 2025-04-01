@@ -41,8 +41,16 @@
   }    
 }
 
-/* Added disabled button style */
 .complete-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.edit-account-setup-header {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 15px;
 }

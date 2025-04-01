@@ -36,8 +36,14 @@
   height: 100%;
   position: absolute;
   width: 4px;
+  border-radius: 4px;
   z-index: 3;
 }
+
+.drag-handle:hover{
+  background-color: rgba(171, 177, 210, 0.2);
+}
+
 
 .toggle-icon-container {
   align-items: center;

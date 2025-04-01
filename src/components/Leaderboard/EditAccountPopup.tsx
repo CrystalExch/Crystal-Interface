@@ -88,7 +88,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   return (
     <div className="account-setup-overlay">
       <div className="account-setup-container">
-        <div className="account-setup-header">
+        <div className="edit-account-setup-header">
           <h2 className="account-setup-title">{t("editAccountTitle")}</h2>
           <p className="account-setup-subtitle">{t("editAccountSubtitle")}</p>
         </div>
