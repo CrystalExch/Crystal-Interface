@@ -127,6 +127,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
+  useEffect(() => {
+    if (!localStorage.getItem("firstLoadDone")) {
+      localStorage.setItem("firstLoadDone", "true");
+      window.location.reload();
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address} = useSmartAccountClient({});
@@ -6124,7 +6130,7 @@ function App() {
               }
             }}
           >
-            {t('swap')}
+            {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
@@ -7487,7 +7493,7 @@ function App() {
             to="/swap"
             className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
-            {t('swap')}
+            {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
@@ -8805,7 +8811,7 @@ function App() {
             to="/swap"
             className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
-            {t('swap')}
+            {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
@@ -9500,7 +9506,7 @@ function App() {
             to="/swap"
             className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
-            {t('swap')}
+            {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
