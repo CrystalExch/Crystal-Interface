@@ -7,6 +7,7 @@ import LeaderboardAccountSetup from './LeaderboardAccountSetup';
 import EditAccountPopup from './EditAccountPopup';
 import ChallengeIntro from './ChallengeIntro';
 import { useSmartAccountClient } from "@account-kit/react";
+import defaultpfp from '../../assets/defaultpfp.webp';
 
 interface Faction {
   id: string;
@@ -43,7 +44,7 @@ interface LeaderboardProps {
 
 const ITEMS_PER_PAGE = 47;
 
-const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
+const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [hasAccount, setHasAccount] = useState<boolean>(false);
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [showAccountSetup, setShowAccountSetup] = useState<boolean>(false);
@@ -51,7 +52,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [userData, setUserData] = useState<UserDisplayData>({
     username: "Guest",
     userXP: 0,
-    logo: ""
+    logo: defaultpfp
   });
   const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
   const [directAccountSetup, setDirectAccountSetup] = useState<boolean>(false);
@@ -99,43 +100,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     fetchUserPoints();
   }, []);
 
-  const generateLetterAvatar = (name: string): string => {
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.width = 200;
-    canvas.height = 200;
-
-    if (context) {
-      const getColorFromName = (name: string) => {
-        const colors = [
-          '#3498db', '#2ecc71', '#e74c3c', '#f39c12',
-          '#9b59b6', '#1abc9c', '#34495e', '#16a085'
-        ];
-
-        let hash = 0;
-        for (let i = 0; i < name.length; i++) {
-          hash = name.charCodeAt(i) + ((hash << 5) - hash);
-        }
-
-        hash = Math.abs(hash);
-
-        return colors[hash % colors.length];
-      };
-
-      context.fillStyle = getColorFromName(name);
-      context.fillRect(0, 0, canvas.width, canvas.height);
-
-      context.font = 'bold 100px Arial';
-      context.fillStyle = 'white';
-      context.textAlign = 'center';
-      context.textBaseline = 'middle';
-
-      context.fillText(name.charAt(0).toUpperCase(), canvas.width / 2, canvas.height / 2 + 5);
-    }
-
-    return canvas.toDataURL('image/png');
-  };
-
   useEffect(() => {
     if (address && Object.keys(userInfo).length > 0) {
       const lowerCaseAddress = address.toLowerCase();
@@ -143,11 +107,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
       if (userInfo[lowerCaseAddress]) {
         const points = liveLeaderboard[lowerCaseAddress] || 0;
-
+        // Replace the generated letter avatar with defaultpfp
         setUserData({
           username: userInfo[lowerCaseAddress].username,
           userXP: points,
-          logo: generateLetterAvatar(userInfo[lowerCaseAddress].username)
+          logo: defaultpfp
         });
         setHasAccount(true);
         setShowChallengeIntro(false);
@@ -162,7 +126,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
       setUserData({
         username: "Guest",
         userXP: 0,
-        logo: ""
+        logo: defaultpfp
       });
       setHasAccount(false);
       setIsGuestMode(true);
@@ -178,7 +142,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         level: Math.max(1, Math.floor(Number(points) / 1000)),
         rank: 0,
         xp: Number(points),
-        logo: ``
+        logo: defaultpfp  // Use defaultpfp for each faction
       }));
 
       liveEntries.sort((a, b) => b.points - a.points);
@@ -259,21 +223,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   const getDisplayName = (address: string): string => {
     const lowerAddr = address.toLowerCase();
-
-    if (userInfo[lowerAddr]?.username) {
+  
+    if (userInfo[lowerAddr]?.username && userInfo[lowerAddr].username != lowerAddr) {
       return userInfo[lowerAddr].username;
     }
-
-    if (
-      address.startsWith('0x') &&
-      address.length === 42 &&
-      /^0x[0-9a-fA-F]{40}$/.test(address)
-    ) {
+  
+    if (address.startsWith("0x") && address.length > 20) {
       return `${address.slice(0, 6)}...${address.slice(-4)}`;
     }
-
+  
     return address;
   };
+  
 
   const handleChallengeIntroComplete = (): void => {
     setShowChallengeIntro(false);
@@ -291,7 +252,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     setUserData({
       username: "Guest",
       userXP: 0,
-      logo: ""
+      logo: defaultpfp
     });
   };
 
@@ -299,7 +260,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     setUserData({
       username: newUserData.username,
       userXP: 0,
-      logo: newUserData.image
+      logo: newUserData.image || defaultpfp
     });
     setHasAccount(true);
 
@@ -341,7 +302,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     setUserData({
       username: updatedUserData.username,
       userXP: updatedUserData.xp,
-      logo: updatedUserData.image
+      logo: updatedUserData.image || defaultpfp
     });
 
     if (address) {
@@ -394,6 +355,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const isUserAddress = (factionAddress: string): boolean => {
     return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
   };
+
   const renderLoadingTopThree = () => {
     return [0, 1, 2].map((index) => (
       <div
@@ -511,34 +473,32 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           </div>
 
           <div className="progress-container">
-  <div className={`xp-display ${loading ? 'loading' : ''}`}>
-    {loading ? (
-      <div className="total-xp-loading"></div>
-    ) : (
-      <span>
-        {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
-      </span>
-    )}
-  </div>
-  <div className="progress-bar">
-    <div
-      className="progress-fill"
-      style={{ 
-        width: loading 
-          ? '5%'  
-          : `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%` 
-      }}
-    ></div>
-  </div>
-</div>
+            <div className={`xp-display ${loading ? 'loading' : ''}`}>
+              {loading ? (
+                <div className="total-xp-loading"></div>
+              ) : (
+                <span>
+                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
+                </span>
+              )}
+            </div>
+            <div className="progress-bar">
+              <div
+                className="progress-fill"
+                style={{ 
+                  width: loading 
+                    ? '5%'  
+                    : `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%` 
+                }}
+              ></div>
+            </div>
+          </div>
           <div className="leaderboard-user-info">
             <div className="info-column">
               <div className="column-header">{t("username")}</div>
               <div className="column-content">
                 <div className="username-container">
-                  {userData.logo && (
-                    <img src={userData.logo} className="username-logo" alt="User Avatar" />
-                  )}
+                  <img src={userData.logo || defaultpfp} className="username-logo" alt="User Avatar" />
                   <span className="username">
                     {userData.username ? getDisplayName(userData.username) : "Guest"}
                   </span>
@@ -601,8 +561,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
                 <img
-                  src={''}
+                  src={faction.logo || defaultpfp}
                   className="faction-logo"
+                  alt="Faction Avatar"
                 />
                 <div className="faction-name">{getDisplayName(faction.name)}</div>
                 <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
@@ -635,8 +596,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                   </div>
                   <div className="row-faction">
                     <img
-                      src={''}
+                      src={faction.logo || defaultpfp}
                       className="faction-small-logo"
+                      alt="Faction Avatar"
                     />
                     <span className="faction-row-name">{getDisplayName(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
