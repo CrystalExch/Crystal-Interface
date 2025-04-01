@@ -2548,7 +2548,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   height: auto;
   inset: 0;
   margin: auto;
-  margin-top: 30px;
+  margin-top: 60px;
   max-width: 420px;
   position: relative;
   width: 100%;
