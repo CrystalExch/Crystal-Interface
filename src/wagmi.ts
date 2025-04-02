@@ -10,10 +10,6 @@ export const config = createConfig({
         'https://testnet-rpc.monad.xyz',
         { batch: true },
       ),
-      http(
-        'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
-        { batch: true },
-      ),
     ]),
   },
 });
