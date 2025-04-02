@@ -1695,6 +1695,29 @@ function App() {
     setSearchQuery('');
     setpopup(0);
   };
+  const [isRefreshing, setIsRefreshing] = useState(false);
+const [refreshCooldown, setRefreshCooldown] = useState(false);
+
+
+//TEMPERARY REFRESH FUNCTION
+const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
+  e.preventDefault();
+  
+  if (refreshCooldown || isRefreshing) return;
+  
+  setIsRefreshing(true);
+  
+  refetch().then(() => {
+    setIsRefreshing(false);
+    setRefreshCooldown(true);
+    
+    setTimeout(() => {
+      setRefreshCooldown(false);
+    }, 5000);
+  }).catch(() => {
+    setIsRefreshing(false);
+  });
+};
 
   const setScaleOutput = (
     amountIn: number,
@@ -6165,7 +6188,30 @@ function App() {
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </span>
-
+          <button 
+  className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''} ${refreshCooldown ? 'cooldown' : ''}`}
+  onClick={handleRefreshQuote}
+  disabled={refreshCooldown || isRefreshing}
+  title={refreshCooldown ? 'Wait before refreshing again' : 'Refresh quote'}
+>
+  <svg
+    className="refresh-quote-icon"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M23 4v6h-6" />
+    <path d="M1 20v-6h6" />
+    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
+    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
+  </svg>
+  <svg className="refresh-timer-circle" viewBox="0 0 24 24">
+    <circle className="timer-circle-border" cx="12" cy="12" r="9" />
+  </svg>
+</button>
           {showSendDropdown && (
             <div className="navlink-dropdown" ref={sendDropdownRef}>
               <Link

@@ -2713,6 +2713,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   display: flex;
   font-size: 0.85rem;
   justify-content: center;
+  max-width: 80px;
 }
 
 .trade-container:has(.main-content-wrapper.simple-view) {
@@ -3837,7 +3838,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     }
     
     .main-content-wrapper.simple-view .navlink-dropdown{
-      width: 33.33%;
+      width: 100px;
       right: 0;
     }
 
@@ -3903,6 +3904,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
   .main-content-wrapper.simple-view .navlink-dropdown{
     top: calc(100% + 5px);
+    left: 200px;
+    width: 100px;
   }
 
   .main-content-wrapper.simple-view .dropdown-item{
@@ -4661,4 +4664,100 @@ input[type="email"] {
 
   .token-dropdown-container .deposit-button-arrow {
   margin-left: 0;
+}
+
+
+.refresh-quote-button {
+  background: transparent;
+  border: none;
+  color: #ffffff90;
+  cursor: pointer;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  margin-left: auto;
+  margin-right: 10px;
+  width: 30px;
+  height: 30px;
+  transition: color 0.2s ease, background-color 0.2s ease;
+  overflow: visible;
+}
+
+.main-content-wrapper.simple-view .refresh-quote-button {
+  display: flex;
+}
+
+.refresh-quote-button:hover:not(.cooldown) {
+  color: #ffffffd0;
+}
+
+.refresh-quote-icon {
+  width: 14px;
+  height: 14px;
+  z-index: 2;
+  transition: transform 0.3s ease;
+  filter: brightness(0.8)
+}
+
+.refresh-quote-button:hover:not(.cooldown) .refresh-quote-icon {
+  transform: rotate(180deg);
+}
+
+
+
+.refresh-timer-circle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.timer-circle-border {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.1);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  transform-origin: center;
+  transform: rotate(-90deg);
+  transition: stroke 0.2s ease;
+}
+
+.refresh-quote-button:hover:not(.cooldown) .timer-circle-border {
+  stroke: rgba(255, 255, 255, 0.15);
+}
+
+.refresh-quote-button.cooldown .timer-circle-border {
+  stroke: #aaaecf;
+  stroke-dasharray: 56.55; 
+  stroke-dashoffset: 56.55; 
+  animation: cooldown-timer 5s linear forwards;
+}
+
+.refresh-quote-button.cooldown {
+  cursor: not-allowed;
+}
+
+.refresh-quote-button.cooldown:hover .refresh-quote-icon {
+  transform: none;
+}
+
+@keyframes cooldown-timer {
+  0% {
+    stroke-dashoffset: 56.55;
+  }
+  100% {
+    stroke-dashoffset: 0; 
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
