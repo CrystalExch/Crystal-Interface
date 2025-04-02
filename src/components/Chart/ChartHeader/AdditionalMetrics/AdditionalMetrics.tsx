@@ -92,7 +92,7 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
             key={index}
             label={metric.label}
             value={metric.value}
-            isLoading={isLoading || metric.isLoading}
+            isLoading={isLoading}
           />
         ))}
       </div>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React from 'react';
 import './PriceDisplay.css';
 
 interface PriceDisplayProps {
@@ -9,35 +9,8 @@ interface PriceDisplayProps {
 
 const PriceDisplay: React.FC<PriceDisplayProps> = ({ 
   price, 
-  activeMarket,
-  isLoading: externalLoading = false 
+  isLoading,
 }) => {
-  const [internalLoading, setInternalLoading] = useState(price === 'n/a');
-  const prevPriceRef = useRef(price);
-  const prevMarketRef = useRef(activeMarket);
-  
-  const isLoading = externalLoading || internalLoading;
-  
-  useEffect(() => {
-    if (price === undefined) {
-      setInternalLoading(true);
-      return;
-    }
-    
-    if (activeMarket !== prevMarketRef.current) {
-      setInternalLoading(true);
-      prevMarketRef.current = activeMarket;
-      return;
-    }
-    
-    if (internalLoading && price !== prevPriceRef.current) {
-      setTimeout(() => {
-        setInternalLoading(false);
-      }, 100);
-    }
-    
-    prevPriceRef.current = price;
-  }, [price, activeMarket, internalLoading]);
 
   if (isLoading) {
     return (

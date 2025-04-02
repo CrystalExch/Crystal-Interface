@@ -29,6 +29,7 @@ interface ChartHeaderProps {
   onMarketSelect: any;
   setpopup: (value: number) => void;
   marketsData: any;
+  isChartLoading: boolean;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -46,10 +47,10 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   onMarketSelect,
   setpopup,
   marketsData,
+  isChartLoading,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
-  const [isLoading, setIsLoading] = useState(false);
   const [prevMarketId, setPrevMarketId] = useState(activeMarket || '');
   
   const prevMetricsRef = useRef({
@@ -65,10 +66,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   useEffect(() => {
     if (activeMarket !== prevMarketId) {
-      setIsLoading(true);
       setPrevMarketId(activeMarket || '');
       
       prevMetricsRef.current = {
@@ -90,11 +90,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         clearTimeout(delayedLoadingClearRef.current);
         delayedLoadingClearRef.current = null;
       }
-      
-      loadingTimeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
-      }, 15000);
-      
+            
       return () => {
         if (loadingTimeoutRef.current) {
           clearTimeout(loadingTimeoutRef.current);
@@ -107,7 +103,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   }, [activeMarket]);
   
   useEffect(() => {
-    if (isLoading) {
       const prevMetrics = prevMetricsRef.current;
       
       const hasMetricsChanged = 
@@ -123,20 +118,13 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         if (delayedLoadingClearRef.current) {
           clearTimeout(delayedLoadingClearRef.current);
         }
-        
-        delayedLoadingClearRef.current = setTimeout(() => {
-          setIsLoading(false);
-          delayedLoadingClearRef.current = null;
-        }, 1000);
-        
+
         if (loadingTimeoutRef.current) {
           clearTimeout(loadingTimeoutRef.current);
           loadingTimeoutRef.current = null;
         }
       }
-    }
   }, [
-    isLoading,
     price,
     priceChangeAmount,
     priceChangePercent,
@@ -189,7 +177,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
             : 'n/a'}
         </span>
       ),
-      isLoading,
     },
     {
       label: t('availableLiquidity'),
@@ -203,22 +190,18 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
           </span>
         </>
       ),
-      isLoading,
     },
     {
       label: t('dayVolume'),
       value: `$${volume}`,
-      isLoading,
     },
     {
       label: t('dayHigh'),
       value: high24h,
-      isLoading,
     },
     {
       label: t('dayLow'),
       value: low24h,
-      isLoading,
     },
   ];
 
@@ -233,11 +216,11 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         tokendict={tokendict}
         setpopup={setpopup}
         marketsData={marketsData}
-        isLoading={isLoading}
+        isLoading={isChartLoading}
       />
       <AdditionalMetrics 
         metrics={metrics} 
-        isLoading={isLoading} 
+        isLoading={isChartLoading}
       />
     </div>
   );

@@ -51,6 +51,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const [high24h, setHigh24h] = useState('n/a');
   const [low24h, setLow24h] = useState('n/a');
   const [volume, setVolume] = useState('n/a');
+  const [isChartLoading, setIsChartLoading] = useState(false)
 
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -169,7 +170,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       }
       return token + interval;
     });
-
+    setIsChartLoading(true)
     try {
       const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address);
       if (subgraphData && subgraphData.length) {
@@ -249,7 +250,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         );
       }
     }
-
+    setIsChartLoading(false)
     if (!settings.useAdv) {
       setOverlayVisible(false);
     }
@@ -264,8 +265,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     if (!trades || trades.length === 0) return;
   
     const lastTrade = trades[trades.length - 1];
-
-    if (lastTrade[4] !== activeMarket.baseAsset + activeMarket.quoteAsset) return;
+    if (lastTrade[4] !== data[1].match(/^[^\d]+/)?.[0]) return;
   
     setData(([existingBars, existingIntervalLabel]) => {
       const updatedBars = [...existingBars];
@@ -333,7 +333,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     if (tokendict[activeMarket.quoteAddress]) {
       setOutPic(tokendict[activeMarket.quoteAddress].image);
     }
-    setData([[], '']);
   }, [activeMarket.baseAsset]);
 
   return (
@@ -353,6 +352,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         onMarketSelect={onMarketSelect}
         setpopup={setpopup}
         marketsData={marketsData}
+        isChartLoading={isChartLoading}
       />
       <div className="chartcontainer">
         {settings.useAdv ? (

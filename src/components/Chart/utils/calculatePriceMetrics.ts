@@ -22,7 +22,6 @@ export const calculatePriceMetrics = (
     setPriceChange('0');
     return;
   }
-
   const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
 
   const now = Date.now();
