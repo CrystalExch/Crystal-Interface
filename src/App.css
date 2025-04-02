@@ -4677,9 +4677,8 @@ input[type="email"] {
   justify-content: center;
   position: relative;
   margin-left: auto;
-  margin-right: 10px;
-  width: 30px;
-  height: 30px;
+  width: 35px;
+  height: 35px;
   transition: color 0.2s ease, background-color 0.2s ease;
   overflow: visible;
 }
