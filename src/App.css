@@ -854,6 +854,7 @@ html {
   position: absolute;
   top: 0;
   transition: all.3s ease;
+  max-width: 80px;
 }
 
 .mobile-trade-button svg {
@@ -3823,9 +3824,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     backdrop-filter: blur(10px);
     top: calc(100%);
     left: 83.5%;
-    background:#131317c9;
+    background:#121213e0;
     border-radius: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.03);
     width: 34%;
     z-index: 5;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -3872,9 +3872,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     color: #ffffffd0;
   }
   
-  .dropdown-item:not(:last-child) {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  }
   
   .dropdown-arrow {
     margin-left: 2px;
