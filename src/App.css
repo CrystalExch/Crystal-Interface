@@ -4757,3 +4757,45 @@ input[type="email"] {
     transform: rotate(360deg);
   }
 }
+
+
+
+
+.scale-info-box {
+  border:1.5px solid #161618;
+  border-radius: 6px;
+  padding: 5px 10px;
+  margin: 5px 12px;
+  margin-bottom: 0;
+  z-index: 10;
+  width: calc(100% - 25px);
+  display: flex;
+  align-items: center;
+}
+
+.scale-info-text {
+  color: #ffffff7b;
+  font-size: 0.8rem;
+  min-width: 85px;
+}
+
+.scale-close-container{
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+}
+.scale-learn-more {
+  color: #aaaecf;
+  font-size: 0.75rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.scale-learn-more:hover {
+  color: #b8beee;
+}
+
+.scale-close-button 
+{
+  margin-left: auto;
+}

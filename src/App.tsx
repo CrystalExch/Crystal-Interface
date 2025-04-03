@@ -505,6 +505,14 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
+  const [showScaleInfoBox, setShowScaleInfoBox] = useState(() => {
+    return localStorage.getItem('crystal_scale_box_seen') !== 'true';
+  });
+  const handleCloseScaleBox = () => {
+    localStorage.setItem('crystal_scale_box_seen', 'true');
+    setShowScaleInfoBox(false);
+  };
+  
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
     const savedHeight = localStorage.getItem('orderCenterHeight');
     if (savedHeight !== null) {
@@ -9606,6 +9614,32 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
+      {showScaleInfoBox && (
+      <div className="scale-info-box">
+        <span className="scale-info-text">WTF is scale?</span>
+        <div className="scale-close-container" style={{ display: 'flex', alignItems: 'center' }}>
+          <a 
+            className="scale-learn-more" 
+            href="https://www.binance.com/en/support/faq/detail/109e5e36156d4c57a8ee29734f8bed3a" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            onClick={handleCloseScaleBox}
+          >
+            Learn More
+          </a>
+          <button 
+            className="scale-close-button" 
+            onClick={handleCloseScaleBox}
+            title="Close"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+      </div>
+    )}
         <div
           className={`inputbg ${connected &&
             ((amountIn > tokenBalances[tokenIn] &&
