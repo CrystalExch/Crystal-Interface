@@ -24,6 +24,7 @@ interface PortfolioContentProps {
   setpopup: any;
   sortConfig: SortConfig;
   tokenBalances: any;
+  isBlurred?: boolean; 
 }
 
 const PortfolioContent: React.FC<PortfolioContentProps> = ({
@@ -35,6 +36,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
   setpopup,
   sortConfig,
   tokenBalances,
+  isBlurred = false,
 }) => {
   const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
 
@@ -159,6 +161,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
             setSendTokenIn={setSendTokenIn}
             setpopup={setpopup}
             priceChange={token.priceChange.percentageChange}
+            isBlurred={isBlurred}
           />
         ))}
     </div>

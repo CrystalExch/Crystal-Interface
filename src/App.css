@@ -4693,7 +4693,7 @@ input[type="email"] {
   height: 14px;
   z-index: 2;
   transition: transform 0.3s ease;
-  filter: brightness(0.8)
+  filter: brightness(0.5);
 }
 
 .refresh-quote-button:hover:not(.cooldown) .refresh-quote-icon {
@@ -4713,7 +4713,7 @@ input[type="email"] {
 
 .timer-circle-border {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.07);
+  stroke: rgba(255, 255, 255, 0.05);
   stroke-width: 1.5;
   stroke-linecap: round;
   transform-origin: center;
@@ -4722,7 +4722,7 @@ input[type="email"] {
 }
 
 .refresh-quote-button:hover:not(.cooldown) .timer-circle-border {
-  stroke: rgba(255, 255, 255, 0.1);
+  stroke: rgba(255, 255, 255, 0.07);
 }
 
 .refresh-quote-button.cooldown .timer-circle-border {

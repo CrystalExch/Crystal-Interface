@@ -400,6 +400,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={setChain}
+          isBlurred={isBlurred}
         />
       </div>
     </div>

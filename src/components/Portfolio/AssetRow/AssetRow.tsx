@@ -1,5 +1,4 @@
 import React from 'react';
-
 import CopyButton from '../../CopyButton/CopyButton';
 import SendIcon from '../SendIcon/SendIcon';
 import SwapIcon from '../SwapIcon/SwapIcon';
@@ -26,6 +25,7 @@ interface AssetRowProps {
   setSendTokenIn: any;
   setpopup: any;
   priceChange: number;
+  isBlurred?: boolean; 
 }
 
 const AssetRow: React.FC<AssetRowProps> = ({
@@ -41,6 +41,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
   setSendTokenIn,
   setpopup,
   priceChange,
+  isBlurred = false, 
 }) => {
   const market =
     settings.chainConfig[activechain].markets[assetName + 'USDC'] ?? null;
@@ -59,10 +60,10 @@ const AssetRow: React.FC<AssetRowProps> = ({
       </div>
       <div className="portfolio-column">
         <div className="amount-details">
-          <div className="usd-asset-amount">
+          <div className={`usd-asset-amount ${isBlurred ? 'blurred' : ''}`}>
             {formatBalance(totalValue.toString(), 'usd')}
           </div>
-          <div className="asset-amount">
+          <div className={`asset-amount ${isBlurred ? 'blurred' : ''}`}>
             {formatBalance(assetAmount, 'token')} {assetName}
           </div>
         </div>

@@ -89,6 +89,7 @@ import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
+import refreshicon from './assets/refresh.svg';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -6194,20 +6195,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
   disabled={refreshCooldown || isRefreshing}
   title={refreshCooldown ? 'Wait before refreshing again' : 'Refresh quote'}
 >
-  <svg
-    className="refresh-quote-icon"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M23 4v6h-6" />
-    <path d="M1 20v-6h6" />
-    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10" />
-    <path d="M20.49 15a9 9 0 0 1-14.85 3.36L1 14" />
-  </svg>
+  <img src={refreshicon} className="refresh-quote-icon"></img>
   <svg className="refresh-timer-circle" viewBox="0 0 24 24">
     <circle className="timer-circle-border" cx="12" cy="12" r="9" />
   </svg>

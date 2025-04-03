@@ -13,9 +13,9 @@ import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
 import './OrderCenter.css';
 
-const BREAKPOINT_HIDE_MARKET = 1250;
+const BREAKPOINT_HIDE_MARKET = 1070;
 const BREAKPOINT_HIDE_TYPE = 800;
-const BREAKPOINT_HIDE_PAGE_SIZE = 1070;
+const BREAKPOINT_HIDE_PAGE_SIZE = 1250;
 
 interface OrderCenterProps {
   orders: any[];
@@ -36,7 +36,7 @@ interface OrderCenterProps {
   sortConfig: any;
   onSort: (config: any) => void;
   tokenBalances: any;
-  activeSection: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances';
+  activeSection: 'balances' | 'orders' | 'tradeHistory' | 'orderHistory';
   setActiveSection: any;
   filter: 'all' | 'buy' | 'sell';
   setFilter: any;
@@ -46,6 +46,7 @@ interface OrderCenterProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
+  isBlurred?: boolean;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = memo(
@@ -78,6 +79,8 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     refetch,
     sendUserOperationAsync,
     setChain,
+    isBlurred,
+
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -119,7 +122,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     const showTypeInDropdown = !showTypeOutside && filter !== undefined;
 
     const handleTabChange = (
-      section: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances',
+      section:  'balances' | 'orders' | 'tradeHistory' | 'orderHistory' ,
     ) => {
       if (!isPortfolio) {
         localStorage.setItem('crystal_oc_tab', section);
@@ -250,18 +253,19 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
 
       return sideMatch && marketMatch && valueMatch;
     });
-
-    const availableTabs = [
+    
+    const availableTabs: { key: any; label: any; }[] = [];
+    if (!hideBalances) {
+      availableTabs.push({ key: 'balances', label: t('balances') });
+    }
+    availableTabs.push(
       {
         key: 'orders',
         label: `${t('openOrders')} (${filteredOrders.length})`,
       },
       { key: 'tradeHistory', label: t('tradeHistory') },
-      { key: 'orderHistory', label: t('orderHistory') },
-    ];
-    if (!hideBalances) {
-      availableTabs.push({ key: 'balances', label: t('balances') });
-    }
+      { key: 'orderHistory', label: t('orderHistory') }
+    );
 
     const handlePrevPage = () => {
       setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
@@ -291,6 +295,25 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     
     const renderContent = () => {
       switch (activeSection) {
+        case 'balances':
+          return (
+            <>
+              <PortfolioHeader onSort={onSort} sortConfig={sortConfig} />
+              <div className="portfolio-assets-container">
+                <PortfolioContent
+                  trades={trades}
+                  tokenList={tokenList}
+                  setTokenIn={setTokenIn}
+                  setTokenOut={setTokenOut}
+                  setSendTokenIn={setSendTokenIn}
+                  setpopup={setpopup}
+                  sortConfig={sortConfig}
+                  tokenBalances={tokenBalances}
+                  isBlurred={isBlurred} 
+                />
+              </div>
+            </>
+          );
         case 'orders':
           return (
             <OrdersContent
@@ -323,24 +346,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               currentPage={currentPage}
             />
           );
-        case 'balances':
-          return (
-            <>
-              <PortfolioHeader onSort={onSort} sortConfig={sortConfig} />
-              <div className="portfolio-assets-container">
-                <PortfolioContent
-                  trades={trades}
-                  tokenList={tokenList}
-                  setTokenIn={setTokenIn}
-                  setTokenOut={setTokenOut}
-                  setSendTokenIn={setSendTokenIn}
-                  setpopup={setpopup}
-                  sortConfig={sortConfig}
-                  tokenBalances={tokenBalances}
-                />
-              </div>
-            </>
-          );
         default:
           return null;
       }
@@ -350,6 +355,13 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     let noDataMessage = '';
 
     switch (activeSection) {
+      case 'balances':
+        const tokensEmpty = Object.values(tokenBalances).every(
+          (balance) => balance === 0n,
+        );
+        noData = tokensEmpty;
+        noDataMessage = t('noTokensDetected');
+        break;
       case 'orders':
         noData = filteredOrders.length === 0;
         noDataMessage = t('noOpenOrders');
@@ -361,13 +373,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       case 'orderHistory':
         noData = filteredOrderHistory.length === 0;
         noDataMessage = t('noOrderHistory');
-        break;
-      case 'balances':
-        const tokensEmpty = Object.values(tokenBalances).every(
-          (balance) => balance === 0n,
-        );
-        noData = tokensEmpty;
-        noDataMessage = t('noTokensDetected');
         break;
     }
     const handlePageChange = (page: number) => {
@@ -382,23 +387,22 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         }
         return;
       }
-      const activeTabIndex = [
-        'orders',
-        'tradeHistory',
-        'orderHistory',
-        'balances',
-      ].indexOf(activeSection);
-      const activeTab = tabsRef.current[activeTabIndex];
-      if (activeTab && activeTab.parentElement) {
-        const indicator = indicatorRef.current;
-        indicator.style.width = `${activeTab.offsetWidth}px`;
-        indicator.style.left = `${activeTab.offsetLeft}px`;
+      
+      const activeTabIndex = availableTabs.findIndex(tab => tab.key === activeSection);
+      
+      if (activeTabIndex !== -1) {
+        const activeTab = tabsRef.current[activeTabIndex];
+        if (activeTab && activeTab.parentElement) {
+          const indicator = indicatorRef.current;
+          indicator.style.width = `${activeTab.offsetWidth}px`;
+          indicator.style.left = `${activeTab.offsetLeft}px`;
+        }
       }
     };
 
     useEffect(() => {
       updateIndicatorPosition();
-    }, [activeSection, isMobileView, filteredOrders.length]);
+    }, [activeSection, isMobileView, filteredOrders.length, hideBalances]);
 
     useEffect(() => {
       if (!isPortfolio && activeSection === 'balances') {
@@ -425,7 +429,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
           resizeObserver.disconnect();
         };
       }
-    }, [activeSection, isMobileView, filteredOrders.length]);
+    }, [activeSection, isMobileView, filteredOrders.length, hideBalances]);
 
     useEffect(() => {
       const handleResize = () => {
@@ -520,6 +524,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               </>
             )}
             
+            <div className="size-filter-divider"/>
             <MinSizeFilter
               minSizeEnabled={minSizeEnabled}
               setMinSizeEnabled={setMinSizeEnabled}
