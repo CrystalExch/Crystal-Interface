@@ -1,7 +1,5 @@
 import React from 'react';
-
-import uiLogo from '../../assets/logo_clear.png';
-
+import spinninglogo from '../../assets/spinninglogo.gif';
 import './LoadingScreen.css';
 
 interface OverlayProps {
@@ -10,10 +8,10 @@ interface OverlayProps {
 
 const FullScreenOverlay: React.FC<OverlayProps> = ({ isVisible }) => {
   if (!isVisible) return null;
-
+  
   return (
     <div className="overlay">
-      <img className="logo-pulse" src={uiLogo} />
+      <img className="logo" src={spinninglogo} alt="Loading" />
     </div>
   );
 };
