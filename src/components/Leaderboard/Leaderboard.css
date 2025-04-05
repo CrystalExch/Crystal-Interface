@@ -672,8 +672,7 @@
   justify-content:space-between;
   align-items:center;
   padding:10px 15px;
-  background-color:rgba(0,0,0,.2);
-  border-top:1px solid rgba(255,255,255,.05);
+  padding-top: 0;
   border-radius:0 0 12px 12px;
   position:relative;
   bottom:0
@@ -969,8 +968,8 @@
   border: 1.5px solid #1a1a1d9f;
   border-radius: 12px;
   width: 100%;
-  max-width: 420px;
-  padding: 15px 24px;
+  max-width: 320px;
+  padding: 15px 15px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
@@ -1011,9 +1010,9 @@
   background: none;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
   border-radius: 6px;
-  padding: 8px 12px;
+  padding: 4px 12px;
   color: white;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
 }
 
 .form-input:focus {
