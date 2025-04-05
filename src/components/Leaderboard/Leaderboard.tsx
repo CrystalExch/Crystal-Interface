@@ -432,7 +432,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
               <div className="column-header">{t("username")}</div>
               <div className="column-content">
                 <div className="username-container">
-                  <img src={userData.logo || defaultpfp} className="username-logo" alt="User Avatar" />
                   <span className="username">
                     {userData.username || (address ? `${address.slice(0, 6)}...${address.slice(-4)}` : "")}
                   </span>
@@ -485,11 +484,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
               )}
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
-                <img
-                  src={faction.logo || defaultpfp}
-                  className="faction-logo"
-                  alt="Faction Avatar"
-                />
+                
                 <div className="faction-name">{getDisplayName(faction.name)}</div>
                 <div className="faction-xp">
                   <img src={crystalxp} className="top-xp-icon" alt="XP Icon" />
@@ -505,7 +500,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       <div className="full-leaderboard">
         <div className="leaderboard-headers">
           <div className="header-rank">{t("rank")}</div>
-          <div className="header-faction">{t("user")}</div>
           <div className="header-bonus">{t("totalXP")}</div>
         </div>
 
@@ -524,11 +518,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                     <span>#{absoluteRank}</span>
                   </div>
                   <div className="row-faction">
-                    <img
-                      src={faction.logo || defaultpfp}
-                      className="faction-small-logo"
-                      alt="Faction Avatar"
-                    />
+                    
                     <span className="faction-row-name">{getDisplayName(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
