@@ -118,7 +118,6 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
             className="back-button"
             type="button"
           >
-            <img className="back-button-arrow" src={SideArrow} alt="Back" />
             {t("cancel")}
           </button>
           <button

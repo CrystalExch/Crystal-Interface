@@ -351,7 +351,8 @@ sendTo: 'Send to',
 done: 'Done', 
 deposit: 'Deposit',
 depositWarning: "Your deposit must be sent on the Monad network. Your smart account is self-custodial; Crystal cannot access your funds.",
-  audioNotifications: "Enable Audio Notifications"
+  audioNotifications: "Enable Audio Notifications",
+  earned: "Earned",
   },
   CN: {
     trade: '交易',

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Leaderboard.css';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
+import crystalxp from '../../assets/CrystalXPIcon.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
@@ -285,7 +286,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       of: "of",
       viewYourPosition: "View Your Position",
       user: "User",
-      totalXP: "Total XP"
+      totalXP: "Total Crystals",
+      earned: "Earned"
     };
     return translations[text] || text;
   };
@@ -409,6 +411,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                 <div className="total-xp-loading"></div>
               ) : (
                 <span>
+                  <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                   {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
                 </span>
               )}
@@ -439,8 +442,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
             <div className="column-divider"/>
             
             <div className="info-column">
-              <div className="column-header">{t("xpEarned")}</div>
-              <div className="column-content">{userData.userXP.toLocaleString()} XP</div>
+              <div className="earned-xp-header"> 
+            <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+            <div className="column-header">{t("earned")}</div>
+            </div> 
+              <div className="column-content">
+                {userData.userXP.toLocaleString()}
+              </div>
             </div>
             <div className="column-divider"/>
             
@@ -483,7 +491,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                   alt="Faction Avatar"
                 />
                 <div className="faction-name">{getDisplayName(faction.name)}</div>
-                <div className="faction-xp">{(faction.xp || faction.points || 0).toLocaleString()} XP</div>
+                <div className="faction-xp">
+                  <img src={crystalxp} className="top-xp-icon" alt="XP Icon" />
+                  {(faction.xp || faction.points || 0).toLocaleString()}
+
+                </div>
               </div>
             </div>
           ))
@@ -509,7 +521,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                   className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
                 >
                   <div className="row-rank">
-                    <span>{absoluteRank}</span>
+                    <span>#{absoluteRank}</span>
                   </div>
                   <div className="row-faction">
                     <img
@@ -521,7 +533,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
                   <div className="row-xp">
-                    <div className="xp-amount">{(faction.xp || faction.points || 0).toLocaleString()}</div>
+                    <div className="xp-amount">
+                      {(faction.xp || faction.points || 0).toLocaleString()}
+                      <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+
+                    </div>
                   </div>
                 </div>
               );
