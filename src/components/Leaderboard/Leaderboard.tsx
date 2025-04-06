@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import './Leaderboard.css';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
-import crystalxp from '../../assets/CrystalXPIcon.png';
+import crystalxp from '../../assets/CrystalX.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
@@ -410,9 +410,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
               {loading ? (
                 <div className="total-xp-loading"></div>
               ) : (
-                <span>
+                <span className="progress-bar-amount-header">
+                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} 
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
-                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} XP
+
                 </span>
               )}
             </div>

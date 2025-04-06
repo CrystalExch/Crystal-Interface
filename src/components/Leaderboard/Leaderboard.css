@@ -1300,3 +1300,8 @@
   margin-left: -8px;
   display: flex;
 }
+
+
+.progress-bar-amount-header{
+  display: flex;
+}
