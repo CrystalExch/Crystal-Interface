@@ -3,7 +3,6 @@
   max-width:1000px;
   width:100%;
   padding:20px;
-  padding-bottom:60px;
   margin:0 auto;
   margin-top:20px
 }
@@ -700,15 +699,15 @@
 }
 .page-indicator{
   font-size:.8rem;
-  color:rgba(255,255,255,.6)
+  color:rgba(255,255,255,.4)
 }
 .go-to-user-position-button{
   border:1px solid rgba(171,176,224,.1);
   color:rgba(255,255,255,.4);
-  padding:4px 8px;
+  padding:3px 8px;
   border-radius:6px;
   cursor:pointer;
-  font-size:.8rem;
+  font-size:.75rem;
   font-weight:200;
   transition:all.2s ease
 }
@@ -750,12 +749,6 @@
   position:relative;
   overflow:hidden
 }
-.faction-card .faction-logo.loading-placeholder{
-  width:64px;
-  height:64px;
-  border-radius:50%;
-  box-shadow:0 4px 8px rgba(0,0,0,.3)
-}
 .faction-card .faction-name.loading-placeholder{
   width:100px;
   height:24px;
@@ -770,11 +763,6 @@
   width:30px;
   height:20px
 }
-.leaderboard-row .faction-small-logo.loading-placeholder{
-  width:28px;
-  height:28px;
-  border-radius:50%
-}
 .leaderboard-row .faction-row-name.loading-placeholder{
   width:120px;
   height:18px;
@@ -786,18 +774,7 @@
   height:18px;
   float:right
 }
-.rank-1 .faction-logo.loading-placeholder{
-  border:3px solid rgba(255,215,0,.3);
-  box-shadow:0 6px 12px rgba(0,0,0,.4),0 0 15px rgba(255,215,0,.15)
-}
-.rank-2 .faction-logo.loading-placeholder{
-  border:3px solid rgba(192,192,192,.3);
-  box-shadow:0 5px 10px rgba(0,0,0,.35),0 0 12px rgba(192,192,192,.15)
-}
-.rank-3 .faction-logo.loading-placeholder{
-  border:3px solid rgba(205,127,50,.3);
-  box-shadow:0 4px 8px rgba(0,0,0,.3),0 0 10px rgba(205,127,50,.15)
-}
+
 .leaderboard-container.is-loading .leaderboard-rows{
   min-height:calc(47*62px)
 }
@@ -912,11 +889,6 @@
   width:100px;
   height:24px;
   display:inline-block
-}
-.account-top-logo-loading{
-  width:60px;
-  height:60px;
-  border-radius:50%
 }
 .account-top-name-loading{
   width:140px;

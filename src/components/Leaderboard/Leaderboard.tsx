@@ -7,7 +7,6 @@ import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
 import EditAccountPopup from './EditAccountPopup';
 import { useSmartAccountClient } from "@account-kit/react";
-import defaultpfp from '../../assets/defaultpfp.webp';
 
 interface Faction {
   id: string;
@@ -51,7 +50,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
   const [userData, setUserData] = useState<UserDisplayData>({
     username: "",
     userXP: 0,
-    logo: defaultpfp
+    logo: ""
   });
   const [introStep, setIntroStep] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
@@ -109,7 +108,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       setUserData({
         username: displayName,
         userXP: points,
-        logo: defaultpfp
+        logo: ""
       });
       setHasAccount(true);
 
@@ -122,7 +121,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       setUserData({
         username: truncatedAddress,
         userXP: 0,
-        logo: defaultpfp
+        logo: ""
       });
       setHasAccount(true);
       
@@ -135,7 +134,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
       setUserData({
         username: "",
         userXP: 0,
-        logo: defaultpfp
+        logo: ""
       });
       setHasAccount(false);
     }
@@ -150,7 +149,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         level: Math.max(1, Math.floor(Number(points) / 1000)),
         rank: 0,
         xp: Number(points),
-        logo: defaultpfp  
+        logo: ""  
       }));
 
       liveEntries.sort((a, b) => b.points - a.points);
@@ -257,7 +256,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
     setUserData({
       username: updatedUserData.username,
       userXP: updatedUserData.xp,
-      logo: defaultpfp 
+      logo: ""
     });
 
     if (address) {
@@ -309,7 +308,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         )}
         <div className="faction-rank">{index + 1}</div>
         <div className="faction-info">
-          <div className="account-top-logo-loading account-loading-animation"></div>
           <div className="account-top-name-loading account-loading-animation"></div>
           <div className="account-top-xp-loading account-loading-animation"></div>
         </div>
@@ -327,7 +325,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
           <span className="loading-placeholder"></span>
         </div>
         <div className="row-faction">
-          <div className="faction-small-logo loading-placeholder"></div>
           <span className="faction-row-name loading-placeholder"></span>
         </div>
         <div className="row-xp">
@@ -386,7 +383,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
         <EditAccountPopup
           userData={{
             username: userData.username,
-            image: defaultpfp,
+            image: "",
             xp: userData.userXP
           }}
           onSaveChanges={handleSaveAccountChanges}
@@ -413,7 +410,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                 <span className="progress-bar-amount-header">
                   {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()} 
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
-
                 </span>
               )}
             </div>
@@ -443,9 +439,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
             
             <div className="info-column">
               <div className="earned-xp-header"> 
-            <img src={crystalxp} className="xp-icon" alt="XP Icon" />
-            <div className="column-header">{t("earned")}</div>
-            </div> 
+                <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+                <div className="column-header">{t("earned")}</div>
+              </div> 
               <div className="column-content">
                 {userData.userXP.toLocaleString()}
               </div>
@@ -485,12 +481,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
               )}
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
-                
                 <div className="faction-name">{getDisplayName(faction.name)}</div>
                 <div className="faction-xp">
                   <img src={crystalxp} className="top-xp-icon" alt="XP Icon" />
                   {(faction.xp || faction.points || 0).toLocaleString()}
-
                 </div>
               </div>
             </div>
@@ -519,7 +513,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                     <span>#{absoluteRank}</span>
                   </div>
                   <div className="row-faction">
-                    
                     <span className="faction-row-name">{getDisplayName(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
@@ -527,7 +520,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => {} }) => {
                     <div className="xp-amount">
                       {(faction.xp || faction.points || 0).toLocaleString()}
                       <img src={crystalxp} className="xp-icon" alt="XP Icon" />
-
                     </div>
                   </div>
                 </div>
