@@ -97,11 +97,11 @@ const Header: React.FC<HeaderProps> = ({
           </button>
 
           <div className="extitle">
-            <img src={backgroundlesslogo} className="crystal-logo"/>
+            {/* <img src={backgroundlesslogo} className="crystal-logo"/> */}
             <span className="crystal-name">CRYSTAL</span>
           </div>
 
-          <nav className="nav-links">
+          {/* <nav className="nav-links">
             <NavLinks
               isSideMenu={false}
               setShowTrade={setShowTrade}
@@ -110,7 +110,7 @@ const Header: React.FC<HeaderProps> = ({
               simpleView={simpleView}
               setSimpleView={setSimpleView}
             />
-          </nav>
+          </nav> */}
         </div>
 
         <div className="right-header">

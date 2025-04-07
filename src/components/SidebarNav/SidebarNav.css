@@ -1,0 +1,216 @@
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 50px;
+    align-items: center;
+    padding-top: 15px;
+    z-index: 100;
+  }
+  
+  .sidebar-logo {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 0.9;
+    transition: opacity 0.2s ease;
+  }
+  
+  .sidebar-logo:hover {
+    opacity: 1;
+  }
+  
+  .sidebar-logo-image {
+    width: 31px;
+    height: 31px;
+  }
+  
+  .view-buttons-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .view-mode-button {
+    position: relative; /* For nav-text positioning */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: none;
+    background-color: transparent;
+    color: #8c8c9a;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .sidebar-nav .active {
+    color: #aaaecf !important;
+    background-color: rgba(121, 124, 177, 0.2) !important;
+  }
+  
+  .sidebar-links {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-grow: 1;
+    width: 100%;
+    padding-top: 10px;
+  }
+  
+  .sidebar-links a {
+    position: relative; /* Allow nav-text absolute positioning */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 35px;
+    height: 35px;
+    margin-bottom: 10px;
+    color: #8c8c9a;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+  }
+  
+  .sidebar-links a:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .sidebar-links a.active {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .sidebar-bottom {
+    margin-top: auto;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 10px;
+  }
+  
+  .sidebar-bottom a {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    color: #8c8c9a;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+  }
+  
+  .sidebar-bottom a:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  
+  .sidebar-bottom a.active {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .otc-text {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    position: relative; 
+  }
+  
+  .nav-text {
+    position: absolute;
+    left: 45px; 
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: #41415133;
+    backdrop-filter: blur(5px);
+    color: #fff;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    z-index: 101;
+  }
+  
+  .sidebar-links a:hover .nav-text,
+  .view-mode-button:hover .nav-text,
+  .otc-text:hover .nav-text {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  
+  @media (max-width: 768px) {
+    .sidebar-nav {
+      width: 50px;
+    }
+  }
+  
+
+  /* Collapsed vs expanded widths */
+.sidebar-nav.collapsed {
+    width: 50px;
+  }
+  
+  .sidebar-nav.expanded {
+    width: 200px;
+  }
+  
+  /* Show/hide .nav-text depending on collapse state */
+  .sidebar-nav.collapsed .nav-text {
+    /* Keep original hover-based behavior or simply hide them */
+    position: absolute;
+    left: 45px;
+    top: 50%;
+    transform: translateY(-50%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  .sidebar-nav.expanded .nav-text {
+    position: static;
+    transform: none;
+    opacity: 1 !important;
+    pointer-events: auto;
+    background: none;
+    margin-left: 8px;
+  }
+  
+  /* Ensure icons + text line up in a row */
+  .sidebar-nav.expanded a,
+  .sidebar-nav.expanded button.view-mode-button,
+  .sidebar-nav.expanded .otc-text {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  
+  .collapse-button {
+    margin-left: 8px;
+    width: 35px;
+    height: 35px;
+    border: none;
+    background-color: transparent;
+    color: #8c8c9a;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  .collapse-button:hover {
+    color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+  

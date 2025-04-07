@@ -117,6 +117,7 @@ import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniCh
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
+import SidebarNav from './components/SidebarNav/SidebarNav';
 
 
 // import config
@@ -10607,7 +10608,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
       {Modals}
-      {windowWidth <= 1020 &&
+      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
+            {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (
           <>
@@ -10670,8 +10672,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
           <div className="headerfiller"></div>
         </>
       }
-      <div className="app-container">
-        <Routes>
+      <div className="app-container sidebar-adjusted">
+      <Routes>
           <Route path="/" element={<Navigate to="/swap" replace />} />
           <Route path="*" element={<Navigate to="/swap" replace />} />
           <Route
