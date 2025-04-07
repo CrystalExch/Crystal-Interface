@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import './EditAccountPopup.css';
-import SideArrow from '../../assets/arrow.svg';
 import { useSmartAccountClient } from '@account-kit/react';
 import defaultpfp from '../../assets/defaultpfp.webp';
+import './EditAccountPopup.css';
 
 interface UserData {
   username: string;
@@ -26,12 +25,11 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   const [error, setError] = useState<string>('');
   const [isUsernameChanged, setIsUsernameChanged] = useState<boolean>(false);
   
-  // Check if username has changed from original
   useEffect(() => {
     setIsUsernameChanged(username !== userData.username);
   }, [username, userData.username]);
 
-  const handleSave = (): void => {
+  const handleSave = async(): Promise<void> => {
     if (!username.trim()) {
       setError('Please enter a username');
       return;
@@ -46,10 +44,23 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       setError('Username cannot exceed 20 characters');
       return;
     }
+
+    try {
+      const profanityRes = await fetch(`https://www.purgomalum.com/service/containsprofanity?text=${encodeURIComponent(username)}`);
+      const profanityResult = await profanityRes.text();
+      if (profanityResult === "true") {
+        setError("Username is inappropriate.");
+        return;
+      }
+    } catch (err) {
+      console.error("Error checking profanity:", err);
+      setError("Error checking username. Please try again.");
+      return;
+    }
     
     const updatedUserData: UserData = {
       username,
-      image: defaultpfp, // Always use default profile picture
+      image: defaultpfp,
       xp: userData.xp 
     };
     
