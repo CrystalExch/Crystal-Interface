@@ -44,16 +44,6 @@
   width: 15px;
 }
 
-.extitle {
-  align-items: center;
-  color: #fff;
-  display: flex;
-  font-size: 1.1rem;
-  font-weight: 500;
-  margin-right: 5px;
-  text-decoration: none;
-}
-
 .crystal-logo {
   height: 1.9rem;
 }
@@ -62,6 +52,8 @@
   font-family: Orbitron, sans-serif;
   font-size: 1.1rem;
   font-weight: 400;
+  margin-left: 25px;
+  display: none;
 }
 
 .connect-button {

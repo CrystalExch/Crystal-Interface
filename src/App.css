@@ -4799,3 +4799,15 @@ input[type="email"] {
 {
   margin-left: auto;
 }
+
+.sidebar-adjusted {
+  margin-left: 46px;
+  width: calc(100% - 46px);
+}
+
+@media (max-width: 768px) {
+  .sidebar-adjusted {
+    margin-left: 50px;
+    width: calc(100% - 50px);
+  }
+}

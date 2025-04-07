@@ -520,17 +520,6 @@
 
 
 
-@media (max-width: 920px) {
-  .market-filter {
-    display: none !important;
-  }
-}
-
-@media (max-width: 800px) {
-  .type-filter {
-    display: none !important;
-  }
-}
 
 .size-filter-divider{
   max-width: 1.5px;

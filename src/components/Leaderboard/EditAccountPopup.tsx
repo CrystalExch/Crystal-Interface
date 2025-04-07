@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import './EditAccountPopup.css';
-import SideArrow from '../../assets/arrow.svg';
 import { useSmartAccountClient } from '@account-kit/react';
 import defaultpfp from '../../assets/defaultpfp.webp';
+import './EditAccountPopup.css';
 
 interface UserData {
   username: string;
@@ -26,12 +25,11 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
   const [error, setError] = useState<string>('');
   const [isUsernameChanged, setIsUsernameChanged] = useState<boolean>(false);
   
-  // Check if username has changed from original
   useEffect(() => {
     setIsUsernameChanged(username !== userData.username);
   }, [username, userData.username]);
 
-  const handleSave = (): void => {
+  const handleSave = async(): Promise<void> => {
     if (!username.trim()) {
       setError('Please enter a username');
       return;
@@ -49,7 +47,7 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
     
     const updatedUserData: UserData = {
       username,
-      image: defaultpfp, // Always use default profile picture
+      image: defaultpfp,
       xp: userData.xp 
     };
     

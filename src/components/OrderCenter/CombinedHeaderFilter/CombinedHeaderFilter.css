@@ -9,6 +9,15 @@
   margin-right: 12px;
 }
 
+.page-size-container::after{
+  content: '';
+  height: 16px;
+  margin-left: 12px;
+  max-width: 1.5px;
+  min-width: 1.5px;  
+  background-color: rgba(255, 255, 255, 0.1);
+  
+}
 @media (max-width: 468px) {
   .page-size-container {
     display: none;
@@ -25,6 +34,15 @@
   color: #ffffff70;
   font-size: 0.75rem;
   margin-left: 6px;
+}
+
+@media (max-width: 1200px) {
+  .per-page-text {
+    display: none;
+  }
+  .show-text {
+    display: none;
+  }
 }
 
 .page-size-section {
