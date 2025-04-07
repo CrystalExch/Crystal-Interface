@@ -5,6 +5,12 @@ import iconusdt from './assets/iconusdt.png';
 import iconwbtc from './assets/iconwbtc.png';
 import iconweth from './assets/iconweth.png';
 import iconwmonad from './assets/iconwmonad.png';
+import iconshmon from './assets/iconshmon.png';
+import icondak from './assets/icondak.png';
+import iconchog from './assets/iconchog.png';
+import iconsmon from './assets/iconsmon.png';
+import iconyaki from './assets/iconyaki.png';
+import iconaprmon from './assets/iconaprmon.png';
 import MonadLogo from './assets/monad.svg';
 
 export const settings: any = {
@@ -120,7 +126,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99990),
-          image: iconusdt,
+          image: iconsmon,
           website: 'https://kintsu.xyz/',
         },
         sMONWMON: {
@@ -141,7 +147,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99990),
-          image: iconusdt,
+          image: iconsmon,
           website: 'https://kintsu.xyz/',
         },
         aprMONMON: {
@@ -162,7 +168,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99990),
-          image: iconusdt,
+          image: iconaprmon,
           website: 'https://apr.io/',
         },
         aprMONWMON: {
@@ -267,7 +273,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: icondak,
           website: 'https://monad.xyz/',
         },
         CHOGMON: {
@@ -288,7 +294,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: iconchog,
           website: 'https://monad.xyz/',
         },
         CHOGWMON: {
@@ -309,7 +315,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: iconchog,
           website: 'https://monad.xyz/',
         },
         YAKIMON: {
@@ -330,7 +336,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: iconyaki,
           website: 'https://monad.xyz/',
         },
         YAKIWMON: {
@@ -351,7 +357,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: iconyaki,
           website: 'https://monad.xyz/',
         },
         WETHUSDC: {
@@ -479,42 +485,42 @@ export const settings: any = {
           name: 'Kintsu Staked Monad',
           address: '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: iconsmon,
         },
         '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A': {
           ticker: 'aprMON',
           name: 'aPriori Staked Monad',
           address: '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: iconaprmon,
         },
         '0x3a98250f98dd388c211206983453837c8365bdc1': {
           ticker: 'shMON',
           name: 'shMonad',
           address: '0x3a98250f98dd388c211206983453837c8365bdc1',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: iconshmon,
         },
         '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714': {
           ticker: 'DAK',
           name: 'Molandak',
           address: '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: icondak,
         },
         '0xE0590015A873bF326bd645c3E1266d4db41C4E6B': {
           ticker: 'CHOG',
           name: 'Chog',
           address: '0xE0590015A873bF326bd645c3E1266d4db41C4E6B',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: iconchog,
         },
         '0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50': {
           ticker: 'YAKI',
           name: 'Moyaki',
           address: '0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50',
           decimals: BigInt(18),
-          image: iconusdt,
+          image: iconyaki,
         },
         '0xB5a30b0FDc5EA94A52fDc42e3E9760Cb8449Fb37': {
           ticker: 'WETH',
