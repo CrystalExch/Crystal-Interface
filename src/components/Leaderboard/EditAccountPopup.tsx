@@ -44,19 +44,6 @@ const EditAccountPopup: React.FC<EditAccountPopupProps> = ({
       setError('Username cannot exceed 20 characters');
       return;
     }
-
-    try {
-      const profanityRes = await fetch(`https://www.purgomalum.com/service/containsprofanity?text=${encodeURIComponent(username)}`);
-      const profanityResult = await profanityRes.text();
-      if (profanityResult === "true") {
-        setError("Username is inappropriate.");
-        return;
-      }
-    } catch (err) {
-      console.error("Error checking profanity:", err);
-      setError("Error checking username. Please try again.");
-      return;
-    }
     
     const updatedUserData: UserData = {
       username,
