@@ -13,9 +13,9 @@ import ToggleSwitch from '../ToggleSwitch/ToggleSwitch';
 
 import './OrderCenter.css';
 
-const BREAKPOINT_HIDE_MARKET = 1070;
-const BREAKPOINT_HIDE_TYPE = 800;
-const BREAKPOINT_HIDE_PAGE_SIZE = 1250;
+const BREAKPOINT_HIDE_MARKET = 1120;
+const BREAKPOINT_HIDE_TYPE = 400;
+const BREAKPOINT_HIDE_PAGE_SIZE = 400;
 
 interface OrderCenterProps {
   orders: any[];
@@ -454,7 +454,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
           height: orderCenterHeight === 0 ? '0px' : `${orderCenterHeight}px`,
           transition: 'height 0.1s ease',
           overflow: 'visible',
-          backgroundColor: '#0f0f12',
         }}
       >
         <div className="oc-top-bar">
