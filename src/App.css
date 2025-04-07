@@ -4801,8 +4801,8 @@ input[type="email"] {
 }
 
 .sidebar-adjusted {
-  margin-left: 47px;
-  width: calc(100% - 47px);
+  margin-left: 46px;
+  width: calc(100% - 46px);
 }
 
 @media (max-width: 768px) {
