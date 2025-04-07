@@ -3,7 +3,7 @@
   height: 100%;
   overflow: visible;
   position: relative;
-  width: calc(100vw - 302px);
+  width: calc(100vw - 350px);
 }
 
 .orderbook-container {
