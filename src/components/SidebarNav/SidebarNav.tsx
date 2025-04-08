@@ -24,7 +24,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
 
-  // Load expanded state from localStorage on component mount
   useEffect(() => {
     const savedExpanded = localStorage.getItem('crystal_sidebar_expanded');
     if (savedExpanded !== null) {
@@ -32,7 +31,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     }
   }, []);
   
-  // Update body classes when sidebar expands/collapses
   useEffect(() => {
     document.body.classList.toggle('sidebar-expanded', expanded);
     return () => {
@@ -80,7 +78,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       </Link>
   
       <div className="sidebar-links">
-        {/* Fixed button classes for consistent rendering */}
         <button 
           className={`view-mode-button ${isTradingPage && !simpleView ? 'active' : ''}`}
           onClick={goToAdvancedView}
