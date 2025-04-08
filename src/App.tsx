@@ -137,7 +137,7 @@ function App() {
   }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address} = useSmartAccountClient({});
+  const { client, address } = useSmartAccountClient({});
   const { sendUserOperationAsync } = useSendUserOperation({
     client,
     waitForTxn: true,
@@ -513,7 +513,7 @@ function App() {
     localStorage.setItem('crystal_scale_box_seen', 'true');
     setShowScaleInfoBox(false);
   };
-  
+
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
     const savedHeight = localStorage.getItem('orderCenterHeight');
     if (savedHeight !== null) {
@@ -874,7 +874,7 @@ function App() {
     if (location.pathname !== '/limit') {
       navigate('/limit');
     }
-    
+
     setTokenIn(market.quoteAddress);
     setTokenOut(market.baseAddress);
     setswitched(false);
@@ -1049,7 +1049,7 @@ function App() {
     volume: 'n/a',
     isChartLoading: false
   });
-  
+
   // Add this function in the App component
   const updateChartHeaderData = (
     price: string,
@@ -1070,7 +1070,7 @@ function App() {
       isChartLoading
     });
   };
-  
+
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -1080,7 +1080,7 @@ function App() {
 
     const fetchData = async () => {
       try {
-          const req = await fetch(HTTP_URL, {
+        const req = await fetch(HTTP_URL, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -1740,28 +1740,28 @@ function App() {
     setpopup(0);
   };
   const [isRefreshing, setIsRefreshing] = useState(false);
-const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const [refreshCooldown, setRefreshCooldown] = useState(false);
 
 
-//TEMPERARY REFRESH FUNCTION
-const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
-  e.preventDefault();
-  
-  if (refreshCooldown || isRefreshing) return;
-  
-  setIsRefreshing(true);
-  
-  refetch().then(() => {
-    setIsRefreshing(false);
-    setRefreshCooldown(true);
-    
-    setTimeout(() => {
-      setRefreshCooldown(false);
-    }, 5000);
-  }).catch(() => {
-    setIsRefreshing(false);
-  });
-};
+  //TEMPERARY REFRESH FUNCTION
+  const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
+    e.preventDefault();
+
+    if (refreshCooldown || isRefreshing) return;
+
+    setIsRefreshing(true);
+
+    refetch().then(() => {
+      setIsRefreshing(false);
+      setRefreshCooldown(true);
+
+      setTimeout(() => {
+        setRefreshCooldown(false);
+      }, 5000);
+    }).catch(() => {
+      setIsRefreshing(false);
+    });
+  };
 
   const setScaleOutput = (
     amountIn: number,
@@ -1914,7 +1914,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
 
     const S_p = prices.reduce((sum, price, i) => sum + price * weights[i], 0);
     const S_w = weights.reduce((sum, w) => sum + w, 0);
-    
+
     let requiredInput: number;
     if (tokenIn === activeMarket.quoteAddress) {
       requiredInput = (desiredOutput * S_p) / (Number(activeMarket.scaleFactor) * S_w);
@@ -5995,56 +5995,56 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
                         </span>
                         <div
-                      className="copy-address-button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigator.clipboard.writeText(token.address);
-                        const copyIcon =
-                          e.currentTarget.querySelector('.copy-icon');
-                        const checkIcon =
-                          e.currentTarget.querySelector('.check-icon');
-                        if (copyIcon && checkIcon) {
-                          copyIcon.classList.add('hidden');
-                          checkIcon.classList.add('visible');
-                          setTimeout(() => {
-                            copyIcon.classList.remove('hidden');
-                            checkIcon.classList.remove('visible');
-                          }, 2000);
-                        }
-                      }}
-                    >
-                      <svg
-                        className="copy-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <rect
-                          x="9"
-                          y="9"
-                          width="13"
-                          height="13"
-                          rx="2"
-                          ry="2"
-                        ></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                      </svg>
-                      <svg
-                        className="check-icon"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <circle cx="12" cy="12" r="10" />
-                        <path d="M8 12l3 3 6-6" />
-                      </svg>
-                    </div>
+                          className="copy-address-button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            navigator.clipboard.writeText(token.address);
+                            const copyIcon =
+                              e.currentTarget.querySelector('.copy-icon');
+                            const checkIcon =
+                              e.currentTarget.querySelector('.check-icon');
+                            if (copyIcon && checkIcon) {
+                              copyIcon.classList.add('hidden');
+                              checkIcon.classList.add('visible');
+                              setTimeout(() => {
+                                copyIcon.classList.remove('hidden');
+                                checkIcon.classList.remove('visible');
+                              }, 2000);
+                            }
+                          }}
+                        >
+                          <svg
+                            className="copy-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <rect
+                              x="9"
+                              y="9"
+                              width="13"
+                              height="13"
+                              rx="2"
+                              ry="2"
+                            ></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                          </svg>
+                          <svg
+                            className="check-icon"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M8 12l3 3 6-6" />
+                          </svg>
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -6065,73 +6065,73 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
           <div ref={popupref} className="deposit-page-container" onClick={(e) => e.stopPropagation()}>
             <div className="deposit-page-header">
               <h2>{t("deposit")}</h2>
-              <button className="deposit-close-button" onClick={() => {setpopup(0)}}>
+              <button className="deposit-close-button" onClick={() => { setpopup(0) }}>
                 <img src={closebutton} className="deposit-close-icon" />
               </button>
             </div>
             <div className={`token-dropdown-container ${dropdownOpen ? 'open' : ''}`}>
-            <div
-    className="selected-token-display"
-    onClick={() => setDropdownOpen(!dropdownOpen)}
-  >
-    <div className="selected-token-info">
-      <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} />
-      <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
-      <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
-      <CopyButton textToCopy={selectedDepositToken}/>
-    </div>
-    <div className="selected-token-balance">
-      {formatDisplayValue(
-        tokenBalances[selectedDepositToken] || 0,
-        Number(tokendict[selectedDepositToken].decimals || 18)
-      )}
+              <div
+                className="selected-token-display"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
+                <div className="selected-token-info">
+                  <img className="deposit-token-icon" src={tokendict[selectedDepositToken].image} />
+                  <span className="deposit-token-name">{tokendict[selectedDepositToken].name}</span>
+                  <span className="deposit-token-ticker">({tokendict[selectedDepositToken].ticker})</span>
+                  <CopyButton textToCopy={selectedDepositToken} />
+                </div>
+                <div className="selected-token-balance">
+                  {formatDisplayValue(
+                    tokenBalances[selectedDepositToken] || 0,
+                    Number(tokendict[selectedDepositToken].decimals || 18)
+                  )}
 
-      <svg
-        className="deposit-button-arrow"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="24"
-        height="24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </div>
-    
-  </div>
+                  <svg
+                    className="deposit-button-arrow"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="6 9 12 15 18 9"></polyline>
+                  </svg>
+                </div>
 
-  {dropdownOpen && (
-    <div className="token-dropdown-list">
-      {Object.entries(tokendict).map(([address, token]) => (
-        <div
-          key={address}
-          className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
-          onClick={() => {
-            setSelectedDepositToken(address);
-            setDropdownOpen(false);
-          }}
-        >
-          <div className="dropdown-token-info">
-            <img className="deposit-token-icon" src={token.image} />
-            <span className="deposit-token-name">{token.name}</span>
-            <span className="deposit-token-ticker">({token.ticker})</span>
-            <CopyButton textToCopy={address}/>
-          </div>
-          <span className="deposit-token-balance">
-            {formatDisplayValue(
-              tokenBalances[address] || 0,
-              Number(token.decimals || 18)
-            )}
-          </span>
-        </div>
-      ))}
-    </div>
-  )}
-</div>
+              </div>
+
+              {dropdownOpen && (
+                <div className="token-dropdown-list">
+                  {Object.entries(tokendict).map(([address, token]) => (
+                    <div
+                      key={address}
+                      className={`token-dropdown-item ${selectedDepositToken === address ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedDepositToken(address);
+                        setDropdownOpen(false);
+                      }}
+                    >
+                      <div className="dropdown-token-info">
+                        <img className="deposit-token-icon" src={token.image} />
+                        <span className="deposit-token-name">{token.name}</span>
+                        <span className="deposit-token-ticker">({token.ticker})</span>
+                        <CopyButton textToCopy={address} />
+                      </div>
+                      <span className="deposit-token-balance">
+                        {formatDisplayValue(
+                          tokenBalances[address] || 0,
+                          Number(token.decimals || 18)
+                        )}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <span className="deposit-subtitle">{t('sendTo')}</span>
             <div className="deposit-address-container">
               <div className="deposit-address-box">
@@ -6173,7 +6173,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
 
             <button
               className="deposit-done-button"
-              onClick={() => {setpopup(4)}}
+              onClick={() => { setpopup(4) }}
             >
               {t('done')}
             </button>
@@ -6232,17 +6232,17 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
               <polyline points="6 9 12 15 18 9"></polyline>
             </svg>
           </span>
-          <button 
-  className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''} ${refreshCooldown ? 'cooldown' : ''}`}
-  onClick={handleRefreshQuote}
-  disabled={refreshCooldown || isRefreshing}
-  title={refreshCooldown ? 'Wait before refreshing again' : 'Refresh quote'}
->
-  <img src={refreshicon} className="refresh-quote-icon"></img>
-  <svg className="refresh-timer-circle" viewBox="0 0 24 24">
-    <circle className="timer-circle-border" cx="12" cy="12" r="9" />
-  </svg>
-</button>
+          <button
+            className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''} ${refreshCooldown ? 'cooldown' : ''}`}
+            onClick={handleRefreshQuote}
+            disabled={refreshCooldown || isRefreshing}
+            title={refreshCooldown ? 'Wait before refreshing again' : 'Refresh quote'}
+          >
+            <img src={refreshicon} className="refresh-quote-icon"></img>
+            <svg className="refresh-timer-circle" viewBox="0 0 24 24">
+              <circle className="timer-circle-border" cx="12" cy="12" r="9" />
+            </svg>
+          </button>
           {showSendDropdown && (
             <div className="navlink-dropdown" ref={sendDropdownRef}>
               <Link
@@ -6930,30 +6930,34 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                   if (switched == false) {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
-                        hash = await sendUserOperationAsync({uo: swapExactETHForTokens(
-                          router,
-                          amountIn,
-                          (amountOutSwap * slippage + 5000n) / 10000n,
-                          activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                          address as `0x${string}`,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                          usedRefAddress as `0x${string}`
-                        )})
+                        hash = await sendUserOperationAsync({
+                          uo: swapExactETHForTokens(
+                            router,
+                            amountIn,
+                            (amountOutSwap * slippage + 5000n) / 10000n,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                            address as `0x${string}`,
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            usedRefAddress as `0x${string}`
+                          )
+                        })
                       } else {
-                        hash = await sendUserOperationAsync({uo: _swap(
-                          router,
-                          amountIn,
-                          activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                          activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                          true,
-                          BigInt(0),
-                          amountIn,
-                          tokenIn == activeMarket.quoteAddress
-                            ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                            : (highestBid * slippage + 5000n) / 10000n,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                          usedRefAddress as `0x${string}`
-                        )})
+                        hash = await sendUserOperationAsync({
+                          uo: _swap(
+                            router,
+                            amountIn,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                            true,
+                            BigInt(0),
+                            amountIn,
+                            tokenIn == activeMarket.quoteAddress
+                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                              : (highestBid * slippage + 5000n) / 10000n,
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            usedRefAddress as `0x${string}`
+                          )
+                        })
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -7019,7 +7023,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               ))
                             }
                           }
-                          hash = await sendUserOperationAsync({uo: uo})
+                          hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
                             hash.hash,
                             'approve',
@@ -7032,11 +7036,13 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           );
                         }
                         else {
-                          hash = await sendUserOperationAsync({uo: approve(
-                            tokenIn as `0x${string}`,
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                            maxUint256
-                          )})
+                          hash = await sendUserOperationAsync({
+                            uo: approve(
+                              tokenIn as `0x${string}`,
+                              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                              maxUint256
+                            )
+                          })
                           newTxPopup(
                             client
                               ? hash.hash
@@ -7054,57 +7060,65 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                       if (!client || !(allowance < amountIn)) {
                         if (tokenOut == eth) {
                           if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({uo: swapExactTokensForETH(
-                              router,
-                              amountIn,
-                              (amountOutSwap * slippage + 5000n) / 10000n,
-                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                              address as `0x${string}`,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: swapExactTokensForETH(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           } else {
-                            hash = await sendUserOperationAsync({uo: _swap(
-                              router,
-                              BigInt(0),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                              true,
-                              BigInt(0),
-                              amountIn,
-                              tokenIn == activeMarket.quoteAddress
-                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                : (highestBid * slippage + 5000n) / 10000n,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           }
                         } else {
                           if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({uo: swapExactTokensForTokens(
-                              router,
-                              amountIn,
-                              (amountOutSwap * slippage + 5000n) / 10000n,
-                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                              address as `0x${string}`,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: swapExactTokensForTokens(
+                                router,
+                                amountIn,
+                                (amountOutSwap * slippage + 5000n) / 10000n,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           } else {
-                            hash = await sendUserOperationAsync({uo: _swap(
-                              router,
-                              BigInt(0),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                              true,
-                              BigInt(0),
-                              amountIn,
-                              tokenIn == activeMarket.quoteAddress
-                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                : (highestBid * slippage + 5000n) / 10000n,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountIn,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           }
                         }
                       }
@@ -7112,30 +7126,34 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                   } else {
                     if (tokenIn == eth) {
                       if (orderType == 1 || multihop) {
-                        hash = await sendUserOperationAsync({uo: swapETHForExactTokens(
-                          router,
-                          amountOutSwap,
-                          (amountIn * 10000n + slippage / 2n) / slippage,
-                          activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                          address as `0x${string}`,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                          usedRefAddress as `0x${string}`
-                        )})
+                        hash = await sendUserOperationAsync({
+                          uo: swapETHForExactTokens(
+                            router,
+                            amountOutSwap,
+                            (amountIn * 10000n + slippage / 2n) / slippage,
+                            activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                            address as `0x${string}`,
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            usedRefAddress as `0x${string}`
+                          )
+                        })
                       } else {
-                        hash = await sendUserOperationAsync({uo: _swap(
-                          router,
-                          BigInt((amountIn * 10000n + slippage / 2n) / slippage),
-                          activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                          activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                          false,
-                          BigInt(0),
-                          amountOutSwap,
-                          tokenIn == activeMarket.quoteAddress
-                            ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                            : (highestBid * slippage + 5000n) / 10000n,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                          usedRefAddress as `0x${string}`
-                        )})
+                        hash = await sendUserOperationAsync({
+                          uo: _swap(
+                            router,
+                            BigInt((amountIn * 10000n + slippage / 2n) / slippage),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                            activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                            false,
+                            BigInt(0),
+                            amountOutSwap,
+                            tokenIn == activeMarket.quoteAddress
+                              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                              : (highestBid * slippage + 5000n) / 10000n,
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            usedRefAddress as `0x${string}`
+                          )
+                        })
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -7201,7 +7219,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               ))
                             }
                           }
-                          hash = await sendUserOperationAsync({uo: uo})
+                          hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
                             hash.hash,
                             'approve',
@@ -7214,11 +7232,13 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           );
                         }
                         else {
-                          hash = await sendUserOperationAsync({uo: approve(
-                            tokenIn as `0x${string}`,
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                            maxUint256
-                          )})
+                          hash = await sendUserOperationAsync({
+                            uo: approve(
+                              tokenIn as `0x${string}`,
+                              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                              maxUint256
+                            )
+                          })
                           newTxPopup(
                             client
                               ? hash.hash
@@ -7236,57 +7256,65 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                       if (!client || !(allowance < amountIn)) {
                         if (tokenOut == eth) {
                           if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({uo: swapTokensForExactETH(
-                              router,
-                              amountOutSwap,
-                              (amountIn * 10000n + slippage / 2n) / slippage,
-                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                              address as `0x${string}`,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: swapTokensForExactETH(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           } else {
-                            hash = await sendUserOperationAsync({uo: _swap(
-                              router,
-                              BigInt(0),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                              true,
-                              BigInt(0),
-                              amountOutSwap,
-                              tokenIn == activeMarket.quoteAddress
-                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                : (highestBid * slippage + 5000n) / 10000n,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           }
                         } else {
                           if (orderType == 1 || multihop) {
-                            hash = await sendUserOperationAsync({uo: swapTokensForExactTokens(
-                              router,
-                              amountOutSwap,
-                              (amountIn * 10000n + slippage / 2n) / slippage,
-                              activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                              address as `0x${string}`,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: swapTokensForExactTokens(
+                                router,
+                                amountOutSwap,
+                                (amountIn * 10000n + slippage / 2n) / slippage,
+                                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
+                                address as `0x${string}`,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           } else {
-                            hash = await sendUserOperationAsync({uo: _swap(
-                              router,
-                              BigInt(0),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                              activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                              true,
-                              BigInt(0),
-                              amountOutSwap,
-                              tokenIn == activeMarket.quoteAddress
-                                ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                                : (highestBid * slippage + 5000n) / 10000n,
-                              BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                              usedRefAddress as `0x${string}`
-                            )})
+                            hash = await sendUserOperationAsync({
+                              uo: _swap(
+                                router,
+                                BigInt(0),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+                                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+                                true,
+                                BigInt(0),
+                                amountOutSwap,
+                                tokenIn == activeMarket.quoteAddress
+                                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
+                                  : (highestBid * slippage + 5000n) / 10000n,
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                usedRefAddress as `0x${string}`
+                              )
+                            })
                           }
                         }
                       }
@@ -8609,27 +8637,31 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
               try {
                 if (tokenIn == eth) {
                   if (addliquidityonly) {
-                    hash = await sendUserOperationAsync({uo: limitOrder(
-                      router,
-                      amountIn,
-                      eth,
-                      tokenOut as `0x${string}`,
-                      limitPrice,
-                      amountIn,
-                    )})
+                    hash = await sendUserOperationAsync({
+                      uo: limitOrder(
+                        router,
+                        amountIn,
+                        eth,
+                        tokenOut as `0x${string}`,
+                        limitPrice,
+                        amountIn,
+                      )
+                    })
                   } else {
-                    hash = await sendUserOperationAsync({uo: _swap(
-                      router,
-                      amountIn,
-                      eth,
-                      tokenOut as `0x${string}`,
-                      true,
-                      BigInt(2),
-                      amountIn,
-                      limitPrice,
-                      BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                      usedRefAddress as `0x${string}`,
-                    )})
+                    hash = await sendUserOperationAsync({
+                      uo: _swap(
+                        router,
+                        amountIn,
+                        eth,
+                        tokenOut as `0x${string}`,
+                        true,
+                        BigInt(2),
+                        amountIn,
+                        limitPrice,
+                        BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                        usedRefAddress as `0x${string}`,
+                      )
+                    })
                   }
                 } else {
                   if (allowance < amountIn) {
@@ -8666,7 +8698,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           usedRefAddress as `0x${string}`,
                         ))
                       }
-                      hash = await sendUserOperationAsync({uo: uo})
+                      hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
                         hash.hash,
                         'approve',
@@ -8683,14 +8715,16 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                       );
                     }
                     else {
-                      hash = await sendUserOperationAsync({uo: approve(
-                        tokenIn as `0x${string}`,
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).address,
-                        maxUint256,
-                      )})
+                      hash = await sendUserOperationAsync({
+                        uo: approve(
+                          tokenIn as `0x${string}`,
+                          getMarket(
+                            activeMarket.path.at(0),
+                            activeMarket.path.at(1),
+                          ).address,
+                          maxUint256,
+                        )
+                      })
                       newTxPopup(
                         client
                           ? hash.hash
@@ -8711,27 +8745,31 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                   }
                   if (!client || !(allowance < amountIn)) {
                     if (addliquidityonly) {
-                      hash = await sendUserOperationAsync({uo: limitOrder(
-                        router,
-                        BigInt(0),
-                        tokenIn as `0x${string}`,
-                        tokenOut as `0x${string}`,
-                        limitPrice,
-                        amountIn,
-                      )})
+                      hash = await sendUserOperationAsync({
+                        uo: limitOrder(
+                          router,
+                          BigInt(0),
+                          tokenIn as `0x${string}`,
+                          tokenOut as `0x${string}`,
+                          limitPrice,
+                          amountIn,
+                        )
+                      })
                     } else {
-                      hash = await sendUserOperationAsync({uo: _swap(
-                        router,
-                        BigInt(0),
-                        tokenIn as `0x${string}`,
-                        tokenOut as `0x${string}`,
-                        true,
-                        BigInt(2),
-                        amountIn,
-                        limitPrice,
-                        BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                        usedRefAddress as `0x${string}`,
-                      )})
+                      hash = await sendUserOperationAsync({
+                        uo: _swap(
+                          router,
+                          BigInt(0),
+                          tokenIn as `0x${string}`,
+                          tokenOut as `0x${string}`,
+                          true,
+                          BigInt(2),
+                          amountIn,
+                          limitPrice,
+                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                          usedRefAddress as `0x${string}`,
+                        )
+                      })
                     }
                   }
                 }
@@ -9649,32 +9687,32 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
-      {showScaleInfoBox && (
-      <div className="scale-info-box">
-        <span className="scale-info-text">WTF is scale?</span>
-        <div className="scale-close-container" style={{ display: 'flex', alignItems: 'center' }}>
-          <a 
-            className="scale-learn-more" 
-            href="https://www.binance.com/en/support/faq/detail/109e5e36156d4c57a8ee29734f8bed3a" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            onClick={handleCloseScaleBox}
-          >
-            Learn More
-          </a>
-          <button 
-            className="scale-close-button" 
-            onClick={handleCloseScaleBox}
-            title="Close"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-      </div>
-    )}
+        {showScaleInfoBox && (
+          <div className="scale-info-box">
+            <span className="scale-info-text">WTF is scale?</span>
+            <div className="scale-close-container" style={{ display: 'flex', alignItems: 'center' }}>
+              <a
+                className="scale-learn-more"
+                href="https://www.binance.com/en/support/faq/detail/109e5e36156d4c57a8ee29734f8bed3a"
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={handleCloseScaleBox}
+              >
+                Learn More
+              </a>
+              <button
+                className="scale-close-button"
+                onClick={handleCloseScaleBox}
+                title="Close"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
         <div
           className={`inputbg ${connected &&
             ((amountIn > tokenBalances[tokenIn] &&
@@ -10411,15 +10449,17 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
               }
               try {
                 if (tokenIn == eth) {
-                  hash = await sendUserOperationAsync({uo: multiBatchOrders(
-                    router,
-                    BigInt(finalAmountIn),
-                    [activeMarket.address],
-                    action,
-                    price,
-                    param1,
-                    param2,
-                  )})
+                  hash = await sendUserOperationAsync({
+                    uo: multiBatchOrders(
+                      router,
+                      BigInt(finalAmountIn),
+                      [activeMarket.address],
+                      action,
+                      price,
+                      param1,
+                      param2,
+                    )
+                  })
                 } else {
                   if (allowance < finalAmountIn) {
                     if (client) {
@@ -10441,7 +10481,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                         param1,
                         param2,
                       ))
-                      hash = await sendUserOperationAsync({uo: uo})
+                      hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
                         hash.hash,
                         'approve',
@@ -10458,14 +10498,16 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                       );
                     }
                     else {
-                      hash = await sendUserOperationAsync({uo: approve(
-                        tokenIn as `0x${string}`,
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).address,
-                        maxUint256,
-                      )})
+                      hash = await sendUserOperationAsync({
+                        uo: approve(
+                          tokenIn as `0x${string}`,
+                          getMarket(
+                            activeMarket.path.at(0),
+                            activeMarket.path.at(1),
+                          ).address,
+                          maxUint256,
+                        )
+                      })
                       newTxPopup(
                         (client
                           ? hash.hash
@@ -10486,15 +10528,17 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                     }
                   }
                   if (!client || !(allowance < amountIn)) {
-                    hash = await sendUserOperationAsync({uo: multiBatchOrders(
-                      router,
-                      BigInt(0),
-                      [activeMarket.address],
-                      action,
-                      price,
-                      param1,
-                      param2,
-                    )})
+                    hash = await sendUserOperationAsync({
+                      uo: multiBatchOrders(
+                        router,
+                        BigInt(0),
+                        [activeMarket.address],
+                        action,
+                        price,
+                        param1,
+                        param2,
+                      )
+                    })
                   }
                 }
                 if (!client && hash?.hash) {
@@ -10643,7 +10687,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
       <FullScreenOverlay isVisible={loading} />
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
-            {windowWidth <= 1020 &&
+      {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (
           <>
@@ -10681,48 +10725,48 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
         )}
       {
         <>
-        <Header
-  setTokenIn={setTokenIn}
-  setTokenOut={setTokenOut}
-  setorders={setorders}
-  settradehistory={settradehistory}
-  settradesByMarket={settradesByMarket}
-  setcanceledorders={setcanceledorders}
-  setpopup={setpopup}
-  setChain={handleSetChain}
-  account={{
-    connected: connected,
-    address: address,
-    chainId: userchain,
-  }}
-  activechain={activechain}
-  tokenIn={tokenIn}
-  setShowTrade={setShowTrade}
-  simpleView={simpleView}
-  setSimpleView={setSimpleView}
-  tokendict={tokendict}
-  transactions={transactions}
-  activeMarket={activeMarket}
-  orderdata={{
-    ...chartHeaderData,
-    liquidityBuyOrders,
-    liquiditySellOrders,
-    spreadData,
-    priceFactor,
-    symbolIn,
-    symbolOut,
-  }}
-  onMarketSelect={onMarketSelect}
-  marketsData={sortedMarkets}
-  trades={tradesByMarket[activeMarketKey]}
-  tradesloading={tradesloading}
-  chartHeaderData={chartHeaderData}
-/>
+          <Header
+            setTokenIn={setTokenIn}
+            setTokenOut={setTokenOut}
+            setorders={setorders}
+            settradehistory={settradehistory}
+            settradesByMarket={settradesByMarket}
+            setcanceledorders={setcanceledorders}
+            setpopup={setpopup}
+            setChain={handleSetChain}
+            account={{
+              connected: connected,
+              address: address,
+              chainId: userchain,
+            }}
+            activechain={activechain}
+            tokenIn={tokenIn}
+            setShowTrade={setShowTrade}
+            simpleView={simpleView}
+            setSimpleView={setSimpleView}
+            tokendict={tokendict}
+            transactions={transactions}
+            activeMarket={activeMarket}
+            orderdata={{
+              ...chartHeaderData,
+              liquidityBuyOrders,
+              liquiditySellOrders,
+              spreadData,
+              priceFactor,
+              symbolIn,
+              symbolOut,
+            }}
+            onMarketSelect={onMarketSelect}
+            marketsData={sortedMarkets}
+            trades={tradesByMarket[activeMarketKey]}
+            tradesloading={tradesloading}
+            chartHeaderData={chartHeaderData}
+          />
           <div className="headerfiller"></div>
         </>
       }
       <div className="app-container sidebar-adjusted">
-      <Routes>
+        <Routes>
           <Route path="/" element={<Navigate to="/swap" replace />} />
           <Route path="*" element={<Navigate to="/swap" replace />} />
           <Route
@@ -10873,26 +10917,26 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           {windowWidth <= 1020 ? (
                             <div className="trade-mobile-view-container">
                               {mobileView === 'chart' && (
- <ChartComponent
- onMarketSelect={onMarketSelect}
- tokendict={tokendict}
- trades={tradesByMarket[activeMarketKey]}
- universalTrades={tradesByMarket}
- activeMarket={activeMarket}
- orderdata={{
-   liquidityBuyOrders,
-   liquiditySellOrders,
-   spreadData,
-   priceFactor,
-   symbolIn,
-   symbolOut,
- }}
- userWalletAddress={connected ? address : undefined}
- setpopup={setpopup}
- tradesloading={tradesloading}
- marketsData={sortedMarkets}
- updateChartData={updateChartHeaderData}
-/>
+                                <ChartComponent
+                                  onMarketSelect={onMarketSelect}
+                                  tokendict={tokendict}
+                                  trades={tradesByMarket[activeMarketKey]}
+                                  universalTrades={tradesByMarket}
+                                  activeMarket={activeMarket}
+                                  orderdata={{
+                                    liquidityBuyOrders,
+                                    liquiditySellOrders,
+                                    spreadData,
+                                    priceFactor,
+                                    symbolIn,
+                                    symbolOut,
+                                  }}
+                                  userWalletAddress={connected ? address : undefined}
+                                  setpopup={setpopup}
+                                  tradesloading={tradesloading}
+                                  marketsData={sortedMarkets}
+                                  updateChartData={updateChartHeaderData}
+                                />
                               )}
                               {(mobileView === 'orderbook' ||
                                 mobileView === 'trades') && (
@@ -10972,22 +11016,22 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           )}
                         </div>
 
-                        <div 
-  className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
->
-  <div
-    className="ordercenter-drag-handle"
-    onMouseDown={handleVertMouseDown}
-  />
-</div>
+                        <div
+                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
+                        >
+                          <div
+                            className="ordercenter-drag-handle"
+                            onMouseDown={handleVertMouseDown}
+                          />
+                        </div>
 
-<div
-  className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
-  style={{
-    height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-    transition: isVertDragging ? 'none' : 'height 0.1s ease',
-  }}
->
+                        <div
+                          className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
+                          style={{
+                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
+                            transition: isVertDragging ? 'none' : 'height 0.1s ease',
+                          }}
+                        >
                           <OrderCenter
                             orders={orders}
                             tradehistory={tradehistory}
