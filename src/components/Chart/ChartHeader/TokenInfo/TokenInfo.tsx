@@ -255,9 +255,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <>
             {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
           </>
-        ) : (
+       ) : (
+        <>
+        <div className="search-market-text-container">
           <span className="search-market-text">Search for a market</span>
-        )}
+          <span className="second-asset">Browse trading pairs</span>
+          </div>
+        </>
+      )}
       </div>
       {shouldShowFullHeader && (
         <div className="token-name">

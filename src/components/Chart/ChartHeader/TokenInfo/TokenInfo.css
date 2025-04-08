@@ -6,17 +6,8 @@
   position: relative;
   background-color: #0f0f12;
   border-radius: 8px;
-  max-height: 44px;
-  min-height: 44px;
-}
-
-
-.chart-header.simplified .search-market-text {
-  color: #a8a9b9;
-  font-size: 0.8rem;
-  font-weight: 300;
-  margin-bottom: 5px;
-  
+  max-height: 46px;
+  min-height: 46px;
 }
 
 
@@ -32,7 +23,7 @@
 .token-info-container{
   display: flex;
   align-items: center;
-  gap:6px;
+  gap:4px;
 }
 
 .symbol-info:hover {
@@ -586,8 +577,31 @@
   background-color: #0f0f12;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  max-height: 44px;
-  min-height: 44px;
+  max-height: 46px;
+  min-height: 46px;
   gap: 10px;
   padding-right: 15px;
+}
+
+.search-market-text-container{
+  display: flex;
+  flex-direction: column;
+  margin-top: -5px;
+  margin-right: -5px;
+}
+
+
+.chart-header.simplified .search-market-text {
+  color: #a8a9b9;
+  font-size: 0.8rem;
+  font-weight: 300;
+}
+
+
+.chart-header.simplified .second-asset {
+  color: #a8a9b973;
+  font-size: 0.7rem;
+  font-weight: 300; 
+  margin: 0;
+  margin-top: -6px;
 }

@@ -59,10 +59,10 @@
   background-color: #0f0f12;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
-  max-height: 44px;
-  min-height: 44px;
-  padding: 0 10px;
-  padding-left: 10px
+  max-height: 46px;
+  min-height: 46px;
+  padding-left: 10px;
+  padding-right: 15px;
 }
 
 
