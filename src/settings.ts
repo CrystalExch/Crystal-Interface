@@ -252,7 +252,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99970),
-          image: iconusdt,
+          image: icondak,
           website: 'https://monad.xyz/',
         },
         DAKWMON: {
