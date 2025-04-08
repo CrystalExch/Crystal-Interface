@@ -95,7 +95,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <span className="sidebar-label">{t('simpleView')}</span>
         </button>
         
-        {/* Fixed Link components with proper class assignments */}
         <Link 
           to="/portfolio" 
           className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
