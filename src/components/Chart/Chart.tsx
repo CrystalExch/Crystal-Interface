@@ -31,16 +31,10 @@ interface ChartComponentProps {
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
-  tokendict,
   trades,
   activeMarket,
-  orderdata,
-  onMarketSelect,
-  setpopup,
   tradesloading,
-  marketsData,
   updateChartData,
-  chartHeaderData,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);

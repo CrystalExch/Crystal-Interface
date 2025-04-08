@@ -71,8 +71,6 @@ const Header: React.FC<HeaderProps> = ({
   orderdata,
   onMarketSelect,
   marketsData,
-  isChartLoading = false,
-  tradesloading,
   chartHeaderData,
 
 }) => {

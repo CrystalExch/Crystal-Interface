@@ -6,7 +6,7 @@ import OrderBook from '../Orderbook/Orderbook';
 import './ChartOrderbookPanel.css';
 
 interface ChartOrderbookPanelProps {
-  onMarketSelect: (market: string) => void;
+  onMarketSelect: (market: { quoteAddress: any; baseAddress: any; }) => void;
   tokendict: Record<string, any>;
   universalTrades: any[];
   userWalletAddress?: string | null;
@@ -65,7 +65,6 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   tradesloading,
   orders = [],
   marketsData,
-  chartOrderData,
   updateChartData
 }) => {
   const [isDragging, setIsDragging] = useState(false);

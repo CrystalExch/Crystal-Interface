@@ -70,7 +70,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
 
-  // Check if we're on a trading page
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
   const shouldShowFullHeader = isTradeRoute && !simpleView;
 
