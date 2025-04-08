@@ -7,3 +7,18 @@
   flex-shrink: 1;
   min-width: 0;
 }
+
+
+@media (max-width: 800px) {
+  .chart-header {
+    overflow: none;
+    max-width: calc(100vw - 55px);
+  }
+}
+
+@media (max-width: 600px) {
+  .chart-header {
+    overflow: none;
+    max-width: calc(100vw - 10px);
+  }
+}

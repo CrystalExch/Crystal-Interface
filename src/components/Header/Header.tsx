@@ -113,36 +113,36 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="app-header">
+        <div className="mobile-left-header"> 
+        <button
+          className={`hamburger ${isMenuOpen ? 'open' : ''}`}
+          onClick={toggleMenu}
+          type="button"
+        >
+          <img src={Hamburger} className="hamburger-image" />
+        </button>
+        <img src={backgroundlesslogo} className="extitle-logo" alt="Logo" />
+        </div> 
         <div className="left-header">
-          <button
-            className={`hamburger ${isMenuOpen ? 'open' : ''}`}
-            onClick={toggleMenu}
-            type="button"
-          >
-            <img src={Hamburger} className="hamburger-image" />
-          </button>
 
-          <div className="extitle">
-            <span className="crystal-name">CRYSTAL</span>
-          </div>
           <ChartHeader
-  in_icon={inPic}
-  out_icon={outPic}
-  price={chartHeaderData?.price || 'n/a'}
-  priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
-  priceChangePercent={chartHeaderData?.change || 'n/a'}
-  activeMarket={activeMarket}
-  high24h={chartHeaderData?.high24h || 'n/a'}
-  low24h={chartHeaderData?.low24h || 'n/a'}
-  volume={chartHeaderData?.volume || 'n/a'}
-  orderdata={orderdata || {}}
-  tokendict={tokendict}
-  onMarketSelect={onMarketSelect}
-  setpopup={setpopup}
-  marketsData={marketsData}
-  isChartLoading={chartHeaderData.isChartLoading} 
-  simpleView={simpleView}
-/>
+            in_icon={inPic}
+            out_icon={outPic}
+            price={chartHeaderData?.price || 'n/a'}
+            priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
+            priceChangePercent={chartHeaderData?.change || 'n/a'}
+            activeMarket={activeMarket}
+            high24h={chartHeaderData?.high24h || 'n/a'}
+            low24h={chartHeaderData?.low24h || 'n/a'}
+            volume={chartHeaderData?.volume || 'n/a'}
+            orderdata={orderdata || {}}
+            tokendict={tokendict}
+            onMarketSelect={onMarketSelect}
+            setpopup={setpopup}
+            marketsData={marketsData}
+            isChartLoading={chartHeaderData.isChartLoading}
+            simpleView={simpleView}
+          />
         </div>
 
         <div className="chart-header-container">

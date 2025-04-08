@@ -14,6 +14,14 @@
   z-index: 4;
   transition: left 0.3s ease;
 }
+@media (max-width: 600px) {
+  .app-header {
+    left: 5px;
+  }
+
+}
+
+
 
 body.sidebar-expanded .app-header {
   left: 200px;
@@ -288,10 +296,23 @@ body.sidebar-expanded .app-header {
   display: flex;
 }
 
-@media(max-width:500px){
+.extitle-logo{
+  width: 32px;
+  height: 32px;
+}
+
+.mobile-left-header{
+  display: none;
+}
+
+@media(max-width:600px){
   .hamburger {
     display: flex;
     order: -1;
+  }
+  .mobile-left-header{
+    display: flex;
+    margin-left: 0px;
   }
 }
 
@@ -308,15 +329,10 @@ body.sidebar-expanded .app-header {
   }
 }
 
-@media (max-width: 550px) {
-  .crystal-name {
-    display: none;
-  }
-}
 
 
 
-@media(max-width: 700px){
+@media(max-width: 800px){
   .left-header{
     position: absolute;
     margin-top: 100px;

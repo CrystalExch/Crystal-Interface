@@ -3786,7 +3786,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   }
 }
 
-@media(max-width: 700px){
+@media(max-width: 800px){
   .mobile-nav{
     margin-top: 49px;
   }
@@ -4812,9 +4812,14 @@ input[type="email"] {
   
 }
 
-@media (max-width: 768px) {
+
+
+@media (max-width: 600px) {
   .sidebar-adjusted {
-    margin-left: 50px;
-    width: calc(100% - 50px);
+    margin-left: 0px;
+    width: calc(100%);
+  }
+  .trade-container{
+    padding-left: 5px;
   }
 }

@@ -196,6 +196,12 @@
   max-height: calc(100vh - 155px);
 }
 
+@media(max-width: 800px) {
+  .markets-list {
+    max-height: calc(100vh - 170px);
+  }
+}
+
 .markets-list::after {
   background: linear-gradient(180deg, rgba(21, 21, 23, 0) 0, #0f0f125a 100%);
   border-radius: 8px;
@@ -397,6 +403,8 @@
   z-index: 10;
 }
 
+
+
 .markets-dropdown-content.visible {
   border-radius: 12px;
   opacity: 1;
@@ -578,7 +586,7 @@
   background-color: #0f0f12;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  max-height: 42px;
-  min-height: 42px;
+  max-height: 44px;
+  min-height: 44px;
   gap: 10px;
 }
