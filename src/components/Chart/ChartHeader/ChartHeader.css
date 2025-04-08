@@ -4,4 +4,6 @@
   height: 45px;
   justify-content: flex-start;
   user-select: none;
+  flex-shrink: 1;
+  min-width: 0;
 }

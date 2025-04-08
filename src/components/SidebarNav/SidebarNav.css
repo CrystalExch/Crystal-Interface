@@ -11,6 +11,7 @@
   z-index: 100;
   transition: width 0.3s ease;
   overflow: hidden;
+  background-color: rgb(6,6,6);
 }
 
 .sidebar-nav.expanded {
