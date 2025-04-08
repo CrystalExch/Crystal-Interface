@@ -2223,7 +2223,14 @@ function App() {
 
   // trades processing
   useEffect(() => {
-    const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
+    const modifiedActiveMarketKey =
+      activeMarketKey.endsWith('WMON')
+        ? activeMarketKey.slice(0, -4) + 'MON'
+        : activeMarketKey;
+
+    const temp: Trade[] | undefined = tradesByMarket[modifiedActiveMarketKey];
+
+    console.log(temp, activeMarketKey, tradesByMarket)
     let processed: [boolean, string, number, string, string][] = [];
 
     if (temp) {
@@ -2811,8 +2818,8 @@ function App() {
       isAddressInfoFetching = true;
       (async () => {
         try {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-
+          // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -2999,7 +3006,8 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
         let allLogs: any[] = [];
 
         const query = `
@@ -3089,6 +3097,108 @@ function App() {
               blockNumber
               contractAddress
             }
+            orders6: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x68dee54ba048ffb3844b5fdbd008c08ca75fe4fd" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders7: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x89f478e72f5acc11502356b188fd48a61c274d43" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders8: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0x2bc10e58afff05d0e185eaabc1b300399da71f20" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders9: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0xf26d6be3e29ceca7044e248bac3c3a09841dd072" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders10: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0xaff5c2e1814d979465cbac2913eab8e23f443a7f" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
+            orders11: orderFilleds(
+              first: 50,
+              orderBy: timeStamp,
+              orderDirection: desc,
+              where: { contractAddress: "0xcaf1e006ea025c36346dd7f35fd14d2a52288953" }
+            ) {
+              id
+              caller
+              amountIn
+              amountOut
+              buySell
+              price
+              timeStamp
+              transactionHash
+              blockNumber
+              contractAddress
+            }
             series_collection(
               where: {
                 id_gte: "series-1h-",
@@ -3115,12 +3225,20 @@ function App() {
           body: JSON.stringify({ query }),
         });
         const json = await response.json();
+
+        console.log(json);
         const orders = json.data.orders1
           .concat(
             json.data.orders2,
             json.data.orders3,
             json.data.orders4,
-            json.data.orders5
+            json.data.orders5,
+            json.data.orders6,
+            json.data.orders7,
+            json.data.orders8,
+            json.data.orders9,
+            json.data.orders10,
+            json.data.orders11,
           );
 
         allLogs = allLogs.concat(orders);
@@ -3137,7 +3255,6 @@ function App() {
                 event.transactionHash,
                 event.timeStamp,
               ]);
-            } else {
             }
           }
         }

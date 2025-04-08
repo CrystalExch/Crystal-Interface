@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
-import NavLinks from './NavLinks/NavLinks';
 import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
@@ -105,15 +104,12 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [activeMarket, tokendict]);
 
-  console.log(chartHeaderData)
-
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
     document.body.style.overflow = !isMenuOpen ? 'hidden' : 'auto';
   };
   
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
-  const shouldShowChart = isTradeRoute && !simpleView;
   const shouldShowSettings = isTradeRoute && !simpleView;
 
   return (
