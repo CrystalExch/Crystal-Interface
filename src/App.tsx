@@ -651,7 +651,6 @@ function App() {
 
   const activeMarket = getMarket(tokenIn, tokenOut);
   const activeMarketKey = activeMarket.baseAsset + activeMarket.quoteAsset;
-
   const multihop = activeMarket.path.length > 2;
 
   const navigate = useNavigate();
@@ -2230,7 +2229,6 @@ function App() {
 
     const temp: Trade[] | undefined = tradesByMarket[modifiedActiveMarketKey];
 
-    console.log(temp, activeMarketKey, tradesByMarket)
     let processed: [boolean, string, number, string, string][] = [];
 
     if (temp) {
@@ -3225,8 +3223,6 @@ function App() {
           body: JSON.stringify({ query }),
         });
         const json = await response.json();
-
-        console.log(json);
         const orders = json.data.orders1
           .concat(
             json.data.orders2,

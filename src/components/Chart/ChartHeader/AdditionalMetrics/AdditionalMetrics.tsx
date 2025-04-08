@@ -12,12 +12,12 @@ interface AdditionalMetricsProps {
     value: React.ReactNode;
     isLoading?: boolean;
   }>;
-  isLoading?: boolean; // Add global loading state
+  isLoading?: boolean;
 }
 
 const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ 
   metrics,
-  isLoading = false // Default to false if not provided
+  isLoading = false
 }) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -39,21 +39,25 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
 
   const updateArrowVisibility = () => {
     if (metricsRef.current) {
-      const { showLeftArrow, showRightArrow } = shouldShowArrows(
+      const { showLeftArrow: newShowLeftArrow, showRightArrow: newShowRightArrow } = shouldShowArrows(
         metricsRef.current,
       );
-      setShowLeftArrow(showLeftArrow);
-      setShowRightArrow(showRightArrow);
       
       const container = metricsRef.current;
       const isScrollable = container.scrollWidth > container.clientWidth;
       const isAtLeftEdge = container.scrollLeft <= 10;
-      const isAtRightEdge = container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-      
-      setShowLeftFade(isScrollable && !isAtLeftEdge);
-      setShowRightFade(isScrollable && !isAtRightEdge);
+      const isAtRightEdge =
+        container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
+      const newShowLeftFade = isScrollable && !isAtLeftEdge;
+      const newShowRightFade = isScrollable && !isAtRightEdge;
+  
+      setShowLeftArrow((prev) => (prev !== newShowLeftArrow ? newShowLeftArrow : prev));
+      setShowRightArrow((prev) => (prev !== newShowRightArrow ? newShowRightArrow : prev));
+      setShowLeftFade((prev) => (prev !== newShowLeftFade ? newShowLeftFade : prev));
+      setShowRightFade((prev) => (prev !== newShowRightFade ? newShowRightFade : prev));
     }
   };
+  
 
   useLayoutEffect(() => {
     const metricsContainer = metricsRef.current;
