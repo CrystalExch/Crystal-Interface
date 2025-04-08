@@ -6,8 +6,8 @@
   position: relative;
   background-color: #0f0f12;
   border-radius: 8px;
-  max-height: 46px;
-  min-height: 46px;
+  max-height: 47px;
+  min-height: 47px;
 }
 
 
@@ -37,6 +37,12 @@
   color: #aaa8b8;
   font-size: 0.7rem;
   padding: 3px 8px;
+}
+
+@media(max-width: 600px){
+  .ctrlktooltip{
+    margin-left: -12px;
+  }
 }
 
 .price-display-section {
@@ -577,8 +583,8 @@
   background-color: #0f0f12;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
-  max-height: 46px;
-  min-height: 46px;
+  max-height: 47px;
+  min-height: 47px;
   gap: 10px;
   padding-right: 15px;
 }

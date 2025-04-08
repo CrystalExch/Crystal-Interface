@@ -272,6 +272,22 @@ body.sidebar-expanded .app-header {
   margin-right: 6px;
 }
 
+
+@media(min-width: 1920px){
+  .right-header {
+    margin-right: 0px;
+    margin-left: 50px;
+  }
+}
+
+
+@media(max-width: 600px){
+  .right-header {
+    margin-right: 0px;
+    margin-left: 0px;
+  }
+}
+
 .arrow-icon {
   margin-top: 1px;
   opacity: 0.9;
