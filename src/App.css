@@ -1910,7 +1910,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   gap: 4px;
   min-height: 530px;
-  padding: 0 5px;
+  padding-right: 5px;
 }
 
 
@@ -4801,8 +4801,9 @@ input[type="email"] {
 }
 
 .sidebar-adjusted {
-  margin-left: 46px;
-  width: calc(100% - 46px);
+  margin-left: 50px;
+  width: calc(100% - 50px);
+  
 }
 
 @media (max-width: 768px) {

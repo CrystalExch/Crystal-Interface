@@ -4,12 +4,12 @@
   display: flex;
   height: 45px;
   justify-content: space-between;
-  left: 0;
-  padding: 0 5px;
+  left: 50px;
+  padding-right: 5px;
   position: fixed;
   right: 0;
   z-index: 10;
-  padding-left:52px;
+  transition: left 0.3s ease; 
 }
 
 .footer-content-left {
@@ -66,4 +66,8 @@
   .footer-content-right {
     display: none;
   }
+}
+
+body.sidebar-expanded .footer {
+  left: 200px; /* Match sidebar width in expanded state */
 }

@@ -6,13 +6,17 @@
   flex: none;
   height: 55px;
   justify-content: space-between;
-  left: 0;
-  padding: 0 15px 0 20px;
-  padding: 8px 16px;
+  left: 50px; 
+  padding: 0 15px 0 0px;
   position: absolute;
   right: 0;
   top: 0;
   z-index: 4;
+  transition: left 0.3s ease;
+}
+
+body.sidebar-expanded .app-header {
+  left: 200px;
 }
 
 .nav-links {

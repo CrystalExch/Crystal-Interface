@@ -24,7 +24,7 @@
 }
 
 .price-skeleton {
-  height: 16px;
+  height: 12px;
   width: 70px;
 }
 
@@ -32,7 +32,8 @@
 .change-skeleton {
   background: #2d2d3b;
   border-radius: 4px;
-  margin-top: 3px;
+  margin-top: 4px;
+  margin-bottom: 3px;
   overflow: hidden;
   position: relative;
 }
