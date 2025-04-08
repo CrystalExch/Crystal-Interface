@@ -242,45 +242,43 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <TokenIcons inIcon={in_icon} outIcon={out_icon} />
         )}
 
-        <div className="token-details">
-          {isLoading ? (
-            <>
-              <div className="symbol-skeleton" />
-              <div className="pair-skeleton" />
-            </>
-          ) : (
-            <>
-              <div className="trading-pair">
-                {shouldShowFullHeader ? (
-                  <>
-                    {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
-                  </>
-                ) : (
-                  <span className="search-market-text">Search for a market</span>
-                  
-                )}
-              </div>
-              {shouldShowFullHeader && (
-                <div className="token-name">
-                  <span className="full-token-name">
-                    {tokendict[activeMarket.baseAddress].name}
-                  </span>
-                  <div
-                    className="token-actions"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <CopyButton textToCopy={marketAddress} />
-                    <TokenInfoPopup
-                      symbol={activeMarket.baseAsset}
-                      setpopup={setpopup}
-                    />
-                  </div>
-                </div>
-              )}
-            </>
-          )}
+<div className="token-details">
+  {isLoading && shouldShowFullHeader ? (
+    <>
+      <div className="symbol-skeleton" />
+      <div className="pair-skeleton" />
+    </>
+  ) : (
+    <>
+      <div className="trading-pair">
+        {shouldShowFullHeader ? (
+          <>
+            {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
+          </>
+        ) : (
+          <span className="search-market-text">Search for a market</span>
+        )}
+      </div>
+      {shouldShowFullHeader && (
+        <div className="token-name">
+          <span className="full-token-name">
+            {tokendict[activeMarket.baseAddress].name}
+          </span>
+          <div
+            className="token-actions"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CopyButton textToCopy={marketAddress} />
+            <TokenInfoPopup
+              symbol={activeMarket.baseAsset}
+              setpopup={setpopup}
+            />
+          </div>
         </div>
-
+      )}
+    </>
+  )}
+</div>
         <div className="markets-dropdown" ref={dropdownRef}>
           <button className="markets-dropdown-trigger" title="Select Market">
             <div
