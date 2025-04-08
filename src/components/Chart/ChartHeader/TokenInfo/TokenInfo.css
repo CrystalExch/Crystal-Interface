@@ -6,8 +6,25 @@
   position: relative;
   background-color: #0f0f12;
   border-radius: 8px;
+  max-height: 40px;
+  min-height: 40px;
 }
 
+
+.chart-header.simplified .search-market-text {
+  color: #a8a9b9;
+  font-size: 0.8rem;
+  font-weight: 300;
+  margin-bottom: 5px;
+  
+}
+
+
+.second-asset{
+  color: #ffffff80;
+  font-weight: 400;
+  margin-left: 3px;
+}
 .token-info-search-icon{
   opacity: 0.3;
   margin-right: 5px;
@@ -44,6 +61,8 @@
 }
 
 .trading-pair {
+  display: flex;
+  align-items: center;
   color: #fff;
   font-size: 0.9rem;
   font-weight: 500;
@@ -170,6 +189,7 @@
 .markets-list {
   border-radius: 8px;
   display: flex;
+
   flex-direction: column;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   overflow-y: auto;
@@ -363,10 +383,10 @@
   background-color: #0f0f128f;
   border-radius: 12px;
   box-shadow: 0 4px 10px rgb(0 0 0 / 100%);
-  left: -10px;
+  left: 0;
   opacity: 0;
   position: absolute;
-  top: calc(100% - 4px);
+  top: calc(100% + 6px);
   transform: translateY(-20px);
   transition:
     opacity 0.2s ease,

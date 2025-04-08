@@ -29,6 +29,8 @@ interface TokenInfoProps {
   setpopup: (value: number) => void;
   marketsData: any[];
   isLoading?: boolean; 
+  isTradeRoute?: boolean;
+  simpleView?: boolean;
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -40,7 +42,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   tokendict,
   setpopup,
   marketsData,
-  isLoading, 
+  isLoading,
+  isTradeRoute = true,
+  simpleView = false,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -64,6 +68,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const tokenAddress =
     activeMarket?.baseAddress?.toLowerCase() ||
     '0x0000000000000000000000000000000000000000';
+  
+  const shouldShowFullHeader = isTradeRoute && !simpleView;
   
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -189,255 +195,265 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   return (
     <div className="token-info-container">
-    <div
-      className="symbol-info"
-      onClick={handleSymbolInfoClick}
-      role="button"
-      tabIndex={0}
-    >
+      <div
+        className="symbol-info"
+        onClick={handleSymbolInfoClick}
+        role="button"
+        tabIndex={0}
+      >
+        <Search className="token-info-search-icon" size={18} />
 
-<Search className="token-info-search-icon" size={18} />
-
-      <TokenIcons inIcon={in_icon} outIcon={out_icon} />
-
-      <div className="token-details">
-        {isLoading ? (
-          <>
-            <div className="symbol-skeleton" />
-            <div className="pair-skeleton" />
-          </>
-        ) : (
-          <>
-            <div className="trading-pair">
-              {activeMarket.baseAsset}/{activeMarket.quoteAsset}
-            </div>
-            <div className="token-name">
-              <span className="full-token-name">
-                {tokendict[activeMarket.baseAddress].name}
-              </span>
-              <div
-                className="token-actions"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <CopyButton textToCopy={marketAddress} />
-                <TokenInfoPopup
-                  symbol={activeMarket.baseAsset}
-                  setpopup={setpopup}
-                />
-              </div>
-            </div>
-          </>
+        {shouldShowFullHeader && (
+          <TokenIcons inIcon={in_icon} outIcon={out_icon} />
         )}
-      </div>
 
-      <div className="markets-dropdown" ref={dropdownRef}>
-        <button className="markets-dropdown-trigger" title="Select Market">
-          <div
-            className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
-          >
-        
-          </div>
-        </button>
+        <div className="token-details">
+          {isLoading ? (
+            <>
+              <div className="symbol-skeleton" />
+              <div className="pair-skeleton" />
+            </>
+          ) : (
+            <>
+              <div className="trading-pair">
+                {shouldShowFullHeader ? (
+                  <>
+                    {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
+                  </>
+                ) : (
+                  <span className="search-market-text">Search for a market</span>
+                  
+                )}
+              </div>
+              {shouldShowFullHeader && (
+                <div className="token-name">
+                  <span className="full-token-name">
+                    {tokendict[activeMarket.baseAddress].name}
+                  </span>
+                  <div
+                    className="token-actions"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <CopyButton textToCopy={marketAddress} />
+                    <TokenInfoPopup
+                      symbol={activeMarket.baseAsset}
+                      setpopup={setpopup}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
 
-        {isDropdownOpen && (
-          <div
-            className={`markets-dropdown-content ${isDropdownVisible ? 'visible' : ''}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="markets-dropdown-header">
-              <div className="search-container">
-                <div className="search-wrapper">
-                  <Search className="search-icon" size={12} />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={t('searchMarkets')}
-                    className="search-input"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    tabIndex={isDropdownVisible ? 0 : -1}
-                    autoComplete="off"
-                  />
-                  {searchQuery && (
-                    <button
-                      className="cancel-search"
-                      onClick={() => setSearchQuery('')}
-                      title="Clear search"
-                    >
-                      {t('clear')}
-                    </button>
-                  )}
+        <div className="markets-dropdown" ref={dropdownRef}>
+          <button className="markets-dropdown-trigger" title="Select Market">
+            <div
+              className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
+            >
+          
+            </div>
+          </button>
+
+          {isDropdownOpen && (
+            <div
+              className={`markets-dropdown-content ${isDropdownVisible ? 'visible' : ''}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="markets-dropdown-header">
+                <div className="search-container">
+                  <div className="search-wrapper">
+                    <Search className="search-icon" size={12} />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder={t('searchMarkets')}
+                      className="search-input"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      tabIndex={isDropdownVisible ? 0 : -1}
+                      autoComplete="off"
+                    />
+                    {searchQuery && (
+                      <button
+                        className="cancel-search"
+                        onClick={() => setSearchQuery('')}
+                        title="Clear search"
+                      >
+                        {t('clear')}
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="markets-list-header">
-              <div className="favorites-header" />
-              <div onClick={() => handleSort('volume')}>
-                {t('market')} / {t('volume')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'volume' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('volume');
-                  }}
-                />
+              <div className="markets-list-header">
+                <div className="favorites-header" />
+                <div onClick={() => handleSort('volume')}>
+                  {t('market')} / {t('volume')}
+                  <SortArrow
+                    sortDirection={
+                      sortField === 'volume' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSort('volume');
+                    }}
+                  />
+                </div>
+                <div
+                  className="markets-dropdown-chart-container"
+                  onClick={() => handleSort('change')}
+                >
+                  {t('last')} {t('day')}
+                  <SortArrow
+                    sortDirection={
+                      sortField === 'change' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSort('change');
+                    }}
+                  />
+                </div>
+                <div
+                  className="markets-dropdown-price-container"
+                  onClick={() => handleSort('price')}
+                >
+                  {t('price')}
+                  <SortArrow
+                    sortDirection={
+                      sortField === 'price' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
+                    }
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleSort('price');
+                    }}
+                  />
+                </div>
               </div>
-              <div
-                className="markets-dropdown-chart-container"
-                onClick={() => handleSort('change')}
-              >
-                {t('last')} {t('day')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'change' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('change');
-                  }}
-                />
-              </div>
-              <div
-                className="markets-dropdown-price-container"
-                onClick={() => handleSort('price')}
-              >
-                {t('price')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'price' ? sortDirection === 'asc' ? 'desc' : 'asc' : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('price');
-                  }}
-                />
-              </div>
-            </div>
-            <div className="markets-list">
-              {sortedMarkets.length > 0 ? (
-                sortedMarkets.map((market) => (
-                  <div
-                    key={market.pair}
-                    className="market-item-container"
-                  >
+              <div className="markets-list">
+                {sortedMarkets.length > 0 ? (
+                  sortedMarkets.map((market) => (
                     <div
-                      className="market-item"
-                      onClick={() => {
-                        onMarketSelect(market);
-                        setSearchQuery('');
-                        setIsDropdownVisible(false);
-                        setTimeout(() => {
-                          setIsDropdownOpen(false);
-                        }, 200);
-                      }}
+                      key={market.pair}
+                      className="market-item-container"
                     >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleFavorite(market.baseAddress.toLowerCase());
+                      <div
+                        className="market-item"
+                        onClick={() => {
+                          onMarketSelect(market);
+                          setSearchQuery('');
+                          setIsDropdownVisible(false);
+                          setTimeout(() => {
+                            setIsDropdownOpen(false);
+                          }, 200);
                         }}
-                        className={`dropdown-market-favorite-button 
-                          ${favorites.includes(market.baseAddress?.toLowerCase()) ? 'active' : ''}`}
                       >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill={
-                            favorites.includes(market.baseAddress?.toLowerCase())
-                              ? 'currentColor'
-                              : 'none'
-                          }
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleFavorite(market.baseAddress.toLowerCase());
+                          }}
+                          className={`dropdown-market-favorite-button 
+                            ${favorites.includes(market.baseAddress?.toLowerCase()) ? 'active' : ''}`}
                         >
-                          <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                        </svg>
-                      </button>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill={
+                              favorites.includes(market.baseAddress?.toLowerCase())
+                                ? 'currentColor'
+                                : 'none'
+                            }
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                          </svg>
+                        </button>
 
-                      <div className="market-pair-section">
-                        <img src={market.image} className="market-icon" />
-                        <div className="market-info">
-                          <span className="market-pair">{market.pair}</span>
-                          <span className="market-volume">
-                            ${formatCommas(market.volume)}
-                          </span>
+                        <div className="market-pair-section">
+                          <img src={market.image} className="market-icon" />
+                          <div className="market-info">
+                            <span className="market-pair">{market.pair}</span>
+                            <span className="market-volume">
+                              ${formatCommas(market.volume)}
+                            </span>
+                          </div>
                         </div>
-                      </div>
-                      <div className="minichart-section">
-                        <MiniChart
-                          market={market}
-                          series={market.series}
-                          priceChange={market.priceChange}
-                          isVisible={true}
-                        />
-                      </div>
-                      <div className="market-price-section">
-                        <div className="market-price">
-                          {formatSubscript(market.currentPrice)}
+                        <div className="minichart-section">
+                          <MiniChart
+                            market={market}
+                            series={market.series}
+                            priceChange={market.priceChange}
+                            isVisible={true}
+                          />
                         </div>
-                        <div
-                          className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
-                        >
-                          {market.priceChange}
+                        <div className="market-price-section">
+                          <div className="market-price">
+                            {formatSubscript(market.currentPrice)}
+                          </div>
+                          <div
+                            className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
+                          >
+                            {market.priceChange}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                ))
-              ) : (
-                <div className="no-markets-message">{t('noMarkets')}</div>
-              )}
+                  ))
+                ) : (
+                  <div className="no-markets-message">{t('noMarkets')}</div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-      <div className="ctrlktooltip">
-        Ctrl + K
-      </div>
-
-      
-    </div>
-    
-    <div className="markets-favorite-section">
-        <button
-          className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(tokenAddress);
-          }}
-          title={
-            favorites.includes(tokenAddress)
-              ? 'Remove from favorites'
-              : 'Add to favorites'
-          }
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-        </button>
-      </div>
-    {activeMarket && (
-        <div className="price-display-section">
-          <PriceDisplay 
-            price={price} 
-            activeMarket={activeMarket} 
-            isLoading={isLoading} 
-          />
+          )}
         </div>
+        <div className="ctrlktooltip">
+          Ctrl + K
+        </div>
+      </div>
+      
+      {shouldShowFullHeader && (
+        <>
+          <div className="markets-favorite-section">
+            <button
+              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(tokenAddress);
+              }}
+              title={
+                favorites.includes(tokenAddress)
+                  ? 'Remove from favorites'
+                  : 'Add to favorites'
+              }
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
+          </div>
+          <div className="price-display-section">
+            <PriceDisplay 
+              price={price} 
+              activeMarket={activeMarket} 
+              isLoading={isLoading} 
+            />
+          </div>
+        </>
       )}
     </div>
   );

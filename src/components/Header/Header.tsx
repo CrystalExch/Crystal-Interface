@@ -133,23 +133,23 @@ const Header: React.FC<HeaderProps> = ({
             <span className="crystal-name">CRYSTAL</span>
           </div>
           <ChartHeader
-              in_icon={inPic}
-              out_icon={outPic}
-              price={chartHeaderData?.price || 'n/a'}
-              priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
-              priceChangePercent={chartHeaderData?.change || 'n/a'}
-              activeMarket={activeMarket}
-              high24h={chartHeaderData?.high24h || 'n/a'}
-              low24h={chartHeaderData?.low24h || 'n/a'}
-              volume={chartHeaderData?.volume || 'n/a'}
-              orderdata={orderdata || {}}
-              tokendict={tokendict}
-              onMarketSelect={onMarketSelect}
-              setpopup={setpopup}
-              marketsData={marketsData}
-              isChartLoading={isChartLoading || tradesloading || false}
-            />
-
+  in_icon={inPic}
+  out_icon={outPic}
+  price={chartHeaderData?.price || 'n/a'}
+  priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
+  priceChangePercent={chartHeaderData?.change || 'n/a'}
+  activeMarket={activeMarket}
+  high24h={chartHeaderData?.high24h || 'n/a'}
+  low24h={chartHeaderData?.low24h || 'n/a'}
+  volume={chartHeaderData?.volume || 'n/a'}
+  orderdata={orderdata || {}}
+  tokendict={tokendict}
+  onMarketSelect={onMarketSelect}
+  setpopup={setpopup}
+  marketsData={marketsData}
+  isChartLoading={isChartLoading || tradesloading || false}
+  simpleView={simpleView}
+/>
           {/* <nav className="nav-links">
             <NavLinks
               isSideMenu={false}

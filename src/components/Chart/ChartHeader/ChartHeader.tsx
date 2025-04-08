@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import AdditionalMetrics from './AdditionalMetrics/AdditionalMetrics';
 import TokenInfo from './TokenInfo/TokenInfo.tsx';
@@ -16,7 +17,6 @@ interface ChartHeaderProps {
   activeMarket: {
     id?: string;
     marketSymbol?: string;
-    priceFactor?: number;
     address?: string;
     baseAddress?: string;
     [key: string]: any;
@@ -30,6 +30,7 @@ interface ChartHeaderProps {
   setpopup: (value: number) => void;
   marketsData: any;
   isChartLoading: boolean;
+  simpleView: boolean;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -48,6 +49,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   setpopup,
   marketsData,
   isChartLoading,
+  simpleView,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -66,6 +68,11 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
+  const location = useLocation();
+
+  // Check if we're on a trading page
+  const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
+  const shouldShowFullHeader = isTradeRoute && !simpleView;
 
   useEffect(() => {
     if (activeMarket !== prevMarketId) {
@@ -160,18 +167,11 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
     }
   }, [orderdata]);
 
-  const priceChangeClass =
-    parseFloat(priceChangePercent) > 0
-      ? 'positive'
-      : parseFloat(priceChangePercent) < 0
-        ? 'negative'
-        : 'neutral';
-
   const metrics = [
     {
       label: t('dayChange'),
       value: (
-        <span className={`price-change ${priceChangeClass}`}>
+        <span className={`price-change ${parseFloat(priceChangePercent) > 0 ? 'positive' : parseFloat(priceChangePercent) < 0 ? 'negative' : 'neutral'}`}>
           {priceChangeAmount !== 'n/a'
             ? `${priceChangeAmount} / ${priceChangePercent}%`
             : 'n/a'}
@@ -206,7 +206,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   ];
 
   return (
-    <div className="chart-header">
+    <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
       <TokenInfo
         in_icon={in_icon}
         out_icon={out_icon}
@@ -217,11 +217,15 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         setpopup={setpopup}
         marketsData={marketsData}
         isLoading={isChartLoading}
+        isTradeRoute={isTradeRoute}
+        simpleView={simpleView}
       />
-      <AdditionalMetrics 
-        metrics={metrics} 
-        isLoading={isChartLoading}
-      />
+      {shouldShowFullHeader && (
+        <AdditionalMetrics 
+          metrics={metrics} 
+          isLoading={isChartLoading}
+        />
+      )}
     </div>
   );
 };
