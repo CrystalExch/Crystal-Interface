@@ -345,7 +345,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     });
   }, [trades]);
 
-  // Pass updated data to the parent component
   useEffect(() => {
     if (updateChartData) {
       updateChartData(price, priceChange, change, high24h, low24h, volume, isChartLoading);

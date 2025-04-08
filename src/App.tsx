@@ -1049,8 +1049,7 @@ function App() {
     isChartLoading: false
   });
 
-  // Add this function in the App component
-  const updateChartHeaderData = (
+  const updateChartHeaderData = useCallback((
     price: string,
     priceChange: string,
     change: string,
@@ -1059,17 +1058,30 @@ function App() {
     volume: string,
     isChartLoading: boolean
   ) => {
-    setChartHeaderData({
-      price,
-      priceChange,
-      change,
-      high24h,
-      low24h,
-      volume,
-      isChartLoading
+    setChartHeaderData(prevData => {
+      if (
+        prevData.price === price &&
+        prevData.priceChange === priceChange &&
+        prevData.change === change &&
+        prevData.high24h === high24h &&
+        prevData.low24h === low24h &&
+        prevData.volume === volume &&
+        prevData.isChartLoading === isChartLoading
+      ) {
+        return prevData; 
+      }
+      
+      return {
+        price,
+        priceChange,
+        change,
+        high24h,
+        low24h,
+        volume,
+        isChartLoading
+      };
     });
-  };
-
+  }, []);
   // live event stream
   useEffect(() => {
     let blockNumber = '';

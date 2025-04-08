@@ -53,21 +53,17 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      // Check if user is not typing in an input or textarea
       const isTypingInField = document.activeElement && 
         ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
       
-      // Check for the "/" shortcut to open search popup
       if (e.key === '/' && !isTypingInField) {
         e.preventDefault();
         setpopup(8);
       }
       
-      // Check for the "Ctrl+K" shortcut to open token dropdown
       if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isTypingInField) {
         e.preventDefault();
         
-        // Toggle the token dropdown
         if (!isDropdownOpen) {
           setSearchQuery('');
           setIsDropdownOpen(true);
@@ -88,7 +84,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen]); // Add isDropdownOpen to dependency array
+  }, [isDropdownOpen]); 
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -458,6 +454,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       
       {shouldShowFullHeader && (
         <>
+        <div className="token-info-right-section">
           <div className="markets-favorite-section">
             <button
               className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
@@ -491,6 +488,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               activeMarket={activeMarket} 
               isLoading={isLoading} 
             />
+          </div>
           </div>
         </>
       )}

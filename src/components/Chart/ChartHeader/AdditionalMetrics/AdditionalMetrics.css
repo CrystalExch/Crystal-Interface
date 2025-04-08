@@ -53,6 +53,13 @@
   scroll-behavior: smooth;
   scrollbar-width: none;
   position: relative;
+  background-color: #0f0f12;
+  border-radius: 8px;
+  max-height: 42px;
+  min-height: 42px;
+  padding: 0 10px;
+  padding-left: 25px;
+  margin-left: -5px;
 }
 
 .additional-metrics::-webkit-scrollbar {

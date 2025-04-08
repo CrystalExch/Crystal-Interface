@@ -108,7 +108,7 @@ const Header: React.FC<HeaderProps> = ({
     setIsMenuOpen(!isMenuOpen);
     document.body.style.overflow = !isMenuOpen ? 'hidden' : 'auto';
   };
-  
+
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
   const shouldShowSettings = isTradeRoute && !simpleView;
 
@@ -121,11 +121,10 @@ const Header: React.FC<HeaderProps> = ({
             onClick={toggleMenu}
             type="button"
           >
-            <img src={Hamburger} className="hamburger-image"/>
+            <img src={Hamburger} className="hamburger-image" />
           </button>
 
           <div className="extitle">
-            {/* <img src={backgroundlesslogo} className="crystal-logo"/> */}
             <span className="crystal-name">CRYSTAL</span>
           </div>
           <ChartHeader
@@ -143,34 +142,17 @@ const Header: React.FC<HeaderProps> = ({
   onMarketSelect={onMarketSelect}
   setpopup={setpopup}
   marketsData={marketsData}
-  isChartLoading={isChartLoading || tradesloading || false}
+  isChartLoading={chartHeaderData.isChartLoading} 
   simpleView={simpleView}
 />
-          {/* <nav className="nav-links">
-            <NavLinks
-              isSideMenu={false}
-              setShowTrade={setShowTrade}
-              toggleMenu={toggleMenu}
-              userWalletAddress={account.connected ? account.address : undefined}
-              simpleView={simpleView}
-              setSimpleView={setSimpleView}
-            />
-          </nav> */}
         </div>
 
-          <div className="chart-header-container">
-            
-          </div>
-        
+        <div className="chart-header-container">
+
+        </div>
+
 
         <div className="right-header">
-          {/* <button
-            type="button"
-            className="search-button"
-            onClick={() => setpopup(8)}
-          >
-            <span className="search-backslash">/</span> {t('search')}
-          </button> */}
           <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
             setNetworkSelectorOpen={setNetworkSelectorOpen}
@@ -187,13 +169,13 @@ const Header: React.FC<HeaderProps> = ({
             className="history-button"
             onClick={() => setIsTransactionHistoryOpen(true)}
           >
-            <img src={historyIcon} className="history-icon"/>
+            <img src={historyIcon} className="history-icon" />
             {pendingNotifs > 0 && (
               <span className="tx-notification-badge">{pendingNotifs}</span>
             )}
             {pendingNotifs > 99 && (
-             <span className="tx-notification-badge">99+</span>
-             )}
+              <span className="tx-notification-badge">99+</span>
+            )}
           </button>
           <div>
             <button
@@ -243,7 +225,7 @@ const Header: React.FC<HeaderProps> = ({
                 'Connect Wallet'
               ) : (
                 <span className="transparent-button-container">
-                  <img src={walleticon} className="wallet-icon"/>
+                  <img src={walleticon} className="wallet-icon" />
                   {`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}
                 </span>
               )}
@@ -251,7 +233,7 @@ const Header: React.FC<HeaderProps> = ({
           </button>
         </div>
       </header>
-      
+
       {isMenuOpen && (
         <SideMenuOverlay
           isMenuOpen={isMenuOpen}

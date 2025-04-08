@@ -32,8 +32,7 @@
 .token-info-container{
   display: flex;
   align-items: center;
-  gap:12px;
-  margin-right: 8px;
+  gap:6px;
 }
 
 .symbol-info:hover {
@@ -144,6 +143,7 @@
   display: flex;
   justify-content: center;
   padding: 4px;
+  padding-left: 12px;
   transition: color.2s ease;
   width: 30px;
 }
@@ -569,4 +569,16 @@
   .token-details {
     display: none;
   }
+}
+
+
+.token-info-right-section{
+  display: flex;
+  align-items: center;
+  background-color: #0f0f12;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  max-height: 42px;
+  min-height: 42px;
+  gap: 10px;
 }
