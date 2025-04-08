@@ -870,7 +870,11 @@ function App() {
   };
 
   // on market select
-  const onMarketSelect = (market: any) => {
+  const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
+    if (location.pathname !== '/limit') {
+      navigate('/limit');
+    }
+    
     setTokenIn(market.quoteAddress);
     setTokenOut(market.baseAddress);
     setswitched(false);
