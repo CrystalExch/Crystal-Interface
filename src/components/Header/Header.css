@@ -288,11 +288,14 @@ body.sidebar-expanded .app-header {
   display: flex;
 }
 
-@media screen and (width <=1020px) {
+@media(max-width:500px){
   .hamburger {
     display: flex;
     order: -1;
   }
+}
+
+@media screen and (width <=1020px) {
 
   .nav-links {
     display: none;
@@ -311,3 +314,11 @@ body.sidebar-expanded .app-header {
   }
 }
 
+
+
+@media(max-width: 700px){
+  .left-header{
+    position: absolute;
+    margin-top: 100px;
+  }
+}

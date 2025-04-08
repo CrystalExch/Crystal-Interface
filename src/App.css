@@ -1869,7 +1869,6 @@ body:has(.right-column.show) .blur-background-popups {
   box-sizing: border-box;
   display: flex;
   height: 30px;
-  margin: 0 10px 4px;
   position: relative;
 }
 
@@ -3616,7 +3615,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     min-height: 550px;
     height: calc(100vh - 100px);
     height: calc(100vh - 100px);
-    padding: 0 10px;
+    padding-right: 5px;
     top: 0;
     width: 100%;
   }
@@ -3716,7 +3715,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     width: 100%;
   }
   .mobile-nav {
-    width: calc(100% - 20px);
+    width: calc(100% - 5px);
+    margin-bottom: 5px;
   }
   .right-column {
     background: #16171c;
@@ -3783,6 +3783,12 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     flex-direction: column;
     right: 15px;
     top: 60px;
+  }
+}
+
+@media(max-width: 700px){
+  .mobile-nav{
+    margin-top: 49px;
   }
 }
 

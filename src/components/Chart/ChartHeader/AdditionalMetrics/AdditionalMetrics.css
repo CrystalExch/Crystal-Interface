@@ -62,9 +62,21 @@
   max-height: 42px;
   min-height: 42px;
   padding: 0 10px;
-  padding-left: 25px;
+  padding-left: 25px
 }
 
+@media(max-width: 700px) {
+  .additional-metrics {
+    max-width: calc(100vw - 430px);
+  }
+}
+
+
+@media(max-width: 560px) {
+  .additional-metrics {
+    max-width: calc(100vw - 323px);
+  }
+}
 .additional-metrics::-webkit-scrollbar {
   display: none;
 }
