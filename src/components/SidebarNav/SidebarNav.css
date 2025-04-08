@@ -20,6 +20,11 @@
     opacity: 0.9;
     transition: opacity 0.2s ease;
   }
+
+  .sidebar-icon{
+    width: 20px;
+    opacity: 0.5;
+  }
   
   .sidebar-logo:hover {
     opacity: 1;
@@ -37,12 +42,14 @@
     gap: 8px;
     width: 100%;
   }
-  
   .view-mode-button {
-    position: relative; /* For nav-text positioning */
+    position: relative;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: flex-start; 
+    align-self: flex-start;     
+    padding-left: 8px;
+    margin-left: 7px;
     width: 35px;
     height: 35px;
     border-radius: 8px;
@@ -50,7 +57,27 @@
     background-color: transparent;
     color: #8c8c9a;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: width 0.2s ease; 
+    overflow: hidden;  
+    margin-bottom: 5px;         
+  }
+
+  .page-mode-button {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start; /* Align internal content to the left */
+    align-self: flex-start;     
+    margin-left: 7px;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    border: none;
+    background-color: transparent;
+    color: #8c8c9a;
+    cursor: pointer;
+    transition: width 0.2s ease; 
+    overflow: hidden;           
   }
   
   .sidebar-nav .active {
@@ -214,3 +241,21 @@
     background-color: rgba(255, 255, 255, 0.05);
   }
   
+  .view-mode-text{
+    display: none;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    position: relative; 
+  }
+
+  .view-mode-button:hover .view-mode-text,
+  .page-mode-button:hover .view-mode-text {
+    display: block;
+  }
+
+  .view-mode-button:hover,
+  .page-mode-button:hover {
+    width: 120px;
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
