@@ -69,5 +69,5 @@
 }
 
 body.sidebar-expanded .footer {
-  left: 200px; /* Match sidebar width in expanded state */
+  left: 200px;
 }

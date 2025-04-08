@@ -36,6 +36,8 @@ body,
 html {
   display: flex;
   scrollbar-width: none;
+  transition: all 0.3s ease;
+
 }
 
 .app-container {
@@ -3788,7 +3790,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 @media(max-width: 800px){
   .mobile-nav{
-    margin-top: 49px;
+    margin-top: 50px;
   }
 }
 

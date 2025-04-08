@@ -18,10 +18,7 @@
   .app-header {
     left: 5px;
   }
-
 }
-
-
 
 body.sidebar-expanded .app-header {
   left: 200px;
@@ -271,7 +268,8 @@ body.sidebar-expanded .app-header {
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
-  margin-left: 8px;
+  margin-left: 24px;
+  margin-right: 6px;
 }
 
 .arrow-icon {
