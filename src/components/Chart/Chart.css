@@ -3,8 +3,7 @@
   border-radius: 8px;
   display: flex;
   flex-direction: column;
-  height: calc(100% - 64px);
-  margin-top: 25px;
+  height: 100%;
   overflow: hidden;
   width: 100%;
   z-index: 1;

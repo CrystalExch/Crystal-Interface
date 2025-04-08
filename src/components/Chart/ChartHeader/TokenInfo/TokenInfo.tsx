@@ -188,39 +188,15 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   });
 
   return (
+    <div className="token-info-container">
     <div
       className="symbol-info"
       onClick={handleSymbolInfoClick}
       role="button"
       tabIndex={0}
     >
-      <div className="markets-favorite-section">
-        <button
-          className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(tokenAddress);
-          }}
-          title={
-            favorites.includes(tokenAddress)
-              ? 'Remove from favorites'
-              : 'Add to favorites'
-          }
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-        </button>
-      </div>
+
+<Search className="token-info-search-icon" size={18} />
 
       <TokenIcons inIcon={in_icon} outIcon={out_icon} />
 
@@ -259,18 +235,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div
             className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
           >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M6 9l6 6 6-6" />
-            </svg>
+        
           </div>
         </button>
 
@@ -431,10 +396,41 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           </div>
         )}
       </div>
+      <div className="ctrlktooltip">
+        Ctrl + K
+      </div>
 
-      <div className="token-name-vertical-divider"></div>
-
-      {activeMarket && (
+      
+    </div>
+    
+    <div className="markets-favorite-section">
+        <button
+          className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(tokenAddress);
+          }}
+          title={
+            favorites.includes(tokenAddress)
+              ? 'Remove from favorites'
+              : 'Add to favorites'
+          }
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+        </button>
+      </div>
+    {activeMarket && (
         <div className="price-display-section">
           <PriceDisplay 
             price={price} 

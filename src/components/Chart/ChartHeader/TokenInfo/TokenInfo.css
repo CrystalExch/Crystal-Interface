@@ -1,13 +1,35 @@
 .symbol-info {
   align-items: center;
   display: flex;
-  gap: 12px;
-  padding: 8px 12px;
+  gap: 6px;
+  padding: 7px 12px;
   position: relative;
+  background-color: #0f0f12;
+  border-radius: 8px;
+}
+
+.token-info-search-icon{
+  opacity: 0.3;
+  margin-right: 5px;
+}
+.token-info-container{
+  display: flex;
+  align-items: center;
+  gap:12px;
+  margin-right: 8px;
 }
 
 .symbol-info:hover {
   cursor: pointer;
+}
+
+.ctrlktooltip{
+  letter-spacing: 0.5px;
+  background-color: #1b1b23;
+  border-radius: 8px;
+  color: #aaa8b8;
+  font-size: 0.7rem;
+  padding: 3px 8px;
 }
 
 .price-display-section {
@@ -23,7 +45,7 @@
 
 .trading-pair {
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 500;
   margin-bottom: -5px;
 }
@@ -36,7 +58,7 @@
 
 .full-token-name {
   color: #b8b7b7;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
 }
 
 .token-actions {
@@ -102,8 +124,6 @@
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin-left: -8px;
-  margin-right: -4px;
   padding: 4px;
   transition: color.2s ease;
   width: 30px;

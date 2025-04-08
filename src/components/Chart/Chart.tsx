@@ -3,7 +3,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import Overlay from '../loading/LoadingComponent';
 import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
 import ChartCanvas from './ChartCanvas/ChartCanvas';
-import ChartHeader from './ChartHeader/ChartHeader';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 
@@ -27,6 +26,8 @@ interface ChartComponentProps {
   setpopup: (value: number) => void;
   tradesloading: boolean;
   marketsData: any;
+  updateChartData?: (price: string, priceChange: string, change: string, high24h: string, low24h: string, volume: string, isChartLoading: boolean) => void;
+  chartHeaderData?: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -38,20 +39,20 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   setpopup,
   tradesloading,
   marketsData,
+  updateChartData,
+  chartHeaderData,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
   const [data, setData] = useState<[DataPoint[], string]>([[], '']);
-  const [inPic, setInPic] = useState('');
-  const [outPic, setOutPic] = useState('');
   const [price, setPrice] = useState('n/a');
   const [priceChange, setPriceChange] = useState('n/a');
   const [change, setChange] = useState('n/a');
   const [high24h, setHigh24h] = useState('n/a');
   const [low24h, setLow24h] = useState('n/a');
   const [volume, setVolume] = useState('n/a');
-  const [isChartLoading, setIsChartLoading] = useState(false)
+  const [isChartLoading, setIsChartLoading] = useState(false);
 
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -177,7 +178,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     
   }
 
-  const updateChartData = async (
+  const updateChartDataInternal = async (
     interval: string,
     tradesArr: any[],
     token: string
@@ -188,7 +189,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       }
       return token + interval;
     });
-    setIsChartLoading(true)
+    setIsChartLoading(true);
     try {
       const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address);
       if (subgraphData && subgraphData.length) {
@@ -268,14 +269,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         );
       }
     }
-    setIsChartLoading(false)
+    setIsChartLoading(false);
     if (!settings.useAdv) {
       setOverlayVisible(false);
     }
   };
 
   useEffect(() => {
-    updateChartData(selectedInterval, trades, activeMarket.baseAsset);
+    updateChartDataInternal(selectedInterval, trades, activeMarket.baseAsset);
   }, [selectedInterval, activeMarket.baseAsset]);
 
   useEffect(() => {
@@ -344,34 +345,15 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     });
   }, [trades]);
 
+  // Pass updated data to the parent component
   useEffect(() => {
-    if (tokendict[activeMarket.baseAddress]) {
-      setInPic(tokendict[activeMarket.baseAddress].image);
+    if (updateChartData) {
+      updateChartData(price, priceChange, change, high24h, low24h, volume, isChartLoading);
     }
-    if (tokendict[activeMarket.quoteAddress]) {
-      setOutPic(tokendict[activeMarket.quoteAddress].image);
-    }
-  }, [activeMarket.baseAsset]);
+  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading, updateChartData]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>
-      <ChartHeader
-        in_icon={inPic}
-        out_icon={outPic}
-        price={price}
-        priceChangeAmount={priceChange}
-        priceChangePercent={change}
-        activeMarket={activeMarket}
-        high24h={high24h}
-        low24h={low24h}
-        volume={volume}
-        orderdata={orderdata}
-        tokendict={tokendict}
-        onMarketSelect={onMarketSelect}
-        setpopup={setpopup}
-        marketsData={marketsData}
-        isChartLoading={isChartLoading}
-      />
       <div className="chartcontainer">
         {settings.useAdv ? (
           <AdvancedTradingChart

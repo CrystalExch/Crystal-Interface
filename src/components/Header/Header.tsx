@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
@@ -6,7 +6,7 @@ import NavLinks from './NavLinks/NavLinks';
 import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
-
+import ChartHeader from '../Chart/ChartHeader/ChartHeader';
 import Hamburger from '../../assets/header_menu.svg';
 import globeicon from '../../assets/globe.svg';
 import settingsicon from '../../assets/settings.svg';
@@ -42,6 +42,14 @@ interface HeaderProps {
   setSimpleView: (value: boolean) => void;
   tokendict: any;
   transactions?: any[];
+  activeMarket?: any;
+  orderdata?: any;
+  onMarketSelect?: any;
+  marketsData?: any;
+  isChartLoading?: boolean;
+  trades?: any[];
+  tradesloading?: boolean;
+  chartHeaderData?: any;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -60,6 +68,14 @@ const Header: React.FC<HeaderProps> = ({
   setSimpleView,
   tokendict,
   transactions,
+  activeMarket,
+  orderdata,
+  onMarketSelect,
+  marketsData,
+  isChartLoading = false,
+  tradesloading,
+  chartHeaderData,
+
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -75,6 +91,21 @@ const Header: React.FC<HeaderProps> = ({
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
+  const [inPic, setInPic] = useState('');
+  const [outPic, setOutPic] = useState('');
+
+  useEffect(() => {
+    if (activeMarket && tokendict) {
+      if (tokendict[activeMarket.baseAddress]) {
+        setInPic(tokendict[activeMarket.baseAddress].image);
+      }
+      if (tokendict[activeMarket.quoteAddress]) {
+        setOutPic(tokendict[activeMarket.quoteAddress].image);
+      }
+    }
+  }, [activeMarket, tokendict]);
+
+  console.log(chartHeaderData)
 
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
@@ -82,6 +113,7 @@ const Header: React.FC<HeaderProps> = ({
   };
   
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
+  const shouldShowChart = isTradeRoute && !simpleView;
   const shouldShowSettings = isTradeRoute && !simpleView;
 
   return (
@@ -100,6 +132,23 @@ const Header: React.FC<HeaderProps> = ({
             {/* <img src={backgroundlesslogo} className="crystal-logo"/> */}
             <span className="crystal-name">CRYSTAL</span>
           </div>
+          <ChartHeader
+              in_icon={inPic}
+              out_icon={outPic}
+              price={chartHeaderData?.price || 'n/a'}
+              priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
+              priceChangePercent={chartHeaderData?.change || 'n/a'}
+              activeMarket={activeMarket}
+              high24h={chartHeaderData?.high24h || 'n/a'}
+              low24h={chartHeaderData?.low24h || 'n/a'}
+              volume={chartHeaderData?.volume || 'n/a'}
+              orderdata={orderdata || {}}
+              tokendict={tokendict}
+              onMarketSelect={onMarketSelect}
+              setpopup={setpopup}
+              marketsData={marketsData}
+              isChartLoading={isChartLoading || tradesloading || false}
+            />
 
           {/* <nav className="nav-links">
             <NavLinks
@@ -113,14 +162,19 @@ const Header: React.FC<HeaderProps> = ({
           </nav> */}
         </div>
 
+          <div className="chart-header-container">
+            
+          </div>
+        
+
         <div className="right-header">
-          <button
+          {/* <button
             type="button"
             className="search-button"
             onClick={() => setpopup(8)}
           >
             <span className="search-backslash">/</span> {t('search')}
-          </button>
+          </button> */}
           <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
             setNetworkSelectorOpen={setNetworkSelectorOpen}

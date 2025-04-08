@@ -210,7 +210,7 @@ export const settings: any = {
           minSize: BigInt(100000000000000000),
           maxPrice: BigInt(100000),
           fee: BigInt(99990),
-          image: iconusdt,
+          image: iconshmon,
           website: 'https://shmonad.xyz/',
         },
         shMONWMON: {

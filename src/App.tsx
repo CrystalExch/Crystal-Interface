@@ -1036,7 +1036,37 @@ function App() {
     ],
     query: { refetchInterval: 10000 },
   });
-
+  const [chartHeaderData, setChartHeaderData] = useState({
+    price: 'n/a',
+    priceChange: 'n/a',
+    change: 'n/a',
+    high24h: 'n/a',
+    low24h: 'n/a',
+    volume: 'n/a',
+    isChartLoading: false
+  });
+  
+  // Add this function in the App component
+  const updateChartHeaderData = (
+    price: string,
+    priceChange: string,
+    change: string,
+    high24h: string,
+    low24h: string,
+    volume: string,
+    isChartLoading: boolean
+  ) => {
+    setChartHeaderData({
+      price,
+      priceChange,
+      change,
+      high24h,
+      low24h,
+      volume,
+      isChartLoading
+    });
+  };
+  
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -10647,28 +10677,43 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
         )}
       {
         <>
-          <Header
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
-            setorders={setorders}
-            settradehistory={settradehistory}
-            settradesByMarket={settradesByMarket}
-            setcanceledorders={setcanceledorders}
-            setpopup={setpopup}
-            setChain={handleSetChain}
-            account={{
-              connected: connected,
-              address: address,
-              chainId: userchain,
-            }}
-            activechain={activechain}
-            tokenIn={tokenIn}
-            setShowTrade={setShowTrade}
-            simpleView={simpleView}
-            setSimpleView={setSimpleView}
-            tokendict={tokendict}
-            transactions={transactions}
-          />
+        <Header
+  setTokenIn={setTokenIn}
+  setTokenOut={setTokenOut}
+  setorders={setorders}
+  settradehistory={settradehistory}
+  settradesByMarket={settradesByMarket}
+  setcanceledorders={setcanceledorders}
+  setpopup={setpopup}
+  setChain={handleSetChain}
+  account={{
+    connected: connected,
+    address: address,
+    chainId: userchain,
+  }}
+  activechain={activechain}
+  tokenIn={tokenIn}
+  setShowTrade={setShowTrade}
+  simpleView={simpleView}
+  setSimpleView={setSimpleView}
+  tokendict={tokendict}
+  transactions={transactions}
+  activeMarket={activeMarket}
+  orderdata={{
+    ...chartHeaderData,
+    liquidityBuyOrders,
+    liquiditySellOrders,
+    spreadData,
+    priceFactor,
+    symbolIn,
+    symbolOut,
+  }}
+  onMarketSelect={onMarketSelect}
+  marketsData={sortedMarkets}
+  trades={tradesByMarket[activeMarketKey]}
+  tradesloading={tradesloading}
+  chartHeaderData={chartHeaderData}
+/>
           <div className="headerfiller"></div>
         </>
       }
@@ -10824,29 +10869,26 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                           {windowWidth <= 1020 ? (
                             <div className="trade-mobile-view-container">
                               {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={
-                                    connected
-                                      ? address
-                                      : undefined
-                                  }
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                />
+ <ChartComponent
+ onMarketSelect={onMarketSelect}
+ tokendict={tokendict}
+ trades={tradesByMarket[activeMarketKey]}
+ universalTrades={tradesByMarket}
+ activeMarket={activeMarket}
+ orderdata={{
+   liquidityBuyOrders,
+   liquiditySellOrders,
+   spreadData,
+   priceFactor,
+   symbolIn,
+   symbolOut,
+ }}
+ userWalletAddress={connected ? address : undefined}
+ setpopup={setpopup}
+ tradesloading={tradesloading}
+ marketsData={sortedMarkets}
+ updateChartData={updateChartHeaderData}
+/>
                               )}
                               {(mobileView === 'orderbook' ||
                                 mobileView === 'trades') && (
@@ -10920,6 +10962,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               tradesloading={tradesloading}
                               orders={orders}
                               marketsData={sortedMarkets}
+                              updateChartData={updateChartHeaderData}
+
                             />
                           )}
                         </div>
@@ -11061,6 +11105,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
+                                  updateChartData={updateChartHeaderData}
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11135,6 +11181,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               tradesloading={tradesloading}
                               orders={orders}
                               marketsData={sortedMarkets}
+                              updateChartData={updateChartHeaderData}
+
                             />
                           )}
                         </div>
@@ -11282,6 +11330,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
+                                  updateChartData={updateChartHeaderData}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11356,6 +11405,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               tradesloading={tradesloading}
                               orders={orders}
                               marketsData={sortedMarkets}
+                              updateChartData={updateChartHeaderData}
+
                             />
                           )}
                         </div>
@@ -11504,6 +11555,8 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                                   setpopup={setpopup}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
+                                  updateChartData={updateChartHeaderData}
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11578,6 +11631,7 @@ const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
                               tradesloading={tradesloading}
                               orders={orders}
                               marketsData={sortedMarkets}
+                              updateChartData={updateChartHeaderData}
                             />
                           )}
                         </div>
