@@ -1040,6 +1040,7 @@ function App() {
     ],
     query: { refetchInterval: 10000 },
   });
+
   const [chartHeaderData, setChartHeaderData] = useState({
     price: 'n/a',
     priceChange: 'n/a',
@@ -1083,6 +1084,7 @@ function App() {
       };
     });
   }, []);
+
   // live event stream
   useEffect(() => {
     let blockNumber = '';
@@ -1544,8 +1546,6 @@ function App() {
     const processMarkets = async () => {
       try {
         const data = dayKlines;
-        const now = Date.now();
-        const oneDayAgo = now - 24 * 60 * 60 * 1000;
 
         const processedMarkets = data.map((series: any) => {
           const idParts = series.id.split("-");
@@ -1557,20 +1557,14 @@ function App() {
           if (!match) return;
 
           const candles: DataPoint[] = series.klines.reverse();
-          const last24hCandles = candles.filter((candle: DataPoint) => {
-            const candleTime = new Date(candle.time).getTime();
-            return candleTime >= oneDayAgo;
-          });
-          const relevantCandles = last24hCandles.length > 0 ? last24hCandles : candles;
-
-          const highs = relevantCandles.map((c) => c.high);
-          const lows = relevantCandles.map((c) => c.low);
+          const highs = candles.map((c) => c.high);
+          const lows = candles.map((c) => c.low);
           const high = Math.max(...highs);
           const low = Math.min(...lows);
-          const firstPrice = relevantCandles[0].close;
-          const lastPrice = relevantCandles[relevantCandles.length - 1].close;
+          const firstPrice = candles[0].open;
+          const lastPrice = candles[candles.length - 1].close;
           const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-          const totalVolume = relevantCandles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
+          const totalVolume = candles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
           const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
 
           return {
@@ -1602,42 +1596,33 @@ function App() {
       prevMarkets.map((market) => {
         const trades = tradesByMarket[market?.marketKey] || [];
 
-        const now = Date.now();
-        const oneDayAgo = now - 24 * 60 * 60 * 1000;
-        const last24hTrades = trades.filter((trade: any) => {
-          if (!trade.time) return false;
-          return new Date(trade.time).getTime() >= oneDayAgo;
-        });
+        if (trades.length <= 50) return market;
 
-        if (last24hTrades.length === 0) return market;
+        const series: any =
+          dayKlines.find((s: any) => typeof s.id === "string" && s.id.includes(market?.address)) || null;
 
-        last24hTrades.sort(
-          (a: DataPoint, b: DataPoint) => new Date(a.time).getTime() - new Date(b.time).getTime()
-        );
+        const firstKlineOpen: number =
+          series && Array.isArray(series.klines) && series.klines.length > 0
+            ? Number(series.klines[0].open)
+            : 0;
 
-        const firstTrade = last24hTrades[0];
-        const latestTrade = last24hTrades[last24hTrades.length - 1];
+        const currentPriceRaw = Number(trades[trades.length - 1][3]);
+        const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
 
-        const currentPriceRaw = Number(latestTrade[3] || latestTrade.close);
-        const firstPrice = Number(firstTrade[3] || firstTrade.close);
-
-        const percentageChange =
-          firstPrice === 0 ? 0 : ((currentPriceRaw - firstPrice) / firstPrice) * 100;
-
-        const totalVolume = last24hTrades.reduce((acc: number, trade: any) => {
-          if (trade.volume !== undefined) {
-            return acc + parseFloat(trade.volume.toString());
-          } else {
-            const vol = Number(trade[2] === 1 ? trade[0] : trade[1]);
-            return acc + vol;
-          }
-        }, 0);
-
+        const volume = Number(trades[trades.length - 1][2] === 1 ? trades[trades.length - 1][0] : trades[trades.length - 1][1]) / 10 ** Number(market?.quoteDecimals);
         const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
+
+        if (market.marketKey === 'MONUSDC') {
+          console.log(formatCommas(
+            (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+          ), volume, trades[trades.length - 1])
+        }
 
         return {
           ...market,
-          volume: formatCommas(totalVolume.toFixed(2)),
+          volume: formatCommas(
+            (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+          ),
           currentPrice: formatSubscript(
             (currentPriceRaw / Number(market.priceFactor)).toFixed(decimals)
           ),
@@ -1753,7 +1738,6 @@ function App() {
   };
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [refreshCooldown, setRefreshCooldown] = useState(false);
-
 
   //TEMPERARY REFRESH FUNCTION
   const handleRefreshQuote = (e: { preventDefault: () => void; }) => {

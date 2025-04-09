@@ -28,7 +28,7 @@ interface TokenInfoProps {
   tokendict: any;
   setpopup: (value: number) => void;
   marketsData: any[];
-  isLoading?: boolean; 
+  isLoading?: boolean;
   isTradeRoute?: boolean;
   simpleView?: boolean;
 }
@@ -53,17 +53,17 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      const isTypingInField = document.activeElement && 
+      const isTypingInField = document.activeElement &&
         ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
-      
+
       if (e.key === '/' && !isTypingInField) {
         e.preventDefault();
         setpopup(8);
       }
-      
+
       if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isTypingInField) {
         e.preventDefault();
-        
+
         if (!isDropdownOpen) {
           setSearchQuery('');
           setIsDropdownOpen(true);
@@ -81,10 +81,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         }
       }
     };
-  
+
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen]); 
+  }, [isDropdownOpen]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -103,11 +103,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const tokenAddress =
     activeMarket?.baseAddress?.toLowerCase() ||
     '0x0000000000000000000000000000000000000000';
-  
-  const shouldShowFullHeader = isTradeRoute && !simpleView;
-  const showTokenInfo = isTradeRoute && !simpleView ? 'symbol-info' : 'mobile-symbol-info';
 
-  
+  const shouldShowFullHeader = isTradeRoute && !simpleView;
+
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
       e.target instanceof Element &&
@@ -244,54 +242,54 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <TokenIcons inIcon={in_icon} outIcon={out_icon} />
         )}
 
-<div className="token-details">
-  {isLoading && shouldShowFullHeader ? (
-    <>
-      <div className="symbol-skeleton" />
-      <div className="pair-skeleton" />
-    </>
-  ) : (
-    <>
-      <div className="trading-pair">
-        {shouldShowFullHeader ? (
-          <>
-            {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
-          </>
-       ) : (
-        <>
-        <div className="search-market-text-container">
-          <span className="search-market-text">Search for a market</span>
-          <span className="second-asset">Browse trading pairs</span>
-          </div>
-        </>
-      )}
-      </div>
-      {shouldShowFullHeader && (
-        <div className="token-name">
-          <span className="full-token-name">
-            {tokendict[activeMarket.baseAddress].name}
-          </span>
-          <div
-            className="token-actions"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CopyButton textToCopy={marketAddress} />
-            <TokenInfoPopup
-              symbol={activeMarket.baseAsset}
-              setpopup={setpopup}
-            />
-          </div>
+        <div className="token-details">
+          {isLoading && shouldShowFullHeader ? (
+            <>
+              <div className="symbol-skeleton" />
+              <div className="pair-skeleton" />
+            </>
+          ) : (
+            <>
+              <div className="trading-pair">
+                {shouldShowFullHeader ? (
+                  <>
+                    {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
+                  </>
+                ) : (
+                  <>
+                    <div className="search-market-text-container">
+                      <span className="search-market-text">Search for a market</span>
+                      <span className="second-asset">Browse trading pairs</span>
+                    </div>
+                  </>
+                )}
+              </div>
+              {shouldShowFullHeader && (
+                <div className="token-name">
+                  <span className="full-token-name">
+                    {tokendict[activeMarket.baseAddress].name}
+                  </span>
+                  <div
+                    className="token-actions"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <CopyButton textToCopy={marketAddress} />
+                    <TokenInfoPopup
+                      symbol={activeMarket.baseAsset}
+                      setpopup={setpopup}
+                    />
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </div>
-      )}
-    </>
-  )}
-</div>
         <div className="markets-dropdown" ref={dropdownRef}>
           <button className="markets-dropdown-trigger" title="Select Market">
             <div
               className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
             >
-          
+
             </div>
           </button>
 
@@ -456,44 +454,44 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           Ctrl + K
         </div>
       </div>
-      
+
       {shouldShowFullHeader && (
         <>
-        <div className="token-info-right-section">
-          <div className="markets-favorite-section">
-            <button
-              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFavorite(tokenAddress);
-              }}
-              title={
-                favorites.includes(tokenAddress)
-                  ? 'Remove from favorites'
-                  : 'Add to favorites'
-              }
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+          <div className="token-info-right-section">
+            <div className="markets-favorite-section">
+              <button
+                className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleFavorite(tokenAddress);
+                }}
+                title={
+                  favorites.includes(tokenAddress)
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
+                }
               >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </button>
-          </div>
-          <div className="price-display-section">
-            <PriceDisplay 
-              price={price} 
-              activeMarket={activeMarket} 
-              isLoading={isLoading} 
-            />
-          </div>
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                </svg>
+              </button>
+            </div>
+            <div className="price-display-section">
+              <PriceDisplay
+                price={price}
+                activeMarket={activeMarket}
+                isLoading={isLoading}
+              />
+            </div>
           </div>
         </>
       )}
