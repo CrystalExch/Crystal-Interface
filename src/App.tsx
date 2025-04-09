@@ -1756,20 +1756,23 @@ function App() {
 
 
   //TEMPERARY REFRESH FUNCTION
-  const handleRefreshQuote = (e: { preventDefault: () => void; }) => {
+  const handleRefreshQuote = (e:any) => {
     e.preventDefault();
-
+  
     if (refreshCooldown || isRefreshing) return;
-
-    setIsRefreshing(true);
-
+      setIsRefreshing(true);
+    const refreshButton = e.currentTarget;
+    refreshButton.classList.add('refreshing');
+  
     refetch().then(() => {
-      setIsRefreshing(false);
-      setRefreshCooldown(true);
-
       setTimeout(() => {
-        setRefreshCooldown(false);
-      }, 5000);
+          setRefreshCooldown(true);
+        setTimeout(() => {
+          setRefreshCooldown(false);
+        }, 5000);
+        
+        setIsRefreshing(false);
+      }, 500); 
     }).catch(() => {
       setIsRefreshing(false);
     });

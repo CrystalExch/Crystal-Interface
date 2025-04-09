@@ -4671,7 +4671,6 @@ input[type="email"] {
   margin-left: 0;
 }
 
-
 .refresh-quote-button {
   background: transparent;
   border: none;
@@ -4692,7 +4691,7 @@ input[type="email"] {
   display: flex;
 }
 
-.refresh-quote-button:hover:not(.cooldown) {
+.refresh-quote-button:hover:not(.cooldown):not(.refreshing) {
   color: #ffffffd0;
 }
 
@@ -4700,15 +4699,22 @@ input[type="email"] {
   width: 14px;
   height: 14px;
   z-index: 2;
-  transition: transform 0.3s ease;
   filter: brightness(0.5);
 }
 
-.refresh-quote-button:hover:not(.cooldown) .refresh-quote-icon {
-  transform: rotate(180deg);
+
+.refresh-quote-button.refreshing .refresh-quote-icon {
+  animation: click-rotate 0.5s ease forwards;
 }
 
-
+@keyframes click-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
 
 .refresh-timer-circle {
   position: absolute;
@@ -4744,10 +4750,6 @@ input[type="email"] {
   cursor: not-allowed;
 }
 
-.refresh-quote-button.cooldown:hover .refresh-quote-icon {
-  transform: none;
-}
-
 @keyframes cooldown-timer {
   0% {
     stroke-dashoffset: 56.55;
@@ -4756,16 +4758,6 @@ input[type="email"] {
     stroke-dashoffset: 0; 
   }
 }
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
 
 
 
