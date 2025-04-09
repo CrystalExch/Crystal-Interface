@@ -173,10 +173,8 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
   };
 
   const renderTransactionDetails = (tx: TxType) => {
-    console.log(tx);
     const tokenIn = tokendict[tx.tokenIn];
     const tokenOut = tx.tokenOut ? tokendict[tx.tokenOut] : null;
-    console.log(tokenIn, tokenOut);
 
     const renderErrorX = () => (
       <div className="txhistory-error-x-container">

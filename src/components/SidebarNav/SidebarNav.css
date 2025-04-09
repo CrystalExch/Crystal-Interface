@@ -46,11 +46,9 @@
 .sidebar-logo-text {
   font-family: Orbitron, sans-serif;
   display: none;
-  margin-left: 2px;
-  font-weight: 400;
-  font-size: 16px;
+  font-size: 1.1rem;
+  font-weight: 500;
   color: #ffffff;
-  letter-spacing: 1px;
 }
 
 .sidebar-nav.expanded .sidebar-logo-text {
@@ -79,9 +77,8 @@
 }
 
 .sidebar-logo-image {
-  width: 31px;
-  height: 31px;
-  min-width: 31px;
+  height: 1.9rem;
+  max-width: 100%;
 }
 
 .view-mode-button, 

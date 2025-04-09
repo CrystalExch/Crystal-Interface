@@ -1612,12 +1612,6 @@ function App() {
         const volume = Number(trades[trades.length - 1][2] === 1 ? trades[trades.length - 1][0] : trades[trades.length - 1][1]) / 10 ** Number(market?.quoteDecimals);
         const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
 
-        if (market.marketKey === 'MONUSDC') {
-          console.log(formatCommas(
-            (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-          ), volume, trades[trades.length - 1])
-        }
-
         return {
           ...market,
           volume: formatCommas(
