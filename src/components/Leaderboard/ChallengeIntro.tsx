@@ -7,22 +7,11 @@ import LeaderboardPfp3 from '../../assets/rubberbandz.png';
 
 interface ChallengeIntroProps {
   onComplete: () => void;
-  onContinueAsGuest: () => void; // Keep for backward compatibility
-  isLoggedIn?: boolean;
   initialStep?: number; 
-}
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
 }
 
 const ChallengeIntro: React.FC<ChallengeIntroProps> = ({ 
   onComplete, 
-  onContinueAsGuest, // Kept but not used
-  isLoggedIn = true,
   initialStep = 0  
 }) => {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
@@ -30,13 +19,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
   const [xpCount, setXpCount] = useState<number>(0);
   const xpAnimationRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const xpPopupsRef = useRef<HTMLDivElement>(null);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
-    days: 7,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-
   useEffect(() => {
     setCurrentStep(initialStep);
   }, [initialStep]);
@@ -52,29 +34,7 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
     }
   }, [currentStep]);
 
-  useEffect(() => {
-    const endDate = new Date();
-    endDate.setDate(endDate.getDate() + 7);
-    
-    const timer = setInterval(() => {
-      const now = new Date();
-      const difference = endDate.getTime() - now.getTime();
-      
-      if (difference <= 0) {
-        clearInterval(timer);
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-      } else {
-        const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-        
-        setTimeLeft({ days, hours, minutes, seconds });
-      }
-    }, 1000);
-    
-    return () => clearInterval(timer);
-  }, []);
+
 
   useEffect(() => {
     if (currentStep === 1) {
@@ -291,12 +251,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
           ) : (
             <div className="rewards-container">
               <div className="rewards-stage">
-                <div className="countdown-timer reward-countdown">
-                  <div className="countdown-time">
-                    {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-                  </div>
-                </div>
-                
                 <div className="podium">
                   <div className="podium-step">
                     <span className="podium-rank">2nd</span>
