@@ -1359,7 +1359,7 @@ body:has(.right-column.show) .blur-background-popups {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border:1.5px solid #161618;
+  border:1.5px solid #131317;
   border-radius: 8px;
   display: flex;
   flex-direction: column;
@@ -2812,7 +2812,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .navlinkwrapper {
   align-items: center;
-  background-color: #ffffff03;
+  background-color: #cfcfff03;
   border-radius: 5px;
   height: 24px;
   margin: 8px 12px 0;
@@ -2829,11 +2829,11 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sliding-tab-indicator {
-  background: #aaaecf09;
-  border: 1px solid #aaaecf14;
+  background: #9296be09;
+  border: 1px solid #80839b14;
   border-radius: 5px;
   box-shadow:
-    inset 0 0.5px rgb(255 255 255/5.3%),
+    inset 0 0.5px rgba(230, 227, 250, 0.053),
     0 5px 15px rgb(0 0 0/20%);
   height: 100%;
   height: 24px;
@@ -3832,7 +3832,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     backdrop-filter: blur(10px);
     top: calc(100%);
     left: 83.5%;
-    background:#121213e0;
+    background:#17171be0;
     border-radius: 5px;
     width: 34%;
     z-index: 5;
