@@ -8,7 +8,7 @@ import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/folder.png';
 import referrals from '../../assets/referrals.png';
 import leaderboard from '../../assets/leaderboard.png';
-import swap from '../../assets/swap.png';
+import swap from '../../assets/refresh.svg';
 import twitter from '../../assets/twitter.png';
 import docs from '../../assets/docs.png';
 
@@ -23,13 +23,29 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const path = location.pathname;
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const newWidth = window.innerWidth;
+      setWindowWidth(newWidth);
+      
+      if (newWidth <= 1020 && expanded) {
+        setExpanded(false);
+        localStorage.setItem('crystal_sidebar_expanded', 'false');
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [expanded]);
 
   useEffect(() => {
     const savedExpanded = localStorage.getItem('crystal_sidebar_expanded');
     if (savedExpanded !== null) {
-      setExpanded(savedExpanded === 'true');
+      setExpanded(savedExpanded === 'true' && windowWidth > 1020);
     }
-  }, []);
+  }, [windowWidth]);
   
   useEffect(() => {
     document.body.classList.toggle('sidebar-expanded', expanded);
@@ -64,10 +80,12 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   };
 
   const toggleSidebar = () => {
-    const newExpanded = !expanded;
-    setExpanded(newExpanded);
-    localStorage.setItem('crystal_sidebar_expanded', newExpanded.toString());
-    window.dispatchEvent(new Event('resize'));
+    if (windowWidth > 1020) {
+      const newExpanded = !expanded;
+      setExpanded(newExpanded);
+      localStorage.setItem('crystal_sidebar_expanded', newExpanded.toString());
+      window.dispatchEvent(new Event('resize'));
+    }
   };
 
   return (
