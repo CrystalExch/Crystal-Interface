@@ -1,10 +1,10 @@
 .app-header {
-  align-items: center;
+  align-items: flex-end;
   background: rgb(6, 6, 6);
   color: #fff;
   display: flex;
   flex: none;
-  height: 55px;
+  height: 60px;
   justify-content: space-between;
   left: 50px; 
   padding-right: 5px;
@@ -13,6 +13,7 @@
   top: 0;
   z-index: 4;
   transition: left 0.3s ease;
+  padding-bottom: 5px;
 }
 @media (max-width: 1020px) {
   .app-header {
