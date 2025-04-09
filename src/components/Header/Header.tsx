@@ -109,6 +109,8 @@ const Header: React.FC<HeaderProps> = ({
 
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
   const shouldShowSettings = isTradeRoute && !simpleView;
+  const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
+
 
   return (
     <>
@@ -150,7 +152,7 @@ const Header: React.FC<HeaderProps> = ({
         </div>
 
 
-        <div className="right-header">
+        <div className={rightHeaderClass}>
           <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
             setNetworkSelectorOpen={setNetworkSelectorOpen}
