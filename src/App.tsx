@@ -285,7 +285,6 @@ function App() {
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
     {},
   );
-
   const [tokenIn, setTokenIn] = useState(() => {
     if (activeTab == 'send') {
       const token = searchParams.get('token');
