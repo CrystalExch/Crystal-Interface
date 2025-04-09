@@ -287,7 +287,9 @@ body.sidebar-expanded .app-header {
   padding-right: 10px;
 }
 
-@media(max-width:800px){
+
+
+@media(max-width:1020px){
   .right-header-trade{
     background-color: transparent;
   }
@@ -356,6 +358,10 @@ body.sidebar-expanded .app-header {
 @media(max-width: 1020px){
   .left-header{
     position: absolute;
-    margin-top: 100px;
+    top: 58px;
+  }
+  .app-header{
+    align-items: center;
+    padding-bottom: 0;
   }
 }
