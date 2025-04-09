@@ -22,9 +22,12 @@ export default withAccountKitUi({
 }, {
   // override account kit themes
   colors: {
-    "btn-primary": createColorSet("#19191c80", "#aaaecf"),
-    "fg-accent-brand": createColorSet("#19191c80", "#aaaecf"),
-    "bg-surface-default": createColorSet("#19191c80", "#0f0f12"),
-    "bg-surface-inset": createColorSet("#19191c80", "#aaaecf30"),
+    "btn-primary": createColorSet("#aaaecf", "#aaaecf"),
+    "fg-disabled": createColorSet("#475569", "#475569"),
+    "fg-invert": createColorSet("#020617", "#020617"),
+    "fg-primary": createColorSet("#fff", "fff"),
+    "fg-accent-brand": createColorSet("#aaaecf", "#aaaecf"),
+    "bg-surface-default": createColorSet("#aaaecf", "#0f0f12"),
+    "bg-surface-inset": createColorSet("#aaaecf", "#aaaecf30"),
   },
 })

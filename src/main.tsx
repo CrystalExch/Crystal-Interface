@@ -18,8 +18,16 @@ const originalFetch = window.fetch;
 
 window.fetch = async (...args) => {
   const url = args[0];
-  if (typeof url === "string" && (url.includes("segment.com") || url.includes("logger_config") || url.includes("segment.io") || url.includes("google-analytics.com"))) {
+  if (typeof url === "string" && (url.includes("segment.com") || url.includes("ws-accounkit") || url.includes("segment.io") || url.includes("google-analytics.com"))) {
     return Promise.resolve(new Response(null, { status: 204 }));
+  } else if (typeof url === "string" && url.includes("signer-config")) {
+    return Promise.resolve(new Response(
+      JSON.stringify({ email: { mode: "OTP" } }),
+      {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      }
+    ));
   }
   return originalFetch(...args);
 };

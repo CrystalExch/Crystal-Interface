@@ -4020,6 +4020,10 @@ body:has(.popup-blur) {
   border-radius: 6px !important;
 }
 
+.akui-input svg > * {
+  fill: #ffffff !important;
+}
+
 .font-semibold{
   font-weight: 300 !important;
 }
