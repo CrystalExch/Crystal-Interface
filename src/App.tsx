@@ -468,12 +468,14 @@ function App() {
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
   const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem('hasShownSocialPopup') === 'true') {
-      return 0
-    }
-    else {
-      localStorage.setItem('hasShownSocialPopup', 'true');
-      return 9
+    if (localStorage.getItem("firstLoadDone")) {
+      if (localStorage.getItem('shownSocialPopup') === 'true') {
+        return 0
+      }
+      else {
+        localStorage.setItem('shownSocialPopup', 'true');
+        return 9
+      }
     }
   });
   const [orders, setorders] = useState<any[]>([]);

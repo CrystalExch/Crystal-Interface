@@ -197,10 +197,10 @@ export const settings: any = {
           baseAsset: 'shMON',
           path: [
             '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-            '0x3a98250f98dd388c211206983453837c8365bdc1',
+            '0x3a98250F98Dd388C211206983453837C8365BDc1',
           ],
           quoteAddress: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
-          baseAddress: '0x3a98250f98dd388c211206983453837c8365bdc1',
+          baseAddress: '0x3a98250F98Dd388C211206983453837C8365BDc1',
           quoteDecimals: BigInt(18),
           baseDecimals: BigInt(18),
           address: '0x2bc10e58afff05d0e185eaabc1b300399da71f20',
@@ -218,10 +218,10 @@ export const settings: any = {
           baseAsset: 'shMON',
           path: [
             '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
-            '0x3a98250f98dd388c211206983453837c8365bdc1',
+            '0x3a98250F98Dd388C211206983453837C8365BDc1',
           ],
           quoteAddress: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
-          baseAddress: '0x3a98250f98dd388c211206983453837c8365bdc1',
+          baseAddress: '0x3a98250F98Dd388C211206983453837C8365BDc1',
           quoteDecimals: BigInt(18),
           baseDecimals: BigInt(18),
           address: '0x2bc10e58afff05d0e185eaabc1b300399da71f20',
@@ -494,10 +494,10 @@ export const settings: any = {
           decimals: BigInt(18),
           image: iconaprmon,
         },
-        '0x3a98250f98dd388c211206983453837c8365bdc1': {
+        '0x3a98250F98Dd388C211206983453837C8365BDc1': {
           ticker: 'shMON',
           name: 'shMonad',
-          address: '0x3a98250f98dd388c211206983453837c8365bdc1',
+          address: '0x3a98250F98Dd388C211206983453837C8365BDc1',
           decimals: BigInt(18),
           image: iconshmon,
         },
