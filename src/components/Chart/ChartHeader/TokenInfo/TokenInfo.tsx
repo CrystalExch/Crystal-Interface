@@ -233,7 +233,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   return (
     <div className="token-info-container">
       <div
-        className={showTokenInfo}
+        className="symbol-info"
         onClick={handleSymbolInfoClick}
         role="button"
         tabIndex={0}
