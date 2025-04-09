@@ -3788,7 +3788,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   }
 }
 
-@media(max-width: 800px){
+@media(max-width: 1020px){
   .mobile-nav{
     margin-top: 50px;
   }
@@ -4816,7 +4816,7 @@ input[type="email"] {
 
 
 
-@media (max-width: 600px) {
+@media (max-width: 1020px) {
   .sidebar-adjusted {
     margin-left: 0px;
     width: calc(100%);

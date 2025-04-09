@@ -63,6 +63,14 @@
 }
 
 
+@media(max-width: 1020px){
+  .additional-metrics{
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+
+  }
+}
+
 
 .additional-metrics::-webkit-scrollbar {
   display: none;
