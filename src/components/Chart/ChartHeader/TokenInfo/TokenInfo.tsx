@@ -105,6 +105,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     '0x0000000000000000000000000000000000000000';
   
   const shouldShowFullHeader = isTradeRoute && !simpleView;
+  const showTokenInfo = isTradeRoute && !simpleView ? 'symbol-info' : 'mobile-symbol-info';
+
   
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -231,7 +233,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   return (
     <div className="token-info-container">
       <div
-        className="symbol-info"
+        className={showTokenInfo}
         onClick={handleSymbolInfoClick}
         role="button"
         tabIndex={0}

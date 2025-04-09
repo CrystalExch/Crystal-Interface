@@ -11,6 +11,26 @@
 }
 
 
+.mobile-symbol-info {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+  padding: 7px 12px;
+  position: relative;
+  background-color: #0f0f12;
+  border-radius: 8px;
+  max-height: 47px;
+  min-height: 47px;
+}
+
+@media(max-width:1020px){
+  .mobile-symbol-info{
+    display: none;
+  }
+}
+
+
+
 .second-asset{
   color: #ffffff80;
   font-weight: 400;

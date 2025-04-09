@@ -526,7 +526,7 @@
     height: auto;
     margin: 0;
     overflow: visible;
-    padding-right:10px;
+    padding:0 5px;
   }
 
   .portfolio-content-container {
