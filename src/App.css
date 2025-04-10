@@ -847,8 +847,8 @@ html {
 }
 
 .main-content-wrapper.simple-view .sliding-tab-indicator {
-  background-color: #0c0c0d;
-  border: none;
+  border: 1.5px solid  #111113;
+  background: none;
   border-radius: 6px;
   box-shadow: none;
   height: 100%;
@@ -3732,7 +3732,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   }
   .mobile-nav {
     width: calc(100% - 5px);
-    margin-bottom: 5px;
+    margin-bottom: 4px;
   }
   .right-column {
     background: #16171c;
