@@ -1571,7 +1571,8 @@ function App() {
             ...match,
             pair: `${match.baseAsset}/${match.quoteAsset}`,
             currentPrice: formatSubscript((lastPrice / Number(match.priceFactor)).toFixed(decimals)),
-            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
+            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+            priceChangeAmount: lastPrice - firstPrice,
             volume: formatCommas(totalVolume.toFixed(2)),
             marketKey: `${match.baseAsset}${match.quoteAsset}`,
             series: candles,
@@ -1620,7 +1621,8 @@ function App() {
           currentPrice: formatSubscript(
             (currentPriceRaw / Number(market.priceFactor)).toFixed(decimals)
           ),
-          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}%`,
+          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+          priceChangeAmount: currentPriceRaw - firstKlineOpen
         };
       })
     );
