@@ -207,18 +207,17 @@
   margin-left:-10px
 }
 .full-leaderboard{
-  background-color:#0f0f12;
-  border:1px solid rgba(180,182,209,.03);
-  border-radius:12px;
   overflow:hidden
 }
 .leaderboard-headers{
   display:flex;
   justify-content:space-between;
-  padding:10px 20px;
+  padding:6px 20px;
   font-size:.9rem;
   color:rgba(255,255,255,.7);
-  padding-bottom:4px
+  border:1.5px solid rgba(255,255,255,.05);
+  border-radius: 5px;
+
 }
 .header-rank,.row-rank{
   width:70px;
@@ -247,9 +246,11 @@
 }
 .leaderboard-row{
   display:flex;
-  padding:10px 20px;
-  border-bottom:1.5px solid rgba(255,255,255,.01);
-  align-items:center
+  padding:7px 20px;
+  margin: 5px 0;
+  background-color: #18181b83;
+  align-items:center;
+  border-radius: 5px;
 }
 .leaderboard-row:last-child{
   border-bottom:none
@@ -292,7 +293,8 @@
   border:2px solid rgba(255,223,0,.6);
   transform:translateY(-8px) translateZ(20px);
   position:relative;
-  transition:all.3s cubic-bezier(.175,.885,.32,1.275)
+  transition:all.3s cubic-bezier(.175,.885,.32,1.275);
+
 }
 .rank-1::before{
   content:'';
@@ -370,7 +372,9 @@
   transition:all.4s cubic-bezier(.175,.885,.32,1.275);
   transform-style:preserve-3d;
   backface-visibility:hidden;
-  max-width:305px
+  max-width:305px;
+  height:110px;
+
 }
 .faction-rank{
   position:absolute;
@@ -514,11 +518,12 @@
   display:flex;
   justify-content:space-between;
   align-items:center;
-  padding:10px 15px;
   padding-top:0;
-  border-radius:0 0 12px 12px;
   position:relative;
-  bottom:0
+  padding: 5px;
+  border-radius: 5px;
+  bottom:0;
+  border:1.5px solid rgba(255,255,255,.05);
 }
 .pagination-arrow{
   border:1.5px solid rgba(255,255,255,.05);
