@@ -240,8 +240,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       (market: any) => market.address === activeMarket.address
     );
 
-    console.log(marketHeader);
-
     if (marketHeader) {
       setPrice(marketHeader.currentPrice);
       setPriceChange(
