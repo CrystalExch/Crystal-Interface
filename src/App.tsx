@@ -89,7 +89,7 @@ import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
-import refreshicon from './assets/refresh.svg';
+import refreshicon from './assets/circulararrow.png';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
