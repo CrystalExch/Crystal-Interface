@@ -32,15 +32,11 @@
 }
 
 .sidebar-logo {
-  margin-bottom: 10px;
+  margin-top: 5px;
   display: flex;
   align-items: center;
-  color: white;
-  opacity: 0.9;
-  transition: opacity 0.2s ease;
   padding-left: 10px;
   width: 100%;
-  text-decoration: none;
 }
 
 .sidebar-logo-text {

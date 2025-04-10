@@ -26,13 +26,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const [expanded, setExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-  // State for tooltip handling.
   const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({
     content: '',
     target: null,
   });
 
-  // Only show tooltip if sidebar is not expanded.
   const handleTooltip = (e: React.MouseEvent<HTMLElement>, content: string) => {
     if (expanded) return;
     setTooltip({ content, target: e.currentTarget });
@@ -42,7 +40,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     setTooltip({ content: '', target: null });
   };
 
-  // Hide tooltip immediately when the sidebar expands.
   useEffect(() => {
     if (expanded) {
       setTooltip({ content: '', target: null });
@@ -228,7 +225,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
         </div>
       </div>
 
-      {/* Render the portaled tooltip */}
       <SidebarTooltip content={tooltip.content} target={tooltip.target} visible={!!tooltip.target} />
     </>
   );

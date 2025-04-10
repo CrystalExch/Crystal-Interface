@@ -67,6 +67,7 @@
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
   transition: transform 0.3s ease;
   border: 1.5px solid #ffffff08;
+  aspect-ratio: 16/9;
 }
 
 .nft-image:hover {
@@ -477,3 +478,4 @@
     font-size: 0.75rem;
   }
 }
+
