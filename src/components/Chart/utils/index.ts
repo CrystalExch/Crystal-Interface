@@ -1,4 +1,3 @@
-export { calculatePriceMetrics, computePrice } from './calculatePriceMetrics';
 export { generateEmptyChartData } from './generateEmptyChartData';
 export { getBinancePair } from './getBinancePair';
 export { getMarketForSymbols } from './getMarketForSymbols';

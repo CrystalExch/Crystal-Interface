@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import './Leaderboard.css';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import crystalxp from '../../assets/CrystalX.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
 import { useSmartAccountClient } from "@account-kit/react";
+import './Leaderboard.css';
 
 interface Faction {
   id: string;
@@ -33,8 +33,6 @@ interface LeaderboardProps {
   setpopup?: (value: number) => void;
 }
 
-const ITEMS_PER_PAGE = 47;
-
 const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserDisplayData>({
@@ -53,6 +51,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
+  const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
 
   useEffect(() => {
     const fetchUserPoints = () => {
@@ -65,10 +64,22 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               { points: info.points }
             ])
           );
-          console.log(normalizedData);
-          const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(normalizedData).map(([addr, info]) => [addr, info.points])
+  
+          const excludedAddresses = [
+            "0xd40e6d7de5972b6a0493ffb7ab2cd799340127de",
+            "0xe7d1f4ab222d94389b82981f99c58824ff42a7d0"
+          ];
+  
+          const filteredData = Object.fromEntries(
+            Object.entries(normalizedData).filter(
+              ([addr]) => !excludedAddresses.includes(addr)
+            )
           );
+  
+          const updatedLiveLeaderboard = Object.fromEntries(
+            Object.entries(filteredData).map(([addr, info]) => [addr, info.points])
+          );
+  
           setLiveLeaderboard(updatedLiveLeaderboard);
           setLoading(false);
         })
@@ -77,9 +88,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           setLoading(false);
         });
     };
-
+  
     fetchUserPoints();
-  }, []);
+  }, []);  
 
   useEffect(() => {
     if (address) {
@@ -156,10 +167,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const totalPages = Math.ceil((allFactions.length - 3) / ITEMS_PER_PAGE);
 
   const getCurrentPageItems = () => {
-    const startIndex = 3 + (currentPage * ITEMS_PER_PAGE);
-    return allFactions.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+    let startIndex: number;
+    let itemsCount: number;
+    if (currentPage === 0) {
+      startIndex = 3;
+      itemsCount = 47;
+    } else {
+      startIndex = 3 + 47 + ((currentPage - 1) * 50);
+      itemsCount = 50;
+    }
+    return allFactions.slice(startIndex, startIndex + itemsCount);
   };
-
+  
   const goToPreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
@@ -176,7 +195,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-03-28T12:00:00Z");
+      const targetDate = new Date("2025-04-17T00:00:00-04:00");
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
       if (difference <= 0) {
@@ -184,18 +203,22 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         return;
       }
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
       setTimeLeft({ days, hours, minutes, seconds });
     };
+    
     calculateTimeLeft();
     const timer = setInterval(() => {
       calculateTimeLeft();
     }, 1000);
+    
     return () => clearInterval(timer);
   }, []);
-
+  
   const getDisplayAddress = (address: string): string => {
     if (address.startsWith("0x")) {
       return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -213,7 +236,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     setIntroStep(0);
   };
 
-  
   const isUserAddress = (factionAddress: string): boolean => {
     return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
   };
@@ -256,6 +278,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
       </div>
     ));
   };
+
+  const formatPoints = (points: number): string => {
+    return points < 0.001 ? "<0.001" : points.toLocaleString();
+  };  
 
   useEffect(() => {
     if (address && !showChallengeIntro) {
@@ -313,7 +339,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 <div className="total-xp-loading" />
               ) : (
                 <span className="progress-bar-amount-header">
-                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000,000'.toLocaleString()}
+                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'1,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                 </span>
               )}
@@ -323,8 +349,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 className="progress-fill"
                 style={{
                   width: loading
-                    ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0) / 1000000000) * 100}%`
+                  ? '5%'
+                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 1000000) * 100}%`                
                 }}
               ></div>
             </div>
@@ -356,7 +382,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
             <div className="info-column">
               <div className="column-header">{t("rank")}</div>
               <div className="column-content">
-                #{findUserPosition() + 1 || "N/A"}
+                {findUserPosition() + 1 > 0 ? "#" + findUserPosition() + 1 : "N/A"}
               </div>
             </div>
           </div>
@@ -381,7 +407,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 <div className="faction-name">{getDisplayAddress(faction.name)}</div>
                 <div className="faction-xp">
                   <img src={crystalxp} className="top-xp-icon" alt="XP Icon" />
-                  {(faction.xp || faction.points || 0).toLocaleString()}
+                  {formatPoints(faction.xp || faction.points || 0)}
                 </div>
               </div>
             </div>
@@ -415,7 +441,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                   </div>
                   <div className="row-xp">
                     <div className="xp-amount">
-                      {(faction.xp || faction.points || 0).toLocaleString()}
+                      {formatPoints(faction.xp || faction.points || 0)}
                       <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                     </div>
                   </div>

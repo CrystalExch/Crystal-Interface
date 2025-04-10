@@ -7,7 +7,7 @@ import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 
 import { settings } from '../../settings.ts';
-import { calculatePriceMetrics } from './utils';
+import { formatCommas } from '../../utils/numberDisplayFormat.ts';
 import {
   DataPoint,
   generateChartDataFromTrades,
@@ -26,7 +26,15 @@ interface ChartComponentProps {
   setpopup: (value: number) => void;
   tradesloading: boolean;
   marketsData: any;
-  updateChartData?: (price: string, priceChange: string, change: string, high24h: string, low24h: string, volume: string, isChartLoading: boolean) => void;
+  updateChartData?: (
+    price: string,
+    priceChange: string,
+    change: string,
+    high24h: string,
+    low24h: string,
+    volume: string,
+    isChartLoading: boolean
+  ) => void;
   chartHeaderData?: any;
 }
 
@@ -35,6 +43,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   activeMarket,
   tradesloading,
   updateChartData,
+  marketsData,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -76,18 +85,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     contractAddress: string
   ): Promise<DataPoint[]> {
     const seriesId = `series-${interval}-${contractAddress}`.toLowerCase();
-    // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-    const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
+    const endpoint =
+      'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
     let allCandles: any[] = [];
     const query = `
       query {
         series_collection(where: { id: "${seriesId}" }) {
-          series1: klines(
-            first: 1000,
-            skip: 0,
-            orderBy: time,
-            orderDirection: desc
-          ) {
+          series1: klines(first: 1000, skip: 0, orderBy: time, orderDirection: desc) {
             id
             time
             open
@@ -96,12 +100,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             close
             volume
           }
-          series2: klines(
-            first: 1000,
-            skip: 1000,
-            orderBy: time,
-            orderDirection: desc
-          ) {
+          series2: klines(first: 1000, skip: 1000, orderBy: time, orderDirection: desc) {
             id
             time
             open
@@ -110,12 +109,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             close
             volume
           }
-          series3: klines(
-            first: 1000,
-            skip: 2000,
-            orderBy: time,
-            orderDirection: desc
-          ) {
+          series3: klines(first: 1000, skip: 2000, orderBy: time, orderDirection: desc) {
             id
             time
             open
@@ -132,12 +126,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       let res1 = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          query
-        }),
+        body: JSON.stringify({ query }),
       });
       const json = await res1.json();
-      allCandles = allCandles.concat(json.data.series_collection?.[0]?.series1).concat(json.data.series_collection?.[0]?.series2).concat(json.data.series_collection?.[0]?.series3);
+      allCandles = allCandles
+        .concat(json.data.series_collection?.[0]?.series1)
+        .concat(json.data.series_collection?.[0]?.series2)
+        .concat(json.data.series_collection?.[0]?.series3);
     } catch (err) {
       console.error('Error fetching from subgraph:', err);
     }
@@ -169,10 +164,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         volume: parseFloat(candle.volume),
       };
     });
-    
   }
 
-  const updateChartDataInternal = async (
+  const updateCandlestickData = async (
     interval: string,
     tradesArr: any[],
     token: string
@@ -198,46 +192,22 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               ? '60'
               : interval.slice(0, -1)),
         ]);
-        calculatePriceMetrics(
-          subgraphData,
-          activeMarket,
-          setPrice,
-          setHigh24h,
-          setLow24h,
-          setChange,
-          setPriceChange,
-          setVolume
-        );
-      }
-      else {
-        if (tradesArr && !tradesloading) {
-          const chartData = generateChartDataFromTrades(tradesArr, interval, activeMarket);
-          setData([
-            chartData,
-            token +
-              (interval === '1d'
-                ? '1D'
-                : interval === '4h'
-                ? '240'
-                : interval === '1h'
-                ? '60'
-                : interval.slice(0, -1)),
-          ]);
-          calculatePriceMetrics(
-            chartData,
-            activeMarket,
-            setPrice,
-            setHigh24h,
-            setLow24h,
-            setChange,
-            setPriceChange,
-            setVolume
-          );
-        }
+      } else if (tradesArr && !tradesloading) {
+        const chartData = generateChartDataFromTrades(tradesArr, interval, activeMarket);
+        setData([
+          chartData,
+          token +
+            (interval === '1d'
+              ? '1D'
+              : interval === '4h'
+              ? '240'
+              : interval === '1h'
+              ? '60'
+              : interval.slice(0, -1)),
+        ]);
       }
     } catch (err) {
       console.error('Error fetching subgraph candles:', err);
-
       if (tradesArr && !tradesloading) {
         const chartData = generateChartDataFromTrades(tradesArr, interval, activeMarket);
         setData([
@@ -251,16 +221,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               ? '60'
               : interval.slice(0, -1)),
         ]);
-        calculatePriceMetrics(
-          chartData,
-          activeMarket,
-          setPrice,
-          setHigh24h,
-          setLow24h,
-          setChange,
-          setPriceChange,
-          setVolume
-        );
       }
     }
     setIsChartLoading(false);
@@ -270,12 +230,50 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   };
 
   useEffect(() => {
-    updateChartDataInternal(selectedInterval, trades, activeMarket.baseAsset);
+    updateCandlestickData(selectedInterval, trades, activeMarket.baseAsset);
   }, [selectedInterval, activeMarket.baseAsset]);
 
   useEffect(() => {
-    if (!data[0] || data[0].length === 0) return;
-    if (!trades || trades.length === 0) return;
+    if (!marketsData || !activeMarket) return;
+    
+    const marketHeader = marketsData.find(
+      (market: any) => market.address === activeMarket.address
+    );
+
+    if (marketHeader) {
+      setPrice(marketHeader.currentPrice);
+      setPriceChange(
+        formatCommas(
+          (marketHeader.priceChangeAmount / Number(activeMarket.priceFactor)).toString()
+        )
+      );      
+      setChange(marketHeader.priceChange);
+      setHigh24h(
+        formatCommas((parseFloat(marketHeader.high24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString())
+      );
+      setLow24h(
+        formatCommas((parseFloat(marketHeader.low24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString())
+      );
+      setVolume(marketHeader.volume);
+    }
+  }, [marketsData, activeMarket]);
+
+  useEffect(() => {
+    if (updateChartData) {
+      updateChartData(
+        price,
+        priceChange,
+        change,
+        high24h,
+        low24h,
+        volume,
+        isChartLoading
+      );
+    }
+  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading, updateChartData]);
+
+  useEffect(() => {
+    if (!data[0] || data[0].length === 0 || !trades || trades.length === 0) return;
   
     const lastTrade = trades[trades.length - 1];
     if (lastTrade[4] !== data[1].match(/^[^\d]+/)?.[0]) return;
@@ -288,30 +286,24 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       const lastBar = updatedBars[lastBarIndex];
   
       const priceFactor = Number(activeMarket.priceFactor || 1);
-
       let rawPrice = lastTrade[3] / priceFactor;
       rawPrice = parseFloat(rawPrice.toFixed(Math.log10(priceFactor)));
   
-      const rawVolume = (lastTrade[2] === 1 ? lastTrade[0] : lastTrade[1]) 
-        / 10 ** Number(activeMarket.quoteDecimals);
+      const rawVolume =
+        (lastTrade[2] === 1 ? lastTrade[0] : lastTrade[1]) /
+        10 ** Number(activeMarket.quoteDecimals);
       
       const tradeTimeSec = lastTrade[6];
-  
       const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
       const lastBarTimeSec = Math.floor(new Date(lastBar.time).getTime() / 1000);
   
       if (flooredTradeTimeSec === lastBarTimeSec) {
-        const newHigh = Math.max(lastBar.high, rawPrice);
-        const newLow = Math.min(lastBar.low, rawPrice);
-        const newClose = rawPrice;
-        const newVolume = lastBar.volume + rawVolume;
-  
         updatedBars[lastBarIndex] = {
           ...lastBar,
-          high: newHigh,
-          low: newLow,
-          close: newClose,
-          volume: newVolume,
+          high: Math.max(lastBar.high, rawPrice),
+          low: Math.min(lastBar.low, rawPrice),
+          close: rawPrice,
+          volume: lastBar.volume + rawVolume,
         };
       } else {
         updatedBars.push({
@@ -324,26 +316,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         });
       }
   
-      calculatePriceMetrics(
-        updatedBars,
-        activeMarket,
-        setPrice,
-        setHigh24h,
-        setLow24h,
-        setChange,
-        setPriceChange,
-        setVolume
-      );
-  
       return [updatedBars, existingIntervalLabel];
     });
   }, [trades]);
-
-  useEffect(() => {
-    if (updateChartData) {
-      updateChartData(price, priceChange, change, high24h, low24h, volume, isChartLoading);
-    }
-  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading, updateChartData]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>

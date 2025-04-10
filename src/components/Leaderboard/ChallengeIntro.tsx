@@ -34,8 +34,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
     }
   }, [currentStep]);
 
-
-
   useEffect(() => {
     if (currentStep === 1) {
       setXpCount(0);
