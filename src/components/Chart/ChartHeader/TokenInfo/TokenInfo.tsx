@@ -466,11 +466,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   e.stopPropagation();
                   toggleFavorite(tokenAddress);
                 }}
-                title={
-                  favorites.includes(tokenAddress)
-                    ? 'Remove from favorites'
-                    : 'Add to favorites'
-                }
               >
                 <svg
                   width="16"

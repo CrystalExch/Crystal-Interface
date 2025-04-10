@@ -118,7 +118,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <button
             className={`view-mode-button ${isTradingPage && !simpleView ? 'active' : ''}`}
             onClick={goToAdvancedView}
-            title={t('advancedView')}
             onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -128,7 +127,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <button
             className={`view-mode-button ${isTradingPage && simpleView ? 'active' : ''}`}
             onClick={goToSimpleView}
-            title={t('basicView')}
             onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -138,7 +136,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/portfolio"
             className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
-            title={t('portfolio')}
             onMouseEnter={(e) => handleTooltip(e, t('portfolio'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -148,7 +145,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/referrals"
             className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
-            title={t('referrals')}
             onMouseEnter={(e) => handleTooltip(e, t('referrals'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -158,7 +154,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/leaderboard"
             className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
-            title={t('leaderboard')}
             onMouseEnter={(e) => handleTooltip(e, t('leaderboard'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -168,7 +163,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/mint"
             className={`page-mode-button ${path === '/mint' ? 'active' : ''}`}
-            title={t('mint')}
             onMouseEnter={(e) => handleTooltip(e, t('mint'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -205,7 +199,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <button
             onClick={toggleSidebar}
             className="sidebar-toggle-button"
-            title={expanded ? 'Collapse' : 'Expand'}
             onMouseEnter={(e) => handleTooltip(e, expanded ? 'Collapse' : 'Expand')}
             onMouseLeave={handleTooltipHide}
           >

@@ -65,7 +65,6 @@ const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refet
         <div
           className={`order-favorite-icon ${isFavorite ? 'order-favorite-active' : ''}`}
           onClick={handleFavoriteClick}
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           <svg
             width="16"

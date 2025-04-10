@@ -176,7 +176,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                 <div
                   className={`simple-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
                   onClick={() => handleCancelOrder(order)}
-                  title={t('cancel')}
                 >
                   {loadingOrders[orderKey] ? (
                     <div className="spinner"></div>
