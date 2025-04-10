@@ -397,8 +397,7 @@
     .nft-main-content-wrapper {
         flex-direction: column;
         gap: 10px;
-        padding: 0 50px;
-        padding-bottom: 70px;
+        padding-bottom: 5px;
     }
     .nft-tokenselectheader2{
         max-width: calc(100% - 35px);
@@ -423,10 +422,6 @@
 }
 
 @media (max-width: 750px) {
-    .nft-main-content-wrapper {
-        padding: 0 10px;
-    }
-    
     .nft-swapmodal {
         width: 100%;
     }

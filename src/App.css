@@ -2556,6 +2556,20 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   width: 100%;
   z-index: 0;
 }
+@media(max-width: 500px) {
+  .main-content-wrapper.simple-view {
+    margin-top: 40px;
+  }
+} 
+
+
+@media(max-width: 400px) {
+  .main-content-wrapper.simple-view {
+    margin-top: 20px;
+  }
+} 
+
+
 
 .main-content-wrapper.simple-view .limit-info-rectangle,
 .main-content-wrapper.simple-view .trade-info-rectangle {

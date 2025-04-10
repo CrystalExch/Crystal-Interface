@@ -105,6 +105,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     '0x0000000000000000000000000000000000000000';
 
   const shouldShowFullHeader = isTradeRoute && !simpleView;
+  const shouldShowTokenInfo = isTradeRoute && !simpleView ? "token-info-container" : "token-info-container-simple";
 
   const handleSymbolInfoClick = (e: React.MouseEvent) => {
     if (
@@ -229,7 +230,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   });
 
   return (
-    <div className="token-info-container">
+    <div className={shouldShowTokenInfo}>
       <div
         className="symbol-info"
         onClick={handleSymbolInfoClick}
