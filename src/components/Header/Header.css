@@ -94,7 +94,7 @@ body.sidebar-expanded .app-header {
   letter-spacing: -0.3px;
   text-decoration: none;
   transition: all.1s ease;
-  width: 120px;
+  min-width: 120px;
   z-index: 3;
   padding: 6px 12px;
 }

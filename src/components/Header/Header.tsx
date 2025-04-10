@@ -222,7 +222,7 @@ const Header: React.FC<HeaderProps> = ({
           >
             <div className="connect-content">
               {!account.connected ? (
-                'Connect Wallet'
+                t('connectWallet')
               ) : (
                 <span className="transparent-button-container">
                   <img src={walleticon} className="wallet-icon" />

@@ -218,3 +218,12 @@
     width: 200px;
   }
 }
+
+
+.sidebar-toggle-button .sidebar-svg-icon {
+  transition: transform 0.3s ease;
+}
+
+.sidebar-nav.expanded .sidebar-toggle-button .sidebar-svg-icon {
+  transform: rotate(180deg);
+}

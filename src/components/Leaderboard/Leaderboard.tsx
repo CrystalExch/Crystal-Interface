@@ -213,21 +213,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     setIntroStep(0);
   };
 
-  const t = (text: string): string => {
-    const translations: Record<string, string> = {
-      viewRules: "View Rules",
-      xpEarned: "XP Earned",
-      rank: "Rank",
-      page: "Page",
-      of: "of",
-      viewYourPosition: "View Your Position",
-      user: "User",
-      totalXP: "Total Crystals",
-      earned: "Earned"
-    };
-    return translations[text] || text;
-  };
-
+  
   const isUserAddress = (factionAddress: string): boolean => {
     return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
   };
@@ -288,15 +274,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
       {!address && (
         <div className="connect-wallet-overlay">
           <div className="connect-wallet-content">
-            <h2>Connect Your Wallet</h2>
-            <p>Please connect your wallet to view the leaderboard</p>
+            <h2>{t("connectYourWallet")}</h2>
+            <p>{t("connectYourWalletSubtitle")}</p>
             <button
               type="button"
               className="leaderboard-connect-wallet-button"
               onClick={handleConnectWallet}
             >
               <div className="connect-content">
-                Connect Wallet
+                {t("connectWallet")}
               </div>
             </button>
           </div>
@@ -345,7 +331,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           </div>
           <div className="leaderboard-user-info">
             <div className="info-column">
-              <div className="column-header">Address</div>
+              <div className="column-header">{t("address")}</div>
               <div className="column-content">
                 <div className="address-container">
                   <span className="address">

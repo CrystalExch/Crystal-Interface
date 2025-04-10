@@ -258,8 +258,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                 ) : (
                   <>
                     <div className="search-market-text-container">
-                      <span className="search-market-text">Search for a market</span>
-                      <span className="second-asset">Browse trading pairs</span>
+                      <span className="search-market-text">{t("searchAMarket")}</span>
+                      <span className="second-asset">{t("browsePairs")}</span>
                     </div>
                   </>
                 )}
