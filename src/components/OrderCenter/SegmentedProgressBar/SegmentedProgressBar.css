@@ -24,14 +24,3 @@
 .empty {
   opacity: 0.08;
 }
-
-@keyframes pulse {
-  0%,
-  30%,
-  100% {
-    opacity: 0.08;
-  }
-  15% {
-    opacity: 0.3;
-  }
-}
