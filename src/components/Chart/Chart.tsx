@@ -276,7 +276,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     if (!data[0] || data[0].length === 0 || !trades || trades.length === 0) return;
   
     const lastTrade = trades[trades.length - 1];
-    if (lastTrade[4] !== data[1].match(/^[^\d]+/)?.[0]) return;
   
     setData(([existingBars, existingIntervalLabel]) => {
       const updatedBars = [...existingBars];
