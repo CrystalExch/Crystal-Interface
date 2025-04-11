@@ -1621,22 +1621,7 @@ function App() {
     );
   }, [tradesByMarket]);
 
-  // search
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      if (
-        e.key === '/' &&
-        document.activeElement &&
-        !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
-      ) {
-        e.preventDefault();
-        setpopup(8);
-      }
-    };
 
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,

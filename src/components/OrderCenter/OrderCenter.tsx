@@ -15,7 +15,7 @@ import './OrderCenter.css';
 
 const BREAKPOINT_HIDE_MARKET = 1180;
 const BREAKPOINT_HIDE_TYPE = 460;
-const BREAKPOINT_HIDE_PAGE_SIZE = 460;
+const BREAKPOINT_HIDE_PAGE_SIZE = 360;
 
 interface OrderCenterProps {
   orders: any[];
