@@ -1621,8 +1621,6 @@ function App() {
     );
   }, [tradesByMarket]);
 
-
-
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
   ): void => {
@@ -3074,7 +3072,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x89f478e72f5acc11502356b188fd48a61c274d43" }
+              where: { contractAddress: "0xc97992ba107c3b3f8b880bf29b07b424c86b8d23" }
             ) {
               id
               caller

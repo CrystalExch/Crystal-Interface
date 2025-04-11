@@ -16,8 +16,8 @@ interface OrderbookViewProps {
   roundedSell: any[];
   spreadData: any;
   priceFactor: number;
-  symbolIn: string;
-  symbolOut: string;
+  symbolQuote: string;
+  symbolBase: string;
   orderbookPosition: string;
   interval: number;
   amountsQuote: string;
@@ -28,9 +28,7 @@ interface OrderbookViewProps {
   setViewMode: (mode: 'both' | 'buy' | 'sell') => void;
   show?: boolean;
   updateLimitAmount: any;
-  // Add props for user orders
   userOrders?: any[];
-  activeMarket?: string;
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -38,8 +36,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   roundedSell,
   spreadData,
   priceFactor,
-  symbolIn,
-  symbolOut,
+  symbolQuote,
+  symbolBase,
   orderbookPosition,
   interval,
   amountsQuote,
@@ -51,7 +49,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   updateLimitAmount,
   show = true,
   userOrders = [], // Default to empty array if not provided
-  activeMarket = '',
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -66,7 +63,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const heightUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const nonUSDCsymbol = symbolIn === 'USDC' ? symbolOut : symbolIn;
 
   const updateContainerHeight = useCallback(() => {
     if (!containerRef.current) return;
@@ -161,7 +157,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     setSpread(spreadData.spread);
     setAveragePrice(spreadData.averagePrice);
   }, [spreadData]);
-
+  
   return (
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className={`ob-controls ${!show ? 'hidden' : ''}`}>
@@ -170,7 +166,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           interval={interval}
           localInterval={obInterval}
           setLocalInterval={setOBInterval}
-          symbolOut={symbolOut}
+          symbolOut={symbolBase}
         />
       </div>
       <div
@@ -180,7 +176,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
         <OrderListHeader
           amountsQuote={amountsQuote}
           onAmountsQuoteChange={setAmountsQuote}
-          symbol={nonUSDCsymbol}
+          symbolQuote={symbolQuote}
+          symbolBase={symbolBase}
         />
         {viewMode === 'both' && (
           <div className="view-both">
@@ -191,13 +188,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               color="rgb(255, 108, 108)"
               amountsQuote={amountsQuote}
               isBuyOrderList={false}
-              symbol={nonUSDCsymbol}
+              symbolQuote={symbolQuote}
+              symbolBase={symbolBase}
               priceFactor={priceFactor}
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
               userOrders={userOrders}
-              activeMarket={activeMarket}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -211,13 +208,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               color="rgb(111, 255, 111)"
               amountsQuote={amountsQuote}
               isBuyOrderList={true}
-              symbol={nonUSDCsymbol}
+              symbolQuote={symbolQuote}
+              symbolBase={symbolBase}
               priceFactor={priceFactor}
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
               userOrders={userOrders}
-              activeMarket={activeMarket}
             />
           </div>
         )}
@@ -230,13 +227,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               color="rgb(255, 108, 108)"
               amountsQuote={amountsQuote}
               isBuyOrderList={false}
-              symbol={nonUSDCsymbol}
+              symbolQuote={symbolQuote}
+              symbolBase={symbolBase}
               priceFactor={priceFactor}
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
               userOrders={userOrders}
-              activeMarket={activeMarket}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -259,13 +256,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               color="rgb(111, 255, 111)"
               amountsQuote={amountsQuote}
               isBuyOrderList={true}
-              symbol={nonUSDCsymbol}
+              symbolQuote={symbolQuote}
+              symbolBase={symbolBase}
               priceFactor={priceFactor}
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
               userOrders={userOrders}
-              activeMarket={activeMarket}
             />
           </div>
         )}

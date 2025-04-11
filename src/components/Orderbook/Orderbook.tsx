@@ -53,8 +53,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
   const displaySellOrders = orderdata.roundedSellOrders;
   const priceFactor = orderdata.priceFactor;
   const spreadData = orderdata.spreadData;
-  const symbolIn = orderdata.symbolIn;
-  const symbolOut = orderdata.symbolOut;
 
   const filteredUserOrders = userOrders.filter(order => {
     return order[4] === (activemarket?.baseAsset + activemarket?.quoteAsset);
@@ -126,8 +124,8 @@ const OrderBook: React.FC<OrderBookProps> = ({
         roundedSell={displaySellOrders}
         spreadData={spreadData}
         priceFactor={priceFactor}
-        symbolIn={symbolIn}
-        symbolOut={symbolOut}
+        symbolQuote={orderdata.symbolIn}
+        symbolBase={orderdata.symbolOut}
         orderbookPosition={orderbookPosition}
         interval={interval}
         amountsQuote={amountsQuote}
@@ -139,7 +137,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
         show={activeTab === 'orderbook' ? true : false}
         updateLimitAmount={updateLimitAmount}
         userOrders={filteredUserOrders}
-        activeMarket={activemarket?.baseAsset + activemarket?.quoteAsset}
       />
 
       <TradesView
