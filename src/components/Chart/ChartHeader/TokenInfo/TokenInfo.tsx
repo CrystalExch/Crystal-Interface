@@ -286,7 +286,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="markets-dropdown" ref={dropdownRef}>
-          <button className="markets-dropdown-trigger" title="Select Market">
+          <button className="markets-dropdown-trigger" >
             <div
               className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
             >
@@ -317,7 +317,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       <button
                         className="cancel-search"
                         onClick={() => setSearchQuery('')}
-                        title="Clear search"
                       >
                         {t('clear')}
                       </button>

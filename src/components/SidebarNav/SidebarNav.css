@@ -7,7 +7,7 @@
   bottom: 0;
   width:50px;
   align-items: flex-start;
-  padding-top: 12px;
+  padding-top: 17px;
   z-index: 100;
   transition: width 0.3s ease;
   overflow: hidden;
@@ -32,7 +32,6 @@
 }
 
 .sidebar-logo {
-  margin-top: 5px;
   display: flex;
   align-items: center;
   padding-left: 10px;
@@ -125,7 +124,7 @@
   align-items: flex-start;
   flex-grow: 1;
   width: 100%;
-  padding-top: 10px;
+  padding-top: 13px;
 }
 
 .sidebar-bottom {

@@ -107,7 +107,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
           ref={buttonRef}
           className="min-size-filter-button" 
           onClick={toggleDropdown}
-          title="Filters"
         >
           <img className="min-size-filter-dots" src={dotsicon} alt="Filters" />
         </div>

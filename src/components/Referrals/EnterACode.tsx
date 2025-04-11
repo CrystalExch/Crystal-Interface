@@ -84,7 +84,6 @@ const EnterACode: React.FC<EnterACodeProps> = ({
                 <button
                   onClick={handleClear}
                   className="clear-icon-button"
-                  title="Clear code"
                 >
                   {t('clear')}
                 </button>

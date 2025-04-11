@@ -87,14 +87,18 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       })
     );
     window.dispatchEvent(new Event('resize'));
-    navigate('/swap');
+    if (!isTradingPage) {
+      navigate('/swap');
+    }
   };
 
   const goToAdvancedView = () => {
     setSimpleView(false);
     localStorage.setItem('crystal_simple_view', 'false');
     window.dispatchEvent(new Event('resize'));
-    navigate('/swap');
+    if (!isTradingPage) {
+      navigate('/swap');
+    }
   };
 
   const toggleSidebar = () => {
@@ -121,7 +125,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={candlestick} alt="Advanced View" className="sidebar-icon" />
+            <img src={candlestick} className="sidebar-icon" />
             <span className="sidebar-label">{t('advancedView')}</span>
           </button>
           <button
@@ -130,7 +134,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={swap} alt="Basic View" className="sidebar-icon" />
+            <img src={swap} className="sidebar-icon" />
             <span className="sidebar-label">{t('simpleView')}</span>
           </button>
           <Link
@@ -177,24 +181,22 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             target="_blank"
             rel="noreferrer"
             className="sidebar-bottom-link"
-            title="Docs"
-            onMouseEnter={(e) => handleTooltip(e, 'Docs')}
+            onMouseEnter={(e) => handleTooltip(e, t('docs'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={docs} alt="Docs" className="sidebar-icon" />
-            <span className="sidebar-label">Docs</span>
+            <img src={docs} className="sidebar-icon" />
+            <span className="sidebar-label">{t('docs')}</span>
           </a>
           <a
             href="https://x.com/CrystalExch"
             target="_blank"
             rel="noreferrer"
             className="sidebar-bottom-link"
-            title="Twitter"
-            onMouseEnter={(e) => handleTooltip(e, 'Twitter')}
+            onMouseEnter={(e) => handleTooltip(e, t('twitter'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={twitter} alt="Twitter" className="sidebar-icon" />
-            <span className="sidebar-label">Twitter</span>
+            <img src={twitter} className="sidebar-icon" />
+            <span className="sidebar-label">{t('twitter')}</span>
           </a>
           <button
             onClick={toggleSidebar}

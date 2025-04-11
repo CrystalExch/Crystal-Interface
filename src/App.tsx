@@ -278,7 +278,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
   const [activeTab, setActiveTab] = useState(location.pathname.slice(1));
-  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'limit' ? t('pro') : t(activeTab.toLowerCase()));
+  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'limit' ? 'pro' : t(activeTab.toLowerCase()));
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
@@ -507,14 +507,6 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [showScaleInfoBox, setShowScaleInfoBox] = useState(() => {
-    return localStorage.getItem('crystal_scale_box_seen') !== 'true';
-  });
-  const handleCloseScaleBox = () => {
-    localStorage.setItem('crystal_scale_box_seen', 'true');
-    setShowScaleInfoBox(false);
-  };
-
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
     const savedHeight = localStorage.getItem('orderCenterHeight');
     if (savedHeight !== null) {
@@ -660,6 +652,7 @@ function App() {
   const [sendUsdValue, setSendUsdValue] = useState('');
   const [sendTokenIn, setSendTokenIn] = useState(eth);
   const [isSigning, setIsSigning] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
@@ -871,8 +864,8 @@ function App() {
 
   // on market select
   const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
-    if (location.pathname !== '/limit') {
-      navigate('/limit');
+    if (!['swap', 'limit', 'send', 'scale'].includes(location.pathname.slice(1))) {
+      navigate('/swap');
     }
 
     setTokenIn(market.quoteAddress);
@@ -1732,15 +1725,12 @@ function App() {
     setSearchQuery('');
     setpopup(0);
   };
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshCooldown, setRefreshCooldown] = useState(false);
 
-  //TEMPERARY REFRESH FUNCTION
   const handleRefreshQuote = async (e:any) => {
     e.preventDefault();
-  
-    if (refreshCooldown || isRefreshing) return;
+    if (isRefreshing) return;
     setIsRefreshing(true);
+    setStateIsLoading(true);
     await refetch()
     setIsRefreshing(false);
   };
@@ -3385,7 +3375,7 @@ function App() {
             : '',
         );
       } else if (path == 'limit') {
-        setCurrentProText(t('pro'));
+        setCurrentProText('pro');
         setswitched(false);
         if (multihop || isWrap) {
           let token;
@@ -3506,7 +3496,7 @@ function App() {
           );
         }
       } else if (path == 'swap') {
-        setCurrentProText(t('pro'));
+        setCurrentProText('pro');
       } else if (path == 'scale') {
         setswitched(false);
         if (multihop || isWrap) {
@@ -5793,7 +5783,6 @@ function App() {
                       type="button"
                       className="cancel-search"
                       onClick={() => setSearchQuery('')}
-                      title="Clear search"
                     >
                       {t('clear')}
                     </button>
@@ -6328,9 +6317,9 @@ function App() {
             </svg>
           </span>
           <button
-            className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''} ${refreshCooldown ? 'cooldown' : ''}`}
+            className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''}`}
             onClick={handleRefreshQuote}
-            disabled={refreshCooldown || isRefreshing}
+            disabled={isRefreshing}
           >
             <img src={refreshicon} className="refresh-quote-icon"></img>
             <svg className="refresh-timer-circle" viewBox="0 0 24 24">
@@ -6344,7 +6333,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('send'));
+                  setCurrentProText('send');
                 }}
               >
                 {t('send')}
@@ -6354,7 +6343,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('scale'));
+                  setCurrentProText('scale');
                 }}
               >
                 {t('scale')}
@@ -7739,7 +7728,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('send'));
+                  setCurrentProText('send');
                 }}
               >
                 {t('send')}
@@ -7749,7 +7738,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('scale'));
+                  setCurrentProText('scale');
                 }}
               >
                 {t('scale')}
@@ -9062,7 +9051,7 @@ function App() {
                 className="dropdown-item"
                 onClick={(e) => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('send'));
+                  setCurrentProText('send');
                   if (location.pathname === '/send') {
                     e.preventDefault();
                   }
@@ -9075,7 +9064,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('scale'));
+                  setCurrentProText('scale');
                 }}
               >
                 {t('scale')}
@@ -9756,7 +9745,7 @@ function App() {
                 className="dropdown-item"
                 onClick={() => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('send'));
+                  setCurrentProText('send');
                 }}
               >
                 {t('send')}
@@ -9766,7 +9755,7 @@ function App() {
                 className="dropdown-item"
                 onClick={(e) => {
                   setShowSendDropdown(false);
-                  setCurrentProText(t('scale'));
+                  setCurrentProText('scale');
                   if (location.pathname === '/scale') {
                     e.preventDefault();
                   }
@@ -9780,32 +9769,6 @@ function App() {
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
-        {showScaleInfoBox && (
-          <div className="scale-info-box">
-            <span className="scale-info-text">WTF is scale?</span>
-            <div className="scale-close-container" style={{ display: 'flex', alignItems: 'center' }}>
-              <a
-                className="scale-learn-more"
-                href="https://www.binance.com/en/support/faq/detail/109e5e36156d4c57a8ee29734f8bed3a"
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={handleCloseScaleBox}
-              >
-                Learn More
-              </a>
-              <button
-                className="scale-close-button"
-                onClick={handleCloseScaleBox}
-                title="Close"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              </button>
-            </div>
-          </div>
-        )}
         <div
           className={`inputbg ${connected &&
             ((amountIn > tokenBalances[tokenIn] &&
