@@ -511,7 +511,6 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
             <span className="tx-detail-back-text">{t('back')}</span>
           </div>
           <div className={`tx-detail-title ${isFailed ? 'txdetail-title-failed' : ''}`}>
-            {isFailed && <span className="txdetail-failed-indicator">!</span>}
             {actionTitle}
           </div>
         </div>
