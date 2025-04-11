@@ -52,6 +52,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
+  
 
   useEffect(() => {
     const fetchUserPoints = () => {
@@ -141,6 +142,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     }
   }, [liveLeaderboard]);
 
+
+
   const findUserPosition = () => {
     if (!address) return -1;
 
@@ -149,6 +152,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     );
 
     return userPosition >= 0 ? userPosition : -1;
+  };
+  
+  const shouldShowNotification = (): boolean => {
+    return address !== undefined && (findUserPosition() === -1 || findUserPosition() < 0);
   };
 
   const goToUserPosition = () => {
@@ -320,6 +327,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           onComplete={handleChallengeIntroComplete}
           initialStep={introStep}
         />
+      )}
+
+      {shouldShowNotification() && (
+        <div className="notification-bar">
+          <div className="notification-content">
+            <p>Want to join the leaderboard? Place a limit order and wait for it to be filled when the market price changes. Be patient the leaderboard take a few minutes to update.</p>
+          </div>
+        </div>
       )}
 
       <div className="leaderboard-banner">

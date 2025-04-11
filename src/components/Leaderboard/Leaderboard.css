@@ -373,7 +373,7 @@
   transform-style:preserve-3d;
   backface-visibility:hidden;
   max-width:305px;
-  height:110px;
+  height:115px;
 
 }
 .faction-rank{
@@ -814,3 +814,32 @@
 .progress-bar-amount-header{
   display:flex
 }
+
+.notification-bar {
+  background: linear-gradient(90deg, rgba(171, 176, 224, 0.01), rgba(204, 199, 254, 0.05));
+  border: 1.5px solid rgba(171, 176, 224, 0.1);
+  color: #ffffffda;
+  padding: 12px 20px;
+  width: 100%;
+  text-align: center;
+  position: relative;
+  z-index: 5;
+  margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  max-width: 1000px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.notification-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 0.75rem;
+  letter-spacing: -0.3px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
