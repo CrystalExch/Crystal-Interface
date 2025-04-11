@@ -7,25 +7,28 @@ import './OrderListHeader.css';
 interface OrderListHeaderProps {
   amountsQuote: string;
   onAmountsQuoteChange: (value: string) => void;
-  symbol: string;
+  symbolQuote: string;
+  symbolBase: string;
 }
 
 const OrderListHeader: React.FC<OrderListHeaderProps> = ({
   amountsQuote,
   onAmountsQuoteChange,
-  symbol,
+  symbolQuote,
+  symbolBase,
 }) => (
   <div className="ol-header">
     <span>{t('price')}</span>
     <span>
-      {t('size')} [{amountsQuote === 'Quote' ? 'USDC' : symbol}]
+      {t('size')} [{amountsQuote === 'Quote' ? symbolQuote : symbolBase}]
     </span>
     <span className="total-column">
       <span className="total-name">{t('total')}</span>
       <OrderbookTokenSelect
         value={amountsQuote}
         onChange={onAmountsQuoteChange}
-        symbol={symbol}
+        symbolQuote={symbolQuote}
+        symbolBase={symbolBase}
       />
     </span>
   </div>

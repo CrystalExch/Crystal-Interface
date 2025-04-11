@@ -22,13 +22,13 @@ interface OrderListProps {
   color: string;
   amountsQuote: string;
   isBuyOrderList: boolean;
-  symbol: string;
+  symbolQuote: string;
+  symbolBase: string;
   priceFactor: number;
   spreadPrice?: number;
   orderbookPosition: string;
   updateLimitAmount: any;
   userOrders?: any[];
-  activeMarket?: string;
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -38,13 +38,13 @@ const OrderList: React.FC<OrderListProps> = ({
   color,
   amountsQuote,
   isBuyOrderList,
-  symbol,
+  symbolQuote,
+  symbolBase,
   priceFactor,
   spreadPrice,
   orderbookPosition,
   updateLimitAmount,
   userOrders = [],
-  activeMarket = '',
 }) => {
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,
@@ -77,7 +77,7 @@ const OrderList: React.FC<OrderListProps> = ({
       const isBuy = Number(order[3]) === 1;
       const matchesListType = isBuyOrderList ? isBuy : !isBuy;
       const orderMarket = String(order[4]);
-      const matchesMarket = orderMarket === activeMarket;
+      const matchesMarket = orderMarket === symbolQuote+symbolBase;
       
       return matchesListType && matchesMarket;
     });
@@ -133,7 +133,7 @@ const OrderList: React.FC<OrderListProps> = ({
     });
     
     return priceMap;
-  }, [userOrders, roundedOrders, isBuyOrderList, activeMarket, priceFactor]);  
+  }, [userOrders, roundedOrders, isBuyOrderList, symbolQuote+symbolBase, priceFactor]);  
 
   const displayedOrders = useMemo(() => {
     const updatedOrders = roundedOrders.map((order) => ({
@@ -205,7 +205,8 @@ const OrderList: React.FC<OrderListProps> = ({
       const highlightRawData = calculateHighlightData(
         ordersInRange,
         amountsQuote,
-        symbol,
+        symbolQuote,
+        symbolBase,
       );
       setHighlightData({
         ...highlightRawData,
@@ -219,7 +220,7 @@ const OrderList: React.FC<OrderListProps> = ({
     displayedOrders,
     isBuyOrderList,
     amountsQuote,
-    symbol,
+    symbolQuote+symbolBase,
     spreadPrice,
     roundedOrders,
   ]);

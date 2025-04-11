@@ -74,10 +74,10 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
         {formatCommas(
           highlightData.averagePrice.toFixed(Math.log10(priceFactor)),
         )}{' '}
-        USDC
+        {highlightData.unit}
       </div>
       <div>
-        <span className="text-white">{t('total')} (USDC): </span>
+        <span className="text-white">{t('total')} {highlightData.unit}: </span>
         {formatCommas(highlightData.totalAmount.toFixed(2))}
       </div>
       <div>
