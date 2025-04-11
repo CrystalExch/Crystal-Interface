@@ -89,7 +89,7 @@ import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
-import refreshicon from './assets/refresh.svg';
+import refreshicon from './assets/circulararrow.png';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -1736,26 +1736,13 @@ function App() {
   const [refreshCooldown, setRefreshCooldown] = useState(false);
 
   //TEMPERARY REFRESH FUNCTION
-  const handleRefreshQuote = (e:any) => {
+  const handleRefreshQuote = async (e:any) => {
     e.preventDefault();
   
     if (refreshCooldown || isRefreshing) return;
-      setIsRefreshing(true);
-    const refreshButton = e.currentTarget;
-    refreshButton.classList.add('refreshing');
-  
-    refetch().then(() => {
-      setTimeout(() => {
-          setRefreshCooldown(true);
-        setTimeout(() => {
-          setRefreshCooldown(false);
-        }, 5000);
-        
-        setIsRefreshing(false);
-      }, 500); 
-    }).catch(() => {
-      setIsRefreshing(false);
-    });
+    setIsRefreshing(true);
+    await refetch()
+    setIsRefreshing(false);
   };
 
   const setScaleOutput = (
@@ -5110,7 +5097,6 @@ function App() {
                       } catch (err) {
                       }
                     }}
-                    title={t('pasteAddress')}
                   >
                     <svg
                       width="16"
@@ -6345,7 +6331,6 @@ function App() {
             className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''} ${refreshCooldown ? 'cooldown' : ''}`}
             onClick={handleRefreshQuote}
             disabled={refreshCooldown || isRefreshing}
-            title={refreshCooldown ? 'Wait before refreshing again' : 'Refresh quote'}
           >
             <img src={refreshicon} className="refresh-quote-icon"></img>
             <svg className="refresh-timer-circle" viewBox="0 0 24 24">
@@ -9572,7 +9557,6 @@ function App() {
                   console.error('Failed to read clipboard: ', err);
                 }
               }}
-              title={t('pasteAddress')}
             >
               <svg
                 width="16"

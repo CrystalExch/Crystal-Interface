@@ -101,9 +101,10 @@ html {
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
-  margin-left: 13px;
+  margin-left: 15px;
   outline: 0;
   width: 0;
+  transform: scaleX(1.03)
 }
 
 .tokenselectheader1 {
@@ -2652,7 +2653,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .output {
   font-size: 1.6rem;
   font-weight: 400;
-  margin-left: 12px;
+  margin-left: 16px;
 }
 
 .main-content-wrapper.simple-view .output-skeleton {
@@ -4835,3 +4836,4 @@ input[type="email"] {
     padding-left: 5px;
   }
 }
+

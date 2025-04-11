@@ -14,8 +14,9 @@
   display: flex;
   gap: 4px;
   height: 100%;
-  max-height: 900px;
-  max-width: 1700px;
+  /* max-height: 900px;
+  max-width: 1700px; */
+  /* next person to uncomment the two lines above owes me doordash (triple cheesburger medium fries sweet tea apple pie) */
   overflow: hidden;
   padding-right:5px;
   width: 100%;

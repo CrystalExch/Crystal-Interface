@@ -326,7 +326,7 @@ export const translations: any = {
     challengeOverview: "Challenge Overview",
     learnHowToCompete: "Learn how to compete and earn rewards",
     precisionMatters: "Precision Matters",
-    placeYourBids: "Place your bids toward the mid to earn bonus points",
+    placeYourBids: "Place your limit orders toward the mid to earn Crystal XP",
     earnXp: "Earn XP",
     midsGiveYou: "Mids give you XP that contributes to your overall ranking",
     claimRewards: "Claim Rewards",

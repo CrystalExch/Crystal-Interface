@@ -47,7 +47,6 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
           onClick={handleFavoriteClick}
           role="button"
           style={{ cursor: 'pointer' }}
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           <svg
             width="16"

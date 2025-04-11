@@ -48,7 +48,6 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
         <div
           className={`order-favorite-icon ${isFavorite ? 'order-favorite-active' : ''}`}
           onClick={handleFavoriteClick}
-          title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
         >
           <svg
             width="16"

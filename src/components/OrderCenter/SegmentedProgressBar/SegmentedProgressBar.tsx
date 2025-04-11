@@ -52,7 +52,7 @@ const SegmentedProgressBar: React.FC<SegmentedProgressBarProps> = ({ percentFill
               isVisible && 
               showAnimation && 
               index >= filledSegments 
-                ? `pulse 4s infinite ${(index - filledSegments) * 0.08}s` 
+                ? `pulse 4s infinite ${(index - filledSegments) * 0.1}s` 
                 : 'none'
           }}
         />
