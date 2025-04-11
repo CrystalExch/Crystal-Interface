@@ -58,12 +58,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
       if (e.key === '/' && !isTypingInField) {
         e.preventDefault();
-        setpopup(8);
-      }
-
-      if ((e.ctrlKey || e.metaKey) && e.key === 'k' && !isTypingInField) {
-        e.preventDefault();
-
+        
         if (!isDropdownOpen) {
           setSearchQuery('');
           setIsDropdownOpen(true);
@@ -452,7 +447,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="ctrlktooltip">
-          Ctrl + K
+          /
         </div>
       </div>
 

@@ -1628,22 +1628,7 @@ function App() {
     );
   }, [tradesByMarket]);
 
-  // search
-  useEffect(() => {
-    const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      if (
-        e.key === '/' &&
-        document.activeElement &&
-        !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)
-      ) {
-        e.preventDefault();
-        setpopup(8);
-      }
-    };
 
-    document.addEventListener('keydown', handleGlobalKeyDown);
-    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -1733,7 +1718,7 @@ function App() {
     setpopup(0);
   };
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [refreshCooldown, setRefreshCooldown] = useState(false);
+  const [refreshCooldown] = useState(false);
 
   //TEMPERARY REFRESH FUNCTION
   const handleRefreshQuote = async (e:any) => {
