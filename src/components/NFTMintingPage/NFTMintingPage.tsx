@@ -4,6 +4,7 @@ import LeaderboardBanner from '../../assets/MintTeaser.png';
 
 const NFTMintingPage: React.FC = () => {
   const [mintLoading, setMintLoading] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -62,6 +63,10 @@ const NFTMintingPage: React.FC = () => {
     }, 2000);
   };
 
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
   const supplySold = nftData.totalSupply - nftData.remainingSupply;
   const percentageSold = (supplySold / nftData.totalSupply) * 100;
 
@@ -69,7 +74,13 @@ const NFTMintingPage: React.FC = () => {
     <div className="nft-scroll-wrapper">
       <div className="nft-main-content-wrapper">
         <div className="nft-image-container">
-          <img src={nftData.imageUrl} className="nft-image" />
+          {!imageLoaded && <div className="nft-image-placeholder"></div>}
+          <img 
+            src={nftData.imageUrl} 
+            className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`} 
+            onLoad={handleImageLoad}
+            alt="NFT Preview"
+          />
           <div className="nft-countdown-timer">
             <div className="nft-countdown-content">
               {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
@@ -120,7 +131,7 @@ const NFTMintingPage: React.FC = () => {
                 
               </div>
             </div>
-                          <button 
+            <button 
                 className={`nft-swap-button ${mintLoading ? 'nft-signing' : ''}`} 
                 onClick={handleMint}
                 disabled={true}
