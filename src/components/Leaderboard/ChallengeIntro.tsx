@@ -4,6 +4,7 @@ import part1image from '../../assets/spreaddemo.png';
 import defaultProfilePic from '../../assets/bh.png';
 import LeaderboardPfp2 from '../../assets/legion.png';
 import LeaderboardPfp3 from '../../assets/rubberbandz.png';
+import crystalxp from '../../assets/CrystalX.png'; 
 
 interface ChallengeIntroProps {
   onComplete: () => void;
@@ -52,7 +53,21 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
         if (xpPopupsRef.current) {
           const popup = document.createElement('div');
           popup.className = 'xp-popup';
-          popup.textContent = '+10 XP';
+          
+          const xpContainer = document.createElement('div');
+          xpContainer.className = 'xp-popup-container';
+          
+          const xpText = document.createElement('span');
+          xpText.textContent = '+10';
+          
+          const xpIcon = document.createElement('img');
+          xpIcon.src = crystalxp;
+          xpIcon.className = 'xp-popup-icon';
+          xpIcon.alt = 'XP Icon';
+          
+          xpContainer.appendChild(xpText);
+          xpContainer.appendChild(xpIcon);
+          popup.appendChild(xpContainer);
           
           const randomOffset = Math.random() * 60 - 30;
           popup.style.left = `calc(50% + ${randomOffset}px)`;
@@ -243,7 +258,10 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                   className="profile-pic-second"
                 />
                 <div className="username-display">@player123</div>
-                <div className="xp-counter">{xpCount} XP</div>
+                <div className="xp-counter">
+                  {xpCount} 
+                  <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+                </div>
               </div>
             </div>
           ) : (
@@ -263,16 +281,16 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                 
                 <div className="podium-profiles">
                   <div className="podium-profile profile-second">
-                    <div className="mon-reward">+30 MON</div>
+                    <div className="mon-reward">+???</div>
                     <img src={LeaderboardPfp2} alt="2nd Place" className="podium-profile-pic" />
                   </div>
                   <div className="podium-profile profile-first">
-                    <div className="mon-reward">+50 MON</div>
+                    <div className="mon-reward">+???</div>
                     <img src={defaultProfilePic} alt="1st Place" className="podium-profile-pic" />
                     <div className="crown">👑</div>
                   </div>
                   <div className="podium-profile profile-third">
-                    <div className="mon-reward">+20 MON</div>
+                    <div className="mon-reward">+???</div>
                     <img src={LeaderboardPfp3} alt="3rd Place" className="podium-profile-pic" />
                   </div>
                 </div>
