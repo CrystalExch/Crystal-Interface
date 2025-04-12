@@ -4,11 +4,7 @@ import part1image from '../../assets/spreaddemo.png';
 import defaultProfilePic from '../../assets/bh.png';
 import LeaderboardPfp2 from '../../assets/legion.png';
 import LeaderboardPfp3 from '../../assets/rubberbandz.png';
-<<<<<<< HEAD
-import crystalxp from '../../assets/CrystalX.png'; // Import the crystal icon
-=======
 import crystalxp from '../../assets/CrystalX.png'; 
->>>>>>> 7f2e9106d4cdbca7d45f6ebb70285c07cf431a0a
 
 interface ChallengeIntroProps {
   onComplete: () => void;
@@ -58,7 +54,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
           const popup = document.createElement('div');
           popup.className = 'xp-popup';
           
-<<<<<<< HEAD
           const popupContent = document.createElement('div');
           popupContent.style.display = 'flex';
           popupContent.style.alignItems = 'center';
@@ -75,22 +70,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
 
           popupContent.appendChild(crystalImg);
           popup.appendChild(popupContent);
-=======
-          const xpContainer = document.createElement('div');
-          xpContainer.className = 'xp-popup-container';
-          
-          const xpText = document.createElement('span');
-          xpText.textContent = '+10';
-          
-          const xpIcon = document.createElement('img');
-          xpIcon.src = crystalxp;
-          xpIcon.className = 'xp-popup-icon';
-          xpIcon.alt = 'XP Icon';
-          
-          xpContainer.appendChild(xpText);
-          xpContainer.appendChild(xpIcon);
-          popup.appendChild(xpContainer);
->>>>>>> 7f2e9106d4cdbca7d45f6ebb70285c07cf431a0a
           
           const randomOffset = Math.random() * 60 - 30;
           popup.style.left = `calc(50% + ${randomOffset}px)`;
@@ -282,13 +261,8 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                 />
                 <div className="username-display">@player123</div>
                 <div className="xp-counter">
-<<<<<<< HEAD
                   <span>{xpCount}</span>
                   <img src={crystalxp} className="xp-icon" alt="Crystal Icon" style={{width: '23px', height: '23px', verticalAlign: 'middle'}} />
-=======
-                  {xpCount} 
-                  <img src={crystalxp} className="xp-icon" alt="XP Icon" />
->>>>>>> 7f2e9106d4cdbca7d45f6ebb70285c07cf431a0a
                 </div>
               </div>
             </div>
@@ -309,25 +283,13 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                 
                 <div className="podium-profiles">
                   <div className="podium-profile profile-second">
-<<<<<<< HEAD
                     <img src={LeaderboardPfp2} alt="2nd Place" className="podium-profile-pic" />
                   </div>
                   <div className="podium-profile profile-first">
-=======
-                    <div className="mon-reward">+???</div>
-                    <img src={LeaderboardPfp2} alt="2nd Place" className="podium-profile-pic" />
-                  </div>
-                  <div className="podium-profile profile-first">
-                    <div className="mon-reward">+???</div>
->>>>>>> 7f2e9106d4cdbca7d45f6ebb70285c07cf431a0a
                     <img src={defaultProfilePic} alt="1st Place" className="podium-profile-pic" />
                     <div className="crown">👑</div>
                   </div>
                   <div className="podium-profile profile-third">
-<<<<<<< HEAD
-=======
-                    <div className="mon-reward">+???</div>
->>>>>>> 7f2e9106d4cdbca7d45f6ebb70285c07cf431a0a
                     <img src={LeaderboardPfp3} alt="3rd Place" className="podium-profile-pic" />
                   </div>
                 </div>
