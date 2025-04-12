@@ -50,6 +50,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
+  const [showNotification, setShowNotification] = useState<boolean>(false);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
   
@@ -108,6 +109,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
+      
+      const notificationTimer = setTimeout(() => {
+        setShowNotification(true);
+      }, 3000); 
+      
+      return () => clearTimeout(notificationTimer);
     } else {
       setUserData({
         userXP: 0,
@@ -119,6 +126,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
+      
+      setShowNotification(false);
     }
   }, [address, liveLeaderboard]);
 
@@ -142,7 +151,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     }
   }, [liveLeaderboard]);
 
-
+  const getUserRank = () => {
+    if (!address || !allFactions.length) return "N/A";
+    
+    const userFaction = allFactions.find(f => 
+      f.id.toLowerCase() === address.toLowerCase()
+    );
+    
+    if (userFaction) {
+      return "#" + userFaction.rank;
+    }
+    
+    return "N/A";
+  };
 
   const findUserPosition = () => {
     if (!address) return -1;
@@ -155,7 +176,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   };
   
   const shouldShowNotification = (): boolean => {
-    return address !== undefined && (findUserPosition() === -1 || findUserPosition() < 0);
+    return showNotification && address !== undefined && (findUserPosition() === -1 || findUserPosition() < 0);
   };
 
   const goToUserPosition = () => {
@@ -397,7 +418,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
             <div className="info-column">
               <div className="column-header">{t("rank")}</div>
               <div className="column-content">
-                {findUserPosition() + 1 > 0 ? "#" + findUserPosition() + 1 : "N/A"}
+                {getUserRank()}
               </div>
             </div>
           </div>
