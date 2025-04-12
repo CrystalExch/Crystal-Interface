@@ -8,9 +8,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid #c3c6e31b;
+  background-color:  #c3c6e314;
 }
 
 .send-icon:hover {
-  background-color: #c3c6e309;
+  background-color:  #c3c6e30d;
 }
