@@ -35,8 +35,8 @@
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   width: 240px;
   z-index: 4;
-  padding: 8px 12px;
-  border: 1.5px solid rgb(58 58 63 / 10%);
+  padding: 2px 12px;
+  border: 1.5px solid rgb(58 58 63 / 5%);
 }
 
 
@@ -49,8 +49,6 @@
 .only-filter-section {
   margin-bottom: 10px;
   padding-top: 8px;
-  padding-bottom:  12px;
-  border-bottom: 1.5px solid rgba(255, 255, 255, 0.06);
 }
 
 .filter-section-header {

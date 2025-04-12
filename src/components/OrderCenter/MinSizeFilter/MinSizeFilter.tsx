@@ -6,10 +6,6 @@ import './MinSizeFilter.css';
 import dotsicon from '../../../assets/dots_icon.png';
 
 interface MinSizeFilterProps {
-  minSizeEnabled: boolean;
-  setMinSizeEnabled: (enabled: boolean) => void;
-  minSizeValue: string;
-  setMinSizeValue: (value: string) => void;
   onlyThisMarket?: boolean;
   setOnlyThisMarket?: (onlyThisMarket: boolean) => void;
   filter?: 'all' | 'buy' | 'sell';
@@ -17,15 +13,10 @@ interface MinSizeFilterProps {
   hideMarketFilter?: boolean;
   showMarketFilter?: boolean;
   showTypeFilter?: boolean;
-  showSizeFilter?: boolean;
   alwaysShowButton?: boolean;
 }
 
 const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
-  minSizeEnabled,
-  setMinSizeEnabled,
-  minSizeValue,
-  setMinSizeValue,
   onlyThisMarket,
   setOnlyThisMarket,
   filter,
@@ -33,7 +24,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
   hideMarketFilter = false,
   showMarketFilter = true,
   showTypeFilter = true,
-  showSizeFilter = true,
   alwaysShowButton = false,
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(false);
@@ -42,23 +32,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setMinSizeValue(value);
-    }
-  };
-
-  const handleToggleChange = () => {
-    setMinSizeEnabled(!minSizeEnabled);
-    if (!minSizeEnabled) {
-      localStorage.setItem('crystal_min_size_enabled', 'true');
-      localStorage.setItem('crystal_min_size_value', minSizeValue);
-    } else {
-      localStorage.setItem('crystal_min_size_enabled', 'false');
-    }
   };
 
   const handleMarketToggleChange = () => {
@@ -70,12 +43,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
       setOnlyThisMarket(!onlyThisMarket);
     }
   };
-
-  useEffect(() => {
-    if (minSizeEnabled) {
-      localStorage.setItem('crystal_min_size_value', minSizeValue);
-    }
-  }, [minSizeValue, minSizeEnabled]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -96,21 +63,22 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
   }, []);
 
   const shouldShowButton = alwaysShowButton || 
-                          (showTypeFilter && filter !== undefined) || 
-                          (showMarketFilter && !hideMarketFilter && onlyThisMarket !== undefined) || 
-                          showSizeFilter;
+    (showTypeFilter && filter !== undefined) || 
+    (showMarketFilter && !hideMarketFilter && onlyThisMarket !== undefined);
+
+  if (!shouldShowButton) {
+    return null;
+  }
 
   return (
     <div className="min-size-filter-container">
-      {shouldShowButton && (
-        <div 
-          ref={buttonRef}
-          className="min-size-filter-button" 
-          onClick={toggleDropdown}
-        >
-          <img className="min-size-filter-dots" src={dotsicon} alt="Filters" />
-        </div>
-      )}
+      <div 
+        ref={buttonRef}
+        className="min-size-filter-button" 
+        onClick={toggleDropdown}
+      >
+        <img className="min-size-filter-dots" src={dotsicon} alt="Filters" />
+      </div>
       
       {isOpen && (
         <div 
@@ -138,7 +106,7 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
             
             {showMarketFilter && !hideMarketFilter && onlyThisMarket !== undefined && setOnlyThisMarket && (
               <>
-                <div className={`only-filter-section ${!showTypeFilter ? '' : ''}`}>
+                <div className="only-filter-section">
                   <div className="filter-section-content">
                     <ToggleSwitch
                       checked={onlyThisMarket}
@@ -160,38 +128,6 @@ const MinSizeFilter: React.FC<MinSizeFilterProps> = ({
                 </div>
               </>
             )}
-
-            <div className={`filter-section ${(!showTypeFilter && !showMarketFilter) ? '' : ''}`}>
-              <div className="min-size-filter-section-header">
-                {t("minimumSize")}
-              </div>
-              <div className="filter-section-content">
-                <div className="min-size-input-container">
-                  <div className="min-size-input-wrapper">
-                    <input
-                      inputMode="decimal"
-                      type="text"
-                      value={minSizeValue}
-                      onChange={handleInputChange}
-                      placeholder="Enter minimum size"
-                      className="min-size-input"
-                    />
-                    {minSizeValue !== '' && <span className="min-size-currency">USDC</span>}
-                  </div>
-                </div>
-                <div className="min-size-toggle-container">
-                  <ToggleSwitch
-                    checked={minSizeEnabled}
-                    onChange={handleToggleChange}
-                    label={
-                      <span className="min-size-toggle-label">
-                        {t("enableFilter")}
-                      </span>
-                    }
-                  />
-                </div>
-              </div>
-            </div>
           </>
         </div>  
       )}

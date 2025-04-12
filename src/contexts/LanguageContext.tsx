@@ -1,4 +1,5 @@
 import { connect } from 'http2';
+import { emitWarning } from 'process';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {
@@ -357,6 +358,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "Connect your wallet to view the leaderboard",
     searchAMarket: "Search for a market",
     browsePairs: "Browse trading pairs",
+    earnCrystals: "Earn Crystals",
 
   },
   CN: {
@@ -714,6 +716,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "连接您的钱包以查看排行榜",
     searchAMarket: "搜索市场",
     browsePairs: "浏览交易对",
+    earnCrystals: "赚取水晶",
   },
   JP: {
     trade: '取引',
@@ -1070,6 +1073,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "リーダーボードを表示するためにウォレットを接続",
     searchAMarket: "マーケットを検索",
     browsePairs: "ペアをブラウズ",
+    earnCrystals: "クリスタルを獲得",
 
   },
   KR: {
@@ -1427,6 +1431,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "리더보드를 보려면 지갑을 연결하세요",
     searchAMarket: "시장 검색",
     browsePairs: "페어 탐색",
+    earnCrystals: "크리스탈 수익",
   },
   ES: {
     trade: 'Operar',
@@ -1783,6 +1788,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "Conecta tu billetera para ver las tablas de clasificación",
     searchAMarket: "Buscar para un mercado",
     browsePairs: "Explorar comercio pares",
+    earnCrystals: "Ganar cristales",
   }
 };
 

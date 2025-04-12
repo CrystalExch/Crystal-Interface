@@ -91,16 +91,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       typeof window !== 'undefined' ? window.innerWidth : 1200
     );
     
-    const [minSizeEnabled, setMinSizeEnabled] = useState<boolean>(
-      typeof window !== 'undefined'
-        ? localStorage.getItem('crystal_min_size_enabled') === 'true'
-        : false,
-    );
-    const [minSizeValue, setMinSizeValue] = useState<string>(
-      typeof window !== 'undefined'
-        ? localStorage.getItem('crystal_min_size_value') || '0'
-        : '0',
-    );
     const [pageSize, setPageSize] = useState<number>(
       typeof window !== 'undefined'
         ? Number(localStorage.getItem('crystal_page_size') || '10')
@@ -115,8 +105,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     const showMarketOutside = windowWidth > BREAKPOINT_HIDE_MARKET;
     const showTypeOutside = windowWidth > BREAKPOINT_HIDE_TYPE;
     const showPageSize = windowWidth > BREAKPOINT_HIDE_PAGE_SIZE;
-    
-    const showSizeInDropdown = true;
     
     const showMarketInDropdown = !showMarketOutside && !hideMarketFilter && onlyThisMarket !== undefined;
     const showTypeInDropdown = !showTypeOutside && filter !== undefined;
@@ -149,109 +137,22 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       return marketSymbol === currentMarket;
     };
 
-    const debugValue = false;
-
     const filteredOrders = orders.filter((order) => {
       const sideMatch = matchesFilter(order[3]);
       const marketMatch = belongsToCurrentMarket(order[4]);
-
-      let valueMatch = true;
-      if (minSizeEnabled && minSizeValue !== '') {
-        try {
-          const marketData = markets[order[4]];
-          if (marketData) {
-            const scaleFactor = Number(marketData.scaleFactor || 1);
-            const quoteDecimals = Number(marketData.quoteDecimals || 18);
-
-            const usdValue = Number(order[8]) / (scaleFactor * 10 ** quoteDecimals);
-
-            if (debugValue) {
-              console.log("Open Order:", {
-                orderId: order[0],
-                orderValue: usdValue,
-                minSizeValue: parseFloat(minSizeValue),
-                matches: usdValue >= parseFloat(minSizeValue)
-              });
-            }
-
-            valueMatch = usdValue >= parseFloat(minSizeValue);
-          }
-        } catch (error) {
-          console.error("Error filtering open order:", error);
-          valueMatch = true;
-        }
-      }
-
-      return sideMatch && marketMatch && valueMatch;
+      return sideMatch && marketMatch;
     });
 
     const filteredTradeHistory = tradehistory.filter((trade) => {
       const sideMatch = matchesFilter(trade[2]);
       const marketMatch = belongsToCurrentMarket(trade[4]);
-
-      let valueMatch = true;
-      if (minSizeEnabled && minSizeValue !== '') {
-        try {
-          const value = trade[2] === 1 ? trade[0] : trade[1];
-          const numericValue = typeof value === 'bigint' ?
-            Number(value) / (10 ** Number(markets[trade[4]]?.quoteDecimals || 18)) :
-            Number(value) / (10 ** Number(markets[trade[4]]?.quoteDecimals || 18));
-
-          if (debugValue) {
-            console.log("Trade History:", {
-              tradeId: trade[0],
-              tradeValue: numericValue,
-              minSizeValue: parseFloat(minSizeValue),
-              matches: numericValue >= parseFloat(minSizeValue)
-            });
-          }
-
-          valueMatch = numericValue >= parseFloat(minSizeValue);
-        } catch (error) {
-          console.error("Error filtering trade history:", error);
-          valueMatch = true;
-        }
-      }
-
-      return sideMatch && marketMatch && valueMatch;
+      return sideMatch && marketMatch;
     });
 
     const filteredOrderHistory = canceledorders.filter((order) => {
       const sideMatch = matchesFilter(order[3]);
       const marketMatch = belongsToCurrentMarket(order[4]);
-
-      let valueMatch = true;
-      if (minSizeEnabled && minSizeValue !== '') {
-        try {
-          const marketData = markets[order[4]];
-          if (marketData) {
-            const priceFactor = Number(marketData.priceFactor || 1);
-            const baseDecimals = Number(marketData.baseDecimals || 18);
-
-            const amount = Number(order[2]) / (10 ** baseDecimals);
-            const price = Number(order[0]) / priceFactor;
-            const value = amount * price;
-
-            if (debugValue) {
-              console.log("Order History:", {
-                orderId: order[0],
-                amount: amount,
-                price: price,
-                orderValue: value,
-                minSizeValue: parseFloat(minSizeValue),
-                matches: value >= parseFloat(minSizeValue)
-              });
-            }
-
-            valueMatch = value >= parseFloat(minSizeValue);
-          }
-        } catch (error) {
-          console.error("Error filtering order history:", error);
-          valueMatch = true;
-        }
-      }
-
-      return sideMatch && marketMatch && valueMatch;
+      return sideMatch && marketMatch;
     });
     
     const availableTabs: { key: any; label: any; }[] = [];
@@ -275,6 +176,12 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       let maxPages = getTotalPages();
       setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
     };
+
+    useEffect(() => {
+      if (activeSection !== 'balances') {
+        setActiveSection('balances');
+      }
+    }, []);
     
     useEffect(() => {
       setCurrentPage(1);
@@ -520,25 +427,20 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
                   onPageChange={handlePageChange}
                   showPageSize={showPageSize}
                 />
+                
+                {(showTypeInDropdown || showMarketInDropdown) && (
+                  <MinSizeFilter
+                    filter={showTypeInDropdown ? filter : undefined}
+                    setFilter={showTypeInDropdown ? setFilter : undefined}
+                    onlyThisMarket={showMarketInDropdown ? onlyThisMarket : undefined}
+                    setOnlyThisMarket={showMarketInDropdown ? setOnlyThisMarket : undefined}
+                    hideMarketFilter={hideMarketFilter}
+                    showMarketFilter={showMarketInDropdown}
+                    showTypeFilter={showTypeInDropdown}
+                  />
+                )}
               </>
             )}
-            
-            <div className="size-filter-divider"/>
-            <MinSizeFilter
-              minSizeEnabled={minSizeEnabled}
-              setMinSizeEnabled={setMinSizeEnabled}
-              minSizeValue={minSizeValue}
-              setMinSizeValue={setMinSizeValue}
-              filter={showTypeInDropdown ? filter : undefined}
-              setFilter={showTypeInDropdown ? setFilter : undefined}
-              onlyThisMarket={showMarketInDropdown ? onlyThisMarket : undefined}
-              setOnlyThisMarket={showMarketInDropdown ? setOnlyThisMarket : undefined}
-              hideMarketFilter={hideMarketFilter}
-              showMarketFilter={showMarketInDropdown}
-              showTypeFilter={showTypeInDropdown}
-              showSizeFilter={showSizeInDropdown}
-              alwaysShowButton={true}
-            />
           </div>
         </div>
 
