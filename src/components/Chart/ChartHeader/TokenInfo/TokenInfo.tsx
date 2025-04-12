@@ -51,6 +51,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [shouldFocus, setShouldFocus] = useState(false);
 
+  const isAdvancedView = isTradeRoute && !simpleView;
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       const isTypingInField = document.activeElement &&
@@ -59,27 +61,35 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       if (e.key === '/' && !isTypingInField) {
         e.preventDefault();
         
-        if (!isDropdownOpen) {
-          setSearchQuery('');
-          setIsDropdownOpen(true);
-          setShouldFocus(true);
-          requestAnimationFrame(() => {
-            setIsDropdownVisible(true);
-          });
+        if (isAdvancedView) {
+          toggleDropdown();
         } else {
-          setIsDropdownVisible(false);
-          setShouldFocus(false);
-          setTimeout(() => {
-            setIsDropdownOpen(false);
-            setSearchQuery('');
-          }, 200);
+          setpopup(8);
         }
       }
     };
 
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-  }, [isDropdownOpen]);
+  }, [isDropdownOpen, isAdvancedView, setpopup]);
+
+  const toggleDropdown = () => {
+    if (!isDropdownOpen) {
+      setSearchQuery('');
+      setIsDropdownOpen(true);
+      setShouldFocus(true);
+      requestAnimationFrame(() => {
+        setIsDropdownVisible(true);
+      });
+    } else {
+      setIsDropdownVisible(false);
+      setShouldFocus(false);
+      setTimeout(() => {
+        setIsDropdownOpen(false);
+        setSearchQuery('');
+      }, 200);
+    }
+  };
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -112,20 +122,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       return;
     }
 
-    if (!isDropdownOpen) {
-      setSearchQuery('');
-      setIsDropdownOpen(true);
-      setShouldFocus(true);
-      requestAnimationFrame(() => {
-        setIsDropdownVisible(true);
-      });
+    if (isAdvancedView) {
+      toggleDropdown();
     } else {
-      setIsDropdownVisible(false);
-      setShouldFocus(false);
-      setTimeout(() => {
-        setIsDropdownOpen(false);
-        setSearchQuery('');
-      }, 200);
+      setpopup(8);
     }
   };
 
