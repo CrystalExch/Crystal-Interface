@@ -171,7 +171,6 @@
   display: flex;
   justify-content: center;
   padding: 4px;
-  padding-left: 12px;
   transition: color.2s ease;
   width: 30px;
 }
@@ -617,7 +616,8 @@
   max-height: 47px;
   min-height: 47px;
   gap: 10px;
-  padding-right: 15px;
+  padding:0 15px;
+
 }
 
 .search-market-text-container{

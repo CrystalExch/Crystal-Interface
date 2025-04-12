@@ -232,8 +232,33 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         role="button"
         tabIndex={0}
       >
-        <Search className="token-info-search-icon" size={18} />
-
+        {isAdvancedView ? (
+          <div className="markets-favorite-section">
+            <button
+              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(tokenAddress);
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
+          </div>
+        ) : (
+          <Search className="token-info-search-icon" size={18} />
+        )}
+        
         {shouldShowFullHeader && (
           <TokenIcons inIcon={in_icon} outIcon={out_icon} />
         )}
@@ -453,28 +478,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       {shouldShowFullHeader && (
         <>
           <div className="token-info-right-section">
-            <div className="markets-favorite-section">
-              <button
-                className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleFavorite(tokenAddress);
-                }}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                >
-                  <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                </svg>
-              </button>
-            </div>
             <div className="price-display-section">
               <PriceDisplay
                 price={price}
