@@ -4,7 +4,6 @@ import DropdownContext from '../DropdownContext/DropdownContext';
 
 import {
   calculateDropdownPosition,
-  formatSymbol,
   handleOutsideClick,
 } from '../../utils';
 
@@ -13,13 +12,15 @@ import './TokenViewSelect.css';
 interface OrderbookTokenSelectProps {
   value: string;
   onChange: (value: string) => void;
-  symbol: string;
+  symbolQuote: string;
+  symbolBase: string;
 }
 
 const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
   value,
   onChange,
-  symbol,
+  symbolQuote,
+  symbolBase,
 }) => {
   const selectorRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
@@ -71,7 +72,7 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
     <div className="interval-token-selector" ref={selectorRef}>
       <div className="interval-select-wrapper" onClick={toggleDropdown}>
         <span className="interval-selected-value">
-          [{formatSymbol(value, symbol)}]
+          [{value == 'Quote' ? symbolQuote : symbolBase}]
         </span>
         <svg
           className={`token-interval-arrow ${isOpen ? 'open' : ''}`}
@@ -107,7 +108,7 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
               localStorage.setItem('ob_amounts_quote', 'Quote');
             }}
           >
-            <span>USDC</span>
+            <span>{symbolQuote}</span>
             <CheckmarkIcon />
           </li>
           <li
@@ -118,7 +119,7 @@ const OrderbookTokenSelect: React.FC<OrderbookTokenSelectProps> = ({
               localStorage.setItem('ob_amounts_quote', 'Base');
             }}
           >
-            <span>{symbol}</span>
+            <span>{symbolBase}</span>
             <CheckmarkIcon />
           </li>
         </ul>

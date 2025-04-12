@@ -176,12 +176,11 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
       let maxPages = getTotalPages();
       setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
     };
-
     useEffect(() => {
-      if (activeSection !== 'balances') {
+      if (isPortfolio) {
         setActiveSection('balances');
       }
-    }, []);
+    }, []); 
     
     useEffect(() => {
       setCurrentPage(1);

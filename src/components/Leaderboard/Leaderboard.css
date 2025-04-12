@@ -818,7 +818,7 @@
 .notification-bar {
   background: linear-gradient(90deg, rgba(171, 176, 224, 0.01), rgba(204, 199, 254, 0.02));
   border: 1.5px solid rgba(171, 176, 224, 0.1);
-  color: #ffffffda;
+  color: #ffffffbc;
   padding: 12px 20px;
   width: 100%;
   text-align: center;
