@@ -1,5 +1,3 @@
-import { connect } from 'http2';
-import { emitWarning } from 'process';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {
