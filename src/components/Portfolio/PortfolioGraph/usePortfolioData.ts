@@ -151,29 +151,44 @@ export const usePortfolioData = (
 
             Object.keys(dailyBalances).forEach((ticker) => {
               const tokenBalance = dailyBalances[ticker] || 0;
+              let priceForDay
               const normalizedTicker = normalizeTicker(ticker, activechain);
-              const tradeTicker = `${normalizedTicker}USDC`;
-
-              const marketTrades = trades[tradeTicker] || [];
-              const filteredTrades = marketTrades.filter((trade) => {
-                const tradeDate = new Date(trade[6] * 1000)
-                  .toISOString()
-                  .split('T')[0];
-                return tradeDate === date;
-              });
-
-              let priceForDay =
-                normalizedTicker == 'USDC'
-                  ? 1
-                  : (fetchLatestPrice(filteredTrades, markets[tradeTicker]) ?? 0);
-              if (!priceForDay || priceForDay === 0) {
-                priceForDay =
-                  lastKnownPrice[ticker] ||
-                  fetchLatestPrice(marketTrades, markets[tradeTicker]) ||
-                  0;
+              const marketKeyUSDC = `${normalizedTicker}USDC`;
+              if (markets[marketKeyUSDC]) {
+                const marketTrades = trades[marketKeyUSDC] || [];
+                const filteredTrades = marketTrades.filter((trade) => {
+                  const tradeDate = new Date(trade[6] * 1000)
+                    .toISOString()
+                    .split('T')[0];
+                  return tradeDate === date;
+                });
+                priceForDay = fetchLatestPrice(filteredTrades, markets[marketKeyUSDC]) || 0;
+                if (!priceForDay || priceForDay === 0) {
+                  priceForDay =
+                    lastKnownPrice[ticker] ||
+                    fetchLatestPrice(marketTrades, markets[marketKeyUSDC]) ||
+                    0;
+                }
               }
-
-              lastKnownPrice[ticker] = priceForDay;
+              else {
+                const quotePrice = trades[settings.chainConfig[activechain].ethticker + 'USDC']?.[0]?.[3]
+                / Number(markets[settings.chainConfig[activechain].ethticker + 'USDC']?.priceFactor)
+                const marketTrades = trades[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`] || [];
+                const filteredTrades = marketTrades.filter((trade) => {
+                  const tradeDate = new Date(trade[6] * 1000)
+                    .toISOString()
+                    .split('T')[0];
+                  return tradeDate === date;
+                });
+                priceForDay = normalizedTicker == 'USDC' ? 1 : (fetchLatestPrice(filteredTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
+                if (!priceForDay || priceForDay === 0) {
+                  priceForDay =
+                    lastKnownPrice[normalizedTicker] ||
+                    (normalizedTicker == 'USDC' ? 1 : (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice ||
+                    0);
+                }
+              }
+              lastKnownPrice[normalizedTicker] = priceForDay;
 
               const index = chartData.findIndex((d) => d.time === date);
               if (index !== -1) {
@@ -204,7 +219,7 @@ export const usePortfolioData = (
         const quotePrice = trades[settings.chainConfig[activechain].ethticker + 'USDC']?.[0]?.[3]
         / Number(markets[settings.chainConfig[activechain].ethticker + 'USDC']?.priceFactor)
         const marketTrades = trades[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`] || [];
-        latestPrice = (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
+        latestPrice = normalizedTicker == 'USDC' ? 1 : (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
       }
       totalValue += tokenBalance * latestPrice;
     });

@@ -11,7 +11,6 @@ import globeicon from '../../assets/globe.svg';
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
-import backgroundlesslogo from '../../assets/logo_clear.png';
 
 import './Header.css';
 
@@ -90,6 +89,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
   const [inPic, setInPic] = useState('');
   const [outPic, setOutPic] = useState('');
+  const backgroundlesslogo = '/logo_clear.png';
 
   useEffect(() => {
     if (activeMarket && tokendict) {

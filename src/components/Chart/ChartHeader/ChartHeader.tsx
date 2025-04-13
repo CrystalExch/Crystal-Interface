@@ -203,7 +203,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       value: low24h,
     },
   ];
-
+  
   return (
     <div className={`chart-header ${!shouldShowFullHeader ? 'simplified' : ''}`}>
       <TokenInfo

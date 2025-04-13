@@ -270,7 +270,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         isChartLoading
       );
     }
-  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading, updateChartData]);
+  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading]);
 
   useEffect(() => {
     if (!data[0] || data[0].length === 0 || !trades || trades.length === 0) return;

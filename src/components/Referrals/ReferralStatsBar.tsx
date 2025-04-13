@@ -17,12 +17,12 @@ const ReferralStatsBar = ({
   claimableFees,
   totalClaimableFees,
 }: ReferralStatsBarProps) => {
-  console.log(claimableFees)
+
   return (
     <div className="stats-bar-container">
       <div className="stats-bar-wrapper">
         <div className="stats-bar-grid">
-          {tokenList.slice(1, 4).map((token, index) => (
+          {tokenList.filter((_, index) => [0, 2, 9].includes(index)).map((token, index) => (
             <div key={index} className="stats-bar-item">
               <div className="stats-token-info">
                 <img src={token.image} className="stats-token-icon" />

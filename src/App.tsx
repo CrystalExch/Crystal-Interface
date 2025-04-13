@@ -862,9 +862,11 @@ function App() {
 
     const latestPrice = fetchLatestPrice(trades, market);
     if (!latestPrice) return BigInt(0);
+    const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+    / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
     return BigInt(
       Math.round(
-        (usdNumeric / latestPrice) *
+        (usdNumeric / (latestPrice * quotePrice)) *
         10 ** Number(tokendict[tokenAddress].decimals),
       ),
     );
@@ -1030,14 +1032,26 @@ function App() {
   const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
     batchSize: 0,
     contracts: [
-      ...Object.values(markets).flatMap((market: any) => ({
-        address: market.address as `0x${string}`,
+      ...Array.from(
+        new Set(
+          Object.values(markets).map(
+            (market) => market.address as `0x${string}`
+          )
+        )
+      ).flatMap((marketAddress: any) => ({
+        address: marketAddress as `0x${string}`,
         abi: CrystalMarketAbi,
         functionName: 'accumulatedFeeQuote',
         args: [address ?? undefined],
       })),
-      ...Object.values(markets).flatMap((market: any) => ({
-        address: market.address as `0x${string}`,
+      ...Array.from(
+        new Set(
+          Object.values(markets).map(
+            (market) => market.address as `0x${string}`
+          )
+        )
+      ).flatMap((marketAddress: any) => ({
+        address: marketAddress as `0x${string}`,
         abi: CrystalMarketAbi,
         functionName: 'accumulatedFeeBase',
         args: [address ?? undefined],
@@ -1545,7 +1559,6 @@ function App() {
     const processMarkets = async () => {
       try {
         const data = dayKlines;
-
         const processedMarkets = data.map((series: any) => {
           const idParts = series.id.split("-");
           const address = idParts[2];
@@ -1580,7 +1593,6 @@ function App() {
             low24h: formatSubscript(low.toFixed(decimals)),
           };
         });
-
         setMarketsData(processedMarkets);
       } catch (error) {
         console.error("error fetching candles:", error);
@@ -1601,8 +1613,7 @@ function App() {
           ),
           ethticker
         )] || [];
-
-        if (trades.length <= 50) return market;
+        if (trades.length < 1) return market;
 
         const series: any =
           dayKlines.find((s: any) => typeof s.id === "string" && s.id.includes(market?.address)) || null;
@@ -1612,7 +1623,7 @@ function App() {
             ? Number(series.klines[0].open)
             : 0;
 
-        const currentPriceRaw = Number(trades[trades.length - 1][3]);
+        const currentPriceRaw = Number(trades[0][3]);
         const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
 
         const volume = Number(trades[trades.length - 1][2] === 1 ? trades[trades.length - 1][0] : trades[trades.length - 1][1]) / 10 ** Number(market?.quoteDecimals);
@@ -2202,16 +2213,28 @@ function App() {
       setClaimableFees(() => {
         let newFees = {};
         let totalFees = 0;
-        Object.values(markets).forEach((market, index) => {
+        const baseOffset = new Set(
+          Object.values(markets).map(
+            (market) => market.address as `0x${string}`
+          )
+        ).size
+        Array.from(
+          Object.values(markets).reduce((acc, market: any) => {
+            if (!acc.has(market.address)) acc.set(market.address, market);
+            return acc;
+          }, new Map<string, any>()).values()
+        ).forEach((market: any, index) => {
           if (
-            market.baseAddress !==
-            '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
             mids !== null &&
             market !== null
           ) {
             const quoteIndex = index;
-            const baseIndex = index + Object.values(markets).length;
-
+            const baseIndex = index + baseOffset;
+            const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+            / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+            const midValue = Number(
+              (mids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
+            ) * quotePrice;
             if (!(newFees as any)[market.quoteAsset]) {
               (newFees as any)[market.quoteAsset] =
                 Number(refData[quoteIndex].result) /
@@ -2227,10 +2250,6 @@ function App() {
                 Number(refData[quoteIndex].result) /
                 10 ** Number(market.quoteDecimals);
             }
-
-            const midValue = Number(
-              mids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0] || 0,
-            );
 
             if (!(newFees as any)[market.baseAsset]) {
               (newFees as any)[market.baseAsset] =
@@ -3624,27 +3643,28 @@ function App() {
   // limit chase
   useEffect(() => {
     if (limitChase && mids?.[activeMarketKey]?.[0]) {
-      setlimitPrice(mids[activeMarketKey][0]);
+      const price = tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+      setlimitPrice(price);
       setlimitPriceString(
         (
-          Number(mids[activeMarketKey][0]) / Number(activeMarket.priceFactor)
+          Number(price) / Number(activeMarket.priceFactor)
         ).toFixed(Math.log10(Number(activeMarket.priceFactor))),
       );
       setamountOutLimit(
-        mids[activeMarketKey][0] != BigInt(0) && amountIn != BigInt(0)
+        price != BigInt(0) && amountIn != BigInt(0)
           ? tokenIn === activeMarket?.baseAddress
-            ? (amountIn * mids[activeMarketKey][0]) /
+            ? (amountIn * price) /
             (activeMarket.scaleFactor || BigInt(1))
             : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-            mids[activeMarketKey][0]
+            price
           : BigInt(0),
       );
       setlimitoutputString(
-        (mids[activeMarketKey][0] != BigInt(0) && amountIn != BigInt(0)
+        (price != BigInt(0) && amountIn != BigInt(0)
           ? tokenIn === activeMarket?.baseAddress
             ? customRound(
               Number(
-                (amountIn * mids[activeMarketKey][0]) /
+                (amountIn * price) /
                 (activeMarket.scaleFactor || BigInt(1)),
               ) /
               10 ** Number(tokendict[tokenOut].decimals),
@@ -3653,7 +3673,7 @@ function App() {
             : customRound(
               Number(
                 (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                mids[activeMarketKey][0],
+                price,
               ) /
               10 ** Number(tokendict[tokenOut].decimals),
               3,
@@ -3662,7 +3682,7 @@ function App() {
         ).toString(),
       );
     }
-  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey]);
+  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn]);
 
   // tx popup time
   useEffect(() => {
@@ -5498,7 +5518,7 @@ function App() {
                   setTokenOut={setTokenOut}
                   setSendTokenIn={setSendTokenIn}
                   setpopup={setpopup}
-                  sortConfig={{ column: 'name', direction: 'asc' }}
+                  sortConfig={{ column: 'balance', direction: 'desc' }}
                   tokenBalances={tokenBalances}
                 />
               </div>
@@ -11151,7 +11171,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={{ column: 'name', direction: 'asc' }}
+                            sortConfig={{ column: 'balance', direction: 'desc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -11374,7 +11394,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={{ column: 'name', direction: 'asc' }}
+                            sortConfig={{ column: 'balance', direction: 'desc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -11597,7 +11617,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={{ column: 'name', direction: 'asc' }}
+                            sortConfig={{ column: 'balance', direction: 'desc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}
@@ -11819,7 +11839,7 @@ function App() {
                             setTokenOut={setTokenOut}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                            sortConfig={{ column: 'name', direction: 'asc' }}
+                            sortConfig={{ column: 'balance', direction: 'desc' }}
                             onSort={emptyFunction}
                             tokenBalances={tokenBalances}
                             activeSection={activeSection}

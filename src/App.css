@@ -3917,7 +3917,9 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 
 
-
+body:has(.right-column.show),
+body:has(.tx-history-overlay.open),
+body:has(.modal-overlay),
 body:has(.blur-background-popups.active), 
 body:has(.popup-blur) {
   overflow: hidden !important;

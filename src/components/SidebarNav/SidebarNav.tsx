@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import backgroundlesslogo from '../../assets/logo_clear.png';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import mint from '../../assets/mint.png';
@@ -25,6 +24,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const backgroundlesslogo = '/logo_clear.png';
 
   const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({
     content: '',

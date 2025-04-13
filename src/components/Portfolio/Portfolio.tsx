@@ -9,7 +9,7 @@ import OrderCenter from '../OrderCenter/OrderCenter';
 import { useSharedContext } from '../../contexts/SharedContext';
 import customRound from '../../utils/customRound';
 import { formatCommas } from '../../utils/numberDisplayFormat';
-
+import { settings } from '../../settings';
 import './Portfolio.css';
 
 type SortDirection = 'asc' | 'desc';
@@ -107,8 +107,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
 }) => {
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
-    column: 'assets',
-    direction: 'asc',
+    column: 'balance',
+    direction: 'desc',
   });
   const [orderCenterHeight, setOrderCenterHeight] = useState(() => {
     if (window.innerHeight > 1080) return 363.58;
@@ -176,11 +176,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
       const price = trade[1];
 
       if (
-        markets[marketKey].baseAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
         typeof tradeTime === 'number' &&
         tradeTime >= timeago
       ) {
-        volume += (tradeSide === 1 ? amount : price) / 10 ** Number(markets[marketKey].quoteDecimals);
+        const quotePrice = markets[marketKey].quoteAsset == 'USDC' ? 1 : trades[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.[0]?.[3]
+        / Number(markets[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.priceFactor)
+        volume += (tradeSide === 1 ? amount : price) * quotePrice / 10 ** Number(markets[marketKey].quoteDecimals);
       }
     });
 

@@ -169,8 +169,12 @@ const Referrals: React.FC<ReferralProps> = ({
               abi: CrystalRouterAbi,
               functionName: 'claimFees',
               args: [
-                Object.values(markets).map(
-                  (market) => market.address as `0x${string}`,
+                Array.from(
+                  new Set(
+                    Object.values(markets).map(
+                      (market) => market.address as `0x${string}`
+                    )
+                  )
                 ),
               ],
             }),
@@ -180,7 +184,7 @@ const Referrals: React.FC<ReferralProps> = ({
       } catch (error) {
       } finally {
         setIsSigning(false);
-        setTimeout(()=>refetch(), 1000)
+        setTimeout(()=>refetch(), 2000)
       }
     } else {
       !account.connected

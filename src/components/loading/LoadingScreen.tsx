@@ -1,7 +1,5 @@
 import React from 'react';
 
-import uiLogo from '../../assets/logo_clear.png';
-
 import './LoadingScreen.css';
 
 interface OverlayProps {
@@ -10,6 +8,7 @@ interface OverlayProps {
 
 const FullScreenOverlay: React.FC<OverlayProps> = ({ isVisible }) => {
   if (!isVisible) return null;
+  const uiLogo = '/logo_clear.png';
 
   return (
     <div className="overlay">

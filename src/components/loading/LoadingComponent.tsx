@@ -1,8 +1,6 @@
 
 import React from 'react';
 
-import uiLogo from '../../assets/logo_clear.png';
-
 import './LoadingComponent.css';
 
 interface OverlayProps {
@@ -21,7 +19,8 @@ const Overlay: React.FC<OverlayProps> = ({
   maxLogoHeight = 100,
 }) => {
   if (!isVisible) return null;
-  
+  const uiLogo = '/logo_clear.png';
+
   const calculateLogoStyle = () => {
     const heightPercentage = height === 0 ? '20%' : `${height}%`;
     
