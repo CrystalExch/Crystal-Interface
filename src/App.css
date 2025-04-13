@@ -4308,10 +4308,7 @@ input[type="email"] {
   width: 90%;
   max-width: 400px;
   padding: 15px;
-  display: flex;
-  flex-direction: column;
   gap: 8px;
-  border: 1.5px solid #1a1a1d7d;
   box-sizing: content-box;
   background: #19191c80;
   display: flex;

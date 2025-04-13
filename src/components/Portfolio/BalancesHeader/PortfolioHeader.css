@@ -6,7 +6,7 @@
   font-weight: 300;
   grid-template-columns:
     minmax(140px, 1.2fr) minmax(120px, 1.1fr) minmax(80px, 1fr)
-    minmax(70px, 0.3fr);
+    minmax(120px, 0.3fr);
   height: 30px;
   justify-items: start;
   min-width: 540px;

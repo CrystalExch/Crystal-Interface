@@ -1,9 +1,6 @@
 import React, { useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import { settings } from '../../../settings.ts';
-
-import swapicon from '../../../assets/swap_icon.png';
 import './SwapIcon.css';
 
 interface SwapIconProps {
@@ -20,13 +17,12 @@ const SwapIcon: React.FC<SwapIconProps> = ({
   setpopup,
 }) => {
   const navigate = useNavigate();
-  const hoverRef = useRef<HTMLImageElement>(null);
-
+  const hoverRef = useRef<HTMLDivElement>(null);
+  
   return (
-    <img
+    <div
       className="swap-icon"
       ref={hoverRef}
-      src={swapicon}
       onClick={() => {
         navigate(`/swap`);
         setTokenIn(
@@ -37,7 +33,9 @@ const SwapIcon: React.FC<SwapIconProps> = ({
         setTokenOut(tokenaddress);
         setpopup(0);
       }}
-    />
+    >
+      Swap
+    </div>
   );
 };
 

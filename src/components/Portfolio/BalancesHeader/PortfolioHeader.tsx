@@ -64,7 +64,7 @@ const PortfolioHeader: React.FC<PortfolioHeaderProps> = ({
           {t('price')}
         </SortableHeaderCell>
       </div>
-      <div className="portfolio-column">{t('actions')}</div>
+      <div className="portfolio-column"></div>
     </div>
   );
 };

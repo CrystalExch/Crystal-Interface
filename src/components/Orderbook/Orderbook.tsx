@@ -8,7 +8,6 @@ import './Orderbook.css';
 interface OrderBookProps {
   trades: any[];
   orderdata: any;
-  activemarket: any;
   layoutSettings: any;
   orderbookPosition: any;
   hideHeader?: boolean;
@@ -22,13 +21,11 @@ interface OrderBookProps {
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
   updateLimitAmount: any;
-  userOrders: any[];
 }
 
 const OrderBook: React.FC<OrderBookProps> = ({
   trades,
   orderdata,
-  activemarket,
   layoutSettings,
   orderbookPosition,
   hideHeader = false,
@@ -42,7 +39,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
   activeTab,
   setActiveTab,
   updateLimitAmount,
-  userOrders = [],
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -53,10 +49,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
   const displaySellOrders = orderdata.roundedSellOrders;
   const priceFactor = orderdata.priceFactor;
   const spreadData = orderdata.spreadData;
-
-  const filteredUserOrders = userOrders.filter(order => {
-    return order[4] === (activemarket?.baseAsset + activemarket?.quoteAsset);
-  });
 
   const updateIndicator = () => {
     if (!headerRef.current || !indicatorRef.current) return;
@@ -136,7 +128,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
         setViewMode={setViewMode}
         show={activeTab === 'orderbook' ? true : false}
         updateLimitAmount={updateLimitAmount}
-        userOrders={filteredUserOrders}
       />
 
       <TradesView

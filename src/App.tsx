@@ -1075,9 +1075,9 @@ function App() {
         prevData.volume === volume &&
         prevData.isChartLoading === isChartLoading
       ) {
-        return prevData; 
+        return prevData;
       }
-      
+
       return {
         price,
         priceChange,
@@ -1721,7 +1721,7 @@ function App() {
     setpopup(0);
   };
 
-  const handleRefreshQuote = async (e:any) => {
+  const handleRefreshQuote = async (e: any) => {
     e.preventDefault();
     if (isRefreshing) return;
     setIsRefreshing(true);
@@ -1943,46 +1943,123 @@ function App() {
     };
   }
 
-  // providing a rounded ver of orders for display
   const processOrdersForDisplay = (
     orders: Order[],
     amountsQuote: string,
     latestPrice: number,
+    userOrders: any[],
+    isBuyOrderList: boolean
   ) => {
     const priceDecimals =
       Math.floor(
-        Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor)),
+        Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
       ) -
         Math.floor(Math.log10(Number(activeMarket.priceFactor))) >
-        -5
+      -5
         ? Math.max(
-          0,
-          Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
-          Math.floor(
-            Math.log10(
-              Number(latestPrice) / Number(activeMarket.priceFactor),
-            ),
-          ) +
-          1,
-        )
+            0,
+            Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
+              Math.floor(
+                Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
+              ) +
+              1
+          )
         : 0;
-    const roundedOrders = orders.map((order) => ({
-      price: Number(
-        Number(order.price).toFixed(
-          Math.floor(Math.log10(Number(activeMarket.priceFactor))),
-        ),
-      ),
-      size:
-        amountsQuote === 'Base'
-          ? Number(Number(order.size / order.price).toFixed(priceDecimals))
-          : Number(Number(order.size).toFixed(2)),
-      totalSize:
-        amountsQuote === 'Base'
-          ? Number(Number(order.totalSize / order.price).toFixed(priceDecimals))
-          : Number(Number(order.totalSize).toFixed(2)),
-      shouldFlash: false,
-    }));
+  
+    const priceMap: { [key: string]: boolean } = {};
+    if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
+      const market = activeMarket.baseAsset + activeMarket.quoteAsset;
+  
+      const filteredUserOrders = userOrders.filter((order) => {
+        const isBuy = Number(order[3]) === 1;
+        const matchesListType = isBuyOrderList ? isBuy : !isBuy;
+        const orderMarket = String(order[4]);
+        return matchesListType && orderMarket === market;
+      });
+  
+      if (filteredUserOrders.length > 0) {
+        const displayedPrices = orders.map((order) => order.price);
+        const sortedDisplayedPrices = [...displayedPrices].sort((a, b) => a - b);
+  
+        let scalingFactor = 1;
+        if (sortedDisplayedPrices.length > 0) {
+          const sampleOrderPrice = Number(filteredUserOrders[0][0]);
+          const averageDisplayPrice =
+            sortedDisplayedPrices.reduce((sum, price) => sum + price, 0) /
+            sortedDisplayedPrices.length;
+          const rawScaling = sampleOrderPrice / averageDisplayPrice;
+          const powerOf10 = Math.round(Math.log10(rawScaling));
+          scalingFactor = Math.pow(10, powerOf10);
+        }
+  
+        const bucketSpacing =
+          sortedDisplayedPrices.length > 1
+            ? Math.abs(sortedDisplayedPrices[1] - sortedDisplayedPrices[0])
+            : 1;
+        const tolerance = bucketSpacing * 0.5;
+  
+        filteredUserOrders.forEach((order) => {
+          const rawOrderPrice = Number(order[0]);
+          const scaledOrderPrice = rawOrderPrice / scalingFactor;
+          const isBuyOrder = Number(order[3]) === 1;
+          let matchedPrice: number;
+  
+          if (isBuyOrder) {
+            matchedPrice = sortedDisplayedPrices[0];
+            for (let i = 0; i < sortedDisplayedPrices.length; i++) {
+              if (
+                sortedDisplayedPrices[i] <= scaledOrderPrice &&
+                sortedDisplayedPrices[i] > matchedPrice
+              ) {
+                matchedPrice = sortedDisplayedPrices[i];
+              }
+            }
+          } else {
+            matchedPrice =
+              sortedDisplayedPrices[sortedDisplayedPrices.length - 1];
+            for (let i = sortedDisplayedPrices.length - 1; i >= 0; i--) {
+              if (
+                sortedDisplayedPrices[i] >= scaledOrderPrice &&
+                sortedDisplayedPrices[i] < matchedPrice
+              ) {
+                matchedPrice = sortedDisplayedPrices[i];
+              }
+            }
+          }
+  
+          const diff = Math.abs(scaledOrderPrice - matchedPrice);
+          if (diff <= tolerance) {
+            priceMap[matchedPrice] = true;
+          }
+        });
+      }
+    }
 
+    const roundedOrders = orders.map((order) => {
+      const roundedPriceStr = Number(order.price).toFixed(
+        Math.floor(Math.log10(Number(activeMarket.priceFactor)))
+      );
+      const roundedPrice = Number(roundedPriceStr);
+      const roundedSize =
+        amountsQuote === 'Base'
+          ? Number((order.size / order.price).toFixed(priceDecimals))
+          : Number(order.size.toFixed(2));
+      const roundedTotalSize =
+        amountsQuote === 'Base'
+          ? Number((order.totalSize / order.price).toFixed(priceDecimals))
+          : Number(order.totalSize.toFixed(2));
+  
+      const userPrice = priceMap[roundedPrice] === true;
+  
+      return {
+        price: roundedPrice,
+        size: roundedSize,
+        totalSize: roundedTotalSize,
+        shouldFlash: false,
+        userPrice,
+      };
+    });
+  
     const defaultOrders = orders.map((order) => ({
       price: Number(
         Number(order.price).toFixed(
@@ -1992,7 +2069,7 @@ function App() {
       size: Number(Number(order.size).toFixed(2)),
       totalSize: Number(Number(order.totalSize).toFixed(2)),
     }));
-
+  
     return { roundedOrders, defaultOrders };
   };
 
@@ -2351,6 +2428,8 @@ function App() {
                   processedBuyOrders,
                   amountsQuote,
                   tempmids[activeMarketKey][0],
+                  orders,
+                  true,
                 );
               const {
                 roundedOrders: roundedSell,
@@ -2359,6 +2438,8 @@ function App() {
                 processedSellOrders,
                 amountsQuote,
                 tempmids[activeMarketKey][0],
+                orders,
+                false,
               );
 
               const highestBid =
@@ -2422,7 +2503,7 @@ function App() {
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt, amountsQuote]);
+  }, [data, activechain, isLoading, activeTab, dataUpdatedAt, amountsQuote, orders]);
 
   // update display values when loading is finished
   useEffect(() => {
@@ -10968,7 +11049,6 @@ function App() {
                                       symbolIn,
                                       symbolOut,
                                     }}
-                                    activemarket={activeMarket}
                                     layoutSettings={layoutSettings}
                                     orderbookPosition={orderbookPosition}
                                     hideHeader={true}
@@ -10982,7 +11062,6 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
-                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -11026,7 +11105,6 @@ function App() {
                               setpopup={setpopup}
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
-                              orders={orders}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
 
@@ -11188,7 +11266,6 @@ function App() {
                                       symbolIn,
                                       symbolOut,
                                     }}
-                                    activemarket={activeMarket}
                                     layoutSettings={layoutSettings}
                                     orderbookPosition={orderbookPosition}
                                     hideHeader={true}
@@ -11202,7 +11279,6 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
-                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -11246,7 +11322,6 @@ function App() {
                               setpopup={setpopup}
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
-                              orders={orders}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
 
@@ -11413,7 +11488,6 @@ function App() {
                                       symbolIn,
                                       symbolOut,
                                     }}
-                                    activemarket={activeMarket}
                                     layoutSettings={layoutSettings}
                                     orderbookPosition={orderbookPosition}
                                     hideHeader={true}
@@ -11427,7 +11501,6 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
-                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -11471,7 +11544,6 @@ function App() {
                               setpopup={setpopup}
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
-                              orders={orders}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
 
@@ -11640,7 +11712,6 @@ function App() {
                                       symbolIn,
                                       symbolOut,
                                     }}
-                                    activemarket={activeMarket}
                                     layoutSettings={layoutSettings}
                                     orderbookPosition={orderbookPosition}
                                     hideHeader={true}
@@ -11654,7 +11725,6 @@ function App() {
                                     activeTab={obTab}
                                     setActiveTab={setOBTab}
                                     updateLimitAmount={updateLimitAmount}
-                                    userOrders={orders}
                                   />
                                 )}
                             </div>
@@ -11698,7 +11768,6 @@ function App() {
                               setpopup={setpopup}
                               updateLimitAmount={updateLimitAmount}
                               tradesloading={tradesloading}
-                              orders={orders}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
                             />

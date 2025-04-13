@@ -28,7 +28,6 @@ interface OrderbookViewProps {
   setViewMode: (mode: 'both' | 'buy' | 'sell') => void;
   show?: boolean;
   updateLimitAmount: any;
-  userOrders?: any[];
 }
 
 const OrderbookView: React.FC<OrderbookViewProps> = ({
@@ -48,7 +47,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   setViewMode,
   updateLimitAmount,
   show = true,
-  userOrders = [], // Default to empty array if not provided
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
@@ -113,14 +111,15 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     if (!containerHeight || !rowHeight) return;
 
     const processOrders = () => {
-      const { orders: newProcessedBuy, leftoverPerRow: buyExtra } = scaleOrders(
-        roundedBuy,
-        obInterval,
-        true,
-        viewMode,
-        containerHeight,
-        rowHeight,
-      );
+      const { orders: newProcessedBuy, leftoverPerRow: buyExtra } = 
+        scaleOrders(
+          roundedBuy,
+          obInterval,
+          true,
+          viewMode,
+          containerHeight,
+          rowHeight,
+        );
       const { orders: newProcessedSell, leftoverPerRow: sellExtra } =
         scaleOrders(
           roundedSell,
@@ -194,7 +193,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
-              userOrders={userOrders}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -214,7 +212,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
-              userOrders={userOrders}
             />
           </div>
         )}
@@ -233,7 +230,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
-              userOrders={userOrders}
             />
             <SpreadDisplay
               averagePrice={averagePrice}
@@ -262,7 +258,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               spreadPrice={averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
-              userOrders={userOrders}
             />
           </div>
         )}

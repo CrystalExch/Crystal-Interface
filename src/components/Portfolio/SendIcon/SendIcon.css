@@ -1,9 +1,16 @@
 .send-icon {
   cursor: pointer;
-  height: 22.5px;
-  width: 22.5px;
+  font-size: 0.75rem;
+  color: #dadee49c;
+  letter-spacing: -0.3px;
+  padding: 3px 15px;
+  border-radius: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color:  #c3c6e314;
 }
 
 .send-icon:hover {
-  transform: scale(1.05);
+  background-color:  #c3c6e30d;
 }
