@@ -5,6 +5,7 @@ import OrderHistoryItem from '../OrderHistoryView/OrderHistoryItem';
 import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
 
 import { getOrderHistoryValue, useSortableData } from '../utils';
+import { settings } from '../../../settings.ts';
 
 import './OrderHistoryContent.css';
 
@@ -14,6 +15,7 @@ interface OrderHistoryContentProps {
   currentMarket: string;
   pageSize: number;
   currentPage: number;
+  trades: any;
 }
 
 const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
@@ -21,7 +23,8 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
   onlyThisMarket,
   currentMarket,
   pageSize,
-  currentPage
+  currentPage,
+  trades,
 }) => {
   const normalizedCurrentMarket = currentMarket.toUpperCase().replace('-', '/');
   const filteredCanceledOrders = canceledorders.filter((order) => {
@@ -30,9 +33,10 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
   });
 
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
+    trades,
     filteredCanceledOrders,
     (order: any, column: string) =>
-      getOrderHistoryValue(order, column, markets),
+      getOrderHistoryValue(order, column, markets, trades),
   );
 
   const currentItems = sortedItems.length > 0 ? 
@@ -130,6 +134,8 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
                 key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
                 order={item}
                 market={markets[item[4]]}
+                quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
+                / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
               />
             ))
           ) : (null

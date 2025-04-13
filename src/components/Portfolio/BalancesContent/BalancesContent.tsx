@@ -42,12 +42,17 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
 
   const getPriceFromTrades = (ticker: string) => {
     const normalizedTicker = normalizeTicker(ticker, activechain);
-    const marketKey = `${normalizedTicker}USDC`;
-    if (markets[marketKey]) {
-      const marketTrades = trades[marketKey] || [];
-      return fetchLatestPrice(marketTrades, markets[marketKey]) || 0;
+    const marketKeyUSDC = `${normalizedTicker}USDC`;
+    if (markets[marketKeyUSDC]) {
+      const marketTrades = trades[marketKeyUSDC] || [];
+      return fetchLatestPrice(marketTrades, markets[marketKeyUSDC]) || 0;
     }
-    return 0;
+    else {
+      const quotePrice = trades[settings.chainConfig[activechain].ethticker + 'USDC']?.[0]?.[3]
+      / Number(markets[settings.chainConfig[activechain].ethticker + 'USDC']?.priceFactor)
+      const marketTrades = trades[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`] || [];
+      return (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
+    }
   };
 
   const getPriceChangeFromTrades = (ticker: string) => {
@@ -69,9 +74,9 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
       prices[market.baseAddress] = price;
     });
 
-    const ethPrice = prices[settings.chainConfig[activechain].weth];
-    if (ethPrice) {
-      prices[settings.chainConfig[activechain].eth] = ethPrice;
+    const wethPrice = prices[settings.chainConfig[activechain].eth];
+    if (wethPrice) {
+      prices[settings.chainConfig[activechain].weth] = wethPrice;
     }
 
     prices[settings.chainConfig[activechain].usdc] = 1;

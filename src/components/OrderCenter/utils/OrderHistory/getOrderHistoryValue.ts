@@ -1,7 +1,10 @@
+import { settings } from "../../../../settings";
+
 export const getOrderHistoryValue = (
   order: any,
   column: string,
   markets: any,
+  trades: any,
 ) => {
   const market = markets[order[4]];
   const priceFactor = Number(market.priceFactor);
@@ -12,6 +15,8 @@ export const getOrderHistoryValue = (
   const amount = order[2] / 10 ** baseDecimals;
   const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
+  const quotePrice = market.quoteAsset == 'USDC' ? 1 : trades[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+  / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
 
   switch (column) {
     case 'markets':
@@ -25,7 +30,7 @@ export const getOrderHistoryValue = (
     case 'amountFilled':
       return percentFilled;
     case 'tradeValue':
-      return order[8] / (scaleFactor * 10 ** quoteDecimals);
+      return order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals);
     case 'status':
       return order[9];
     case 'time':

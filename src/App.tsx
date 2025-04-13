@@ -155,6 +155,8 @@ function App() {
   const eth = settings.chainConfig[activechain].eth as `0x${string}`;
   const weth = settings.chainConfig[activechain].weth as `0x${string}`;
   const usdc = settings.chainConfig[activechain].usdc as `0x${string}`;
+  const ethticker = settings.chainConfig[activechain].ethticker;
+  const wethticker = settings.chainConfig[activechain].wethticker;
   const balancegetter = settings.chainConfig[activechain].balancegetter;
   const router = settings.chainConfig[activechain].router;
   const markets: { [key: string]: any } =
@@ -643,7 +645,13 @@ function App() {
     addressinfoloading;
 
   const activeMarket = getMarket(tokenIn, tokenOut);
-  const activeMarketKey = activeMarket.baseAsset + activeMarket.quoteAsset;
+  const activeMarketKey = (activeMarket.baseAsset + activeMarket.quoteAsset).replace(
+    new RegExp(
+      `^${wethticker}|${wethticker}$`,
+      'g'
+    ),
+    ethticker
+  );
   const multihop = activeMarket.path.length > 2;
 
   const navigate = useNavigate();
@@ -815,7 +823,7 @@ function App() {
     }
     return `$${amount.toFixed(2)}`;
   };
-
+  
   const calculateUSDValue = (
     amount: bigint,
     trades: any[],
@@ -823,18 +831,18 @@ function App() {
     market: any,
   ) => {
     if (amount === BigInt(0)) return 0;
-
-    if (tokenAddress === usdc) {
-      const usdcAmount = Number(amount) / 10 ** 6;
-      return usdcAmount;
+    if (tokenAddress == market.quoteAddress && tokenAddress == usdc) {
+      return Number(amount) / 10 ** 6;
     }
-
+    else if (tokenAddress == market.quoteAddress) {
+      return Number(amount) * tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) +'USDC']?.[0]?.[3]
+      / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
+    }
     const latestPrice = fetchLatestPrice(trades, market);
     if (!latestPrice) return 0;
-
-    const usdValue =
-      (Number(amount) / 10 ** Number(tokendict[tokenAddress].decimals)) *
-      latestPrice;
+    const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+    / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+    const usdValue = (Number(amount) * latestPrice * quotePrice / 10 ** Number(tokendict[tokenAddress].decimals));
     return Number(usdValue);
   };
 
@@ -1005,8 +1013,12 @@ function App() {
         abi: CrystalDataHelperAbi as any,
         functionName: 'getPrices',
         args: [
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`,
+          Array.from(
+            new Set(
+              Object.values(markets).map(
+                (market) => market.address as `0x${string}`
+              )
+            )
           ),
         ],
       },
@@ -1394,12 +1406,6 @@ function App() {
                           _timestamp,
                         ],
                       ];
-                      temptradesByMarket[
-                        settings.chainConfig[activechain].wethticker + 'USDC'
-                      ] =
-                        temptradesByMarket[
-                        settings.chainConfig[activechain].ethticker + 'USDC'
-                        ];
                     }
                     return { ...temptradesByMarket };
                   });
@@ -1588,7 +1594,13 @@ function App() {
   useEffect(() => {
     setMarketsData((prevMarkets) =>
       prevMarkets.map((market) => {
-        const trades = tradesByMarket[market?.marketKey] || [];
+        const trades = tradesByMarket[market?.marketKey.replace(
+          new RegExp(
+            `^${wethticker}|${wethticker}$`,
+            'g'
+          ),
+          ethticker
+        )] || [];
 
         if (trades.length <= 50) return market;
 
@@ -2178,12 +2190,7 @@ function App() {
 
   // trades processing
   useEffect(() => {
-    const modifiedActiveMarketKey =
-      activeMarketKey.endsWith('WMON')
-        ? activeMarketKey.slice(0, -4) + 'MON'
-        : activeMarketKey;
-
-    const temp: Trade[] | undefined = tradesByMarket[modifiedActiveMarketKey];
+    const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
     let processed: [boolean, string, number, string, string][] = [];
 
@@ -2295,7 +2302,11 @@ function App() {
       }
       let tempmids;
       if (data[4].result) {
-        tempmids = Object.keys(markets).reduce(
+        tempmids = Object.keys(markets).filter((key) => {
+          return !(
+            key.startsWith(wethticker) || key.endsWith(wethticker)
+          );
+        }).reduce(
           (acc, market, i) => {
             const prices = [
               (data as any)[4].result?.[0][i],
@@ -3199,8 +3210,8 @@ function App() {
           for (const event of allLogs) {
             if (addresstoMarket[event.contractAddress]) {
               temptradesByMarket[addresstoMarket[event.contractAddress]].push([
-                event.amountIn,
-                event.amountOut,
+                parseInt(event.amountIn),
+                parseInt(event.amountOut),
                 event.buySell,
                 event.price,
                 addresstoMarket[event.contractAddress],
@@ -3210,13 +3221,6 @@ function App() {
             }
           }
         }
-
-        temptradesByMarket[
-          settings.chainConfig[activechain].wethticker + 'USDC'
-        ] =
-          temptradesByMarket[
-          settings.chainConfig[activechain].ethticker + 'USDC'
-          ];
         settradesByMarket(temptradesByMarket);
         settradesloading(false);
         if (
@@ -3229,10 +3233,10 @@ function App() {
             `$${calculateUSDValue(
               BigInt(amountIn),
               temptradesByMarket[
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1))
-                .baseAsset +
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1))
-                .quoteAsset
+                (({ baseAsset, quoteAsset }) => 
+                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
               ],
               tokenIn,
               getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
@@ -3347,10 +3351,10 @@ function App() {
             ? `$${calculateUSDValue(
               amountIn,
               tradesByMarket[
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1))
-                .baseAsset +
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1))
-                .quoteAsset
+                (({ baseAsset, quoteAsset }) => 
+                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
               ],
               tokenIn,
               getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
@@ -4005,8 +4009,10 @@ function App() {
                             calculateTokenAmount(
                               sendInputString.replace(/^\$|,/g, ''),
                               tradesByMarket[
-                              pricefetchmarket.baseAsset +
-                              pricefetchmarket.quoteAsset
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(pricefetchmarket)
                               ],
                               token.address,
                               pricefetchmarket,
@@ -4020,8 +4026,10 @@ function App() {
                         calculateTokenAmount(
                           sendInputString.replace(/^\$|,/g, ''),
                           tradesByMarket[
-                          pricefetchmarket.baseAsset +
-                          pricefetchmarket.quoteAsset
+                            (({ baseAsset, quoteAsset }) => 
+                              (baseAsset === wethticker ? ethticker : baseAsset) + 
+                              (quoteAsset === wethticker ? ethticker : quoteAsset)
+                            )(pricefetchmarket)
                           ],
                           token.address,
                           pricefetchmarket,
@@ -4036,8 +4044,10 @@ function App() {
                               (calculateTokenAmount(
                                 sendInputString.replace(/^\$|,/g, ''),
                                 tradesByMarket[
-                                pricefetchmarket.baseAsset +
-                                pricefetchmarket.quoteAsset
+                                  (({ baseAsset, quoteAsset }) => 
+                                    (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                    (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                  )(pricefetchmarket)
                                 ],
                                 token.address,
                                 pricefetchmarket,
@@ -4068,8 +4078,10 @@ function App() {
                           (amountIn * BigInt(10) ** token.decimals) /
                           BigInt(10) ** tokendict[tokenIn].decimals,
                           tradesByMarket[
-                          pricefetchmarket.baseAsset +
-                          pricefetchmarket.quoteAsset
+                            (({ baseAsset, quoteAsset }) => 
+                              (baseAsset === wethticker ? ethticker : baseAsset) + 
+                              (quoteAsset === wethticker ? ethticker : quoteAsset)
+                            )(pricefetchmarket)
                           ],
                           token.address,
                           pricefetchmarket,
@@ -4786,7 +4798,6 @@ function App() {
             <div className="tokenselectheader1">{t('selectAToken')}</div>
             <div className="tokenselectheader2">{t('selectTokenSubtitle')}</div>
             <div className="tokenselectheader-divider"></div>
-            <div className="tokenlistbg"></div>
             <div style={{ position: 'relative' }}>
               <input
                 className="tokenselect"
@@ -4830,7 +4841,6 @@ function App() {
             </button>
             <div className="tokenselectheader1">{t('selectAToken')}</div>
             <div className="tokenselectheader2">{t('selectTokenSubtitle')}</div>
-            <div className="tokenlistbg"></div>
             <div style={{ position: 'relative' }}>
               <input
                 className="tokenselect"
@@ -4899,7 +4909,12 @@ function App() {
                             setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
                             const calculatedAmount = calculateTokenAmount(
                               e.currentTarget.value.replace(/^\$/, ''),
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             );
@@ -4920,7 +4935,12 @@ function App() {
                           setSendUsdValue(
                             `$${calculateUSDValue(
                               inputValue,
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],                              
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -4943,7 +4963,12 @@ function App() {
                             setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
                             const calculatedAmount = calculateTokenAmount(
                               e.target.value.replace(/^\$/, ''),
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],                              
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             );
@@ -4964,7 +4989,12 @@ function App() {
                           setSendUsdValue(
                             `$${calculateUSDValue(
                               inputValue,
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],                              
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -5000,7 +5030,12 @@ function App() {
                           setSendUsdValue(
                             `$${calculateUSDValue(
                               amount,
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],                              
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -5035,7 +5070,12 @@ function App() {
                           : formatUSDDisplay(
                             calculateUSDValue(
                               sendAmountIn,
-                              tradesByMarket[getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).baseAsset + getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc).quoteAsset],
+                              tradesByMarket[
+                                (({ baseAsset, quoteAsset }) => 
+                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             )
@@ -5992,7 +6032,6 @@ function App() {
         ) : null}
         {popup === 10 ? ( //send search 
           <div ref={popupref} className="sendselectbg">
-            <div className="tokenlistbg"></div>
             <div className="send-top-row">
               <input
                 className="sendselect"
@@ -6506,14 +6545,10 @@ function App() {
                         ),
                       ),
                       tradesByMarket[
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).baseAsset +
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).quoteAsset
+                        (({ baseAsset, quoteAsset }) => 
+                          (baseAsset === wethticker ? ethticker : baseAsset) + 
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -6751,14 +6786,10 @@ function App() {
                     const outputUSD = calculateUSDValue(
                       amountOutSwap,
                       tradesByMarket[
-                      getMarket(
-                        activeMarket.path.at(-2),
-                        activeMarket.path.at(-1),
-                      ).baseAsset +
-                      getMarket(
-                        activeMarket.path.at(-2),
-                        activeMarket.path.at(-1),
-                      ).quoteAsset
+                        (({ baseAsset, quoteAsset }) => 
+                          (baseAsset === wethticker ? ethticker : baseAsset) + 
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                       ],
                       tokenOut,
                       getMarket(
@@ -6770,14 +6801,10 @@ function App() {
                     const inputUSD = calculateUSDValue(
                       amountIn,
                       tradesByMarket[
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).baseAsset +
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).quoteAsset
+                        (({ baseAsset, quoteAsset }) => 
+                          (baseAsset === wethticker ? ethticker : baseAsset) + 
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -7973,14 +8000,10 @@ function App() {
                       ),
                     ),
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -8314,14 +8337,10 @@ function App() {
                   const outputUSD = calculateUSDValue(
                     amountOutLimit,
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(-2),
-                      activeMarket.path.at(-1),
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(-2),
-                      activeMarket.path.at(-1),
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                     ],
                     tokenOut,
                     getMarket(
@@ -8340,14 +8359,10 @@ function App() {
                         (activeMarket.scaleFactor || BigInt(1))
                       : BigInt(0),
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -9117,14 +9132,10 @@ function App() {
                       const tokenBigInt = calculateTokenAmount(
                         numericValue,
                         tradesByMarket[
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).baseAsset +
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).quoteAsset
+                          (({ baseAsset, quoteAsset }) => 
+                            (baseAsset === wethticker ? ethticker : baseAsset) + 
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -9182,14 +9193,10 @@ function App() {
                     const usd = calculateUSDValue(
                       tokenBigInt,
                       tradesByMarket[
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).baseAsset +
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).quoteAsset
+                        (({ baseAsset, quoteAsset }) => 
+                          (baseAsset === wethticker ? ethticker : baseAsset) + 
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -9261,14 +9268,10 @@ function App() {
                       const tokenBigInt = calculateTokenAmount(
                         numericValue,
                         tradesByMarket[
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).baseAsset +
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).quoteAsset
+                          (({ baseAsset, quoteAsset }) => 
+                            (baseAsset === wethticker ? ethticker : baseAsset) + 
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -9324,14 +9327,10 @@ function App() {
                     const usd = calculateUSDValue(
                       tokenBigInt,
                       tradesByMarket[
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).baseAsset +
-                      getMarket(
-                        activeMarket.path.at(0),
-                        activeMarket.path.at(1),
-                      ).quoteAsset
+                        (({ baseAsset, quoteAsset }) => 
+                          (baseAsset === wethticker ? ethticker : baseAsset) + 
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -9407,14 +9406,10 @@ function App() {
                       `$${calculateUSDValue(
                         amount,
                         tradesByMarket[
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).baseAsset +
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).quoteAsset
+                          (({ baseAsset, quoteAsset }) => 
+                            (baseAsset === wethticker ? ethticker : baseAsset) + 
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -9481,14 +9476,10 @@ function App() {
                             ),
                           ),
                           tradesByMarket[
-                          getMarket(
-                            activeMarket.path.at(0),
-                            activeMarket.path.at(1),
-                          ).baseAsset +
-                          getMarket(
-                            activeMarket.path.at(0),
-                            activeMarket.path.at(1),
-                          ).quoteAsset
+                            (({ baseAsset, quoteAsset }) => 
+                              (baseAsset === wethticker ? ethticker : baseAsset) + 
+                              (quoteAsset === wethticker ? ethticker : quoteAsset)
+                            )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                           ],
                           tokenIn,
                           getMarket(
@@ -9882,14 +9873,10 @@ function App() {
                       ),
                     ),
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1),
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -10057,14 +10044,10 @@ function App() {
                   const outputUSD = calculateUSDValue(
                     amountOutScale,
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(-2),
-                      activeMarket.path.at(-1)
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(-2),
-                      activeMarket.path.at(-1)
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                     ],
                     tokenOut,
                     getMarket(
@@ -10081,14 +10064,10 @@ function App() {
                       )
                     ),
                     tradesByMarket[
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1)
-                    ).baseAsset +
-                    getMarket(
-                      activeMarket.path.at(0),
-                      activeMarket.path.at(1)
-                    ).quoteAsset
+                      (({ baseAsset, quoteAsset }) => 
+                        (baseAsset === wethticker ? ethticker : baseAsset) + 
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -11079,12 +11058,13 @@ function App() {
                             address={address}
                             trades={tradesByMarket}
                             currentMarket={
-                              activeMarketKey ==
-                                settings.chainConfig[activechain].wethticker +
-                                'USDC'
-                                ? settings.chainConfig[activechain].ethticker +
-                                'USDC'
-                                : activeMarketKey
+                              activeMarketKey.replace(
+                                new RegExp(
+                                  `^${wethticker}|${wethticker}$`,
+                                  'g'
+                                ),
+                                ethticker
+                              )
                             }
                             orderCenterHeight={orderCenterHeight}
                             hideBalances={true}
@@ -11304,12 +11284,13 @@ function App() {
                             address={address}
                             trades={tradesByMarket}
                             currentMarket={
-                              activeMarketKey ==
-                                settings.chainConfig[activechain].wethticker +
-                                'USDC'
-                                ? settings.chainConfig[activechain].ethticker +
-                                'USDC'
-                                : activeMarketKey
+                              activeMarketKey.replace(
+                                new RegExp(
+                                  `^${wethticker}|${wethticker}$`,
+                                  'g'
+                                ),
+                                ethticker
+                              )
                             }
                             orderCenterHeight={orderCenterHeight}
                             hideBalances={true}
@@ -11529,12 +11510,13 @@ function App() {
                             address={address}
                             trades={tradesByMarket}
                             currentMarket={
-                              activeMarketKey ==
-                                settings.chainConfig[activechain].wethticker +
-                                'USDC'
-                                ? settings.chainConfig[activechain].ethticker +
-                                'USDC'
-                                : activeMarketKey
+                              activeMarketKey.replace(
+                                new RegExp(
+                                  `^${wethticker}|${wethticker}$`,
+                                  'g'
+                                ),
+                                ethticker
+                              )
                             }
                             orderCenterHeight={orderCenterHeight}
                             hideBalances={true}
@@ -11753,12 +11735,13 @@ function App() {
                             address={address}
                             trades={tradesByMarket}
                             currentMarket={
-                              activeMarketKey ==
-                                settings.chainConfig[activechain].wethticker +
-                                'USDC'
-                                ? settings.chainConfig[activechain].ethticker +
-                                'USDC'
-                                : activeMarketKey
+                              activeMarketKey.replace(
+                                new RegExp(
+                                  `^${wethticker}|${wethticker}$`,
+                                  'g'
+                                ),
+                                ethticker
+                              )
                             }
                             orderCenterHeight={orderCenterHeight}
                             hideBalances={true}

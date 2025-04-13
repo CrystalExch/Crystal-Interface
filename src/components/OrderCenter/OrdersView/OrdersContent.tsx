@@ -7,7 +7,7 @@ import OrderItem from './OrderItem';
 import multiBatchOrders from '../../../scripts/multiBatchOrders';
 
 import { getOrderValue, useSortableData } from '../utils';
-
+import { settings } from '../../../settings.ts';
 import './OrdersContent.css';
 
 interface OrdersContentProps {
@@ -18,15 +18,16 @@ interface OrdersContentProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  pageSize?: number;
-  currentPage?: number;
+  pageSize: number;
+  currentPage: number;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize = 10, currentPage = 1 }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
+      trades,
       orders,
-      (order: any, column: string) => getOrderValue(order, column, markets),
+      (order: any, column: string) => getOrderValue(order, column, markets, trades),
     );
     const [isSigning, setIsSigning] = useState(false);
     
@@ -172,11 +173,13 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
               <OrderItem
                 key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
                 order={item}
-                trades={trades}
+                trades={trades[item[4]]}
                 router={router}
                 refetch={refetch}
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={setChain}
+                quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
+                / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
               />
             ))
           ) : (null

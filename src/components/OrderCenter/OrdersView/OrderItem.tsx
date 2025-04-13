@@ -17,31 +17,30 @@ import './OrderItem.css';
 
 interface OrderItemProps {
   order: any;
-  trades: TradesByMarket;
+  trades: any;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
+  quotePrice: any;
 }
 
-const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperationAsync, setChain }) => {
+const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice }) => {
   const { favorites, toggleFavorite } = useSharedContext();
-
+  
   const marketKey = order[4];
   const market = markets[marketKey];
   const priceFactor = Number(market.priceFactor);
   const baseDecimals = Number(market.baseDecimals);
   const quoteDecimals = Number(market.quoteDecimals);
   const scaleFactor = Number(market.scaleFactor);
-
   const amount = order[2] / 10 ** baseDecimals;
   const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
-  const usdValue = (order[8] / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
+  const usdValue = (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
   const isBuyOrder = order[3] === 1;
 
-  const tradesForMarket = trades[marketKey] || [];
-  const currentPrice = fetchLatestPrice(tradesForMarket, market) || 0;
+  const currentPrice = fetchLatestPrice(trades, market) || 0;
   const limitPrice = order[0] / priceFactor;
   const { formattedGap, gapColor } = getPriceGap(
     limitPrice,

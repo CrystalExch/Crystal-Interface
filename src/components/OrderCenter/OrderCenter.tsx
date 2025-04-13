@@ -339,6 +339,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               tradehistory={filteredTradeHistory}
               pageSize={pageSize}
               currentPage={currentPage}
+              trades={trades}
             />
           );
         case 'orderHistory':
@@ -349,6 +350,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               currentMarket={currentMarket}
               pageSize={pageSize}
               currentPage={currentPage}
+              trades={trades}
             />
           );
         default:

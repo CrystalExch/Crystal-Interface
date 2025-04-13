@@ -97,7 +97,7 @@ export const formatSubscript = (value: string) => {
       }
     }
 
-    if (zerosCount > 3) {
+    if (zerosCount > 4) {
       const remainder = fractionalPart.slice(zerosCount);
       const zerosSubscript = zerosCount
         .toString()

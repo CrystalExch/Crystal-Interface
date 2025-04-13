@@ -1,4 +1,6 @@
-export const getOrderValue = (order: any, column: string, markets: any) => {
+import { settings } from "../../../../settings";
+
+export const getOrderValue = (order: any, column: string, markets: any, trades: any) => {
   const market = markets[order[4]];
   const priceFactor = Number(market.priceFactor);
   const baseDecimals = Number(market.baseDecimals);
@@ -8,7 +10,8 @@ export const getOrderValue = (order: any, column: string, markets: any) => {
   const amount = order[2] / 10 ** baseDecimals;
   const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
-
+  const quotePrice = market.quoteAsset == 'USDC' ? 1 : trades[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+  / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
   switch (column) {
     case 'markets':
       return market.baseAsset + '-' + market.quoteAsset;
@@ -21,7 +24,7 @@ export const getOrderValue = (order: any, column: string, markets: any) => {
     case 'amountFilled':
       return percentFilled;
     case 'tradeValue':
-      return order[8] / (scaleFactor * 10 ** quoteDecimals);
+      return order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals);
     case 'time':
       return order[6];
     default:

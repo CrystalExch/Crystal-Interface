@@ -142,6 +142,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
       <TradesView
         trades={trades}
         show={activeTab === 'trades' ? true : false}
+        symbolQuote={orderdata.symbolIn}
       />
     </div>
   );

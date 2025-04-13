@@ -76,10 +76,8 @@ const OrderList: React.FC<OrderListProps> = ({
     const filteredOrders = userOrders.filter(order => {
       const isBuy = Number(order[3]) === 1;
       const matchesListType = isBuyOrderList ? isBuy : !isBuy;
-      const orderMarket = String(order[4]);
-      const matchesMarket = orderMarket === symbolQuote+symbolBase;
       
-      return matchesListType && matchesMarket;
+      return matchesListType && String(order[4]) === symbolBase+symbolQuote;
     });
     
     if (filteredOrders.length === 0) {
@@ -102,7 +100,7 @@ const OrderList: React.FC<OrderListProps> = ({
     const bucketSpacing =
       sortedDisplayedPrices.length > 1 ? Math.abs(sortedDisplayedPrices[1] - sortedDisplayedPrices[0]) : 1;
     const tolerance = bucketSpacing * 0.5;
-    
+
     filteredOrders.forEach(order => {
       const rawOrderPrice = Number(order[0]);
       const scaledOrderPrice = rawOrderPrice / scalingFactor;

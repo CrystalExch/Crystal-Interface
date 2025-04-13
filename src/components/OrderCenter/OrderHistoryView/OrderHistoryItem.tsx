@@ -17,11 +17,13 @@ import './OrderHistoryItem.css';
 interface OrderHistoryItemProps {
   order: any;
   market: any;
+  quotePrice: any;
 }
 
 const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   order,
   market,
+  quotePrice,
 }) => {
   const { favorites, toggleFavorite } = useSharedContext();
 
@@ -79,7 +81,7 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
       </div>
       <div className="oc-cell value-cell">
         <span className="order-value">
-          {formatBalance(amount * (order[0] / priceFactor), 'usd')}
+          {formatBalance(amount * quotePrice * (order[0] / priceFactor), 'usd')}
         </span>
         <div className="amount">
           {formatDisplay(customRound(amount, 3))}

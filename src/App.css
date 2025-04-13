@@ -126,20 +126,12 @@ html {
   width: 70%;
 }
 
-.tokenlist {
-  bottom: -10px;
-  width: calc(100% + 10px);
-  -webkit-overflow-scrolling: touch;
-  margin-top: 10px;
-}
-
 .tokenlist,.sendtokenlist {
   -ms-overflow-style: none;
   overflow-y: auto;
   padding-left: 0;
   scrollbar-width: none;
-  top: 0;
-  margin-bottom: 20px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sendtokenlist {
@@ -236,20 +228,6 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-}
-
-.tokenlist,
-.tokenlistbg {
-  background: 0 0;
-  border: none;
-  position: absolute;
-}
-
-.tokenlistbg {
-  border-radius: 20px;
-  left: 0;
-  top: 160px;
-  z-index: -1;
 }
 
 .empty-token-list {
@@ -889,7 +867,7 @@ body {
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 6px 20px 12px 37px;
+  padding: 6px 12px 12px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
@@ -910,7 +888,7 @@ body {
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 4px 20px 10.5px 37px;
+  padding: 4px 12px 10.5px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
@@ -1915,13 +1893,12 @@ body:has(.right-column.show) .blur-background-popups {
   padding-right: 5px;
 }
 
-
 .tokenlistcontainer {
   display: flex;
   flex-direction: column;
-  height: calc(100% - 100px);
+  height: 364.32px;
   overflow: hidden;
-  position: relative;
+  margin-top: 8px;
 }
 
 .wallet-footer-link {
@@ -2764,9 +2741,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   background-color: transparent;
   cursor: row-resize;
   position: absolute;
-  width: 100%;
+  width: calc(100% - 12px);
   z-index: 3;
-  border-radius: 4px;
   transition: background-color 0.2s ease;
 }
 

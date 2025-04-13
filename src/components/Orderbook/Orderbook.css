@@ -7,14 +7,6 @@
   width: 100%;
 }
 
-.ob-container::after {
-  background-color: white;
-  bottom: 0;
-  content: '';
-  height: 30px;
-  position: absolute;
-}
-
 .ob-container,
 .ob-header {
   display: flex;
@@ -53,7 +45,7 @@
   flex: 1;
   font-size: 0.8rem;
   font-weight: 300;
-  margin-top: 3px;
+  margin-top: 2px;
   padding: 8px 20px;
   text-align: center;
   text-decoration: none;

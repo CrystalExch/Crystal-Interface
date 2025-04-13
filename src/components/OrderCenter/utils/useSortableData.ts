@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
 export function useSortableData(
+  trades: any,
   items: any[],
-  getValue: (item: any, column: string) => any,
+  getValue: (item: any, column: string, trades: any) => any,
 ) {
   const [sortColumn, setSortColumn] = useState<string>('time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -20,8 +21,8 @@ export function useSortableData(
     const sorted = [...items].sort((a, b) => {
       let comparison = 0;
 
-      const aValue = getValue(a, sortColumn);
-      const bValue = getValue(b, sortColumn);
+      const aValue = getValue(a, sortColumn, trades);
+      const bValue = getValue(b, sortColumn, trades);
 
       if (typeof aValue === 'string' && typeof bValue === 'string') {
         comparison = aValue.localeCompare(bValue);

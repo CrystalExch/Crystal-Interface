@@ -4,23 +4,27 @@ import SortableHeaderCell from '../SortableHeaderCell/SortableHeaderCell';
 import TradeHistoryItem from './TradeHistoryItem';
 
 import { getTradeValue, useSortableData } from '../utils';
+import { settings } from '../../../settings.ts';
 
 import './TradeHistoryContent.css';
 
 interface TradeHistoryContentProps {
   tradehistory: any[];
-  pageSize?: number;
-  currentPage?: number;
+  trades: any;
+  pageSize: number;
+  currentPage: number;
 }
 
 const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   tradehistory,
-  pageSize = 10,
-  currentPage = 1
+  trades,
+  pageSize,
+  currentPage
 }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
+    trades,
     tradehistory,
-    (trade: any, column: string) => getTradeValue(trade, column, markets),
+    (trade: any, column: string) => getTradeValue(trade, column, markets, trades),
   );
 
   const currentItems = sortedItems.length > 0 ? 
@@ -91,6 +95,8 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
               key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
               trade={item}
               market={markets[item[4]]}
+              quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
+              / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
             />
           ))
         ) : (null

@@ -193,15 +193,19 @@ export const usePortfolioData = (
       const tokenBalance =
         Number(tokenBalances[token.address]) / 10 ** Number(token.decimals) ||
         0;
+      let latestPrice
       const normalizedTicker = normalizeTicker(token.ticker, activechain);
-      const marketKey = `${normalizedTicker}USDC`;
-      const market = markets[marketKey];
-      const tradesForMarket = trades[marketKey] || [];
-
-      const latestPrice =
-        token.ticker === 'USDC'
-          ? 1
-          : (fetchLatestPrice(tradesForMarket, market) ?? 0);
+      const marketKeyUSDC = `${normalizedTicker}USDC`;
+      if (markets[marketKeyUSDC]) {
+        const marketTrades = trades[marketKeyUSDC] || [];
+        latestPrice = fetchLatestPrice(marketTrades, markets[marketKeyUSDC]) || 0;
+      }
+      else {
+        const quotePrice = trades[settings.chainConfig[activechain].ethticker + 'USDC']?.[0]?.[3]
+        / Number(markets[settings.chainConfig[activechain].ethticker + 'USDC']?.priceFactor)
+        const marketTrades = trades[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`] || [];
+        latestPrice = (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
+      }
       totalValue += tokenBalance * latestPrice;
     });
     setTotalAccountValue(totalValue);

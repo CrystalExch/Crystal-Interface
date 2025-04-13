@@ -98,7 +98,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setCopySuccess(false);
     }, 3000);
   };
-
+  
   useEffect(() => {
     (async () => {
       const refs = (await readContracts(config, {

@@ -169,18 +169,18 @@ const Portfolio: React.FC<PortfolioProps> = ({
     let volume = 0;
 
     tradehistory.forEach((trade) => {
-      const market = trade[4];
+      const marketKey = trade[4];
       const tradeTime = trade[6];
       const tradeSide = trade[2];
       const amount = trade[0];
       const price = trade[1];
 
       if (
-        market.baseAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
+        markets[marketKey].baseAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
         typeof tradeTime === 'number' &&
         tradeTime >= timeago
       ) {
-        volume += (tradeSide === 1 ? amount : price) / 10 ** 6;
+        volume += (tradeSide === 1 ? amount : price) / 10 ** Number(markets[marketKey].quoteDecimals);
       }
     });
 
