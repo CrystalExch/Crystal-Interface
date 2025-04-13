@@ -28,7 +28,6 @@ interface OrderListProps {
   spreadPrice?: number;
   orderbookPosition: string;
   updateLimitAmount: any;
-  userOrders?: any[];
 }
 
 const OrderList: React.FC<OrderListProps> = ({
@@ -44,15 +43,12 @@ const OrderList: React.FC<OrderListProps> = ({
   spreadPrice,
   orderbookPosition,
   updateLimitAmount,
-  userOrders = [],
 }) => {
   const [mousePosition, setMousePosition] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
   });
-  const [highlightData, setHighlightData] = useState<HighlightData | null>(
-    null,
-  );
+  const [highlightData, setHighlightData] = useState<HighlightData | null>(null);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   const orderRefs = useRef<(HTMLLIElement | null)[]>([]);
@@ -65,75 +61,6 @@ const OrderList: React.FC<OrderListProps> = ({
     }
     return 0;
   };
-
-  const userOrderPrices = useMemo(() => {
-    const priceMap: { [key: string]: boolean } = {};
-  
-    if (!userOrders || userOrders.length === 0 || !roundedOrders || roundedOrders.length === 0) {
-      return priceMap;
-    }
-    
-    const filteredOrders = userOrders.filter(order => {
-      const isBuy = Number(order[3]) === 1;
-      const matchesListType = isBuyOrderList ? isBuy : !isBuy;
-      const orderMarket = String(order[4]);
-      const matchesMarket = orderMarket === symbolQuote+symbolBase;
-      
-      return matchesListType && matchesMarket;
-    });
-    
-    if (filteredOrders.length === 0) {
-      return priceMap;
-    }
-    
-    const displayedPrices = roundedOrders.map(order => order.price);
-    const sortedDisplayedPrices = [...displayedPrices].sort((a, b) => a - b);
-    
-    let scalingFactor = 1;
-    if (filteredOrders.length > 0 && sortedDisplayedPrices.length > 0) {
-      const sampleOrderPrice = Number(filteredOrders[0][0]);
-      const averageDisplayPrice =
-        sortedDisplayedPrices.reduce((sum, price) => sum + price, 0) / sortedDisplayedPrices.length;
-      const rawScaling = sampleOrderPrice / averageDisplayPrice;
-      const powerOf10 = Math.round(Math.log10(rawScaling));
-      scalingFactor = Math.pow(10, powerOf10);
-    }
-    
-    const bucketSpacing =
-      sortedDisplayedPrices.length > 1 ? Math.abs(sortedDisplayedPrices[1] - sortedDisplayedPrices[0]) : 1;
-    const tolerance = bucketSpacing * 0.5;
-    
-    filteredOrders.forEach(order => {
-      const rawOrderPrice = Number(order[0]);
-      const scaledOrderPrice = rawOrderPrice / scalingFactor;
-      const isBuyOrder = Number(order[3]) === 1;
-      let matchedPrice: number;
-      
-      if (isBuyOrder) {
-        matchedPrice = sortedDisplayedPrices[0];
-        for (let i = 0; i < sortedDisplayedPrices.length; i++) {
-          if (sortedDisplayedPrices[i] <= scaledOrderPrice && sortedDisplayedPrices[i] > matchedPrice) {
-            matchedPrice = sortedDisplayedPrices[i];
-          }
-        }
-      } else {
-        matchedPrice = sortedDisplayedPrices[sortedDisplayedPrices.length - 1];
-        for (let i = sortedDisplayedPrices.length - 1; i >= 0; i--) {
-          if (sortedDisplayedPrices[i] >= scaledOrderPrice && sortedDisplayedPrices[i] < matchedPrice) {
-            matchedPrice = sortedDisplayedPrices[i];
-          }
-        }
-      }
-      
-      const diff = Math.abs(scaledOrderPrice - matchedPrice);
-      
-      if (diff <= tolerance) {
-        priceMap[matchedPrice] = true;
-      }
-    });
-    
-    return priceMap;
-  }, [userOrders, roundedOrders, isBuyOrderList, symbolQuote+symbolBase, priceFactor]);  
 
   const displayedOrders = useMemo(() => {
     const updatedOrders = roundedOrders.map((order) => ({
@@ -152,7 +79,7 @@ const OrderList: React.FC<OrderListProps> = ({
       max = Math.max(max, sizeDecimals, totalSizeDecimals);
     });
 
-    if (amountsQuote == 'Quote') {
+    if (amountsQuote === 'Quote') {
       return 2;
     }
 
@@ -197,10 +124,7 @@ const OrderList: React.FC<OrderListProps> = ({
     if (selectedIndex !== null) {
       const ordersInRange = isBuyOrderList
         ? roundedOrders.slice(0, selectedIndex + 1)
-        : roundedOrders.slice(
-            0,
-            Math.max(0, roundedOrders.length - selectedIndex),
-          );
+        : roundedOrders.slice(0, Math.max(0, roundedOrders.length - selectedIndex));
 
       const highlightRawData = calculateHighlightData(
         ordersInRange,
@@ -220,7 +144,7 @@ const OrderList: React.FC<OrderListProps> = ({
     displayedOrders,
     isBuyOrderList,
     amountsQuote,
-    symbolQuote+symbolBase,
+    symbolQuote + symbolBase,
     spreadPrice,
     roundedOrders,
   ]);
@@ -239,9 +163,6 @@ const OrderList: React.FC<OrderListProps> = ({
         className={`order-list-items ${isBuyOrderList ? 'top-aligned' : 'bottom-aligned'}`}
       >
         {displayedOrders.map((order, index) => {
-          const price = order.price;
-          const hasUserOrder = userOrderPrices[price] === true;
-
           return (
             <OrderItem
               key={`order-${index}-${order.price}-${order.size}-${order.isPhantom === true ? 'phantom' : 'real'}`}
@@ -255,18 +176,19 @@ const OrderList: React.FC<OrderListProps> = ({
               isBuyOrder={isBuyOrderList}
               changeType={order.changeType}
               priceFactor={priceFactor}
-              isHighlighted={(() => {
-                if (selectedIndex == null || order.price === 0) return false;
-                return isBuyOrderList
+              isHighlighted={
+                selectedIndex === null || order.price === 0
+                  ? false
+                  : isBuyOrderList
                   ? index <= selectedIndex
-                  : index >= selectedIndex;
-              })()}
+                  : index >= selectedIndex
+              }
               isBoundary={selectedIndex === index}
               isPhantom={order.isPhantom}
               maxDecimals={maxDecimals}
               updateLimitAmount={updateLimitAmount}
               shouldFlash={order.shouldFlash}
-              hasUserOrder={hasUserOrder}
+              hasUserOrder={order.userPrice}
             />
           );
         })}

@@ -5,6 +5,7 @@ interface Order {
   changeType?: boolean;
   isPhantom?: boolean;
   shouldFlash: boolean;
+  userPrice: boolean;
 }
 
 const SPREAD_DISPLAY_HEIGHT = 50;
@@ -54,6 +55,7 @@ export function scaleOrders(
       totalSize: 0,
       isPhantom: true,
       shouldFlash: false,
+      userPrice: false,
     }));
     slicedOrders = [...slicedOrders, ...phantomOrders];
   }
@@ -67,7 +69,7 @@ export function scaleOrders(
     orders: slicedOrders,
     leftoverPerRow,
   };
-}
+};
 
 const groupOrders = (
   orders: Order[],
@@ -75,7 +77,7 @@ const groupOrders = (
   isBuy: boolean,
 ): Order[] => {
   const grouped: {
-    [priceLevel: number]: { size: number; shouldFlash: boolean };
+    [priceLevel: number]: { size: number; shouldFlash: boolean; userPrice: boolean };
   } = {};
 
   const preciseRound = (value: number, decimals: number): number => {
@@ -84,7 +86,7 @@ const groupOrders = (
   };
 
   const epsilon = 1e-8;
-  orders.forEach(({ price, size, shouldFlash }) => {
+  orders.forEach(({ price, size, shouldFlash, userPrice }) => {
     const intervalStart = isBuy
       ? Math.floor((price + epsilon) / interval) * interval
       : Math.ceil((price - epsilon) / interval) * interval;
@@ -92,7 +94,7 @@ const groupOrders = (
     const roundedInterval = preciseRound(intervalStart, 8);
 
     if (!grouped[roundedInterval]) {
-      grouped[roundedInterval] = { size: 0, shouldFlash: false };
+      grouped[roundedInterval] = { size: 0, shouldFlash: false, userPrice };
     }
     grouped[roundedInterval].size = preciseRound(
       grouped[roundedInterval].size + size,
@@ -101,14 +103,17 @@ const groupOrders = (
     if (shouldFlash) {
       grouped[roundedInterval].shouldFlash = true;
     }
+    grouped[roundedInterval].userPrice =
+      grouped[roundedInterval].userPrice || userPrice;
   });
 
   return Object.entries(grouped)
-    .map(([price, { size, shouldFlash }]) => ({
+    .map(([price, { size, shouldFlash, userPrice }]) => ({
       price: preciseRound(Number(price), 8),
       size: preciseRound(size, 8),
       totalSize: 0,
       shouldFlash,
+      userPrice,
     }))
     .sort((a, b) => (isBuy ? b.price - a.price : a.price - b.price))
     .reduce((acc, order) => {

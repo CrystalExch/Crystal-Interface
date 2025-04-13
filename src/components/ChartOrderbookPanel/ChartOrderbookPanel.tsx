@@ -31,7 +31,6 @@ interface ChartOrderbookPanelProps {
   setpopup: (value: number) => void;
   updateLimitAmount: any;
   tradesloading: boolean;
-  orders: any;
   marketsData: any;
   chartOrderData?: any;
   updateChartData?: any;
@@ -63,7 +62,6 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   setpopup,
   updateLimitAmount,
   tradesloading,
-  orders = [],
   marketsData,
   updateChartData
 }) => {
@@ -200,7 +198,6 @@ return (
         <OrderBook
           trades={obtrades}
           orderdata={orderdata}
-          activemarket={activeMarket}
           layoutSettings={layoutSettings}
           orderbookPosition={orderbookPosition}
           hideHeader={false}
@@ -214,7 +211,6 @@ return (
           activeTab={activeTab}
           setActiveTab={setActiveTab}
           updateLimitAmount={updateLimitAmount}
-          userOrders={orders}
         />
       </div>
     </>
