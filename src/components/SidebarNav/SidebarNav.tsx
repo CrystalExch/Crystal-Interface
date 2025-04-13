@@ -4,7 +4,7 @@ import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import mint from '../../assets/mint.png';
 import candlestick from '../../assets/candlestick.png';
-import portfolio from '../../assets/folder.png';
+import portfolio from '../../assets/portfolio.png';
 import referrals from '../../assets/referrals.png';
 import leaderboard from '../../assets/leaderboard.png';
 import swap from '../../assets/refresh.svg';
