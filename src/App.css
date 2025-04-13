@@ -1040,7 +1040,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .portfolio-content-popup {
-  height: 125px;
+  height: 140px;
   margin-top: 6px;
   overflow: auto;
   -ms-overflow-style: auto;
@@ -3228,7 +3228,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
     -webkit-appearance: none;
     appearance: none;
     margin-left: 0;
-    padding-left: 12px;
+    padding-left: 16px;
   }
   .input::placeholder,
   .output::placeholder,
