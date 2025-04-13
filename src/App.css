@@ -3976,6 +3976,7 @@ body:has(.popup-blur) {
     height: 100%;
     overflow: hidden;
     -webkit-overflow-scrolling: auto;
+    padding-top: 100px;
   }
   
   body:has(.main-content-wrapper.simple-view) {
