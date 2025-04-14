@@ -4813,3 +4813,98 @@ input[type="email"] {
   }
 }
 
+
+
+
+.limit-price-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin: 0 13px;
+  margin-bottom: 8px;
+  margin-top: -5px;
+  width: calc(100% - 26px);
+  gap: 3px;
+}
+
+.limit-price-button {
+  border: 1px dotted rgb(102 107 150/25%);
+  border-radius: 4px;
+  color: #ffffff70;
+  cursor: pointer;
+  flex: 1;
+  font-size: 0.7rem;
+  padding:1px 0;
+  text-align: center;
+  transition: all 0.2s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.limit-price-button:hover {
+  border-color: rgb(102 107 150/15%);
+  color: #ffffffd8;
+}
+
+.limit-custom-button {
+  border:1px dotted rgba(228, 226, 252, 0.15);
+}
+
+.limit-custom-button:hover {
+  border:1px dotted rgba(228, 226, 252, 0.2);
+
+}
+
+.limit-custom-input {
+  background: transparent;
+  border: none;
+  color: #ffffffd8;
+  font-size: 0.7rem;
+  height: 100%;
+  left: 0;
+  opacity: 0;
+  position: absolute;
+  text-align: center;
+  top: 0;
+  width: 100%;
+  z-index: -1;
+}
+
+.limit-custom-button.editing .limit-custom-label {
+  opacity: 0;
+}
+
+.limit-custom-button.editing .limit-custom-input {
+  opacity: 1;
+  z-index: 2;
+  outline: none;
+}
+
+.limit-custom-input::-webkit-outer-spin-button,
+.limit-custom-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.limit-custom-input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.main-content-wrapper.simple-view .limit-price-buttons {
+  margin: 8px 13px;
+}
+
+.main-content-wrapper.simple-view .limit-price-button {
+  font-size: 0.8rem;
+  padding: 5px 0;
+}
+
+.main-content-wrapper.simple-view .limit-custom-input {
+  font-size: 0.8rem;
+}
+
+@media (max-width: 1020px) {
+  .limit-price-buttons {
+    margin: 8px 12px;
+    width: calc(100% - 24px);
+  }
+}

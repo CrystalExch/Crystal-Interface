@@ -8629,6 +8629,139 @@ function App() {
             />
             <span className="limit-order-usd-label">USDC</span>
           </div>
+<div className="limit-price-buttons">
+<button 
+  className="limit-price-button limit-custom-button"
+  onClick={() => {
+    const customButton = document.querySelector('.limit-custom-button');
+    if (customButton) {
+      customButton.classList.add('editing');
+    }
+    
+    setTimeout(() => {
+      const input = document.querySelector('.limit-custom-input') as HTMLInputElement | null;
+      if (input) {
+        input.value = '';
+        input.focus();
+      }
+    }, 10);
+  }}
+>
+  <span className="limit-custom-label">
+    {(() => {
+      const marketPrice = tokenIn === activeMarket?.baseAddress 
+        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+      
+      const currentPrice = parseFloat(limitPriceString || '0');
+      
+      if (marketPrice > 0 && currentPrice > 0) {
+        const percentDiff = ((currentPrice - marketPrice) / marketPrice) * 100;
+        
+        if (Math.abs(percentDiff) < 0.01) {
+          return "Custom";
+        }
+        
+        return (percentDiff >= 0 ? "+" : "") + percentDiff.toFixed(1) + "%";
+      }
+      
+      return "Custom";
+    })()}
+  </span>
+  <div className="custom-input-container">
+    <input 
+      className="limit-custom-input"
+      type="number" 
+      step="0.1"
+      min="0"
+      placeholder="%" 
+      onBlur={(e) => {
+        const customButton = document.querySelector('.limit-custom-button');
+        if (customButton) {
+          customButton.classList.remove('editing');
+        }
+        
+        const value = e.target.value;
+        if (value) {
+          const marketPrice = tokenIn === activeMarket?.baseAddress 
+            ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+            : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+          
+          const percentValue = parseFloat(value);
+          
+          let newPrice;
+          if (tokenIn === activeMarket?.quoteAddress) {
+            newPrice = marketPrice * (1 - percentValue/100);
+          } else {
+            newPrice = marketPrice * (1 + percentValue/100);
+          }
+          
+          updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+        }
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') {
+          const input = e.target as HTMLInputElement;
+          input.blur();
+        } else if (e.key === 'Escape') {
+          const customButton = document.querySelector('.limit-custom-button');
+          if (customButton) {
+            customButton.classList.remove('editing');
+          }
+        }
+      }}
+      onClick={(e) => e.stopPropagation()}
+    />
+  </div>
+</button>
+  <button 
+    className="limit-price-button" 
+    onClick={() => {
+      const marketPrice = tokenIn === activeMarket?.baseAddress 
+        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+      
+      const newPrice = tokenIn === activeMarket?.quoteAddress
+        ? Math.max(0, marketPrice * 0.99) 
+        : marketPrice * 1.01;
+      
+      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+    }}
+  >
+    {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
+  </button>
+  <button 
+    className="limit-price-button" 
+    onClick={() => {
+      const marketPrice = tokenIn === activeMarket?.baseAddress 
+        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+      const newPrice = tokenIn === activeMarket?.quoteAddress
+        ? Math.max(0, marketPrice * 0.95) 
+        : marketPrice * 1.05; 
+      
+      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+    }}
+  >
+    {tokenIn === activeMarket?.quoteAddress ? "-5%" : "+5%"}
+  </button>
+  <button 
+    className="limit-price-button" 
+    onClick={() => {
+      const marketPrice = tokenIn === activeMarket?.baseAddress 
+        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+      
+      const newPrice = tokenIn === activeMarket?.quoteAddress
+        ? Math.max(0, marketPrice * 0.9) 
+        : marketPrice * 1.1; 
+      
+      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+    }}
+  >
+    {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}
+  </button>
+</div>
         </div>
         <div className="balance-slider-wrapper">
           <div className="slider-container">
