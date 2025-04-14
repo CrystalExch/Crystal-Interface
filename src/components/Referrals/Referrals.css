@@ -348,8 +348,6 @@
   font-weight: 500;
   -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
-  transform: scaleX(1.07);
-  padding-left: 8px;
 }
 
 .token-breakdown-title {
@@ -565,7 +563,7 @@
 @media (max-width: 1020px) {
   .referral-scroll-wrapper {
     height: auto;
-    margin: 0;
+    margin: 0 0 5px 0;
     overflow: visible;
     padding: 0 5px;
   }

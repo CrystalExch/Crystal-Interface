@@ -15,11 +15,6 @@
   transition: left 0.3s ease;
   padding-bottom: 5px;
 }
-@media (max-width: 1020px) {
-  .app-header {
-    left: 5px;
-  }
-}
 
 body.sidebar-expanded .app-header {
   left: 200px;
@@ -287,8 +282,6 @@ body.sidebar-expanded .app-header {
   padding-right: 10px;
 }
 
-
-
 @media(max-width:1020px){
   .right-header-trade{
     background-color: transparent;
@@ -349,19 +342,13 @@ body.sidebar-expanded .app-header {
     display: flex;
     margin-left: 0px;
   }
-}
-
-
-
-
-
-@media(max-width: 1020px){
   .left-header{
     position: absolute;
     top: 58px;
   }
   .app-header{
     align-items: center;
-    padding-bottom: 0;
+    left: 5px;
+    padding: 0px;
   }
 }
