@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
-import crystalxp from '../../assets/CrystalX.png';
+import crystalxp from '../../assets/CrystalLB.png';
 import CrownIcon from '../../assets/crownicon.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
@@ -48,7 +48,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     seconds: 0
   });
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
-  const [loading, setLoading] = useState<boolean>(true);
+  const loading = Object.keys(liveLeaderboard).length === 0;
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
   const [showNotification, setShowNotification] = useState<boolean>(false);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
@@ -72,11 +72,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
           );
   
           setLiveLeaderboard(updatedLiveLeaderboard);
-          setLoading(false);
         })
         .catch((err) => {
           console.error("Error fetching user points:", err);
-          setLoading(false);
         });
     };
 

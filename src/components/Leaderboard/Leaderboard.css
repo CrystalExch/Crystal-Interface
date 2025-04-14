@@ -178,7 +178,7 @@
   z-index:1;
   transform:translateZ(15px);
   transition:transform.4s cubic-bezier(.175,.885,.32,1.275);
-  position:relative
+  position:relative;
 }
 .faction-logo{
   width:60px;
@@ -204,7 +204,6 @@
   color:rgba(255,255,255,.6);
   font-size:1.1rem;
   font-weight:400;
-  margin-left:-10px
 }
 .full-leaderboard{
   overflow:hidden
