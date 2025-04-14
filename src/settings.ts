@@ -447,16 +447,16 @@ export const settings: any = {
       },
       addresstomarket: {
         '0xe67b22228362f54c207623857ac01b0f8fa1e14f': 'MONUSDC',
-        '0xf5272255fef2ce9735944706625597011f45c986': 'WETHUSDC',
-        '0xf49847295eeb5f262e29aa309b2af39e983c1734': 'WBTCUSDC',
-        '0x7589404f183be0a02290d4e488adb95dd742d6b3': 'WSOLUSDC',
-        '0x3b82f2321977137c80825237b85d154b665e11ee': 'USDTUSDC',
         '0x68dee54ba048ffb3844b5fdbd008c08ca75fe4fd': 'sMONMON',
         '0xc97992ba107c3b3f8b880bf29b07b424c86b8d23': 'aprMONMON',
         '0x2bc10e58afff05d0e185eaabc1b300399da71f20': 'shMONMON',
         '0xf26d6be3e29ceca7044e248bac3c3a09841dd072': 'DAKMON',
         '0xaff5c2e1814d979465cbac2913eab8e23f443a7f': 'CHOGMON',
         '0xcaf1e006ea025c36346dd7f35fd14d2a52288953': 'YAKIMON',
+        '0xf5272255fef2ce9735944706625597011f45c986': 'WETHUSDC',
+        '0xf49847295eeb5f262e29aa309b2af39e983c1734': 'WBTCUSDC',
+        '0x7589404f183be0a02290d4e488adb95dd742d6b3': 'WSOLUSDC',
+        '0x3b82f2321977137c80825237b85d154b665e11ee': 'USDTUSDC',
       },
       tokendict: {
         '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE': {

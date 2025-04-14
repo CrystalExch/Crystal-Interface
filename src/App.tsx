@@ -4041,6 +4041,46 @@ function App() {
                     } else {
                       setTokenOut(tokenIn);
                       if (amountIn != BigInt(0)) {
+                        if (limitChase && mids?.[activeMarketKey]?.[0]) {
+                          const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+                          setlimitPrice(price);
+                          setlimitPriceString(
+                            (
+                              Number(price) / Number(activeMarket.priceFactor)
+                            ).toFixed(Math.log10(Number(activeMarket.priceFactor))),
+                          );
+                          setamountOutLimit(
+                            price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              : BigInt(0),
+                          );
+                          setlimitoutputString(
+                            (price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number(
+                                    (amountIn * price) /
+                                    (activeMarket.scaleFactor || BigInt(1)),
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number(
+                                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                    price,
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
                         setInputString(limitoutputString);
                         setlimitoutputString(inputString);
                         setamountIn(amountOutLimit);
@@ -4674,6 +4714,46 @@ function App() {
                     } else {
                       setTokenIn(tokenOut);
                       if (amountIn != BigInt(0)) {
+                        if (limitChase && mids?.[activeMarketKey]?.[0]) {
+                          const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+                          setlimitPrice(price);
+                          setlimitPriceString(
+                            (
+                              Number(price) / Number(activeMarket.priceFactor)
+                            ).toFixed(Math.log10(Number(activeMarket.priceFactor))),
+                          );
+                          setamountOutLimit(
+                            price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              : BigInt(0),
+                          );
+                          setlimitoutputString(
+                            (price != BigInt(0) && amountIn != BigInt(0)
+                              ? tokenOut === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number(
+                                    (amountIn * price) /
+                                    (activeMarket.scaleFactor || BigInt(1)),
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number(
+                                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                                    price,
+                                  ) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
                         setInputString(limitoutputString);
                         setlimitoutputString(inputString);
                         setamountIn(amountOutLimit);
@@ -8201,6 +8281,46 @@ function App() {
             setTokenIn(tokenOut);
             setTokenOut(tokenIn);
             if (amountIn != BigInt(0)) {
+              if (limitChase && mids?.[activeMarketKey]?.[0]) {
+                const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
+                setlimitPrice(price);
+                setlimitPriceString(
+                  (
+                    Number(price) / Number(activeMarket.priceFactor)
+                  ).toFixed(Math.log10(Number(activeMarket.priceFactor))),
+                );
+                setamountOutLimit(
+                  price != BigInt(0) && amountIn != BigInt(0)
+                    ? tokenOut === activeMarket?.baseAddress
+                      ? (amountIn * price) /
+                      (activeMarket.scaleFactor || BigInt(1))
+                      : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                      price
+                    : BigInt(0),
+                );
+                setlimitoutputString(
+                  (price != BigInt(0) && amountIn != BigInt(0)
+                    ? tokenOut === activeMarket?.baseAddress
+                      ? customRound(
+                        Number(
+                          (amountIn * price) /
+                          (activeMarket.scaleFactor || BigInt(1)),
+                        ) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      )
+                      : customRound(
+                        Number(
+                          (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                          price,
+                        ) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      )
+                    : ''
+                  ).toString(),
+                );
+              }
               setInputString(limitoutputString);
               setlimitoutputString(inputString);
               setamountIn(amountOutLimit);
@@ -8649,23 +8769,18 @@ function App() {
 >
   <span className="limit-custom-label">
     {(() => {
-      const marketPrice = tokenIn === activeMarket?.baseAddress 
-        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
-        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
-      
-      const currentPrice = parseFloat(limitPriceString || '0');
-      
-      if (marketPrice > 0 && currentPrice > 0) {
-        const percentDiff = ((currentPrice - marketPrice) / marketPrice) * 100;
-        
+      const marketPrice = Number(tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[1] ? mids[activeMarketKey]?.[2] : mids[activeMarketKey]?.[0] : mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[2] ? mids[activeMarketKey]?.[1] : mids[activeMarketKey]?.[0])
+
+      if (marketPrice > 0 && limitPrice > 0) {
+        const percentDiff = ((Number(limitPrice) - marketPrice) / marketPrice) * 100;
         if (Math.abs(percentDiff) < 0.01) {
-          return "Custom";
+          return t('custom');
         }
         
         return (percentDiff >= 0 ? "+" : "") + percentDiff.toFixed(1) + "%";
       }
       
-      return "Custom";
+      return t('custom');
     })()}
   </span>
   <div className="custom-input-container">
@@ -8674,7 +8789,7 @@ function App() {
       type="number" 
       step="0.1"
       min="0"
-      placeholder="%" 
+      placeholder={tokenIn === activeMarket?.quoteAddress ? "-%" : "%"}
       onBlur={(e) => {
         const customButton = document.querySelector('.limit-custom-button');
         if (customButton) {
