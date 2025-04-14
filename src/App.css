@@ -4785,7 +4785,7 @@ input[type="email"] {
   position: absolute;
   text-align: center;
   top: 0;
-  width: 100%;
+  width:  100%;
   z-index: -1;
 }
 
@@ -4810,12 +4810,13 @@ input[type="email"] {
 }
 
 .main-content-wrapper.simple-view .limit-price-buttons {
-  margin: 8px 13px;
+  margin: 0px 13px;
+  margin-bottom: 5px;
 }
 
 .main-content-wrapper.simple-view .limit-price-button {
   font-size: 0.8rem;
-  padding: 5px 0;
+  padding: 2px 0;
 }
 
 .main-content-wrapper.simple-view .limit-custom-input {
