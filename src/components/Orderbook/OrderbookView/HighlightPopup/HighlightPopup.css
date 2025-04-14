@@ -1,8 +1,7 @@
 .highlight-popup {
-  background-color: rgba(219, 221, 248, 0.03) !important;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
-  color: rgb(255 255 255 / 80%);
+  background-color: rgba(219, 221, 248, 0.05);
+  border-radius: 6px;
+  color: rgb(255 255 255 / 60%);
   font-size: 0.7rem;
   isolation: isolate;
   min-width: 140px;
@@ -12,7 +11,7 @@
   transition: opacity 0.5s ease-in-out;
   white-space: nowrap;
   z-index: 1000;
-  border: 1px solid rgb(255 255 255 / 3%);
+  letter-spacing: -0.2px;
 }
 
 .highlight-popup::after {
@@ -49,6 +48,3 @@
   left: 0.5px;
 }
 
-.text-white {
-  color: #fff9;
-}

@@ -14,6 +14,7 @@
   text-rendering: optimizelegibility;
   text-size-adjust: 100%;
   user-select: none;
+  letter-spacing: -0.2px;
 }
 
 ::placeholder{
