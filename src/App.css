@@ -4739,10 +4739,10 @@ input[type="email"] {
 .limit-price-buttons {
   display: flex;
   justify-content: space-between;
-  margin: 0 13px;
+  margin: 0 11px;
   margin-bottom: 8px;
-  margin-top: -5px;
-  width: calc(100% - 26px);
+  margin-top: -4px;
+  width: calc(100% - 24px);
   gap: 3px;
 }
 
@@ -4810,8 +4810,7 @@ input[type="email"] {
 }
 
 .main-content-wrapper.simple-view .limit-price-buttons {
-  margin: 0px 13px;
-  margin-bottom: 5px;
+  margin: -2px 13px 6px 13px;
 }
 
 .main-content-wrapper.simple-view .limit-price-button {
