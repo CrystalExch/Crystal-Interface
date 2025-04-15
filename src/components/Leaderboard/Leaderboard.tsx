@@ -514,6 +514,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       {isCurrentUser && (
                         <span className="current-user-tag">You</span>
                       )}
+                      {isCurrentUser && orders.length > 0 && (
+                        <div className="orders-indicator-container">
+                          <div
+                            className="orders-indicator"
+                            title={`You have ${orders.length} pending orders`}
+                          ></div>
+                        </div>
+                      )}
                     </div>
                     <div className="row-xp">
                       <div className="xp-amount">
