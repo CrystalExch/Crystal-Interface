@@ -749,7 +749,7 @@
 }
 
 .leaderboard-container.is-loading .leaderboard-rows {
-  min-height: calc(47*62px)
+  min-height: auto;
 }
 
 .leaderboard-rows {
