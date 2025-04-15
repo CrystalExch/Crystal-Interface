@@ -356,6 +356,7 @@ export const translations: any = {
     connectYourWalletSubtitle: "Connect your wallet to view the leaderboard",
     searchAMarket: "Search for a market",
     browsePairs: "Browse trading pairs",
+    custom: "Custom",
   },
   CN: {
     trade: '交易',
@@ -713,6 +714,7 @@ export const translations: any = {
     searchAMarket: "搜索市场",
     browsePairs: "浏览交易对",
     earnCrystals: "赚取水晶",
+    custom: "自定义",
   },
   JP: {
     trade: '取引',
@@ -1070,6 +1072,7 @@ export const translations: any = {
     searchAMarket: "マーケットを検索",
     browsePairs: "ペアをブラウズ",
     earnCrystals: "クリスタルを獲得",
+    custom: "カスタム",
 
   },
   KR: {
@@ -1428,6 +1431,7 @@ export const translations: any = {
     searchAMarket: "시장 검색",
     browsePairs: "페어 탐색",
     earnCrystals: "크리스탈 수익",
+    custom: "사용자 정의",
   },
   ES: {
     trade: 'Operar',
@@ -1785,6 +1789,7 @@ export const translations: any = {
     searchAMarket: "Buscar para un mercado",
     browsePairs: "Explorar comercio pares",
     earnCrystals: "Ganar cristales",
+    custom: "Personalizado",
   }
 };
 
