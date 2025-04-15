@@ -8,10 +8,11 @@
     z-index: 101;
     pointer-events: none;
     transition: opacity 0.3s ease;
-    color: #bdc0d7;
+    color: #ccd0f1;
     font-size: 12px;
     font-weight: 300;
-    letter-spacing: 0.5px;
+    letter-spacing: -0.2px;
     backdrop-filter: blur(10px);
+  
   }
   
