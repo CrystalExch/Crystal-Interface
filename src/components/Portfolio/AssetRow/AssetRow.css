@@ -20,9 +20,6 @@
   user-select: none;
 }
 
-.blurred:hover {
-  filter: none;
-}
 .portfolio-column {
   align-items: center;
   display: flex;

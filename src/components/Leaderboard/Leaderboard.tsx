@@ -511,17 +511,20 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       <span className="faction-row-name">
                         {getDisplayAddress(faction.name)}
                       </span>
-                      {isCurrentUser && (
-                        <span className="current-user-tag">You</span>
-                      )}
+                      <div className="user-self-tag">
                       {isCurrentUser && orders.length > 0 && (
                         <div className="orders-indicator-container">
                           <div
                             className="orders-indicator"
-                            title={`You have ${orders.length} pending orders`}
+                            title={`You have ${orders.length} open orders earning points`}
                           ></div>
                         </div>
                       )}
+                      {isCurrentUser && (
+                        <span className="current-user-tag">You</span>
+                      )}
+                      </div>
+                      
                     </div>
                     <div className="row-xp">
                       <div className="xp-amount">
