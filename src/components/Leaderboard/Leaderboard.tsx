@@ -55,7 +55,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [liveLeaderboard, setLiveLeaderboard] = useState<{ [address: string]: number }>({});
   const loading = Object.keys(liveLeaderboard).length === 0;
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
-  const [showNotification, setShowNotification] = useState<boolean>(false);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
   
@@ -108,12 +107,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
-      
-      const notificationTimer = setTimeout(() => {
-        setShowNotification(true);
-      }, 3000); 
-      
-      return () => clearTimeout(notificationTimer);
     } else {
       setUserData({
         userXP: 0,
@@ -125,8 +118,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         setShowChallengeIntro(true);
         setIntroStep(0);
       }
-      
-      setShowNotification(false);
     }
   }, [address, liveLeaderboard]);
 
@@ -171,10 +162,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     );
 
     return userPosition >= 0 ? userPosition : -1;
-  };
-  
-  const shouldShowNotification = (): boolean => {
-    return showNotification && address !== undefined && (findUserPosition() === -1 || findUserPosition() < 0);
   };
 
   const goToUserPosition = () => {
