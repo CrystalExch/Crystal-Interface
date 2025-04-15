@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import crystalxp from '../../assets/CrystalX.png';
 import CrownIcon from '../../assets/crownicon.png';
+import defaultPfp from '../../assets/DiscordLB.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
 import { useSmartAccountClient } from "@account-kit/react";
+
 import './Leaderboard.css';
 
 interface Faction {
@@ -277,8 +279,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         )}
         <div className="faction-rank">{index + 1}</div>
         <div className="faction-info">
-          <div className="account-top-name-loading account-loading-animation"></div>
-          <div className="account-top-xp-loading account-loading-animation"></div>
+          <div className="pfp-container">
+            <div className="pfp-loading account-loading-animation" />
+          </div>
+          <div className="account-top-name-loading account-loading-animation" />
+          <div className="account-top-xp-loading account-loading-animation" />
         </div>
       </div>
     ));
@@ -291,13 +296,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         className="leaderboard-row"
       >
         <div className="row-rank">
-          <span className="loading-placeholder"></span>
+          <span className="loading-placeholder" />
         </div>
         <div className="row-faction">
-          <span className="faction-row-name loading-placeholder"></span>
+          <div className="row-pfp-container">
+            <div className="row-pfp-loading loading-placeholder" />
+          </div>
+          <span className="faction-row-name loading-placeholder" />
         </div>
         <div className="row-xp">
-          <div className="xp-amount loading-placeholder"></div>
+          <div className="xp-amount loading-placeholder" />
         </div>
       </div>
     ));
@@ -384,7 +392,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                   ? '5%'
                   : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`                
                 }}
-              ></div>
+              />
             </div>
           </div>
           <div className="leaderboard-user-info">
@@ -436,6 +444,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               )}
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
+                <div className="pfp-container">
+                  <img src={defaultPfp} className="pfp-image" alt="Profile" />
+                </div>
                 <div className="faction-name">{getDisplayAddress(faction.name)}</div>
                 <div className="faction-xp">
                   {formatPoints(faction.points || 0)}
@@ -468,6 +479,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                     <span>#{absoluteRank}</span>
                   </div>
                   <div className="row-faction">
+                    <div className="row-pfp-container">
+                      <img src={defaultPfp} className="row-pfp-image" alt="Profile" />
+                    </div>
                     <span className="faction-row-name">{getDisplayAddress(faction.name)}</span>
                     {isCurrentUser && <span className="current-user-tag">You</span>}
                   </div>
