@@ -11171,6 +11171,7 @@ function App() {
             element={
               <Leaderboard
                 setpopup={setpopup}
+                orders={orders}
               />
             }
           />
