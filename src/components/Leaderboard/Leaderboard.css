@@ -876,12 +876,16 @@
 .account-top-name-loading {
   width: 140px;
   height: 22px;
-  margin: 8px 0
+  margin-top: 14px;
+  margin-bottom: 6px;
+  border-radius: 5px;
 }
 
 .account-top-xp-loading {
   width: 100px;
-  height: 20px
+  height: 20px;
+  border-radius: 5px;
+
 }
 
 @keyframes total-xp-shimmer {

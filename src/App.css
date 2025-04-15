@@ -101,7 +101,7 @@ html {
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
-  margin-left: 15px;
+  padding-left: 15px;
   outline: 0;
   width: 0;
   transform: scaleX(1.03)
@@ -1474,7 +1474,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex-grow: 1;
   font-size: 0.95rem;
   font-weight: 400;
-  margin-left: 13px;
+  padding-left: 13px;
   outline: 0;
   padding-bottom: 10px;
   width: 0;
@@ -1510,8 +1510,7 @@ body:has(.right-column.show) .blur-background-popups {
 .send-output {
   font-size: 0.8rem;
   margin-bottom: 10px;
-  margin-left: 10px;
-  padding-left: 15px;
+  padding-left: 25px;
   padding-right: 12px;
   padding-top: 3px;
   width: 100%;
@@ -2620,7 +2619,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .main-content-wrapper.simple-view .output {
   font-size: 1.6rem;
   font-weight: 400;
-  margin-left: 16px;
+  padding-left: 16px;
 }
 
 .main-content-wrapper.simple-view .output-skeleton {
@@ -4681,6 +4680,10 @@ input[type="email"] {
     height: 20px !important;
     margin-top: 1rem;
   }
+  .limit-price-buttons {
+    margin: 8px 12px;
+    width: calc(100% - 24px);
+  }
 }
 
 @media (height <=533px) {
@@ -4716,21 +4719,6 @@ input[type="email"] {
     margin-top: 20px;
   }
 }
-
-@supports (-webkit-touch-callout: none) {
-  .input,
-  .output,
-  .limit-order,.main-content-wrapper.simple-view .input,
-  .main-content-wrapper.simple-view .output,
-  .main-content-wrapper.simple-view .limit-order {
-    -webkit-appearance: none;
-    appearance: none;
-    margin-left: 0;
-    padding-left: 16px;
-  }
-}
-
-
 
 
 .limit-price-buttons {
@@ -4817,11 +4805,4 @@ input[type="email"] {
 
 .main-content-wrapper.simple-view .limit-custom-input {
   font-size: 0.8rem;
-}
-
-@media (max-width: 1020px) {
-  .limit-price-buttons {
-    margin: 8px 12px;
-    width: calc(100% - 24px);
-  }
 }
