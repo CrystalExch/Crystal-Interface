@@ -4790,9 +4790,6 @@ input[type="email"] {
   margin: 0;
 }
 
-.limit-custom-input[type=number] {
-  -moz-appearance: textfield;
-}
 
 .main-content-wrapper.simple-view .limit-price-buttons {
   margin: -2px 13px 6px 13px;
