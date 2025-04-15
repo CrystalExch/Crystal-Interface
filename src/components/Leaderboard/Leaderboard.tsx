@@ -57,7 +57,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
-  
+
   useEffect(() => {
     const fetchUserPoints = () => {
       fetch("https://points-backend-b5a062cda7cd.herokuapp.com/user_points")
@@ -69,11 +69,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               { points: info.points }
             ])
           );
-  
+
           const updatedLiveLeaderboard = Object.fromEntries(
             Object.entries(normalizedData).map(([addr, info]) => [addr, info.points])
           );
-  
+
           setLiveLeaderboard(updatedLiveLeaderboard);
         })
         .catch((err) => {
@@ -90,7 +90,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
       clearTimeout(timeout);
       clearInterval(interval);
     }
-  }, []);  
+  }, []);
 
   useEffect(() => {
     if (address) {
@@ -142,15 +142,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   const getUserRank = () => {
     if (!address || !allFactions.length) return "N/A";
-    
-    const userFaction = allFactions.find(f => 
+
+    const userFaction = allFactions.find(f =>
       f.id.toLowerCase() === address.toLowerCase()
     );
-    
+
     if (userFaction) {
       return "#" + userFaction.rank;
     }
-    
+
     return "N/A";
   };
 
@@ -191,7 +191,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
     }
     return allFactions.slice(startIndex, startIndex + itemsCount);
   };
-  
+
   const goToPreviousPage = () => {
     if (currentPage > 0) {
       setCurrentPage(currentPage - 1);
@@ -223,15 +223,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
       const seconds = Math.floor((difference % (1000 * 60)) / 1000);
       setTimeLeft({ days, hours, minutes, seconds });
     };
-    
+
     calculateTimeLeft();
     const timer = setInterval(() => {
       calculateTimeLeft();
     }, 1000);
-    
+
     return () => clearInterval(timer);
   }, []);
-  
+
   const getDisplayAddress = (address: string): string => {
     if (address.startsWith("0x")) {
       return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -313,7 +313,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   const formatPoints = (points: number): string => {
     return points < 0.001 ? "<0.001" : points.toLocaleString();
-  };  
+  };
 
   useEffect(() => {
     if (address && !showChallengeIntro) {
@@ -389,8 +389,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 className="progress-fill"
                 style={{
                   width: loading
-                  ? '5%'
-                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`                
+                    ? '5%'
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`
                 }}
               />
             </div>
