@@ -697,14 +697,15 @@
     background-position: 1000px 0
   }
 }
-.loading-placeholder{
-  background:linear-gradient(90deg, rgba(255,255,255,.05) 0%,rgba(255,255,255,.1) 20%,rgba(255,255,255,.05) 40%);
-  background-size:1000px 100%;
-  animation:leaderboard-shimmer 2s infinite linear;
-  border-radius:4px;
-  height:100%;
-  position:relative;
-  overflow:hidden
+
+.loading-placeholder {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .05) 0%, rgba(255, 255, 255, .1) 20%, rgba(255, 255, 255, .05) 40%);
+  background-size: 1000px 100%;
+  animation: leaderboard-shimmer 2s infinite linear;
+  border-radius: 4px;
+  height: 100%;
+  position: relative;
+  overflow: hidden
 }
 
 .faction-card .faction-name.loading-placeholder {
@@ -820,13 +821,14 @@
     background-position: 200% 0
   }
 }
-.account-loading-animation{
-  background:linear-gradient(90deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.2) 25%,rgba(255,255,255,.2) 35%,rgba(255,255,255,.05) 60%);
-  background-size:200% 100%;
-  animation:accountShimmer 3s infinite linear;
-  color:transparent!important;
-  position:relative;
-  overflow:hidden
+
+.account-loading-animation {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .05) 0%, rgba(255, 255, 255, .2) 25%, rgba(255, 255, 255, .2) 35%, rgba(255, 255, 255, .05) 60%);
+  background-size: 200% 100%;
+  animation: accountShimmer 3s infinite linear;
+  color: transparent !important;
+  position: relative;
+  overflow: hidden
 }
 
 .account-name-loading,
@@ -891,16 +893,17 @@
     background-position: 200% 0
   }
 }
-.total-xp-loading{
-  background:linear-gradient(90deg,rgba(255,255,255,.05) 0%,rgba(255,255,255,.2) 25%,rgba(255,255,255,.2) 35%,rgba(255,255,255,.05) 60%);
-  background-size:200% 100%;
-  animation:total-xp-shimmer 3s infinite linear;
-  border-radius:4px;
-  display:inline-block;
-  height:16px;
-  width:120px;
-  position:relative;
-  overflow:hidden
+
+.total-xp-loading {
+  background: linear-gradient(90deg, rgba(255, 255, 255, .05) 0%, rgba(255, 255, 255, .2) 25%, rgba(255, 255, 255, .2) 35%, rgba(255, 255, 255, .05) 60%);
+  background-size: 200% 100%;
+  animation: total-xp-shimmer 3s infinite linear;
+  border-radius: 4px;
+  display: inline-block;
+  height: 16px;
+  width: 120px;
+  position: relative;
+  overflow: hidden
 }
 
 .xp-display.loading {
