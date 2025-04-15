@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
-import crystalxp from '../../assets/CrystalLB.png';
+import crystalxp from '../../assets/CrystalX.png';
 import CrownIcon from '../../assets/crownicon.png';
 import defaultPfp from '../../assets/DiscordLB.png';
 import arrow from '../../assets/arrow.svg';
@@ -352,13 +352,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
         />
       )}
 
-      {shouldShowNotification() && (
+      {/* {shouldShowNotification() && (
         <div className="notification-bar">
           <div className="notification-content">
             <p>Want to earn your share of a limited supply of Crystals? Start now by placing a limit order anywhere. Be patient as the leaderboard may take a few minutes to update.</p>
           </div>
         </div>
-      )}
+      )} */}
 
       <div className="leaderboard-banner">
         <div className="banner-overlay">

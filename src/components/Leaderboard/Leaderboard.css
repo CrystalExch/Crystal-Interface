@@ -426,13 +426,13 @@
   flex-direction: column;
   background-color: rgba(255, 255, 255, .05);
   border-radius: 12px;
-  padding: 20px;
+  padding: 10px;
   position: relative;
   transition: all.4s cubic-bezier(.175, .885, .32, 1.275);
   transform-style: preserve-3d;
   backface-visibility: hidden;
   max-width: 305px;
-  height: 115px;
+  max-height: 175px;
 
 }
 
@@ -986,7 +986,7 @@
   height: 64px;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 10px;
+  margin-bottom: -10px;
   border: 2px solid rgba(255, 255, 255, 0.2);
   transform: translateZ(20px);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -1011,9 +1011,10 @@
   height: 32px;
   border-radius: 50%;
   overflow: hidden;
-  margin-right: 10px;
+  margin-right: 0px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
+  margin-right: -5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
