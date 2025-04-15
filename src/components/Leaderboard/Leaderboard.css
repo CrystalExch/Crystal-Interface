@@ -196,16 +196,15 @@
   margin-right: 20px;
   background-color: rgba(255, 255, 255, .05)
 }
-
-.faction-info {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 3px;
-  z-index: 1;
-  transform: translateZ(15px);
-  transition: transform.4s cubic-bezier(.175, .885, .32, 1.275);
-  position: relative
+.faction-info{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  z-index:1;
+  transform:translateZ(15px);
+  transition:transform.4s cubic-bezier(.175,.885,.32,1.275);
+  position:relative;
 }
 
 .faction-logo {
@@ -227,14 +226,12 @@
   margin-top: 10px;
   filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .3))
 }
-
-.faction-xp {
-  display: flex;
-  font-size: 1rem;
-  color: rgba(255, 255, 255, .6);
-  font-size: 1.1rem;
-  font-weight: 400;
-  margin-left: -10px
+.faction-xp{
+  display:flex;
+  font-size:1rem;
+  color:rgba(255,255,255,.6);
+  font-size:1.1rem;
+  font-weight:400;
 }
 
 .full-leaderboard {
@@ -694,15 +691,14 @@
     background-position: 1000px 0
   }
 }
-
-.loading-placeholder {
-  background: linear-gradient(90deg, rgba(255, 255, 255, .05)0, rgba(255, 255, 255, .1)20%, rgba(255, 255, 255, .05)40%);
-  background-size: 1000px 100%;
-  animation: leaderboard-shimmer 2s infinite linear;
-  border-radius: 4px;
-  height: 100%;
-  position: relative;
-  overflow: hidden
+.loading-placeholder{
+  background:linear-gradient(90deg,rgba(255,255,255,.05)0%,rgba(255,255,255,.1)20%,rgba(255,255,255,.05)40%);
+  background-size:1000px 100%;
+  animation:leaderboard-shimmer 2s infinite linear;
+  border-radius:4px;
+  height:100%;
+  position:relative;
+  overflow:hidden
 }
 
 .faction-card .faction-name.loading-placeholder {
@@ -818,14 +814,13 @@
     background-position: 200% 0
   }
 }
-
-.account-loading-animation {
-  background: linear-gradient(90deg, rgba(255, 255, 255, .05)0, rgba(255, 255, 255, .2)25%, rgba(255, 255, 255, .2)35%, rgba(255, 255, 255, .05)60%);
-  background-size: 200% 100%;
-  animation: accountShimmer 3s infinite linear;
-  color: transparent !important;
-  position: relative;
-  overflow: hidden
+.account-loading-animation{
+  background:linear-gradient(90deg,rgba(255,255,255,.05)0%,rgba(255,255,255,.2)25%,rgba(255,255,255,.2)35%,rgba(255,255,255,.05)60%);
+  background-size:200% 100%;
+  animation:accountShimmer 3s infinite linear;
+  color:transparent!important;
+  position:relative;
+  overflow:hidden
 }
 
 .account-name-loading,
@@ -890,17 +885,16 @@
     background-position: 200% 0
   }
 }
-
-.total-xp-loading {
-  background: linear-gradient(90deg, rgba(255, 255, 255, .05)0, rgba(255, 255, 255, .2)25%, rgba(255, 255, 255, .2)35%, rgba(255, 255, 255, .05)60%);
-  background-size: 200% 100%;
-  animation: total-xp-shimmer 3s infinite linear;
-  border-radius: 4px;
-  display: inline-block;
-  height: 16px;
-  width: 120px;
-  position: relative;
-  overflow: hidden
+.total-xp-loading{
+  background:linear-gradient(90deg,rgba(255,255,255,.05)0%,rgba(255,255,255,.2)25%,rgba(255,255,255,.2)35%,rgba(255,255,255,.05)60%);
+  background-size:200% 100%;
+  animation:total-xp-shimmer 3s infinite linear;
+  border-radius:4px;
+  display:inline-block;
+  height:16px;
+  width:120px;
+  position:relative;
+  overflow:hidden
 }
 
 .xp-display.loading {
