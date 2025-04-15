@@ -76,7 +76,7 @@
 
 .view-rules-button {
   background: 0 0;
-  border: 1.5px solid rgba(255, 255, 255, .03);
+  border: 1.5px solid rgba(255, 255, 255, .08);
   color: #ffffff95;
   padding: 4px 16px;
   border-radius: 6px;
@@ -235,7 +235,10 @@
 }
 
 .full-leaderboard {
-  overflow: hidden
+  overflow: hidden;
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  padding: 15px;
+  border-radius: 8px;
 }
 
 .leaderboard-headers {
@@ -592,7 +595,8 @@
   top: 0;
   bottom: 0;
   width: 3px;
-  background-color: #a7acd8
+  background-color: #a7acd8;
+  border-radius: 2px 0 0 2px;
 }
 
 .current-user-tag {

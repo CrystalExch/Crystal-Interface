@@ -4518,8 +4518,6 @@ input[type="email"] {
   }
   .main-content-wrapper.simple-view {
     justify-content: center;
-    padding: 100px 0px 0px 0px;
-    margin-top: 0px;
   }
   .app-wrapper,
   .right-column.show {
@@ -4656,7 +4654,6 @@ input[type="email"] {
     height: max-content;
     min-height: 0;
     min-height: max-content;
-    padding-top: 10px;
   }
   .main-content-wrapper.simple-view
     .main-content-wrapper.simple-view
