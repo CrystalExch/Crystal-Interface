@@ -2,7 +2,10 @@ import React, { useState, useEffect } from 'react';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import crystalxp from '../../assets/CrystalLB.png';
 import CrownIcon from '../../assets/crownicon.png';
-import defaultPfp from '../../assets/DiscordLB.png';
+import defaultPfp from '../../assets/leaderboard_default.png';
+import firstPlacePfp from '../../assets/leaderboard_first.png';
+import secondPlacePfp from '../../assets/leaderboard_second.png';
+import thirdPlacePfp from '../../assets/leaderboard_third.png';
 import arrow from '../../assets/arrow.svg';
 import ChallengeIntro from './ChallengeIntro';
 import { useSmartAccountClient } from "@account-kit/react";
@@ -56,7 +59,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
   const { address } = useSmartAccountClient({ type: "LightAccount" });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
   
-
   useEffect(() => {
     const fetchUserPoints = () => {
       fetch("https://points-backend-b5a062cda7cd.herokuapp.com/user_points")
@@ -219,7 +221,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-08-01T00:00:00-04:00");
+      const targetDate = new Date("2025-04-24T00:00:00-04:00");
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
       if (difference <= 0) {
@@ -262,6 +264,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
 
   const isUserAddress = (factionAddress: string): boolean => {
     return address !== undefined && factionAddress.toLowerCase() === address.toLowerCase();
+  };
+
+  const getTopThreePfp = (index: number) => {
+    switch (index) {
+      case 0:
+        return firstPlacePfp;
+      case 1:
+        return secondPlacePfp;
+      case 2:
+        return thirdPlacePfp;
+      default:
+        return defaultPfp;
+    }
   };
 
   const renderLoadingTopThree = () => {
@@ -377,7 +392,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 <div className="total-xp-loading" />
               ) : (
                 <span className="progress-bar-amount-header">
-                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'10,000,000,000'.toLocaleString()}
+                  {Object.values(liveLeaderboard).reduce((sum: any, value: any) => sum + value, 0).toLocaleString()} / {'10,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                 </span>
               )}
@@ -388,7 +403,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
                 style={{
                   width: loading
                   ? '5%'
-                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`                
+                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`                
                 }}
               />
             </div>
@@ -443,7 +458,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({ setpopup = () => { } }) => {
               <div className="faction-rank">{index + 1}</div>
               <div className="faction-info">
                 <div className="pfp-container">
-                  <img src={defaultPfp} className="pfp-image" alt="Profile" />
+                  <img src={getTopThreePfp(index)} className="pfp-image" alt={`Rank ${index + 1} Profile`} />
                 </div>
                 <div className="faction-name">{getDisplayAddress(faction.name)}</div>
                 <div className="faction-xp">
