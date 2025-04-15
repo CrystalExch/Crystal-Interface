@@ -8,6 +8,7 @@ import firstPlacePfp from '../../assets/leaderboard_first.png';
 import secondPlacePfp from '../../assets/leaderboard_second.png';
 import thirdPlacePfp from '../../assets/leaderboard_third.png';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
+import goldbg from '../../assets/goldbgtst.png';
 import ChallengeIntro from './ChallengeIntro';
 
 import './Leaderboard.css';
