@@ -9,6 +9,7 @@ import secondPlacePfp from '../../assets/leaderboard_second.png';
 import thirdPlacePfp from '../../assets/leaderboard_third.png';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import ChallengeIntro from './ChallengeIntro';
+import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
 
@@ -418,6 +419,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   <span className="address">
                     {address ? getDisplayAddress(address) : ''}
                   </span>
+                  {address && <div className="copy-button-wrapper"><CopyButton textToCopy={address} /></div>}
                 </div>
               </div>
             </div>
@@ -466,6 +468,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   </div>
                   <div className="faction-name">
                     {getDisplayAddress(faction.name)}
+                    <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
                   </div>
                   <div className="faction-xp">
                     {formatPoints(faction.points || 0)}
@@ -510,6 +513,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       </div>
                       <span className="faction-row-name">
                         {getDisplayAddress(faction.name)}
+                        <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
                       </span>
                       <div className="user-self-tag">
                       {isCurrentUser && orders.length > 0 && (

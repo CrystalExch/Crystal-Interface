@@ -306,8 +306,7 @@
   color: rgba(255, 255, 255, .8);
   font-size: .9rem;
   font-weight: 300;
-  margin-left: 5px;
-  transform: scaleX(1.05)
+  transform: scaleX(1.05);
 }
 
 .xp-amount {
@@ -1111,7 +1110,8 @@
 }
 .orders-indicator:hover::after {
   backdrop-filter: blur(10px);
-  background: rgba(28, 28, 34, 0.7);  
+  background: rgba(194, 194, 244, 0.2);  
+  border: 1px solid #aaaecf3c;
   border-radius: 4px;
   color: rgb(188, 188, 188);
   content: attr(title);
@@ -1170,3 +1170,25 @@
     transform: scale(0.8);
   }
 }
+
+
+
+.faction-row-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+
+.copy-button-wrapper {
+  display: flex;
+  align-items: center;
+}
+
+
+.faction-name {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
