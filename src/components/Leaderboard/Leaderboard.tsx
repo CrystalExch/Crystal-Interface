@@ -69,38 +69,27 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
         .then((res) => res.json())
         .then((data: Record<string, { points: number }>) => {
-          const normalizedData = Object.fromEntries(
-            Object.entries(data).map(([addr, info]) => [
-              addr.toLowerCase(),
-              { points: info.points },
-            ]),
-          );
-
+          const excluded = '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de';
+  
           const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(normalizedData).map(([addr, info]) => [
-              addr,
-              info.points,
-            ]),
+            Object.entries(data)
+              .map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
+              .filter(([addr]) => addr !== excluded)
           );
-
+  
           setLiveLeaderboard(updatedLiveLeaderboard);
         })
         .catch((err) => {
           console.error('Error fetching user points:', err);
         });
     };
-
-    let interval: any;
-    const timeout = setTimeout(() => {
-      interval = setInterval(fetchUserPoints, 3000);
-    }, 2000);
-
-    return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
-    };
+  
+    fetchUserPoints();
+    const interval = setInterval(fetchUserPoints, 3000);
+  
+    return () => clearInterval(interval);
   }, []);
-
+  
   useEffect(() => {
     if (address) {
       const lowerCaseAddress = address.toLowerCase();
@@ -394,7 +383,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {Object.values(liveLeaderboard)
                     .reduce((sum: any, value: any) => sum + value, 0)
                     .toLocaleString()}{' '}
-                  / {'10,000,000'.toLocaleString()}
+                  / {'1,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                 </span>
               )}
@@ -405,7 +394,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`,
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 1000000) * 100}%`,
                 }}
               />
             </div>
