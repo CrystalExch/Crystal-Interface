@@ -12,6 +12,7 @@ interface SimpleOrdersContainerProps {
   refetch: () => void;
   sendUserOperationAsync: any;
   setChain: () => Promise<void>;
+  waitForTxReceipt: any;
 }
 
 const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
@@ -21,6 +22,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
+  waitForTxReceipt,
 }) => {
   const { t } = useLanguage();
   const [loadingOrders, setLoadingOrders] = useState<{ [key: string]: boolean }>(
@@ -33,37 +35,36 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
       return;
     }
     const orderId = order[0].toString();
-    try {
-      
-
-      
+    try {   
       if (!markets[order[4]]) {
         return;
       }
       
       await setChain();
+      let hash;
       setLoadingOrders((prev) => ({ ...prev, [orderId]: true }));
-        await cancelOrder(
-          sendUserOperationAsync,
-        router as `0x${string}`,
-        order[3] == 1
-          ? markets[order[4]].quoteAddress
-          : markets[order[4]].baseAddress,
-        order[3] == 1
-          ? markets[order[4]].baseAddress
-          : markets[order[4]].quoteAddress,
-        BigInt(order[0]),
-        BigInt(order[1]),
+      hash = await cancelOrder(
+        sendUserOperationAsync,
+      router as `0x${string}`,
+      order[3] == 1
+        ? markets[order[4]].quoteAddress
+        : markets[order[4]].baseAddress,
+      order[3] == 1
+        ? markets[order[4]].baseAddress
+        : markets[order[4]].quoteAddress,
+      BigInt(order[0]),
+      BigInt(order[1]),
       );
+      await waitForTxReceipt(hash.hash);
+      refetch()
     } catch (error) {
     } finally {
       setLoadingOrders((prev) => ({ ...prev, [orderId]: false }));
-      refetch()
     }
   };
 
   const cancelAllOrders = async () => {
-    if (!orders || orders.length === 0 || !address) {
+    if (!orders || orders.length === 0 || !address || cancelAllLoading) {
       return;
     }      
 
@@ -98,8 +99,9 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
 
     try {
       await setChain();
+      let hash;
       setCancelAllLoading(true);
-      await sendUserOperationAsync({uo: multiBatchOrders(
+      hash = await sendUserOperationAsync({uo: multiBatchOrders(
         router as `0x${string}`,
         BigInt(0),
         m,
@@ -108,10 +110,11 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         param1,
         param2
       )})
+      await waitForTxReceipt(hash.hash);
+      refetch()
     } catch (error) {
     } finally {
       setCancelAllLoading(false);
-      refetch()
     }
   };
 
@@ -175,7 +178,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                 </div>
                 <div
                   className={`simple-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
-                  onClick={() => handleCancelOrder(order)}
+                  onClick={loadingOrders[orderKey] ? () => {} : () => handleCancelOrder(order)}
                 >
                   {loadingOrders[orderKey] ? (
                     <div className="spinner"></div>

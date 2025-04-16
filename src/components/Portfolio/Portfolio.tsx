@@ -67,6 +67,7 @@ interface PortfolioProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
+  waitForTxReceipt: any;
 }
 
 const Portfolio: React.FC<PortfolioProps> = ({
@@ -104,6 +105,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
+  waitForTxReceipt,
 }) => {
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
@@ -402,6 +404,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={setChain}
           isBlurred={isBlurred}
+          waitForTxReceipt={waitForTxReceipt}
         />
       </div>
     </div>

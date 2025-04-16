@@ -23,9 +23,10 @@ interface OrderItemProps {
   sendUserOperationAsync: any;
   setChain: any;
   quotePrice: any;
+  waitForTxReceipt: any;
 }
 
-const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice }) => {
+const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt }) => {
   const { favorites, toggleFavorite } = useSharedContext();
   
   const marketKey = order[4];
@@ -117,7 +118,7 @@ const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refet
       </div>
       <span className="oc-cell oc-time">{formatDateAndTime(order[6])}</span>
       <span className="oc-cell cancel-cell">
-        <CancelButton order={order} router={router} refetch={refetch} sendUserOperationAsync={sendUserOperationAsync} setChain={setChain}/>
+        <CancelButton order={order} router={router} refetch={refetch} sendUserOperationAsync={sendUserOperationAsync} setChain={setChain} waitForTxReceipt={waitForTxReceipt} />
       </span>
     </div>
   );

@@ -295,24 +295,25 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       const tradeTimeSec = lastTrade[6];
       const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
       const lastBarTimeSec = Math.floor(new Date(lastBar.time).getTime() / 1000);
-  
-      if (flooredTradeTimeSec === lastBarTimeSec) {
-        updatedBars[lastBarIndex] = {
-          ...lastBar,
-          high: Math.max(lastBar.high, rawPrice),
-          low: Math.min(lastBar.low, rawPrice),
-          close: rawPrice,
-          volume: lastBar.volume + rawVolume,
-        };
-      } else {
-        updatedBars.push({
-          time: new Date(flooredTradeTimeSec * 1000).toISOString(),
-          open: rawPrice,
-          high: rawPrice,
-          low: rawPrice,
-          close: rawPrice,
-          volume: rawVolume,
-        });
+      if (/^[^\d]+/.test(existingIntervalLabel) && lastTrade?.[4].startsWith(existingIntervalLabel.match(/^[^\d]+/)![0])) {
+        if (flooredTradeTimeSec === lastBarTimeSec) {
+          updatedBars[lastBarIndex] = {
+            ...lastBar,
+            high: Math.max(lastBar.high, rawPrice),
+            low: Math.min(lastBar.low, rawPrice),
+            close: rawPrice,
+            volume: lastBar.volume + rawVolume,
+          };
+        } else {
+          updatedBars.push({
+            time: new Date(flooredTradeTimeSec * 1000).toISOString(),
+            open: rawPrice,
+            high: rawPrice,
+            low: rawPrice,
+            close: rawPrice,
+            volume: rawVolume,
+          });
+        }
       }
   
       return [updatedBars, existingIntervalLabel];

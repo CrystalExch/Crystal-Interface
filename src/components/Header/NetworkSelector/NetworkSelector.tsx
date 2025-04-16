@@ -49,7 +49,7 @@ const NetworkSelector: React.FC<NetworkSelectorProps> = ({
       </button>
       {isNetworkSelectorOpen && (
         <div className="network-dropdown">
-          <span className="network-label">{t('networks')}</span>
+          <div className="network-label">{t('networks')}</div>
           {Object.keys(settings.chainConfig).map((chainId) => (
             <div
               key={chainId}

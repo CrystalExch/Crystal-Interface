@@ -777,6 +777,13 @@ function App() {
     localStorage.setItem('orderbookWidth', newWidth.toString());
   };
 
+  const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
+    if (!client) {
+      return (await waitForTransactionReceipt(config, { hash: hash })).transactionHash
+    }
+    return hash
+  }, [client])
+
   const formatDisplayValue = (
     rawAmount: bigint,
     decimals = 18,
@@ -5393,7 +5400,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
                           'send',
                           eth,
                           '',
@@ -5416,7 +5423,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
                           'send',
                           sendTokenIn,
                           '',
@@ -7239,7 +7246,7 @@ function App() {
                   newTxPopup(
                     (client
                       ? hash.hash
-                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
+                      : await waitForTxReceipt(hash.hash)),
                     'wrap',
                     eth,
                     weth,
@@ -7253,7 +7260,7 @@ function App() {
                   newTxPopup(
                     (client
                       ? hash.hash
-                      : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash),
+                      : await waitForTxReceipt(hash.hash)),
                     'unwrap',
                     weth,
                     eth,
@@ -7382,7 +7389,7 @@ function App() {
                           newTxPopup(
                             client
                               ? hash.hash
-                              : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                              : await waitForTxReceipt(hash.hash),
                             'approve',
                             tokenIn,
                             '',
@@ -7578,7 +7585,7 @@ function App() {
                           newTxPopup(
                             client
                               ? hash.hash
-                              : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                              : await waitForTxReceipt(hash.hash),
                             'approve',
                             tokenIn,
                             '',
@@ -7659,7 +7666,7 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTxReceipt(hash.hash);
                 }
                 await refetch()
                 txPending.current = false
@@ -9259,7 +9266,7 @@ function App() {
                       newTxPopup(
                         client
                           ? hash.hash
-                          : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                          : await waitForTxReceipt(hash.hash),
                         'approve',
                         tokenIn,
                         '',
@@ -9306,7 +9313,7 @@ function App() {
                 }
                 if (!client && hash?.hash) {
                   txPending.current = true
-                  await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTxReceipt(hash.hash);
                 }
                 await refetch()
                 txPending.current = false
@@ -9443,6 +9450,7 @@ function App() {
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -10010,7 +10018,7 @@ function App() {
                     txPending.current = true
                   }
                   newTxPopup(
-                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTxReceipt(hash.hash)),
                     'send',
                     eth,
                     '',
@@ -10033,7 +10041,7 @@ function App() {
                     txPending.current = true
                   }
                   newTxPopup(
-                    (client ? hash.hash : await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash,
+                    (client ? hash.hash : await waitForTxReceipt(hash.hash)),
                     'send',
                     tokenIn,
                     '',
@@ -10979,7 +10987,7 @@ function App() {
                       newTxPopup(
                         (client
                           ? hash.hash
-                          : (await waitForTransactionReceipt(config, { hash: hash.hash })).transactionHash
+                          : await waitForTxReceipt(hash.hash)
                         ),
                         'approve',
                         tokenIn,
@@ -11011,7 +11019,7 @@ function App() {
                 }
                 if (!client && hash?.hash) {
                   txPending.current = true
-                  await waitForTransactionReceipt(config, { hash: hash.hash });
+                  await waitForTxReceipt(hash.hash);
                 }
                 await refetch()
                 txPending.current = false
@@ -11144,6 +11152,7 @@ function App() {
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -11255,6 +11264,7 @@ function App() {
                 showModal={showReferralsModal}
                 setShowModal={setShowReferralsModal}
                 setChain={handleSetChain}
+                waitForTxReceipt={waitForTxReceipt}
                 setpopup={setpopup}
                 account={{
                   connected: connected,
@@ -11330,6 +11340,7 @@ function App() {
                 refetch={refetch}
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
+                waitForTxReceipt={waitForTxReceipt}
               />
             }
           />
@@ -11533,6 +11544,7 @@ function App() {
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -11756,6 +11768,7 @@ function App() {
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -11979,6 +11992,7 @@ function App() {
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -12201,6 +12215,7 @@ function App() {
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>

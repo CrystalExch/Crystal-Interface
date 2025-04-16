@@ -8,17 +8,19 @@ interface CancelButtonProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
+  waitForTxReceipt: any;
 }
 
-const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperationAsync, setChain }) => {
+const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sendUserOperationAsync, setChain, waitForTxReceipt }) => {
   const [isSigning, setIsSigning] = useState(false);
 
   const handleCancel = async () => {
     if (isSigning) return;
     try {
       await setChain();
+      let hash;
       setIsSigning(true);
-      await cancelOrder(
+      hash = await cancelOrder(
         sendUserOperationAsync,
         router,
         order[3] == 1
@@ -30,10 +32,11 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
         BigInt(order[0]),
         BigInt(order[1]),
       );
+      await waitForTxReceipt(hash.hash);
+      refetch()
     } catch (error) {
     } finally {
       setIsSigning(false);
-      refetch()
     }
   };
 

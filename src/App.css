@@ -702,8 +702,7 @@ html {
   width: 18px;
 }
 
-.eye-icon.hidden,
-.inputbutton1container {
+.eye-icon.hidden {
   position: relative;
 }
 
@@ -2809,7 +2808,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sliding-tab-indicator {
-  background: #9296be09;
+  background: #b4b8e300;
   border: 1px solid #80839b14;
   border-radius: 5px;
   box-shadow:
@@ -4789,6 +4788,7 @@ input[type="email"] {
   -webkit-appearance: none;
   margin: 0;
 }
+
 
 
 .main-content-wrapper.simple-view .limit-price-buttons {
