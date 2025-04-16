@@ -416,10 +416,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <div className="column-header">{t('address')}</div>
               <div className="column-content">
                 <div className="address-container">
-                  <span className="address">
+                  <span className="leaderboard-user-address">
                     {address ? getDisplayAddress(address) : ''}
+                    {address && <CopyButton textToCopy={address} />}
                   </span>
-                  {address && <div className="copy-button-wrapper"><CopyButton textToCopy={address} /></div>}
                 </div>
               </div>
             </div>

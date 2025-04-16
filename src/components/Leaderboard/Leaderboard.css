@@ -269,7 +269,7 @@
 
 .row-rank {
   font-size: .85rem;
-  max-width: 40px;
+  max-width: 30px;
   opacity: .4
 }
 
@@ -315,6 +315,12 @@
   font-size: .9rem;
   font-weight: 300;
   justify-content: flex-end
+}
+
+.leaderboard-user-address {
+  display: flex;
+  gap: 6px;
+  align-items: center;
 }
 
 .arrow {
@@ -1033,7 +1039,6 @@
   border-radius: 50%;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   height: 30px;
-  margin-right: -5px;
   overflow: hidden;
   position: relative;
   width: 30px;
@@ -1042,7 +1047,7 @@
 .row-pfp-image {
   height: 100%;
   -o-object-fit: cover;
-     object-fit: cover;
+  object-fit: cover;
   width: 100%;
 }
 
@@ -1178,13 +1183,6 @@
   align-items: center;
   gap: 5px;
 }
-
-
-.copy-button-wrapper {
-  display: flex;
-  align-items: center;
-}
-
 
 .faction-name {
   display: flex;

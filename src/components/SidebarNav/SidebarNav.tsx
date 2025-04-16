@@ -7,7 +7,7 @@ import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/wallet_icon.png';
 import referrals from '../../assets/referrals.png';
 import leaderboard from '../../assets/leaderboard.png';
-import swap from '../../assets/refresh.svg';
+import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import docs from '../../assets/docs.png';
 import SidebarTooltip from './SidebarTooltip';
