@@ -702,8 +702,7 @@ html {
   width: 18px;
 }
 
-.eye-icon.hidden,
-.inputbutton1container {
+.eye-icon.hidden {
   position: relative;
 }
 

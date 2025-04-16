@@ -37,6 +37,7 @@ interface ReferralProps {
   account: any;
   refetch: any;
   sendUserOperationAsync: any;
+  waitForTxReceipt: any;
 }
 
 const Referrals: React.FC<ReferralProps> = ({
@@ -58,6 +59,7 @@ const Referrals: React.FC<ReferralProps> = ({
   account,
   refetch,
   sendUserOperationAsync,
+  waitForTxReceipt,  
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
@@ -138,7 +140,7 @@ const Referrals: React.FC<ReferralProps> = ({
 
   const handleCreateRef = async () => {
     try {
-      await sendUserOperationAsync({
+      const hash = await sendUserOperationAsync({
         uo: {
           target: router,
           data: encodeFunctionData({
@@ -151,6 +153,7 @@ const Referrals: React.FC<ReferralProps> = ({
           value: 0n,
         },
       })
+      await waitForTxReceipt(hash.hash);
       setRefLink(refLinkString);
       return true;
     } catch (error) {
@@ -162,7 +165,7 @@ const Referrals: React.FC<ReferralProps> = ({
     if (account.connected && account.chainId === activechain) {
       try {
         setIsSigning(true);
-        await sendUserOperationAsync({
+        const hash = await sendUserOperationAsync({
           uo: {
             target: router,
             data: encodeFunctionData({
@@ -181,10 +184,11 @@ const Referrals: React.FC<ReferralProps> = ({
             value: 0n,
           },
         })
+        await waitForTxReceipt(hash.hash);
+        refetch()
       } catch (error) {
       } finally {
         setIsSigning(false);
-        setTimeout(()=>refetch(), 2000)
       }
     } else {
       !account.connected

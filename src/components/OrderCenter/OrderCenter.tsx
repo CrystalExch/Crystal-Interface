@@ -46,6 +46,7 @@ interface OrderCenterProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
+  waitForTxReceipt: any;
   isBlurred?: boolean;
 }
 
@@ -80,7 +81,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
     sendUserOperationAsync,
     setChain,
     isBlurred,
-
+    waitForTxReceipt,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -232,6 +233,7 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
               pageSize={pageSize}
               currentPage={currentPage}
               setChain={setChain}
+              waitForTxReceipt={waitForTxReceipt}
             />
           );
         case 'tradeHistory':

@@ -20,10 +20,11 @@ interface OrdersContentProps {
   setChain: any;
   pageSize: number;
   currentPage: number;
+  waitForTxReceipt: any;
 }
 
 const OrdersContent: React.FC<OrdersContentProps> = memo(
-  ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage }) => {
+  ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt }) => {
     const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
       trades,
       orders,
@@ -144,8 +145,9 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 const param2 = m.map((market) => orderbatch[market][3]);
                 try {
                   await setChain()
+                  let hash;
                   setIsSigning(true);
-                  await sendUserOperationAsync({uo: multiBatchOrders(
+                  hash = await sendUserOperationAsync({uo: multiBatchOrders(
                     router,
                     BigInt(0),
                     m,
@@ -154,10 +156,11 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                     param1,
                     param2,
                   )})
+                  await waitForTxReceipt(hash.hash);
+                  refetch()
                 } catch (error) {
                 } finally {
                   setIsSigning(false);
-                  refetch()
                 }
               }}
             >
@@ -180,6 +183,7 @@ const OrdersContent: React.FC<OrdersContentProps> = memo(
                 setChain={setChain}
                 quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
                 / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
+                waitForTxReceipt={waitForTxReceipt}
               />
             ))
           ) : (null
