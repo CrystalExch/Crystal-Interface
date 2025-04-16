@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
-import mint from '../../assets/anvil.png';
+import mint from '../../assets/mintanvil.png';
 import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/wallet_icon.png';
 import referrals from '../../assets/referrals.png';
