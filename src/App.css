@@ -1372,6 +1372,8 @@ body:has(.right-column.show) .blur-background-popups {
   width: 50%;
 }
 .scale-order-total-label{
+  display: flex;
+  align-items: center;
   text-align: left;
   font-size: 0.7rem;
   color: #ffffff79;
@@ -1380,9 +1382,10 @@ body:has(.right-column.show) .blur-background-popups {
 .main-content-wrapper.simple-view .scale-order-total-label,
 .main-content-wrapper.simple-view .scale-order-size-label{
   font-size: 0.85rem;
-  margin-top: 1px;
 }
 .scale-order-size-label{
+  display: flex;
+  align-items: center;
   text-align: left;
   font-size: 0.7rem;
   color: #ffffff79;
@@ -1452,6 +1455,8 @@ body:has(.right-column.show) .blur-background-popups {
 
 .scale-order-start-label,
 .scale-order-end-label{
+  display: flex;
+  align-items: center;
   color: #ffffff79;
   font-size: 0.7rem;
   text-align: left;
@@ -1459,8 +1464,8 @@ body:has(.right-column.show) .blur-background-popups {
 }
 .main-content-wrapper.simple-view .scale-order-start-label,
 .main-content-wrapper.simple-view .scale-order-end-label{
+  
   font-size: 0.85rem;
-  margin-top: 1px;
 }
 .limitbg {
   margin: -6px 12px 13px;
@@ -2571,7 +2576,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .main-content-wrapper.simple-view .swapmodal {
   background-color: #0c0c0d;
-  border: 1.5px solid #0f0f12;
+  border: 1px solid #0f0f12;
   border-radius: 10px;
   padding: 0;
   padding-bottom: 11px;
