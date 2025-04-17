@@ -669,8 +669,8 @@
 }
 
 .go-to-user-position-button {
-  border: 1px solid rgba(171, 176, 224, .1);
-  border-radius: 6px;
+  background-color: rgba(171, 176, 224, .05);
+  border-radius: 4px;
   color: rgba(255, 255, 255, .4);
   cursor: pointer;
   font-size: .75rem;
@@ -690,7 +690,7 @@
 }
 
 .user-faction {
-  box-shadow: 0 0 0 2px rgba(171, 176, 224, .5), 0 0 20px rgba(171, 176, 224, .2)
+  box-shadow: #aaaecf 0 0 0 2px, #aaaecf 0 0 20px;
 }
 
 .leaderboard-control-left-arrow {

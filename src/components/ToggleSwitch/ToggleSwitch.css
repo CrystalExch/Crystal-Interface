@@ -49,7 +49,7 @@
 .market-toggle-switch
   input[type='checkbox']:checked
   + .market-toggle-switch-background {
-    background:rgb(159, 156, 198);
+    background:rgb(180 182 244);
   }
 
 .market-toggle-switch
