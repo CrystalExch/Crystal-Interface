@@ -72,7 +72,7 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
-import depositicon from './assets/deposit.png';
+import depositicon from './assets/deposit_test.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
