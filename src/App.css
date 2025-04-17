@@ -2571,9 +2571,10 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .main-content-wrapper.simple-view .swapmodal {
   background-color: #0c0c0d;
-  border-radius: 8px;
+  border: 1.5px solid #0f0f12;
+  border-radius: 10px;
   padding: 0;
-  padding-bottom: 12px;
+  padding-bottom: 11px;
   animation: fadeInSlideUp 0.5s ease forwards;
   animation-delay: 0.3s;
   opacity: 0;
@@ -2755,7 +2756,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .main-content-wrapper.simple-view .swap-container-divider {
-  background: rgb(255 255 255/5%);
+  background: rgb(255 255 255/3%);
   border-radius: 50%;
   height: 1px;
   margin: 0 12px;
@@ -3586,12 +3587,12 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
   .main-content-wrapper.simple-view .dropdown-item{
     font-size: 0.8rem;
-    background-color: #131317ef;
+    background: #101012;
   }
 
   .main-content-wrapper.simple-view .dropdown-item:hover{
     font-size: 0.8rem;
-    background-color: #1c1c20;
+    background: #111113;
   }
 
 
