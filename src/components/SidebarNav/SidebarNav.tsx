@@ -74,7 +74,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     };
   }, [expanded]);
 
-  const isTradingPage = ['/swap', '/limit', '/send', '/scale'].some(tradePath =>
+  const isTradingPage = ['/swap', '/limit', '/send', '/scale','/market'].some(tradePath =>
     path === tradePath || path.startsWith(tradePath)
   );
 
@@ -87,18 +87,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       })
     );
     window.dispatchEvent(new Event('resize'));
-    if (!isTradingPage) {
-      navigate('/swap');
-    }
+    navigate('/swap');
   };
 
   const goToAdvancedView = () => {
     setSimpleView(false);
     localStorage.setItem('crystal_simple_view', 'false');
     window.dispatchEvent(new Event('resize'));
-    if (!isTradingPage) {
-      navigate('/swap');
-    }
+    navigate('/market');
   };
 
   const toggleSidebar = () => {
@@ -119,24 +115,26 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
         </Link>
 
         <div className="sidebar-links">
-          <button
-            className={`view-mode-button ${isTradingPage && !simpleView ? 'active' : ''}`}
-            onClick={goToAdvancedView}
+          <Link
+            to="/market"
+            className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
+            onClick={() => setSimpleView(false)}
             onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
             onMouseLeave={handleTooltipHide}
           >
             <img src={candlestick} className="sidebar-icon" />
             <span className="sidebar-label">{t('advancedView')}</span>
-          </button>
-          <button
-            className={`view-mode-button ${isTradingPage && simpleView ? 'active' : ''}`}
-            onClick={goToSimpleView}
+          </Link>
+          <Link
+            to="/swap"
+            className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''}`}
+            onClick={() => setSimpleView(true)}
             onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
             onMouseLeave={handleTooltipHide}
           >
             <img src={swap} className="sidebar-icon" />
             <span className="sidebar-label">{t('simpleView')}</span>
-          </button>
+          </Link>
           <Link
             to="/portfolio"
             className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}

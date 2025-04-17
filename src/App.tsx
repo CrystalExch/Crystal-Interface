@@ -259,6 +259,7 @@ function App() {
     '/portfolio',
     '/leaderboard',
     '/mint',
+    '/market',
 
     '/referrals',
     '/earn',
@@ -881,7 +882,7 @@ function App() {
 
   // on market select
   const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
-    if (!['swap', 'limit', 'send', 'scale'].includes(location.pathname.slice(1))) {
+    if (!['swap', 'limit', 'send', 'scale','market'].includes(location.pathname.slice(1))) {
       navigate('/swap');
     }
 
@@ -3487,7 +3488,7 @@ function App() {
   // url
   useEffect(() => {
     const path = location.pathname.slice(1);
-    if (['swap', 'limit', 'send', 'scale'].includes(path)) {
+    if (['swap', 'limit', 'send', 'scale', 'market'].includes(path)) {
       setSearchParams({
         ...(path != 'send' ? { tokenIn } : { token: tokenIn }),
         ...(tokenOut && path != 'send' && { tokenOut }),
@@ -3502,7 +3503,18 @@ function App() {
   useEffect(() => {
     const path = location.pathname.slice(1);
     setActiveTab(path);
-    if (['swap', 'limit', 'send', 'scale'].includes(path)) {
+    if (path === 'swap') {
+      setSimpleView(true);
+    } else if (path === 'market') {
+      setSimpleView(false);
+    }
+    if (path === 'send' || path === 'scale') {
+      setCurrentProText(path.toLowerCase());
+    } else if (path !== 'swap' && path !== 'limit' && path !== 'market') {
+      setCurrentProText('pro');
+    }
+  
+    if (['swap', 'limit', 'send', 'scale', 'market'].includes(path)) {
       if (amountIn == BigInt(0)) {
         setInputString('');
       }
@@ -3751,7 +3763,7 @@ function App() {
         ).toString(),
       );
     }
-  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn]);
+  }, [location.pathname, limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn]);
 
   // tx popup time
   useEffect(() => {
@@ -6542,52 +6554,52 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
-        <div className="innernavlinkwrapper">
-          <Link
-            to="/swap"
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
-            onClick={(e) => {
-              if (location.pathname === '/swap') {
-                e.preventDefault();
-              }
-            }}
-          >
-            {simpleView ? t('swap') : t('market')}
-          </Link>
-          <Link
-            to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
-
-          >
-            {t('limit')}
-          </Link>
-          <span
-            ref={(el: HTMLSpanElement | null) => {
-              sendButtonRef.current = el;
-            }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
-            onClick={(e: React.MouseEvent) => {
-              e.preventDefault();
-              setShowSendDropdown(!showSendDropdown);
-            }}
-          >
-            {t(currentProText)}
-            <svg
-              className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              width="12"
-              height="12"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9"></polyline>
-            </svg>
-          </span>
+<div className="navlinkwrapper" data-active={activeTab}>
+  <div className="innernavlinkwrapper">
+    <Link
+      to={simpleView ? "/swap" : "/market"}
+      className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
+      onClick={(e) => {
+        if ((location.pathname === '/swap' && simpleView) || 
+            (location.pathname === '/market' && !simpleView)) {
+          e.preventDefault();
+        }
+      }}
+    >
+      {simpleView ? t('swap') : t('market')}
+    </Link>
+    <Link
+      to="/limit"
+      className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+    >
+      {t('limit')}
+    </Link>
+    <span
+      ref={(el: HTMLSpanElement | null) => {
+        sendButtonRef.current = el;
+      }}
+      className={`navlink ${activeTab === 'send' || activeTab === 'scale' ? 'active' : ''}`}
+      onClick={(e: React.MouseEvent) => {
+        e.preventDefault();
+        setShowSendDropdown(!showSendDropdown);
+      }}
+    >
+      {t(currentProText)}
+      <svg
+        className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        width="12"
+        height="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <polyline points="6 9 12 15 18 9"></polyline>
+      </svg>
+    </span>
           <button
             className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''}`}
             onClick={handleRefreshQuote}
@@ -7938,8 +7950,8 @@ function App() {
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-            to="/swap"
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+           to={simpleView ? "/swap" : "/market"}
+           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -9462,8 +9474,8 @@ waitForTxReceipt={waitForTxReceipt}
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-            to="/swap"
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+           to={simpleView ? "/swap" : "/market"}
+           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -10132,8 +10144,8 @@ waitForTxReceipt={waitForTxReceipt}
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-            to="/swap"
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+           to={simpleView ? "/swap" : "/market"}
+           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -11166,7 +11178,7 @@ waitForTxReceipt={waitForTxReceipt}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
       {windowWidth <= 1020 &&
         !simpleView &&
-        ['swap', 'limit', 'send', 'scale'].includes(activeTab) && (
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(activeTab) && (
           <>
             <button
               className="mobile-trade-button"
@@ -11244,8 +11256,8 @@ waitForTxReceipt={waitForTxReceipt}
       }
       <div className="app-container sidebar-adjusted">
         <Routes>
-          <Route path="/" element={<Navigate to="/swap" replace />} />
-          <Route path="*" element={<Navigate to="/swap" replace />} />
+          <Route path="/" element={<Navigate to="/market" replace />} />
+          <Route path="*" element={<Navigate to="/market" replace />} />
           <Route
             path="/referrals"
             element={
@@ -11346,6 +11358,219 @@ waitForTxReceipt={waitForTxReceipt}
           />
           <Route
             path="/swap"
+            element={
+              <div className="trade-container">
+                {windowWidth <= 1020 && (
+                  <div className="mobile-nav" data-active={mobileView}>
+                    <div className="mobile-nav-inner">
+                      <button
+                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
+                        onClick={() => setMobileView('chart')}
+                      >
+                        {t('chart')}
+                      </button>
+                      <button
+                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
+                        onClick={() => {
+                          setMobileView('orderbook');
+                          setOBTab('orderbook');
+                        }}
+                      >
+                        {t('orderbook')}
+                      </button>
+                      <button
+                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
+                        onClick={() => {
+                          setMobileView('trades');
+                          setOBTab('trades');
+                        }}
+                      >
+                        {t('trades')}
+                      </button>
+                      <div className="mobile-sliding-indicator" />
+                    </div>
+                  </div>
+                )}
+                <div
+                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
+                  style={{
+                    flexDirection:
+                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
+                  }}
+                >
+                  {simpleView ? (
+                    <>
+                      <div className="right-column">{swap}</div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="chartandorderbookandordercenter">
+                        <div className="chartandorderbook">
+                          {windowWidth <= 1020 ? (
+                            <div className="trade-mobile-view-container">
+                              {mobileView === 'chart' && (
+                                <ChartComponent
+                                  onMarketSelect={onMarketSelect}
+                                  tokendict={tokendict}
+                                  trades={tradesByMarket[activeMarketKey]}
+                                  universalTrades={tradesByMarket}
+                                  activeMarket={activeMarket}
+                                  orderdata={{
+                                    liquidityBuyOrders,
+                                    liquiditySellOrders,
+                                    spreadData,
+                                    priceFactor,
+                                    symbolIn,
+                                    symbolOut,
+                                  }}
+                                  userWalletAddress={connected ? address : undefined}
+                                  setpopup={setpopup}
+                                  tradesloading={tradesloading}
+                                  marketsData={sortedMarkets}
+                                  updateChartData={updateChartHeaderData}
+                                />
+                              )}
+                              {(mobileView === 'orderbook' ||
+                                mobileView === 'trades') && (
+                                  <OrderBook
+                                    trades={trades}
+                                    orderdata={{
+                                      roundedBuyOrders,
+                                      roundedSellOrders,
+                                      spreadData,
+                                      priceFactor,
+                                      symbolIn,
+                                      symbolOut,
+                                    }}
+                                    layoutSettings={layoutSettings}
+                                    orderbookPosition={orderbookPosition}
+                                    hideHeader={true}
+                                    interval={baseInterval}
+                                    amountsQuote={amountsQuote}
+                                    setAmountsQuote={setAmountsQuote}
+                                    obInterval={obInterval}
+                                    setOBInterval={setOBInterval}
+                                    viewMode={viewMode}
+                                    setViewMode={setViewMode}
+                                    activeTab={obTab}
+                                    setActiveTab={setOBTab}
+                                    updateLimitAmount={updateLimitAmount}
+                                  />
+                                )}
+                            </div>
+                          ) : (
+                            <ChartOrderbookPanel
+                              onMarketSelect={onMarketSelect}
+                              tokendict={tokendict}
+                              universalTrades={tradesByMarket}
+                              userWalletAddress={
+                                connected
+                                  ? address
+                                  : undefined
+                              }
+                              layoutSettings={layoutSettings}
+                              orderbookPosition={orderbookPosition}
+                              trades={tradesByMarket[activeMarketKey]}
+                              orderdata={{
+                                roundedBuyOrders,
+                                roundedSellOrders,
+                                spreadData,
+                                priceFactor,
+                                symbolIn,
+                                symbolOut,
+                                liquidityBuyOrders,
+                                liquiditySellOrders,
+                              }}
+                              activeMarket={activeMarket}
+                              isOrderbookVisible={isOrderbookVisible}
+                              orderbookWidth={orderbookWidth}
+                              setOrderbookWidth={handleSetOrderbookWidth}
+                              obInterval={obInterval}
+                              amountsQuote={amountsQuote}
+                              setAmountsQuote={setAmountsQuote}
+                              obtrades={trades}
+                              setOBInterval={setOBInterval}
+                              baseInterval={baseInterval}
+                              viewMode={viewMode}
+                              setViewMode={setViewMode}
+                              activeTab={obTab}
+                              setActiveTab={setOBTab}
+                              setpopup={setpopup}
+                              updateLimitAmount={updateLimitAmount}
+                              tradesloading={tradesloading}
+                              marketsData={sortedMarkets}
+                              updateChartData={updateChartHeaderData}
+
+                            />
+                          )}
+                        </div>
+
+                        <div
+                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
+                        >
+                          <div
+                            className="ordercenter-drag-handle"
+                            onMouseDown={handleVertMouseDown}
+                          />
+                        </div>
+
+                        <div
+                          className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
+                          style={{
+                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
+                            transition: isVertDragging ? 'none' : 'height 0.1s ease',
+                          }}
+                        >
+                          <OrderCenter
+                            orders={orders}
+                            tradehistory={tradehistory}
+                            canceledorders={canceledorders}
+                            router={router}
+                            address={address}
+                            trades={tradesByMarket}
+                            currentMarket={
+                              activeMarketKey.replace(
+                                new RegExp(
+                                  `^${wethticker}|${wethticker}$`,
+                                  'g'
+                                ),
+                                ethticker
+                              )
+                            }
+                            orderCenterHeight={orderCenterHeight}
+                            hideBalances={true}
+                            tokenList={memoizedTokenList}
+                            setTokenIn={setTokenIn}
+                            setTokenOut={setTokenOut}
+                            setSendTokenIn={setSendTokenIn}
+                            setpopup={setpopup}
+                            sortConfig={{ column: 'balance', direction: 'desc' }}
+                            onSort={emptyFunction}
+                            tokenBalances={tokenBalances}
+                            activeSection={activeSection}
+                            setActiveSection={setActiveSection}
+                            filter={filter}
+                            setFilter={setFilter}
+                            onlyThisMarket={onlyThisMarket}
+                            setOnlyThisMarket={setOnlyThisMarket}
+                            refetch={refetch}
+                            sendUserOperationAsync={sendUserOperationAsync}
+                            setChain={handleSetChain}
+waitForTxReceipt={waitForTxReceipt}
+                          />
+                        </div>
+                      </div>
+                      {windowWidth > 1020 && (
+                        <div className="right-column"> {swap} </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            }
+          />
+                    <Route
+            path="/market"
             element={
               <div className="trade-container">
                 {windowWidth <= 1020 && (

@@ -70,7 +70,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
 
-  const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
+  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const shouldShowFullHeader = isTradeRoute && !simpleView;
 
   useEffect(() => {

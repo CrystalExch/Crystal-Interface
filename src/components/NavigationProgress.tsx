@@ -15,7 +15,7 @@ const NavigationProgress: React.FC<NavigationProgressProps> = ({
   useEffect(() => {
     const cleanPath = (path: string) => path.split('?')[0];
     const isTradeRoute = (path: string) =>
-      ['swap', 'limit', 'send', 'scale'].includes(path.split('/')[1]);
+      ['swap', 'limit', 'send', 'scale','market'].includes(path.split('/')[1]);
 
     const currentPath = cleanPath(location.pathname);
     const prevPath = cleanPath(prevPathRef.current);

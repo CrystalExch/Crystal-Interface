@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({
     document.body.style.overflow = !isMenuOpen ? 'hidden' : 'auto';
   };
 
-  const isTradeRoute = ['/swap', '/limit', '/send', '/scale'].includes(location.pathname);
+  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const shouldShowSettings = isTradeRoute && !simpleView;
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
 

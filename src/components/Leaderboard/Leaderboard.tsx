@@ -172,10 +172,23 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     if (userPosition >= 0) {
       if (userPosition < 3) {
         setCurrentPage(0);
+        setTimeout(() => {
+          const topFactions = document.querySelector('.top-factions');
+          if (topFactions) {
+            topFactions.scrollIntoView({ behavior: 'smooth' });
+          }
+        }, 100);
       } else {
         const adjustedPosition = userPosition - 3;
         const targetPage = Math.floor(adjustedPosition / ITEMS_PER_PAGE);
         setCurrentPage(targetPage);
+        
+        setTimeout(() => {
+          const userRow = document.querySelector('.current-user-row');
+          if (userRow) {
+            userRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
       }
     }
   };
