@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import mint from '../../assets/mintanvil.png';
@@ -19,7 +19,6 @@ interface SidebarNavProps {
 
 const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const path = location.pathname;
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
@@ -74,28 +73,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     };
   }, [expanded]);
 
-  const isTradingPage = ['/swap', '/limit', '/send', '/scale','/market'].some(tradePath =>
+  const isTradingPage = ['/swap', '/limit', '/send', '/scale', '/market'].some(tradePath =>
     path === tradePath || path.startsWith(tradePath)
   );
-
-  const goToSimpleView = () => {
-    setSimpleView(true);
-    localStorage.setItem('crystal_simple_view', 'true');
-    window.dispatchEvent(
-      new CustomEvent('enterSimpleView', {
-        detail: { clearTokens: true },
-      })
-    );
-    window.dispatchEvent(new Event('resize'));
-    navigate('/swap');
-  };
-
-  const goToAdvancedView = () => {
-    setSimpleView(false);
-    localStorage.setItem('crystal_simple_view', 'false');
-    window.dispatchEvent(new Event('resize'));
-    navigate('/market');
-  };
 
   const toggleSidebar = () => {
     if (windowWidth > 1020) {
@@ -118,7 +98,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/market"
             className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
-            onClick={() => setSimpleView(false)}
+            onClick={(e) => {
+              if (location.pathname === '/market') {
+                e.preventDefault();
+              }
+              else {
+                setSimpleView(false)
+              }
+            }}
             onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
             onMouseLeave={handleTooltipHide}
           >
@@ -128,7 +115,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <Link
             to="/swap"
             className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''}`}
-            onClick={() => setSimpleView(true)}
+            onClick={(e) => {
+              if (location.pathname === '/swap') {
+                e.preventDefault();
+              }
+              else {
+                setSimpleView(true)
+              }
+            }}
             onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
             onMouseLeave={handleTooltipHide}
           >

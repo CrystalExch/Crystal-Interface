@@ -121,7 +121,7 @@
 .xp-display {
   color: rgba(255, 255, 255, .7);
   display: flex;
-  font-size: 14px;
+  font-size: 0.9rem;
   justify-content: flex-end;
   margin-top: 5px
 }
@@ -232,6 +232,7 @@
   display: flex;
   font-size: 1.1rem;
   font-weight: 400;
+  align-items: center;
 }
 
 .full-leaderboard {
@@ -248,7 +249,7 @@
   display: flex;
   font-size: .9rem;
   justify-content: space-between;
-  padding: 6px 20px;
+  padding: 6px 15px;
 
 }
 
@@ -295,7 +296,7 @@
   border-radius: 5px;
   display: flex;
   margin: 5px 0;
-  padding: 7px 20px;
+  padding: 7px 10px 7px 20px;
 }
 
 .leaderboard-row:last-child {
@@ -314,7 +315,8 @@
   display: flex;
   font-size: .9rem;
   font-weight: 300;
-  justify-content: flex-end
+  justify-content: flex-end;
+  align-items: center;
 }
 
 .leaderboard-user-address {
@@ -966,9 +968,9 @@
 }
 
 .top-xp-icon {
-  height: 28px;
+  height: 24px;
   vertical-align: middle;
-  width: 28px
+  width: 24px
 }
 
 .earned-xp-header {
@@ -977,7 +979,8 @@
 }
 
 .progress-bar-amount-header {
-  display: flex
+  display: flex;
+  align-items: center;
 }
 
 .notification-bar {

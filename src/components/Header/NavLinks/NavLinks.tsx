@@ -38,17 +38,14 @@ const NavLinks: React.FC<NavLinksProps> = ({
     setSimpleView(isSimple);
     localStorage.setItem('crystal_simple_view', JSON.stringify(isSimple));
 
-    if (isSimple) {
-      window.dispatchEvent(
-        new CustomEvent('enterSimpleView', {
-          detail: { clearTokens: true },
-        }),
-      );
-    }
-
     window.dispatchEvent(new Event('resize'));
     setIsSideMenuTradeOpen(false);
-    navigate('/swap');
+    if (isSimple && !(location.pathname == '/swap')) {
+      navigate('/swap');
+    }
+    else if (!isSimple && !(location.pathname == '/market')) {
+      navigate('/market');
+    }
     toggleMenu();
   }, []);
 

@@ -24,7 +24,9 @@ const SwapIcon: React.FC<SwapIconProps> = ({
       className="swap-icon"
       ref={hoverRef}
       onClick={() => {
-        navigate(`/swap`);
+        if (!(location.pathname == '/market') && !(location.pathname == '/swap')) {
+          navigate(`/market`);
+        }
         setTokenIn(
           tokenaddress === settings.chainConfig[activechain].usdc
             ? settings.chainConfig[activechain].eth
@@ -34,7 +36,7 @@ const SwapIcon: React.FC<SwapIconProps> = ({
         setpopup(0);
       }}
     >
-      Swap
+      {t('swap')}
     </div>
   );
 };

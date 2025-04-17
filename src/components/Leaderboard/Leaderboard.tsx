@@ -1,4 +1,3 @@
-import { useSmartAccountClient } from '@account-kit/react';
 import React, { useEffect, useState } from 'react';
 import crystalxp from '../../assets/CrystalX.png';
 import arrow from '../../assets/arrow.svg';
@@ -38,11 +37,13 @@ interface TimeLeft {
 interface LeaderboardProps {
   setpopup?: (value: number) => void;
   orders: any;
+  address: any;
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
   setpopup = () => {},
   orders,
+  address,
 }) => {
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserDisplayData>({
@@ -62,7 +63,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   }>({});
   const loading = Object.keys(liveLeaderboard).length === 0;
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
-  const { address } = useSmartAccountClient({ type: 'LightAccount' });
   const ITEMS_PER_PAGE = currentPage == 0 ? 47 : 50;
 
   useEffect(() => {
@@ -70,12 +70,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
         .then((res) => res.json())
         .then((data: Record<string, { points: number }>) => {
-          const excluded = '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de';
   
           const updatedLiveLeaderboard = Object.fromEntries(
             Object.entries(data)
               .map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
-              .filter(([addr]) => addr !== excluded)
           );
   
           setLiveLeaderboard(updatedLiveLeaderboard);
@@ -397,7 +395,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {Object.values(liveLeaderboard)
                     .reduce((sum: any, value: any) => sum + value, 0)
                     .toLocaleString()}{' '}
-                  / {'1,000,000'.toLocaleString()}
+                  / {'10,000,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                 </span>
               )}
@@ -408,7 +406,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 1000000) * 100}%`,
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`,
                 }}
               />
             </div>

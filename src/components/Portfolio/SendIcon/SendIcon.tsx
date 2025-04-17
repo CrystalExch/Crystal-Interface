@@ -23,7 +23,7 @@ const SendIcon: React.FC<SendIconProps> = ({
         setpopup(3);
       }}
     >
-      Send
+      {t('send')}
     </div>
   );
 };

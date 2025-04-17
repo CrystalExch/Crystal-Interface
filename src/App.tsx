@@ -253,14 +253,13 @@ function App() {
   // state vars
   const showFooter = [
     '/swap',
+    '/market',
     '/limit',
     '/send',
     '/scale',
     '/portfolio',
     '/leaderboard',
     '/mint',
-    '/market',
-
     '/referrals',
     '/earn',
     '/mint'
@@ -281,7 +280,7 @@ function App() {
   const [isDragging, setIsDragging] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
   const [activeTab, setActiveTab] = useState(location.pathname.slice(1));
-  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'limit' ? 'pro' : t(activeTab.toLowerCase()));
+  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'market' || activeTab == 'limit' ? 'pro' : t(activeTab.toLowerCase()));
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
@@ -409,7 +408,7 @@ function App() {
     return BigInt(0);
   });
   const [amountOutSwap, setamountOutSwap] = useState(() => {
-    if (activeTab == 'swap') {
+    if (activeTab == 'swap' || activeTab == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount) {
         setswitched(true);
@@ -433,7 +432,7 @@ function App() {
     return '';
   });
   const [outputString, setoutputString] = useState(() => {
-    if (activeTab == 'swap') {
+    if (activeTab == 'swap' || activeTab == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount && Number(amount) > 0) {
         return customRound(
@@ -662,7 +661,6 @@ function App() {
   const [sendTokenIn, setSendTokenIn] = useState(eth);
   const [isSigning, setIsSigning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSearchPopupOpen, setIsSearchPopupOpen] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
   const [marketsData, setMarketsData] = useState<any[]>([]);
@@ -883,7 +881,12 @@ function App() {
   // on market select
   const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale','market'].includes(location.pathname.slice(1))) {
-      navigate('/swap');
+      if (simpleView) {
+        navigate('/swap');
+      }
+      else {
+        navigate('/market');
+      }
     }
 
     setTokenIn(market.quoteAddress);
@@ -953,6 +956,7 @@ function App() {
     setStateIsLoading(true);
     debounceTimerRef.current = setTimeout(() => {
       setamountIn(amount);
+      debounceTimerRef.current = null;
     }, 300);
   };
 
@@ -964,17 +968,8 @@ function App() {
     setStateIsLoading(true);
     debounceTimerRef.current = setTimeout(() => {
       setamountOutSwap(amount);
+      debounceTimerRef.current = null;
     }, 300);
-  };
-
-  // set token string
-  const debouncedSetTokenString = (value: string) => {
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      settokenString(value);
-    }, 100);
   };
 
   // fetch state
@@ -1630,10 +1625,8 @@ function App() {
           series && Array.isArray(series.klines) && series.klines.length > 0
             ? Number(series.klines[0].open)
             : 0;
-
-        const currentPriceRaw = Number(trades[0][3]);
+        const currentPriceRaw = Number(trades[trades.length - 1][3]);
         const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-
         const volume = Number(trades[trades.length - 1][2] === 1 ? trades[trades.length - 1][0] : trades[trades.length - 1][1]) / 10 ** Number(market?.quoteDecimals);
         const decimals = Math.floor(Math.log10(Number(market.priceFactor)));
 
@@ -1663,7 +1656,6 @@ function App() {
         selectedMarket.quoteAddress,
       );
     } else if (e.key === 'Escape') {
-      setIsSearchPopupOpen(false);
       setSearchQuery('');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
@@ -1677,12 +1669,6 @@ function App() {
       refocusSearchInput();
     }
   };
-
-  useEffect(() => {
-    if (isSearchPopupOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [isSearchPopupOpen]);
 
   useEffect(() => {
     if (showSendDropdown) {
@@ -1735,7 +1721,6 @@ function App() {
     setTokenIn(quoteToken);
     setTokenOut(baseToken);
 
-    setIsSearchPopupOpen(false);
     setSearchQuery('');
     setpopup(0);
   };
@@ -2260,6 +2245,7 @@ function App() {
         title = 'Mint | Crystal';
         break;
       case '/swap':
+      case '/market':
       case '/limit':
       case '/send':
       case '/scale':
@@ -2387,7 +2373,7 @@ function App() {
   // update state variables when data is loaded
   useEffect(() => {
     if (!isLoading && data) {
-      if (!txPending.current) {
+      if (!txPending.current && !debounceTimerRef.current) {
         setStateIsLoading(false);
         setstateloading(false);
         setallowance(data[1].result || BigInt(0));
@@ -3492,7 +3478,7 @@ function App() {
       setSearchParams({
         ...(path != 'send' ? { tokenIn } : { token: tokenIn }),
         ...(tokenOut && path != 'send' && { tokenOut }),
-        ...(switched && path == 'swap'
+        ...(switched && (path == 'swap' || path == 'market')
           ? { amountOut: amountOutSwap }
           : { amountIn }),
       });
@@ -3510,10 +3496,9 @@ function App() {
     }
     if (path === 'send' || path === 'scale') {
       setCurrentProText(path.toLowerCase());
-    } else if (path !== 'swap' && path !== 'limit' && path !== 'market') {
+    } else {
       setCurrentProText('pro');
     }
-  
     if (['swap', 'limit', 'send', 'scale', 'market'].includes(path)) {
       if (amountIn == BigInt(0)) {
         setInputString('');
@@ -3663,7 +3648,7 @@ function App() {
               .replace(/\.0+$/, ''),
           );
         }
-      } else if (path == 'swap') {
+      } else if (activeTab == 'swap' || activeTab == 'market') {
         setCurrentProText('pro');
       } else if (path == 'scale') {
         setswitched(false);
@@ -3868,7 +3853,7 @@ function App() {
                   settokenString('');
                   setTokenIn(token.address);
                   setStateIsLoading(true);
-                  if (activeTab === 'swap') {
+                  if (activeTab == 'swap' || activeTab == 'market') {
                     if (token.address !== tokenOut) {
                       if (
                         markets[
@@ -3881,7 +3866,7 @@ function App() {
                         newTokenOut = tokenOut;
                       } else {
                         const path = findShortestPath(token.address, tokenOut);
-                        if (path && path.length > 1 && activeTab == 'swap') {
+                        if (path && path.length > 1 && (activeTab == 'swap' || activeTab == 'market')) {
                           newTokenOut = tokenOut;
                         } else {
                           for (const market in markets) {
@@ -4557,7 +4542,7 @@ function App() {
                   settokenString('');
                   setTokenOut(token.address);
                   setStateIsLoading(true);
-                  if (activeTab == 'swap') {
+                  if (activeTab == 'swap' || activeTab == 'market') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -5064,7 +5049,7 @@ function App() {
               <input
                 className="tokenselect"
                 onChange={(e) => {
-                  debouncedSetTokenString(e.target.value);
+                  settokenString(e.target.value);
                 }}
                 placeholder={t('searchToken')}
                 autoFocus={!(windowWidth <= 1020)}
@@ -5107,7 +5092,7 @@ function App() {
               <input
                 className="tokenselect"
                 onChange={(e) => {
-                  debouncedSetTokenString(e.target.value);
+                  settokenString(e.target.value);
                 }}
                 placeholder={t('searchToken')}
                 autoFocus={!(windowWidth <= 1020)}
@@ -6298,7 +6283,7 @@ function App() {
               <input
                 className="sendselect"
                 onChange={(e) => {
-                  debouncedSetTokenString(e.target.value);
+                  settokenString(e.target.value);
                 }}
                 placeholder={t('searchToken')}
                 autoFocus={!(windowWidth <= 1020)}
@@ -6554,52 +6539,52 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-<div className="navlinkwrapper" data-active={activeTab}>
-  <div className="innernavlinkwrapper">
-    <Link
-      to={simpleView ? "/swap" : "/market"}
-      className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
-      onClick={(e) => {
-        if ((location.pathname === '/swap' && simpleView) || 
-            (location.pathname === '/market' && !simpleView)) {
-          e.preventDefault();
-        }
-      }}
-    >
-      {simpleView ? t('swap') : t('market')}
-    </Link>
-    <Link
-      to="/limit"
-      className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
-    >
-      {t('limit')}
-    </Link>
-    <span
-      ref={(el: HTMLSpanElement | null) => {
-        sendButtonRef.current = el;
-      }}
-      className={`navlink ${activeTab === 'send' || activeTab === 'scale' ? 'active' : ''}`}
-      onClick={(e: React.MouseEvent) => {
-        e.preventDefault();
-        setShowSendDropdown(!showSendDropdown);
-      }}
-    >
-      {t(currentProText)}
-      <svg
-        className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 24 24"
-        width="12"
-        height="12"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <polyline points="6 9 12 15 18 9"></polyline>
-      </svg>
-    </span>
+      <div className="navlinkwrapper" data-active={activeTab}>
+        <div className="innernavlinkwrapper">
+          <Link
+            to={simpleView ? "/swap" : "/market"}
+            className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
+            onClick={(e) => {
+              if ((location.pathname === '/swap' && simpleView) || 
+                  (location.pathname === '/market' && !simpleView)) {
+                e.preventDefault();
+              }
+            }}
+          >
+            {simpleView ? t('swap') : t('market')}
+          </Link>
+          <Link
+            to="/limit"
+            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+          >
+            {t('limit')}
+          </Link>
+          <span
+            ref={(el: HTMLSpanElement | null) => {
+              sendButtonRef.current = el;
+            }}
+            className={`navlink ${activeTab === 'send' || activeTab === 'scale' ? 'active' : ''}`}
+            onClick={(e: React.MouseEvent) => {
+              e.preventDefault();
+              setShowSendDropdown(!showSendDropdown);
+            }}
+          >
+            {t(currentProText)}
+            <svg
+              className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 24 24"
+              width="12"
+              height="12"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+          </span>
           <button
             className={`refresh-quote-button ${isRefreshing ? 'refreshing' : ''}`}
             onClick={handleRefreshQuote}
@@ -11208,7 +11193,7 @@ waitForTxReceipt={waitForTxReceipt}
               <img src={mobiletradeswap} className="trade-mobile-switch" />
             </button>
             <div className={`right-column ${showTrade ? 'show' : ''}`}>
-              {activeTab == 'swap' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
+              {activeTab == 'swap' || activeTab == 'market' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
             </div>
           </>
         )}
@@ -11288,13 +11273,13 @@ waitForTxReceipt={waitForTxReceipt}
               />
             }
           />
-
           <Route
             path="/leaderboard"
             element={
               <Leaderboard
                 setpopup={setpopup}
                 orders={orders}
+                address={address}
               />
             }
           />
@@ -11569,7 +11554,7 @@ waitForTxReceipt={waitForTxReceipt}
               </div>
             }
           />
-                    <Route
+          <Route
             path="/market"
             element={
               <div className="trade-container">

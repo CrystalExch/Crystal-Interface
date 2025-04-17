@@ -21,7 +21,7 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
   const location = useLocation();
   
   const isTradingPage = useMemo(() => {
-    const tradingPaths = ['/swap', '/limit', '/send', '/scale', '/trade'];
+    const tradingPaths = ['/swap', '/limit', '/send', '/scale', '/market'];
     return tradingPaths.some(path => location.pathname.startsWith(path));
   }, [location.pathname]);
 
@@ -33,14 +33,6 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
     setSimpleView(isSimpleView);
     localStorage.setItem('crystal_simple_view', JSON.stringify(isSimpleView));
     
-    if (isSimpleView) {
-      window.dispatchEvent(
-        new CustomEvent('enterSimpleView', {
-          detail: { clearTokens: true },
-        }),
-      );
-    }
-    
     window.dispatchEvent(new Event('resize'));
     onTradeDropdownClose();
     
@@ -48,7 +40,7 @@ const TradeDropdown: React.FC<TradeDropdownProps> = ({
       setShowTrade(true);
     }
     
-    if (!isTogglingSameView || location.pathname !== '/swap') {
+    if (!isTogglingSameView || (location.pathname !== '/swap' && location.pathname !== '/market')) {
       const currentParams = new URLSearchParams(location.search);
       const targetPath = '/swap' + (currentParams.toString() ? `?${currentParams.toString()}` : '');
       navigate(targetPath);
