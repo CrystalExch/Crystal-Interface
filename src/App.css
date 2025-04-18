@@ -4880,7 +4880,7 @@ input[type="email"] {
   display: flex;
   justify-content: flex-end;
   padding-right: 15px;
-  margin-bottom: -30px;
+  margin-bottom: -40px;
 }
 
 .warning-image{
@@ -4896,6 +4896,7 @@ input[type="email"] {
   letter-spacing: -0.3px;
   margin: 0;
   color: #e4e4e7c2;
+  font-weight: 300;
 }
 
 .high-impact-details {
@@ -4939,6 +4940,7 @@ input[type="email"] {
   transition: all 0.2s;
   border: none;
   min-width: 50%;
+  letter-spacing: -0.3px;
 }
 
 .high-impact-cancel-button {
@@ -4952,7 +4954,7 @@ input[type="email"] {
 
 .high-impact-confirm-button {
   background-color: #e82f2f1f;
-  color:#FF5757;
+  color:#ff5757d8;
 }
 
 .high-impact-confirm-button:hover {
@@ -4988,7 +4990,7 @@ input[type="email"] {
 
 
 .high-impact-confirmation-popup {
-  height: min(340px, 90vh);
+  height: min(330px, 90vh);
   border-radius: 8px;
   left: 50%;
   margin: 0 auto;
