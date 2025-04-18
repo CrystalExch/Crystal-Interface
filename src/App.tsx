@@ -1882,67 +1882,67 @@ function App() {
     return prices.map((price, i) => [price, orderSizes[i], orderUsdValues[i]])
   }
 
-  const setScaleInput = (
-    desiredOutput: number,
-    startPrice: number,
-    endPrice: number,
-    numOrders: number,
-    skew: number,
-  ) => {
-    const requiredInput = calculateScaleInput(
-      desiredOutput,
-      startPrice,
-      endPrice,
-      numOrders,
-      skew
-    );
+  // const setScaleInput = (
+  //   desiredOutput: number,
+  //   startPrice: number,
+  //   endPrice: number,
+  //   numOrders: number,
+  //   skew: number,
+  // ) => {
+  //   const requiredInput = calculateScaleInput(
+  //     desiredOutput,
+  //     startPrice,
+  //     endPrice,
+  //     numOrders,
+  //     skew
+  //   );
   
-    const scaleDetails = calculateScaleOutput(
-      requiredInput,
-      startPrice,
-      endPrice,
-      numOrders,
-      skew
-    );
+  //   const scaleDetails = calculateScaleOutput(
+  //     requiredInput,
+  //     startPrice,
+  //     endPrice,
+  //     numOrders,
+  //     skew
+  //   );
     
-    const orderUsdValues = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderUsdValue);
-    const orderSizes = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderSize);
+  //   const orderUsdValues = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderUsdValue);
+  //   const orderSizes = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderSize);
     
-    let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
-    let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
+  //   let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
+  //   let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
   
-    if (tokenIn === activeMarket.quoteAddress) {
-      if (totalUsdValue !== requiredInput) {
-        orderUsdValues[orderUsdValues.length - 1] += (requiredInput - totalUsdValue);
-        totalUsdValue = requiredInput;
-      }
+  //   if (tokenIn === activeMarket.quoteAddress) {
+  //     if (totalUsdValue !== requiredInput) {
+  //       orderUsdValues[orderUsdValues.length - 1] += (requiredInput - totalUsdValue);
+  //       totalUsdValue = requiredInput;
+  //     }
 
-      setAmountOutScale(BigInt(totalTokenValue));
-      setScaleOutputString(
-        totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals))
-          ? customRound(
-              totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals)),
-              3,
-            )
-          : ''
-      );
-    } else {
-      if (totalTokenValue !== requiredInput) {
-        orderSizes[orderSizes.length - 1] += (requiredInput - totalTokenValue);
-        totalTokenValue = requiredInput;
-      }
+  //     setAmountOutScale(BigInt(totalTokenValue));
+  //     setScaleOutputString(
+  //       totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals))
+  //         ? customRound(
+  //             totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals)),
+  //             3,
+  //           )
+  //         : ''
+  //     );
+  //   } else {
+  //     if (totalTokenValue !== requiredInput) {
+  //       orderSizes[orderSizes.length - 1] += (requiredInput - totalTokenValue);
+  //       totalTokenValue = requiredInput;
+  //     }
 
-      setAmountOutScale(BigInt(totalUsdValue));
-      setScaleOutputString(
-        totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals))
-          ? customRound(
-              totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals)),
-              3,
-            )
-          : ''
-      );
-    }
-  };
+  //     setAmountOutScale(BigInt(totalUsdValue));
+  //     setScaleOutputString(
+  //       totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals))
+  //         ? customRound(
+  //             totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals)),
+  //             3,
+  //           )
+  //         : ''
+  //     );
+  //   }
+  // };
 
   const calculateScaleInput = (
     desiredOutput: number,

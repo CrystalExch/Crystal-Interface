@@ -4236,7 +4236,7 @@ input[type="email"] {
   background-color: #121214;
   border: 1px solid #1a1a1d;
   border-radius: 6px;
-  overflow: hidden;
+  overflow: scroll;
   z-index: 10;
   max-height: 205px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
