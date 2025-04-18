@@ -345,6 +345,7 @@
   font-size: .8rem;
   font-weight: 300
 }
+
 .rank-1 {
   background: url('../../assets/goldbg.png');
   background-size: cover;
@@ -353,7 +354,6 @@
   transform: translateY(-8px) translateZ(20px);
   transition: all.3s cubic-bezier(.175, .885, .32, 1.275);
   box-shadow: inset 0 0 0px 1.5px rgba(233, 224, 151, 0.5); 
-
 }
 
 .rank-1::before {
@@ -366,7 +366,7 @@
   position: absolute;
   right: -2px;
   top: -2px;
-  z-index: -1
+  z-index: -1;
 }
 
 .rank-1:hover {
@@ -375,54 +375,56 @@
 
 .rank-2 {
   background: url('../../assets/silverbg.png');
+  background-size: cover;
+  background-position: center;
   position: relative;
-  transform: translateY(-6px) translateZ(10px);
+  transform: translateY(-8px) translateZ(20px);
   transition: all.3s cubic-bezier(.175, .885, .32, 1.275);
-  box-shadow: inset 0 0 0px 1.5px rgba(192, 192, 192, .9); 
-
+  box-shadow: inset 0 0 0px 1.5px rgba(233, 224, 151, 0.5); 
 }
 
 .rank-2::before {
   border-radius: 14px;
   bottom: -2px;
   content: '';
-  filter: blur(6px);
+  filter: blur(8px);
   left: -2px;
-  opacity: .7;
+  opacity: .8;
   position: absolute;
   right: -2px;
   top: -2px;
-  z-index: -1
+  z-index: -1;
 }
 
 .rank-2:hover {
-  transform: translateY(-10px) translateZ(20px) scale(1.02)
+  transform: translateY(-12px) translateZ(30px) scale(1.03)
 }
 
 .rank-3 {
   background: url('../../assets/bronzebg.png');
-  border: 2px solid rgba(205, 127, 50, .5);
+  background-size: cover;
+  background-position: center;
   position: relative;
-  transform: translateY(-4px) translateZ(5px);
-  transition: all.3s cubic-bezier(.175, .885, .32, 1.275)
+  transform: translateY(-8px) translateZ(20px);
+  transition: all.3s cubic-bezier(.175, .885, .32, 1.275);
+  box-shadow: inset 0 0 0px 1.5px rgba(233, 224, 151, 0.5); 
 }
 
 .rank-3::before {
-  background: linear-gradient(135deg, rgba(205, 127, 50, .3), transparent, rgba(205, 127, 50, .3));
   border-radius: 14px;
   bottom: -2px;
   content: '';
-  filter: blur(5px);
+  filter: blur(8px);
   left: -2px;
-  opacity: .6;
+  opacity: .8;
   position: absolute;
   right: -2px;
   top: -2px;
-  z-index: -1
+  z-index: -1;
 }
 
 .rank-3:hover {
-  transform: translateY(-8px) translateZ(15px) scale(1.01)
+  transform: translateY(-12px) translateZ(30px) scale(1.03)
 }
 
 .faction-card {
