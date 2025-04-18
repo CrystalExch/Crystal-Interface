@@ -236,7 +236,7 @@
 }
 
 .full-leaderboard {
-  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   overflow: hidden;
   padding: 15px;
