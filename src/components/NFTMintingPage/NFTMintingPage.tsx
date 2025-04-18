@@ -79,7 +79,6 @@ const NFTMintingPage: React.FC = () => {
             src={nftData.imageUrl} 
             className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`} 
             onLoad={handleImageLoad}
-            alt="NFT Preview"
           />
           <div className="nft-countdown-timer">
             <div className="nft-countdown-content">

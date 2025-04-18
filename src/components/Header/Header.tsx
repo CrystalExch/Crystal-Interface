@@ -123,7 +123,7 @@ const Header: React.FC<HeaderProps> = ({
         >
           <img src={Hamburger} className="hamburger-image" />
         </button>
-        <img src={backgroundlesslogo} className="extitle-logo" alt="Logo" />
+        <img src={backgroundlesslogo} className="extitle-logo" />
         </div> 
         <div className="left-header">
 

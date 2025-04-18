@@ -67,14 +67,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const fetchUserPoints = () => {
-      fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
+      if (address) {
+        fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
         .then((res) => res.json())
         .then((data: Record<string, { points: number }>) => {
   
           const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(data)
-              .filter(([addr]) => addr.toLowerCase() !== '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de')
-              .map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
+            Object.entries(data).map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
           );
   
           setLiveLeaderboard(updatedLiveLeaderboard);
@@ -82,6 +81,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         .catch((err) => {
           console.error('Error fetching user points:', err);
         });
+      }
     };
   
     fetchUserPoints();
@@ -223,7 +223,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date('2025-04-24T00:00:00-04:00');
+      const targetDate = new Date('2025-06-01T00:00:00-04:00');
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
       if (difference <= 0) {
@@ -292,7 +292,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       >
         {index === 0 && (
           <div className="crown-icon-container">
-            <img src={CrownIcon} className="crown-icon" alt="Crown" />
+            <img src={CrownIcon} className="crown-icon" />
           </div>
         )}
         <div className="faction-rank">{index + 1}</div>
@@ -374,7 +374,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <img
             src={LeaderboardImage}
             className="leaderboard-image"
-            alt="Leaderboard Banner"
           />
           <button className="view-rules-button" onClick={handleViewRules}>
             {t('viewRules')}
@@ -396,8 +395,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {Object.values(liveLeaderboard)
                     .reduce((sum: any, value: any) => sum + value, 0)
                     .toLocaleString()}{' '}
-                  / {'1,000,000'.toLocaleString()}
-                  <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+                  / {'10,000,000,000'.toLocaleString()}
+                  <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
             </div>
@@ -407,7 +406,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 1000000) * 100}%`,
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`,
                 }}
               />
             </div>
@@ -428,7 +427,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
             <div className="info-column">
               <div className="earned-xp-header">
-                <img src={crystalxp} className="xp-icon" alt="XP Icon" />
+                <img src={crystalxp} className="xp-icon" />
                 <div className="column-header">{t('earned')}</div>
               </div>
               <div className="column-content">
@@ -455,7 +454,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               >
                 {index === 0 && (
                   <div className="crown-icon-container">
-                    <img src={CrownIcon} className="crown-icon" alt="Crown" />
+                    <img src={CrownIcon} className="crown-icon" />
                   </div>
                 )}
                 <div className="faction-rank">{index + 1}</div>
@@ -464,7 +463,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     <img
                       src={getTopThreePfp(index)}
                       className="pfp-image"
-                      alt={`Rank ${index + 1} Profile`}
                     />
                   </div>
                   <div className="faction-name">
@@ -476,7 +474,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     <img
                       src={crystalxp}
                       className="top-xp-icon"
-                      alt="XP Icon"
                     />
                   </div>
                 </div>
@@ -509,7 +506,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         <img
                           src={defaultPfp}
                           className="row-pfp-image"
-                          alt="Profile"
                         />
                       </div>
                       <span className="faction-row-name">
@@ -537,7 +533,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         <img
                           src={crystalxp}
                           className="xp-icon"
-                          alt="XP Icon"
                         />
                       </div>
                     </div>
@@ -564,7 +559,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <img
                 src={arrow}
                 className="leaderboard-control-left-arrow"
-                alt="Previous"
               />
             </button>
 
@@ -581,7 +575,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <img
                 src={arrow}
                 className="leaderboard-control-right-arrow"
-                alt="Next"
               />
             </button>
           </div>

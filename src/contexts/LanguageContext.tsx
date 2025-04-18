@@ -357,6 +357,9 @@ export const translations: any = {
     searchAMarket: "Search for a market",
     browsePairs: "Browse trading pairs",
     custom: "Custom",
+    confirmSwap: "Confirm Swap",
+    highPriceImpactMessage: "Warning! High Price Impact! Your trade will move the market price more than 5%"
+    
   },
   CN: {
     trade: '交易',

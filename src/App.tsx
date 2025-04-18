@@ -84,6 +84,7 @@ import walletinjected from './assets/walletinjected.png'
 import walletmetamask from './assets/walletmetamask.svg'
 import walletphantom from './assets/walletphantom.svg'
 import walletrabby from './assets/walletrabby.png'
+import warningicon from './assets/warning_icon.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
@@ -470,11 +471,11 @@ function App() {
   const [limitChase, setlimitChase] = useState(true);
   const [popup, setpopup] = useState(() => {
     if (localStorage.getItem("firstLoadDone")) {
-      if (localStorage.getItem('shownSocialPopup') === 'true') {
+      if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
         return 0
       }
       else {
-        localStorage.setItem('shownSocialPopup', 'true');
+        localStorage.setItem('hasShownSocialPopup1', 'true');
         return 9
       }
     }
@@ -1659,13 +1660,25 @@ function App() {
       setSearchQuery('');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev < sortedMarkets.length - 1 ? prev + 1 : prev,
-      );
+      const newIndex = selectedIndex < sortedMarkets.length - 1 ? selectedIndex + 1 : selectedIndex;
+      setSelectedIndex(newIndex);
+      
+      const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      }
+      
       refocusSearchInput();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      const newIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
+      setSelectedIndex(newIndex);
+      
+      const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      }
+      
       refocusSearchInput();
     }
   };
@@ -1869,67 +1882,67 @@ function App() {
     return prices.map((price, i) => [price, orderSizes[i], orderUsdValues[i]])
   }
 
-  const setScaleInput = (
-    desiredOutput: number,
-    startPrice: number,
-    endPrice: number,
-    numOrders: number,
-    skew: number,
-  ) => {
-    const requiredInput = calculateScaleInput(
-      desiredOutput,
-      startPrice,
-      endPrice,
-      numOrders,
-      skew
-    );
+  // const setScaleInput = (
+  //   desiredOutput: number,
+  //   startPrice: number,
+  //   endPrice: number,
+  //   numOrders: number,
+  //   skew: number,
+  // ) => {
+  //   const requiredInput = calculateScaleInput(
+  //     desiredOutput,
+  //     startPrice,
+  //     endPrice,
+  //     numOrders,
+  //     skew
+  //   );
   
-    const scaleDetails = calculateScaleOutput(
-      requiredInput,
-      startPrice,
-      endPrice,
-      numOrders,
-      skew
-    );
+  //   const scaleDetails = calculateScaleOutput(
+  //     requiredInput,
+  //     startPrice,
+  //     endPrice,
+  //     numOrders,
+  //     skew
+  //   );
     
-    const orderUsdValues = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderUsdValue);
-    const orderSizes = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderSize);
+  //   const orderUsdValues = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderUsdValue);
+  //   const orderSizes = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderSize);
     
-    let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
-    let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
+  //   let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
+  //   let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
   
-    if (tokenIn === activeMarket.quoteAddress) {
-      if (totalUsdValue !== requiredInput) {
-        orderUsdValues[orderUsdValues.length - 1] += (requiredInput - totalUsdValue);
-        totalUsdValue = requiredInput;
-      }
+  //   if (tokenIn === activeMarket.quoteAddress) {
+  //     if (totalUsdValue !== requiredInput) {
+  //       orderUsdValues[orderUsdValues.length - 1] += (requiredInput - totalUsdValue);
+  //       totalUsdValue = requiredInput;
+  //     }
 
-      setAmountOutScale(BigInt(totalTokenValue));
-      setScaleOutputString(
-        totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals))
-          ? customRound(
-              totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals)),
-              3,
-            )
-          : ''
-      );
-    } else {
-      if (totalTokenValue !== requiredInput) {
-        orderSizes[orderSizes.length - 1] += (requiredInput - totalTokenValue);
-        totalTokenValue = requiredInput;
-      }
+  //     setAmountOutScale(BigInt(totalTokenValue));
+  //     setScaleOutputString(
+  //       totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals))
+  //         ? customRound(
+  //             totalTokenValue / (10 ** Number(tokendict[tokenOut].decimals)),
+  //             3,
+  //           )
+  //         : ''
+  //     );
+  //   } else {
+  //     if (totalTokenValue !== requiredInput) {
+  //       orderSizes[orderSizes.length - 1] += (requiredInput - totalTokenValue);
+  //       totalTokenValue = requiredInput;
+  //     }
 
-      setAmountOutScale(BigInt(totalUsdValue));
-      setScaleOutputString(
-        totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals))
-          ? customRound(
-              totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals)),
-              3,
-            )
-          : ''
-      );
-    }
-  };
+  //     setAmountOutScale(BigInt(totalUsdValue));
+  //     setScaleOutputString(
+  //       totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals))
+  //         ? customRound(
+  //             totalUsdValue / (10 ** Number(tokendict[tokenOut].decimals)),
+  //             3,
+  //           )
+  //         : ''
+  //     );
+  //   }
+  // };
 
   const calculateScaleInput = (
     desiredOutput: number,
@@ -2866,7 +2879,7 @@ function App() {
               : 2
             : parseFloat(temppriceimpact.slice(0, -1)) > 5 &&
               !isWrap &&
-              slippage < BigInt(9500) &&
+              (orderType != 0 || (slippage < BigInt(9500))) &&
               !isLoading &&
               !stateIsLoading
               ? 1
@@ -5122,6 +5135,7 @@ function App() {
           <div ref={popupref} className="send-popup-container">
             <div className="send-popup-background">
               <div className={`sendbg ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
+
                 <div className="sendbutton1container">
                   <div className="send-Send">{t('send')}</div>
                   <button
@@ -5157,10 +5171,10 @@ function App() {
                             const calculatedAmount = calculateTokenAmount(
                               e.currentTarget.value.replace(/^\$/, ''),
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
                               ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
@@ -5183,11 +5197,11 @@ function App() {
                             `$${calculateUSDValue(
                               inputValue,
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                              ],                              
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -5211,11 +5225,11 @@ function App() {
                             const calculatedAmount = calculateTokenAmount(
                               e.target.value.replace(/^\$/, ''),
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                              ],                              
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             );
@@ -5237,11 +5251,11 @@ function App() {
                             `$${calculateUSDValue(
                               inputValue,
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                              ],                              
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -5278,11 +5292,11 @@ function App() {
                             `$${calculateUSDValue(
                               amount,
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                              ],                              
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
                             ).toFixed(2)}`
@@ -5318,10 +5332,10 @@ function App() {
                             calculateUSDValue(
                               sendAmountIn,
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
                               ],
                               sendTokenIn,
                               getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
@@ -6128,7 +6142,10 @@ function App() {
                 />
               </div>
             </div>
-            <div className="search-markets-list">
+            <div 
+              className="search-markets-list" 
+              id="search-markets-list-container"
+            >
               {sortedMarkets.length > 0 ? (
                 sortedMarkets.map((market, index) => (
                   <div
@@ -6143,6 +6160,7 @@ function App() {
                     onMouseEnter={() => setSelectedIndex(index)}
                     role="button"
                     tabIndex={-1}
+                    id={`search-market-item-${index}`}
                   >
                     <button
                       onClick={(e) => {
@@ -6254,7 +6272,6 @@ function App() {
                     <img
                       className="connect-wallet-icon"
                       src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg"
-                      alt="Discord"
                     />
                     <span className="wallet-name">Join Crystal's Discord</span>
                   </button>
@@ -6268,7 +6285,6 @@ function App() {
                     <img
                       className="connect-wallet-icon"
                       src={Xicon}
-                      alt="Twitter"
                     />
                     <span className="wallet-name">Follow us on X (Twitter)</span>
                   </button>
@@ -6277,7 +6293,7 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 10 ? ( //send search 
+        {popup === 10 ? ( // send token search popup
           <div ref={popupref} className="sendselectbg">
             <div className="send-top-row">
               <input
@@ -6293,7 +6309,7 @@ function App() {
                   className="sendselect-clear visible"
                   onClick={() => {
                     settokenString('');
-                    const input = document.querySelector('.tokenselect') as HTMLInputElement;
+                    const input = document.querySelector('.sendselect') as HTMLInputElement;
                     if (input) {
                       input.value = '';
                       input.focus();
@@ -6320,88 +6336,116 @@ function App() {
                     token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
                     token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
                     token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
-                )
-                .map((token) => (
-                  <button
-                    className="sendtokenbutton"
-                    key={token.address}
-                    onClick={() => {
-                      setSendTokenIn(token.address);
-                      setSendUsdValue('');
-                      setSendInputAmount('');
-                      setSendAmountIn(BigInt(0));
-                      settokenString('');
-                      setpopup(3);
-                    }}
-                  >
-                    <img className="tokenlistimage" src={token.image} />
-                    <div className="tokenlisttext">
-                      <div className="tokenlistname">{token.ticker}</div>
-                      <div className="tokenlistticker">{token.name}</div>
-                    </div>
-                    <div className="token-right-content">
-                      <div className="tokenlistbalance">
-                        {formatDisplayValue(tokenBalances[token.address], Number(token.decimals))}
+                ).length === 0 ? (
+                <div className="empty-token-list">
+                  <div className="empty-token-list-content">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="empty-token-list-icon"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="M21 21l-4.35-4.35" />
+                    </svg>
+                    <div className="empty-token-list-text">{t('noTokens')}</div>
+                  </div>
+                </div>
+              ) : (
+                Object.values(tokendict)
+                  .filter(
+                    (token) =>
+                      token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
+                  )
+                  .map((token) => (
+                    <button
+                      className="sendtokenbutton"
+                      key={token.address}
+                      onClick={() => {
+                        setSendTokenIn(token.address);
+                        setSendUsdValue('');
+                        setSendInputAmount('');
+                        setSendAmountIn(BigInt(0));
+                        settokenString('');
+                        setpopup(3);
+                      }}
+                    >
+                      <img className="tokenlistimage" src={token.image} />
+                      <div className="tokenlisttext">
+                        <div className="tokenlistname">{token.ticker}</div>
+                        <div className="tokenlistticker">{token.name}</div>
                       </div>
-                      <div className="token-address-container">
-                        <span className="token-address">
-                          {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
-                        </span>
-                        <div
-                          className="copy-address-button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigator.clipboard.writeText(token.address);
-                            const copyIcon =
-                              e.currentTarget.querySelector('.copy-icon');
-                            const checkIcon =
-                              e.currentTarget.querySelector('.check-icon');
-                            if (copyIcon && checkIcon) {
-                              copyIcon.classList.add('hidden');
-                              checkIcon.classList.add('visible');
-                              setTimeout(() => {
-                                copyIcon.classList.remove('hidden');
-                                checkIcon.classList.remove('visible');
-                              }, 2000);
-                            }
-                          }}
-                        >
-                          <svg
-                            className="copy-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                      <div className="token-right-content">
+                        <div className="tokenlistbalance">
+                          {formatDisplayValue(tokenBalances[token.address], Number(token.decimals))}
+                        </div>
+                        <div className="token-address-container">
+                          <span className="token-address">
+                            {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                          </span>
+                          <div
+                            className="copy-address-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(token.address);
+                              const copyIcon =
+                                e.currentTarget.querySelector('.copy-icon');
+                              const checkIcon =
+                                e.currentTarget.querySelector('.check-icon');
+                              if (copyIcon && checkIcon) {
+                                copyIcon.classList.add('hidden');
+                                checkIcon.classList.add('visible');
+                                setTimeout(() => {
+                                  copyIcon.classList.remove('hidden');
+                                  checkIcon.classList.remove('visible');
+                                }, 2000);
+                              }
+                            }}
                           >
-                            <rect
-                              x="9"
-                              y="9"
-                              width="13"
-                              height="13"
-                              rx="2"
-                              ry="2"
-                            ></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                          </svg>
-                          <svg
-                            className="check-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 12l3 3 6-6" />
-                          </svg>
+                            <svg
+                              className="copy-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect
+                                x="9"
+                                y="9"
+                                width="13"
+                                height="13"
+                                rx="2"
+                                ry="2"
+                              ></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <svg
+                              className="check-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M8 12l3 3 6-6" />
+                            </svg>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                  ))
+              )}
             </ul>
           </div>
         ) : null}
@@ -6530,6 +6574,79 @@ function App() {
             >
               {t('done')}
             </button>
+          </div>
+        ) : null}
+        {popup === 13 ? (
+          <div ref={popupref} className="high-impact-confirmation-popup">
+            <div className="high-impact-confirmation-header">
+              <button
+                className="high-impact-close-button"
+                onClick={() => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-cancel'));
+                }}
+              >
+                <img src={closebutton} className="close-button-icon" />
+              </button>
+            </div>
+            <div className="high-impact-content">
+              <div className="high-impact-warning-icon">
+                <img className="warning-image" src={warningicon}/>
+              </div>
+              
+              <p className="high-impact-message">
+                {t('highPriceImpactMessage')}
+              </p>
+              
+              <div className="high-impact-details">
+                <div className="high-impact-detail-row">
+                  <span>{t('priceImpact')}</span>
+                  <span className="high-impact-value">{priceImpact}</span>
+                </div>
+                
+                <div className="high-impact-detail-row">
+                  <span>{t('pay')}</span>
+                  <span className="high-impact-value">
+                    {formatDisplayValue(
+                      amountIn,
+                      Number(tokendict[tokenIn].decimals)
+                    )} {tokendict[tokenIn].ticker}
+                  </span>
+                </div>
+                
+                <div className="high-impact-detail-row">
+                  <span>{t('receive')}</span>
+                  <span className="high-impact-value">
+                    {formatDisplayValue(
+                      amountOutSwap,
+                      Number(tokendict[tokenOut].decimals)
+                    )} {tokendict[tokenOut].ticker}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="high-impact-actions">
+              <button
+                className="high-impact-cancel-button"
+                onClick={() => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-cancel'));
+                }}
+              >
+                {t('cancel')}
+              </button>
+              
+              <button
+                className="high-impact-confirm-button"
+                onClick={async () => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-confirm'));
+                }}
+              >
+                {t('confirmSwap')}
+              </button>
+            </div>
           </div>
         ) : null}
       </div>
@@ -7231,11 +7348,35 @@ function App() {
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
-            if (connected && userchain === activechain) {
+            if (connected && userchain === activechain) {              
+              if (warning == 1) {
+                setpopup(13);
+                const confirmed = await new Promise((resolve) => {
+                  const handleConfirm = () => {
+                    cleanup();
+                    resolve(true);
+                  };
+              
+                  const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                  };
+              
+                  const cleanup = () => {
+                    window.removeEventListener('high-impact-confirm', handleConfirm);
+                    window.removeEventListener('high-impact-cancel', handleCancel);
+                  };
+              
+                  window.addEventListener('high-impact-confirm', handleConfirm);
+                  window.addEventListener('high-impact-cancel', handleCancel);
+
+                });
+                if (!confirmed) return;
+              }
               let hash;
-              setIsSigning(true)
+              setIsSigning(true);
               if (client) {
-                txPending.current = true
+                txPending.current = true;
               }
               try {
                 if (tokenIn == eth && tokenOut == weth) {
@@ -11413,6 +11554,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11485,6 +11628,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -11626,6 +11771,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11698,6 +11845,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -11843,6 +11992,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
 
                                 />
                               )}
@@ -11916,6 +12067,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -12067,6 +12220,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12139,6 +12294,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
 
                             />
                           )}
@@ -12291,6 +12447,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
 
                                 />
                               )}
@@ -12364,6 +12522,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
                             />
                           )}
                         </div>

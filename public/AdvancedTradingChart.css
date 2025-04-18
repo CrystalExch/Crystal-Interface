@@ -402,3 +402,11 @@ html.theme-dark .container-zLVm6B4t {
 .icon-GwQQdU8S {
   place-self: center center;
 }
+
+html.theme-dark .tooltip-eSLcXvvL {
+  background: var(--themed-color-background, rgba(28, 28, 34, 1));
+}
+
+html.theme-dark .tooltip-eSLcXvvL:not(.right-eSLcXvvL)::after {
+  border-left-color: var(--themed-color-background, rgba(28, 28, 34, 1));
+}

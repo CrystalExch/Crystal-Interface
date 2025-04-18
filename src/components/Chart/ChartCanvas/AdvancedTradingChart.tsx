@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 
 import { overrides } from './overrides';
-
+import customRound from '../../../utils/customRound';
+import { formatDisplay } from '../../OrderCenter/utils';
 import './AdvancedTradingChart.css';
 
 interface ChartCanvasProps {
@@ -11,6 +12,7 @@ interface ChartCanvasProps {
   selectedInterval: any;
   setSelectedInterval: any;
   setOverlayVisible: any;
+  tradehistory: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -19,10 +21,14 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   selectedInterval,
   setSelectedInterval,
   setOverlayVisible,
+  tradehistory,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [chartReady, setChartReady] = useState(false);
   const dataRef = useRef(data);
   const activeMarketRef = useRef(activeMarket);
+  const tradeHistoryRef = useRef(tradehistory);
+  const marksRef = useRef<any>();
   const realtimeCallbackRef = useRef<any>({});
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
@@ -42,6 +48,42 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       realtimeCallbackRef.current[data[1]](latestBar);
     }
   }, [data]);
+
+  useEffect(() => {
+    const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
+    tradeHistoryRef.current = tradehistory;
+    if (tradehistory.length > 0) {
+      if (chartReady) {
+        const marks = diff.filter(
+          (trade: any) => trade[4] == widgetRef.current._options.symbol.split('/')[0] + widgetRef.current._options.symbol.split('/')[1]
+        ).map((trade: any) => ({
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          time: trade[6],
+          hoveredBorderWidth: 0,
+          borderWidth: 0,
+          color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
+          text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+          .replace(/, \d{2}$/, ''),
+          label: trade[2] == 0 ? 'S' : 'B',
+          labelFontColor: 'black',
+          minSize: 17,
+        }));
+        marksRef.current(marks);
+      }
+    }
+    else {
+      if (chartReady) {
+        widgetRef.current.activeChart().clearMarks();
+      }
+    }
+}, [tradehistory.length]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -102,6 +144,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   desc: 'Crystal Exchange',
                 },
               ],
+              supports_marks: true,
             });
           }, 0);
         },
@@ -170,7 +213,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
-
+            
             setTimeout(() => {
               if (bars && bars.length) {
                 onHistoryCallback(bars, { noData: false });
@@ -182,6 +225,39 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             console.error('Error fetching bars:', error);
             onErrorCallback(error);
           }
+        },
+
+        getMarks: async (
+          symbolInfo: any,
+          from: number,
+          to: number,
+          onDataCallback: (marks: any[]) => void,
+        ) => {
+          const marks = tradeHistoryRef.current.filter(
+            (trade: any) => trade[6] >= from && trade[6] <= to && trade[4] == symbolInfo.name.split('/')[0]+symbolInfo.name.split('/')[1]
+          ).map((trade: any) => ({
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            time: trade[6],
+            hoveredBorderWidth: 0,
+            borderWidth: 0,
+            color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
+            text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
+              month: '2-digit',
+              day: '2-digit',
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+              hour12: false,
+            })
+            .replace(/, \d{2}$/, ''),
+            label: trade[2] == 0 ? 'S' : 'B',
+            labelFontColor: 'black',
+            minSize: 17,
+          }));
+          marksRef.current = onDataCallback;
+          setTimeout(() => {
+            onDataCallback(marks);
+          }, 0);
         },
 
         subscribeBars: (
@@ -199,6 +275,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     });
 
     widgetRef.current.onChartReady(() => {
+      setChartReady(true)
       const marketId = `${activeMarketRef.current.baseAsset}_${activeMarketRef.current.quoteAsset}`;
       const chartId = `layout_${marketId}`;
       localAdapterRef.current
@@ -253,7 +330,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
   useEffect(() => {
     activeMarketRef.current = activeMarket;
-    if (widgetRef.current?._ready === true) {
+    if (chartReady) {
       setOverlayVisible(true);
       widgetRef.current.setSymbol(
         `${activeMarketRef.current.baseAsset}/${activeMarketRef.current.quoteAsset}`,

@@ -160,7 +160,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
           onClick={onPrevPage}
           disabled={currentPage <= 1}
         >
-          <img className="filter-left-arrow" src={arrow} alt="Previous page"/>
+          <img className="filter-left-arrow" src={arrow} />
         </button>
         <div className="header-page-indicator">
           <input
@@ -180,7 +180,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
           onClick={onNextPage}
           disabled={currentPage >= totalPages || totalPages === 0}
         >          
-          <img className="filter-right-arrow" src={arrow} alt="Next page"/>
+          <img className="filter-right-arrow" src={arrow} />
         </button>
       </div>
     </div>

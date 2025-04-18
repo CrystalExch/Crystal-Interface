@@ -259,7 +259,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
               >
                 <img
                   src={steps[currentStep].image}
-                  alt={`Step ${currentStep + 1}`}
                   className="intro-image"
                 />
                 {animationStarted && <div className="glowing-rectangle"></div>}
@@ -270,7 +269,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
               <div className="user-profile">
                 <img
                   src={defaultProfilePic}
-                  alt="Profile"
                   className="profile-pic-second"
                 />
                 <div className="username-display">@player123</div>
@@ -279,7 +277,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                   <img
                     src={crystalxp}
                     className="xp-icon"
-                    alt="Crystal Icon"
                     style={{
                       width: '23px',
                       height: '23px',
@@ -308,14 +305,12 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                   <div className="podium-profile profile-second">
                     <img
                       src={LeaderboardPfp2}
-                      alt="2nd Place"
                       className="podium-profile-pic"
                     />
                   </div>
                   <div className="podium-profile profile-first">
                     <img
                       src={defaultProfilePic}
-                      alt="1st Place"
                       className="podium-profile-pic"
                     />
                     <div className="crown">👑</div>
@@ -323,7 +318,6 @@ const ChallengeIntro: React.FC<ChallengeIntroProps> = ({
                   <div className="podium-profile profile-third">
                     <img
                       src={LeaderboardPfp3}
-                      alt="3rd Place"
                       className="podium-profile-pic"
                     />
                   </div>
