@@ -73,6 +73,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   
           const updatedLiveLeaderboard = Object.fromEntries(
             Object.entries(data)
+              .filter(([addr]) => addr.toLowerCase() !== '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de')
               .map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
           );
   
@@ -87,7 +88,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const interval = setInterval(fetchUserPoints, 3000);
   
     return () => clearInterval(interval);
-  }, []);
+  }, []);  
   
   useEffect(() => {
     if (address) {
@@ -395,7 +396,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {Object.values(liveLeaderboard)
                     .reduce((sum: any, value: any) => sum + value, 0)
                     .toLocaleString()}{' '}
-                  / {'10,000,000,000'.toLocaleString()}
+                  / {'1,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" alt="XP Icon" />
                 </span>
               )}
@@ -406,7 +407,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`,
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 1000000) * 100}%`,
                 }}
               />
             </div>
