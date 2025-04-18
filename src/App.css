@@ -4991,7 +4991,7 @@ input[type="email"] {
 
 
 .high-impact-confirmation-popup {
-  height: min(320px, 90vh);
+  height: min(315px, 90vh);
   border-radius: 8px;
   left: 50%;
   margin: 0 auto;
@@ -5001,3 +5001,4 @@ input[type="email"] {
   user-select: none;
   width: min(350px, 90vw);
 }
+
