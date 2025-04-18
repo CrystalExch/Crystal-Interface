@@ -250,486 +250,7 @@ function App() {
     }
     return null;
   };
-  const [confirmingHighImpactSwap, setConfirmingHighImpactSwap] = useState(false);
-  const [pendingSwapParams, setPendingSwapParams] = useState(null);
-  // This is the complete executeHighImpactSwap function
-const executeHighImpactSwap = async () => {
-  if (!pendingSwapParams) return;
-  
-  let hash;
-  setIsSigning(true);
-  if (client) {
-    txPending.current = true;
-  }
-  
-  try {
-    if (tokenIn == eth && tokenOut == weth) {
-      hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
-      newTxPopup(
-        (client
-          ? hash.hash
-          : await waitForTxReceipt(hash.hash)),
-        'wrap',
-        eth,
-        weth,
-        customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-        customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-        '',
-        ''
-      );
-    } else if (tokenIn == weth && tokenOut == eth) {
-      hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
-      newTxPopup(
-        (client
-          ? hash.hash
-          : await waitForTxReceipt(hash.hash)),
-        'unwrap',
-        weth,
-        eth,
-        customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-        customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-        '',
-        ''
-      );
-    } else {
-      if (switched == false) {
-        if (tokenIn == eth) {
-          if (orderType == 1 || multihop) {
-            hash = await sendUserOperationAsync({
-              uo: swapExactETHForTokens(
-                router,
-                amountIn,
-                (amountOutSwap * slippage + 5000n) / 10000n,
-                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                address as `0x${string}`,
-                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                usedRefAddress as `0x${string}`
-              )
-            });
-          } else {
-            hash = await sendUserOperationAsync({
-              uo: _swap(
-                router,
-                amountIn,
-                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                true,
-                BigInt(0),
-                amountIn,
-                tokenIn == activeMarket.quoteAddress
-                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                  : (highestBid * slippage + 5000n) / 10000n,
-                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                usedRefAddress as `0x${string}`
-              )
-            });
-          }
-        } else {
-          if (allowance < amountIn) {
-            if (client) {
-              let uo = [];
-              uo.push(approve(
-                tokenIn as `0x${string}`,
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                maxUint256
-              ));
-              if (tokenOut == eth) {
-                if (orderType == 1 || multihop) {
-                  uo.push(swapExactTokensForETH(
-                    router,
-                    amountIn,
-                    (amountOutSwap * slippage + 5000n) / 10000n,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                } else {
-                  uo.push(_swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountIn,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                }
-              } else {
-                if (orderType == 1 || multihop) {
-                  uo.push(swapExactTokensForTokens(
-                    router,
-                    amountIn,
-                    (amountOutSwap * slippage + 5000n) / 10000n,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                } else {
-                  uo.push(_swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountIn,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                }
-              }
-              hash = await sendUserOperationAsync({ uo: uo });
-              newTxPopup(
-                hash.hash,
-                'approve',
-                tokenIn,
-                '',
-                customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                0,
-                '',
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
-              );
-            }
-            else {
-              hash = await sendUserOperationAsync({
-                uo: approve(
-                  tokenIn as `0x${string}`,
-                  getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                  maxUint256
-                )
-              });
-              newTxPopup(
-                client
-                  ? hash.hash
-                  : await waitForTxReceipt(hash.hash),
-                'approve',
-                tokenIn,
-                '',
-                customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                0,
-                '',
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
-              );
-            }
-          }
-          if (!client || !(allowance < amountIn)) {
-            if (tokenOut == eth) {
-              if (orderType == 1 || multihop) {
-                hash = await sendUserOperationAsync({
-                  uo: swapExactTokensForETH(
-                    router,
-                    amountIn,
-                    (amountOutSwap * slippage + 5000n) / 10000n,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              } else {
-                hash = await sendUserOperationAsync({
-                  uo: _swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountIn,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              }
-            } else {
-              if (orderType == 1 || multihop) {
-                hash = await sendUserOperationAsync({
-                  uo: swapExactTokensForTokens(
-                    router,
-                    amountIn,
-                    (amountOutSwap * slippage + 5000n) / 10000n,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              } else {
-                hash = await sendUserOperationAsync({
-                  uo: _swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountIn,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              }
-            }
-          }
-        }
-      } else {
-        if (tokenIn == eth) {
-          if (orderType == 1 || multihop) {
-            hash = await sendUserOperationAsync({
-              uo: swapETHForExactTokens(
-                router,
-                amountOutSwap,
-                (amountIn * 10000n + slippage / 2n) / slippage,
-                activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                address as `0x${string}`,
-                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                usedRefAddress as `0x${string}`
-              )
-            });
-          } else {
-            hash = await sendUserOperationAsync({
-              uo: _swap(
-                router,
-                BigInt((amountIn * 10000n + slippage / 2n) / slippage),
-                activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                false,
-                BigInt(0),
-                amountOutSwap,
-                tokenIn == activeMarket.quoteAddress
-                  ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                  : (highestBid * slippage + 5000n) / 10000n,
-                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                usedRefAddress as `0x${string}`
-              )
-            });
-          }
-        } else {
-          if (allowance < amountIn) {
-            if (client) {
-              let uo = [];
-              uo.push(approve(
-                tokenIn as `0x${string}`,
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                maxUint256
-              ));
-              if (tokenOut == eth) {
-                if (orderType == 1 || multihop) {
-                  uo.push(swapTokensForExactETH(
-                    router,
-                    amountOutSwap,
-                    (amountIn * 10000n + slippage / 2n) / slippage,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                } else {
-                  uo.push(_swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountOutSwap,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                }
-              } else {
-                if (orderType == 1 || multihop) {
-                  uo.push(swapTokensForExactTokens(
-                    router,
-                    amountOutSwap,
-                    (amountIn * 10000n + slippage / 2n) / slippage,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                } else {
-                  uo.push(_swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountOutSwap,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  ));
-                }
-              }
-              hash = await sendUserOperationAsync({ uo: uo });
-              newTxPopup(
-                hash.hash,
-                'approve',
-                tokenIn,
-                '',
-                customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                0,
-                '',
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
-              );
-            }
-            else {
-              hash = await sendUserOperationAsync({
-                uo: approve(
-                  tokenIn as `0x${string}`,
-                  getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-                  maxUint256
-                )
-              });
-              newTxPopup(
-                client
-                  ? hash.hash
-                  : await waitForTxReceipt(hash.hash),
-                'approve',
-                tokenIn,
-                '',
-                customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
-                0,
-                '',
-                getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
-              );
-            }
-          }
-          if (!client || !(allowance < amountIn)) {
-            if (tokenOut == eth) {
-              if (orderType == 1 || multihop) {
-                hash = await sendUserOperationAsync({
-                  uo: swapTokensForExactETH(
-                    router,
-                    amountOutSwap,
-                    (amountIn * 10000n + slippage / 2n) / slippage,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              } else {
-                hash = await sendUserOperationAsync({
-                  uo: _swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountOutSwap,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              }
-            } else {
-              if (orderType == 1 || multihop) {
-                hash = await sendUserOperationAsync({
-                  uo: swapTokensForExactTokens(
-                    router,
-                    amountOutSwap,
-                    (amountIn * 10000n + slippage / 2n) / slippage,
-                    activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
-                    address as `0x${string}`,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              } else {
-                hash = await sendUserOperationAsync({
-                  uo: _swap(
-                    router,
-                    BigInt(0),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-                    activeMarket.path[0] == tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-                    true,
-                    BigInt(0),
-                    amountOutSwap,
-                    tokenIn == activeMarket.quoteAddress
-                      ? (lowestAsk * 10000n + slippage / 2n) / slippage
-                      : (highestBid * slippage + 5000n) / 10000n,
-                    BigInt(Math.floor(new Date().getTime() / 1000) + 300),
-                    usedRefAddress as `0x${string}`
-                  )
-                });
-              }
-            }
-          }
-        }
-      }
-    }
-    
-    if (!client && hash?.hash) {
-      txPending.current = true;
-      await waitForTxReceipt(hash.hash);
-    }
-    
-    await refetch();
-    txPending.current = false;
-    setTimeout(() => setoutputString(''), 0);
-    setTimeout(() => setamountOutSwap(BigInt(0)), 0);
-    setTimeout(() => setInputString(''), 0);
-    setTimeout(() => setamountIn(BigInt(0)), 0);
-    setswitched(false);
-    setInputString('');
-    setamountIn(BigInt(0));
-    setoutputString('');
-    setamountOutSwap(BigInt(0));
-    setSliderPercent(0);
-    setSwapButtonDisabled(true);
-    setSwapButton(1);
-    const slider = document.querySelector('.balance-amount-slider');
-    const popup = document.querySelector('.slider-percentage-popup');
-    if (slider && popup) {
-      (popup as HTMLElement).style.left = `${15 / 2}px`;
-    }
-  } catch (error) {
-    if (!(error instanceof TransactionExecutionError)) {
-      newTxPopup(
-        hash?.hash,
-        "swapFailed",
-        tokenIn == eth ? eth : tokenIn,
-        tokenOut == eth ? eth : tokenOut,
-        customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-        customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
-        "",
-        "",
-      );
-    }
-  } finally {
-    txPending.current = false;
-    setIsSigning(false);
-    setPendingSwapParams(null);
-  }
-};
+
   // state vars
   const showFooter = [
     '/swap',
@@ -2142,12 +1663,10 @@ const executeHighImpactSwap = async () => {
       const newIndex = selectedIndex < sortedMarkets.length - 1 ? selectedIndex + 1 : selectedIndex;
       setSelectedIndex(newIndex);
       
-      setTimeout(() => {
-        const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
-        if (selectedItem) {
-          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-      }, 0);
+      const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      }
       
       refocusSearchInput();
     } else if (e.key === 'ArrowUp') {
@@ -2155,16 +1674,15 @@ const executeHighImpactSwap = async () => {
       const newIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
       setSelectedIndex(newIndex);
       
-      setTimeout(() => {
-        const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
-        if (selectedItem) {
-          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-        }
-      }, 0);
+      const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+      if (selectedItem) {
+        selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+      }
       
       refocusSearchInput();
     }
   };
+
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -5613,385 +5131,385 @@ const executeHighImpactSwap = async () => {
             {TokenList2}
           </div>
         ) : null}
-{popup === 3 ? ( // send popup
-  <div ref={popupref} className="send-popup-container">
-    <div className="send-popup-background">
-      <div className={`sendbg ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
+        {popup === 3 ? ( // send popup
+          <div ref={popupref} className="send-popup-container">
+            <div className="send-popup-background">
+              <div className={`sendbg ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
 
-        <div className="sendbutton1container">
-          <div className="send-Send">{t('send')}</div>
-          <button
-            className="send-button1"
-            onClick={() => {
-              setpopup(10);
-            }}
-          >
-            <img className="send-button1pic" src={tokendict[sendTokenIn].image} />
-            <span>{tokendict[sendTokenIn].ticker || '?'}</span>
-          </button>
+                <div className="sendbutton1container">
+                  <div className="send-Send">{t('send')}</div>
+                  <button
+                    className="send-button1"
+                    onClick={() => {
+                      setpopup(10);
+                    }}
+                  >
+                    <img className="send-button1pic" src={tokendict[sendTokenIn].image} />
+                    <span>{tokendict[sendTokenIn].ticker || '?'}</span>
+                  </button>
 
-        </div>
-        <div className="sendinputcontainer">
-          <input
-            inputMode="decimal"
-            className={`send-input ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
-            onCompositionStart={() => {
-              setIsComposing(true);
-            }}
-            onCompositionEnd={(
-              e: React.CompositionEvent<HTMLInputElement>,
-            ) => {
-              setIsComposing(false);
-              if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
-                if (displayMode == 'usd') {
-                  if (e.currentTarget.value == '$') {
-                    setSendUsdValue('');
-                    setSendInputAmount('');
-                    setSendAmountIn(BigInt(0));
+                </div>
+                <div className="sendinputcontainer">
+                  <input
+                    inputMode="decimal"
+                    className={`send-input ${connected && sendAmountIn > tokenBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    onCompositionStart={() => {
+                      setIsComposing(true);
+                    }}
+                    onCompositionEnd={(
+                      e: React.CompositionEvent<HTMLInputElement>,
+                    ) => {
+                      setIsComposing(false);
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.currentTarget.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.currentTarget.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.currentTarget.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.currentTarget.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    onChange={(e) => {
+                      if (isComposing) {
+                        setSendInputAmount(e.target.value);
+                        return;
+                      }
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.target.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.target.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.target.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.target.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
+                    value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
+                    autoFocus={!(windowWidth <= 1020)}
+                  />
+                </div>
+                <div className="send-balance-wrapper">
+                  <div className="send-balance-max-container">
+                    <div className="send-balance1">
+                      <img src={walleticon} className="send-balance-wallet-icon" />{' '}
+                      {formatDisplayValue(tokenBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
+                    </div>
+                    <div
+                      className="send-max-button"
+                      onClick={() => {
+                        if (tokenBalances[sendTokenIn] != BigInt(0)) {
+                          let amount =
+                            sendTokenIn == eth
+                              ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[sendTokenIn];
+                          setSendAmountIn(amount);
+                          setSendInputAmount(
+                            customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
+                          );
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              amount,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }}
+                    >
+                      {t('max')}
+                    </div>
+                  </div>
+                  <div
+                    className="send-usd-switch-wrapper"
+                    onClick={() => {
+                      if (displayMode === 'usd') {
+                        setDisplayMode('token');
+                        if (parseFloat(sendUsdValue.replace(/^\$|,/g, '')) == 0) {
+                          setSendInputAmount('');
+                        }
+                      } else {
+                        setDisplayMode('usd');
+                        if (parseFloat(sendInputAmount) == 0) {
+                          setSendUsdValue('');
+                        }
+                      }
+                    }}
+                  >
+                    <div className="send-usd-value">
+                      {displayMode === 'usd'
+                        ? `${customRound(Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn].decimals), 3)} ${tokendict[sendTokenIn].ticker}`
+                        : sendAmountIn === BigInt(0)
+                          ? '$0.00'
+                          : formatUSDDisplay(
+                            calculateUSDValue(
+                              sendAmountIn,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            )
+                          )}
+                    </div>
+                    <img src={sendSwitch} className="send-arrow" />
+                  </div>
+                </div>
+              </div>
+              <div className="swap-container-divider" />
+              <div className="sendaddressbg">
+                <div className="send-To">{t('to')}</div>
+                <div className="send-address-input-container">
+                  <input
+                    className="send-output"
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+                        setrecipient(e.target.value);
+                      }
+                    }}
+                    value={recipient}
+                    placeholder={t('enterWalletAddress')}
+                  />
+                  <button
+                    className="address-paste-button"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+                          setrecipient(text);
+                        }
+                      } catch (err) {
+                      }
+                    }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button
+                className={`send-swap-button ${isSigning ? 'signing' : ''}`}
+                onClick={async () => {
+                  if (
+                    connected &&
+                    userchain === activechain
+                  ) {
+                    let hash;
+                    setIsSigning(true)
+                    if (client) {
+                      txPending.current = true
+                    }
+                    try {
+                      if (sendTokenIn == eth) {
+                        hash = await sendeth(
+                          sendUserOperationAsync,
+                          recipient as `0x${string}`,
+                          sendAmountIn,
+                        );
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          eth,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      } else {
+                        hash = await sendtokens(
+                          sendUserOperationAsync,
+                          sendTokenIn as `0x${string}`,
+                          recipient as `0x${string}`,
+                          sendAmountIn,
+                        );
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          sendTokenIn,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) /
+                            10 ** Number(tokendict[sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      }
+                      await refetch()
+                      txPending.current = false
+                      setSendUsdValue('')
+                      setSendInputAmount('');
+                      setSendAmountIn(BigInt(0));
+                      setSendPopupButton(0);
+                      setSendPopupButtonDisabled(true);
+                    } catch (error) {
+                      if (!(error instanceof TransactionExecutionError)) {
+                        newTxPopup(
+                          hash.hash,
+                          "sendFailed",
+                          sendTokenIn === eth ? eth : sendTokenIn,
+                          "",
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn === eth ? eth : sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          "",
+                          recipient,
+                        );
+                      }
+                    } finally {
+                      txPending.current = false
+                      setIsSigning(false)
+                    }
                   } else {
-                    setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
-                    const calculatedAmount = calculateTokenAmount(
-                      e.currentTarget.value.replace(/^\$/, ''),
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    );
-                    setSendAmountIn(calculatedAmount);
-                    setSendInputAmount(
-                      customRound(
-                        Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
-                        3,
-                      ).toString()
-                    );
+                    !connected
+                      ? setpopup(4)
+                      : handleSetChain()
                   }
-                } else {
-                  const inputValue = BigInt(
-                    Math.round((parseFloat(e.currentTarget.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
-                  );
-                  setSendAmountIn(inputValue);
-                  setSendInputAmount(e.currentTarget.value);
-                  setSendUsdValue(
-                    `$${calculateUSDValue(
-                      inputValue,
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    ).toFixed(2)}`
-                  );
-                }
-              }
-            }}
-            onChange={(e) => {
-              if (isComposing) {
-                setSendInputAmount(e.target.value);
-                return;
-              }
-              if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
-                if (displayMode == 'usd') {
-                  if (e.target.value == '$') {
-                    setSendUsdValue('');
-                    setSendInputAmount('');
-                    setSendAmountIn(BigInt(0));
-                  } else {
-                    setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
-                    const calculatedAmount = calculateTokenAmount(
-                      e.target.value.replace(/^\$/, ''),
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    );
-                    setSendAmountIn(calculatedAmount);
-                    setSendInputAmount(
-                      customRound(
-                        Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
-                        3,
-                      ).toString()
-                    );
-                  }
-                } else {
-                  const inputValue = BigInt(
-                    Math.round((parseFloat(e.target.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
-                  );
-                  setSendAmountIn(inputValue);
-                  setSendInputAmount(e.target.value);
-                  setSendUsdValue(
-                    `$${calculateUSDValue(
-                      inputValue,
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    ).toFixed(2)}`
-                  );
-                }
-              }
-            }}
-            placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
-            value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
-            autoFocus={!(windowWidth <= 1020)}
-          />
-        </div>
-        <div className="send-balance-wrapper">
-          <div className="send-balance-max-container">
-            <div className="send-balance1">
-              <img src={walleticon} className="send-balance-wallet-icon" />{' '}
-              {formatDisplayValue(tokenBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
-            </div>
-            <div
-              className="send-max-button"
-              onClick={() => {
-                if (tokenBalances[sendTokenIn] != BigInt(0)) {
-                  let amount =
-                    sendTokenIn == eth
-                      ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
-                        ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
-                        : BigInt(0)
-                      : tokenBalances[sendTokenIn];
-                  setSendAmountIn(amount);
-                  setSendInputAmount(
-                    customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
-                  );
-                  setSendUsdValue(
-                    `$${calculateUSDValue(
-                      amount,
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    ).toFixed(2)}`
-                  );
-                }
-              }}
-            >
-              {t('max')}
+                }}
+                disabled={sendPopupButtonDisabled || isSigning}
+              >
+                {isSigning ? (
+                  <div className="button-content">
+                    <div className="loading-spinner" />
+                    {client ? t('sendingTransaction') : t('signTransaction')}
+                  </div>
+                ) : !connected ? (
+                  t('connectWallet')
+                ) : sendPopupButton == 0 ? (
+                  t('enterAmount')
+                ) : sendPopupButton == 1 ? (
+                  t('enterWalletAddress')
+                ) : sendPopupButton == 2 ? (
+                  t('send')
+                ) : sendPopupButton == 3 ? (
+                  t('insufficient') +
+                  (tokendict[sendTokenIn].ticker || '?') +
+                  ' ' +
+                  t('bal')
+                ) : sendPopupButton == 4 ? (
+                  `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+                ) : (
+                  t('connectWallet')
+                )}
+              </button>
             </div>
           </div>
-          <div
-            className="send-usd-switch-wrapper"
-            onClick={() => {
-              if (displayMode === 'usd') {
-                setDisplayMode('token');
-                if (parseFloat(sendUsdValue.replace(/^\$|,/g, '')) == 0) {
-                  setSendInputAmount('');
-                }
-              } else {
-                setDisplayMode('usd');
-                if (parseFloat(sendInputAmount) == 0) {
-                  setSendUsdValue('');
-                }
-              }
-            }}
-          >
-            <div className="send-usd-value">
-              {displayMode === 'usd'
-                ? `${customRound(Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn].decimals), 3)} ${tokendict[sendTokenIn].ticker}`
-                : sendAmountIn === BigInt(0)
-                  ? '$0.00'
-                  : formatUSDDisplay(
-                    calculateUSDValue(
-                      sendAmountIn,
-                      tradesByMarket[
-                      (({ baseAsset, quoteAsset }) =>
-                        (baseAsset === wethticker ? ethticker : baseAsset) +
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
-                      ],
-                      sendTokenIn,
-                      getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
-                    )
-                  )}
-            </div>
-            <img src={sendSwitch} className="send-arrow" />
-          </div>
-        </div>
-      </div>
-      <div className="swap-container-divider" />
-      <div className="sendaddressbg">
-        <div className="send-To">{t('to')}</div>
-        <div className="send-address-input-container">
-          <input
-            className="send-output"
-            onChange={(e) => {
-              if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
-                setrecipient(e.target.value);
-              }
-            }}
-            value={recipient}
-            placeholder={t('enterWalletAddress')}
-          />
-          <button
-            className="address-paste-button"
-            onClick={async () => {
-              try {
-                const text = await navigator.clipboard.readText();
-                if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
-                  setrecipient(text);
-                }
-              } catch (err) {
-              }
-            }}
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-              <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            </svg>
-          </button>
-        </div>
-      </div>
-      <button
-        className={`send-swap-button ${isSigning ? 'signing' : ''}`}
-        onClick={async () => {
-          if (
-            connected &&
-            userchain === activechain
-          ) {
-            let hash;
-            setIsSigning(true)
-            if (client) {
-              txPending.current = true
-            }
-            try {
-              if (sendTokenIn == eth) {
-                hash = await sendeth(
-                  sendUserOperationAsync,
-                  recipient as `0x${string}`,
-                  sendAmountIn,
-                );
-                if (!client) {
-                  txPending.current = true
-                }
-                newTxPopup(
-                  (client ? hash.hash : await waitForTxReceipt(hash.hash)),
-                  'send',
-                  eth,
-                  '',
-                  customRound(
-                    Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals),
-                    3,
-                  ),
-                  0,
-                  '',
-                  recipient,
-                );
-              } else {
-                hash = await sendtokens(
-                  sendUserOperationAsync,
-                  sendTokenIn as `0x${string}`,
-                  recipient as `0x${string}`,
-                  sendAmountIn,
-                );
-                if (!client) {
-                  txPending.current = true
-                }
-                newTxPopup(
-                  (client ? hash.hash : await waitForTxReceipt(hash.hash)),
-                  'send',
-                  sendTokenIn,
-                  '',
-                  customRound(
-                    Number(sendAmountIn) /
-                    10 ** Number(tokendict[sendTokenIn].decimals),
-                    3,
-                  ),
-                  0,
-                  '',
-                  recipient,
-                );
-              }
-              await refetch()
-              txPending.current = false
-              setSendUsdValue('')
-              setSendInputAmount('');
-              setSendAmountIn(BigInt(0));
-              setSendPopupButton(0);
-              setSendPopupButtonDisabled(true);
-            } catch (error) {
-              if (!(error instanceof TransactionExecutionError)) {
-                newTxPopup(
-                  hash.hash,
-                  "sendFailed",
-                  sendTokenIn === eth ? eth : sendTokenIn,
-                  "",
-                  customRound(
-                    Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn === eth ? eth : sendTokenIn].decimals),
-                    3,
-                  ),
-                  0,
-                  "",
-                  recipient,
-                );
-              }
-            } finally {
-              txPending.current = false
-              setIsSigning(false)
-            }
-          } else {
-            !connected
-              ? setpopup(4)
-              : handleSetChain()
-          }
-        }}
-        disabled={sendPopupButtonDisabled || isSigning}
-      >
-        {isSigning ? (
-          <div className="button-content">
-            <div className="loading-spinner" />
-            {client ? t('sendingTransaction') : t('signTransaction')}
-          </div>
-        ) : !connected ? (
-          t('connectWallet')
-        ) : sendPopupButton == 0 ? (
-          t('enterAmount')
-        ) : sendPopupButton == 1 ? (
-          t('enterWalletAddress')
-        ) : sendPopupButton == 2 ? (
-          t('send')
-        ) : sendPopupButton == 3 ? (
-          t('insufficient') +
-          (tokendict[sendTokenIn].ticker || '?') +
-          ' ' +
-          t('bal')
-        ) : sendPopupButton == 4 ? (
-          `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-        ) : (
-          t('connectWallet')
-        )}
-      </button>
-    </div>
-  </div>
-) : null}
+        ) : null}
         {popup === 4 ? (
           !connected ? (
             <div ref={popupref} className="connect-wallet-background unconnected">
@@ -6528,206 +6046,205 @@ const executeHighImpactSwap = async () => {
             ref={popupref}
           />
         ) : null}
-
-{popup === 8 ? (
-  <div className="search-markets-dropdown-popup" ref={popupref}>
-    <div className="search-markets-dropdown-header">
-      <div className="search-container">
-        <div className="search-wrapper">
-          <SearchIcon className="search-icon" size={12} />
-          <input
-            ref={searchInputRef}
-            type="text"
-            placeholder={t('searchMarkets')}
-            className="search-input"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={handleSearchKeyDown}
-            autoFocus={!(windowWidth <= 1020)}
-          />
-          {searchQuery && (
-            <button
-              type="button"
-              className="cancel-search"
-              onClick={() => setSearchQuery('')}
-            >
-              {t('clear')}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-
-    <div className="search-markets-list-header">
-      <div className="favorites-header">
-        <button
-          onClick={() => handleSort('favorites')}
-          className="favorite-sort-button"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="favorites-sort-icon"
-          >
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-        </button>
-      </div>
-      <div
-        className="search-header-item"
-        onClick={() => handleSort('volume')}
-      >
-        {t('market')} / {t('volume')}
-        <SortArrow
-          sortDirection={
-            sortField === 'volume' ? sortDirection : undefined
-          }
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSort('volume');
-          }}
-        />
-      </div>
-      <div
-        className="search-header-item"
-        onClick={() => handleSort('change')}
-      >
-        {t('last') + ' ' + t('day')}
-        <SortArrow
-          sortDirection={
-            sortField === 'change' ? sortDirection : undefined
-          }
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSort('change');
-          }}
-        />
-      </div>
-      <div
-        className="search-header-item"
-        onClick={() => handleSort('price')}
-      >
-        {t('price')}
-        <SortArrow
-          sortDirection={
-            sortField === 'price' ? sortDirection : undefined
-          }
-          onClick={(e) => {
-            e.stopPropagation();
-            handleSort('price');
-          }}
-        />
-      </div>
-    </div>
-    <div 
-      className="search-markets-list" 
-      id="search-markets-list-container"
-    >
-      {sortedMarkets.length > 0 ? (
-        sortedMarkets.map((market, index) => (
-          <div
-            key={market.pair}
-            className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
-            onClick={() =>
-              handleMarketSelect(
-                market.baseAddress,
-                market.quoteAddress,
-              )
-            }
-            onMouseEnter={() => setSelectedIndex(index)}
-            role="button"
-            tabIndex={-1}
-            id={`search-market-item-${index}`}
-          >
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                e.preventDefault();
-                toggleFavorite(market.baseAddress?.toLowerCase() ?? '');
-                refocusSearchInput();
-              }}
-              onMouseDown={(e) => e.preventDefault()}
-              tabIndex={-1}
-              className={`dropdown-market-favorite-button 
-                    ${favorites.includes(market.baseAddress?.toLowerCase() ?? '') ? 'active' : ''}`}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill={
-                  favorites.includes(
-                    market.baseAddress?.toLowerCase() ?? '',
-                  )
-                    ? 'currentColor'
-                    : 'none'
-                }
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </button>
-
-            <div className="search-market-pair-section">
-              <img src={market.image} className="market-icon" />
-              <div className="market-info">
-                <span className="market-pair">{market.pair}</span>
-                <span className="market-volume">
-                  ${formatCommas(market.volume)}
-                </span>
+        {popup === 8 ? (
+          <div className="search-markets-dropdown-popup" ref={popupref}>
+            <div className="search-markets-dropdown-header">
+              <div className="search-container">
+                <div className="search-wrapper">
+                  <SearchIcon className="search-icon" size={12} />
+                  <input
+                    ref={searchInputRef}
+                    type="text"
+                    placeholder={t('searchMarkets')}
+                    className="search-input"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={handleSearchKeyDown}
+                    autoFocus={!(windowWidth <= 1020)}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      className="cancel-search"
+                      onClick={() => setSearchQuery('')}
+                    >
+                      {t('clear')}
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div className="search-market-chart-section">
-              <MiniChart
-                market={market}
-                series={market.series}
-                priceChange={market.priceChange}
-                isVisible={true}
-              />
-            </div>
-            <div className="search-market-price-section">
-              <div className="search-market-price">
-                {formatSubscript(market.currentPrice)}
+
+            <div className="search-markets-list-header">
+              <div className="favorites-header">
+                <button
+                  onClick={() => handleSort('favorites')}
+                  className="favorite-sort-button"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="favorites-sort-icon"
+                  >
+                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                  </svg>
+                </button>
               </div>
               <div
-                className={`search-market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
+                className="search-header-item"
+                onClick={() => handleSort('volume')}
               >
-                {market.priceChange}
+                {t('market')} / {t('volume')}
+                <SortArrow
+                  sortDirection={
+                    sortField === 'volume' ? sortDirection : undefined
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSort('volume');
+                  }}
+                />
+              </div>
+              <div
+                className="search-header-item"
+                onClick={() => handleSort('change')}
+              >
+                {t('last') + ' ' + t('day')}
+                <SortArrow
+                  sortDirection={
+                    sortField === 'change' ? sortDirection : undefined
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSort('change');
+                  }}
+                />
+              </div>
+              <div
+                className="search-header-item"
+                onClick={() => handleSort('price')}
+              >
+                {t('price')}
+                <SortArrow
+                  sortDirection={
+                    sortField === 'price' ? sortDirection : undefined
+                  }
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSort('price');
+                  }}
+                />
+              </div>
+            </div>
+            <div 
+              className="search-markets-list" 
+              id="search-markets-list-container"
+            >
+              {sortedMarkets.length > 0 ? (
+                sortedMarkets.map((market, index) => (
+                  <div
+                    key={market.pair}
+                    className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
+                    onClick={() =>
+                      handleMarketSelect(
+                        market.baseAddress,
+                        market.quoteAddress,
+                      )
+                    }
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    role="button"
+                    tabIndex={-1}
+                    id={`search-market-item-${index}`}
+                  >
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        toggleFavorite(market.baseAddress?.toLowerCase() ?? '');
+                        refocusSearchInput();
+                      }}
+                      onMouseDown={(e) => e.preventDefault()}
+                      tabIndex={-1}
+                      className={`dropdown-market-favorite-button 
+                            ${favorites.includes(market.baseAddress?.toLowerCase() ?? '') ? 'active' : ''}`}
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill={
+                          favorites.includes(
+                            market.baseAddress?.toLowerCase() ?? '',
+                          )
+                            ? 'currentColor'
+                            : 'none'
+                        }
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+                      </svg>
+                    </button>
+
+                    <div className="search-market-pair-section">
+                      <img src={market.image} className="market-icon" />
+                      <div className="market-info">
+                        <span className="market-pair">{market.pair}</span>
+                        <span className="market-volume">
+                          ${formatCommas(market.volume)}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="search-market-chart-section">
+                      <MiniChart
+                        market={market}
+                        series={market.series}
+                        priceChange={market.priceChange}
+                        isVisible={true}
+                      />
+                    </div>
+                    <div className="search-market-price-section">
+                      <div className="search-market-price">
+                        {formatSubscript(market.currentPrice)}
+                      </div>
+                      <div
+                        className={`search-market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
+                      >
+                        {market.priceChange}
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="no-markets-message">{t('noMarkets')}</div>
+              )}
+            </div>
+
+            <div className="keyboard-shortcuts-container">
+              <div className="keyboard-shortcut">
+                <span className="arrow-key">↑</span>
+                <span className="arrow-key">↓</span>
+                <span>{t('toNavigate')}</span>
+              </div>
+              <div className="keyboard-shortcut">
+                <span className="key">Enter</span>
+                <span>{t('toSelect')}</span>
+              </div>
+              <div className="keyboard-shortcut">
+                <span className="key">Esc</span>
+                <span>{t('toClose')}</span>
               </div>
             </div>
           </div>
-        ))
-      ) : (
-        <div className="no-markets-message">{t('noMarkets')}</div>
-      )}
-    </div>
-
-    <div className="keyboard-shortcuts-container">
-      <div className="keyboard-shortcut">
-        <span className="arrow-key">↑</span>
-        <span className="arrow-key">↓</span>
-        <span>{t('toNavigate')}</span>
-      </div>
-      <div className="keyboard-shortcut">
-        <span className="key">Enter</span>
-        <span>{t('toSelect')}</span>
-      </div>
-      <div className="keyboard-shortcut">
-        <span className="key">Esc</span>
-        <span>{t('toClose')}</span>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
         {popup === 9 ? (
           <div ref={popupref} className="connect-wallet-background unconnected">
             <div className="social-content-container">
@@ -6755,7 +6272,6 @@ const executeHighImpactSwap = async () => {
                     <img
                       className="connect-wallet-icon"
                       src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg"
-                      alt="Discord"
                     />
                     <span className="wallet-name">Join Crystal's Discord</span>
                   </button>
@@ -6769,7 +6285,6 @@ const executeHighImpactSwap = async () => {
                     <img
                       className="connect-wallet-icon"
                       src={Xicon}
-                      alt="Twitter"
                     />
                     <span className="wallet-name">Follow us on X (Twitter)</span>
                   </button>
@@ -6778,162 +6293,162 @@ const executeHighImpactSwap = async () => {
             </div>
           </div>
         ) : null}
-{popup === 10 ? ( // send token search popup
-  <div ref={popupref} className="sendselectbg">
-    <div className="send-top-row">
-      <input
-        className="sendselect"
-        onChange={(e) => {
-          settokenString(e.target.value);
-        }}
-        placeholder={t('searchToken')}
-        autoFocus={!(windowWidth <= 1020)}
-      />
-      {tokenString && (
-        <button
-          className="sendselect-clear visible"
-          onClick={() => {
-            settokenString('');
-            const input = document.querySelector('.sendselect') as HTMLInputElement;
-            if (input) {
-              input.value = '';
-              input.focus();
-            }
-          }}
-        >
-          {t('clear')}
-        </button>
-      )}
-      <button
-        className="sendselect-back"
-        onClick={() => {
-          setpopup(3);
-        }}
-      >
-        <img src={closebutton} className="send-close-button-icon" />
-      </button>
-    </div>
+        {popup === 10 ? ( // send token search popup
+          <div ref={popupref} className="sendselectbg">
+            <div className="send-top-row">
+              <input
+                className="sendselect"
+                onChange={(e) => {
+                  settokenString(e.target.value);
+                }}
+                placeholder={t('searchToken')}
+                autoFocus={!(windowWidth <= 1020)}
+              />
+              {tokenString && (
+                <button
+                  className="sendselect-clear visible"
+                  onClick={() => {
+                    settokenString('');
+                    const input = document.querySelector('.sendselect') as HTMLInputElement;
+                    if (input) {
+                      input.value = '';
+                      input.focus();
+                    }
+                  }}
+                >
+                  {t('clear')}
+                </button>
+              )}
+              <button
+                className="sendselect-back"
+                onClick={() => {
+                  setpopup(3);
+                }}
+              >
+                <img src={closebutton} className="send-close-button-icon" />
+              </button>
+            </div>
 
-    <ul className="sendtokenlist">
-      {Object.values(tokendict)
-        .filter(
-          (token) =>
-            token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
-            token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
-            token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
-        ).length === 0 ? (
-        <div className="empty-token-list">
-          <div className="empty-token-list-content">
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className="empty-token-list-icon"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="M21 21l-4.35-4.35" />
-            </svg>
-            <div className="empty-token-list-text">{t('noTokens')}</div>
-          </div>
-        </div>
-      ) : (
-        Object.values(tokendict)
-          .filter(
-            (token) =>
-              token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
-              token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
-              token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
-          )
-          .map((token) => (
-            <button
-              className="sendtokenbutton"
-              key={token.address}
-              onClick={() => {
-                setSendTokenIn(token.address);
-                setSendUsdValue('');
-                setSendInputAmount('');
-                setSendAmountIn(BigInt(0));
-                settokenString('');
-                setpopup(3);
-              }}
-            >
-              <img className="tokenlistimage" src={token.image} />
-              <div className="tokenlisttext">
-                <div className="tokenlistname">{token.ticker}</div>
-                <div className="tokenlistticker">{token.name}</div>
-              </div>
-              <div className="token-right-content">
-                <div className="tokenlistbalance">
-                  {formatDisplayValue(tokenBalances[token.address], Number(token.decimals))}
-                </div>
-                <div className="token-address-container">
-                  <span className="token-address">
-                    {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
-                  </span>
-                  <div
-                    className="copy-address-button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigator.clipboard.writeText(token.address);
-                      const copyIcon =
-                        e.currentTarget.querySelector('.copy-icon');
-                      const checkIcon =
-                        e.currentTarget.querySelector('.check-icon');
-                      if (copyIcon && checkIcon) {
-                        copyIcon.classList.add('hidden');
-                        checkIcon.classList.add('visible');
-                        setTimeout(() => {
-                          copyIcon.classList.remove('hidden');
-                          checkIcon.classList.remove('visible');
-                        }, 2000);
-                      }
-                    }}
-                  >
+            <ul className="sendtokenlist">
+              {Object.values(tokendict)
+                .filter(
+                  (token) =>
+                    token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                    token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                    token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
+                ).length === 0 ? (
+                <div className="empty-token-list">
+                  <div className="empty-token-list-content">
                     <svg
-                      className="copy-icon"
+                      width="24"
+                      height="24"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
+                      className="empty-token-list-icon"
                     >
-                      <rect
-                        x="9"
-                        y="9"
-                        width="13"
-                        height="13"
-                        rx="2"
-                        ry="2"
-                      ></rect>
-                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="M21 21l-4.35-4.35" />
                     </svg>
-                    <svg
-                      className="check-icon"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <path d="M8 12l3 3 6-6" />
-                    </svg>
+                    <div className="empty-token-list-text">{t('noTokens')}</div>
                   </div>
                 </div>
-              </div>
-            </button>
-          ))
-      )}
-    </ul>
-  </div>
-) : null}
+              ) : (
+                Object.values(tokendict)
+                  .filter(
+                    (token) =>
+                      token.ticker.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.name.toLowerCase().includes(tokenString.trim().toLowerCase()) ||
+                      token.address.toLowerCase().includes(tokenString.trim().toLowerCase())
+                  )
+                  .map((token) => (
+                    <button
+                      className="sendtokenbutton"
+                      key={token.address}
+                      onClick={() => {
+                        setSendTokenIn(token.address);
+                        setSendUsdValue('');
+                        setSendInputAmount('');
+                        setSendAmountIn(BigInt(0));
+                        settokenString('');
+                        setpopup(3);
+                      }}
+                    >
+                      <img className="tokenlistimage" src={token.image} />
+                      <div className="tokenlisttext">
+                        <div className="tokenlistname">{token.ticker}</div>
+                        <div className="tokenlistticker">{token.name}</div>
+                      </div>
+                      <div className="token-right-content">
+                        <div className="tokenlistbalance">
+                          {formatDisplayValue(tokenBalances[token.address], Number(token.decimals))}
+                        </div>
+                        <div className="token-address-container">
+                          <span className="token-address">
+                            {`${token.address.slice(0, 6)}...${token.address.slice(-4)}`}
+                          </span>
+                          <div
+                            className="copy-address-button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigator.clipboard.writeText(token.address);
+                              const copyIcon =
+                                e.currentTarget.querySelector('.copy-icon');
+                              const checkIcon =
+                                e.currentTarget.querySelector('.check-icon');
+                              if (copyIcon && checkIcon) {
+                                copyIcon.classList.add('hidden');
+                                checkIcon.classList.add('visible');
+                                setTimeout(() => {
+                                  copyIcon.classList.remove('hidden');
+                                  checkIcon.classList.remove('visible');
+                                }, 2000);
+                              }
+                            }}
+                          >
+                            <svg
+                              className="copy-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <rect
+                                x="9"
+                                y="9"
+                                width="13"
+                                height="13"
+                                rx="2"
+                                ry="2"
+                              ></rect>
+                              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
+                            <svg
+                              className="check-icon"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            >
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M8 12l3 3 6-6" />
+                            </svg>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  ))
+              )}
+            </ul>
+          </div>
+        ) : null}
         {popup === 11 ? (
           <div ref={popupref} className="generating-address-popup">
             <span className="loader"></span>
@@ -7062,79 +6577,78 @@ const executeHighImpactSwap = async () => {
           </div>
         ) : null}
         {popup === 13 ? (
-  <div ref={popupref} className="high-impact-confirmation-popup">
-    <div className="high-impact-confirmation-header">
-      <button
-        className="high-impact-close-button"
-        onClick={() => {
-          setpopup(0);
-          setConfirmingHighImpactSwap(false);
-        }}
-      >
-        <img src={closebutton} className="close-button-icon" />
-      </button>
-    </div>
-    <div className="high-impact-content">
-      <div className="high-impact-warning-icon">
-        <img className="warning-image" src={warningicon}/>
-      </div>
-      
-      <p className="high-impact-message">
-        {t('highPriceImpactMessage')}
-      </p>
-      
-      <div className="high-impact-details">
-        <div className="high-impact-detail-row">
-          <span>{t('priceImpact')}</span>
-          <span className="high-impact-value">{priceImpact}</span>
-        </div>
-        
-        <div className="high-impact-detail-row">
-          <span>{t('pay')}</span>
-          <span className="high-impact-value">
-            {formatDisplayValue(
-              amountIn,
-              Number(tokendict[tokenIn].decimals)
-            )} {tokendict[tokenIn].ticker}
-          </span>
-        </div>
-        
-        <div className="high-impact-detail-row">
-          <span>{t('receive')}</span>
-          <span className="high-impact-value">
-            {formatDisplayValue(
-              amountOutSwap,
-              Number(tokendict[tokenOut].decimals)
-            )} {tokendict[tokenOut].ticker}
-          </span>
-        </div>
-      </div>
-    </div>
-    
-    <div className="high-impact-actions">
-      <button
-        className="high-impact-cancel-button"
-        onClick={() => {
-          setpopup(0);
-          setConfirmingHighImpactSwap(false);
-        }}
-      >
-        {t('cancel')}
-      </button>
-      
-      <button
-        className="high-impact-confirm-button"
-        onClick={async () => {
-          setpopup(0);
-          setConfirmingHighImpactSwap(false);
-          await executeHighImpactSwap();
-        }}
-      >
-        {t('confirmSwap')}
-      </button>
-    </div>
-  </div>
-) : null}
+          <div ref={popupref} className="high-impact-confirmation-popup">
+            <div className="high-impact-confirmation-header">
+              <button
+                className="high-impact-close-button"
+                onClick={() => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-cancel'));
+                }}
+              >
+                <img src={closebutton} className="close-button-icon" />
+              </button>
+            </div>
+            <div className="high-impact-content">
+              <div className="high-impact-warning-icon">
+                <img className="warning-image" src={warningicon}/>
+              </div>
+              
+              <p className="high-impact-message">
+                {t('highPriceImpactMessage')}
+              </p>
+              
+              <div className="high-impact-details">
+                <div className="high-impact-detail-row">
+                  <span>{t('priceImpact')}</span>
+                  <span className="high-impact-value">{priceImpact}</span>
+                </div>
+                
+                <div className="high-impact-detail-row">
+                  <span>{t('pay')}</span>
+                  <span className="high-impact-value">
+                    {formatDisplayValue(
+                      amountIn,
+                      Number(tokendict[tokenIn].decimals)
+                    )} {tokendict[tokenIn].ticker}
+                  </span>
+                </div>
+                
+                <div className="high-impact-detail-row">
+                  <span>{t('receive')}</span>
+                  <span className="high-impact-value">
+                    {formatDisplayValue(
+                      amountOutSwap,
+                      Number(tokendict[tokenOut].decimals)
+                    )} {tokendict[tokenOut].ticker}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="high-impact-actions">
+              <button
+                className="high-impact-cancel-button"
+                onClick={() => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-cancel'));
+                }}
+              >
+                {t('cancel')}
+              </button>
+              
+              <button
+                className="high-impact-confirm-button"
+                onClick={async () => {
+                  setpopup(0);
+                  window.dispatchEvent(new Event('high-impact-confirm'));
+                }}
+              >
+                {t('confirmSwap')}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -7834,19 +7348,30 @@ const executeHighImpactSwap = async () => {
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
-            if (connected && userchain === activechain) {
-              const impactValue = parseFloat(priceImpact.replace(/[^0-9.]/g, ''));
-              
-              if (!isWrap && impactValue > 10) {
-                setConfirmingHighImpactSwap(true);
-                setPendingSwapParams({
-                  tokenIn,
-                  tokenOut,
-                  amountIn,
-                  amountOutSwap
-                });
+            if (connected && userchain === activechain) {              
+              if (warning == 1) {
                 setpopup(13);
-                return;
+                const confirmed = await new Promise((resolve) => {
+                  const handleConfirm = () => {
+                    cleanup();
+                    resolve(true);
+                  };
+              
+                  const handleCancel = () => {
+                    cleanup();
+                    resolve(false);
+                  };
+              
+                  const cleanup = () => {
+                    window.removeEventListener('high-impact-confirm', handleConfirm);
+                    window.removeEventListener('high-impact-cancel', handleCancel);
+                  };
+              
+                  window.addEventListener('high-impact-confirm', handleConfirm);
+                  window.addEventListener('high-impact-cancel', handleCancel);
+
+                });
+                if (!confirmed) return;
               }
               let hash;
               setIsSigning(true);

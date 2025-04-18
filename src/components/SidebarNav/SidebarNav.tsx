@@ -90,7 +90,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     <>
       <div className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}>
         <Link to="/" className="sidebar-logo">
-          <img src={backgroundlesslogo} className="sidebar-logo-image" alt="Logo" />
+          <img src={backgroundlesslogo} className="sidebar-logo-image" />
           <span className="sidebar-logo-text">CRYSTAL</span>
         </Link>
 
@@ -135,7 +135,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('portfolio'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={portfolio} alt="Portfolio" className="sidebar-icon" />
+            <img src={portfolio} className="sidebar-icon" />
             <span className="sidebar-label">{t('portfolio')}</span>
           </Link>
           <Link
@@ -144,7 +144,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('referrals'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={referrals} alt="Referrals" className="sidebar-icon" />
+            <img src={referrals} className="sidebar-icon" />
             <span className="sidebar-label">{t('referrals')}</span>
           </Link>
           <Link
@@ -153,7 +153,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('leaderboard'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={leaderboard} alt="Leaderboard" className="sidebar-icon" />
+            <img src={leaderboard} className="sidebar-icon" />
             <span className="sidebar-label">{t('leaderboard')}</span>
           </Link>
           <Link
@@ -162,7 +162,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('mint'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={mint} alt="Mint" className="sidebar-icon" />
+            <img src={mint} className="sidebar-icon" />
             <span className="sidebar-label">{t('mint')}</span>
           </Link>
         </div>

@@ -3278,8 +3278,13 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .search-markets-list {
-  max-height: 300px;
+  max-height: 303px;
   overflow-y: auto;
+  scroll-behavior: smooth;
+  position: relative;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch; 
+  padding-top: 1px;
 }
 
 .search-market-item {
@@ -4812,20 +4817,6 @@ input[type="email"] {
 .main-content-wrapper.simple-view .limit-custom-input {
   font-size: 0.8rem;
 }
-
-
-.search-markets-list {
-  max-height: 300px;
-  overflow-y: auto;
-  scroll-behavior: smooth;
-  position: relative;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch; 
-}
-
-
-
-
 
 .high-impact-header {
   display: flex;

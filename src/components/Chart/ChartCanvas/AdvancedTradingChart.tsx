@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 
 import { overrides } from './overrides';
@@ -24,6 +24,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   tradehistory,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
+  const [chartReady, setChartReady] = useState(false);
   const dataRef = useRef(data);
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
@@ -48,10 +49,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     }
   }, [data]);
 
-    useEffect(() => {
-      const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
-      tradeHistoryRef.current = tradehistory;
-      if (widgetRef.current?._ready === true) {
+  useEffect(() => {
+    const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
+    tradeHistoryRef.current = tradehistory;
+    if (tradehistory.length > 0) {
+      if (chartReady) {
         const marks = diff.filter(
           (trade: any) => trade[4] == widgetRef.current._options.symbol.split('/')[0] + widgetRef.current._options.symbol.split('/')[1]
         ).map((trade: any) => ({
@@ -75,7 +77,13 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         }));
         marksRef.current(marks);
       }
-  }, [tradehistory.length]);
+    }
+    else {
+      if (chartReady) {
+        widgetRef.current.activeChart().clearMarks();
+      }
+    }
+}, [tradehistory.length]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -267,6 +275,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     });
 
     widgetRef.current.onChartReady(() => {
+      setChartReady(true)
       const marketId = `${activeMarketRef.current.baseAsset}_${activeMarketRef.current.quoteAsset}`;
       const chartId = `layout_${marketId}`;
       localAdapterRef.current
@@ -321,7 +330,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
   useEffect(() => {
     activeMarketRef.current = activeMarket;
-    if (widgetRef.current?._ready === true) {
+    if (chartReady) {
       setOverlayVisible(true);
       widgetRef.current.setSymbol(
         `${activeMarketRef.current.baseAsset}/${activeMarketRef.current.quoteAsset}`,
