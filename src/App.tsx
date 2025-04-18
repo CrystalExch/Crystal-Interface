@@ -1659,17 +1659,32 @@ function App() {
       setSearchQuery('');
     } else if (e.key === 'ArrowDown') {
       e.preventDefault();
-      setSelectedIndex((prev) =>
-        prev < sortedMarkets.length - 1 ? prev + 1 : prev,
-      );
+      const newIndex = selectedIndex < sortedMarkets.length - 1 ? selectedIndex + 1 : selectedIndex;
+      setSelectedIndex(newIndex);
+      
+      setTimeout(() => {
+        const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }, 0);
+      
       refocusSearchInput();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
-      setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+      const newIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
+      setSelectedIndex(newIndex);
+      
+      setTimeout(() => {
+        const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
+        if (selectedItem) {
+          selectedItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }, 0);
+      
       refocusSearchInput();
     }
   };
-
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -6033,201 +6048,206 @@ function App() {
             ref={popupref}
           />
         ) : null}
-        {popup === 8 ? (
-          <div className="search-markets-dropdown-popup" ref={popupref}>
-            <div className="search-markets-dropdown-header">
-              <div className="search-container">
-                <div className="search-wrapper">
-                  <SearchIcon className="search-icon" size={12} />
-                  <input
-                    ref={searchInputRef}
-                    type="text"
-                    placeholder={t('searchMarkets')}
-                    className="search-input"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyDown={handleSearchKeyDown}
-                    autoFocus={!(windowWidth <= 1020)}
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      className="cancel-search"
-                      onClick={() => setSearchQuery('')}
-                    >
-                      {t('clear')}
-                    </button>
-                  )}
-                </div>
+
+{popup === 8 ? (
+  <div className="search-markets-dropdown-popup" ref={popupref}>
+    <div className="search-markets-dropdown-header">
+      <div className="search-container">
+        <div className="search-wrapper">
+          <SearchIcon className="search-icon" size={12} />
+          <input
+            ref={searchInputRef}
+            type="text"
+            placeholder={t('searchMarkets')}
+            className="search-input"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            autoFocus={!(windowWidth <= 1020)}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="cancel-search"
+              onClick={() => setSearchQuery('')}
+            >
+              {t('clear')}
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+
+    <div className="search-markets-list-header">
+      <div className="favorites-header">
+        <button
+          onClick={() => handleSort('favorites')}
+          className="favorite-sort-button"
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="favorites-sort-icon"
+          >
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+        </button>
+      </div>
+      <div
+        className="search-header-item"
+        onClick={() => handleSort('volume')}
+      >
+        {t('market')} / {t('volume')}
+        <SortArrow
+          sortDirection={
+            sortField === 'volume' ? sortDirection : undefined
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSort('volume');
+          }}
+        />
+      </div>
+      <div
+        className="search-header-item"
+        onClick={() => handleSort('change')}
+      >
+        {t('last') + ' ' + t('day')}
+        <SortArrow
+          sortDirection={
+            sortField === 'change' ? sortDirection : undefined
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSort('change');
+          }}
+        />
+      </div>
+      <div
+        className="search-header-item"
+        onClick={() => handleSort('price')}
+      >
+        {t('price')}
+        <SortArrow
+          sortDirection={
+            sortField === 'price' ? sortDirection : undefined
+          }
+          onClick={(e) => {
+            e.stopPropagation();
+            handleSort('price');
+          }}
+        />
+      </div>
+    </div>
+    <div 
+      className="search-markets-list" 
+      id="search-markets-list-container"
+    >
+      {sortedMarkets.length > 0 ? (
+        sortedMarkets.map((market, index) => (
+          <div
+            key={market.pair}
+            className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
+            onClick={() =>
+              handleMarketSelect(
+                market.baseAddress,
+                market.quoteAddress,
+              )
+            }
+            onMouseEnter={() => setSelectedIndex(index)}
+            role="button"
+            tabIndex={-1}
+            id={`search-market-item-${index}`}
+          >
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                toggleFavorite(market.baseAddress?.toLowerCase() ?? '');
+                refocusSearchInput();
+              }}
+              onMouseDown={(e) => e.preventDefault()}
+              tabIndex={-1}
+              className={`dropdown-market-favorite-button 
+                    ${favorites.includes(market.baseAddress?.toLowerCase() ?? '') ? 'active' : ''}`}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={
+                  favorites.includes(
+                    market.baseAddress?.toLowerCase() ?? '',
+                  )
+                    ? 'currentColor'
+                    : 'none'
+                }
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
+
+            <div className="search-market-pair-section">
+              <img src={market.image} className="market-icon" />
+              <div className="market-info">
+                <span className="market-pair">{market.pair}</span>
+                <span className="market-volume">
+                  ${formatCommas(market.volume)}
+                </span>
               </div>
             </div>
-
-            <div className="search-markets-list-header">
-              <div className="favorites-header">
-                <button
-                  onClick={() => handleSort('favorites')}
-                  className="favorite-sort-button"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="favorites-sort-icon"
-                  >
-                    <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                  </svg>
-                </button>
-              </div>
-              <div
-                className="search-header-item"
-                onClick={() => handleSort('volume')}
-              >
-                {t('market')} / {t('volume')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'volume' ? sortDirection : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('volume');
-                  }}
-                />
-              </div>
-              <div
-                className="search-header-item"
-                onClick={() => handleSort('change')}
-              >
-                {t('last') + ' ' + t('day')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'change' ? sortDirection : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('change');
-                  }}
-                />
-              </div>
-              <div
-                className="search-header-item"
-                onClick={() => handleSort('price')}
-              >
-                {t('price')}
-                <SortArrow
-                  sortDirection={
-                    sortField === 'price' ? sortDirection : undefined
-                  }
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleSort('price');
-                  }}
-                />
-              </div>
+            <div className="search-market-chart-section">
+              <MiniChart
+                market={market}
+                series={market.series}
+                priceChange={market.priceChange}
+                isVisible={true}
+              />
             </div>
-            <div className="search-markets-list">
-              {sortedMarkets.length > 0 ? (
-                sortedMarkets.map((market, index) => (
-                  <div
-                    key={market.pair}
-                    className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
-                    onClick={() =>
-                      handleMarketSelect(
-                        market.baseAddress,
-                        market.quoteAddress,
-                      )
-                    }
-                    onMouseEnter={() => setSelectedIndex(index)}
-                    role="button"
-                    tabIndex={-1}
-                  >
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault();
-                        toggleFavorite(market.baseAddress?.toLowerCase() ?? '');
-                        refocusSearchInput();
-                      }}
-                      onMouseDown={(e) => e.preventDefault()}
-                      tabIndex={-1}
-                      className={`dropdown-market-favorite-button 
-                            ${favorites.includes(market.baseAddress?.toLowerCase() ?? '') ? 'active' : ''}`}
-                    >
-                      <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill={
-                          favorites.includes(
-                            market.baseAddress?.toLowerCase() ?? '',
-                          )
-                            ? 'currentColor'
-                            : 'none'
-                        }
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-                      </svg>
-                    </button>
-
-                    <div className="search-market-pair-section">
-                      <img src={market.image} className="market-icon" />
-                      <div className="market-info">
-                        <span className="market-pair">{market.pair}</span>
-                        <span className="market-volume">
-                          ${formatCommas(market.volume)}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="search-market-chart-section">
-                      <MiniChart
-                        market={market}
-                        series={market.series}
-                        priceChange={market.priceChange}
-                        isVisible={true}
-                      />
-                    </div>
-                    <div className="search-market-price-section">
-                      <div className="search-market-price">
-                        {formatSubscript(market.currentPrice)}
-                      </div>
-                      <div
-                        className={`search-market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
-                      >
-                        {market.priceChange}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="no-markets-message">{t('noMarkets')}</div>
-              )}
-            </div>
-
-            <div className="keyboard-shortcuts-container">
-              <div className="keyboard-shortcut">
-                <span className="arrow-key">↑</span>
-                <span className="arrow-key">↓</span>
-                <span>{t('toNavigate')}</span>
+            <div className="search-market-price-section">
+              <div className="search-market-price">
+                {formatSubscript(market.currentPrice)}
               </div>
-              <div className="keyboard-shortcut">
-                <span className="key">Enter</span>
-                <span>{t('toSelect')}</span>
-              </div>
-              <div className="keyboard-shortcut">
-                <span className="key">Esc</span>
-                <span>{t('toClose')}</span>
+              <div
+                className={`search-market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
+              >
+                {market.priceChange}
               </div>
             </div>
           </div>
-        ) : null}
+        ))
+      ) : (
+        <div className="no-markets-message">{t('noMarkets')}</div>
+      )}
+    </div>
+
+    <div className="keyboard-shortcuts-container">
+      <div className="keyboard-shortcut">
+        <span className="arrow-key">↑</span>
+        <span className="arrow-key">↓</span>
+        <span>{t('toNavigate')}</span>
+      </div>
+      <div className="keyboard-shortcut">
+        <span className="key">Enter</span>
+        <span>{t('toSelect')}</span>
+      </div>
+      <div className="keyboard-shortcut">
+        <span className="key">Esc</span>
+        <span>{t('toClose')}</span>
+      </div>
+    </div>
+  </div>
+) : null}
         {popup === 9 ? (
           <div ref={popupref} className="connect-wallet-background unconnected">
             <div className="social-content-container">

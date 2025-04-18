@@ -4809,3 +4809,14 @@ input[type="email"] {
 .main-content-wrapper.simple-view .limit-custom-input {
   font-size: 0.8rem;
 }
+
+
+.search-markets-list {
+  max-height: 300px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  position: relative;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch; 
+}
+
