@@ -9,6 +9,7 @@ import FeatureModal from './FeatureModal';
 import ReferralStatsBar from './ReferralStatsBar';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import { ReferralHelperAbi } from '../../abis/ReferralHelperAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
@@ -90,6 +91,7 @@ const Referrals: React.FC<ReferralProps> = ({
     },
   ];
   const [copySuccess, setCopySuccess] = useState(false);
+  const [referredCount, setReferredCount] = useState(0);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -123,6 +125,12 @@ const Referrals: React.FC<ReferralProps> = ({
             functionName: 'refToAddress',
             args: [refLinkString.toLowerCase()],
           },
+          {
+            abi: ReferralHelperAbi,
+            address: '0x6C862870f5B02FC676402Df38915b42c14d55e4f' as `0x${string}`,
+            functionName: 'referrerToReferredAddresses',
+            args: [address ?? '0x0000000000000000000000000000000000000000']
+          },
         ],
       })) as any[];
       setRefLink(refs[0].result);
@@ -135,6 +143,7 @@ const Referrals: React.FC<ReferralProps> = ({
           ? error == t('codeTaken') ? '' : error
           : t('codeTaken'),
       );
+      setReferredCount(Number(refs[3].result));
     })();
   }, [usedRefLink, address, refLinkString]);
 
