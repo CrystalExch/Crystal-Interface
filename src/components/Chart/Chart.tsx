@@ -36,6 +36,7 @@ interface ChartComponentProps {
     isChartLoading: boolean
   ) => void;
   chartHeaderData?: any;
+  tradehistory?: any[]; 
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -44,6 +45,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   tradesloading,
   updateChartData,
   marketsData,
+  tradehistory = [], 
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -330,6 +332,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             selectedInterval={selectedInterval}
             setSelectedInterval={setSelectedInterval}
             setOverlayVisible={setOverlayVisible}
+            tradehistory={tradehistory} 
           />
         ) : (
           <>

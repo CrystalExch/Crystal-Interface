@@ -11413,6 +11413,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11485,6 +11487,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -11626,6 +11630,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -11698,6 +11704,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -11843,6 +11851,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
 
                                 />
                               )}
@@ -11916,6 +11926,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
 
                             />
                           )}
@@ -12067,6 +12079,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12139,6 +12153,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
 
                             />
                           )}
@@ -12291,6 +12306,8 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
+                                  tradehistory={tradehistory} 
+
 
                                 />
                               )}
@@ -12364,6 +12381,8 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
+                              tradehistory={tradehistory} 
+
                             />
                           )}
                         </div>
