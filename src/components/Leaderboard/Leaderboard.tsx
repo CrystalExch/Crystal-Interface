@@ -67,7 +67,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const fetchUserPoints = () => {
-      fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
+      if (address) {
+        fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
         .then((res) => res.json())
         .then((data: Record<string, { points: number }>) => {
   
@@ -81,13 +82,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         .catch((err) => {
           console.error('Error fetching user points:', err);
         });
+      }
     };
   
     fetchUserPoints();
     const interval = setInterval(fetchUserPoints, 3000);
   
     return () => clearInterval(interval);
-  }, []);
+  }, [address]);
   
   useEffect(() => {
     if (address) {

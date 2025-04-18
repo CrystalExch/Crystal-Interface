@@ -233,7 +233,7 @@ html {
 .empty-token-list {
   align-items: center;
   display: flex;
-  height: 100%;
+  min-height: 300px;
   justify-content: center;
   width: 100%;
 }
