@@ -352,12 +352,6 @@ const Referrals: React.FC<ReferralProps> = ({
                   ? customRound(totalClaimableFees, 3)
                   : '0.00'}
               </div>
-              <div className="referral-stats">
-                <div className="referral-stat-item">
-                  <span className="referral-stat-label">{t('totalReferrals')}</span>
-                  <span className="referral-stat-value">{referredCount}</span>
-                </div>
-              </div>
             </div>
             <div className="token-breakdown">
               {Object.entries(claimableFees).map(([token, value]) => (
