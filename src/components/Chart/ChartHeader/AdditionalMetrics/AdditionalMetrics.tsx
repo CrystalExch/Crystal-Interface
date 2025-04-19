@@ -15,7 +15,7 @@ interface AdditionalMetricsProps {
   isLoading?: boolean;
 }
 
-const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({ 
+const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
   metrics,
   isLoading = false
 }) => {
@@ -39,26 +39,27 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
 
   const updateArrowVisibility = () => {
     if (metricsRef.current) {
-      const { showLeftArrow: newShowLeftArrow, showRightArrow: newShowRightArrow } = shouldShowArrows(
-        metricsRef.current,
-      );
-      
       const container = metricsRef.current;
       const isScrollable = container.scrollWidth > container.clientWidth;
       const isAtLeftEdge = container.scrollLeft <= 10;
       const isAtRightEdge =
         container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
-      const newShowLeftFade = isScrollable && !isAtLeftEdge;
-      const newShowRightFade = isScrollable && !isAtRightEdge;
-  
-      setShowLeftArrow((prev) => (prev !== newShowLeftArrow ? newShowLeftArrow : prev));
-      setShowRightArrow((prev) => (prev !== newShowRightArrow ? newShowRightArrow : prev));
-      setShowLeftFade((prev) => (prev !== newShowLeftFade ? newShowLeftFade : prev));
-      setShowRightFade((prev) => (prev !== newShowRightFade ? newShowRightFade : prev));
+      
+      // Only show arrows when there's content to scroll to
+      const newShowLeftArrow = isScrollable && !isAtLeftEdge;
+      const newShowRightArrow = isScrollable && !isAtRightEdge;
+      
+      // Update fade visibility to match arrow visibility
+      const newShowLeftFade = newShowLeftArrow;
+      const newShowRightFade = newShowRightArrow;
+
+      setShowLeftArrow(newShowLeftArrow);
+      setShowRightArrow(newShowRightArrow);
+      setShowLeftFade(newShowLeftFade);
+      setShowRightFade(newShowRightFade);
     }
   };
-  
-
+    
   useLayoutEffect(() => {
     const metricsContainer = metricsRef.current;
     if (metricsContainer) {

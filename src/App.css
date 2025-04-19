@@ -4855,7 +4855,7 @@ input[type="email"] {
 
 .high-impact-content {
   padding: 15px;
-  padding-bottom: 10px;
+  padding-bottom: 8px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4863,7 +4863,6 @@ input[type="email"] {
 }
 
 .high-impact-warning-icon {
-  opacity: 0.5;
 }
 
 .high-impact-confirmation-header{
@@ -4874,12 +4873,11 @@ input[type="email"] {
   margin-bottom: -30px;
 }
 
-.warning-image{
+.warning-image {
   width: 60px;
   margin-bottom: 5px;
+  filter: brightness(0) saturate(100%) invert(36%) sepia(93%) saturate(2878%) hue-rotate(337deg) brightness(120%) contrast(100%);
 }
-
-
 
 .high-impact-message {
   text-align: center;
@@ -4905,6 +4903,8 @@ input[type="email"] {
   align-items: center;
   margin-bottom: 8px;
   font-size: 0.8rem;
+  opacity: 0.8;
+
 }
 
 .high-impact-detail-row:last-child {
@@ -4920,13 +4920,13 @@ input[type="email"] {
   display: flex;
   justify-content: center;
   gap: 8px;
-  padding: 0 20px 20px;
+  padding: 0 20px 0px;
 }
 
 .high-impact-cancel-button,
 .high-impact-confirm-button {
   padding: 10px 16px;
-  border-radius: 8px;
+  border-radius: 6px;
   font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s;
@@ -4937,7 +4937,7 @@ input[type="email"] {
 
 .high-impact-cancel-button {
   background-color: rgba(255, 255, 255, 0.05);
-  color: #e4e4e7;
+  color: #e4e4e7a1;
 }
 
 .high-impact-cancel-button:hover {
