@@ -88,7 +88,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const interval = setInterval(fetchUserPoints, 3000);
   
     return () => clearInterval(interval);
-  }, []);
+  }, [address]);
   
   useEffect(() => {
     if (address) {

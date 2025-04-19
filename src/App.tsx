@@ -2952,8 +2952,7 @@ function App() {
       isAddressInfoFetching = true;
       (async () => {
         try {
-          // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-          const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
+          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -3140,8 +3139,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/crystal-testnet/v0.1.1';
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
         let allLogs: any[] = [];
 
         const query = `
