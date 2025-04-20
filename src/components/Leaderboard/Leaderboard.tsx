@@ -46,6 +46,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   address,
 }) => {
   const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
+
   const [userData, setUserData] = useState<UserDisplayData>({
     userXP: 0,
     logo: '',
