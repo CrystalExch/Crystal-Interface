@@ -106,7 +106,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
       if (chartDays < 7) return `${month}/${day} ${hour}:00`;
       return `${month}/${day}`;
     };
-
+  
     const calculateXAxisInterval = (): number => {
       switch (chartDays) {
         case 1:

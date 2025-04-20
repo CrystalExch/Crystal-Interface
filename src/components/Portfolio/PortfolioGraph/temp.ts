@@ -1,5 +1,5 @@
 import { getBlockNumber, readContract } from '@wagmi/core';
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
+import { useCallback, useEffect, useState, useMemo } from 'react';
 import { config } from '../../../wagmi.ts';
 
 import PortfolioCache from './portfolioCache';
@@ -23,7 +23,6 @@ export const usePortfolioData = (
     balanceResults: {},
     portChartLoading: false,
   });
-  const abortControllerRef = useRef<AbortController>();
   const cache = PortfolioCache.getInstance();
 
   const marketDataMap = useMemo(() => {
@@ -59,10 +58,6 @@ export const usePortfolioData = (
   const fetchBalances = useCallback(async () => {
     if (!address) return {};
 
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-
     try {
       const startblock = await getBlockNumber(config);
       const dateRange = generateDateRange();
@@ -75,8 +70,6 @@ export const usePortfolioData = (
 
       const batchSize = 1;
       for (let i = 0; i < dateRange.length; i += batchSize) {
-        if (signal.aborted) throw new Error('Operation cancelled');
-
         const batch = dateRange.slice(i, i + batchSize);
         const batchResults = await Promise.all(
           batch.map(async (dateStr) => {
@@ -120,6 +113,7 @@ export const usePortfolioData = (
 
               return { date: dateStr, balances };
             } catch (error) {
+              console.error('[fetchBalances] failed for date', dateStr);
               return null;
             }
           }),
@@ -177,7 +171,6 @@ export const usePortfolioData = (
 
           lastKnownPrice[normalized] = price;
           chartData[idx].value += tokenBalance * price;
-          console.log(chartData[idx])
         });
       });
 
@@ -218,35 +211,48 @@ export const usePortfolioData = (
   }, [tokenList, tokenBalances, marketsData]);
 
   useEffect(() => {
+    console.log("run");
     const fetchData = async () => {
       if (!address) {
-        setState((prev) => ({ ...prev, portChartLoading: false, chartData: [], balanceResults: {} }));
+        setState({ chartData: [], balanceResults: {}, portChartLoading: false });
         return;
       }
-
+  
+      if (marketsData.length === 0) {
+        console.log("zero length")
+        setState(prev => ({ ...prev, portChartLoading: true }));
+        return;
+      }
+  
       const key = cache.getCacheKey(activechain, address, chartDays);
       const cached = cache.get(key);
       if (cached && Date.now() - cached.timestamp < 600000) {
-        setState({ chartData: cached.data, balanceResults: cached.balanceResults, portChartLoading: false });
+        setState({
+          chartData: cached.data,
+          balanceResults: cached.balanceResults,
+          portChartLoading: false,
+        });
         return;
       }
-
-      setState((prev) => ({ ...prev, portChartLoading: true }));
+  
+      setState(prev => ({ ...prev, portChartLoading: true }));
       try {
         const balances = await fetchBalances();
         const chart = calculateChartData(balances);
+
         cache.set(key, chart, balances, chartDays);
         setState({ chartData: chart, balanceResults: balances, portChartLoading: false });
       } catch (e) {
-        console.error('Error fetching portfolio data:', e);
-        setState((prev) => ({ ...prev, portChartLoading: false }));
+        console.error(e);
+        setState(prev => ({ ...prev, portChartLoading: false }));
       }
     };
-
+  
     fetchData();
-    return () => { abortControllerRef.current?.abort(); };
-  }, [address, chartDays, marketsData]);
 
+    return () => {};
+  }, [address, chartDays, marketsData]);
+  
   return state;
 };
 

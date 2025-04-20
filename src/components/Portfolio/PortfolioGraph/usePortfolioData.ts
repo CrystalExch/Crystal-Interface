@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { getBlockNumber, readContract } from '@wagmi/core';
+import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 import { config } from '../../../wagmi.ts';
 
 import PortfolioCache from './portfolioCache';
@@ -26,15 +26,16 @@ export const usePortfolioData = (
   const abortControllerRef = useRef<AbortController>();
   const cache = PortfolioCache.getInstance();
 
+  console.log(marketsData);
+
   const marketDataMap = useMemo(() => {
     const map: Record<string, any> = {};
-    marketsData.forEach((market: any) => {
+    marketsData.forEach((market: Market) => {
       if (market) {
         const key = `${market.baseAsset}${market.quoteAsset}`;
         map[key] = market;
       }
     });
-
     return map;
   }, [marketsData]);
 
@@ -148,46 +149,44 @@ export const usePortfolioData = (
 
   const calculateChartData = useCallback(
     (balanceResults: Record<string, any>) => {
-        const dateRange = generateDateRange();
-        let chartData = dateRange.map((date) => ({
-          time: date,
-          value: 0,
-        }));
-          const lastKnownPrice: Record<string, number> = {};
-          const ethTicker = settings.chainConfig[activechain].ethticker;
-          const ethMarket = marketDataMap[`${ethTicker}USDC`];
+      const dateRange = generateDateRange();
+      const chartData = dateRange.map((date) => ({ time: date, value: 0 }));
+      const lastKnownPrice: Record<string, number> = {};
+      const ethTicker = settings.chainConfig[activechain].ethticker;
+      const ethMarket = marketDataMap[`${ethTicker}USDC`];
 
-          dateRange.forEach((date, idx) => {
-            const dailyBalances = balanceResults[date]?.balances || {};
-            Object.entries(dailyBalances).forEach(([ticker, bal]) => {
-              const tokenBalance = bal as number;
-              const normalized = normalizeTicker(ticker, activechain);
-              let price = lastKnownPrice[normalized] || 0;
+      dateRange.forEach((date, idx) => {
+        const dailyBalances = balanceResults[date]?.balances || {};
+        
+        Object.entries(dailyBalances).forEach(([ticker, bal]) => {
+          const tokenBalance = bal as number;
+          const normalized = normalizeTicker(ticker, activechain);
 
-              const usdcMkt = marketDataMap[`${normalized}USDC`];
-              if (usdcMkt?.series?.length > idx) {
-                price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
-              } else if (normalized === 'USDC') {
-                price = 1;
-              } else {
-                const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
-                if (
-                  tokenEth?.series?.length > idx &&
-                  ethMarket?.series?.length > idx
-                ) {
-                  price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
-                }
-              }
+          let price = lastKnownPrice[normalized] || 0;
 
-              lastKnownPrice[normalized] = price;
-              chartData[idx].value += tokenBalance * price;
-              console.log(chartData[idx])
-            });
-          });
+          const usdcMkt = marketDataMap[`${normalized}USDC`];
+          if (usdcMkt?.series?.length > idx) {
+            price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
+          } else if (normalized === 'USDC') {
+            price = 1;
+          } else {
+            const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
+            if (
+              tokenEth?.series?.length > idx &&
+              ethMarket?.series?.length > idx
+            ) {
+              price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
+            }
+          }
 
-        return chartData;
+          lastKnownPrice[normalized] = price;
+          chartData[idx].value += tokenBalance * price;
+        })
+      });
+
+      return chartData;
     },
-    [generateDateRange, marketDataMap],
+    [chartDays, markets, marketDataMap],
   );
 
   useEffect(() => {
@@ -222,8 +221,11 @@ export const usePortfolioData = (
   }, [tokenList, tokenBalances, marketsData]);
 
   useEffect(() => {
+    console.log("run");
+
     const fetchData = async () => {
       if (!address) {
+        console.log("no address")
         setState((prev) => ({
           ...prev,
           portChartLoading: false,
@@ -232,10 +234,17 @@ export const usePortfolioData = (
         return;
       }
 
+      if (marketsData.length === 0) {
+        console.log("zero length");
+        setState(prev => ({ ...prev, portChartLoading: true }));
+        return;
+      }
+
       const cacheKey = cache.getCacheKey(activechain, address, chartDays);
       const cachedData = cache.get(cacheKey);
 
-      if (cachedData && Date.now() - cachedData.timestamp < 600000) {
+      if (cachedData && Date.now() - cachedData.timestamp < 1000) {
+        console.log("cached");
         setState({
           chartData: cachedData.data,
           balanceResults: cachedData.balanceResults,
@@ -246,16 +255,21 @@ export const usePortfolioData = (
 
       setState((prev) => ({ ...prev, portChartLoading: true }));
 
-      try {
-        const balanceResults = await fetchBalances();
-        const chartData = calculateChartData(balanceResults);
-        cache.set(cacheKey, chartData, balanceResults, chartDays);
+      console.log("got to try-catch");
 
-        setState({
-          chartData,
-          balanceResults,
-          portChartLoading: false,
-        });
+      try {
+        if (marketsData.length > 0) {
+          console.log("working start fetch")
+          const balanceResults = await fetchBalances();
+          const chartData = calculateChartData(balanceResults);
+          cache.set(cacheKey, chartData, balanceResults, chartDays);
+
+          setState({
+            chartData,
+            balanceResults,
+            portChartLoading: false,
+          });
+        }
       } catch (error) {
         console.error('Error fetching portfolio data:', error);
         setState((prev) => ({ ...prev, portChartLoading: false }));
@@ -267,7 +281,7 @@ export const usePortfolioData = (
     return () => {
       abortControllerRef.current?.abort();
     };
-  }, [address, chartDays, marketsData]);
+  }, [address, chartDays, marketsData.length]);
 
   return state;
 };
