@@ -6,7 +6,7 @@
   flex: none;
   height: 60px;
   justify-content: space-between;
-  left: 50px; 
+  left: 55px; 
   padding-right: 5px;
   position: absolute;
   right: 0;
@@ -17,7 +17,7 @@
 }
 
 body.sidebar-expanded .app-header {
-  left: 200px;
+  left: 205px;
 }
 
 .nav-links {

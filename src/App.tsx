@@ -5842,6 +5842,21 @@ function App() {
                   />
                 </div>
               </div>
+              <div className="trade-markers-toggle-row">
+  <span className="trade-markers-toggle-label">
+    {t('showTradeMarkers')}
+  </span>
+  <ToggleSwitch
+                      checked={isOrderbookVisible}
+                      onChange={() => {
+                        setIsOrderbookVisible(!isOrderbookVisible);
+                        localStorage.setItem(
+                          'crystal_orderbook_visible',
+                          JSON.stringify(!isOrderbookVisible),
+                        );
+                      }}
+                    />
+</div>
 
               {!simpleView && (
                 <>

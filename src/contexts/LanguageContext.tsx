@@ -358,7 +358,8 @@ export const translations: any = {
     browsePairs: "Browse trading pairs",
     custom: "Custom",
     confirmSwap: "Confirm Swap",
-    highPriceImpactMessage: "Warning! High Price Impact! Your trade will move the market price more than 5%"
+    highPriceImpactMessage: "Warning! High Price Impact! Your trade will move the market price more than 5%",
+    showTradeMarkers: "Show Trade Markers",
     
   },
   CN: {
@@ -718,6 +719,7 @@ export const translations: any = {
     browsePairs: "浏览交易对",
     earnCrystals: "赚取水晶",
     custom: "自定义",
+    showTradeMarkers: "显示交易标记",
   },
   JP: {
     trade: '取引',
@@ -1076,6 +1078,7 @@ export const translations: any = {
     browsePairs: "ペアをブラウズ",
     earnCrystals: "クリスタルを獲得",
     custom: "カスタム",
+    showTradeMarkers: '取引マーカーを表示',
 
   },
   KR: {
@@ -1435,6 +1438,7 @@ export const translations: any = {
     browsePairs: "페어 탐색",
     earnCrystals: "크리스탈 수익",
     custom: "사용자 정의",
+    showTradeMarkers: '거래 마커 표시',
   },
   ES: {
     trade: 'Operar',
@@ -1793,6 +1797,7 @@ export const translations: any = {
     browsePairs: "Explorar comercio pares",
     earnCrystals: "Ganar cristales",
     custom: "Personalizado",
+    showTradeMarkers: 'Mostrar Marcadores de Comercio',
   }
 };
 

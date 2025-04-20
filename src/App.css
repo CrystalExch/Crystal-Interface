@@ -2010,7 +2010,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
-  height: min(480px, 90vh);
+  height: min(505px, 90vh);
   left: 50%;
   position: fixed;
   top: 50%;
@@ -2291,7 +2291,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .orderbook-toggle-row,
 .ordercenter-toggle-row,
 .simple-view-row,
-.audio-toggle-row {
+.audio-toggle-row,
+.trade-markers-toggle-row{
   align-items: center;
   display: flex;
   height: 25px;
@@ -2302,7 +2303,8 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 .orderbook-toggle-label,
 .ordercenter-toggle-label,
 .simple-view-label,
-.audio-toggle-label 
+.audio-toggle-label,
+.trade-markers-toggle-label 
   {
   color: #ffffff8e;
   font-size: 0.8rem;
@@ -2742,11 +2744,11 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .ordercenter-drag-handle:hover, 
 .isVertDragging .ordercenter-drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.1);
 }
 
 body[style*="cursor: row-resize"] .ordercenter-drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.12);
 }
 
 
@@ -3512,8 +3514,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sidebar-adjusted {
-  margin-left: 50px;
-  width: calc(100% - 50px);
+  margin-left: 55px;
+  width: calc(100% - 55px);
 }
 
 /* PRO DROPDOWN */
