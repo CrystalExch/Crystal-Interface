@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { getBlockNumber, readContract } from '@wagmi/core';
+import { useCallback, useEffect, useRef, useState, useMemo } from 'react';
 import { config } from '../../../wagmi.ts';
 
 import PortfolioCache from './portfolioCache';
@@ -28,13 +28,12 @@ export const usePortfolioData = (
 
   const marketDataMap = useMemo(() => {
     const map: Record<string, any> = {};
-    marketsData.forEach((market: any) => {
+    marketsData.forEach((market: Market) => {
       if (market) {
         const key = `${market.baseAsset}${market.quoteAsset}`;
         map[key] = market;
       }
     });
-
     return map;
   }, [marketsData]);
 
@@ -148,44 +147,41 @@ export const usePortfolioData = (
 
   const calculateChartData = useCallback(
     (balanceResults: Record<string, any>) => {
-        const dateRange = generateDateRange();
-        let chartData = dateRange.map((date) => ({
-          time: date,
-          value: 0,
-        }));
-          const lastKnownPrice: Record<string, number> = {};
-          const ethTicker = settings.chainConfig[activechain].ethticker;
-          const ethMarket = marketDataMap[`${ethTicker}USDC`];
+      const dateRange = generateDateRange();
+      const chartData = dateRange.map((date) => ({ time: date, value: 0 }));
+      const lastKnownPrice: Record<string, number> = {};
+      const ethTicker = settings.chainConfig[activechain].ethticker;
+      const ethMarket = marketDataMap[`${ethTicker}USDC`];
 
-          dateRange.forEach((date, idx) => {
-            const dailyBalances = balanceResults[date]?.balances || {};
-            Object.entries(dailyBalances).forEach(([ticker, bal]) => {
-              const tokenBalance = bal as number;
-              const normalized = normalizeTicker(ticker, activechain);
-              let price = lastKnownPrice[normalized] || 0;
+      dateRange.forEach((date, idx) => {
+        const dailyBalances = balanceResults[date]?.balances || {};
+        Object.entries(dailyBalances).forEach(([ticker, bal]) => {
+          const tokenBalance = bal as number;
+          const normalized = normalizeTicker(ticker, activechain);
+          let price = lastKnownPrice[normalized] || 0;
 
-              const usdcMkt = marketDataMap[`${normalized}USDC`];
-              if (usdcMkt?.series?.length > idx) {
-                price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
-              } else if (normalized === 'USDC') {
-                price = 1;
-              } else {
-                const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
-                if (
-                  tokenEth?.series?.length > idx &&
-                  ethMarket?.series?.length > idx
-                ) {
-                  price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
-                }
-              }
+          const usdcMkt = marketDataMap[`${normalized}USDC`];
+          if (usdcMkt?.series?.length > idx) {
+            price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
+          } else if (normalized === 'USDC') {
+            price = 1;
+          } else {
+            const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
+            if (
+              tokenEth?.series?.length > idx &&
+              ethMarket?.series?.length > idx
+            ) {
+              price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
+            }
+          }
 
-              lastKnownPrice[normalized] = price;
-              chartData[idx].value += tokenBalance * price;
-              console.log(chartData[idx])
-            });
-          });
+          lastKnownPrice[normalized] = price;
+          chartData[idx].value += tokenBalance * price;
+          console.log(chartData[idx])
+        });
+      });
 
-        return chartData;
+      return chartData;
     },
     [generateDateRange, marketDataMap],
   );
@@ -224,49 +220,31 @@ export const usePortfolioData = (
   useEffect(() => {
     const fetchData = async () => {
       if (!address) {
-        setState((prev) => ({
-          ...prev,
-          portChartLoading: false,
-          chartData: [],
-        }));
+        setState((prev) => ({ ...prev, portChartLoading: false, chartData: [], balanceResults: {} }));
         return;
       }
 
-      const cacheKey = cache.getCacheKey(activechain, address, chartDays);
-      const cachedData = cache.get(cacheKey);
-
-      if (cachedData && Date.now() - cachedData.timestamp < 600000) {
-        setState({
-          chartData: cachedData.data,
-          balanceResults: cachedData.balanceResults,
-          portChartLoading: false,
-        });
+      const key = cache.getCacheKey(activechain, address, chartDays);
+      const cached = cache.get(key);
+      if (cached && Date.now() - cached.timestamp < 600000) {
+        setState({ chartData: cached.data, balanceResults: cached.balanceResults, portChartLoading: false });
         return;
       }
 
       setState((prev) => ({ ...prev, portChartLoading: true }));
-
       try {
-        const balanceResults = await fetchBalances();
-        const chartData = calculateChartData(balanceResults);
-        cache.set(cacheKey, chartData, balanceResults, chartDays);
-
-        setState({
-          chartData,
-          balanceResults,
-          portChartLoading: false,
-        });
-      } catch (error) {
-        console.error('Error fetching portfolio data:', error);
+        const balances = await fetchBalances();
+        const chart = calculateChartData(balances);
+        cache.set(key, chart, balances, chartDays);
+        setState({ chartData: chart, balanceResults: balances, portChartLoading: false });
+      } catch (e) {
+        console.error('Error fetching portfolio data:', e);
         setState((prev) => ({ ...prev, portChartLoading: false }));
       }
     };
 
     fetchData();
-
-    return () => {
-      abortControllerRef.current?.abort();
-    };
+    return () => { abortControllerRef.current?.abort(); };
   }, [address, chartDays, marketsData]);
 
   return state;
