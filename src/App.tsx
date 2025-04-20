@@ -2965,7 +2965,7 @@ function App() {
                 id
                 caller
                 counter
-                orders {
+                orders(first: 1000) {
                   id
                   caller
                   amountIn
@@ -3026,6 +3026,7 @@ function App() {
           });
 
           const result = await response.json();
+          console.log(result);
           if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {

@@ -26,8 +26,6 @@ export const usePortfolioData = (
   const abortControllerRef = useRef<AbortController>();
   const cache = PortfolioCache.getInstance();
 
-  console.log(marketsData);
-
   const marketDataMap = useMemo(() => {
     const map: Record<string, any> = {};
     marketsData.forEach((market: Market) => {
