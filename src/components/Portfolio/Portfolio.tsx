@@ -170,8 +170,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     const timeago = now - 24 * 60 * 60 * days;
     let volume = 0;
 
-    console.log(tradehistory);
-
     tradehistory.forEach((trade) => {
       const marketKey = trade[4];
       const tradeTime = trade[6];

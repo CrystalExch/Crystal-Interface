@@ -219,11 +219,8 @@ export const usePortfolioData = (
   }, [tokenList, tokenBalances, marketsData]);
 
   useEffect(() => {
-    console.log("run");
-
     const fetchData = async () => {
       if (!address) {
-        console.log("no address")
         setState((prev) => ({
           ...prev,
           portChartLoading: false,
@@ -233,7 +230,6 @@ export const usePortfolioData = (
       }
 
       if (marketsData.length === 0) {
-        console.log("zero length");
         setState(prev => ({ ...prev, portChartLoading: true }));
         return;
       }
@@ -242,7 +238,6 @@ export const usePortfolioData = (
       const cachedData = cache.get(cacheKey);
 
       if (cachedData && Date.now() - cachedData.timestamp < 1000) {
-        console.log("cached");
         setState({
           chartData: cachedData.data,
           balanceResults: cachedData.balanceResults,
@@ -253,11 +248,8 @@ export const usePortfolioData = (
 
       setState((prev) => ({ ...prev, portChartLoading: true }));
 
-      console.log("got to try-catch");
-
       try {
         if (marketsData.length > 0) {
-          console.log("working start fetch")
           const balanceResults = await fetchBalances();
           const chartData = calculateChartData(balanceResults);
           cache.set(cacheKey, chartData, balanceResults, chartDays);
