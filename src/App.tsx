@@ -2979,12 +2979,33 @@ function App() {
                   timeStamp
                 }
               }
-              orderMaps(where:{caller: "${address}"}) {
+              orders1: orderMaps(where:{caller: "${address}"}) {
+                id
+                counter
+                batches(first: 1000, orderDirection: desc, orderBy: id) {
+                  id
+                  orders(first: 1000, where:{status: 2}) {
+                    id
+                    caller
+                    originalSizeBase
+                    originalSizeQuote
+                    filledAmountBase
+                    filledSizeQuote
+                    price
+                    buySell
+                    contractAddress
+                    transactionHash
+                    timestamp
+                    status
+                  }
+                }
+              }
+              orders2: orderMaps(where:{caller: "${address}"}) {
                 id
                 counter
                 batches(first: 10, orderDirection: desc, orderBy: id) {
                   id
-                  orders(first: 1000) {
+                  orders(first: 1000, where: { status_not: 2 }) {
                     id
                     caller
                     originalSizeBase
@@ -3048,7 +3069,7 @@ function App() {
             }
           }
 
-          const updatedMaps = (result?.data?.orderMaps || []).concat(result?.data?.filledMaps || []);
+          const updatedMaps = (result?.data?.orders1 || []).concat(result?.data?.orders2 || []).concat(result?.data?.filledMaps || []);
           for (const orderMap of updatedMaps) {
             const batches = orderMap.batches || [];
             for (const batch of batches) {

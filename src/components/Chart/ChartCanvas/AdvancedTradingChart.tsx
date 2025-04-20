@@ -53,7 +53,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     tradeHistoryRef.current = tradehistory;
     if (tradehistory.length > 0) {
-      if (chartReady) {
+      if (chartReady && marksRef.current) {
         const marks = diff.filter(
           (trade: any) => trade[4] == widgetRef.current._options.symbol.split('/')[0] + widgetRef.current._options.symbol.split('/')[1]
         ).map((trade: any) => ({
@@ -234,7 +234,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onDataCallback: (marks: any[]) => void,
         ) => {
           const marks = tradeHistoryRef.current.filter(
-            (trade: any) => trade[6] >= from && trade[6] <= to && trade[4] == symbolInfo.name.split('/')[0]+symbolInfo.name.split('/')[1]
+            (trade: any) => trade[6] >= from && trade[6] <= to && (trade[4] == symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1])
           ).map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             time: trade[6],
