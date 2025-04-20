@@ -825,10 +825,10 @@ html {
 }
 
 .main-content-wrapper.simple-view .sliding-tab-indicator {
-  border: 1.5px solid  #111113;
-  background: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  background-color: #0f0f12;
   box-shadow: none;
+  border: none;
   height: 100%;
   opacity: 1;
   position: absolute;
@@ -2577,8 +2577,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 }
 
 .main-content-wrapper.simple-view .swapmodal {
-  background-color: #0c0c0d;
-  border: 1px solid #0f0f12;
+  background-color: #0f0f12;
   border-radius: 10px;
   padding: 0;
   padding-bottom: 11px;
