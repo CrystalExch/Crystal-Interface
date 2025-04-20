@@ -1,4 +1,4 @@
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import PortfolioContent from '../Portfolio/BalancesContent/BalancesContent';
 import PortfolioHeader from '../Portfolio/BalancesHeader/PortfolioHeader';
@@ -50,7 +50,7 @@ interface OrderCenterProps {
   isBlurred?: boolean;
 }
 
-const OrderCenter: React.FC<OrderCenterProps> = memo(
+const OrderCenter: React.FC<OrderCenterProps> = 
   ({
     orders,
     tradehistory,
@@ -465,7 +465,6 @@ const OrderCenter: React.FC<OrderCenterProps> = memo(
         )}
       </div>
     );
-  },
-);
+  }
 
 export default OrderCenter;

@@ -8,6 +8,15 @@
   width: 100%;
 }
 
+.segmented-progress-bar-hidden {
+  background: none;
+  border-radius: 0px;
+  display: flex;
+  height: 6px;
+  margin: 2px 0;
+  width: 100px;
+}
+
 .progress-segment {
   background: linear-gradient(90deg, #9096d3 0%, #b7bad8 100%);
   border-radius: 1px;
