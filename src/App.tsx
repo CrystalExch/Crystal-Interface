@@ -130,12 +130,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
-  useEffect(() => {
-    if (!localStorage.getItem("firstLoadDone")) {
-      localStorage.setItem("firstLoadDone", "true");
-      window.location.reload();
-    }
-  }, []);
+  // useEffect(() => {
+  //   if (!localStorage.getItem("firstLoadDone")) {
+  //     localStorage.setItem("firstLoadDone", "true");
+  //     window.location.reload();
+  //   }
+  // }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -541,15 +541,14 @@ function App() {
   const [tradesloading, settradesloading] = useState(true);
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
+  const [marketsData, setMarketsData] = useState<any[]>([]);
   const { chartData, portChartLoading } = usePortfolioData(
     address,
-    tradesByMarket,
     Object.values(tokendict),
-    markets,
     chartDays,
     tokenBalances,
     setTotalAccountValue,
-    tradesloading,
+    marketsData,
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
@@ -664,7 +663,6 @@ function App() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
-  const [marketsData, setMarketsData] = useState<any[]>([]);
   const [sortField, setSortField] = useState<
     'volume' | 'price' | 'change' | 'favorites' | null
   >('volume');
@@ -2967,7 +2965,7 @@ function App() {
                 id
                 caller
                 counter
-                orders {
+                orders(first: 1000) {
                   id
                   caller
                   amountIn
@@ -3049,6 +3047,7 @@ function App() {
           });
 
           const result = await response.json();
+          console.log(result);
           if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {

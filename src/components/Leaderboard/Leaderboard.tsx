@@ -41,7 +41,7 @@ interface LeaderboardProps {
 }
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
-  setpopup = () => {},
+  setpopup = () => { },
   orders,
   address,
 }) => {
@@ -69,24 +69,32 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const fetchUserPoints = () => {
       if (address) {
         fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
-        .then((res) => res.json())
-        .then((data: Record<string, { points: number }>) => {
-  
-          const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(data).map(([addr, info]) => [addr.toLowerCase(), info.points] as const)
-          );
-  
-          setLiveLeaderboard(updatedLiveLeaderboard);
-        })
-        .catch((err) => {
-          console.error('Error fetching user points:', err);
-        });
+          .then((res) => res.json())
+          .then((data: Record<string, { points: number }>) => {
+
+            const updatedLiveLeaderboard = Object.fromEntries(
+              Object.entries(data)
+                .filter(
+                  ([addr]) =>
+                    addr.toLowerCase() !== '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de'.toLowerCase()
+                )
+                .map(([addr, info]) => [
+                  addr.toLowerCase(),
+                  info.points,
+                ] as const)
+            );
+
+            setLiveLeaderboard(updatedLiveLeaderboard);
+          })
+          .catch((err) => {
+            console.error('Error fetching user points:', err);
+          });
       }
     };
-  
+
     fetchUserPoints();
     const interval = setInterval(fetchUserPoints, 3000);
-  
+
     return () => clearInterval(interval);
   }, [address]);
   
@@ -181,7 +189,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         const adjustedPosition = userPosition - 3;
         const targetPage = Math.floor(adjustedPosition / ITEMS_PER_PAGE);
         setCurrentPage(targetPage);
-        
+
         setTimeout(() => {
           const userRow = document.querySelector('.current-user-row');
           if (userRow) {
@@ -223,7 +231,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date('2025-06-01T00:00:00-04:00');
+      const targetDate = new Date('2025-05-01T00:00:00-04:00');
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
       if (difference <= 0) {
@@ -395,7 +403,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   {Object.values(liveLeaderboard)
                     .reduce((sum: any, value: any) => sum + value, 0)
                     .toLocaleString()}{' '}
-                  / {'10,000,000,000'.toLocaleString()}
+                  / {'10,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -406,7 +414,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000000) * 100}%`,
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`,
                 }}
               />
             </div>
@@ -448,37 +456,37 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         {loading
           ? renderLoadingTopThree()
           : topThreeUsers.map((faction, index) => (
-              <div
-                key={faction.id}
-                className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
-              >
-                {index === 0 && (
-                  <div className="crown-icon-container">
-                    <img src={CrownIcon} className="crown-icon" />
-                  </div>
-                )}
-                <div className="faction-rank">{index + 1}</div>
-                <div className="faction-info">
-                  <div className="pfp-container">
-                    <img
-                      src={getTopThreePfp(index)}
-                      className="pfp-image"
-                    />
-                  </div>
-                  <div className="faction-name">
-                    {getDisplayAddress(faction.name)}
-                    <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
-                  </div>
-                  <div className="faction-xp">
-                    {formatPoints(faction.points || 0)}
-                    <img
-                      src={crystalxp}
-                      className="top-xp-icon"
-                    />
-                  </div>
+            <div
+              key={faction.id}
+              className={`faction-card rank-${index + 1} ${isUserAddress(faction.name) ? 'user-faction' : ''}`}
+            >
+              {index === 0 && (
+                <div className="crown-icon-container">
+                  <img src={CrownIcon} className="crown-icon" />
+                </div>
+              )}
+              <div className="faction-rank">{index + 1}</div>
+              <div className="faction-info">
+                <div className="pfp-container">
+                  <img
+                    src={getTopThreePfp(index)}
+                    className="pfp-image"
+                  />
+                </div>
+                <div className="faction-name">
+                  {getDisplayAddress(faction.name)}
+                  <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
+                </div>
+                <div className="faction-xp">
+                  {formatPoints(faction.points || 0)}
+                  <img
+                    src={crystalxp}
+                    className="top-xp-icon"
+                  />
                 </div>
               </div>
-            ))}
+            </div>
+          ))}
       </div>
 
       <div className="full-leaderboard">
@@ -491,28 +499,28 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           {loading
             ? renderLoadingRows()
             : getCurrentPageItems().map((faction) => {
-                const absoluteRank = faction.rank;
-                const isCurrentUser = isUserAddress(faction.name);
-                return (
-                  <div
-                    key={faction.id}
-                    className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
-                  >
-                    <div className="row-rank">
-                      <span>#{absoluteRank}</span>
+              const absoluteRank = faction.rank;
+              const isCurrentUser = isUserAddress(faction.name);
+              return (
+                <div
+                  key={faction.id}
+                  className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
+                >
+                  <div className="row-rank">
+                    <span>#{absoluteRank}</span>
+                  </div>
+                  <div className="row-faction">
+                    <div className="row-pfp-container">
+                      <img
+                        src={defaultPfp}
+                        className="row-pfp-image"
+                      />
                     </div>
-                    <div className="row-faction">
-                      <div className="row-pfp-container">
-                        <img
-                          src={defaultPfp}
-                          className="row-pfp-image"
-                        />
-                      </div>
-                      <span className="faction-row-name">
-                        {getDisplayAddress(faction.name)}
-                        <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
-                      </span>
-                      <div className="user-self-tag">
+                    <span className="faction-row-name">
+                      {getDisplayAddress(faction.name)}
+                      <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
+                    </span>
+                    <div className="user-self-tag">
                       {isCurrentUser && orders.length > 0 && (
                         <div className="orders-indicator-container">
                           <div
@@ -524,21 +532,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       {isCurrentUser && (
                         <span className="current-user-tag">You</span>
                       )}
-                      </div>
-                      
                     </div>
-                    <div className="row-xp">
-                      <div className="xp-amount">
-                        {formatPoints(faction.points || 0)}
-                        <img
-                          src={crystalxp}
-                          className="xp-icon"
-                        />
-                      </div>
+
+                  </div>
+                  <div className="row-xp">
+                    <div className="xp-amount">
+                      {formatPoints(faction.points || 0)}
+                      <img
+                        src={crystalxp}
+                        className="xp-icon"
+                      />
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              );
+            })}
         </div>
 
         <div className="pagination-controls">
