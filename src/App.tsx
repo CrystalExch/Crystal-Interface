@@ -2963,8 +2963,6 @@ function App() {
                 }
               ) {
                 id
-                caller
-                counter
                 orders(first: 1000) {
                   id
                   caller
@@ -2979,8 +2977,7 @@ function App() {
               }
               orders1: orderMaps(where:{caller: "${address}"}) {
                 id
-                counter
-                batches(first: 1000, orderDirection: desc, orderBy: id) {
+                batches(first: 100, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000, where:{status: 2}) {
                     id
@@ -3000,7 +2997,6 @@ function App() {
               }
               orders2: orderMaps(where:{caller: "${address}"}) {
                 id
-                counter
                 batches(first: 10, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000, where: { status_not: 2 }) {
@@ -3021,7 +3017,6 @@ function App() {
               }
               filledMaps(where:{caller: "${address}"}) {
                 id
-                counter
                 orders(first: 1000) {
                   id
                   caller
@@ -3047,7 +3042,7 @@ function App() {
           });
 
           const result = await response.json();
-          console.log(result);
+
           if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {

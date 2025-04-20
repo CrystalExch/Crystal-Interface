@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React from 'react';
 
 import CopyButton from '../../CopyButton/CopyButton';
 import CancelButton from '../CancelButton/CancelButton';
@@ -26,7 +26,7 @@ interface OrderItemProps {
   waitForTxReceipt: any;
 }
 
-const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt }) => {
+const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt }) => {
   const { favorites, toggleFavorite } = useSharedContext();
   
   const marketKey = order[4];
@@ -122,7 +122,6 @@ const OrderItem: React.FC<OrderItemProps> = memo(({ order, trades, router, refet
       </span>
     </div>
   );
-},
-)
+}
 
 export default OrderItem;
