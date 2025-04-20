@@ -89,6 +89,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   return (
     <>
       <div className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}>
+        <div className="sidebar-nav-inner">
         <Link to="/" className="sidebar-logo">
           <img src={backgroundlesslogo} className="sidebar-logo-image" />
           <span className="sidebar-logo-text">CRYSTAL</span>
@@ -209,6 +210,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </svg>
             <span className="sidebar-label">{expanded ? 'Collapse' : 'Expand'}</span>
           </button>
+        </div>
         </div>
       </div>
 

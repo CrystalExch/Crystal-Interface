@@ -14,6 +14,22 @@
   background-color: rgb(6,6,6);
 }
 
+.sidebar-nav-inner{
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  left: 4px;
+  top: 8px;
+  border-radius: 8px;
+  bottom: 8px;
+  align-items: flex-start;
+  width:46px;
+  padding-top: 10px;
+  background: #0f0f12;
+  transition: width 0.3s ease;
+
+}
+
 
 @media (max-width: 1020px) {
   .sidebar-nav {
@@ -26,15 +42,20 @@
 }
 
 .sidebar-nav.expanded ~ .app-container.sidebar-adjusted {
-  margin-left: 200px;
-  width: calc(100% - 200px);
+  margin-left: 205px;
+  width: calc(100% - 205px);
   transition: all 0.3s ease;
+}
+.sidebar-nav.expanded .sidebar-nav-inner {
+  width: 196px;
+  transition: all 0.3s ease;
+
 }
 
 .sidebar-logo {
   display: flex;
   align-items: center;
-  padding-left: 10px;
+  padding-left: 8px;
   width: 100%;
 }
 
@@ -57,14 +78,14 @@
   margin-left: 8px;
   position: static; 
   filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .sidebar-svg-icon {
   margin-left: 8px;
   opacity: 0.5;
   position: static;
-  transition: opacity 0.3s ease;
+  transition: all 0.3s ease;
 }
 
 .sidebar-logo:hover {
@@ -92,7 +113,7 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow: visible;
   width: 35px;
-  margin-left: 7px;
+  margin-left: 5px;
   margin-bottom: 5px;
   align-self: flex-start;
   text-decoration: none;
@@ -105,6 +126,8 @@
   width: 185px;
   padding-right: 12px;
   justify-content: flex-start;
+  transition: all 0.3s ease;
+
 }
 
 .sidebar-nav .active {

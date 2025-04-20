@@ -3514,8 +3514,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sidebar-adjusted {
-  margin-left: 50px;
-  width: calc(100% - 50px);
+  margin-left: 55px;
+  width: calc(100% - 55px);
 }
 
 /* PRO DROPDOWN */
