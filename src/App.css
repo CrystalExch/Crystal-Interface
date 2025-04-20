@@ -2744,11 +2744,11 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
 
 .ordercenter-drag-handle:hover, 
 .isVertDragging .ordercenter-drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.1);
 }
 
 body[style*="cursor: row-resize"] .ordercenter-drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.12);
 }
 
 

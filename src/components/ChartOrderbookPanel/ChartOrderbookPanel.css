@@ -41,11 +41,11 @@
 
 .drag-handle:hover, 
 .isDragging .drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.1);
 }
 
 body[style*="cursor: col-resize"] .drag-handle {
-  background-color: rgba(171, 177, 210, 0.15);
+  background-color: rgba(171, 177, 210, 0.12);
 }
 
 .toggle-icon-container {
