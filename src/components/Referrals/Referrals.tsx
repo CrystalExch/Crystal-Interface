@@ -9,7 +9,7 @@ import FeatureModal from './FeatureModal';
 import ReferralStatsBar from './ReferralStatsBar';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { ReferralHelperAbi } from '../../abis/ReferralHelperAbi';
+import { CrystalReferralAbi } from '../../abis/CrystalReferralAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
@@ -26,7 +26,8 @@ interface ReferralProps {
   address: `0x${string}` | undefined;
   usedRefLink: string;
   setUsedRefLink: any;
-  setUsedRefAddress: React.Dispatch<React.SetStateAction<string>>;
+  usedRefAddress: `0x${string}` | undefined;
+  setUsedRefAddress: any;
   totalClaimableFees: number;
   claimableFees: { [key: string]: number };
   refLink: string;
@@ -48,6 +49,7 @@ const Referrals: React.FC<ReferralProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
+  usedRefAddress,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -64,6 +66,7 @@ const Referrals: React.FC<ReferralProps> = ({
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
+  const [referredCount, setReferredCount] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
   const [selectedFeatureIndex, setSelectedFeatureIndex] = useState<
     number | null
@@ -91,7 +94,6 @@ const Referrals: React.FC<ReferralProps> = ({
     },
   ];
   const [copySuccess, setCopySuccess] = useState(false);
-  const [referredCount, setReferredCount] = useState(0);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -108,35 +110,38 @@ const Referrals: React.FC<ReferralProps> = ({
       const refs = (await readContracts(config, {
         contracts: [
           {
-            abi: ReferralHelperAbi,
-            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
           {
-            abi: ReferralHelperAbi,
-            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
-            functionName: 'refToAddress',
-            args: [usedRefLink.toLowerCase()],
-          },
-          {
-            abi: ReferralHelperAbi,
-            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
             functionName: 'refToAddress',
             args: [refLinkString.toLowerCase()],
           },
           {
-            abi: ReferralHelperAbi,
-            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
             functionName: 'referrerToReferredAddresses',
             args: [address ?? '0x0000000000000000000000000000000000000000']
+          },
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'addressToReferrer',
+            args: [address ?? '0x0000000000000000000000000000000000000000'],
+          },
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'addressToRef',
+            args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
           },
         ],
       })) as any[];
       setRefLink(refs[0].result);
-      setUsedRefAddress(
-        refs[1].result || '0x0000000000000000000000000000000000000000',
-      );
       setError(
         refs[2].result === '0x0000000000000000000000000000000000000000' ||
           refs[2].result == address
@@ -144,6 +149,11 @@ const Referrals: React.FC<ReferralProps> = ({
           : t('codeTaken'),
       );
       setReferredCount(Number(refs[3].result));
+      setUsedRefAddress(
+        refs[4].result || '0x0000000000000000000000000000000000000000',
+      );
+      setUsedRefLink(refs[5].result)
+      console.log(referredCount)
     })();
   }, [usedRefLink, address, refLinkString]);
 

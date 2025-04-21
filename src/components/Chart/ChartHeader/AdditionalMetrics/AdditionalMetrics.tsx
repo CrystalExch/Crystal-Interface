@@ -2,7 +2,7 @@ import React, { useLayoutEffect, useRef, useState, useEffect } from 'react';
 import MetricItem from '../MetricItem/MetricItem';
 import ScrollButton from '../ScrollButton/ScrollButton';
 
-import { scrollContainer, shouldShowArrows } from '../../utils';
+import { scrollContainer } from '../../utils';
 
 import './AdditionalMetrics.css';
 

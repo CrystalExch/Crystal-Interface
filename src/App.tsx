@@ -130,12 +130,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
-  // useEffect(() => {
-  //   if (!localStorage.getItem("firstLoadDone")) {
-  //     localStorage.setItem("firstLoadDone", "true");
-  //     window.location.reload();
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (!localStorage.getItem("firstLoadDone")) {
+      localStorage.setItem("firstLoadDone", "true");
+      window.location.reload();
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -367,7 +367,7 @@ function App() {
     return searchParams.get('ref') || localStorage.getItem(`ref`) || '';
   });
   const [usedRefAddress, setUsedRefAddress] = useState(
-    '0x0000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
   const [simpleView, setSimpleView] = useState(() => {
     const savedSimpleView = localStorage.getItem('crystal_simple_view');
@@ -11421,6 +11421,7 @@ waitForTxReceipt={waitForTxReceipt}
                 router={router}
                 address={address ?? undefined}
                 usedRefLink={usedRefLink}
+                usedRefAddress={usedRefAddress}
                 setUsedRefAddress={setUsedRefAddress}
                 setUsedRefLink={setUsedRefLink}
                 totalClaimableFees={totalClaimableFees}
