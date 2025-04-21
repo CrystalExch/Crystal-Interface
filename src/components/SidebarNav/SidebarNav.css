@@ -8,7 +8,7 @@
   width:50px;
   align-items: flex-start;
   padding-top: 17px;
-  z-index: 100;
+  z-index: 10;
   transition: width 0.3s ease;
   overflow: hidden;
   background-color: rgb(6,6,6);
@@ -23,7 +23,7 @@
   border-radius: 8px;
   bottom: 8px;
   align-items: flex-start;
-  width:46px;
+  width:47px;
   padding-top: 10px;
   background: #0f0f12;
   transition: width 0.3s ease;
@@ -113,7 +113,7 @@
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow: visible;
   width: 35px;
-  margin-left: 5px;
+  margin-left: 6px;
   margin-bottom: 5px;
   align-self: flex-start;
   text-decoration: none;
