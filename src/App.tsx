@@ -130,12 +130,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
-  useEffect(() => {
-    if (!localStorage.getItem("firstLoadDone")) {
-      localStorage.setItem("firstLoadDone", "true");
-      window.location.reload();
-    }
-  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -470,14 +464,12 @@ function App() {
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
   const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem("firstLoadDone")) {
-      if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
-        return 0
-      }
-      else {
-        localStorage.setItem('hasShownSocialPopup1', 'true');
-        return 9
-      }
+    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
+      return 0
+    }
+    else {
+      localStorage.setItem('hasShownSocialPopup1', 'true');
+      return 9
     }
   });
   const [orders, setorders] = useState<any[]>([]);
