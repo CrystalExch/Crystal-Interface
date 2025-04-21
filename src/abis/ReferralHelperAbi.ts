@@ -5,6 +5,11 @@ export const ReferralHelperAbi = [
         "type": "error"
     },
     {
+        "inputs": [],
+        "name": "UsernameAlreadyTaken",
+        "type": "error"
+    },
+    {
         "anonymous": false,
         "inputs": [
             {
@@ -24,30 +29,23 @@ export const ReferralHelperAbi = [
         "type": "event"
     },
     {
+        "anonymous": false,
         "inputs": [
             {
+                "indexed": true,
+                "internalType": "address",
+                "name": "caller",
+                "type": "address"
+            },
+            {
+                "indexed": false,
                 "internalType": "string",
-                "name": "code",
+                "name": "username",
                 "type": "string"
             }
         ],
-        "name": "setReferral",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "inputs": [
-            {
-                "internalType": "string",
-                "name": "code",
-                "type": "string"
-            }
-        ],
-        "name": "setUsedRef",
-        "outputs": [],
-        "stateMutability": "nonpayable",
-        "type": "function"
+        "name": "Username",
+        "type": "event"
     },
     {
         "inputs": [
@@ -95,6 +93,44 @@ export const ReferralHelperAbi = [
                 "type": "address"
             }
         ],
+        "name": "addressToUsername",
+        "outputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "",
+                "type": "string"
+            }
+        ],
+        "name": "refToAddress",
+        "outputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "address",
+                "name": "",
+                "type": "address"
+            }
+        ],
         "name": "referrerToReferredAddresses",
         "outputs": [
             {
@@ -110,11 +146,50 @@ export const ReferralHelperAbi = [
         "inputs": [
             {
                 "internalType": "string",
+                "name": "code",
+                "type": "string"
+            }
+        ],
+        "name": "setReferral",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "code",
+                "type": "string"
+            }
+        ],
+        "name": "setUsedRef",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
+                "name": "username",
+                "type": "string"
+            }
+        ],
+        "name": "setUsername",
+        "outputs": [],
+        "stateMutability": "nonpayable",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "internalType": "string",
                 "name": "",
                 "type": "string"
             }
         ],
-        "name": "refToAddress",
+        "name": "usernameToAddress",
         "outputs": [
             {
                 "internalType": "address",

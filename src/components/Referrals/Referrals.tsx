@@ -108,26 +108,26 @@ const Referrals: React.FC<ReferralProps> = ({
       const refs = (await readContracts(config, {
         contracts: [
           {
-            abi: CrystalRouterAbi,
-            address: router,
+            abi: ReferralHelperAbi,
+            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
             functionName: 'addressToRef',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
           {
-            abi: CrystalRouterAbi,
-            address: router,
+            abi: ReferralHelperAbi,
+            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
             functionName: 'refToAddress',
             args: [usedRefLink.toLowerCase()],
           },
           {
-            abi: CrystalRouterAbi,
-            address: router,
+            abi: ReferralHelperAbi,
+            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
             functionName: 'refToAddress',
             args: [refLinkString.toLowerCase()],
           },
           {
             abi: ReferralHelperAbi,
-            address: '0x6C862870f5B02FC676402Df38915b42c14d55e4f' as `0x${string}`,
+            address: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
             functionName: 'referrerToReferredAddresses',
             args: [address ?? '0x0000000000000000000000000000000000000000']
           },
