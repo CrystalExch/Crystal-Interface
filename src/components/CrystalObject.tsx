@@ -34,6 +34,12 @@ const CrystalObject = () => {
       mountRef.current.appendChild(renderer.domElement);
     }
 
+    // Create render target for ASCII effect
+    const renderTarget = new THREE.WebGLRenderTarget(
+      window.innerWidth * window.devicePixelRatio,
+      window.innerHeight * window.devicePixelRatio
+    );
+
     // Create groups for the main crystal and small crystals
     const crystalGroup = new THREE.Group();
     scene.add(crystalGroup);
@@ -413,6 +419,82 @@ const CrystalObject = () => {
     pointLight3.position.set(0, -5, -5);
     scene.add(pointLight3);
 
+    // --- ASCII effect setup ---
+    // ASCII shader - vertex shader
+    const asciiVertexShader = `
+    attribute vec2 pos;
+    uniform vec2 resolution;
+    void main() {
+      vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+      gl_Position = projectionMatrix * mvPosition;
+    }`;
+
+    // ASCII shader - fragment shader
+    const asciiFragmentShader = `
+    // based on https://www.shadertoy.com/view/lsBXzD
+    // which is nowadays a pixi.js ascii filter https://filters.pixijs.download/main/docs/PIXI.filters.AsciiFilter.html
+    precision highp float;
+    uniform sampler2D media;
+    uniform float time;
+    uniform vec2 resolution;
+    uniform float charsize;
+    uniform float brightness;
+    
+    float character(float n, vec2 p) {
+      p = floor(p*vec2(4.0, -4.0) + 2.5);
+      if (clamp(p.x, 0.0, 4.0) == p.x) {
+        if (clamp(p.y, 0.0, 4.0) == p.y) {
+          if (int(mod(n/exp2(p.x + 5.0*p.y), 2.0)) == 1) return 1.0;
+        }
+      }
+      return 0.0;
+    }
+    
+    void main() {
+      vec2 p = gl_FragCoord.xy;
+      vec2 uv = p / resolution.xy;
+      vec3 col = texture2D(media, uv).rgb;
+      
+      // keying or contrast
+      float luma = dot(col,vec3(brightness, brightness, brightness));
+      float gray = smoothstep(-.2, 1.2, luma);
+      
+      // character selector codez
+      float n = float[](0.,4194304.,131200.,324.,330.,283712.,12650880.,4532768.,
+                       13191552.,10648704.,11195936.,15218734.,15255086.,15252014.,15324974.,11512810.)[int(gray * 16.)];
+      
+      p = mod(p/charsize, charsize/2.) - vec2(charsize/4.);
+      col = col*character(n, p);
+      
+      gl_FragColor = vec4(col * 4.0, 1.0);
+      
+      // transparent bg
+      if(gl_FragColor == vec4(0., 0., 0., 1.)){
+        gl_FragColor = vec4(0., 0., 0., 0.);
+      }
+    }`;
+
+    // Create ASCII effect scene and camera
+    const asciiScene = new THREE.Scene();
+    const asciiCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    
+    // Create a full-screen quad for post-processing
+    const asciiQuad = new THREE.PlaneGeometry(2, 2);
+    const asciiMaterial = new THREE.ShaderMaterial({
+      vertexShader: asciiVertexShader,
+      fragmentShader: asciiFragmentShader,
+      uniforms: {
+        media: { value: renderTarget.texture },
+        time: { value: 0 },
+        resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+        charsize: { value: 8.0 }, // Character size - adjust this to change ASCII density
+        brightness: { value: 0.5 } // Brightness - adjust to change contrast
+      }
+    });
+    
+    const asciiQuadMesh = new THREE.Mesh(asciiQuad, asciiMaterial);
+    asciiScene.add(asciiQuadMesh);
+
     // --- Mouse interaction ---
     const handleMouseMove = (event: { clientX: number; clientY: number; }) => {
       mousePos.current.x = event.clientX;
@@ -510,7 +592,6 @@ const CrystalObject = () => {
         positions[i + 2] = origZ + pulseZ;
       }
       crystalGeometry.attributes.position.needsUpdate = true;
-
       const hueShift = Math.sin(frame * 0.5) * 0.1;
       crystalMaterial.color.setHSL(0.6 + hueShift, 0.8, 0.7);
       crystalMaterial.transmission = 0.95 + Math.sin(frame * 2) * 0.03;

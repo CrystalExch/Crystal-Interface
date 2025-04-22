@@ -5224,8 +5224,8 @@ input[type="email"] {
 
 .username-error {
   margin-top: 8px;
-  font-size: 14px;
-  color: #ff4d4d;
+  font-size: 0.8rem;
+  color: #fd7676;
 }
 
 .onboarding-actions {
@@ -5253,7 +5253,7 @@ input[type="email"] {
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%);
   color: #000000;
-  font-weight: 600;
+  font-weight: 500;
   font-size: 0.9rem;
   padding: 8px;
   cursor: pointer;
@@ -5263,6 +5263,34 @@ input[type="email"] {
 
 .create-username-button:hover {
   filter: brightness(0.9)
+}
+
+.create-username-button.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-username-button.disabled:hover {
+  cursor: not-allowed;
+}
+
+
+.create-username-button.signing {
+  position: relative;
+  pointer-events: none;
+}
+
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.create-username-button .button-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .onboarding-crystal-logo{

@@ -153,6 +153,7 @@ function App() {
     client,
     waitForTxn: true,
   });
+  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -2114,6 +2115,7 @@ function App() {
 
   const handleCreateUsername = async () => {
     setUsernameError("");
+    
     if (!usernameInput.trim()) {
       setUsernameError("Please enter a username");
       return;
@@ -2128,24 +2130,27 @@ function App() {
       setUsernameError("Username can only contain letters, numbers, and underscores");
       return;
     }
-
-    const read = (await readContracts(config, {
-      contracts: [
-        {
-          abi: CrystalReferralAbi,
-          address: settings.chainConfig[activechain].referralManager,
-          functionName: 'usernameToAddress',
-          args: [usernameInput],
-        },
-      ]
-    })) as any[];
-
-    if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-      setUsernameError("Username already taken");
-      return;
-    }
-    
+  
+    setIsUsernameSigning(true);
+  
     try {
+      const read = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'usernameToAddress',
+            args: [usernameInput],
+          },
+        ]
+      })) as any[];
+  
+      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+        setUsernameError("Username already taken");
+        setIsUsernameSigning(false);
+        return;
+      }
+      
       const hash = await sendUserOperationAsync({
         uo: {
           target: settings.chainConfig[activechain].referralManager,
@@ -2158,11 +2163,26 @@ function App() {
           }),
           value: 0n,
         },
-      })
+      });
+      
       await waitForTxReceipt(hash.hash);
+      
+      setIsTransitioning(true);
+      setTransitionDirection('forward');
+      setTimeout(() => {
+        setpopup(15);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setJustEntered(true);
+        }, 500);
+      }, 400);
+      
       return true;
     } catch (error) {
+      console.error("Error creating username:", error);
       return false;
+    } finally {
+      setIsUsernameSigning(false);
     }
   };
 
@@ -6869,8 +6889,8 @@ function App() {
           <div className="onboarding-left-side">
             <div className="onboarding-content">
               <div className="onboarding-header">
-                <h2 className="onboarding-title">Welcome to Crystal</h2>
-                <p className="onboarding-subtitle">Create a username for your wallet to enhance your experience</p>
+                <h2 className="onboarding-title">Create a Username</h2>
+                <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
               </div>
               
               <div className="onboarding-form">
@@ -6895,24 +6915,22 @@ function App() {
                 </div>
               </div>
               <button
-                  className="create-username-button"
-                  onClick={async () => {
-                    const success = await handleCreateUsername();
-                    if (success) {
-                      setIsTransitioning(true);
-                      setTransitionDirection('forward');
-                      setTimeout(() => {
-                        setpopup(15);
-                        setTimeout(() => {
-                          setIsTransitioning(false);
-                          setJustEntered(true);
-                        }, 500);
-                      }, 400);
-                    }
-                  }}
-                >
-                  Create Username
-                </button>
+  className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+  onClick={async () => {
+    if (!usernameInput.trim() || isUsernameSigning) return;
+    await handleCreateUsername();
+  }}
+  disabled={!usernameInput.trim() || isUsernameSigning}
+>
+  {isUsernameSigning ? (
+    <div className="button-content">
+      <div className="loading-spinner" />
+      {t('signTransaction')}
+    </div>
+  ) : (
+    "Create Username"
+  )}
+</button>
               </div>
               <div className="onboarding-actions">
                 
