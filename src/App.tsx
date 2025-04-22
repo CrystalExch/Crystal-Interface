@@ -6867,79 +6867,79 @@ function App() {
       >
         <div className="onboarding-split-container">
           <div className="onboarding-left-side">
-
-            <div className="onboarding-header">
-              <h2 className="onboarding-title">Welcome to Crystal</h2>
-              <p className="onboarding-subtitle">Create a username for your wallet to enhance your experience</p>
-            </div>
-            
-            <div className="onboarding-form">
-              <div className="form-group">
-                <label className="form-label">Your Wallet Address</label>
-                <div className="wallet-address">{address || "0x1234...5678"}</div>
+            <div className="onboarding-content">
+              <div className="onboarding-header">
+                <h2 className="onboarding-title">Welcome to Crystal</h2>
+                <p className="onboarding-subtitle">Create a username for your wallet to enhance your experience</p>
               </div>
               
-              <div className="form-group">
-                <label htmlFor="username" className="form-label">Username</label>
-                <input
-                  type="text"
-                  id="username"
-                  className="username-input"
-                  placeholder="Enter a username"
-                  value={usernameInput || ""}
-                  onChange={(e) => setUsernameInput(e.target.value)}
-                />
-                {usernameError && (
-                  <p className="username-error">{usernameError}</p>
-                )}
+              <div className="onboarding-form">
+                <div className="form-group">
+                  <label className="form-label">Your Wallet Address</label>
+                  <div className="wallet-address">{address || "0x1234...5678"}</div>
+                </div>
+                
+                <div className="form-group">
+                  <label htmlFor="username" className="form-label">Username</label>
+                  <input
+                    type="text"
+                    id="username"
+                    className="username-input"
+                    placeholder="Enter a username"
+                    value={usernameInput || ""}
+                    onChange={(e) => setUsernameInput(e.target.value)}
+                  />
+                  {usernameError && (
+                    <p className="username-error">{usernameError}</p>
+                  )}
+                </div>
               </div>
-            </div>
-            
-            <div className="onboarding-actions">
               <button
-                className="create-username-button"
-                onClick={async () => {
-                  const success = await handleCreateUsername();
-                  if (success) {
+                  className="create-username-button"
+                  onClick={async () => {
+                    const success = await handleCreateUsername();
+                    if (success) {
+                      setIsTransitioning(true);
+                      setTransitionDirection('forward');
+                      setTimeout(() => {
+                        setpopup(15);
+                        setTimeout(() => {
+                          setIsTransitioning(false);
+                          setJustEntered(true);
+                        }, 500);
+                      }, 400);
+                    }
+                  }}
+                >
+                  Create Username
+                </button>
+              </div>
+              <div className="onboarding-actions">
+                
+                <button
+                  className="skip-button"
+                  onClick={() => {
                     setIsTransitioning(true);
                     setTransitionDirection('forward');
                     setTimeout(() => {
                       setpopup(15);
                       setTimeout(() => {
                         setIsTransitioning(false);
-                        setJustEntered(true);
                       }, 500);
                     }, 400);
-                  }
-                }}
-              >
-                Create Username
-              </button>
-              
-              <button
-                className="skip-button"
-                onClick={() => {
-                  setIsTransitioning(true);
-                  setTransitionDirection('forward');
-                  setTimeout(() => {
-                    setpopup(15);
-                    setTimeout(() => {
-                      setIsTransitioning(false);
-                    }, 500);
-                  }, 400);
-                }}
-              >
-                Continue Without Username
-              </button>
-            </div>
+                  }}
+                >
+                  Continue Without Username
+                </button>
+              </div>
           </div>
-          <div className="onboarding-right-side">
+          {/* <div className="onboarding-right-side">
             <img className="onboarding-image" src={usernameonboarding} alt="Join the Crystal Community" />
             <span className="onboarding-image-title-text">CRYSTAL POINTS PROGRAM: SEASON 0
               </span> 
 
             <span className="onboarding-image-text">Create an Account to be put on the leaderboard and earn. Crystals will directly translate to mainnet token holdings.</span> 
-          </div>
+          </div> */}
         </div>
       </div>
 
