@@ -35,12 +35,12 @@ export class PortfolioCache {
 
   set(
     key: string,
-    data: ScaledDataPoint[],
+    chartData: ScaledDataPoint[],
     balanceResults: Record<string, any>,
     chartDays: number,
   ): void {
     this.cache.set(key, {
-      data,
+      chartData,
       balanceResults,
       timestamp: Date.now(),
       chartDays,
