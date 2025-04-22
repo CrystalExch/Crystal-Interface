@@ -141,6 +141,7 @@ const Referrals: React.FC<ReferralProps> = ({
           },
         ],
       })) as any[];
+      console.log(refs);
       setRefLink(refs[0].result);
       setError(
         refs[2].result === '0x0000000000000000000000000000000000000000' ||
@@ -152,7 +153,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefAddress(
         refs[4].result || '0x0000000000000000000000000000000000000000',
       );
-      setUsedRefLink(refs[5].result)
+      setUsedRefLink(refs[4].result)
       console.log(referredCount)
     })();
   }, [usedRefLink, address, refLinkString]);

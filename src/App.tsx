@@ -1,6 +1,7 @@
 // import libraries
 import {
   getBlockNumber,
+  readContracts,
   waitForTransactionReceipt,
 } from '@wagmi/core';
 import React, {
@@ -20,7 +21,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { TransactionExecutionError, maxUint256 } from 'viem';
+import { TransactionExecutionError, encodeFunctionData, maxUint256 } from 'viem';
 import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -64,6 +65,7 @@ import { formatCommas, formatSubscript } from './utils/numberDisplayFormat.ts';
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
 import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
+import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 
 // import types
@@ -120,7 +122,6 @@ import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 
-
 // import config
 import { SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
@@ -130,6 +131,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
+  useEffect(() => {
+    if (!localStorage.getItem("firstLoadDone")) {
+      localStorage.setItem("firstLoadDone", "true");
+      window.location.reload();
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -661,6 +668,8 @@ function App() {
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
   >('desc');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -1972,7 +1981,7 @@ function App() {
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
   };
-
+  
   // order processing
   function processOrders(buyOrdersRaw: any[], sellOrdersRaw: any[]) {
     const mapOrders = (orderData: bigint[]) => {
@@ -2011,6 +2020,87 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
+  
+  const handleCreateUsername = async () => {
+    setUsernameError("");
+    if (!usernameInput.trim()) {
+      setUsernameError("Please enter a username");
+      return;
+    }
+    
+    if (usernameInput.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    const read = (await readContracts(config, {
+      contracts: [
+        {
+          abi: CrystalReferralAbi,
+          address: settings.chainConfig[activechain].referralManager,
+          functionName: 'usernameToAddress',
+          args: [usernameInput],
+        },
+      ]
+    })) as any[];
+
+    if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+      setUsernameError("Username already taken");
+      return;
+    }
+    
+    try {
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      })
+      await waitForTxReceipt(hash.hash);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const read = await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToUsername',
+              args: [address as `0x${string}`],
+            },
+          ]
+        });
+
+        if (read[0]?.result?.length) {
+          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch username:", error);
+      }
+    };
+  
+    if (address) {
+      fetchUsername();
+    }
+  }, [address, activechain, config]);
 
   const processOrdersForDisplay = (
     orders: Order[],
@@ -6676,6 +6766,62 @@ function App() {
             </div>
           </div>
         ) : null}
+{popup === 14 ? (
+  <div ref={popupref} className="new-wallet-overlay">
+    <div className="new-wallet-split-container">
+      <div className="new-wallet-image-container">
+      </div>
+      
+      <div className="new-wallet-container">
+        
+        <div className="new-wallet-content">
+          <h2 className="new-wallet-title">Welcome to Crystal</h2>
+          <p className="new-wallet-subtitle">Create a username for your wallet to enhance your experience</p>
+          
+          <div className="new-wallet-form">
+            <div className="new-wallet-form-group">
+              <label className="new-wallet-label">Your Wallet Address</label>
+              <div className="new-wallet-address">{address || "0x1234...5678"}</div>
+            </div>
+            
+            <div className="new-wallet-form-group">
+              <label htmlFor="username" className="new-wallet-label">Username</label>
+              <input
+                type="text"
+                id="username"
+                className="new-wallet-input"
+                placeholder="Enter a username"
+                value={usernameInput || ""}
+                onChange={(e) => setUsernameInput(e.target.value)}
+              />
+              {usernameError && (
+                <p className="new-wallet-error">{usernameError}</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="new-wallet-actions">
+            <button
+              className="new-wallet-create-button"
+              onClick={handleCreateUsername}
+            >
+              Create Username
+            </button>
+            
+            <button
+              className="new-wallet-skip-button"
+              onClick={() => setpopup(0)}
+            >
+              Continue Without Username
+            </button>
+          </div>
+          
+
+        </div>
+      </div>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
@@ -6894,7 +7040,7 @@ function App() {
                 : ''
                 }`}
               onClick={() => {
-                setpopup(1);
+                setpopup(14);
               }}
             >
               <img className="button1pic" src={tokendict[tokenIn].image} />
