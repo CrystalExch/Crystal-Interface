@@ -130,12 +130,12 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
-  // useEffect(() => {
-  //   if (!localStorage.getItem("firstLoadDone")) {
-  //     localStorage.setItem("firstLoadDone", "true");
-  //     window.location.reload();
-  //   }
-  // }, []);
+  useEffect(() => {
+    if (!localStorage.getItem("firstLoadDone")) {
+      localStorage.setItem("firstLoadDone", "true");
+      window.location.reload();
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -1980,7 +1980,7 @@ function App() {
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
   };
-
+  
   // order processing
   function processOrders(buyOrdersRaw: any[], sellOrdersRaw: any[]) {
     const mapOrders = (orderData: bigint[]) => {
@@ -2019,7 +2019,31 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
-
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  
+  const handleCreateUsername = () => {
+    setUsernameError("");
+    if (!usernameInput.trim()) {
+      setUsernameError("Please enter a username");
+      return;
+    }
+    
+    if (usernameInput.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+    
+    
+    setpopup(0);
+    
+    setUsernameInput("");
+  };
   const processOrdersForDisplay = (
     orders: Order[],
     amountsQuote: string,
@@ -6677,6 +6701,62 @@ function App() {
             </div>
           </div>
         ) : null}
+{popup === 14 ? (
+  <div ref={popupref} className="new-wallet-overlay">
+    <div className="new-wallet-split-container">
+      <div className="new-wallet-image-container">
+      </div>
+      
+      <div className="new-wallet-container">
+        
+        <div className="new-wallet-content">
+          <h2 className="new-wallet-title">Welcome to Crystal</h2>
+          <p className="new-wallet-subtitle">Create a username for your wallet to enhance your experience</p>
+          
+          <div className="new-wallet-form">
+            <div className="new-wallet-form-group">
+              <label className="new-wallet-label">Your Wallet Address</label>
+              <div className="new-wallet-address">{address || "0x1234...5678"}</div>
+            </div>
+            
+            <div className="new-wallet-form-group">
+              <label htmlFor="username" className="new-wallet-label">Username</label>
+              <input
+                type="text"
+                id="username"
+                className="new-wallet-input"
+                placeholder="Enter a username"
+                value={usernameInput || ""}
+                onChange={(e) => setUsernameInput(e.target.value)}
+              />
+              {usernameError && (
+                <p className="new-wallet-error">{usernameError}</p>
+              )}
+            </div>
+          </div>
+          
+          <div className="new-wallet-actions">
+            <button
+              className="new-wallet-create-button"
+              onClick={handleCreateUsername}
+            >
+              Create Username
+            </button>
+            
+            <button
+              className="new-wallet-skip-button"
+              onClick={() => setpopup(0)}
+            >
+              Continue Without Username
+            </button>
+          </div>
+          
+
+        </div>
+      </div>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
@@ -6895,7 +6975,7 @@ function App() {
                 : ''
                 }`}
               onClick={() => {
-                setpopup(1);
+                setpopup(14);
               }}
             >
               <img className="button1pic" src={tokendict[tokenIn].image} />
