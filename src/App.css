@@ -5049,6 +5049,7 @@ input[type="email"] {
   display: flex;
   width: 100%;
   height: 100%;
+
 }
 
 .onboarding-left-side {
@@ -5059,16 +5060,17 @@ input[type="email"] {
   justify-content: center;
   padding: 24px;
   overflow-y: auto;
+  box-shadow: inset 0 0 100px 100px #000000;
 }
 
 .onboarding-right-side {
   width: 50%;
   height: calc(100% - 40px);
-  border: 1.5px solid #151515ad;
   display: flex;
   align-items: center;
   justify-content: center;
   margin: 20px;
+  margin-left: 0;
   border-radius: 30px;
   animation: simpleFadeIn 0.4s ease-out forwards;
   overflow: hidden;
@@ -5247,7 +5249,7 @@ input[type="email"] {
   position: absolute;
   top: 20px;
   left: 20px;
-
+z-index: 10;
 }
 
 .skip-button {

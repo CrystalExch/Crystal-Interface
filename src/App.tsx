@@ -128,6 +128,8 @@ import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
+import CrystalObject from './components/CrystalObject.tsx';
+
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -6851,12 +6853,15 @@ const handleCompleteChallenge = () => {
 {popup === 14 || popup === 15 || isTransitioning ? (
   <div ref={popupref} className="onboarding-container">
     <img className="onboarding-crystal-logo" src={clearlogo}></img>
+    <CrystalObject />
+
     <div className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''}`}>
       <div 
         className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward') ? 'active' : ''} ${justEntered ? 'entering' : ''}`}
       >
         <div className="onboarding-split-container">
           <div className="onboarding-left-side">
+
             <div className="onboarding-header">
               <h2 className="onboarding-title">Welcome to Crystal</h2>
               <p className="onboarding-subtitle">Create a username for your wallet to enhance your experience</p>
