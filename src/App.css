@@ -1008,7 +1008,7 @@ body:has(.right-column.show) .blur-background-popups {
 .connect-wallet-background.connected {
   border-radius: 8px;
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
-  height: min(390px, 90vh);
+  height: min(385px, 90vh);
   left: 50%;
   overflow: hidden;
   position: fixed;
@@ -1039,7 +1039,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .portfolio-content-popup {
-  height: 140px;
+  height: 125px;
   margin-top: 6px;
   overflow: auto;
   -ms-overflow-style: auto;
@@ -1661,7 +1661,6 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex-direction: column;
   left: 50%;
-  max-height: 358px;
   max-width: 90vw;
   padding: 0;
   position: fixed;

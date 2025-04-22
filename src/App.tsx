@@ -383,9 +383,36 @@ function App() {
     const savedSimpleView = localStorage.getItem('crystal_simple_view');
     return savedSimpleView ? JSON.parse(savedSimpleView) : false;
   });
+  const [isMarksVisible, setIsMarksVisible] = useState(() => {
+    const saved = localStorage.getItem('crystal_marks_visible');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
   const [isOrderbookVisible, setIsOrderbookVisible] = useState(() => {
     const saved = localStorage.getItem('crystal_orderbook_visible');
     return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [isOrderCenterVisible, setIsOrderCenterVisible] = useState(() => {
+    const saved = localStorage.getItem('crystal_ordercenter_visible');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [orderbookWidth, setOrderbookWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('orderbookWidth');
+    return saved ? parseInt(saved, 10) : 300;
+  });
+  const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
+    const savedHeight = localStorage.getItem('orderCenterHeight');
+    if (savedHeight !== null) {
+      const parsedHeight = parseFloat(savedHeight);
+      if (!isNaN(parsedHeight)) {
+        return parsedHeight;
+      }
+    }
+
+    if (window.innerHeight > 1080) return 363.58;
+    if (window.innerHeight > 960) return 322.38;
+    if (window.innerHeight > 840) return 281.18;
+    if (window.innerHeight > 720) return 239.98;
+    return 198.78;
   });
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'false');
@@ -393,6 +420,19 @@ function App() {
   const [orderbookPosition, setOrderbookPosition] = useState(() => {
     const savedPosition = localStorage.getItem('crystal_orderbook');
     return savedPosition || 'right';
+  });
+  const [layoutSettings, setLayoutSettings] = useState(() => {
+    const savedLayout = localStorage.getItem('crystal_layout');
+    return savedLayout || 'default';
+  });
+  const [popup, setpopup] = useState(() => {
+    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
+      return 0
+    }
+    else {
+      localStorage.setItem('hasShownSocialPopup1', 'true');
+      return 9
+    }
   });
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
@@ -463,10 +503,6 @@ function App() {
   const [limitPriceString, setlimitPriceString] = useState('');
   const [allowance, setallowance] = useState(BigInt(0));
   const [warning, setwarning] = useState(0);
-  const [layoutSettings, setLayoutSettings] = useState(() => {
-    const savedLayout = localStorage.getItem('crystal_layout');
-    return savedLayout || 'default';
-  });
   const [showReferralsModal, setShowReferralsModal] = useState(false);
   const [lowestAsk, setlowestAsk] = useState(BigInt(0));
   const [highestBid, sethighestBid] = useState(BigInt(0));
@@ -479,15 +515,6 @@ function App() {
   const [recipient, setrecipient] = useState('');
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
-  const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
-      return 0
-    }
-    else {
-      localStorage.setItem('hasShownSocialPopup1', 'true');
-      return 9
-    }
-  });
   const [orders, setorders] = useState<any[]>([]);
   const [canceledorders, setcanceledorders] = useState<any[]>([]);
   const [tradehistory, settradehistory] = useState<any[]>([]);
@@ -518,33 +545,10 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
-    const savedHeight = localStorage.getItem('orderCenterHeight');
-    if (savedHeight !== null) {
-      const parsedHeight = parseFloat(savedHeight);
-      if (!isNaN(parsedHeight)) {
-        return parsedHeight;
-      }
-    }
-
-    if (window.innerHeight > 1080) return 363.58;
-    if (window.innerHeight > 960) return 322.38;
-    if (window.innerHeight > 840) return 281.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
-  });
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<Order[]>([]);
   const [roundedSellOrders, setRoundedSellOrders] = useState<Order[]>([]);
   const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<Order[]>([]);
   const [liquiditySellOrders, setLiquiditySellOrders] = useState<Order[]>([]);
-  const [isOrderCenterVisible, setIsOrderCenterVisible] = useState(() => {
-    const saved = localStorage.getItem('crystal_ordercenter_visible');
-    return saved !== null ? JSON.parse(saved) : true;
-  });
-  const [orderbookWidth, setOrderbookWidth] = useState<number>(() => {
-    const saved = localStorage.getItem('orderbookWidth');
-    return saved ? parseInt(saved, 10) : 300;
-  });
   const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
   const [addressinfoloading, setaddressinfoloading] = useState(true);
@@ -682,8 +686,6 @@ function App() {
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
-
-  let isAddressInfoFetching = false;
 
   const audio = useMemo(() => {
     const a = new Audio(notificationSound);
@@ -1118,6 +1120,7 @@ function App() {
 
   // live event stream
   useEffect(() => {
+    let liveStreamCancelled = false;
     let blockNumber = '';
     (async () => {
       blockNumber = '0x' + (await getBlockNumber(config) - BigInt(10)).toString(16)
@@ -1176,6 +1179,7 @@ function App() {
           }] : [])]),
         });
         const result = await req.json();
+        if (liveStreamCancelled) return;
         blockNumber = '0x' + (parseInt(result[0].result, 16) - 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
@@ -1563,6 +1567,7 @@ function App() {
     return () => {
       clearTimeout(timeout);
       clearInterval(interval);
+      liveStreamCancelled = true;
     }
   }, [HTTP_URL, address]);
 
@@ -2029,82 +2034,84 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
-  // State variables for managing transitions between screens
-const [isTransitioning, setIsTransitioning] = useState(false);
-const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
-const [fromChallenge, setFromChallenge] = useState(false); // Tracks if coming back from challenge to username
-const [justEntered, setJustEntered] = useState(false); // Used for entry animations
-const [exitingChallenge, setExitingChallenge] = useState(false); // Used when leaving challenge screen
 
-// Challenge state
-const [currentStep, setCurrentStep] = useState(0); // Current step in the challenge intro (0, 1, or 2)
-const [animationStarted, setAnimationStarted] = useState(false); // Controls animations within challenge steps
+    // State variables for managing transitions between screens
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
+  const [fromChallenge, setFromChallenge] = useState(false); // Tracks if coming back from challenge to username
+  const [justEntered, setJustEntered] = useState(false); // Used for entry animations
+  const [exitingChallenge, setExitingChallenge] = useState(false); // Used when leaving challenge screen
 
-
-// Effect to trigger animations when entering the first step of challenge
-useEffect(() => {
-  if (currentStep === 0) {
-    // Start animation after a short delay
-    const timer = setTimeout(() => {
-      setAnimationStarted(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  } else {
-    // Reset animation state when moving to other steps
-    setAnimationStarted(false);
-  }
-}, [currentStep]);
-
-const handleBack = () => {
-  if (currentStep > 0) {
-    // Simply decrement the current step
-    setCurrentStep(prevStep => prevStep - 1);
-  }
-};
+  // Challenge state
+  const [currentStep, setCurrentStep] = useState(0); // Current step in the challenge intro (0, 1, or 2)
+  const [animationStarted, setAnimationStarted] = useState(false); // Controls animations within challenge steps
 
 
-const handleBackToUsername = () => {
-  // Start the transition animation
-  setIsTransitioning(true);
-  setTransitionDirection('backward');
-  setExitingChallenge(true);
-  setFromChallenge(true);
-  
-  setTimeout(() => {
-    setpopup(14);
-    setJustEntered(true);
-    
-    setTimeout(() => {
-      setIsTransitioning(false);
-      setExitingChallenge(false);
-    }, 500);
-  }, 400);
-};
+  // Effect to trigger animations when entering the first step of challenge
+  useEffect(() => {
+    if (currentStep === 0) {
+      // Start animation after a short delay
+      const timer = setTimeout(() => {
+        setAnimationStarted(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      // Reset animation state when moving to other steps
+      setAnimationStarted(false);
+    }
+  }, [currentStep]);
 
-const handleSkipUsername = () => {
-  setIsTransitioning(true);
-  setTransitionDirection('forward');
-  
-  setTimeout(() => {
-    setpopup(15);
-    setCurrentStep(0);
-    
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, 500);
-  }, 400);
-};
+  const handleBack = () => {
+    if (currentStep > 0) {
+      // Simply decrement the current step
+      setCurrentStep(prevStep => prevStep - 1);
+    }
+  };
 
-const handleCompleteChallenge = () => {
-  if (currentStep < 2) {
-    setCurrentStep(currentStep + 1);
-  } else {
+
+  const handleBackToUsername = () => {
+    // Start the transition animation
+    setIsTransitioning(true);
+    setTransitionDirection('backward');
     setExitingChallenge(true);
+    setFromChallenge(true);
+    
     setTimeout(() => {
-      setpopup(0); 
+      setpopup(14);
+      setJustEntered(true);
+      
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setExitingChallenge(false);
+      }, 500);
     }, 400);
-  }
-};
+  };
+
+  const handleSkipUsername = () => {
+    setIsTransitioning(true);
+    setTransitionDirection('forward');
+    
+    setTimeout(() => {
+      setpopup(15);
+      setCurrentStep(0);
+      
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, 500);
+    }, 400);
+  };
+
+  const handleCompleteChallenge = () => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      setExitingChallenge(true);
+      setTimeout(() => {
+        setpopup(0); 
+      }, 400);
+    }
+  };
+
   const handleCreateUsername = async () => {
     setUsernameError("");
     if (!usernameInput.trim()) {
@@ -2557,7 +2564,7 @@ const handleCompleteChallenge = () => {
           setallowance(data[1].result);
         }
         let tempbalances = tokenBalances
-        if (data?.[2]?.result) {
+        if (data?.[2]?.result || !address) {
           tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
             const balance = data[2].result?.[i] || BigInt(0);
             acc[token.address] = balance;
@@ -3113,6 +3120,7 @@ const handleCompleteChallenge = () => {
 
   // fetch initial address info
   useEffect(() => {
+    let isAddressInfoFetching = false;
     if (address) {
       setTimeout(() => {
         setTransactions([]);
@@ -3306,12 +3314,10 @@ const handleCompleteChallenge = () => {
       })();
     }
     else if (!user) {
-      setTimeout(() => {
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-      }, 500);
+      setTransactions([]);
+      settradehistory([]);
+      setorders([]);
+      setcanceledorders([]);
       setaddressinfoloading(false);
     }
     return () => { isAddressInfoFetching = false; };
@@ -6020,12 +6026,12 @@ const handleCompleteChallenge = () => {
     {t('showTradeMarkers')}
   </span>
   <ToggleSwitch
-                      checked={isOrderbookVisible}
+                      checked={isMarksVisible}
                       onChange={() => {
-                        setIsOrderbookVisible(!isOrderbookVisible);
+                        setIsMarksVisible(!isMarksVisible);
                         localStorage.setItem(
-                          'crystal_orderbook_visible',
-                          JSON.stringify(!isOrderbookVisible),
+                          'crystal_marks_visible',
+                          JSON.stringify(!isMarksVisible),
                         );
                       }}
                     />
