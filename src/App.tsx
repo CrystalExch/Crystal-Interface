@@ -367,7 +367,7 @@ function App() {
     return searchParams.get('ref') || localStorage.getItem(`ref`) || '';
   });
   const [usedRefAddress, setUsedRefAddress] = useState(
-    '0x0000000000000000000000000000000000000000',
+    '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
   const [simpleView, setSimpleView] = useState(() => {
     const savedSimpleView = localStorage.getItem('crystal_simple_view');
@@ -470,14 +470,12 @@ function App() {
   const [limitPrice, setlimitPrice] = useState(BigInt(0));
   const [limitChase, setlimitChase] = useState(true);
   const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem("firstLoadDone")) {
-      if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
-        return 0
-      }
-      else {
-        localStorage.setItem('hasShownSocialPopup1', 'true');
-        return 9
-      }
+    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
+      return 0
+    }
+    else {
+      localStorage.setItem('hasShownSocialPopup1', 'true');
+      return 9
     }
   });
   const [orders, setorders] = useState<any[]>([]);
@@ -11501,6 +11499,7 @@ waitForTxReceipt={waitForTxReceipt}
                 router={router}
                 address={address ?? undefined}
                 usedRefLink={usedRefLink}
+                usedRefAddress={usedRefAddress}
                 setUsedRefAddress={setUsedRefAddress}
                 setUsedRefLink={setUsedRefLink}
                 totalClaimableFees={totalClaimableFees}
