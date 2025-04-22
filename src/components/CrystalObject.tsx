@@ -550,11 +550,11 @@ const CrystalObject = () => {
       ref={mountRef} 
       style={{ 
         position: 'absolute', 
-        top: '50%',
-        left: '0',
+        top: '50vh',
+        left: '50vw',
         transform: 'translate(-50%, -50%)',
-        width: '50%', 
-        height: '100%',
+        width: '100vw', 
+        height: '100vh',
         zIndex: 1,
         pointerEvents: 'none' 
       }}
