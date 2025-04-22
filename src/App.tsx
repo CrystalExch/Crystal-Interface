@@ -94,7 +94,7 @@ import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
 import usernameonboarding from './assets/usernameonboarding.png';
- 
+import clearlogo from '../public/logo_clear.png';
  import defaultProfilePic from './assets/bh.png';
  import crystalxp from './assets/CrystalX.png';
  import LeaderboardPfp2 from './assets/legion.png';
@@ -6850,6 +6850,7 @@ const handleCompleteChallenge = () => {
         ) : null}
 {popup === 14 || popup === 15 || isTransitioning ? (
   <div ref={popupref} className="onboarding-container">
+    <img className="onboarding-crystal-logo" src={clearlogo}></img>
     <div className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''}`}>
       <div 
         className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward') ? 'active' : ''} ${justEntered ? 'entering' : ''}`}
@@ -6931,7 +6932,6 @@ const handleCompleteChallenge = () => {
         </div>
       </div>
 
-      {/* Challenge Intro Section */}
       <div 
         className={`onboarding-section challenge-section ${popup === 15 || (isTransitioning && transitionDirection === 'forward') ? 'active' : ''} ${exitingChallenge ? 'exiting' : ''}`}
       >

@@ -4984,7 +4984,6 @@ input[type="email"] {
   width: min(350px, 90vw);
 }
 
-/* Onboarding Container */
 .onboarding-container {
   position: fixed;
   top: 0;
@@ -4995,7 +4994,7 @@ input[type="email"] {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(6, 6, 6, 0.9);
+  background-color: rgb(0, 0, 0);
   overflow: hidden;
 }
 
@@ -5134,12 +5133,11 @@ input[type="email"] {
   font-size: 24px;
   text-align: center;
   color: #e4e3e3;
-  margin-bottom: 5px;
   letter-spacing: -0.5px;
 }
 
 .onboarding-subtitle {
-  font-size: 16px;
+  font-size: 0.95rem;
   text-align: center;
   justify-self: center;
   color: #aaaaaa;
@@ -5161,19 +5159,19 @@ input[type="email"] {
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 10px;
 }
 
 .form-label {
   display: block;
   font-size: 0.85rem;
-  font-weight: 500;
   color: #999999;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
+  letter-spacing: -0.3px;
 }
 
 .wallet-address {
-  background-color: #2222226a;
+  background-color: rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   padding: 8px 16px;
   font-size: 0.8rem;
@@ -5244,13 +5242,21 @@ input[type="email"] {
   opacity: 0.9;
 }
 
+.onboarding-crystal-logo{
+  width: 40px;
+  position: absolute;
+  top: 20px;
+  left: 20px;
+
+}
+
 .skip-button {
   width: 100%;
   background-color: transparent;
   color: #ffffffd1;
   font-size: 0.9rem;
   padding: 10px;
-  border: 1.5px solid #1c1c1c;
+  border: 1.5px solid #1c1c1c63;
   border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.2s;
@@ -5464,7 +5470,6 @@ input[type="email"] {
   opacity: 0;
 }
 
-/* User profile in step 2 */
 .user-profile {
   display: flex;
   flex-direction: column;
