@@ -7,7 +7,6 @@ import firstPlacePfp from '../../assets/leaderboard_first.png';
 import secondPlacePfp from '../../assets/leaderboard_second.png';
 import thirdPlacePfp from '../../assets/leaderboard_third.png';
 import LeaderboardImage from '../../assets/leaderboardbanner.png';
-import ChallengeIntro from './ChallengeIntro';
 import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
@@ -45,7 +44,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   orders,
   address,
 }) => {
-  const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
 
   const [userData, setUserData] = useState<UserDisplayData>({
     userXP: 0,
@@ -369,13 +367,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
-      )}
-
-      {showChallengeIntro && (
-        <ChallengeIntro
-          onComplete={handleChallengeIntroComplete}
-          initialStep={introStep}
-        />
       )}
 
       <div className="leaderboard-banner">
