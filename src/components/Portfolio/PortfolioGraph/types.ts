@@ -4,7 +4,7 @@ export interface ScaledDataPoint {
 }
 
 export interface CacheEntry {
-  data: ScaledDataPoint[];
+  chartData: ScaledDataPoint[];
   balanceResults: Record<string, any>;
   timestamp: number;
   chartDays: number;

@@ -2551,84 +2551,91 @@ const handleCompleteChallenge = () => {
       if (!txPending.current && !debounceTimerRef.current) {
         setStateIsLoading(false);
         setstateloading(false);
-        setallowance(data[1].result || BigInt(0));
-        let tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
-          const balance = data[2].result?.[i] || BigInt(0);
-          acc[token.address] = balance;
-          return acc;
-        }, {});
-        if (stateloading) {
-          const percentage = !tempbalances[tokenIn]
-            ? 0
-            : Math.min(
-              100,
-              Math.floor(
-                Number((amountIn * BigInt(100)) / tempbalances[tokenIn]),
-              ),
-            );
-          setSliderPercent(percentage);
-          const slider = document.querySelector('.balance-amount-slider');
-          const popup = document.querySelector('.slider-percentage-popup');
-          if (slider && popup) {
-            const rect = slider.getBoundingClientRect();
-            (popup as HTMLElement).style.left =
-              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
-          }
+        if (data?.[1]?.result) {
+          setallowance(data[1].result);
         }
-        setTokenBalances(tempbalances);
-        if (switched == false && !isWrap) {
-          const outputValue = BigInt(data?.[0].result?.at(-1) || BigInt(0));
-          setamountOutSwap(outputValue);
-          setoutputString(
-            outputValue === BigInt(0)
-              ? ''
-              : parseFloat(
-                customRound(
-                  Number(outputValue) /
-                  10 ** Number(tokendict[tokenOut].decimals),
-                  3,
+        let tempbalances = tokenBalances
+        if (data?.[2]?.result) {
+          tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
+            const balance = data[2].result?.[i] || BigInt(0);
+            acc[token.address] = balance;
+            return acc;
+          }, {});
+          if (stateloading) {
+            const percentage = !tempbalances[tokenIn]
+              ? 0
+              : Math.min(
+                100,
+                Math.floor(
+                  Number((amountIn * BigInt(100)) / tempbalances[tokenIn]),
                 ),
-              ).toString(),
-          );
-        } else if (!isWrap) {
-          let inputValue;
-          if (BigInt(data?.[0].result?.at(-1) || BigInt(0)) != amountOutSwap) {
-            inputValue = BigInt(0);
-          } else {
-            inputValue = BigInt(data?.[0].result?.[0] || BigInt(0));
+              );
+            setSliderPercent(percentage);
+            const slider = document.querySelector('.balance-amount-slider');
+            const popup = document.querySelector('.slider-percentage-popup');
+            if (slider && popup) {
+              const rect = slider.getBoundingClientRect();
+              (popup as HTMLElement).style.left =
+                `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+            }
           }
-          setamountIn(inputValue);
-          setInputString(
-            inputValue == BigInt(0)
-              ? ''
-              : parseFloat(
-                customRound(
-                  Number(inputValue) /
-                  10 ** Number(tokendict[tokenIn].decimals),
-                  3,
-                ),
-              ).toString(),
-          );
-          const percentage = !tempbalances[tokenIn]
-            ? 0
-            : Math.min(
-              100,
-              Math.floor(
-                Number((inputValue * BigInt(100)) / tempbalances[tokenIn]),
-              ),
+          setTokenBalances(tempbalances);
+        }
+        if (data?.[0]?.result) {
+          if (switched == false && !isWrap) {
+            const outputValue = BigInt(data[0].result?.at(-1) || BigInt(0));
+            setamountOutSwap(outputValue);
+            setoutputString(
+              outputValue === BigInt(0)
+                ? ''
+                : parseFloat(
+                  customRound(
+                    Number(outputValue) /
+                    10 ** Number(tokendict[tokenOut].decimals),
+                    3,
+                  ),
+                ).toString(),
             );
-          setSliderPercent(percentage);
-          const slider = document.querySelector('.balance-amount-slider');
-          const popup = document.querySelector('.slider-percentage-popup');
-          if (slider && popup) {
-            const rect = slider.getBoundingClientRect();
-            (popup as HTMLElement).style.left =
-              `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+          } else if (!isWrap) {
+            let inputValue;
+            if (BigInt(data[0].result?.at(-1) || BigInt(0)) != amountOutSwap) {
+              inputValue = BigInt(0);
+            } else {
+              inputValue = BigInt(data[0].result?.[0] || BigInt(0));
+            }
+            setamountIn(inputValue);
+            setInputString(
+              inputValue == BigInt(0)
+                ? ''
+                : parseFloat(
+                  customRound(
+                    Number(inputValue) /
+                    10 ** Number(tokendict[tokenIn].decimals),
+                    3,
+                  ),
+                ).toString(),
+            );
+            const percentage = !tempbalances[tokenIn]
+              ? 0
+              : Math.min(
+                100,
+                Math.floor(
+                  Number((inputValue * BigInt(100)) / tempbalances[tokenIn]),
+                ),
+              );
+            setSliderPercent(percentage);
+            const slider = document.querySelector('.balance-amount-slider');
+            const popup = document.querySelector('.slider-percentage-popup');
+            if (slider && popup) {
+              const rect = slider.getBoundingClientRect();
+              (popup as HTMLElement).style.left =
+                `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+            }
           }
         }
       }
-      let tempmids;
-      if (data[4].result) {
+      let tempmids = mids;
+      if (data?.[4]?.result) {
         tempmids = Object.keys(markets).filter((key) => {
           return !(
             key.startsWith(wethticker) || key.endsWith(wethticker)
@@ -2647,10 +2654,10 @@ const handleCompleteChallenge = () => {
         );
         setmids(tempmids);
       }
-      if (data[3].result) {
+      if (data?.[3]?.result) {
         sethighestBid((data as any)[3].result[0] || BigInt(0));
         setlowestAsk((data as any)[3].result[1] || BigInt(0));
-        const orderdata = data?.[3].result;
+        const orderdata = data[3].result;
 
         if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4) {
           try {
@@ -5456,7 +5463,7 @@ const handleCompleteChallenge = () => {
                       onClick={() => {
                         if (tokenBalances[sendTokenIn] != BigInt(0)) {
                           let amount =
-                            sendTokenIn == eth
+                            (sendTokenIn == eth && !client)
                               ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
                                 ? tokenBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
                                 : BigInt(0)
@@ -5832,7 +5839,7 @@ const handleCompleteChallenge = () => {
                       colorValue={portfolioColorValue}
                       setColorValue={setPortfolioColorValue}
                       isPopup={true}
-                      chartData={totalAccountValue ? [
+                      chartData={typeof totalAccountValue === 'number' ? [
                         ...chartData.slice(0, -1),
                         {
                           ...chartData[chartData.length - 1],
@@ -7340,7 +7347,7 @@ const handleCompleteChallenge = () => {
                 if (tokenBalances[tokenIn] != BigInt(0)) {
                   setswitched(false);
                   let amount =
-                    tokenIn == eth
+                    (tokenIn == eth && !client)
                       ? tokenBalances[tokenIn] -
                         settings.chainConfig[activechain].gasamount >
                         BigInt(0)
@@ -7623,7 +7630,7 @@ const handleCompleteChallenge = () => {
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
-                  ((tokenIn == eth
+                  (((tokenIn == eth && !client)
                     ? tokenBalances[tokenIn] -
                       settings.chainConfig[activechain].gasamount >
                       BigInt(0)
@@ -7696,7 +7703,7 @@ const handleCompleteChallenge = () => {
                   data-percentage={markPercent}
                   onClick={() => {
                     const newAmount =
-                      ((tokenIn == eth
+                      (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
                           BigInt(0)
@@ -8817,7 +8824,7 @@ const handleCompleteChallenge = () => {
               onClick={() => {
                 if (tokenBalances[tokenIn] != BigInt(0)) {
                   let amount =
-                    tokenIn == eth
+                    (tokenIn == eth && !client)
                       ? tokenBalances[tokenIn] -
                         settings.chainConfig[activechain].gasamount >
                         BigInt(0)
@@ -9540,7 +9547,7 @@ const handleCompleteChallenge = () => {
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
-                  ((tokenIn == eth
+                  (((tokenIn == eth && !client)
                     ? tokenBalances[tokenIn] -
                       settings.chainConfig[activechain].gasamount >
                       BigInt(0)
@@ -9632,7 +9639,7 @@ const handleCompleteChallenge = () => {
                   data-percentage={markPercent}
                   onClick={() => {
                     const newAmount =
-                      ((tokenIn == eth
+                      (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
                           BigInt(0)
@@ -10386,7 +10393,7 @@ waitForTxReceipt={waitForTxReceipt}
                 onClick={() => {
                   if (tokenBalances[tokenIn] != BigInt(0)) {
                     let amount =
-                      tokenIn == eth
+                      (tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
                           BigInt(0)
@@ -10898,7 +10905,7 @@ waitForTxReceipt={waitForTxReceipt}
               onClick={() => {
                 if (tokenBalances[tokenIn] != BigInt(0)) {
                   let amount =
-                    tokenIn == eth
+                    (tokenIn == eth && !client)
                       ? tokenBalances[tokenIn] -
                         settings.chainConfig[activechain].gasamount >
                         BigInt(0)
@@ -11319,7 +11326,7 @@ waitForTxReceipt={waitForTxReceipt}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
-                  ((tokenIn == eth
+                  (((tokenIn == eth && !client)
                     ? tokenBalances[tokenIn] -
                       settings.chainConfig[activechain].gasamount >
                       BigInt(0)
@@ -11383,7 +11390,7 @@ waitForTxReceipt={waitForTxReceipt}
                   data-percentage={markPercent}
                   onClick={() => {
                     const newAmount =
-                      ((tokenIn == eth
+                      (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
                           BigInt(0)
@@ -11855,7 +11862,7 @@ waitForTxReceipt={waitForTxReceipt}
                 totalAccountValue={totalAccountValue}
                 setTotalVolume={setTotalVolume}
                 totalVolume={totalVolume}
-                chartData={totalAccountValue ? [
+                chartData={typeof totalAccountValue === 'number' ? [
                   ...chartData.slice(0, -1),
                   {
                     ...chartData[chartData.length - 1],

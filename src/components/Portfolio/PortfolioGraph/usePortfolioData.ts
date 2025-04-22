@@ -1,5 +1,5 @@
 import { getBlockNumber, readContract } from '@wagmi/core';
-import { useCallback, useEffect, useRef, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { config } from '../../../wagmi.ts';
 
 import PortfolioCache from './portfolioCache';
@@ -23,8 +23,8 @@ export const usePortfolioData = (
     balanceResults: {},
     portChartLoading: false,
   });
-  const abortControllerRef = useRef<AbortController>();
   const cache = PortfolioCache.getInstance();
+  let isFetching = false;
 
   const marketDataMap = useMemo(() => {
     const map: Record<string, any> = {};
@@ -56,95 +56,6 @@ export const usePortfolioData = (
     return dateRange;
   }, [chartDays]);
 
-  const fetchBalances = useCallback(async () => {
-    if (!address) return {};
-
-    abortControllerRef.current?.abort();
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-
-    try {
-      const startblock = await getBlockNumber(config);
-      const dateRange = generateDateRange();
-      const results: Record<string, any> = {};
-      const simplifiedTokenList = tokenList.map((token) => ({
-        ticker: token.ticker,
-        address: token.address,
-        decimals: token.decimals,
-      }));
-
-      const batchSize = 1;
-      for (let i = 0; i < dateRange.length; i += batchSize) {
-        if (signal.aborted) throw new Error('Operation cancelled');
-
-        const batch = dateRange.slice(i, i + batchSize);
-        const batchResults = await Promise.all(
-          batch.map(async (dateStr) => {
-            const [datePart, hourPart] = dateStr.split(' ');
-            const currentDate = new Date(`${datePart}T${hourPart}:00:00Z`);
-            const targetTimestamp = Math.floor(currentDate.getTime() / 1000);
-            const startTimestamp = Math.floor(new Date().getTime() / 1000);
-            const blockNumber = BigInt(
-              Math.round(
-                Number(startblock) -
-                  (startTimestamp - targetTimestamp) *
-                    (1 / settings.chainConfig[activechain].blocktime) -
-                  10,
-              ),
-            );
-
-            try {
-              const balancesdata = await readContract(config, {
-                blockNumber,
-                abi: CrystalDataHelperAbi,
-                address: settings.chainConfig[activechain].balancegetter,
-                functionName: 'batchBalanceOf',
-                args: [
-                  address as `0x${string}`,
-                  simplifiedTokenList.map(
-                    (token) => token.address as `0x${string}`,
-                  ),
-                ],
-              });
-
-              const balances: Record<string, number> = {};
-              for (const [index, balance] of balancesdata.entries()) {
-                const token = simplifiedTokenList[index];
-                if (token) {
-                  balances[token.ticker] = formatBalance(
-                    BigInt(balance),
-                    BigInt(token.decimals),
-                  );
-                }
-              }
-
-              return { date: dateStr, balances };
-            } catch (error) {
-              return null;
-            }
-          }),
-        );
-
-        batchResults.forEach((response) => {
-          if (response) {
-            results[response.date] = response;
-          }
-        });
-
-        if (i + batchSize < dateRange.length) {
-          await new Promise((resolve) => setTimeout(resolve, 100));
-        }
-      }
-
-      return results;
-    } catch (error) {
-      if (error instanceof Error && error.message === 'Operation cancelled') {
-        return {};
-      }
-      throw error;
-    }
-  }, [address, tokenList, chartDays]);
-
   const calculateChartData = useCallback(
     (balanceResults: Record<string, any>) => {
       const dateRange = generateDateRange();
@@ -152,16 +63,15 @@ export const usePortfolioData = (
       const lastKnownPrice: Record<string, number> = {};
       const ethTicker = settings.chainConfig[activechain].ethticker;
       const ethMarket = marketDataMap[`${ethTicker}USDC`];
-
+      let lastBalances = Object.values(balanceResults)[0]?.balances;
       dateRange.forEach((date, idx) => {
-        const dailyBalances = balanceResults[date]?.balances || {};
+        const dailyBalances = balanceResults[date]?.balances || lastBalances || {};
         
         Object.entries(dailyBalances).forEach(([ticker, bal]) => {
           const tokenBalance = bal as number;
           const normalized = normalizeTicker(ticker, activechain);
 
           let price = lastKnownPrice[normalized] || 0;
-
           const usdcMkt = marketDataMap[`${normalized}USDC`];
           if (usdcMkt?.series?.length > idx) {
             price = usdcMkt.series[idx].close / Number(usdcMkt.priceFactor);
@@ -176,10 +86,10 @@ export const usePortfolioData = (
               price = tokenEth.series[idx].close / Number(tokenEth.priceFactor) * ethMarket.series[idx].close / Number(ethMarket.priceFactor);
             }
           }
-
           lastKnownPrice[normalized] = price;
           chartData[idx].value += tokenBalance * price;
         })
+        lastBalances = dailyBalances
       });
 
       return chartData;
@@ -236,41 +146,117 @@ export const usePortfolioData = (
 
       const cacheKey = cache.getCacheKey(activechain, address, chartDays);
       const cachedData = cache.get(cacheKey);
-
       if (cachedData && Date.now() - cachedData.timestamp < 1000) {
         setState({
-          chartData: cachedData.data,
+          chartData: cachedData.chartData,
           balanceResults: cachedData.balanceResults,
           portChartLoading: false,
         });
         return;
       }
-
       setState((prev) => ({ ...prev, portChartLoading: true }));
-
       try {
         if (marketsData.length > 0) {
-          const balanceResults = await fetchBalances();
-          const chartData = calculateChartData(balanceResults);
-          cache.set(cacheKey, chartData, balanceResults, chartDays);
-
-          setState({
-            chartData,
-            balanceResults,
-            portChartLoading: false,
-          });
+          isFetching = true;
+          const balanceResults = await (async () => {
+            if (!address) return {};
+        
+            try {
+              const startblock = await getBlockNumber(config);
+              const dateRange = generateDateRange();
+              const results: Record<string, any> = {};
+              const simplifiedTokenList = tokenList.map((token) => ({
+                ticker: token.ticker,
+                address: token.address,
+                decimals: token.decimals,
+              }));
+        
+              const batchSize = 1;
+              for (let i = 0; i < dateRange.length; i += batchSize) {
+                if (!isFetching) return;
+                const batch = dateRange.slice(i, i + batchSize);
+                const batchResults = await Promise.all(
+                  batch.map(async (dateStr) => {
+                    const [datePart, hourPart] = dateStr.split(' ');
+                    const currentDate = new Date(`${datePart}T${hourPart}:00:00Z`);
+                    const targetTimestamp = Math.floor(currentDate.getTime() / 1000);
+                    const startTimestamp = Math.floor(new Date().getTime() / 1000);
+                    const blockNumber = BigInt(
+                      Math.round(
+                        Number(startblock) -
+                          (startTimestamp - targetTimestamp) *
+                            (1 / settings.chainConfig[activechain].blocktime) -
+                          10,
+                      ),
+                    );
+        
+                    try {
+                      const balancesdata = await readContract(config, {
+                        blockNumber,
+                        abi: CrystalDataHelperAbi,
+                        address: settings.chainConfig[activechain].balancegetter,
+                        functionName: 'batchBalanceOf',
+                        args: [
+                          address as `0x${string}`,
+                          simplifiedTokenList.map(
+                            (token) => token.address as `0x${string}`,
+                          ),
+                        ],
+                      });
+        
+                      const balances: Record<string, number> = {};
+                      for (const [index, balance] of balancesdata.entries()) {
+                        const token = simplifiedTokenList[index];
+                        if (token) {
+                          balances[token.ticker] = formatBalance(
+                            BigInt(balance),
+                            BigInt(token.decimals),
+                          );
+                        }
+                      }
+        
+                      return { date: dateStr, balances };
+                    } catch (error) {
+                      return null;
+                    }
+                  }),
+                );
+                batchResults.forEach((response) => {
+                  if (response) {
+                    results[response.date] = response;
+                  }
+                });
+        
+                if (i + batchSize < dateRange.length) {
+                  await new Promise((resolve) => setTimeout(resolve, 100));
+                }
+              }
+        
+              return results;
+            } catch (error) {
+              return;
+            }
+          })()
+          isFetching = false
+          if (balanceResults) {
+            const chartData = calculateChartData(balanceResults);
+            cache.set(cacheKey, chartData, balanceResults, chartDays);
+  
+            setState({
+              chartData,
+              balanceResults,
+              portChartLoading: false,
+            });
+          }
         }
       } catch (error) {
         console.error('Error fetching portfolio data:', error);
         setState((prev) => ({ ...prev, portChartLoading: false }));
       }
     };
-
     fetchData();
 
-    return () => {
-      abortControllerRef.current?.abort();
-    };
+    return () => { isFetching = false; };
   }, [address, chartDays, marketsData.length]);
 
   return state;
