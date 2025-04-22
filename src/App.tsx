@@ -1,6 +1,7 @@
 // import libraries
 import {
   getBlockNumber,
+  readContracts,
   waitForTransactionReceipt,
 } from '@wagmi/core';
 import React, {
@@ -20,7 +21,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { TransactionExecutionError, maxUint256 } from 'viem';
+import { TransactionExecutionError, encodeFunctionData, maxUint256 } from 'viem';
 import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -64,6 +65,7 @@ import { formatCommas, formatSubscript } from './utils/numberDisplayFormat.ts';
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
 import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
+import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 
 // import types
@@ -119,7 +121,6 @@ import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
-
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -667,6 +668,8 @@ function App() {
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
   >('desc');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -2017,10 +2020,8 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
-  const [usernameInput, setUsernameInput] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   
-  const handleCreateUsername = () => {
+  const handleCreateUsername = async () => {
     setUsernameError("");
     if (!usernameInput.trim()) {
       setUsernameError("Please enter a username");
@@ -2036,12 +2037,71 @@ function App() {
       setUsernameError("Username can only contain letters, numbers, and underscores");
       return;
     }
+
+    const read = (await readContracts(config, {
+      contracts: [
+        {
+          abi: CrystalReferralAbi,
+          address: settings.chainConfig[activechain].referralManager,
+          functionName: 'usernameToAddress',
+          args: [usernameInput],
+        },
+      ]
+    })) as any[];
+
+    if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+      setUsernameError("Username already taken");
+      return;
+    }
     
-    
-    setpopup(0);
-    
-    setUsernameInput("");
+    try {
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      })
+      await waitForTxReceipt(hash.hash);
+      return true;
+    } catch (error) {
+      return false;
+    }
   };
+
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const read = await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToUsername',
+              args: [address as `0x${string}`],
+            },
+          ]
+        });
+
+        if (read[0]?.result?.length) {
+          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch username:", error);
+      }
+    };
+  
+    if (address) {
+      fetchUsername();
+    }
+  }, [address, activechain, config]);
+
   const processOrdersForDisplay = (
     orders: Order[],
     amountsQuote: string,
