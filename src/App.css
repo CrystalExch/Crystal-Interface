@@ -3906,15 +3906,6 @@ input[type="email"] {
   margin-bottom: 0;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
 
 
 
@@ -4993,29 +4984,85 @@ input[type="email"] {
   width: min(350px, 90vw);
 }
 
-
-
-.new-wallet-overlay {
+/* Onboarding Container */
+.onboarding-container {
   position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
-  background-color: rgba(6, 6, 6, 0.9);
   height: 100vh;
+  z-index: 9999;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999;
+  background-color: rgba(6, 6, 6, 0.9);
+  overflow: hidden;
 }
 
-.new-wallet-split-container {
+.onboarding-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.onboarding-wrapper.transitioning {
+  transition: transform 0.5s ease-out;
+}
+
+.onboarding-section {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, transform 0.5s ease;
+}
+
+.onboarding-section.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.username-section {
+  z-index: 2;
+  transform: translateY(100%);
+}
+
+.username-section.active {
+  transform: translateY(0);
+}
+
+.username-section.entering {
+  animation: fadeIn 0.4s ease forwards;
+}
+
+.onboarding-wrapper.transitioning.forward .username-section.active {
+  transform: translateY(-100%);
+}
+
+.onboarding-wrapper.transitioning.backward .username-section.active {
+  transform: translateY(0);
+}
+
+.onboarding-split-container {
   display: flex;
   width: 100%;
   height: 100%;
 }
 
+.onboarding-left-side {
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 24px;
+  overflow-y: auto;
+}
 
-.new-wallet-image-container {
+.onboarding-right-side {
   width: 50%;
   height: calc(100% - 40px);
   border: 1.5px solid #151515ad;
@@ -5024,76 +5071,100 @@ input[type="email"] {
   justify-content: center;
   margin: 20px;
   border-radius: 30px;
-  animation: simpleFadeIn 0.4s ease-out forwards !important;
-  transform: none !important;
+  animation: simpleFadeIn 0.4s ease-out forwards;
   overflow: hidden;
 }
 
-.username-onboarding-image {
+.onboarding-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  
 }
 
-.new-wallet-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.new-wallet-container {
+.onboarding-right-side::after{
+  content: "";
+  position: absolute;
+  bottom: 20px;
+  right: 0;
   width: 50%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  padding: 24px;
-  overflow-y: auto;
+  height: 300px;
+  border-radius: 30px;
+  background: linear-gradient(to top, #000000, transparent);
+  z-index: 1;
 }
 
-.new-wallet-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: relative;
-  margin-bottom: 24px;
+.onboarding-image-title-text {
+  font-family: "orbitron", sans-serif;
+  position: absolute;
+  color: #e2e3ff;
+  font-size: 3rem;
+  bottom: 150px;
+  line-height: 1;
+  width: 45%;
+  margin-left: 60px;
+  letter-spacing: -0.5px;
+  z-index:2;
+}
+
+.season-text{
+  font-family: "orbitron", sans-serif;
+  color: #c0c5f5;
+  text-shadow: 0 0 1px #c0c5f539, 0 0 2px #c0c5f539, 0 0 3px #c0c5f539, 0 0 4px #c0c5f539, 0 0 5px #c0c5f539, 0 0 6px #c0c5f539, 0 0 7px #c0c5f539;
+
+}
+
+.onboarding-image-text {
+  position: absolute;
+  color: #e9eaffba;
+  font-size: 1.3rem;
+  bottom: 100px;
+  line-height: 1;
+  width: 40%;
+  margin-left:-10px;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  z-index:2;
+
+
 }
 
 
+.onboarding-title {
+  font-size: 24px;
+  text-align: center;
+  color: #e4e3e3;
+  margin-bottom: 5px;
+  letter-spacing: -0.5px;
+}
 
-.new-wallet-content {
+.onboarding-subtitle {
+  font-size: 16px;
+  text-align: center;
+  justify-self: center;
+  color: #aaaaaa;
+  margin-bottom: 10px;
+  line-height: 1.2;
+  letter-spacing: -0.3px;
+  max-width: 400px;
+}
+
+.onboarding-form {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
   max-width: 400px;
+  max-height: 180px;
   margin: 0 auto;
   width: 100%;
 }
 
-.new-wallet-title {
-  font-size: 24px;
-  text-align: center;
-  color: #ffffff;
-  margin-bottom: 5px;
-  letter-spacing: -0.5px;
-}
-
-.new-wallet-subtitle {
-  font-size: 16px;
-  text-align: center;
-  color: #aaaaaa;
-  margin-bottom: 32px;
-  line-height: 1.2;
-  letter-spacing: -0.3px;
-}
-
-
-
-.new-wallet-form-group {
+.form-group {
   margin-bottom: 16px;
 }
 
-.new-wallet-label {
+.form-label {
   display: block;
   font-size: 0.85rem;
   font-weight: 500;
@@ -5101,7 +5172,7 @@ input[type="email"] {
   margin-bottom: 8px;
 }
 
-.new-wallet-address {
+.wallet-address {
   background-color: #2222226a;
   border-radius: 8px;
   padding: 8px 16px;
@@ -5109,9 +5180,9 @@ input[type="email"] {
   color: #999999;
 }
 
-.new-wallet-input {
+.username-input {
   width: 100%;
-  background:none;
+  background: none;
   border: 1.5px solid #151515;
   border-radius: 8px;
   padding: 8px 16px;
@@ -5120,29 +5191,31 @@ input[type="email"] {
   transition: border-color 0.2s;
 }
 
-.new-wallet-input:focus {
+.username-input:focus {
   outline: none;
   border-color: #aaaecf;
   box-shadow: 0 0 0 2px rgba(169, 192, 247, 0.2);
 }
 
-.new-wallet-input::placeholder {
+.username-input::placeholder {
   color: #666666;
 }
 
-.new-wallet-error {
+.username-error {
   margin-top: 8px;
   font-size: 14px;
   color: #ff4d4d;
 }
 
-.new-wallet-actions {
+.onboarding-actions {
   display: flex;
   flex-direction: column;
+  align-self:center ;
   gap: 12px;
+  width: 400px;
 }
 
-.new-wallet-create-button {
+.create-username-button {
   width: 100%;
   background: linear-gradient(
     135deg,
@@ -5153,7 +5226,7 @@ input[type="email"] {
     #7f82a1 100%
   );
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/55%),
@@ -5162,79 +5235,58 @@ input[type="email"] {
   font-weight: 600;
   font-size: 0.9rem;
   padding: 10px;
-  border: none;
-  border-radius: 8px;
   cursor: pointer;
   transition: background-color 0.2s;
   letter-spacing: -0.3px;
 }
 
-.new-wallet-create-button:hover {
+.create-username-button:hover {
   opacity: 0.9;
 }
 
-.new-wallet-skip-button {
+.skip-button {
   width: 100%;
   background-color: transparent;
   color: #ffffffd1;
   font-size: 0.9rem;
   padding: 10px;
   border: 1.5px solid #1c1c1c;
-  border-radius: 8px;
+  border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.2s;
 }
 
-.new-wallet-skip-button:hover {
+.skip-button:hover {
   background-color: #1c1c1c31;
 }
 
-.new-wallet-footer {
-  margin-top: 24px;
-  text-align: center;
+.challenge-section {
+  z-index: 1;
+  transform: translateY(100%);
 }
 
-.new-wallet-protected {
-  font-size: 12px;
-  color: #666666;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
+.challenge-section.active {
+  transform: translateY(0);
 }
 
-.new-wallet-privy-icon {
-  display: inline-block;
-  margin: 0 4px;
+.onboarding-wrapper.transitioning.forward .challenge-section.active {
+  transform: translateY(0);
 }
 
-@media (max-width: 768px) {
-  .new-wallet-image-container {
-    display: none;
-  }
-  
-  .new-wallet-container {
-    width: 100%;
-  }
+.onboarding-wrapper.transitioning.backward .challenge-section.active {
+  transform: translateY(100%);
 }
 
-
-
+.challenge-section.exiting {
+  animation: fadeOut 0.4s ease forwards;
+}
 
 .challenge-intro-split-container {
   display: flex;
   flex-direction: row;
   width: 100%;
-  min-height: 100%;
-}
-
-.account-setup-overlay {
-  animation: fadeIn 0.3s ease-out;
-  width: 100%;
   height: 100%;
-  background-color: rgb(6,6,6)
 }
-
 
 .challenge-intro-content-side {
   width: 50%;
@@ -5244,21 +5296,329 @@ input[type="email"] {
   justify-content: space-between;
 }
 
-/* Right side with visuals */
 .challenge-intro-visual-side {
   width: 50%;
   position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, rgba(26, 26, 29, 0.7), rgba(20, 20, 22, 0.9));
   border-top-right-radius: 12px;
   border-bottom-right-radius: 12px;
   overflow: hidden;
-  animation: simpleFadeIn 0.4s ease-out forwards !important;
-  transform: none !important;
+  animation: simpleFadeIn 0.4s ease-out forwards;
 }
 
+.account-setup-header {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.account-setup-title-wrapper {
+  margin-bottom: 15px;
+}
+
+.account-setup-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 5px;
+}
+
+.account-setup-subtitle {
+  font-size: 16px;
+  color: #aaaaaa;
+}
+
+.step-indicators {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.step-indicator {
+  width: 24px;
+  height: 4px;
+  background-color: #333333;
+  border-radius: 2px;
+  transition: background-color 0.3s ease;
+}
+
+.step-indicator.active {
+  background-color: #aaaecf;
+}
+
+.step-indicator.completed {
+  background-color: #7f82ac;
+}
+
+.intro-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  padding: 20px 0;
+}
+
+.intro-title {
+  font-size: 1.3rem;
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: #aaaecf;
+}
+
+.intro-description {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  color: #f0f0f0;
+}
+
+.account-setup-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+
+.back-button, .back-to-username-button {
+  padding: 10px 16px;
+  background-color: transparent;
+  color: #ffffffd1;
+  border: 1.5px solid #1c1c1c;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.back-button:hover, .back-to-username-button:hover {
+  background-color: #1c1c1c31;
+}
+
+.next-button {
+  padding: 10px 20px;
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  );
+  border: none;
+  border-radius: 8px;
+  color: #000000;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.next-button:hover {
+  opacity: 0.9;
+}
+
+.intro-image-container, .xp-animation-container, .rewards-container {
+  width: 90%;
+  height: 90%;
+  margin: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.zoom-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.intro-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 2s ease-out;
+}
+
+.zoom-container.zoom-active .intro-image {
+  animation: zoomRightAnimation 2s forwards ease-out;
+}
+
+.glowing-rectangle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: 25px;
+  width: 250px;
+  border: 1px solid rgba(208, 210, 228, 0.2);
+  box-shadow: 0 0 20px rgba(170, 174, 207, 0.25);
+  animation: glowingRectangleAppear 1s forwards;
+  animation-delay: 1.5s;
+  background-color: transparent;
+  border-radius: 3px;
+  opacity: 0;
+}
+
+/* User profile in step 2 */
+.user-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-pic-second {
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  box-shadow: 0 0 15px rgba(170, 174, 207, 0.3);
+  animation: profileBounce 2.5s infinite;
+}
+
+.username-display {
+  font-size: 1.2rem;
+  margin-top: 15px;
+  font-weight: 500;
+  color: #ffffff;
+}
+
+.xp-counter {
+  font-size: 1.4rem;
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  color: #aaaecf;
+  animation: counterPulse 2s infinite;
+}
+
+.xp-icon {
+  width: 28px;
+  height: 28px;
+  margin-left: 8px;
+}
+
+.rewards-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rewards-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.podium {
+  position: absolute;
+  bottom: 20%;
+  display: flex;
+  align-items: flex-end;
+  height: 150px;
+  gap: 10px;
+}
+
+.podium-step {
+  background: linear-gradient(to bottom, rgba(170, 174, 207, 0.7), rgba(127, 130, 172, 0.9));
+  width: 80px;
+  position: relative;
+  border-radius: 6px 6px 0 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.podium-step:nth-child(1) {
+  height: 80px;
+}
+
+.podium-step:nth-child(2) {
+  height: 120px;
+}
+
+.podium-step:nth-child(3) {
+  height: 60px;
+}
+
+.podium-rank {
+  color: #ffffff;
+  font-weight: 600;
+  position: relative;
+  z-index: 1;
+}
+
+.podium-profiles {
+  position: absolute;
+  bottom: 50%;
+  display: flex;
+  align-items: flex-end;
+  gap: 40px;
+}
+
+.podium-profile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  opacity: 0;
+}
+
+.profile-first {
+  order: 2;
+  transform: translateY(-30px);
+  animation: profileAppear 0.5s forwards;
+  animation-delay: 0.3s;
+}
+
+.profile-second {
+  order: 1;
+  animation: profileAppear 0.5s forwards;
+  animation-delay: 0.5s;
+}
+
+.profile-third {
+  order: 3;
+  animation: profileAppear 0.5s forwards;
+  animation-delay: 0.7s;
+}
+
+.podium-profile-pic {
+  border-radius: 50%;
+  border: 2px solid #aaaecf;
+  box-shadow: 0 0 10px rgba(170, 174, 207, 0.5);
+}
+
+.profile-first .podium-profile-pic {
+  height: 70px;
+  width: 70px;
+}
+
+.profile-second .podium-profile-pic,
+.profile-third .podium-profile-pic {
+  height: 50px;
+  width: 50px;
+}
+
+.crown {
+  position: absolute;
+  top: -25px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 24px;
+  animation: crownFloat 2s infinite ease-in-out;
+}
 
 @keyframes simpleFadeIn {
   from {
@@ -5269,128 +5629,6 @@ input[type="email"] {
   }
 }
 
-/* Adjust header for split layout */
-.challenge-intro-content-side .account-setup-header {
-  margin-bottom: 0;
-}
-
-/* Adjust intro text for split layout */
-.challenge-intro-content-side .intro-text {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  text-align: left;
-  padding: 20px 0;
-}
-
-.challenge-intro-content-side .intro-title {
-  font-size: 1.3rem;
-  font-weight: 500;
-  margin-bottom: 10px;
-  color: #aaaecf;
-}
-
-.challenge-intro-content-side .intro-description {
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-/* Adjust visual elements to fill the right side */
-.challenge-intro-visual-side .intro-image-container,
-.challenge-intro-visual-side .xp-animation-container,
-.challenge-intro-visual-side .rewards-container {
-  width: 90%;
-  height: 90%;
-  margin: 0;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-/* Specific adjustments for step 1 */
-.challenge-intro-visual-side .intro-image-container {
-  height: 70%;
-}
-
-.challenge-intro-visual-side .zoom-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* Specific adjustments for step 2 */
-.challenge-intro-visual-side .xp-animation-container {
-  justify-content: center;
-  padding: 30px;
-}
-
-.challenge-intro-visual-side .user-profile {
-  margin-bottom: 20px;
-}
-
-.challenge-intro-visual-side .profile-pic-second {
-  height: 80px;
-  width: 80px;
-}
-
-.challenge-intro-visual-side .username-display {
-  font-size: 1.2rem;
-  margin-top: 15px;
-}
-
-.challenge-intro-visual-side .xp-counter {
-  font-size: 1.4rem;
-  margin-top: 10px;
-}
-
-.challenge-intro-visual-side .xp-icon {
-  width: 28px !important;
-  height: 28px !important;
-  margin-left: 8px;
-}
-
-/* Specific adjustments for step 3 */
-.challenge-intro-visual-side .rewards-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.challenge-intro-visual-side .rewards-stage {
-  width: 100%;
-  height: 100%;
-}
-
-.challenge-intro-visual-side .podium {
-  bottom: 20%;
-}
-
-.challenge-intro-visual-side .podium-profiles {
-  bottom: 50%;
-}
-
-.challenge-intro-visual-side .podium-step {
-  width: 80px;
-}
-
-.challenge-intro-visual-side .profile-first .podium-profile-pic {
-  height: 70px;
-  width: 70px;
-}
-
-.challenge-intro-content-side, 
-.challenge-intro-visual-side {
-  animation: contentSlideIn 0.4s ease-out forwards;
-}
-
-
-@keyframes contentSlideIn {
-  from {
-    transform: translateY(220px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -5400,51 +5638,22 @@ input[type="email"] {
   }
 }
 
-/* Animation adjustments for better visibility */
-.glowing-rectangle {
-  height: 25px;
-  width: 250px;
-  border: 1px solid rgba(208, 210, 228, 0.2);
-  box-shadow: 0 0 20px rgba(170, 174, 207, 0.25);
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
-/* Responsive adjustments for mobile */
-@media (max-width: 768px) {
-  .challenge-intro-split-container {
-    flex-direction: column;
-    height: auto;
-    max-width: 420px;
+@keyframes contentSlideIn {
+  from {
+    transform: translateY(220px);
   }
-  
-  .challenge-intro-content-side,
-  .challenge-intro-visual-side {
-    width: 100%;
+  to {
+    transform: translateY(0);
   }
-  
-  .challenge-intro-content-side {
-    padding: 15px 20px;
-  }
-  
-  .challenge-intro-visual-side {
-    height: 250px;
-    border-radius: 0 0 12px 12px;
-  }
-  
-  .challenge-intro-content-side .intro-text {
-    text-align: center;
-    padding: 15px 0;
-  }
-  
-  .challenge-intro-visual-side .intro-image-container,
-  .challenge-intro-visual-side .xp-animation-container,
-  .challenge-intro-visual-side .rewards-container {
-    height: 80%;
-  }
-}/* Enhanced animations for smooth transitions between steps */
-
-/* Zoom animation for the first step */
-.zoom-container.zoom-active .intro-image {
-  animation: zoomRightAnimation 2s forwards ease-out;
 }
 
 @keyframes zoomRightAnimation {
@@ -5454,16 +5663,6 @@ input[type="email"] {
   100% {
     transform: scale(2.5) translateX(-15%) translateY(10%);
   }
-}
-
-/* Glowing rectangle animation */
-.glowing-rectangle {
-  animation: glowingRectangleAppear 1s forwards;
-  animation-delay: 1.5s;
-  background-color: transparent;
-  border: 1px solid rgba(208, 210, 228, 0.15);
-  border-radius: 3px;
-  box-shadow: 0 0 15px rgba(170, 174, 207, 0.2);
 }
 
 @keyframes glowingRectangleAppear {
@@ -5481,35 +5680,6 @@ input[type="email"] {
   }
 }
 
-/* XP animation enhancements */
-.xp-popup {
-  color: #aaaecf;
-  font-weight: bold;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  text-shadow: 0 0 4px rgba(170, 174, 207, 0.5);
-}
-
-@keyframes xpFadeUp {
-  0% {
-    opacity: 0;
-    transform: translateY(0);
-  }
-  20%, 80% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-60px);
-  }
-}
-
-/* Profile bounce animation */
-.profile-pic-second {
-  animation: profileBounce 2.5s infinite;
-}
-
 @keyframes profileBounce {
   0%, 100% {
     transform: translateY(0);
@@ -5521,11 +5691,6 @@ input[type="email"] {
   }
 }
 
-/* XP counter pulse animation */
-.xp-counter {
-  animation: counterPulse 2s infinite;
-}
-
 @keyframes counterPulse {
   0%, 100% {
     text-shadow: 0 0 5px rgba(170, 174, 207, 0.3);
@@ -5533,26 +5698,6 @@ input[type="email"] {
   50% {
     text-shadow: 0 0 10px rgba(170, 174, 207, 0.6);
   }
-}
-
-/* Profile appearance animations */
-.podium-profile {
-  opacity: 0;
-}
-
-.profile-first {
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.3s;
-}
-
-.profile-second {
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.5s;
-}
-
-.profile-third {
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.7s;
 }
 
 @keyframes profileAppear {
@@ -5566,111 +5711,6 @@ input[type="email"] {
   }
 }
 
-/* Confetti animations */
-.confetti {
-  animation: fallDown 2s forwards;
-  border-radius: 0 50% 50%;
-  height: 16px;
-  opacity: 0;
-  position: absolute;
-  width: 8px;
-}
-
-@keyframes fallDown {
-  0% {
-    opacity: 1;
-    transform: translateY(-100px) rotate(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(300px) rotate(360deg);
-  }
-}
-
-/* Particle animations */
-.particle {
-  background: rgba(170, 174, 207, 0.8);
-  border-radius: 50%;
-  box-shadow: 0 0 8px rgba(170, 174, 207, 0.5);
-  height: 4px;
-  opacity: 0;
-  position: absolute;
-  width: 4px;
-}
-
-@keyframes particleAnimation {
-  0% {
-    opacity: 1;
-    transform: translateY(0) translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-30px) translateX(var(--x-offset));
-  }
-}
-
-.spark {
-  background: linear-gradient(0, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.8));
-  border-radius: 50%;
-  height: 20px;
-  opacity: 0;
-  position: absolute;
-  transform-origin: bottom center;
-  width: 2px;
-}
-
-@keyframes sparkAnimation {
-  0%, 100% {
-    height: 0;
-    opacity: 0;
-  }
-  50% {
-    height: 30px;
-    opacity: 0.8;
-  }
-}
-
-.podium-step::before {
-  animation: shimmer 1.5s infinite;
-  background: linear-gradient(90deg, transparent 0, rgba(255, 255, 255, 0.2) 50%, transparent 100%);
-  content: '';
-  height: 100%;
-  left: 0;
-  position: absolute;
-  top: 0;
-  transform: translateX(-100%);
-  width: 100%;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.challenge-intro-visual-side > div {
-  animation: contentTransition 0.5s ease-out;
-}
-
-@keyframes contentTransition {
-  0% {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.crown {
-  animation: crownFloat 2s infinite ease-in-out;
-  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.5));
-}
-
 @keyframes crownFloat {
   0%, 100% {
     transform: translateX(-50%) translateY(0);
@@ -5680,428 +5720,43 @@ input[type="email"] {
   }
 }
 
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Button hover animations */
-.next-button, .back-button, .skip-button {
-  transition: all 0.2s ease;
-}
-
-.next-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(170, 174, 207, 0.2);
-}
-
-.back-button:hover, .skip-button:hover {
-  background-color: rgba(255, 255, 255, 0.05);
-}
-
-
-@keyframes slideInDown {
-  from {
-    opacity: 0;
-    transform: translateY(-50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-
-@keyframes slideFromBottom {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Content animation for transition to challenge intro */
-.new-wallet-content {
-  animation: fadeIn 0.4s ease-out;
-}
-
-.account-setup-overlay {
-  animation: simpleOpacityFade 0.4s ease-out;
-}
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.account-setup-overlay.exiting {
-  animation: simpleOpacityFade 0.4s ease-out forwards; /* Replace with a simple fade */
-}
-
-@keyframes simpleOpacityFade {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-@keyframes slideOutDown {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(50px);
-  }
-}
-
-/* Animation for challenge container itself */
-.challenge-intro-split-container {
-  animation: fadeInScale 0.4s ease-out;
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-
-
-
-
-.challenge-intro-visual-side {
-  animation: visualSlideIn 0.5s ease-out;
-  animation-fill-mode: forwards;
-}
-
-@keyframes visualSlideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Additional animation for the split container sides when going back */
-.challenge-intro-split-container.exiting .challenge-intro-content-side {
-  animation: contentSlideOut 0.4s ease-in forwards;
-}
-
-.challenge-intro-split-container.exiting .challenge-intro-visual-side {
-  animation: visualSlideOut 0.4s ease-in forwards;
-}
-
-@keyframes contentSlideOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-}
-
-@keyframes visualSlideOut {
-  from {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-}
-
-
-
-@keyframes contentSlideInFix {
-  from {
-    opacity: 0;
-    transform: translateY(0);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-} 
-
-
-
-@keyframes splitContainerEnter {
-  from {
-    opacity: 0;
-    transform: translateY(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.new-wallet-container {
-  animation: containerSlideIn 0.4s ease-out;
-  animation-fill-mode: forwards;
-}
-
-@keyframes containerSlideIn {
-  from {
-    transform: translateY(-200px);
-  }
-  to {
-    transform: translateY(0);
-  }
-}
-
-
-
-.new-wallet-content,
-.account-setup-header,
-.intro-text,
-.account-setup-footer {
-  animation: contentSlideIn 0.4s ease-out;
-}
-
-
-/* Animations for transitions between challenge steps */
-.challenge-intro-split-container.transitioning .intro-text {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-
-.challenge-intro-split-container.transitioning .challenge-intro-visual-side > div {
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.2s ease-out, transform 0.2s ease-out;
-}
-
-/* Quick fade in for visual elements when switching steps */
-.intro-image-container, 
-.xp-animation-container, 
-.rewards-container {
-  animation: stepTransition 0.3s ease-out forwards;
-}
-
-@keyframes stepTransition {
-  from {
-    opacity: 0;
-    transform: translateY(15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Optimize the username to challenge transition */
-.account-setup-overlay {
-  animation: fadeIn 0.25s ease-out;
-}
-
-/* Make sure all step indicators have smooth transitions */
-.step-indicator {
-  transition: background-color 0.3s ease, transform 0.3s ease;
-}
-
-.step-indicator.active {
-  transform: scale(1.1);
-}
-
-/* Smooth transition for text changes */
-.intro-title, 
-.intro-description {
-  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
-}
-
-/* Ensure the right visual is visible with proper animation */
-.challenge-intro-visual-side > div {
-  opacity: 0;
-  animation: visualFadeIn 0.3s ease-out forwards;
-}
-
-@keyframes visualFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(15px); 
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Style the transitioning class */
-.challenge-intro-split-container.transitioning {
-  pointer-events: none;
-}
-
-/* Optimize the immediate transition from username to challenge */
-.new-wallet-split-container.entering {
-  animation: quickFadeIn 0.2s ease-out;
-}
-
-@keyframes quickFadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-/* Fix for any conflicting animations */
-.challenge-intro-content-side {
-  animation: none !important;
-}
-
-.challenge-intro-visual-side {
-  animation: none !important;
-}
-
-/* Override any existing animations causing delays */
-.account-setup-overlay.exiting,
-.challenge-intro-split-container.exiting {
-  animation: fadeOut 0.2s ease-out forwards !important;
-}
-
-@keyframes fadeOut {
-  from {
-    opacity: 1;
-  }
-  to {
-    opacity: 0;
-  }
-}
-
-/* Connected transition styles */
-.transition-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
-  z-index: 9999;
-  pointer-events: none;
-}
-
-.transition-container > * {
-  pointer-events: auto;
-}
-
-/* Modified animation for username screen */
-.new-wallet-overlay.transitioning-out {
-  animation: none !important;
-}
-
-.new-wallet-split-container.transitioning-out {
-  transform: translateY(-50%);
-  opacity: 0;
-  transition: transform 0.5s ease-out, opacity 0.4s ease-out;
-}
-
-/* Modified animation for challenge intro */
-.account-setup-overlay.transitioning-in {
-  animation: none !important;
-  opacity: 1;
-}
-
-.challenge-intro-split-container.transitioning-in {
-  transform: translateY(0);
-  transition: transform 0.5s ease-out;
-  animation: none !important;
-}
-
-.challenge-intro-split-container.pre-transition {
-  transform: translateY(100%);
-  opacity: 1;
-}
-
-/* Shared container for transitioning elements */
-.screens-container {
-  position: relative;
-  width: 100%;
-  height: 100%;
-}
-
-/* Coordinated exit and entry animations */
-@keyframes slideOutUp {
-  from {
-    transform: translateY(0);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(-50%);
-    opacity: 0;
-  }
-}
-
-@keyframes slideInUp {
-  from {
-    transform: translateY(100%);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-/* Ensure smooth content transitions */
-.new-wallet-content.fading {
-  opacity: 0;
-  transition: opacity 0.3s ease-out;
-}
-
-.challenge-intro-content-side.entering {
-  opacity: 0;
-  animation: fadeIn 0.3s ease-out 0.3s forwards;
-}
-
-.challenge-intro-visual-side.entering {
-  opacity: 0;
-  animation: fadeIn 0.3s ease-out 0.4s forwards;
-}
-
-/* Override default animations that might interfere */
-.new-wallet-overlay.in-transition,
-.account-setup-overlay.in-transition {
-  animation: none !important;
-}
-
-/* Media queries for responsive transitions */
 @media (max-width: 768px) {
-  .new-wallet-split-container.transitioning-out {
-    transform: translateY(-30%);
+  .onboarding-split-container,
+  .challenge-intro-split-container {
+    flex-direction: column;
   }
   
-  .challenge-intro-split-container.pre-transition {
-    transform: translateY(70%);
+  .onboarding-left-side,
+  .onboarding-right-side,
+  .challenge-intro-content-side,
+  .challenge-intro-visual-side {
+    width: 100%;
+  }
+  
+  .onboarding-right-side {
+    height: 250px;
+    margin: 10px 20px;
+  }
+  
+  .challenge-intro-visual-side {
+    height: 250px;
+  }
+  
+  .challenge-intro-content-side {
+    padding: 15px;
+  }
+  
+  .onboarding-form {
+    padding: 10px;
+  }
+  
+  .podium {
+    scale: 0.8;
+  }
+  
+  .podium-profiles {
+    scale: 0.8;
+    gap: 30px;
   }
 }
+

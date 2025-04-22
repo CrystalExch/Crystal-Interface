@@ -93,6 +93,13 @@ import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
+import usernameonboarding from './assets/usernameonboarding.png';
+ 
+ import defaultProfilePic from './assets/bh.png';
+ import crystalxp from './assets/CrystalX.png';
+ import LeaderboardPfp2 from './assets/legion.png';
+ import LeaderboardPfp3 from './assets/rubberbandz.png';
+ import part1image from './assets/spreaddemo.png';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -251,7 +258,7 @@ function App() {
     }
     return null;
   };
-
+  
   // state vars
   const showFooter = [
     '/swap',
@@ -2020,7 +2027,82 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
+  // State variables for managing transitions between screens
+const [isTransitioning, setIsTransitioning] = useState(false);
+const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
+const [fromChallenge, setFromChallenge] = useState(false); // Tracks if coming back from challenge to username
+const [justEntered, setJustEntered] = useState(false); // Used for entry animations
+const [exitingChallenge, setExitingChallenge] = useState(false); // Used when leaving challenge screen
+
+// Challenge state
+const [currentStep, setCurrentStep] = useState(0); // Current step in the challenge intro (0, 1, or 2)
+const [animationStarted, setAnimationStarted] = useState(false); // Controls animations within challenge steps
+
+
+// Effect to trigger animations when entering the first step of challenge
+useEffect(() => {
+  if (currentStep === 0) {
+    // Start animation after a short delay
+    const timer = setTimeout(() => {
+      setAnimationStarted(true);
+    }, 100);
+    return () => clearTimeout(timer);
+  } else {
+    // Reset animation state when moving to other steps
+    setAnimationStarted(false);
+  }
+}, [currentStep]);
+
+const handleBack = () => {
+  if (currentStep > 0) {
+    // Simply decrement the current step
+    setCurrentStep(prevStep => prevStep - 1);
+  }
+};
+
+
+const handleBackToUsername = () => {
+  // Start the transition animation
+  setIsTransitioning(true);
+  setTransitionDirection('backward');
+  setExitingChallenge(true);
+  setFromChallenge(true);
   
+  setTimeout(() => {
+    setpopup(14);
+    setJustEntered(true);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+      setExitingChallenge(false);
+    }, 500);
+  }, 400);
+};
+
+const handleSkipUsername = () => {
+  setIsTransitioning(true);
+  setTransitionDirection('forward');
+  
+  setTimeout(() => {
+    setpopup(15);
+    setCurrentStep(0);
+    
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, 500);
+  }, 400);
+};
+
+const handleCompleteChallenge = () => {
+  if (currentStep < 2) {
+    setCurrentStep(currentStep + 1);
+  } else {
+    setExitingChallenge(true);
+    setTimeout(() => {
+      setpopup(0); 
+    }, 400);
+  }
+};
   const handleCreateUsername = async () => {
     setUsernameError("");
     if (!usernameInput.trim()) {
@@ -6759,57 +6841,213 @@ function App() {
             </div>
           </div>
         ) : null}
-{popup === 14 ? (
-  <div ref={popupref} className="new-wallet-overlay">
-    <div className="new-wallet-split-container">
-      <div className="new-wallet-image-container">
-      </div>
-      
-      <div className="new-wallet-container">
-        
-        <div className="new-wallet-content">
-          <h2 className="new-wallet-title">Welcome to Crystal</h2>
-          <p className="new-wallet-subtitle">Create a username for your wallet to enhance your experience</p>
-          
-          <div className="new-wallet-form">
-            <div className="new-wallet-form-group">
-              <label className="new-wallet-label">Your Wallet Address</label>
-              <div className="new-wallet-address">{address || "0x1234...5678"}</div>
+{popup === 14 || popup === 15 || isTransitioning ? (
+  <div ref={popupref} className="onboarding-container">
+    <div className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''}`}>
+      <div 
+        className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward') ? 'active' : ''} ${justEntered ? 'entering' : ''}`}
+      >
+        <div className="onboarding-split-container">
+          <div className="onboarding-left-side">
+            <div className="onboarding-header">
+              <h2 className="onboarding-title">Welcome to Crystal</h2>
+              <p className="onboarding-subtitle">Create a username for your wallet to enhance your experience</p>
             </div>
             
-            <div className="new-wallet-form-group">
-              <label htmlFor="username" className="new-wallet-label">Username</label>
-              <input
-                type="text"
-                id="username"
-                className="new-wallet-input"
-                placeholder="Enter a username"
-                value={usernameInput || ""}
-                onChange={(e) => setUsernameInput(e.target.value)}
-              />
-              {usernameError && (
-                <p className="new-wallet-error">{usernameError}</p>
-              )}
+            <div className="onboarding-form">
+              <div className="form-group">
+                <label className="form-label">Your Wallet Address</label>
+                <div className="wallet-address">{address || "0x1234...5678"}</div>
+              </div>
+              
+              <div className="form-group">
+                <label htmlFor="username" className="form-label">Username</label>
+                <input
+                  type="text"
+                  id="username"
+                  className="username-input"
+                  placeholder="Enter a username"
+                  value={usernameInput || ""}
+                  onChange={(e) => setUsernameInput(e.target.value)}
+                />
+                {usernameError && (
+                  <p className="username-error">{usernameError}</p>
+                )}
+              </div>
+            </div>
+            
+            <div className="onboarding-actions">
+              <button
+                className="create-username-button"
+                onClick={async () => {
+                  const success = await handleCreateUsername();
+                  if (success) {
+                    setIsTransitioning(true);
+                    setTransitionDirection('forward');
+                    setTimeout(() => {
+                      setpopup(15);
+                      setTimeout(() => {
+                        setIsTransitioning(false);
+                        setJustEntered(true);
+                      }, 500);
+                    }, 400);
+                  }
+                }}
+              >
+                Create Username
+              </button>
+              
+              <button
+                className="skip-button"
+                onClick={() => {
+                  setIsTransitioning(true);
+                  setTransitionDirection('forward');
+                  setTimeout(() => {
+                    setpopup(15);
+                    setTimeout(() => {
+                      setIsTransitioning(false);
+                    }, 500);
+                  }, 400);
+                }}
+              >
+                Continue Without Username
+              </button>
             </div>
           </div>
-          
-          <div className="new-wallet-actions">
-            <button
-              className="new-wallet-create-button"
-              onClick={handleCreateUsername}
-            >
-              Create Username
-            </button>
-            
-            <button
-              className="new-wallet-skip-button"
-              onClick={() => setpopup(0)}
-            >
-              Continue Without Username
-            </button>
-          </div>
-          
+          <div className="onboarding-right-side">
+            <img className="onboarding-image" src={usernameonboarding} alt="Join the Crystal Community" />
+            <span className="onboarding-image-title-text">CRYSTAL POINTS PROGRAM: SEASON 0
+              </span> 
 
+            <span className="onboarding-image-text">Create an Account to be put on the leaderboard and earn. Crystals will directly translate to mainnet token holdings.</span> 
+          </div>
+        </div>
+      </div>
+
+      {/* Challenge Intro Section */}
+      <div 
+        className={`onboarding-section challenge-section ${popup === 15 || (isTransitioning && transitionDirection === 'forward') ? 'active' : ''} ${exitingChallenge ? 'exiting' : ''}`}
+      >
+        <div className="challenge-intro-split-container">
+          <div className="challenge-intro-content-side">
+            <div className="account-setup-header">
+              <div className="account-setup-title-wrapper">
+                <h2 className="account-setup-title">{t('challengeOverview')}</h2>
+                <p className="account-setup-subtitle">{t('learnHowToCompete')}</p>
+              </div>
+
+              <div className="step-indicators">
+                {[0, 1, 2].map((index) => (
+                  <div
+                    key={index}
+                    className={`step-indicator ${index === currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="intro-text">
+              <h3 className="intro-title">
+                {currentStep === 0 ? t('precisionMatters') :
+                 currentStep === 1 ? t('earnCrystals') :
+                 t('claimRewards')}
+              </h3>
+              <p className="intro-description">
+                {currentStep === 0 ? t('placeYourBids') :
+                 currentStep === 1 ? t('midsGiveYou') :
+                 t('competeOnLeaderboards')}
+              </p>
+            </div>
+
+            <div className="account-setup-footer">
+              {currentStep > 0 ? (
+                <button className="back-button" onClick={handleBack}>
+                  {t('back')}
+                </button>
+              ) : (
+                <button 
+                  className="back-to-username-button" 
+                  onClick={handleBackToUsername}
+                >
+                  <svg className="back-arrow-icon" viewBox="0 0 24 24" width="16" height="16">
+                    <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" 
+                    strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7"/>
+                  </svg>
+                  {t('backToUsername')}
+                </button>
+              )}
+
+              <button 
+                className="next-button" 
+                onClick={handleCompleteChallenge}
+              >
+                {currentStep < 2 ? t('next') : t('getStarted')}
+              </button>
+            </div>
+          </div>
+
+          <div className="challenge-intro-visual-side">
+            {currentStep === 0 && (
+              <div className="intro-image-container">
+                <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
+                  <img src={part1image} className="intro-image" alt="Tutorial illustration" />
+                  {animationStarted && <div className="glowing-rectangle"></div>}
+                </div>
+              </div>
+            )}
+            
+            {currentStep === 1 && (
+              <div className="xp-animation-container">
+                <div className="user-profile">
+                  <img src={defaultProfilePic} className="profile-pic-second" alt="User profile" />
+                  <div className="username-display">@{usernameInput || "player123"}</div>
+                  <div className="xp-counter">
+                    <img
+                      src={crystalxp}
+                      className="xp-icon"
+                      alt="Crystal XP"
+                      style={{
+                        width: '23px',
+                        height: '23px',
+                        verticalAlign: 'middle',
+                      }}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {currentStep === 2 && (
+              <div className="rewards-container">
+                <div className="rewards-stage">
+                  <div className="podium">
+                    <div className="podium-step">
+                      <span className="podium-rank">2nd</span>
+                    </div>
+                    <div className="podium-step">
+                      <span className="podium-rank">1st</span>
+                    </div>
+                    <div className="podium-step">
+                      <span className="podium-rank">3rd</span>
+                    </div>
+                  </div>
+
+                  <div className="podium-profiles">
+                    <div className="podium-profile profile-second">
+                      <img src={LeaderboardPfp2} className="podium-profile-pic" alt="Second place" />
+                    </div>
+                    <div className="podium-profile profile-first">
+                      <img src={defaultProfilePic} className="podium-profile-pic" alt="First place" />
+                      <div className="crown">👑</div>
+                    </div>
+                    <div className="podium-profile profile-third">
+                      <img src={LeaderboardPfp3} className="podium-profile-pic" alt="Third place" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
