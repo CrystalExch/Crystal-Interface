@@ -1,6 +1,7 @@
 // import libraries
 import {
   getBlockNumber,
+  readContracts,
   waitForTransactionReceipt,
 } from '@wagmi/core';
 import React, {
@@ -20,7 +21,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { TransactionExecutionError, maxUint256 } from 'viem';
+import { TransactionExecutionError, encodeFunctionData, maxUint256 } from 'viem';
 import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -64,6 +65,7 @@ import { formatCommas, formatSubscript } from './utils/numberDisplayFormat.ts';
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
 import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
+import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 
 // import types
@@ -91,13 +93,7 @@ import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
-import usernameonboarding from './assets/usernameonboarding.png';
 
-import defaultProfilePic from './assets/bh.png';
-import crystalxp from './assets/CrystalX.png';
-import LeaderboardPfp2 from './assets/legion.png';
-import LeaderboardPfp3 from './assets/rubberbandz.png';
-import part1image from './assets/spreaddemo.png';
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
 import Referrals from './components/Referrals/Referrals.tsx';
@@ -125,7 +121,6 @@ import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
-
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -657,8 +652,7 @@ function App() {
     ethticker
   );
   const multihop = activeMarket.path.length > 2;
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState('forward');
+
   const navigate = useNavigate();
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
@@ -674,6 +668,8 @@ function App() {
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
   >('desc');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const { toggleFavorite } = useSharedContext();
 
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -2024,171 +2020,87 @@ function App() {
       sellOrders: mapOrders(sellOrdersRaw as bigint[]),
     };
   }
-
-
-
-
-
-
-  const [usernameInput, setUsernameInput] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   
-const [currentStep, setCurrentStep] = useState(0);
-const [animationStarted, setAnimationStarted] = useState(false);
-const [xpCount, setXpCount] = useState(0);
-const xpAnimationRef = useRef(null);
-const xpPopupsRef = useRef(null);
+  const handleCreateUsername = async () => {
+    setUsernameError("");
+    if (!usernameInput.trim()) {
+      setUsernameError("Please enter a username");
+      return;
+    }
+    
+    if (usernameInput.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
 
-useEffect(() => {
-  if (currentStep === 0) {
-    const timer = setTimeout(() => {
-      setAnimationStarted(true);
-    }, 100);
-    return () => clearTimeout(timer);
-  } else {
-    setAnimationStarted(false);
-  }
-}, [currentStep]);
+    const read = (await readContracts(config, {
+      contracts: [
+        {
+          abi: CrystalReferralAbi,
+          address: settings.chainConfig[activechain].referralManager,
+          functionName: 'usernameToAddress',
+          args: [usernameInput],
+        },
+      ]
+    })) as any[];
 
-useEffect(() => {
-  if (currentStep === 1) {
-    setXpCount(0);
+    if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+      setUsernameError("Username already taken");
+      return;
+    }
+    
+    try {
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      })
+      await waitForTxReceipt(hash.hash);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  };
 
-    const counterInterval = setInterval(() => {
-      setXpCount((prev) => {
-        if (prev >= 150) {
-          clearInterval(counterInterval);
-          return 150;
-        }
-        return prev + 10;
-      });
-    }, 500);
-
-    xpAnimationRef.current = setInterval(() => {
-      if (xpPopupsRef.current) {
-        const popup = document.createElement('div');
-        popup.className = 'xp-popup';
-
-        const popupContent = document.createElement('div');
-        popupContent.style.display = 'flex';
-        popupContent.style.alignItems = 'center';
-
-        const crystalImg = document.createElement('img');
-        crystalImg.src = crystalxp;
-        crystalImg.className = 'xp-icon';
-        crystalImg.style.width = '20px';
-        crystalImg.style.height = '20px';
-        crystalImg.style.marginRight = '3px';
-
-        const textContent = document.createTextNode('+10');
-        popupContent.appendChild(textContent);
-
-        popupContent.appendChild(crystalImg);
-        popup.appendChild(popupContent);
-
-        const randomOffset = Math.random() * 60 - 30;
-        popup.style.left = `calc(50% + ${randomOffset}px)`;
-        popup.style.top = '30px';
-
-        popup.style.animation = 'xpFadeUp 1.5s forwards';
-
-        xpPopupsRef.current.appendChild(popup);
-
-        setTimeout(() => {
-          popup.remove();
-        }, 1500);
-      }
-    }, 500);
-
-    return () => {
-      clearInterval(counterInterval);
-      if (xpAnimationRef.current) {
-        clearInterval(xpAnimationRef.current);
-      }
-    };
-  }
-
-  if (currentStep === 2) {
-    const createConfetti = () => {
-      if (!xpPopupsRef.current) return;
-
-      const confettiContainer = document.querySelector('.rewards-stage');
-      if (!confettiContainer) return;
-
-      for (let i = 0; i < 30; i++) {
-        setTimeout(() => {
-          const confetti = document.createElement('div');
-          confetti.className = 'confetti';
-
-          const colors = [
-            '#aaaecf',
-            '#9a9ec7',
-            '#FFD700',
-            '#ffffff',
-            '#7f82ac',
-          ];
-          const randomColor =
-            colors[Math.floor(Math.random() * colors.length)];
-          const randomLeft = Math.random() * 100;
-          const randomDelay = Math.random() * 1.5;
-          const randomRotation = Math.random() * 360;
-
-          confetti.style.left = `${randomLeft}%`;
-          confetti.style.backgroundColor = randomColor;
-          confetti.style.animationDelay = `${randomDelay}s`;
-          confetti.style.transform = `rotate(${randomRotation}deg)`;
-
-          confettiContainer.appendChild(confetti);
-
-          setTimeout(
-            () => {
-              confetti.remove();
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const read = await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToUsername',
+              args: [address as `0x${string}`],
             },
-            2000 + randomDelay * 1000,
-          );
-        }, i * 100);
+          ]
+        });
+
+        if (read[0]?.result?.length) {
+          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch username:", error);
       }
     };
-
-    setTimeout(createConfetti, 500);
-  }
-}, [currentStep]);
-
-const handleBack = () => {
-  if (currentStep > 0) {
-    setCurrentStep((prevStep) => prevStep - 1);
-  }
-};
-
-const [exitingChallenge, setExitingChallenge] = useState(false);
-const [fromChallenge, setFromChallenge] = useState(false);
-const [justEntered, setJustEntered] = useState(false);
-
-const handleCreateUsername = () => {
-  setUsernameError("");
-  if (!usernameInput.trim()) {
-    setUsernameError("Please enter a username");
-    return;
-  }
   
-  if (usernameInput.length < 3) {
-    setUsernameError("Username must be at least 3 characters");
-    return;
-  }
-  
-  if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-    setUsernameError("Username can only contain letters, numbers, and underscores");
-    return;
-  }
-  
-  setExitingChallenge(false);
-  setJustEntered(false);
-  setTimeout(() => {
-    setpopup(15);
-    setCurrentStep(0);
-  }, 50);
-};
-
+    if (address) {
+      fetchUsername();
+    }
+  }, [address, activechain, config]);
 
   const processOrdersForDisplay = (
     orders: Order[],
@@ -6848,9 +6760,13 @@ const handleCreateUsername = () => {
           </div>
         ) : null}
 {popup === 14 ? (
-  <div ref={popupref} className={`new-wallet-overlay ${fromChallenge ? 'from-challenge' : ''}`}>
-    <div className={`new-wallet-split-container ${justEntered ? 'entering' : ''}`}>
+  <div ref={popupref} className="new-wallet-overlay">
+    <div className="new-wallet-split-container">
+      <div className="new-wallet-image-container">
+      </div>
+      
       <div className="new-wallet-container">
+        
         <div className="new-wallet-content">
           <h2 className="new-wallet-title">Welcome to Crystal</h2>
           <p className="new-wallet-subtitle">Create a username for your wallet to enhance your experience</p>
@@ -6887,162 +6803,14 @@ const handleCreateUsername = () => {
             
             <button
               className="new-wallet-skip-button"
-              onClick={() => {
-                setExitingChallenge(false);
-                setJustEntered(false);
-                setTimeout(() => {
-                  setpopup(15);
-                }, 50);
-              }}
+              onClick={() => setpopup(0)}
             >
               Continue Without Username
             </button>
           </div>
+          
+
         </div>
-      </div>
-      
-      <div className="new-wallet-image-container">
-        <img className="username-onboarding-image"src={usernameonboarding}/>
-      </div>
-    </div>
-  </div>
-) : popup === 15 ? (
-  <div ref={popupref} className={`account-setup-overlay ${exitingChallenge ? 'exiting' : ''}`}>
-    <div className={`challenge-intro-split-container ${exitingChallenge ? 'exiting' : ''}`}>
-      <div className="challenge-intro-content-side">
-        <div className="account-setup-header">
-          <div className="account-setup-title-wrapper">
-            <h2 className="account-setup-title">{t('challengeOverview')}</h2>
-            <p className="account-setup-subtitle">{t('learnHowToCompete')}</p>
-          </div>
-
-          <div className="step-indicators">
-            {[0, 1, 2].map((index) => (
-              <div
-                key={index}
-                className={`step-indicator ${index === currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}
-              />
-            ))}
-          </div>
-        </div>
-
-        <div className="intro-text">
-          <h3 className="intro-title">
-            {currentStep === 0 ? t('precisionMatters') :
-             currentStep === 1 ? t('earnCrystals') :
-             t('claimRewards')}
-          </h3>
-          <p className="intro-description">
-            {currentStep === 0 ? t('placeYourBids') :
-             currentStep === 1 ? t('midsGiveYou') :
-             t('competeOnLeaderboards')}
-          </p>
-        </div>
-
-        <div className="account-setup-footer">
-          {currentStep > 0 ? (
-            <button className="back-button" onClick={handleBack}>
-              {t('back')}
-            </button>
-          ) : (
-            <div className="setup-buttons-container">
-              <button 
-                className="back-to-username-button" 
-                onClick={() => {
-                  setExitingChallenge(true);
-                  setFromChallenge(true);
-                  setTimeout(() => {
-                    setpopup(14);
-                    setJustEntered(true);
-                    // Reset after animation completes
-                    setTimeout(() => {
-                      setExitingChallenge(false);
-                      setFromChallenge(false);
-                    }, 500);
-                  }, 400);
-                }}
-              >
-                <svg className="back-arrow-icon" viewBox="0 0 24 24" width="16" height="16">
-                  <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" 
-                  strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                {t('backToUsername')}
-              </button>
-              <button className="skip-button" onClick={() => setpopup(0)}>
-                {t('skip')}
-              </button>
-            </div>
-          )}
-
-          <button className="next-button" onClick={() => {
-            if (currentStep < 2) {
-              setCurrentStep(currentStep + 1);
-            } else {
-              setpopup(0);
-            }
-          }}>
-            {currentStep < 2 ? t('next') : t('getStarted')}
-          </button>
-        </div>
-      </div>
-
-      <div className="challenge-intro-visual-side">
-        {currentStep === 0 ? (
-          <div className="intro-image-container">
-            <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
-              <img src={part1image} className="intro-image" />
-              {animationStarted && <div className="glowing-rectangle"></div>}
-            </div>
-          </div>
-        ) : currentStep === 1 ? (
-          <div className="xp-animation-container" ref={xpPopupsRef}>
-            <div className="user-profile">
-              <img src={defaultProfilePic} className="profile-pic-second" />
-              <div className="username-display">@{usernameInput || "player123"}</div>
-              <div className="xp-counter">
-                <span>{xpCount}</span>
-                <img
-                  src={crystalxp}
-                  className="xp-icon"
-                  style={{
-                    width: '23px',
-                    height: '23px',
-                    verticalAlign: 'middle',
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="rewards-container">
-            <div className="rewards-stage">
-              <div className="podium">
-                <div className="podium-step">
-                  <span className="podium-rank">2nd</span>
-                </div>
-                <div className="podium-step">
-                  <span className="podium-rank">1st</span>
-                </div>
-                <div className="podium-step">
-                  <span className="podium-rank">3rd</span>
-                </div>
-              </div>
-
-              <div className="podium-profiles">
-                <div className="podium-profile profile-second">
-                  <img src={LeaderboardPfp2} className="podium-profile-pic" />
-                </div>
-                <div className="podium-profile profile-first">
-                  <img src={defaultProfilePic} className="podium-profile-pic" />
-                  <div className="crown">👑</div>
-                </div>
-                <div className="podium-profile profile-third">
-                  <img src={LeaderboardPfp3} className="podium-profile-pic" />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   </div>

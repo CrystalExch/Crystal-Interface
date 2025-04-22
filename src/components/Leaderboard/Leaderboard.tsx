@@ -19,11 +19,13 @@ interface Faction {
   rank: number;
   xp?: number;
   logo?: string;
+  username?: string;
 }
 
 interface UserDisplayData {
   userXP: number;
   logo: string;
+  username?: string;
 }
 
 interface TimeLeft {
@@ -44,12 +46,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   orders,
   address,
 }) => {
+  const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
 
   const [userData, setUserData] = useState<UserDisplayData>({
     userXP: 0,
     logo: '',
+    username: '',
   });
-  const [introStep, setIntroStep] = useState<number>(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [timeLeft, setTimeLeft] = useState<TimeLeft>({
     days: 0,
@@ -58,7 +61,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     seconds: 0,
   });
   const [liveLeaderboard, setLiveLeaderboard] = useState<{
-    [address: string]: number;
+    [address: string]: { points: number; username: string };
   }>({});
   const loading = Object.keys(liveLeaderboard).length === 0;
   const [allFactions, setAllFactions] = useState<Faction[]>([]);
@@ -69,8 +72,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       if (address) {
         fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
           .then((res) => res.json())
-          .then((data: Record<string, { points: number }>) => {
-
+          .then((data: Record<string, { username: string; points: number }>) => {
+            console.log(data);
             const updatedLiveLeaderboard = Object.fromEntries(
               Object.entries(data)
                 .filter(
@@ -79,10 +82,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 )
                 .map(([addr, info]) => [
                   addr.toLowerCase(),
-                  info.points,
+                  { points: info.points, username: info.username || '' },
                 ] as const)
             );
-
+    
+            console.log(updatedLiveLeaderboard);
+    
             setLiveLeaderboard(updatedLiveLeaderboard);
           })
           .catch((err) => {
@@ -102,28 +107,28 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       const lowerCaseAddress = address.toLowerCase();
       const hasSeenIntro =
         localStorage.getItem('has_seen_challenge_intro') === 'true';
-      const points = liveLeaderboard[lowerCaseAddress] || 0;
-
+      const userInfo = liveLeaderboard[lowerCaseAddress] || { points: 0, username: '' };
+  
       setUserData({
-        userXP: points,
+        userXP: userInfo.points,
         logo: '',
+        username: userInfo.username || '',
       });
-
+  
       if (!hasSeenIntro) {
         setShowChallengeIntro(true);
-        setIntroStep(0);
       }
     } else {
       setUserData({
         userXP: 0,
         logo: '',
+        username: '',
       });
-
+  
       const hasSeenIntro =
         localStorage.getItem('has_seen_challenge_intro') === 'true';
       if (!hasSeenIntro) {
         setShowChallengeIntro(true);
-        setIntroStep(0);
       }
     }
   }, [address, liveLeaderboard]);
@@ -131,16 +136,17 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     if (Object.keys(liveLeaderboard).length > 0) {
       const liveEntries = Object.entries(liveLeaderboard).map(
-        ([address, points]) => ({
+        ([address, data]) => ({
           id: address,
           name: address,
-          points: Number(points),
-          level: Math.max(1, Math.floor(Number(points) / 1000)),
+          username: data.username || '',
+          points: Number(data.points),
+          level: Math.max(1, Math.floor(Number(data.points) / 1000)),
           rank: 0,
           logo: '',
         }),
       );
-
+  
       liveEntries.sort((a, b) => b.points - a.points);
       liveEntries.forEach((entry, index) => {
         entry.rank = index + 1;
@@ -261,14 +267,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return address;
   };
 
-  const handleChallengeIntroComplete = (): void => {
-    setShowChallengeIntro(false);
-    localStorage.setItem('has_seen_challenge_intro', 'true');
+  const getDisplayName = (faction: Faction): string => {
+    if (faction.username && faction.username.trim() !== '' && faction.username !== faction.name) {
+      return faction.username;
+    }
+    return getDisplayAddress(faction.name);
   };
 
   const handleViewRules = (): void => {
     setShowChallengeIntro(true);
-    setIntroStep(0);
   };
 
   const isUserAddress = (factionAddress: string): boolean => {
@@ -393,7 +400,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               ) : (
                 <span className="progress-bar-amount-header">
                   {Object.values(liveLeaderboard)
-                    .reduce((sum: any, value: any) => sum + value, 0)
+                    .reduce((sum: any, value: any) => sum + value.points, 0)
                     .toLocaleString()}{' '}
                   / {'10,000,000'.toLocaleString()}
                   <img src={crystalxp} className="xp-icon" />
@@ -401,14 +408,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               )}
             </div>
             <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{
-                  width: loading
-                    ? '5%'
-                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: number) => sum + value, 0) / 10000000) * 100}%`,
-                }}
-              />
+            <div
+              className="progress-fill"
+              style={{
+                width: loading
+                  ? '5%'
+                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: any) => sum + value.points, 0) / 10000000) * 100}%`,
+              }}
+            />
             </div>
           </div>
           <div className="leaderboard-user-info">
@@ -466,7 +473,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   />
                 </div>
                 <div className="faction-name">
-                  {getDisplayAddress(faction.name)}
+                  {getDisplayName(faction)}
                   <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
                 </div>
                 <div className="faction-xp">
@@ -509,7 +516,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       />
                     </div>
                     <span className="faction-row-name">
-                      {getDisplayAddress(faction.name)}
+                      {getDisplayName(faction)}
                       <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
                     </span>
                     <div className="user-self-tag">
