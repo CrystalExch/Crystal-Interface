@@ -85,9 +85,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   { points: info.points, username: info.username || '' },
                 ] as const)
             );
-    
+
             console.log(updatedLiveLeaderboard);
-    
+
             setLiveLeaderboard(updatedLiveLeaderboard);
           })
           .catch((err) => {
@@ -101,20 +101,20 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
     return () => clearInterval(interval);
   }, [address]);
-  
+
   useEffect(() => {
     if (address) {
       const lowerCaseAddress = address.toLowerCase();
       const hasSeenIntro =
         localStorage.getItem('has_seen_challenge_intro') === 'true';
       const userInfo = liveLeaderboard[lowerCaseAddress] || { points: 0, username: '' };
-  
+
       setUserData({
         userXP: userInfo.points,
         logo: '',
         username: userInfo.username || '',
       });
-  
+
       if (!hasSeenIntro) {
         setShowChallengeIntro(true);
       }
@@ -124,7 +124,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         logo: '',
         username: '',
       });
-  
+
       const hasSeenIntro =
         localStorage.getItem('has_seen_challenge_intro') === 'true';
       if (!hasSeenIntro) {
@@ -146,7 +146,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           logo: '',
         }),
       );
-  
+
       liveEntries.sort((a, b) => b.points - a.points);
       liveEntries.forEach((entry, index) => {
         entry.rank = index + 1;
@@ -326,17 +326,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       .fill(0)
       .map((_, index) => (
         <div key={`loading-row-${index}`} className="leaderboard-row">
-          <div className="row-rank">
-            <span className="loading-placeholder" />
-          </div>
-          <div className="row-faction">
-            <div className="row-pfp-container">
-              <div className="row-pfp-loading loading-placeholder" />
+          <div className="leaderboard-inner-row">
+            <div className="row-rank">
+              <span className="loading-placeholder" />
             </div>
-            <span className="faction-row-name loading-placeholder" />
-          </div>
-          <div className="row-xp">
-            <div className="xp-amount loading-placeholder" />
+            <div className="row-faction">
+              <div className="row-pfp-container">
+                <div className="row-pfp-loading loading-placeholder" />
+              </div>
+              <span className="faction-row-name loading-placeholder" />
+            </div>
+            <div className="row-xp">
+              <div className="leaderboard-xp-amount loading-placeholder" />
+            </div>
           </div>
         </div>
       ));
@@ -408,14 +410,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               )}
             </div>
             <div className="progress-bar">
-            <div
-              className="progress-fill"
-              style={{
-                width: loading
-                  ? '5%'
-                  : `${(Object.values(liveLeaderboard).reduce((sum: number, value: any) => sum + value.points, 0) / 10000000) * 100}%`,
-              }}
-            />
+              <div
+                className="progress-fill"
+                style={{
+                  width: loading
+                    ? '5%'
+                    : `${(Object.values(liveLeaderboard).reduce((sum: number, value: any) => sum + value.points, 0) / 10000000) * 100}%`,
+                }}
+              />
             </div>
           </div>
           <div className="leaderboard-user-info">
@@ -505,6 +507,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   key={faction.id}
                   className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
                 >
+                  <div className="leaderboard-inner-row">
                   <div className="row-rank">
                     <span>#{absoluteRank}</span>
                   </div>
@@ -535,7 +538,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
                   </div>
                   <div className="row-xp">
-                    <div className="xp-amount">
+                    <div className="leaderboard-xp-amount">
                       {formatPoints(faction.points || 0)}
                       <img
                         src={crystalxp}
@@ -543,6 +546,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                       />
                     </div>
                   </div>
+                </div>
                 </div>
               );
             })}
