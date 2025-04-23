@@ -209,12 +209,12 @@ function App() {
       })() ||
       (() => {
         const path = findShortestPath(token1, token2);
-        if (path && path.length > 1 && activeTab != 'limit') {
+        if (path && path.length > 2 && activeTab != 'limit') {
           let fee = BigInt(1);
           for (let i = 0; i < path.length - 1; i++) {
             fee *= getMarket(path[i], path[i + 1]).fee;
           }
-          fee /= BigInt(100000);
+          fee /= BigInt(100000 ** (path.length-2));
           return {
             quoteAsset: getMarket(path.at(-2), path.at(-1)).quoteAsset,
             baseAsset: getMarket(path.at(-2), path.at(-1)).baseAsset,
@@ -2807,10 +2807,22 @@ function App() {
               activeMarket.path[i + 1],
             );
             if (activeMarket.path[i] == market.quoteAddress) {
-              mid = Number(mids[market.baseAsset + market.quoteAsset][2]);
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][2]);
               price *= mid / Number(market.priceFactor);
             } else {
-              mid = Number(mids[market.baseAsset + market.quoteAsset][1]);
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][1]);
               price /= mid / Number(market.priceFactor);
             }
           }
@@ -2847,7 +2859,13 @@ function App() {
               activeMarket.path[i],
               activeMarket.path[i + 1],
             );
-            mid = Number(mids[market.baseAsset + market.quoteAsset][0]);
+            mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+              new RegExp(
+                `^${wethticker}|${wethticker}$`,
+                'g'
+              ),
+              ethticker
+            )][0]);
             if (activeMarket.path[i] == market.quoteAddress) {
               price *= mid / Number(market.priceFactor);
             } else {
