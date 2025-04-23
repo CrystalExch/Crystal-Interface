@@ -1593,7 +1593,9 @@ function App() {
           const firstPrice = candles[0].open;
           const lastPrice = candles[candles.length - 1].close;
           const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-          const totalVolume = candles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
+          const totalVolume = candles
+            .filter((c) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
+            .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
           const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
 
           return {
@@ -1621,8 +1623,9 @@ function App() {
 
   // tokeninfo modal updating
   useEffect(() => {
-    setMarketsData((prevMarkets) =>
-      prevMarkets.map((market) => {
+    setMarketsData((marketsData) =>
+      marketsData.map((market) => {
+        if (!market) return;
         const trades = tradesByMarket[market?.marketKey.replace(
           new RegExp(
             `^${wethticker}|${wethticker}$`,
@@ -1630,7 +1633,7 @@ function App() {
           ),
           ethticker
         )] || [];
-        if (trades.length < 1) return market;
+        if (trades.length <= 50) return market;
 
         const series: any =
           dayKlines.find((s: any) => typeof s.id === "string" && s.id.includes(market?.address)) || null;
