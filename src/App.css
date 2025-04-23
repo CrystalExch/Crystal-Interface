@@ -347,6 +347,7 @@ html {
   opacity: 1;
 }
 
+.deposit-icon,
 .disconnect-icon,
 .disconnected-wallet-close-button:hover,
 .eye-button.h .eye-slash,
@@ -358,6 +359,16 @@ html {
 .use-market-button:hover,
 .wallet-popup-address {
   opacity: 0.7;
+}
+
+.deposit-icon {
+  fill: none;
+  height: 18px;
+  stroke: currentcolor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+  width: 18px;
 }
 
 .tokenselect-clear svg {
@@ -583,6 +594,7 @@ html {
 
 .connect-wallet-close-button,
 .popup-disconnect-button,
+.popup-deposit-button,
 .settings-button {
   align-items: center;
   background: 0 0;
@@ -597,12 +609,14 @@ html {
 
 .connect-wallet-close-button:hover,
 .popup-disconnect-button:hover,
+.popup-deposit-button:hover,
 .settings-button:hover,
 .slippage-value:hover {
   opacity: 0.8;
 }
 
 .eye-button,
+.popup-deposit-button,
 .popup-disconnect-button {
   align-items: center;
   background: none;
@@ -619,6 +633,7 @@ html {
 
 .eye-button:hover .eye-icon,
 .layout-settings-close-button:hover,
+.popup-deposit-button:hover .deposit-icon,
 .popup-disconnect-button:hover .disconnect-icon {
   opacity: 0.5;
 }

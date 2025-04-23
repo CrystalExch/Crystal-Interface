@@ -74,7 +74,6 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
-import depositicon from './assets/deposit_test.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
@@ -230,12 +229,12 @@ function App() {
       })() ||
       (() => {
         const path = findShortestPath(token1, token2);
-        if (path && path.length > 1 && activeTab != 'limit') {
+        if (path && path.length > 2 && activeTab != 'limit') {
           let fee = BigInt(1);
           for (let i = 0; i < path.length - 1; i++) {
             fee *= getMarket(path[i], path[i + 1]).fee;
           }
-          fee /= BigInt(100000);
+          fee /= BigInt(100000 ** (path.length-2));
           return {
             quoteAsset: getMarket(path.at(-2), path.at(-1)).quoteAsset,
             baseAsset: getMarket(path.at(-2), path.at(-1)).baseAsset,
@@ -391,12 +390,7 @@ function App() {
     }
     return eth;
   });
-  const [usedRefLink, setUsedRefLink] = useState(() => {
-    if (searchParams.get('ref')) {
-      localStorage.setItem('ref', searchParams.get('ref') as string);
-    }
-    return searchParams.get('ref') || localStorage.getItem(`ref`) || '';
-  });
+  const [usedRefLink, setUsedRefLink] = useState('');
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );
@@ -1614,7 +1608,9 @@ function App() {
           const firstPrice = candles[0].open;
           const lastPrice = candles[candles.length - 1].close;
           const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-          const totalVolume = candles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
+          const totalVolume = candles
+            .filter((c) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
+            .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
           const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
 
           return {
@@ -1642,8 +1638,9 @@ function App() {
 
   // tokeninfo modal updating
   useEffect(() => {
-    setMarketsData((prevMarkets) =>
-      prevMarkets.map((market) => {
+    setMarketsData((marketsData) =>
+      marketsData.map((market) => {
+        if (!market) return;
         const trades = tradesByMarket[market?.marketKey.replace(
           new RegExp(
             `^${wethticker}|${wethticker}$`,
@@ -1651,7 +1648,7 @@ function App() {
           ),
           ethticker
         )] || [];
-        if (trades.length < 1) return market;
+        if (trades.length <= 50) return market;
 
         const series: any =
           dayKlines.find((s: any) => typeof s.id === "string" && s.id.includes(market?.address)) || null;
@@ -2844,10 +2841,22 @@ function App() {
               activeMarket.path[i + 1],
             );
             if (activeMarket.path[i] == market.quoteAddress) {
-              mid = Number(mids[market.baseAsset + market.quoteAsset][2]);
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][2]);
               price *= mid / Number(market.priceFactor);
             } else {
-              mid = Number(mids[market.baseAsset + market.quoteAsset][1]);
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][1]);
               price /= mid / Number(market.priceFactor);
             }
           }
@@ -2884,7 +2893,13 @@ function App() {
               activeMarket.path[i],
               activeMarket.path[i + 1],
             );
-            mid = Number(mids[market.baseAsset + market.quoteAsset][0]);
+            mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+              new RegExp(
+                `^${wethticker}|${wethticker}$`,
+                'g'
+              ),
+              ethticker
+            )][0]);
             if (activeMarket.path[i] == market.quoteAddress) {
               price *= mid / Number(market.priceFactor);
             } else {
@@ -5828,12 +5843,25 @@ function App() {
                   </div>
                 </button>
                 <button
-                  className="popup-disconnect-button"
+                  className="popup-deposit-button"
                   onClick={() => {
                     setpopup(12)
                   }}
                 >
-                  <img className="disconnect-icon" src={depositicon}></img>
+                  <svg
+                    className="deposit-icon"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="7 11 12 16 17 11"></polyline>
+                    <line x1="12" y1="1" x2="12" y2="14"></line>
+                    <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14"/>
+
+                  </svg>
                 </button>
                 <button
                   className="popup-disconnect-button"
