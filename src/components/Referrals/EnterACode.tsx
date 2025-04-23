@@ -15,7 +15,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
   const [refCode, setRefCode] = useState<string>(usedRefLink);
   const [error, setError] = useState<string>('');
   const [success, setSuccess] = useState<string>(refCode ? ` ${refCode}` : '');
-  const [isSet, setIsSet] = useState<boolean>(!!usedRefLink);
+  const [isSet, setIsSet] = useState<boolean>(usedRefLink !== '');
 
   const handleSubmit = async (): Promise<void> => {
     if (!refCode) {
@@ -28,15 +28,14 @@ const EnterACode: React.FC<EnterACodeProps> = ({
     }
 
     setUsedRefLink(refCode);
-    localStorage.setItem('ref', refCode);
     setSuccess(`${refCode}`);
     setIsSet(true);
   };
 
   const handleClear = (): void => {
+    console.log("clearing");
     setRefCode('');
     setUsedRefLink('');
-    localStorage.removeItem('ref');
     setError('');
     setSuccess('');
     setIsSet(false);
@@ -69,7 +68,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             <div className="input-with-clear">
               <input
                 type="text"
-                value={isSet ? success : refCode}
+                value={isSet ? success : usedRefLink}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   if (!isSet) {
                     setRefCode(e.target.value);

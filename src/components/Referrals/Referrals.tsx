@@ -144,17 +144,26 @@ const Referrals: React.FC<ReferralProps> = ({
       console.log(refs);
       setRefLink(refs[0].result);
       setError(
-        refs[2].result === '0x0000000000000000000000000000000000000000' ||
-          refs[2].result == address
+        refs[1].result === '0x0000000000000000000000000000000000000000' ||
+          refs[1].result == address
           ? error == t('codeTaken') ? '' : error
           : t('codeTaken'),
       );
-      setReferredCount(Number(refs[3].result));
+      setReferredCount(Number(refs[2].result));
       setUsedRefAddress(
-        refs[4].result || '0x0000000000000000000000000000000000000000',
+        refs[3].result || '0x0000000000000000000000000000000000000000',
       );
-      setUsedRefLink(refs[4].result)
-      console.log(referredCount)
+      const find = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'addressToRef',
+            args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
+          },
+        ],
+      })) as any[];
+      setUsedRefLink(find[0].result);
     })();
   }, [usedRefLink, address, refLinkString]);
 
@@ -162,9 +171,9 @@ const Referrals: React.FC<ReferralProps> = ({
     try {
       const hash = await sendUserOperationAsync({
         uo: {
-          target: router,
+          target: settings.chainConfig[activechain].referralManager,
           data: encodeFunctionData({
-            abi: CrystalRouterAbi,
+            abi: CrystalReferralAbi,
             functionName: 'setReferral',
             args: [
               refLinkString
@@ -180,6 +189,29 @@ const Referrals: React.FC<ReferralProps> = ({
       return false;
     }
   };
+
+  const handleSetRef = async(used: string) => {
+    try {
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target:  settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsedRef',
+            args: [
+              used
+            ],
+          }),
+          value: 0n,
+        },
+      })
+      await waitForTxReceipt(hash.hash);
+      setUsedRefLink(used);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
   const handleClaimFees = async () => {
     if (account.connected && account.chainId === activechain) {
@@ -342,7 +374,7 @@ const Referrals: React.FC<ReferralProps> = ({
             </div>
             <EnterCode
               usedRefLink={usedRefLink}
-              setUsedRefLink={setUsedRefLink}
+              setUsedRefLink={handleSetRef}
               refLink={refLink}
             />
           </div>
