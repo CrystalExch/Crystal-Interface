@@ -93,13 +93,24 @@ import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
-import usernameonboarding from './assets/usernameonboarding.png';
 import clearlogo from '../public/logo_clear.png';
- import defaultProfilePic from './assets/bh.png';
- import crystalxp from './assets/CrystalX.png';
- import LeaderboardPfp2 from './assets/legion.png';
- import LeaderboardPfp3 from './assets/rubberbandz.png';
- import part1image from './assets/spreaddemo.png';
+import defaultProfilePic from './assets/bh.png';
+import crystalxp from './assets/CrystalX.png';
+import LeaderboardPfp2 from './assets/legion.png';
+import LeaderboardPfp3 from './assets/rubberbandz.png';
+import part1image from './assets/part1intro.png';
+import topright from './assets/topright.png';
+import veryleft from './assets/veryleft.png';
+import topmiddle from './assets/topmiddle.png';
+import veryright from './assets/veryright.png';
+import topleft from './assets/topleft.png';
+import circleleft from './assets/circleleft.png';
+import lbstand from './assets/lbstand.png';
+
+
+//audio
+import stepaudio from './assets/step_audio.mp3';
+import backaudio from './assets/back_audio.mp3';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
@@ -154,6 +165,15 @@ function App() {
     waitForTxn: true,
   });
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const stepAudioRef = useRef<HTMLAudioElement>(null);
+  const handleNextClick = () => {
+    if (stepAudioRef.current) {
+      stepAudioRef.current.currentTime = 0;
+      stepAudioRef.current.play().catch(console.error);
+    }
+    handleCompleteChallenge();
+  };
+
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -261,7 +281,7 @@ function App() {
     }
     return null;
   };
-  
+
   // state vars
   const showFooter = [
     '/swap',
@@ -841,7 +861,7 @@ function App() {
     }
     return `$${amount.toFixed(2)}`;
   };
-  
+
   const calculateUSDValue = (
     amount: bigint,
     trades: any[],
@@ -853,13 +873,13 @@ function App() {
       return Number(amount) / 10 ** 6;
     }
     else if (tokenAddress == market.quoteAddress) {
-      return Number(amount) * tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) +'USDC']?.[0]?.[3]
-      / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
+      return Number(amount) * tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+        / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
     }
     const latestPrice = fetchLatestPrice(trades, market);
     if (!latestPrice) return 0;
     const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-    / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+      / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
     const usdValue = (Number(amount) * latestPrice * quotePrice / 10 ** Number(tokendict[tokenAddress].decimals));
     return Number(usdValue);
   };
@@ -881,7 +901,7 @@ function App() {
     const latestPrice = fetchLatestPrice(trades, market);
     if (!latestPrice) return BigInt(0);
     const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-    / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+      / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
     return BigInt(
       Math.round(
         (usdNumeric / (latestPrice * quotePrice)) *
@@ -892,7 +912,7 @@ function App() {
 
   // on market select
   const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
-    if (!['swap', 'limit', 'send', 'scale','market'].includes(location.pathname.slice(1))) {
+    if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
       if (simpleView) {
         navigate('/swap');
       }
@@ -1676,23 +1696,23 @@ function App() {
       e.preventDefault();
       const newIndex = selectedIndex < sortedMarkets.length - 1 ? selectedIndex + 1 : selectedIndex;
       setSelectedIndex(newIndex);
-      
+
       const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
       if (selectedItem) {
         selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
-      
+
       refocusSearchInput();
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const newIndex = selectedIndex > 0 ? selectedIndex - 1 : 0;
       setSelectedIndex(newIndex);
-      
+
       const selectedItem = document.getElementById(`search-market-item-${newIndex}`);
       if (selectedItem) {
         selectedItem.scrollIntoView({ block: 'nearest', behavior: 'auto' });
       }
-      
+
       refocusSearchInput();
     }
   };
@@ -1910,7 +1930,7 @@ function App() {
   //     numOrders,
   //     skew
   //   );
-  
+
   //   const scaleDetails = calculateScaleOutput(
   //     requiredInput,
   //     startPrice,
@@ -1918,13 +1938,13 @@ function App() {
   //     numOrders,
   //     skew
   //   );
-    
+
   //   const orderUsdValues = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderUsdValue);
   //   const orderSizes = scaleDetails.map(([price, orderSize, orderUsdValue]) => orderSize);
-    
+
   //   let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
   //   let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
-  
+
   //   if (tokenIn === activeMarket.quoteAddress) {
   //     if (totalUsdValue !== requiredInput) {
   //       orderUsdValues[orderUsdValues.length - 1] += (requiredInput - totalUsdValue);
@@ -1996,7 +2016,7 @@ function App() {
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
   };
-  
+
   // order processing
   function processOrders(buyOrdersRaw: any[], sellOrdersRaw: any[]) {
     const mapOrders = (orderData: bigint[]) => {
@@ -2036,103 +2056,81 @@ function App() {
     };
   }
 
-    // State variables for managing transitions between screens
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
-  const [fromChallenge, setFromChallenge] = useState(false); // Tracks if coming back from challenge to username
-  const [justEntered, setJustEntered] = useState(false); // Used for entry animations
-  const [exitingChallenge, setExitingChallenge] = useState(false); // Used when leaving challenge screen
-
-  // Challenge state
-  const [currentStep, setCurrentStep] = useState(0); // Current step in the challenge intro (0, 1, or 2)
-  const [animationStarted, setAnimationStarted] = useState(false); // Controls animations within challenge steps
+  const [transitionDirection, setTransitionDirection] = useState('forward');
+  const [fromChallenge, setFromChallenge] = useState(false);
+  const [justEntered, setJustEntered] = useState(false);
+  const [exitingChallenge, setExitingChallenge] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [animationStarted, setAnimationStarted] = useState(false);
 
 
-  // Effect to trigger animations when entering the first step of challenge
   useEffect(() => {
     if (currentStep === 0) {
-      // Start animation after a short delay
       const timer = setTimeout(() => {
         setAnimationStarted(true);
       }, 100);
       return () => clearTimeout(timer);
     } else {
-      // Reset animation state when moving to other steps
       setAnimationStarted(false);
     }
   }, [currentStep]);
 
   const handleBack = () => {
     if (currentStep > 0) {
-      // Simply decrement the current step
       setCurrentStep(prevStep => prevStep - 1);
     }
   };
 
 
   const handleBackToUsername = () => {
-    // Start the transition animation
     setIsTransitioning(true);
     setTransitionDirection('backward');
     setExitingChallenge(true);
     setFromChallenge(true);
-    
+
     setTimeout(() => {
       setpopup(14);
       setJustEntered(true);
-      
+      setCurrentStep(0);
+
       setTimeout(() => {
         setIsTransitioning(false);
         setExitingChallenge(false);
-      }, 500);
-    }, 400);
+      });
+    }, 10);
   };
-
-  const handleSkipUsername = () => {
-    setIsTransitioning(true);
-    setTransitionDirection('forward');
-    
-    setTimeout(() => {
-      setpopup(15);
-      setCurrentStep(0);
-      
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, 500);
-    }, 400);
-  };
-
   const handleCompleteChallenge = () => {
     if (currentStep < 2) {
       setCurrentStep(currentStep + 1);
     } else {
       setExitingChallenge(true);
       setTimeout(() => {
-        setpopup(0); 
-      }, 400);
+        setpopup(0);
+      });
     }
   };
 
   const handleCreateUsername = async () => {
     setUsernameError("");
-    
+
     if (!usernameInput.trim()) {
       setUsernameError("Please enter a username");
       return;
     }
-    
+
     if (usernameInput.length < 3) {
       setUsernameError("Username must be at least 3 characters");
       return;
     }
-    
+
     if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
       setUsernameError("Username can only contain letters, numbers, and underscores");
       return;
     }
-  
+
     setIsUsernameSigning(true);
-  
+
     try {
       const read = (await readContracts(config, {
         contracts: [
@@ -2144,13 +2142,13 @@ function App() {
           },
         ]
       })) as any[];
-  
+
       if (read[0].result !== '0x0000000000000000000000000000000000000000') {
         setUsernameError("Username already taken");
         setIsUsernameSigning(false);
         return;
       }
-      
+
       const hash = await sendUserOperationAsync({
         uo: {
           target: settings.chainConfig[activechain].referralManager,
@@ -2164,19 +2162,25 @@ function App() {
           value: 0n,
         },
       });
-      
+
       await waitForTxReceipt(hash.hash);
-      
+
+      if (stepAudioRef.current) {
+        stepAudioRef.current.currentTime = 0;
+        stepAudioRef.current.play().catch(console.error);
+      }
+
       setIsTransitioning(true);
       setTransitionDirection('forward');
       setTimeout(() => {
         setpopup(15);
+        setCurrentStep(0);
         setTimeout(() => {
           setIsTransitioning(false);
           setJustEntered(true);
-        }, 500);
-      }, 400);
-      
+        });
+      });
+
       return true;
     } catch (error) {
       console.error("Error creating username:", error);
@@ -2185,7 +2189,37 @@ function App() {
       setIsUsernameSigning(false);
     }
   };
+  const handleSkipUsername = () => {
+    if (stepAudioRef.current) {
+      stepAudioRef.current.currentTime = 0;
+      stepAudioRef.current.play().catch(console.error);
+    }
 
+    setIsTransitioning(true);
+    setTransitionDirection('forward');
+    setTimeout(() => {
+      setpopup(15);
+      setTimeout(() => {
+        setIsTransitioning(false);
+      });
+    });
+  };
+
+  const backAudioRef = useRef<HTMLAudioElement>(null);
+  const handleBackClick = () => {
+    if (backAudioRef.current) {
+      backAudioRef.current.currentTime = 0;
+      backAudioRef.current.play().catch(console.error);
+    }
+    handleBack();
+  };
+  const handleBackToUsernameWithAudio = () => {
+    if (backAudioRef.current) {
+      backAudioRef.current.currentTime = 0;
+      backAudioRef.current.play().catch(console.error);
+    }
+    handleBackToUsername();
+  };
   useEffect(() => {
     const fetchUsername = async () => {
       try {
@@ -2207,7 +2241,7 @@ function App() {
         console.error("Failed to fetch username:", error);
       }
     };
-  
+
     if (address) {
       fetchUsername();
     }
@@ -2225,32 +2259,32 @@ function App() {
         Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
       ) -
         Math.floor(Math.log10(Number(activeMarket.priceFactor))) >
-      -5
+        -5
         ? Math.max(
-            0,
-            Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
-              Math.floor(
-                Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
-              ) +
-              1
-          )
+          0,
+          Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
+          Math.floor(
+            Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
+          ) +
+          1
+        )
         : 0;
-  
+
     const priceMap: { [key: string]: boolean } = {};
     if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
       const market = activeMarket.baseAsset + activeMarket.quoteAsset;
-  
+
       const filteredUserOrders = userOrders.filter((order) => {
         const isBuy = Number(order[3]) === 1;
         const matchesListType = isBuyOrderList ? isBuy : !isBuy;
         const orderMarket = String(order[4]);
         return matchesListType && orderMarket === market;
       });
-  
+
       if (filteredUserOrders.length > 0) {
         const displayedPrices = orders.map((order) => order.price);
         const sortedDisplayedPrices = [...displayedPrices].sort((a, b) => a - b);
-  
+
         let scalingFactor = 1;
         if (sortedDisplayedPrices.length > 0) {
           const sampleOrderPrice = Number(filteredUserOrders[0][0]);
@@ -2261,19 +2295,19 @@ function App() {
           const powerOf10 = Math.round(Math.log10(rawScaling));
           scalingFactor = Math.pow(10, powerOf10);
         }
-  
+
         const bucketSpacing =
           sortedDisplayedPrices.length > 1
             ? Math.abs(sortedDisplayedPrices[1] - sortedDisplayedPrices[0])
             : 1;
         const tolerance = bucketSpacing * 0.5;
-  
+
         filteredUserOrders.forEach((order) => {
           const rawOrderPrice = Number(order[0]);
           const scaledOrderPrice = rawOrderPrice / scalingFactor;
           const isBuyOrder = Number(order[3]) === 1;
           let matchedPrice: number;
-  
+
           if (isBuyOrder) {
             matchedPrice = sortedDisplayedPrices[0];
             for (let i = 0; i < sortedDisplayedPrices.length; i++) {
@@ -2296,7 +2330,7 @@ function App() {
               }
             }
           }
-  
+
           const diff = Math.abs(scaledOrderPrice - matchedPrice);
           if (diff <= tolerance) {
             priceMap[matchedPrice] = true;
@@ -2318,9 +2352,9 @@ function App() {
         amountsQuote === 'Base'
           ? Number((order.totalSize / order.price).toFixed(priceDecimals))
           : Number(order.totalSize.toFixed(2));
-  
+
       const userPrice = priceMap[roundedPrice] === true;
-  
+
       return {
         price: roundedPrice,
         size: roundedSize,
@@ -2329,7 +2363,7 @@ function App() {
         userPrice,
       };
     });
-  
+
     const defaultOrders = orders.map((order) => ({
       price: Number(
         Number(order.price).toFixed(
@@ -2339,7 +2373,7 @@ function App() {
       size: Number(Number(order.size).toFixed(2)),
       totalSize: Number(Number(order.totalSize).toFixed(2)),
     }));
-  
+
     return { roundedOrders, defaultOrders };
   };
 
@@ -2491,7 +2525,7 @@ function App() {
             const quoteIndex = index;
             const baseIndex = index + baseOffset;
             const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-            / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+              / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
             const midValue = Number(
               (mids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
             ) * quotePrice;
@@ -3614,10 +3648,10 @@ function App() {
             `$${calculateUSDValue(
               BigInt(amountIn),
               temptradesByMarket[
-                (({ baseAsset, quoteAsset }) => 
-                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+              (({ baseAsset, quoteAsset }) =>
+                (baseAsset === wethticker ? ethticker : baseAsset) +
+                (quoteAsset === wethticker ? ethticker : quoteAsset)
+              )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
               ],
               tokenIn,
               getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
@@ -3633,7 +3667,6 @@ function App() {
     })();
   }, [activechain]);
 
-  // click outside slippage and resize handler and click outside popup and showtrade esc
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && popup != 11) {
@@ -3742,10 +3775,10 @@ function App() {
             ? `$${calculateUSDValue(
               amountIn,
               tradesByMarket[
-                (({ baseAsset, quoteAsset }) => 
-                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+              (({ baseAsset, quoteAsset }) =>
+                (baseAsset === wethticker ? ethticker : baseAsset) +
+                (quoteAsset === wethticker ? ethticker : quoteAsset)
+              )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
               ],
               tokenIn,
               getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
@@ -4441,10 +4474,10 @@ function App() {
                             calculateTokenAmount(
                               sendInputString.replace(/^\$|,/g, ''),
                               tradesByMarket[
-                                (({ baseAsset, quoteAsset }) => 
-                                  (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                )(pricefetchmarket)
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(pricefetchmarket)
                               ],
                               token.address,
                               pricefetchmarket,
@@ -4458,10 +4491,10 @@ function App() {
                         calculateTokenAmount(
                           sendInputString.replace(/^\$|,/g, ''),
                           tradesByMarket[
-                            (({ baseAsset, quoteAsset }) => 
-                              (baseAsset === wethticker ? ethticker : baseAsset) + 
-                              (quoteAsset === wethticker ? ethticker : quoteAsset)
-                            )(pricefetchmarket)
+                          (({ baseAsset, quoteAsset }) =>
+                            (baseAsset === wethticker ? ethticker : baseAsset) +
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(pricefetchmarket)
                           ],
                           token.address,
                           pricefetchmarket,
@@ -4476,10 +4509,10 @@ function App() {
                               (calculateTokenAmount(
                                 sendInputString.replace(/^\$|,/g, ''),
                                 tradesByMarket[
-                                  (({ baseAsset, quoteAsset }) => 
-                                    (baseAsset === wethticker ? ethticker : baseAsset) + 
-                                    (quoteAsset === wethticker ? ethticker : quoteAsset)
-                                  )(pricefetchmarket)
+                                (({ baseAsset, quoteAsset }) =>
+                                  (baseAsset === wethticker ? ethticker : baseAsset) +
+                                  (quoteAsset === wethticker ? ethticker : quoteAsset)
+                                )(pricefetchmarket)
                                 ],
                                 token.address,
                                 pricefetchmarket,
@@ -4510,10 +4543,10 @@ function App() {
                           (amountIn * BigInt(10) ** token.decimals) /
                           BigInt(10) ** tokendict[tokenIn].decimals,
                           tradesByMarket[
-                            (({ baseAsset, quoteAsset }) => 
-                              (baseAsset === wethticker ? ethticker : baseAsset) + 
-                              (quoteAsset === wethticker ? ethticker : quoteAsset)
-                            )(pricefetchmarket)
+                          (({ baseAsset, quoteAsset }) =>
+                            (baseAsset === wethticker ? ethticker : baseAsset) +
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(pricefetchmarket)
                           ],
                           token.address,
                           pricefetchmarket,
@@ -6042,20 +6075,20 @@ function App() {
                 </div>
               </div>
               <div className="trade-markers-toggle-row">
-  <span className="trade-markers-toggle-label">
-    {t('showTradeMarkers')}
-  </span>
-  <ToggleSwitch
-                      checked={isMarksVisible}
-                      onChange={() => {
-                        setIsMarksVisible(!isMarksVisible);
-                        localStorage.setItem(
-                          'crystal_marks_visible',
-                          JSON.stringify(!isMarksVisible),
-                        );
-                      }}
-                    />
-</div>
+                <span className="trade-markers-toggle-label">
+                  {t('showTradeMarkers')}
+                </span>
+                <ToggleSwitch
+                  checked={isMarksVisible}
+                  onChange={() => {
+                    setIsMarksVisible(!isMarksVisible);
+                    localStorage.setItem(
+                      'crystal_marks_visible',
+                      JSON.stringify(!isMarksVisible),
+                    );
+                  }}
+                />
+              </div>
 
               {!simpleView && (
                 <>
@@ -6369,8 +6402,8 @@ function App() {
                 />
               </div>
             </div>
-            <div 
-              className="search-markets-list" 
+            <div
+              className="search-markets-list"
               id="search-markets-list-container"
             >
               {sortedMarkets.length > 0 ? (
@@ -6818,19 +6851,19 @@ function App() {
             </div>
             <div className="high-impact-content">
               <div className="high-impact-warning-icon">
-                <img className="warning-image" src={warningicon}/>
+                <img className="warning-image" src={warningicon} />
               </div>
-              
+
               <p className="high-impact-message">
                 {t('highPriceImpactMessage')}
               </p>
-              
+
               <div className="high-impact-details">
                 <div className="high-impact-detail-row">
                   <span>{t('priceImpact')}</span>
                   <span className="high-impact-value">{priceImpact}</span>
                 </div>
-                
+
                 <div className="high-impact-detail-row">
                   <span>{t('pay')}</span>
                   <span className="high-impact-value">
@@ -6840,7 +6873,7 @@ function App() {
                     )} {tokendict[tokenIn].ticker}
                   </span>
                 </div>
-                
+
                 <div className="high-impact-detail-row">
                   <span>{t('receive')}</span>
                   <span className="high-impact-value">
@@ -6852,7 +6885,7 @@ function App() {
                 </div>
               </div>
             </div>
-            
+
             <div className="high-impact-actions">
               <button
                 className="high-impact-cancel-button"
@@ -6863,7 +6896,7 @@ function App() {
               >
                 {t('cancel')}
               </button>
-              
+
               <button
                 className="high-impact-confirm-button"
                 onClick={async () => {
@@ -6876,219 +6909,272 @@ function App() {
             </div>
           </div>
         ) : null}
-{popup === 14 || popup === 15 || isTransitioning ? (
-  <div ref={popupref} className="onboarding-container">
-    <img className="onboarding-crystal-logo" src={clearlogo}></img>
-    <CrystalObject />
-
-    <div className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''}`}>
-      <div 
-        className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward') ? 'active' : ''} ${justEntered ? 'entering' : ''}`}
-      >
-        <div className="onboarding-split-container">
-          <div className="onboarding-left-side">
-            <div className="onboarding-content">
-              <div className="onboarding-header">
-                <h2 className="onboarding-title">Create a Username</h2>
-                <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
-              </div>
-              
-              <div className="onboarding-form">
-                <div className="form-group">
-                  <label className="form-label">Your Wallet Address</label>
-                  <div className="wallet-address">{address || "0x1234...5678"}</div>
-                </div>
-                
-                <div className="form-group">
-                  <label htmlFor="username" className="form-label">Username</label>
-                  <input
-                    type="text"
-                    id="username"
-                    className="username-input"
-                    placeholder="Enter a username"
-                    value={usernameInput || ""}
-                    onChange={(e) => setUsernameInput(e.target.value)}
-                  />
-                  {usernameError && (
-                    <p className="username-error">{usernameError}</p>
-                  )}
-                </div>
-              </div>
-              <button
-  className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
-  onClick={async () => {
-    if (!usernameInput.trim() || isUsernameSigning) return;
-    await handleCreateUsername();
-  }}
-  disabled={!usernameInput.trim() || isUsernameSigning}
->
-  {isUsernameSigning ? (
-    <div className="button-content">
-      <div className="loading-spinner" />
-      {t('signTransaction')}
-    </div>
-  ) : (
-    "Create Username"
-  )}
-</button>
-              </div>
-              <div className="onboarding-actions">
-                
-                <button
-                  className="skip-button"
-                  onClick={() => {
-                    setIsTransitioning(true);
-                    setTransitionDirection('forward');
-                    setTimeout(() => {
-                      setpopup(15);
-                      setTimeout(() => {
-                        setIsTransitioning(false);
-                      }, 500);
-                    }, 400);
-                  }}
-                >
-                  Continue Without Username
-                </button>
-              </div>
-          </div>
-          {/* <div className="onboarding-right-side">
-            <img className="onboarding-image" src={usernameonboarding} alt="Join the Crystal Community" />
-            <span className="onboarding-image-title-text">CRYSTAL POINTS PROGRAM: SEASON 0
-              </span> 
-
-            <span className="onboarding-image-text">Create an Account to be put on the leaderboard and earn. Crystals will directly translate to mainnet token holdings.</span> 
-          </div> */}
-        </div>
-      </div>
-
-      <div 
-        className={`onboarding-section challenge-section ${popup === 15 || (isTransitioning && transitionDirection === 'forward') ? 'active' : ''} ${exitingChallenge ? 'exiting' : ''}`}
-      >
-        <div className="challenge-intro-split-container">
-          <div className="challenge-intro-content-side">
-            <div className="account-setup-header">
-              <div className="account-setup-title-wrapper">
-                <h2 className="account-setup-title">{t('challengeOverview')}</h2>
-                <p className="account-setup-subtitle">{t('learnHowToCompete')}</p>
-              </div>
-
-              <div className="step-indicators">
-                {[0, 1, 2].map((index) => (
-                  <div
-                    key={index}
-                    className={`step-indicator ${index === currentStep ? 'active' : ''} ${index < currentStep ? 'completed' : ''}`}
-                  />
-                ))}
-              </div>
+        {popup === 14 || popup === 15 || isTransitioning ? (
+          <div ref={popupref} className="onboarding-container">
+            <div
+              className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15 ? 'active' : ''
+                }`}
+            />
+            <img className="onboarding-crystal-logo" src={clearlogo}></img>
+            <CrystalObject />
+            <div className="step-indicators">
+              {[1, 2, 3, 4].map((index) => (
+                <div
+                  key={index}
+                  className={`step-indicator ${popup === 14
+                    ? index === 1 ? 'active' : ''
+                    : (currentStep + 2) === index ? 'active' : ''
+                    } ${popup === 14
+                      ? index < 1 ? 'completed' : ''
+                      : (currentStep + 2) > index ? 'completed' : ''
+                    } ${isTransitioning ? 'transitioning' : ''}`}
+                />
+              ))}
             </div>
-
-            <div className="intro-text">
-              <h3 className="intro-title">
-                {currentStep === 0 ? t('precisionMatters') :
-                 currentStep === 1 ? t('earnCrystals') :
-                 t('claimRewards')}
-              </h3>
-              <p className="intro-description">
-                {currentStep === 0 ? t('placeYourBids') :
-                 currentStep === 1 ? t('midsGiveYou') :
-                 t('competeOnLeaderboards')}
-              </p>
-            </div>
-
-            <div className="account-setup-footer">
-              {currentStep > 0 ? (
-                <button className="back-button" onClick={handleBack}>
-                  {t('back')}
-                </button>
-              ) : (
-                <button 
-                  className="back-to-username-button" 
-                  onClick={handleBackToUsername}
-                >
-                  <svg className="back-arrow-icon" viewBox="0 0 24 24" width="16" height="16">
-                    <path fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" 
-                    strokeLinejoin="round" d="M19 12H5M12 19l-7-7 7-7"/>
-                  </svg>
-                  {t('backToUsername')}
-                </button>
-              )}
-
-              <button 
-                className="next-button" 
-                onClick={handleCompleteChallenge}
+            <div className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''}`}>
+              <div
+                className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward') ? 'active' : ''} ${justEntered ? 'entering' : ''}`}
               >
-                {currentStep < 2 ? t('next') : t('getStarted')}
-              </button>
+                <div className="onboarding-split-container">
+                  <div className="onboarding-left-side">
+                    <div className="onboarding-content">
+                      <div className="onboarding-header">
+                        <h2 className="onboarding-title">Enter a Name</h2>
+                        <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
+                      </div>
+
+                      <div className="onboarding-form">
+                        <div className="form-group">
+                          <label className="form-label">Your Wallet Address</label>
+                          <div className="wallet-address">{address || "0x1234...5678"}</div>
+                        </div>
+
+                        <div className="form-group">
+                          <label htmlFor="username" className="form-label">Username</label>
+                          <input
+                            type="text"
+                            id="username"
+                            className="username-input"
+                            placeholder="Enter a username"
+                            value={usernameInput || ""}
+                            onChange={(e) => setUsernameInput(e.target.value)}
+                          />
+                          {usernameError && (
+                            <p className="username-error">{usernameError}</p>
+                          )}
+                        </div>
+                      </div>
+                      <button
+                        className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+                        onClick={async () => {
+                          if (!usernameInput.trim() || isUsernameSigning) return;
+                          await handleCreateUsername();
+                        }}
+                        disabled={!usernameInput.trim() || isUsernameSigning}
+                      >
+                        {isUsernameSigning ? (
+                          <div className="button-content">
+                            <div className="loading-spinner" />
+                            {t('signTransaction')}
+                          </div>
+                        ) : (
+                          "Create Username"
+                        )}
+                      </button>
+                    </div>
+                    <div className="onboarding-actions">
+
+                      <button
+                        className="skip-button"
+                        onClick={handleSkipUsername}
+
+                      >
+                        Continue Without Username
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div 
+  className={`onboarding-section challenge-section ${popup === 15 || (isTransitioning && transitionDirection === 'forward') ? 'active' : ''} ${exitingChallenge ? 'exiting' : ''}`}
+  data-step={currentStep}
+>
+                <div className="challenge-intro-split-container">
+                  <div className="floating-elements-container">
+                    <img src={circleleft} className="circle-bottom" />
+
+                    <img src={topright} className="top-right" />
+                    <img src={topleft} className="top-left" />
+                    <img src={circleleft} className="circle-left" />
+
+                    <img src={veryleft} className="very-left" />
+                    <img src={circleleft} className="circle-right" />
+
+                    <img src={veryright} className="very-right" />
+                    <img src={topmiddle} className="top-middle" />
+                    <img src={topleft} className="bottom-middle" />
+                    <img src={circleleft} className="bottom-right" />
+
+                    <div className="account-setup-header">
+                      <div className="account-setup-title-wrapper">
+                        <h2 className="account-setup-title">{t('challengeOverview')}</h2>
+                        <p className="account-setup-subtitle">{t('learnHowToCompete')}</p>
+                      </div>
+                    </div>
+                    <div className="challenge-intro-content-wrapper">
+                      <div className="challenge-intro-content-side">
+                        <div className="challenge-intro-content-inner">
+                          <div className="intro-text">
+                            <h3 className="intro-title">
+                              {currentStep === 0 ? t('precisionMatters') :
+                                currentStep === 1 ? t('earnCrystals') :
+                                  t('claimRewards')}
+                            </h3>
+                            <p className="intro-description">
+                              {currentStep === 0 ? t('placeYourBids') :
+                                currentStep === 1 ? t('midsGiveYou') :
+                                  t('competeOnLeaderboards')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="challenge-intro-visual-side">
+                        {currentStep === 0 && (
+
+                          <div className="intro-image-container">
+                            <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
+                              <img src={part1image} className="intro-image" alt="Tutorial illustration" />
+                            </div>
+                          </div>
+                        )}
+
+                        {currentStep === 1 && (
+                          <div className="xp-animation-container">
+                            <div className="user-profile">
+                              <div className="self-pfp">
+                              <img src={defaultProfilePic} className="profile-pic-second" alt="User profile" />
+                              <div className="username-display">@{usernameInput || "player123"}</div>
+                              <div className="xp-counter">
+                                <img
+                                  src={crystalxp}
+                                  className="xp-icon"
+                                  alt="Crystal XP"
+                                  style={{
+                                    width: '23px',
+                                    height: '23px',
+                                    verticalAlign: 'middle',
+                                  }}
+                                />   <span className="self-pfp-xp">123123</span>
+
+                              </div>
+                              </div>
+
+                              <div className="challenge-mini-leaderboard">
+                                <div className="mini-leaderboard-header">
+                                  <span className="mini-leaderboard-title">Season 1 Leaderboard</span>
+                                  <span className="mini-leaderboard-time">7d 22h 50m 54s</span>
+                                </div>
+
+                                <div className="mini-progress-bar">
+                                  <div className="mini-progress-fill"></div>
+                                </div>
+
+                                <div className="mini-leaderboard-user">
+                                  <div className="mini-leaderboard-user-left">
+                                    <span className="mini-user-rank">#62</span>
+                                    <span className="mini-user-address">0x16A6...Bb5d
+                                      <span className="mini-user-copy">⧉</span>
+                                    </span>
+                                  </div>
+                                  <div className="mini-user-points">
+                                    14.448
+                                    <img src={crystalxp} width="14" height="14" alt="XP" />
+                                  </div>
+                                </div>
+
+                                <div className="mini-top-users">
+                                  <div className="mini-top-user mini-top-user-1">
+                                    <span className="mini-crown">👑</span>
+                                    <span className="mini-top-rank mini-top-rank-1">1</span>
+                                    <div className="mini-points-container">
+                                      <img src={crystalxp} className="mini-token-icon" alt="Token" />
+                                      <span className="mini-top-points">234,236</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="mini-top-user mini-top-user-2">
+                                    <span className="mini-top-rank mini-top-rank-2">2</span>
+                                    <div className="mini-points-container">
+
+                                      <img src={crystalxp} className="mini-token-icon" alt="Token" />
+                                      <span className="mini-top-points">91,585</span>
+                                    </div>
+                                  </div>
+
+                                  <div className="mini-top-user mini-top-user-3">
+                                    <span className="mini-top-rank mini-top-rank-3">3</span>
+                                    <div className="mini-points-container">
+
+                                      <img src={crystalxp} className="mini-token-icon" alt="Token" />
+                                      <span className="mini-top-points">52,181</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {currentStep === 2 && (
+                          <div className="rewards-container">
+                            <div className="rewards-stage">
+
+                              <img className="lbstand" src={lbstand}/>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="account-setup-footer">
+                    {currentStep > 0 ? (
+                      <button className="back-button" onClick={handleBackClick}>
+                        {t('back')}
+                      </button>
+                    ) : (
+                      <button
+                        className="back-to-username-button"
+                        onClick={handleBackToUsernameWithAudio}
+                      >
+                        {t('back')}
+                      </button>
+                    )}
+
+                    <button
+                      className="next-button"
+                      onClick={handleNextClick}
+                    >
+                      {currentStep < 2 ? t('next') : t('getStarted')}
+                    </button>
+                    <audio
+                      ref={stepAudioRef}
+                      src={stepaudio}
+                      preload="auto"
+                    />
+                    <audio
+                      ref={backAudioRef}
+                      src={backaudio}
+                      preload="auto"
+                    />
+
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-
-          <div className="challenge-intro-visual-side">
-            {currentStep === 0 && (
-              <div className="intro-image-container">
-                <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
-                  <img src={part1image} className="intro-image" alt="Tutorial illustration" />
-                  {animationStarted && <div className="glowing-rectangle"></div>}
-                </div>
-              </div>
-            )}
-            
-            {currentStep === 1 && (
-              <div className="xp-animation-container">
-                <div className="user-profile">
-                  <img src={defaultProfilePic} className="profile-pic-second" alt="User profile" />
-                  <div className="username-display">@{usernameInput || "player123"}</div>
-                  <div className="xp-counter">
-                    <img
-                      src={crystalxp}
-                      className="xp-icon"
-                      alt="Crystal XP"
-                      style={{
-                        width: '23px',
-                        height: '23px',
-                        verticalAlign: 'middle',
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-            
-            {currentStep === 2 && (
-              <div className="rewards-container">
-                <div className="rewards-stage">
-                  <div className="podium">
-                    <div className="podium-step">
-                      <span className="podium-rank">2nd</span>
-                    </div>
-                    <div className="podium-step">
-                      <span className="podium-rank">1st</span>
-                    </div>
-                    <div className="podium-step">
-                      <span className="podium-rank">3rd</span>
-                    </div>
-                  </div>
-
-                  <div className="podium-profiles">
-                    <div className="podium-profile profile-second">
-                      <img src={LeaderboardPfp2} className="podium-profile-pic" alt="Second place" />
-                    </div>
-                    <div className="podium-profile profile-first">
-                      <img src={defaultProfilePic} className="podium-profile-pic" alt="First place" />
-                      <div className="crown">👑</div>
-                    </div>
-                    <div className="podium-profile profile-third">
-                      <img src={LeaderboardPfp3} className="podium-profile-pic" alt="Third place" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
       </div>
     </>
   );
@@ -7102,8 +7188,8 @@ function App() {
             to={simpleView ? "/swap" : "/market"}
             className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
             onClick={(e) => {
-              if ((location.pathname === '/swap' && simpleView) || 
-                  (location.pathname === '/market' && !simpleView)) {
+              if ((location.pathname === '/swap' && simpleView) ||
+                (location.pathname === '/market' && !simpleView)) {
                 e.preventDefault();
               }
             }}
@@ -7349,10 +7435,10 @@ function App() {
                         ),
                       ),
                       tradesByMarket[
-                        (({ baseAsset, quoteAsset }) => 
-                          (baseAsset === wethticker ? ethticker : baseAsset) + 
-                          (quoteAsset === wethticker ? ethticker : quoteAsset)
-                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -7590,10 +7676,10 @@ function App() {
                     const outputUSD = calculateUSDValue(
                       amountOutSwap,
                       tradesByMarket[
-                        (({ baseAsset, quoteAsset }) => 
-                          (baseAsset === wethticker ? ethticker : baseAsset) + 
-                          (quoteAsset === wethticker ? ethticker : quoteAsset)
-                        )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                       ],
                       tokenOut,
                       getMarket(
@@ -7605,10 +7691,10 @@ function App() {
                     const inputUSD = calculateUSDValue(
                       amountIn,
                       tradesByMarket[
-                        (({ baseAsset, quoteAsset }) => 
-                          (baseAsset === wethticker ? ethticker : baseAsset) + 
-                          (quoteAsset === wethticker ? ethticker : quoteAsset)
-                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -7788,7 +7874,7 @@ function App() {
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
-            if (connected && userchain === activechain) {              
+            if (connected && userchain === activechain) {
               if (warning == 1) {
                 setpopup(13);
                 const confirmed = await new Promise((resolve) => {
@@ -7796,17 +7882,17 @@ function App() {
                     cleanup();
                     resolve(true);
                   };
-              
+
                   const handleCancel = () => {
                     cleanup();
                     resolve(false);
                   };
-              
+
                   const cleanup = () => {
                     window.removeEventListener('high-impact-confirm', handleConfirm);
                     window.removeEventListener('high-impact-cancel', handleCancel);
                   };
-              
+
                   window.addEventListener('high-impact-confirm', handleConfirm);
                   window.addEventListener('high-impact-cancel', handleCancel);
 
@@ -8516,8 +8602,8 @@ function App() {
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-           to={simpleView ? "/swap" : "/market"}
-           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            to={simpleView ? "/swap" : "/market"}
+            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -8828,10 +8914,10 @@ function App() {
                       ),
                     ),
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -9205,10 +9291,10 @@ function App() {
                   const outputUSD = calculateUSDValue(
                     amountOutLimit,
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                     ],
                     tokenOut,
                     getMarket(
@@ -9227,10 +9313,10 @@ function App() {
                         (activeMarket.scaleFactor || BigInt(1))
                       : BigInt(0),
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -9397,172 +9483,172 @@ function App() {
             <span className="limit-order-usd-label">USDC</span>
           </div>
           <div className="limit-price-buttons">
-  <button 
-    className="limit-price-button limit-custom-button"
-    onClick={() => {
-      const customButton = document.querySelector('.limit-custom-button');
-      if (customButton) {
-        customButton.classList.add('editing');
-      }
-      
-      setTimeout(() => {
-        const input = document.querySelector('.limit-custom-input') as HTMLInputElement | null;
-        if (input) {
-          input.value = '';
-          input.focus();
-        }
-      }, 10);
-    }}
-  >
-    <span className="limit-custom-label">
-      {(() => {
-        const marketPrice = Number(tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[1] ? mids[activeMarketKey]?.[2] : mids[activeMarketKey]?.[0] : mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[2] ? mids[activeMarketKey]?.[1] : mids[activeMarketKey]?.[0])
+            <button
+              className="limit-price-button limit-custom-button"
+              onClick={() => {
+                const customButton = document.querySelector('.limit-custom-button');
+                if (customButton) {
+                  customButton.classList.add('editing');
+                }
 
-        if (marketPrice > 0 && limitPrice > 0) {
-          const percentDiff = ((Number(limitPrice) - marketPrice) / marketPrice) * 100;
-          if (Math.abs(percentDiff) < 0.01) {
-            return t('custom');
-          }
-          
-          return (percentDiff >= 0 ? "+" : "") + percentDiff.toFixed(1) + "%";
-        }
-        
-        return t('custom');
-      })()}
-    </span>
-    <div className="custom-input-container">
-      <input 
-        className="limit-custom-input"
-        type="text" 
-        inputMode="decimal"
-        placeholder={tokenIn === activeMarket?.quoteAddress ? "-%" : "+%"}
-        onBlur={(e) => {
-          const customButton = document.querySelector('.limit-custom-button');
-          if (customButton) {
-            customButton.classList.remove('editing');
-          }
-          
-          let value = e.target.value.replace(/[^0-9.]/g, '');
-          
-          let numValue = parseFloat(value);
-          if (isNaN(numValue)) numValue = 0;
-          if (numValue > 100) {
-            value = "100";
-            numValue = 100;
-          }
-          
-          if (value) {
-            const marketPrice = tokenIn === activeMarket?.baseAddress 
-              ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
-              : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
-            
-            let newPrice;
-            if (tokenIn === activeMarket?.quoteAddress) {
-              newPrice = marketPrice * (1 - numValue/100);
-            } else {
-              newPrice = marketPrice * (1 + numValue/100);
-            }
-            
-            updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
-          }
-        }}
-        onFocus={(e) => {
-          const value = e.target.value.replace(/[^0-9.]/g, '');
-          e.target.value = value;
-        }}
-        onKeyDown={(e) => {
-          if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
-              (e.keyCode === 65 && e.ctrlKey === true) ||
-              (e.keyCode === 67 && e.ctrlKey === true) ||
-              (e.keyCode === 86 && e.ctrlKey === true) ||
-              (e.keyCode === 88 && e.ctrlKey === true) ||
-              (e.keyCode >= 35 && e.keyCode <= 39)) {
-            return;
-          }
-          
-          if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && 
-              (e.keyCode < 96 || e.keyCode > 105)) {
-            e.preventDefault();
-          }
-          
-          if (e.key === 'Enter') {
-            const input = e.target as HTMLInputElement;
-            input.blur();
-          } else if (e.key === 'Escape') {
-            const customButton = document.querySelector('.limit-custom-button');
-            if (customButton) {
-              customButton.classList.remove('editing');
-            }
-          }
-        }}
-        onChange={(e) => {
-          let value = e.target.value.replace(/[^0-9.]/g, '');
-          
-          const numValue = parseFloat(value);
-          if (!isNaN(numValue) && numValue > 100) {
-            value = "100";
-          }
-          
-          const sign = tokenIn === activeMarket?.quoteAddress ? "-" : "+";
-          
-          if (value && value !== "0") {
-            e.target.value = sign + value;
-          } else {
-            e.target.value = value;
-          }
-        }}
-        onClick={(e) => e.stopPropagation()}
-      />
-    </div>
-  </button>
-  <button 
-    className="limit-price-button" 
-    onClick={() => {
-      const marketPrice = tokenIn === activeMarket?.baseAddress 
-        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
-        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
-      
-      const newPrice = tokenIn === activeMarket?.quoteAddress
-        ? Math.max(0, marketPrice * 0.99) 
-        : marketPrice * 1.01;
-      
-      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
-    }}
-  >
-    {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
-  </button>
-  <button 
-    className="limit-price-button" 
-    onClick={() => {
-      const marketPrice = tokenIn === activeMarket?.baseAddress 
-        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
-        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
-      const newPrice = tokenIn === activeMarket?.quoteAddress
-        ? Math.max(0, marketPrice * 0.95) 
-        : marketPrice * 1.05; 
-      
-      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
-    }}
-  >
-    {tokenIn === activeMarket?.quoteAddress ? "-5%" : "+5%"}
-  </button>
-  <button 
-    className="limit-price-button" 
-    onClick={() => {
-      const marketPrice = tokenIn === activeMarket?.baseAddress 
-        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
-        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
-      
-      const newPrice = tokenIn === activeMarket?.quoteAddress
-        ? Math.max(0, marketPrice * 0.9) 
-        : marketPrice * 1.1; 
-      
-      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
-    }}
-  >
-    {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}
-  </button>
-</div>
+                setTimeout(() => {
+                  const input = document.querySelector('.limit-custom-input') as HTMLInputElement | null;
+                  if (input) {
+                    input.value = '';
+                    input.focus();
+                  }
+                }, 10);
+              }}
+            >
+              <span className="limit-custom-label">
+                {(() => {
+                  const marketPrice = Number(tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[1] ? mids[activeMarketKey]?.[2] : mids[activeMarketKey]?.[0] : mids[activeMarketKey]?.[0] == mids[activeMarketKey]?.[2] ? mids[activeMarketKey]?.[1] : mids[activeMarketKey]?.[0])
+
+                  if (marketPrice > 0 && limitPrice > 0) {
+                    const percentDiff = ((Number(limitPrice) - marketPrice) / marketPrice) * 100;
+                    if (Math.abs(percentDiff) < 0.01) {
+                      return t('custom');
+                    }
+
+                    return (percentDiff >= 0 ? "+" : "") + percentDiff.toFixed(1) + "%";
+                  }
+
+                  return t('custom');
+                })()}
+              </span>
+              <div className="custom-input-container">
+                <input
+                  className="limit-custom-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder={tokenIn === activeMarket?.quoteAddress ? "-%" : "+%"}
+                  onBlur={(e) => {
+                    const customButton = document.querySelector('.limit-custom-button');
+                    if (customButton) {
+                      customButton.classList.remove('editing');
+                    }
+
+                    let value = e.target.value.replace(/[^0-9.]/g, '');
+
+                    let numValue = parseFloat(value);
+                    if (isNaN(numValue)) numValue = 0;
+                    if (numValue > 100) {
+                      value = "100";
+                      numValue = 100;
+                    }
+
+                    if (value) {
+                      const marketPrice = tokenIn === activeMarket?.baseAddress
+                        ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+                        : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+
+                      let newPrice;
+                      if (tokenIn === activeMarket?.quoteAddress) {
+                        newPrice = marketPrice * (1 - numValue / 100);
+                      } else {
+                        newPrice = marketPrice * (1 + numValue / 100);
+                      }
+
+                      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+                    }
+                  }}
+                  onFocus={(e) => {
+                    const value = e.target.value.replace(/[^0-9.]/g, '');
+                    e.target.value = value;
+                  }}
+                  onKeyDown={(e) => {
+                    if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+                      (e.keyCode === 65 && e.ctrlKey === true) ||
+                      (e.keyCode === 67 && e.ctrlKey === true) ||
+                      (e.keyCode === 86 && e.ctrlKey === true) ||
+                      (e.keyCode === 88 && e.ctrlKey === true) ||
+                      (e.keyCode >= 35 && e.keyCode <= 39)) {
+                      return;
+                    }
+
+                    if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) &&
+                      (e.keyCode < 96 || e.keyCode > 105)) {
+                      e.preventDefault();
+                    }
+
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement;
+                      input.blur();
+                    } else if (e.key === 'Escape') {
+                      const customButton = document.querySelector('.limit-custom-button');
+                      if (customButton) {
+                        customButton.classList.remove('editing');
+                      }
+                    }
+                  }}
+                  onChange={(e) => {
+                    let value = e.target.value.replace(/[^0-9.]/g, '');
+
+                    const numValue = parseFloat(value);
+                    if (!isNaN(numValue) && numValue > 100) {
+                      value = "100";
+                    }
+
+                    const sign = tokenIn === activeMarket?.quoteAddress ? "-" : "+";
+
+                    if (value && value !== "0") {
+                      e.target.value = sign + value;
+                    } else {
+                      e.target.value = value;
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+            </button>
+            <button
+              className="limit-price-button"
+              onClick={() => {
+                const marketPrice = tokenIn === activeMarket?.baseAddress
+                  ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+                  : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+
+                const newPrice = tokenIn === activeMarket?.quoteAddress
+                  ? Math.max(0, marketPrice * 0.99)
+                  : marketPrice * 1.01;
+
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+              }}
+            >
+              {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
+            </button>
+            <button
+              className="limit-price-button"
+              onClick={() => {
+                const marketPrice = tokenIn === activeMarket?.baseAddress
+                  ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+                  : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+                const newPrice = tokenIn === activeMarket?.quoteAddress
+                  ? Math.max(0, marketPrice * 0.95)
+                  : marketPrice * 1.05;
+
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+              }}
+            >
+              {tokenIn === activeMarket?.quoteAddress ? "-5%" : "+5%"}
+            </button>
+            <button
+              className="limit-price-button"
+              onClick={() => {
+                const marketPrice = tokenIn === activeMarket?.baseAddress
+                  ? Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor)
+                  : Number(mids[activeMarketKey]?.[0]) / Number(activeMarket.priceFactor);
+
+                const newPrice = tokenIn === activeMarket?.quoteAddress
+                  ? Math.max(0, marketPrice * 0.9)
+                  : marketPrice * 1.1;
+
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+              }}
+            >
+              {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}
+            </button>
+          </div>
         </div>
         <div className="balance-slider-wrapper">
           <div className="slider-container">
@@ -10028,7 +10114,7 @@ function App() {
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+          waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -10040,8 +10126,8 @@ waitForTxReceipt={waitForTxReceipt}
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-           to={simpleView ? "/swap" : "/market"}
-           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            to={simpleView ? "/swap" : "/market"}
+            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -10168,10 +10254,10 @@ waitForTxReceipt={waitForTxReceipt}
                       const tokenBigInt = calculateTokenAmount(
                         numericValue,
                         tradesByMarket[
-                          (({ baseAsset, quoteAsset }) => 
-                            (baseAsset === wethticker ? ethticker : baseAsset) + 
-                            (quoteAsset === wethticker ? ethticker : quoteAsset)
-                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                        (({ baseAsset, quoteAsset }) =>
+                          (baseAsset === wethticker ? ethticker : baseAsset) +
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -10229,10 +10315,10 @@ waitForTxReceipt={waitForTxReceipt}
                     const usd = calculateUSDValue(
                       tokenBigInt,
                       tradesByMarket[
-                        (({ baseAsset, quoteAsset }) => 
-                          (baseAsset === wethticker ? ethticker : baseAsset) + 
-                          (quoteAsset === wethticker ? ethticker : quoteAsset)
-                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -10304,10 +10390,10 @@ waitForTxReceipt={waitForTxReceipt}
                       const tokenBigInt = calculateTokenAmount(
                         numericValue,
                         tradesByMarket[
-                          (({ baseAsset, quoteAsset }) => 
-                            (baseAsset === wethticker ? ethticker : baseAsset) + 
-                            (quoteAsset === wethticker ? ethticker : quoteAsset)
-                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                        (({ baseAsset, quoteAsset }) =>
+                          (baseAsset === wethticker ? ethticker : baseAsset) +
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -10363,10 +10449,10 @@ waitForTxReceipt={waitForTxReceipt}
                     const usd = calculateUSDValue(
                       tokenBigInt,
                       tradesByMarket[
-                        (({ baseAsset, quoteAsset }) => 
-                          (baseAsset === wethticker ? ethticker : baseAsset) + 
-                          (quoteAsset === wethticker ? ethticker : quoteAsset)
-                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                      (({ baseAsset, quoteAsset }) =>
+                        (baseAsset === wethticker ? ethticker : baseAsset) +
+                        (quoteAsset === wethticker ? ethticker : quoteAsset)
+                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                       ],
                       tokenIn,
                       getMarket(
@@ -10442,10 +10528,10 @@ waitForTxReceipt={waitForTxReceipt}
                       `$${calculateUSDValue(
                         amount,
                         tradesByMarket[
-                          (({ baseAsset, quoteAsset }) => 
-                            (baseAsset === wethticker ? ethticker : baseAsset) + 
-                            (quoteAsset === wethticker ? ethticker : quoteAsset)
-                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                        (({ baseAsset, quoteAsset }) =>
+                          (baseAsset === wethticker ? ethticker : baseAsset) +
+                          (quoteAsset === wethticker ? ethticker : quoteAsset)
+                        )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                         ],
                         tokenIn,
                         getMarket(
@@ -10512,10 +10598,10 @@ waitForTxReceipt={waitForTxReceipt}
                             ),
                           ),
                           tradesByMarket[
-                            (({ baseAsset, quoteAsset }) => 
-                              (baseAsset === wethticker ? ethticker : baseAsset) + 
-                              (quoteAsset === wethticker ? ethticker : quoteAsset)
-                            )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                          (({ baseAsset, quoteAsset }) =>
+                            (baseAsset === wethticker ? ethticker : baseAsset) +
+                            (quoteAsset === wethticker ? ethticker : quoteAsset)
+                          )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                           ],
                           tokenIn,
                           getMarket(
@@ -10710,8 +10796,8 @@ waitForTxReceipt={waitForTxReceipt}
       <div className="navlinkwrapper" data-active={activeTab}>
         <div className="innernavlinkwrapper">
           <Link
-           to={simpleView ? "/swap" : "/market"}
-           className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            to={simpleView ? "/swap" : "/market"}
+            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
@@ -10909,10 +10995,10 @@ waitForTxReceipt={waitForTxReceipt}
                       ),
                     ),
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -11080,10 +11166,10 @@ waitForTxReceipt={waitForTxReceipt}
                   const outputUSD = calculateUSDValue(
                     amountOutScale,
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(-2), activeMarket.path.at(-1)))
                     ],
                     tokenOut,
                     getMarket(
@@ -11100,10 +11186,10 @@ waitForTxReceipt={waitForTxReceipt}
                       )
                     ),
                     tradesByMarket[
-                      (({ baseAsset, quoteAsset }) => 
-                        (baseAsset === wethticker ? ethticker : baseAsset) + 
-                        (quoteAsset === wethticker ? ethticker : quoteAsset)
-                      )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
+                    (({ baseAsset, quoteAsset }) =>
+                      (baseAsset === wethticker ? ethticker : baseAsset) +
+                      (quoteAsset === wethticker ? ethticker : quoteAsset)
+                    )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
                     ],
                     tokenIn,
                     getMarket(
@@ -11730,7 +11816,7 @@ waitForTxReceipt={waitForTxReceipt}
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+          waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -11995,7 +12081,7 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
-                                  tradehistory={tradehistory} 
+                                  tradehistory={tradehistory}
 
                                 />
                               )}
@@ -12069,7 +12155,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
-                              tradehistory={tradehistory} 
+                              tradehistory={tradehistory}
 
 
                             />
@@ -12127,7 +12213,7 @@ waitForTxReceipt={waitForTxReceipt}
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+                            waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -12212,7 +12298,7 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
-                                  tradehistory={tradehistory} 
+                                  tradehistory={tradehistory}
 
                                 />
                               )}
@@ -12286,7 +12372,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
-                              tradehistory={tradehistory} 
+                              tradehistory={tradehistory}
 
 
                             />
@@ -12344,7 +12430,7 @@ waitForTxReceipt={waitForTxReceipt}
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+                            waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -12433,7 +12519,7 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
-                                  tradehistory={tradehistory} 
+                                  tradehistory={tradehistory}
 
 
                                 />
@@ -12508,7 +12594,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
-                              tradehistory={tradehistory} 
+                              tradehistory={tradehistory}
 
 
                             />
@@ -12572,7 +12658,7 @@ waitForTxReceipt={waitForTxReceipt}
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+                            waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -12661,7 +12747,7 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
-                                  tradehistory={tradehistory} 
+                                  tradehistory={tradehistory}
 
                                 />
                               )}
@@ -12735,7 +12821,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
-                              tradehistory={tradehistory} 
+                              tradehistory={tradehistory}
 
                             />
                           )}
@@ -12799,7 +12885,7 @@ waitForTxReceipt={waitForTxReceipt}
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+                            waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
@@ -12888,7 +12974,7 @@ waitForTxReceipt={waitForTxReceipt}
                                   tradesloading={tradesloading}
                                   marketsData={sortedMarkets}
                                   updateChartData={updateChartHeaderData}
-                                  tradehistory={tradehistory} 
+                                  tradehistory={tradehistory}
 
 
                                 />
@@ -12963,7 +13049,7 @@ waitForTxReceipt={waitForTxReceipt}
                               tradesloading={tradesloading}
                               marketsData={sortedMarkets}
                               updateChartData={updateChartHeaderData}
-                              tradehistory={tradehistory} 
+                              tradehistory={tradehistory}
 
                             />
                           )}
@@ -13026,7 +13112,7 @@ waitForTxReceipt={waitForTxReceipt}
                             refetch={refetch}
                             sendUserOperationAsync={sendUserOperationAsync}
                             setChain={handleSetChain}
-waitForTxReceipt={waitForTxReceipt}
+                            waitForTxReceipt={waitForTxReceipt}
                           />
                         </div>
                       </div>
