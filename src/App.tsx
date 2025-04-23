@@ -10931,6 +10931,7 @@ function App() {
 
                 if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
                   setInputString(e.currentTarget.value);
+                  setIsOutputBasedScaleOrder(false);
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -11312,13 +11313,30 @@ function App() {
                     );
                     setScaleStart(price);
                     if (price && scaleEnd && scaleOrders && scaleSkew) {
-                      setScaleOutput(
-                        Number(amountIn),
-                        Number(price),
-                        Number(scaleEnd),
-                        Number(scaleOrders),
-                        Number(scaleSkew)
-                      );
+                      if (!isOutputBasedScaleOrder) {
+                        setScaleOutput(
+                          Number(amountIn),
+                          Number(price),
+                          Number(scaleEnd),
+                          Number(scaleOrders),
+                          Number(scaleSkew)
+                        );
+                      } else {
+                        const requiredInput = calculateScaleInput(
+                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          Number(price),
+                          Number(scaleEnd),
+                          Number(scaleOrders),
+                          Number(scaleSkew)
+                        );
+                        setamountIn(BigInt(requiredInput));
+                        setInputString(
+                          customRound(
+                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            3
+                          ).toString()
+                        );
+                      }
                     }
                   }
                 }}
@@ -11384,13 +11402,30 @@ function App() {
                     );
                     setScaleEnd(price);
                     if (price && scaleStart && scaleOrders && scaleSkew) {
-                      setScaleOutput(
-                        Number(amountIn),
-                        Number(scaleStart),
-                        Number(price),
-                        Number(scaleOrders),
-                        Number(scaleSkew)
-                      );
+                      if (!isOutputBasedScaleOrder) {
+                        setScaleOutput(
+                          Number(amountIn),
+                          Number(scaleStart),
+                          Number(price),
+                          Number(scaleOrders),
+                          Number(scaleSkew)
+                        );
+                      } else {
+                        const requiredInput = calculateScaleInput(
+                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          Number(scaleStart),
+                          Number(price),
+                          Number(scaleOrders),
+                          Number(scaleSkew)
+                        );
+                        setamountIn(BigInt(requiredInput));
+                        setInputString(
+                          customRound(
+                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            3
+                          ).toString()
+                        );
+                      }
                     }
                   }
                 }}
@@ -11421,7 +11456,30 @@ function App() {
                     let temporders = BigInt(e.target.value == "1" ? 0 : e.target.value)
                     setScaleOrders(temporders)
                     if (temporders && scaleStart && scaleSkew && scaleEnd) {
-                      setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(temporders), Number(scaleSkew))
+                      if (!isOutputBasedScaleOrder) {
+                        setScaleOutput(
+                          Number(amountIn),
+                          Number(scaleStart),
+                          Number(scaleEnd),
+                          Number(temporders),
+                          Number(scaleSkew)
+                        );
+                      } else {
+                        const requiredInput = calculateScaleInput(
+                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          Number(scaleStart),
+                          Number(scaleEnd),
+                          Number(temporders),
+                          Number(scaleSkew)
+                        );
+                        setamountIn(BigInt(requiredInput));
+                        setInputString(
+                          customRound(
+                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            3
+                          ).toString()
+                        );
+                      }
                     }
                     else {
                       setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(0), Number(scaleSkew))
@@ -11447,7 +11505,30 @@ function App() {
                     let skew = Number(e.target.value)
                     setScaleSkew(skew)
                     if (skew && scaleStart && scaleOrders && scaleEnd) {
-                      setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(skew))
+                      if (!isOutputBasedScaleOrder) {
+                        setScaleOutput(
+                          Number(amountIn),
+                          Number(scaleStart),
+                          Number(scaleEnd),
+                          Number(scaleOrders),
+                          Number(skew)
+                        );
+                      } else {
+                        const requiredInput = calculateScaleInput(
+                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          Number(scaleStart),
+                          Number(scaleEnd),
+                          Number(scaleOrders),
+                          Number(skew)
+                        );
+                        setamountIn(BigInt(requiredInput));
+                        setInputString(
+                          customRound(
+                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            3
+                          ).toString()
+                        );
+                      }
                     }
                   }
                 }}

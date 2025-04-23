@@ -457,7 +457,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                           <div
                             className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
                           >
-                            {market.priceChange}
+                            {market.priceChange+'%'}
                           </div>
                         </div>
                       </div>
