@@ -5678,8 +5678,8 @@ input[type="email"] {
 }
 
 .profile-pic-second {
-  height: 80px;
-  width: 80px;
+  height: 60px;
+  width: 60px;
   border-radius: 50%;
   box-shadow: 0 0 15px rgba(170, 174, 207, 0.3);
   animation: profileBounce 2.5s infinite;

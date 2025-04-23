@@ -143,10 +143,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
             const filledPercent =
               order[7] && order[2] ? (order[7] / order[2]) * 100 : 0;
             const isBuy = order[3] === 1;
-            
-            const value = order[8] && market.scaleFactor && market.quoteDecimals
-              ? Number(order[8]) / (Number(market.scaleFactor) * Math.pow(10, Number(market.quoteDecimals)))
-              : 0;
+            const value = order[2] / 10 ** Number(market.baseDecimals)
             
             const orderKey = order[0].toString();
 
@@ -158,11 +155,16 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                   >
                     {isBuy ? t('buy') : t('sell')}
                   </span>
+                </div>
+                <div className="order-market">
                   {market.baseAsset}
                   {market.quoteAsset}
                 </div>
                 <div className="simple-order-value">
-                  ${customRound(value, 2)}
+                  {(order[0]/Number(market.priceFactor)).toFixed(Math.log10(Number(market.priceFactor)))}
+                </div>
+                <div className="simple-order-value">
+                  {customRound(value, 3) + ' ' + market.baseAsset}
                 </div>
                 <div className="order-filled">
                   <div className="simple-progress-bar">
@@ -174,7 +176,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                       }}
                     ></div>
                   </div>
-                  <span>{Math.round(filledPercent)}%</span>
                 </div>
                 <div
                   className={`simple-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
