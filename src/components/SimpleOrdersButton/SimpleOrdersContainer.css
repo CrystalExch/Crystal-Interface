@@ -101,7 +101,7 @@
   
   .order-row {
     display: grid;
-    grid-template-columns: 1fr 0.6fr 0.8fr 25px;
+    grid-template-columns: 0.4fr 0.8fr 0.5fr 0.7fr 0.8fr 25px;
     padding: 4px 0;
     align-items: center;
     transition: background-color 0.2s ease;
@@ -116,7 +116,6 @@
     font-size: 0.65rem;
     padding: 1px 5px;
     border-radius: 3px;
-    margin-right: 6px;
     text-transform: uppercase;
     font-weight: 500;
   }
@@ -139,6 +138,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    gap: 7px;
   }
   
   .simple-order-value {
@@ -149,7 +149,8 @@
   .order-filled {
     display: flex;
     align-items: center;
-    max-width: 100px;
+    max-width: 85px;
+    gap: 6px;
   }
   
   .simple-progress-bar {
@@ -169,7 +170,7 @@
     font-size: 0.7rem;
     color: #ffffffcf;
     min-width: 24px;
-    text-align: right;
+    text-align: left;
     margin-left: 1px;
     margin-bottom: 1px;
   }
