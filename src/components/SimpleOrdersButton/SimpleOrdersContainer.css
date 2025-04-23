@@ -101,7 +101,7 @@
   
   .order-row {
     display: grid;
-    grid-template-columns: 0.4fr 0.8fr 0.5fr 0.7fr 0.8fr 25px;
+    grid-template-columns: 0.4fr 0.8fr 0.5fr 0.8fr 0.7fr 25px;
     padding: 4px 0;
     align-items: center;
     transition: background-color 0.2s ease;
