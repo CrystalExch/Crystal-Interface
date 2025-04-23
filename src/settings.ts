@@ -24,7 +24,7 @@ export const settings: any = {
       rpcUrls: {
         default: {
           http: [
-            'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5/',
+            'https://testnet-rpc.monad.xyz',
           ],
         },
         alchemy: {
