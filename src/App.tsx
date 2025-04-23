@@ -95,8 +95,6 @@ import refreshicon from './assets/circulararrow.png';
 import clearlogo from '../public/logo_clear.png';
 import defaultProfilePic from './assets/bh.png';
 import crystalxp from './assets/CrystalX.png';
-import LeaderboardPfp2 from './assets/legion.png';
-import LeaderboardPfp3 from './assets/rubberbandz.png';
 import part1image from './assets/part1intro.png';
 import topright from './assets/topright.png';
 import veryleft from './assets/veryleft.png';
@@ -1993,12 +1991,10 @@ function App() {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [fromChallenge, setFromChallenge] = useState(false);
   const [justEntered, setJustEntered] = useState(false);
   const [exitingChallenge, setExitingChallenge] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
-
 
   useEffect(() => {
     if (currentStep === 0) {
@@ -2017,12 +2013,10 @@ function App() {
     }
   };
 
-
   const handleBackToUsername = () => {
     setIsTransitioning(true);
     setTransitionDirection('backward');
     setExitingChallenge(true);
-    setFromChallenge(true);
 
     setTimeout(() => {
       setpopup(14);
