@@ -1624,8 +1624,9 @@ function App() {
 
   // tokeninfo modal updating
   useEffect(() => {
-    setMarketsData((prevMarkets) =>
-      prevMarkets.map((market) => {
+    setMarketsData((marketsData) =>
+      marketsData.map((market) => {
+        if (!market) return;
         const trades = tradesByMarket[market?.marketKey.replace(
           new RegExp(
             `^${wethticker}|${wethticker}$`,
@@ -1633,7 +1634,7 @@ function App() {
           ),
           ethticker
         )] || [];
-        if (trades.length < 1) return market;
+        if (trades.length <= 50) return market;
 
         const series: any =
           dayKlines.find((s: any) => typeof s.id === "string" && s.id.includes(market?.address)) || null;
