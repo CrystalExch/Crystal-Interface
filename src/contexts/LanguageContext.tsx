@@ -324,7 +324,7 @@ export const translations: any = {
     complete: "Complete",
     challengeOverview: "Crystal Rewards: Season 0",
     learnHowToCompete: "Compete to earn Crystals!",
-    precisionMatters: "Place Orders",
+    precisionMatters: "Place Limit Orders",
     placeYourBids: "Place your limit orders near the mid price. The closer, the better.",
     earnCrystals: "Earn Crystals",
     midsGiveYou: "Recieve Crystals every second your order remains unfilled.",
