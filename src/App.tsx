@@ -1594,7 +1594,9 @@ function App() {
           const firstPrice = candles[0].open;
           const lastPrice = candles[candles.length - 1].close;
           const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-          const totalVolume = candles.reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
+          const totalVolume = candles
+            .filter((c) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
+            .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
           const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
 
           return {
