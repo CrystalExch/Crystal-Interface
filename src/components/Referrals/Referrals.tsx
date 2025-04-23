@@ -153,23 +153,20 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefAddress(
         refs[3].result || '0x0000000000000000000000000000000000000000',
       );
-      setUsedRefLink(
-        refs[3].result !== '0x0000000000000000000000000000000000000000' ?  refs[3].result : '',
-      );
-      // const find = (await readContracts(config, {
-      //   contracts: [
-      //     {
-      //       abi: CrystalReferralAbi,
-      //       address: settings.chainConfig[activechain].referralManager,
-      //       functionName: 'addressToRef',
-      //       args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
-      //     },
-      //   ],
-      // })) as any[];
-      // setUsedRefLink(find[0].result);
-      // console.log(find[0].result);
+      const find = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'addressToRef',
+            args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
+          },
+        ],
+      })) as any[];
+      setUsedRefLink(find[0].result);
+      console.log(find[0].result);
     })();
-  }, [usedRefLink, address, refLinkString]);
+  }, [address, refLinkString]);
 
   const handleCreateRef = async () => {
     try {

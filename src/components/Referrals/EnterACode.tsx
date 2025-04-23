@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
-
+import React, { useState } from 'react';
 import './EnterACode.css';
 
 interface EnterACodeProps {
-  setUsedRefLink: (refLink: string) => Promise<boolean>;
+  setUsedRefLink: (refLink: string) => void;
   usedRefLink: string;
   refLink: string;
 }
@@ -13,66 +12,32 @@ const EnterACode: React.FC<EnterACodeProps> = ({
   usedRefLink,
   refLink,
 }) => {
-  const [refCode, setRefCode] = useState<string>('');
+  const [refCode, setRefCode] = useState<string>(usedRefLink);
   const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>('');
-  const [isSet, setIsSet] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  
-  useEffect(() => {
-    if (usedRefLink) {
-      setRefCode(usedRefLink);
-      setSuccess(usedRefLink);
-      setIsSet(true);
-    }
-  }, [usedRefLink]);
+  const [success, setSuccess] = useState<string>(refCode ? ` ${refCode}` : '');
 
   const handleSubmit = async (): Promise<void> => {
     if (!refCode) {
       setError(t('pleaseEnterCode'));
       return;
     }
-    
     if (refCode === refLink) {
       setError(t('noSelfRefer'));
       return;
     }
 
-    try {
-      setIsSubmitting(true);
-      const success = await setUsedRefLink(refCode);
-      
-      if (success) {
-        setSuccess(refCode);
-        setIsSet(true);
-        setError('');
-      } else {
-        setError(t('failedToSetRefCode'));
-      }
-    } catch (err) {
-      setError(t('errorSettingRefCode'));
-    } finally {
-      setIsSubmitting(false);
-    }
+    setUsedRefLink(refCode);
+    setSuccess(`${refCode}`);
   };
 
-  const handleClear = async (): Promise<void> => {
-    try {
-      setIsSubmitting(true);
-      const success = await setUsedRefLink('');
-      
-      if (success) {
-        setUsedRefLink('');
-        setSuccess('');
-        setIsSet(false);
-        setError('');
-      }
-    } catch (err) {
-      setError(t('errorClearingRefCode'));
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleClear = (): void => {
+    setRefCode('');
+    setUsedRefLink('');
+    setError('');
+    setSuccess('');
   };
+
+  console.log(usedRefLink);
 
   return (
     <div className="code-container">
@@ -80,7 +45,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
         {error && <span className="error-message">{error}</span>}
         <div className="header-container">
           <h2 className="code-title">
-            {isSet ? t('usingCode') : t('enterReferralCode')}
+            {!usedRefLink ? t('usingCode') : t('enterReferralCode')}
           </h2>
         </div>
         <p className="referral-subtitle">
@@ -101,22 +66,21 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             <div className="input-with-clear">
               <input
                 type="text"
-                value={refCode}
+                value={usedRefLink !== '' ? success : refCode}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (!isSet) {
+                  if (usedRefLink == '') {
                     setRefCode(e.target.value);
                     setError('');
                   }
                 }}
                 placeholder={t('enteracode')}
-                className={isSet ? 'code-input-success' : 'code-input'}
-                readOnly={isSet}
+                className={usedRefLink !== '' ? 'code-input-success' : 'code-input'}
+                readOnly={usedRefLink !== ''}
               />
-              {isSet && (
+              {usedRefLink !== '' && (
                 <button
                   onClick={handleClear}
                   className="clear-icon-button"
-                  disabled={isSubmitting}
                 >
                   {t('clear')}
                 </button>
@@ -124,17 +88,10 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             </div>
             <button
               onClick={handleSubmit}
-              disabled={isSet || isSubmitting}
+              disabled={usedRefLink !== ''}
               className="code-button"
             >
-              {isSubmitting ? (
-                <>
-                  <div className="loading-spinner-small"></div>
-                  {t('setting')}
-                </>
-              ) : (
-                t('setRef')
-              )}
+              {t('setRef')}
             </button>
           </div>
         </div>
