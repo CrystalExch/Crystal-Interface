@@ -371,12 +371,7 @@ function App() {
     }
     return eth;
   });
-  const [usedRefLink, setUsedRefLink] = useState(() => {
-    if (searchParams.get('ref')) {
-      localStorage.setItem('ref', searchParams.get('ref') as string);
-    }
-    return searchParams.get('ref') || localStorage.getItem(`ref`) || '';
-  });
+  const [usedRefLink, setUsedRefLink] = useState('');
   const [usedRefAddress, setUsedRefAddress] = useState(
     '0x0000000000000000000000000000000000000000' as `0x${string}`,
   );

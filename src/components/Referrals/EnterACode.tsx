@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import './EnterACode.css';
 
 interface EnterACodeProps {
-  setUsedRefLink: (refLink: string) => void;
+  setUsedRefLink: (refLink: string) => Promise<boolean>;
   usedRefLink: string;
   refLink: string;
 }
@@ -12,33 +13,65 @@ const EnterACode: React.FC<EnterACodeProps> = ({
   usedRefLink,
   refLink,
 }) => {
-  const [refCode, setRefCode] = useState<string>(usedRefLink);
+  const [refCode, setRefCode] = useState<string>('');
   const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>(refCode ? ` ${refCode}` : '');
-  const [isSet, setIsSet] = useState<boolean>(usedRefLink !== '');
+  const [success, setSuccess] = useState<string>('');
+  const [isSet, setIsSet] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  
+  useEffect(() => {
+    if (usedRefLink) {
+      setRefCode(usedRefLink);
+      setSuccess(usedRefLink);
+      setIsSet(true);
+    }
+  }, [usedRefLink]);
 
   const handleSubmit = async (): Promise<void> => {
     if (!refCode) {
       setError(t('pleaseEnterCode'));
       return;
     }
+    
     if (refCode === refLink) {
       setError(t('noSelfRefer'));
       return;
     }
 
-    setUsedRefLink(refCode);
-    setSuccess(`${refCode}`);
-    setIsSet(true);
+    try {
+      setIsSubmitting(true);
+      const success = await setUsedRefLink(refCode);
+      
+      if (success) {
+        setSuccess(refCode);
+        setIsSet(true);
+        setError('');
+      } else {
+        setError(t('failedToSetRefCode'));
+      }
+    } catch (err) {
+      setError(t('errorSettingRefCode'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
-  const handleClear = (): void => {
-    console.log("clearing");
-    setRefCode('');
-    setUsedRefLink('');
-    setError('');
-    setSuccess('');
-    setIsSet(false);
+  const handleClear = async (): Promise<void> => {
+    try {
+      setIsSubmitting(true);
+      const success = await setUsedRefLink('');
+      
+      if (success) {
+        setUsedRefLink('');
+        setSuccess('');
+        setIsSet(false);
+        setError('');
+      }
+    } catch (err) {
+      setError(t('errorClearingRefCode'));
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -68,7 +101,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             <div className="input-with-clear">
               <input
                 type="text"
-                value={isSet ? success : usedRefLink}
+                value={refCode}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   if (!isSet) {
                     setRefCode(e.target.value);
@@ -83,6 +116,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
                 <button
                   onClick={handleClear}
                   className="clear-icon-button"
+                  disabled={isSubmitting}
                 >
                   {t('clear')}
                 </button>
@@ -90,10 +124,17 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             </div>
             <button
               onClick={handleSubmit}
-              disabled={isSet}
+              disabled={isSet || isSubmitting}
               className="code-button"
             >
-              {t('setRef')}
+              {isSubmitting ? (
+                <>
+                  <div className="loading-spinner-small"></div>
+                  {t('setting')}
+                </>
+              ) : (
+                t('setRef')
+              )}
             </button>
           </div>
         </div>
