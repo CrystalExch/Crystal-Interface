@@ -211,7 +211,6 @@ const CrystalObject = () => {
           metalness: 0.3 + Math.random() * 0.2,
           roughness: Math.random() * 0.1,
           wireframe: true,
-          flatShading: true,
           transmission: 0.9 + Math.random() * 0.1,
           thickness: 1,
           reflectivity: 0.5,

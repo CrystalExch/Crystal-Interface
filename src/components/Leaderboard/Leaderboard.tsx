@@ -422,14 +422,16 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           </div>
           <div className="leaderboard-user-info">
             <div className="info-column">
-              <div className="column-header">{t('address')}</div>
+              <div className="column-header">{t('username')}</div>
               <div className="column-content">
-                <div className="address-container">
-                  <span className="leaderboard-user-address">
-                    {address ? getDisplayAddress(address) : ''}
-                    {address && <CopyButton textToCopy={address} />}
-                  </span>
-                </div>
+              <div className="address-container">
+  <span className="leaderboard-user-address">
+    {address ? (
+      liveLeaderboard[address.toLowerCase()]?.username || getDisplayAddress(address)
+    ) : ''}
+    {address && <CopyButton textToCopy={address} />}
+  </span>
+</div>
               </div>
             </div>
             <div className="column-divider" />
