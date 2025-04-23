@@ -74,7 +74,6 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 // import svg graphics
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
-import depositicon from './assets/deposit_test.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
@@ -5793,12 +5792,25 @@ function App() {
                   </div>
                 </button>
                 <button
-                  className="popup-disconnect-button"
+                  className="popup-deposit-button"
                   onClick={() => {
                     setpopup(12)
                   }}
                 >
-                  <img className="disconnect-icon" src={depositicon}></img>
+                  <svg
+                    className="deposit-icon"
+                    viewBox="0 0 24 24"
+                    width="24"
+                    height="24"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="7 11 12 16 17 11"></polyline>
+                    <line x1="12" y1="1" x2="12" y2="14"></line>
+                    <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14"/>
+
+                  </svg>
                 </button>
                 <button
                   className="popup-disconnect-button"
