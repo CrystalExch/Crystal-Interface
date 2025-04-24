@@ -1689,26 +1689,51 @@ body:has(.right-column.show) .blur-background-popups {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  transform: translate(-50%, -50%);
+  transform: translate(calc(-50%/1.2), calc(-50%/1.2));
   z-index: 12;
   width: 350px;
-  top: 50%;
-  border-radius: 8px;
+  border-radius: 16px;
   display: flex;
   flex-direction: column;
-  left: 50%;
   max-width: 90vw;
   padding: 0;
-
+  transform: scale(1.1);
+  backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
 
 }
 
 
 .connect-wallet-username-onboarding-bg{
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   height: 100%;
   background-color: #000000;
+}
 
+
+
+.connect-wallet-username-wrapper{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 20vw 20vw rgba(0, 0, 0, 1);
+  
+}
+
+.connect-wallet-username-wrapper::after{
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  box-shadow: inset 0 0 10vw 10vw rgba(0, 0, 0, 1);
+  z-index: 10;
 }
 
 .connect-wallet-title {
@@ -6310,3 +6335,285 @@ input[type="email"] {
   text-align: center;
 }
 
+
+
+
+/*welcome stuff*/
+.welcome-trader-animation {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.welcome-message-wrapper {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideUp 0.8s ease-out forwards 0.2s;
+  padding: 40px;
+}
+
+.welcome-title {
+  font-size: 1rem;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  line-height: 1.2;
+  margin-bottom: 8px;
+
+}
+
+.welcome-text {
+  font-family: monospace;
+  color: #f0f0f0;
+  opacity: 0;
+  animation: fadeInText 0.6s ease-out forwards 0.4s;
+}
+
+
+
+.enter-button {
+  background: linear-gradient(
+    135deg,
+    #aaaecf 0,
+    #9a9ec7 25%,
+    #8b8eb8 50%,
+    #7f82ac 75%,
+    #7f82a1 100%
+  );
+  border: none;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);  color: white;
+  font-size: 0.8rem;
+  color: black;
+  padding: 3px 12px;
+  border: none;
+  border-radius: 6px;
+  letter-spacing: -0.5px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  opacity: 0;
+  animation: fadeInText 0.6s ease-out forwards 1.6s;
+}
+
+.enter-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(102, 103, 171, 0.3);
+}
+
+.enter-button:active {
+  transform: translateY(0);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-slide-in {
+  from { opacity: 0; transform: translateX(20px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+
+/*TERMINAL*/ 
+.matrix-terminal {
+  background-color: #000;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  color: #aaaecf;
+  font-family: "Courier New", monospace;
+  padding: 20px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.matrix-terminal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(rgba(0, 10, 0, 0.1) 50%, rgba(0, 0, 0, 0.2) 50%);
+  background-size: 100% 4px;
+  pointer-events: none;
+  z-index: 1;
+  animation: scan 8s linear infinite;
+}
+
+@keyframes scan {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+.terminal-header {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #aaaecf;
+  margin-bottom: 15px;
+  font-size: 14px;
+  opacity: 0.8;
+  font-family: "Courier New", monospace;
+
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-right: 10px;
+}
+
+.message {
+  opacity: 0;
+  transform: translateY(20px);
+  animation: fadeIn 0.5s forwards;
+}
+
+.message.system {
+  color: #aaaecf;
+}
+
+.message.user {
+  color: #ffffff;
+  text-align: right;
+}
+
+.message-content {
+  padding: 8px 12px;
+  border-radius: 4px;
+  display: inline-block;
+  max-width: 85%;
+  word-break: break-word;
+  font-family: "Courier New", monospace;
+
+}
+
+.system .message-content {
+  background-color: rgb(148 148 238 / 15%);
+  border-left: 2px solid #aaaecf;
+}
+
+.user .message-content {
+  background-color: rgba(255, 255, 255, 0.1);
+  border-right: 2px solid #ffffff;
+}
+
+.message-typing {
+  display: inline-block;
+}
+
+.message-typing::after {
+  content: '...';
+  animation: cursor 1s infinite;
+}
+
+@keyframes cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.terminal-input-container {
+  display: flex;
+  border-top: 1px solid #aaaecf;
+  padding-top: 15px;
+}
+
+.terminal-prompt {
+  color: #aaaecf;
+  margin-right: 10px;
+  user-select: none;
+  
+}
+
+.terminal-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-family: "Courier New", monospace;
+  font-size: 16px;
+  outline: none;
+  caret-color: #33ff33;
+}
+
+.access-granted {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 28px;
+  color: #33ff33;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  opacity: 0;
+  z-index: 10;
+  pointer-events: none;
+  animation: pulse 2s forwards;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.8);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
