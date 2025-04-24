@@ -106,8 +106,8 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket }) => {
       });
       series.applyOptions({
         priceFormat: {
-          precision: Math.log10(Number(activeMarket.priceFactor)),
-          minMove: Math.pow(10, -Math.log10(Number(activeMarket.priceFactor))),
+          precision: Math.floor(Math.log10(Number(activeMarket.priceFactor))),
+          minMove: Math.pow(10, -Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
         },
       });
       series.setData(formattedData);

@@ -3,7 +3,7 @@ export const getTradeValue = (trade: any, market: any) => {
   const quoteDecimals = Number(market.quoteDecimals);
 
   const price = parseFloat(
-    (trade[3] / priceFactor || 0).toFixed(Math.log10(priceFactor)),
+    (trade[3] / priceFactor || 0).toFixed(Math.floor(Math.log10(priceFactor))),
   );
 
   const tradeValue =

@@ -45,11 +45,6 @@ const OrderBook: React.FC<OrderBookProps> = ({
   const headerRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const displayBuyOrders = orderdata.roundedBuyOrders;
-  const displaySellOrders = orderdata.roundedSellOrders;
-  const priceFactor = orderdata.priceFactor;
-  const spreadData = orderdata.spreadData;
-
   const updateIndicator = () => {
     if (!headerRef.current || !indicatorRef.current) return;
 
@@ -112,10 +107,10 @@ const OrderBook: React.FC<OrderBookProps> = ({
       )}
 
       <OrderbookView
-        roundedBuy={displayBuyOrders}
-        roundedSell={displaySellOrders}
-        spreadData={spreadData}
-        priceFactor={priceFactor}
+        roundedBuy={orderdata.roundedBuyOrders}
+        roundedSell={orderdata.roundedSellOrders}
+        spreadData={orderdata.spreadData}
+        priceFactor={orderdata.priceFactor}
         symbolQuote={orderdata.symbolIn}
         symbolBase={orderdata.symbolOut}
         orderbookPosition={orderbookPosition}

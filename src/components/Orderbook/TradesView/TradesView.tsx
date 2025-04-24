@@ -13,7 +13,6 @@ interface TradesViewProps {
 const TradesView: React.FC<TradesViewProps> = ({ trades, show, symbolQuote }) => {
   const listRef = useRef<HTMLDivElement>(null);
   
-
   return (
     <>
       <TradeHeader show={show} symbolQuote={symbolQuote} />

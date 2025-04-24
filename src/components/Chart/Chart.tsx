@@ -26,17 +26,10 @@ interface ChartComponentProps {
   setpopup: (value: number) => void;
   tradesloading: boolean;
   marketsData: any;
-  updateChartData?: (
-    price: string,
-    priceChange: string,
-    change: string,
-    high24h: string,
-    low24h: string,
-    volume: string,
-    isChartLoading: boolean
-  ) => void;
+  updateChartData?: any;
   chartHeaderData?: any;
-  tradehistory?: any[]; 
+  tradehistory?: any[];
+  isMarksVisible: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -46,6 +39,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   updateChartData,
   marketsData,
   tradehistory = [], 
+  isMarksVisible,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -258,15 +252,29 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
   useEffect(() => {
     if (updateChartData) {
-      updateChartData(
-        price,
-        priceChange,
-        change,
-        high24h,
-        low24h,
-        volume,
-        isChartLoading
-      );
+      updateChartData((prevData: any) => {
+        if (
+          prevData.price === price &&
+          prevData.priceChange === priceChange &&
+          prevData.change === change &&
+          prevData.high24h === high24h &&
+          prevData.low24h === low24h &&
+          prevData.volume === volume &&
+          prevData.isChartLoading === isChartLoading
+        ) {
+          return prevData;
+        }
+  
+        return {
+          price,
+          priceChange,
+          change,
+          high24h,
+          low24h,
+          volume,
+          isChartLoading
+        };
+      });
     }
   }, [price, priceChange, change, high24h, low24h, volume, isChartLoading]);
 
@@ -284,7 +292,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   
       const priceFactor = Number(activeMarket.priceFactor || 1);
       let rawPrice = lastTrade[3] / priceFactor;
-      rawPrice = parseFloat(rawPrice.toFixed(Math.log10(priceFactor)));
+      rawPrice = parseFloat(rawPrice.toFixed(Math.floor(Math.log10(priceFactor))));
   
       const rawVolume =
         (lastTrade[2] === 1 ? lastTrade[0] : lastTrade[1]) /
@@ -329,6 +337,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             setSelectedInterval={setSelectedInterval}
             setOverlayVisible={setOverlayVisible}
             tradehistory={tradehistory} 
+            isMarksVisible={isMarksVisible}
           />
         ) : (
           <>

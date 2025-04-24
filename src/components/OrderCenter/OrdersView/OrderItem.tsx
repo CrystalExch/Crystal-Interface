@@ -102,7 +102,7 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
         </div>
       </div>
       <div className="oc-cell limit-price">
-        {formatSubscript(limitPrice.toFixed(Math.log10(priceFactor)))}
+        {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
         <div className="price-gap" style={{ color: gapColor }}>
           {formattedGap}
         </div>

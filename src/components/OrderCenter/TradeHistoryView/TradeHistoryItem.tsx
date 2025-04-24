@@ -100,7 +100,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
 
       <div className="oc-cell trigger-price">
         {formatSubscript(
-          (trade[3] / priceFactor).toFixed(Math.log10(priceFactor)),
+          (trade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
         )}
       </div>
       <span className="oc-cell status">

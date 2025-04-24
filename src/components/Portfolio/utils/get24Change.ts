@@ -32,7 +32,7 @@ export const get24hChange = (trades: any[]): ChangeMetrics => {
       return Number(trade[3]) || 0;
     }
     const priceFactor = Number(market.priceFactor);
-    const precision = priceFactor > 0 ? Math.log10(priceFactor) : 0;
+    const precision = priceFactor > 0 ? Math.floor(Math.log10(priceFactor)) : 0;
     const price = (trade[3] / priceFactor || 0).toFixed(precision);
 
     return parseFloat(price);

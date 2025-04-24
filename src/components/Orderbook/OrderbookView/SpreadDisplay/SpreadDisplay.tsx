@@ -21,7 +21,7 @@ const SpreadDisplay: React.FC<SpreadDisplayProps> = ({
         <span>
           {t('mid')}:{' '}
           {!isNaN(averagePrice) && priceFactor != 0
-            ? formatCommas(averagePrice.toFixed(Math.log10(priceFactor)))
+            ? formatCommas(averagePrice.toFixed(Math.floor(Math.log10(priceFactor))))
             : t('N/A')}
         </span>
         <span>

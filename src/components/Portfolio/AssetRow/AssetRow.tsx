@@ -73,7 +73,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
           <div className="port-token-price">
             $
             {formatSubscript(
-              price.toFixed(Math.log10(Number(market?.priceFactor ?? 100))),
+              price.toFixed(Math.floor(Math.log10(Number(market?.priceFactor ?? 100)))),
             )}
           </div>
           <div

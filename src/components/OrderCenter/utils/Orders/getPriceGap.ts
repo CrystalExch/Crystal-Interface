@@ -21,7 +21,7 @@ export function getPriceGap(
   const gapColor = isPositiveGap ? '#65ed92' : 'rgb(240, 103, 103)';
   const gapSign = isPositiveGap ? '+' : '';
 
-  const formattedPriceGap = `${gapSign}${priceGap.toFixed(Math.log10(Number(priceFactor)))}`;
+  const formattedPriceGap = `${gapSign}${priceGap.toFixed(Math.floor(Math.log10(Number(priceFactor))))}`;
   const formattedGapPercentage = `${gapSign}${gapPercentage.toFixed(2)}%`;
 
   const formattedGap = `${formatSubscript(formattedPriceGap)} / ${formattedGapPercentage}`;

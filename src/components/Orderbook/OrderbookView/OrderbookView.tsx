@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
 
 import DropdownContext from './DropdownContext/DropdownContext';
 import OrderList from './OrderList/OrderList';
@@ -51,13 +51,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
   const [rowHeight, setRowHeight] = useState<number>(0);
-  const [processedBuyOrders, setProcessedBuyOrders] = useState<Order[]>([]);
-  const [processedSellOrders, setProcessedSellOrders] = useState<Order[]>([]);
-  const [adjustedMaxSize, setAdjustedMaxSize] = useState<number>(0);
-  const [extraBuy, setBuyExtra] = useState<number>(0);
-  const [extraSell, setSellExtra] = useState<number>(0);
-  const [spread, setSpread] = useState<number>(0);
-  const [averagePrice, setAveragePrice] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const heightUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -70,7 +63,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     heightUpdateTimeoutRef.current = setTimeout(() => {
       const rect = containerRef.current?.getBoundingClientRect();
       const newHeight = rect?.height || 0;
-      if (Math.abs(newHeight - containerHeight) > 1) {
+      if (Math.abs(newHeight - containerHeight) > 1 && newHeight != 0) {
         setContainerHeight(newHeight);
       }
     }, 100);
@@ -91,10 +84,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   }, [updateContainerHeight]);
 
   useEffect(() => {
-    localStorage.setItem('ob_viewmode', viewMode);
-  }, [viewMode]);
-
-  useEffect(() => {
     const probe = document.createElement('div');
     probe.style.position = 'absolute';
     probe.style.visibility = 'hidden';
@@ -108,54 +97,42 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
   }, []);
 
   useEffect(() => {
-    if (!containerHeight || !rowHeight) return;
-
-    const processOrders = () => {
-      const { orders: newProcessedBuy, leftoverPerRow: buyExtra } = 
-        scaleOrders(
-          roundedBuy,
-          obInterval,
-          true,
-          viewMode,
-          containerHeight,
-          rowHeight,
-        );
-      const { orders: newProcessedSell, leftoverPerRow: sellExtra } =
-        scaleOrders(
-          roundedSell,
-          obInterval,
-          false,
-          viewMode,
-          containerHeight,
-          rowHeight,
-        );
-      setProcessedBuyOrders(newProcessedBuy);
-      setProcessedSellOrders(newProcessedSell);
-      setBuyExtra(buyExtra);
-      setSellExtra(sellExtra);
-      const buyTotalSize =
-        newProcessedBuy.filter((order) => order.price !== 0).slice(-1)[0]
-          ?.totalSize || 0;
-      const sellTotalSize =
-        newProcessedSell.filter((order) => order.price !== 0).slice(-1)[0]
-          ?.totalSize || 0;
-      setAdjustedMaxSize(Math.max(buyTotalSize, sellTotalSize));
-    };
-    processOrders();
-  }, [
-    roundedBuy,
-    roundedSell,
-    obInterval,
-    viewMode,
-    containerHeight,
-    rowHeight,
-  ]);
+    localStorage.setItem('ob_viewmode', viewMode);
+  }, [viewMode]);
   
-  useEffect(() => {
-    if (!spreadData) return;
-    setSpread(spreadData.spread);
-    setAveragePrice(spreadData.averagePrice);
-  }, [spreadData]);
+  const { orders: processedBuyOrders, leftoverPerRow: extraBuy } = useMemo(() => {
+    return scaleOrders(
+      roundedBuy,
+      obInterval,
+      true,
+      viewMode,
+      containerHeight,
+      rowHeight || 20.5,
+    );
+  }, [roundedBuy, obInterval, viewMode, containerHeight, rowHeight]);
+  
+  const { orders: processedSellOrders, leftoverPerRow: extraSell } = useMemo(() => {
+    return scaleOrders(
+      roundedSell,
+      obInterval,
+      false,
+      viewMode,
+      containerHeight,
+      rowHeight || 20.5,
+    );
+  }, [roundedSell, obInterval, viewMode, containerHeight, rowHeight]);
+  
+  const adjustedMaxSize = useMemo(() => {
+    const lastBuySize = processedBuyOrders
+      .filter((order) => order.price !== 0)
+      .slice(-1)[0]?.totalSize || 0;
+  
+    const lastSellSize = processedSellOrders
+      .filter((order) => order.price !== 0)
+      .slice(-1)[0]?.totalSize || 0;
+  
+    return Math.max(lastBuySize, lastSellSize);
+  }, [processedBuyOrders, processedSellOrders]);
   
   return (
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
@@ -190,13 +167,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               symbolQuote={symbolQuote}
               symbolBase={symbolBase}
               priceFactor={priceFactor}
-              spreadPrice={averagePrice}
+              spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
             />
             <SpreadDisplay
-              averagePrice={averagePrice}
-              spread={spread}
+              averagePrice={spreadData.averagePrice}
+              spread={spreadData.spread}
               priceFactor={priceFactor}
             />
             <OrderList
@@ -209,7 +186,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               symbolQuote={symbolQuote}
               symbolBase={symbolBase}
               priceFactor={priceFactor}
-              spreadPrice={averagePrice}
+              spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
             />
@@ -227,13 +204,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               symbolQuote={symbolQuote}
               symbolBase={symbolBase}
               priceFactor={priceFactor}
-              spreadPrice={averagePrice}
+              spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
             />
             <SpreadDisplay
-              averagePrice={averagePrice}
-              spread={spread}
+              averagePrice={spreadData.averagePrice}
+              spread={spreadData.spread}
               priceFactor={priceFactor}
             />
           </div>
@@ -241,8 +218,8 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
         {viewMode === 'buy' && (
           <div className="ob-buy-only">
             <SpreadDisplay
-              averagePrice={averagePrice}
-              spread={spread}
+              averagePrice={spreadData.averagePrice}
+              spread={spreadData.spread}
               priceFactor={priceFactor}
             />
             <OrderList
@@ -255,7 +232,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
               symbolQuote={symbolQuote}
               symbolBase={symbolBase}
               priceFactor={priceFactor}
-              spreadPrice={averagePrice}
+              spreadPrice={spreadData.averagePrice}
               orderbookPosition={orderbookPosition}
               updateLimitAmount={updateLimitAmount}
             />

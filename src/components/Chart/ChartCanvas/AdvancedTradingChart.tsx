@@ -13,6 +13,7 @@ interface ChartCanvasProps {
   setSelectedInterval: any;
   setOverlayVisible: any;
   tradehistory: any;
+  isMarksVisible: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -22,14 +23,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   setSelectedInterval,
   setOverlayVisible,
   tradehistory,
+  isMarksVisible,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
   const dataRef = useRef(data);
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
-  const marksRef = useRef<any>();
+  const marksRef = useRef<any>(isMarksVisible);
   const realtimeCallbackRef = useRef<any>({});
+  const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
@@ -50,9 +53,37 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   }, [data]);
 
   useEffect(() => {
+    const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
+    isMarksVisibleRef.current = isMarksVisible;
     const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     tradeHistoryRef.current = tradehistory;
-    if (tradehistory.length > 0) {
+    if (tradehistory.length > 0 && becameVisible) {
+      if (chartReady && marksRef.current && widgetRef.current?.activeChart()?.symbol()) {
+        const marks = tradehistory.filter(
+          (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+        ).map((trade: any) => ({
+          id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          time: trade[6],
+          hoveredBorderWidth: 0,
+          borderWidth: 0,
+          color: trade[2] == 0 ? {background: 'rgb(210, 82, 82)', border: ''} : {background: 'rgb(131, 251, 155)', border: ''},
+          text: (trade[2] == 0 ? `${t('sold')} ${formatDisplay(customRound(trade[0] / (10**Number(markets[trade[4]].baseDecimals)), 3))} ` : `${t('bought')} ${formatDisplay(customRound(trade[1] / (10**Number(markets[trade[4]].baseDecimals)), 3))} `) + `${markets[trade[4]].baseAsset} on ` + new Date(trade[6]*1000).toLocaleString('en-US', {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+          .replace(/, \d{2}$/, ''),
+          label: trade[2] == 0 ? 'S' : 'B',
+          labelFontColor: 'black',
+          minSize: 17,
+        }));
+        marksRef.current(marks);
+      }
+    }
+    else if (tradehistory.length > 0 && isMarksVisible) {
       if (chartReady && marksRef.current && widgetRef.current?.activeChart()?.symbol()) {
         const marks = diff.filter(
           (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
@@ -83,7 +114,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         widgetRef.current?.activeChart()?.clearMarks();
       }
     }
-}, [tradehistory.length]);
+}, [tradehistory.length, isMarksVisible]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -233,7 +264,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           to: number,
           onDataCallback: (marks: any[]) => void,
         ) => {
-          const marks = tradeHistoryRef.current.filter(
+          const marks = isMarksVisibleRef.current == false ? [] : tradeHistoryRef.current.filter(
             (trade: any) => trade[6] >= from && trade[6] <= to && (trade[4] == symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1])
           ).map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,

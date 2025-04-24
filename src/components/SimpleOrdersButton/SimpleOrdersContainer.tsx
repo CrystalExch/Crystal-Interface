@@ -161,7 +161,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                   {market.quoteAsset}
                 </div>
                 <div className="simple-order-value">
-                  {(order[0]/Number(market.priceFactor)).toFixed(Math.log10(Number(market.priceFactor)))}
+                  {(order[0]/Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}
                 </div>
                 <div className="simple-order-value">
                   {customRound(value, 3) + ' ' + market.baseAsset}

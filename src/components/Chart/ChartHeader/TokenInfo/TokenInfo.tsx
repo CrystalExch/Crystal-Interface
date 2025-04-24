@@ -55,10 +55,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
-      const isTypingInField = document.activeElement &&
-        ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName);
-
-      if (e.key === '/' && !isTypingInField) {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         
         if (isAdvancedView) {
@@ -471,7 +468,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="ctrlktooltip">
-          /
+          Ctrl+K
         </div>
       </div>
 

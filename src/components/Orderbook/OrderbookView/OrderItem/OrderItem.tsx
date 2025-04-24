@@ -89,7 +89,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
           <div className="totalSizeBar" style={totalSizeBarStyle} />
           <div className="order-content">
             <span className="order-price" style={{ color }}>
-              {formatCommas(price.toFixed(Math.log10(priceFactor)))}
+              {formatCommas(price.toFixed(Math.floor(Math.log10(priceFactor))))}
               {hasUserOrder && (
                 <span className="user-order-dot">•</span>
               )}

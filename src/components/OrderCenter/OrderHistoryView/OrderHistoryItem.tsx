@@ -90,7 +90,7 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
       </div>
       <div className="oc-cell price">
         {formatSubscript(
-          (order[0] / priceFactor).toFixed(Math.log10(priceFactor)),
+          (order[0] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
         )}
       </div>
       <div className="oc-cell amount-filled-cell">

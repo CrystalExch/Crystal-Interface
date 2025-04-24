@@ -17,7 +17,7 @@ interface ChartOrderbookPanelProps {
   activeMarket: any;
   isOrderbookVisible: boolean;
   orderbookWidth: number;
-  setOrderbookWidth: (newWidth: number) => void;
+  setOrderbookWidth: any;
   obInterval: number;
   amountsQuote: any;
   setAmountsQuote: any;
@@ -35,7 +35,7 @@ interface ChartOrderbookPanelProps {
   chartOrderData?: any;
   updateChartData?: any;
   tradehistory?: any[]; 
-
+  isMarksVisible: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -66,8 +66,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   tradesloading,
   marketsData,
   updateChartData,
+  isMarksVisible,
   tradehistory = [],
-
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -95,6 +95,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
       );
 
       setOrderbookWidth(newWidth);
+      localStorage.setItem('orderbookWidth', newWidth.toString())
     };
 
     const handleMouseUp = (e: MouseEvent) => {
@@ -183,7 +184,7 @@ return (
           marketsData={marketsData}
           updateChartData={updateChartData}
           tradehistory={tradehistory} 
-
+          isMarksVisible={isMarksVisible}
         />
       </div>
 
