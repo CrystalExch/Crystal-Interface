@@ -7144,7 +7144,7 @@ function App() {
             </div>
           ) : (
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
-              <div className="connect-wallet-background unconnected">
+              <div className="onboarding-connect-wallet">
                 <div className="connect-wallet-content-container">
                   <AuthCard {...alchemyconfig.ui.auth} />
                 </div>

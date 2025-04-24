@@ -1683,6 +1683,26 @@ body:has(.right-column.show) .blur-background-popups {
   width: 300px;
 }
 
+.onboarding-connect-wallet{
+  position: fixed !important;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  transform: translate(-50%, -50%);
+  z-index: 12;
+  width: 350px;
+  top: 50%;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  left: 50%;
+  max-width: 90vw;
+  padding: 0;
+
+
+}
+
 
 .connect-wallet-username-onboarding-bg{
   width: 100%;
@@ -3662,6 +3682,7 @@ body:has(.popup-blur) {
   transform: translate(-50%, -50%);
   z-index: 12;
 }
+
 
 .right-column.show {
   position: fixed !important;
@@ -5734,104 +5755,7 @@ input[type="email"] {
   justify-content: center;
 }
 
-.podium {
-  position: absolute;
-  bottom: 20%;
-  display: flex;
-  align-items: flex-end;
-  height: 150px;
-  gap: 10px;
-}
 
-.podium-step {
-  background: linear-gradient(to bottom, rgba(170, 174, 207, 0.7), rgba(127, 130, 172, 0.9));
-  width: 80px;
-  position: relative;
-  border-radius: 6px 6px 0 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
-
-.podium-step:nth-child(1) {
-  height: 80px;
-}
-
-.podium-step:nth-child(2) {
-  height: 120px;
-}
-
-.podium-step:nth-child(3) {
-  height: 60px;
-}
-
-.podium-rank {
-  color: #ffffff;
-  font-weight: 600;
-  position: relative;
-  z-index: 1;
-}
-
-.podium-profiles {
-  position: absolute;
-  bottom: 50%;
-  display: flex;
-  align-items: flex-end;
-  gap: 40px;
-}
-
-.podium-profile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  opacity: 0;
-}
-
-.profile-first {
-  order: 2;
-  transform: translateY(-30px);
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.3s;
-}
-
-.profile-second {
-  order: 1;
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.5s;
-}
-
-.profile-third {
-  order: 3;
-  animation: profileAppear 0.5s forwards;
-  animation-delay: 0.7s;
-}
-
-.podium-profile-pic {
-  border-radius: 50%;
-  border: 2px solid #aaaecf;
-  box-shadow: 0 0 10px rgba(170, 174, 207, 0.5);
-}
-
-.profile-first .podium-profile-pic {
-  height: 70px;
-  width: 70px;
-}
-
-.profile-second .podium-profile-pic,
-.profile-third .podium-profile-pic {
-  height: 50px;
-  width: 50px;
-}
-
-.crown {
-  position: absolute;
-  top: -25px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 24px;
-  animation: crownFloat 2s infinite ease-in-out;
-}
 
 @keyframes simpleFadeIn {
   from {
