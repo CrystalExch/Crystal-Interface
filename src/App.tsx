@@ -295,6 +295,7 @@ function App() {
   const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
   const [mobileView, setMobileView] = useState('chart');
   const [showTrade, setShowTrade] = useState(false);
+  const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
   const [totalAccountValue, setTotalAccountValue] = useState<number>(0);
   const [totalVolume, setTotalVolume] = useState(0);
@@ -3923,7 +3924,6 @@ function App() {
   }, []);
 
   // popup
-  // Update useEffect for popup handling
   useEffect(() => {
     if (user && !connected && !loading) {
       setpopup(11)
@@ -3931,10 +3931,7 @@ function App() {
     else if (connected && popup == 11) {
       setpopup(12)
     }
-    // If popup is 14 or 15 but wallet isn't connected, show wallet connection instead
     else if ((popup === 14 || popup === 15) && !connected) {
-      // We'll keep it at popup 14/15 but render different content
-      // The rendering logic will handle showing the AuthCard instead
     }
 
     if (popupref.current && blurref.current) {
@@ -3954,6 +3951,148 @@ function App() {
       return () => resizeObserver.disconnect();
     }
   }, [popup, connected, user != null, loading]);
+  const [animating, setAnimating] = useState(false);
+
+  useEffect(() => {
+    setAnimating(true);
+    const timer = setTimeout(() => setAnimating(false), 300);
+    return () => clearTimeout(timer);
+  }, [currentStep]);
+  useEffect(() => {
+    if (popup !== 14 && popup !== 15) {
+      setShowWelcomeScreen(true);
+    }
+  }, [popup]);
+
+
+
+
+  const [messages, setMessages] = useState([
+    { id: 0, sender: 'system', text: 'Initializing secure connection...', typing: false },
+  ]);
+  const [userInput, setUserInput] = useState('');
+  const [accessGranted, setAccessGranted] = useState(false);
+  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
+  const chatContainerRef = useRef(null);
+
+  const systemMessages = [
+    'Initializing secure connection...',
+    'Connection established. Welcome to the Crystal Exchange Terminal.',
+    'I am CRYST-AI, the autonomous trading assistant.',
+    'Before I can grant you access, I need to verify your identity.',
+    'What brings you to Crystal Exchange today?'
+  ];
+
+  useEffect(() => {
+    if (currentMessageIndex >= systemMessages.length) return;
+    
+    const timer = setTimeout(() => {
+      setMessages(prev => [
+        ...prev.slice(0, prev.length - (prev[prev.length - 1].typing ? 1 : 0)),
+        { 
+          id: prev.length, 
+          sender: 'system', 
+          text: systemMessages[currentMessageIndex], 
+          typing: false 
+        }
+      ]);
+      
+      if (currentMessageIndex < systemMessages.length - 1) {
+        setMessages(prev => [
+          ...prev,
+          { 
+            id: prev.length, 
+            sender: 'system', 
+            text: '', 
+            typing: true 
+          }
+        ]);
+      }
+      
+      setCurrentMessageIndex(prev => prev + 1);
+    }, 2000);
+    
+    return () => clearTimeout(timer);
+  }, [currentMessageIndex]);
+
+
+
+  const handleKeyDown = (e: { key: string; }) => {
+    if (e.key === 'Enter' && userInput.trim()) {
+      const newUserMessage = { 
+        id: messages.length, 
+        sender: 'user', 
+        text: userInput.trim(), 
+        typing: false 
+      };
+      
+      setMessages(prev => [
+        ...prev.filter(m => !m.typing),
+        newUserMessage
+      ]);
+      
+      if (['trade', 'invest', 'market', 'crypto'].some(keyword => 
+        userInput.toLowerCase().includes(keyword)
+      )) {
+        setTimeout(() => {
+          const systemResponses = [
+            'Identity verified. You seem to understand our purpose.',
+            'Granting access to Crystal Exchange...',
+            'Welcome aboard. Your strategic trading journey begins now.'
+          ];
+          
+          const responseMessage = {
+            id: messages.length + 1, 
+            sender: 'system', 
+            text: systemResponses[Math.floor(Math.random() * systemResponses.length)],
+            typing: false
+          };
+          
+          setMessages(prev => [
+            ...prev,
+            responseMessage
+          ]);
+          
+          // Grant access after some interaction
+          setTimeout(() => {
+            setAccessGranted(true);
+            setShowWelcomeScreen(false); // Explicitly set this to false
+          }, 1500);
+        }, 1000);
+      } else {
+        // Generic response for other inputs
+        setTimeout(() => {
+          const genericResponses = [
+            'I see. Please tell me more about your interest in trading.',
+            'Could you elaborate on your trading goals?',
+            'Crystal Exchange offers advanced trading tools. What are you looking for?'
+          ];
+          
+          const responseMessage = {
+            id: messages.length + 1, 
+            sender: 'system', 
+            text: genericResponses[Math.floor(Math.random() * genericResponses.length)],
+            typing: false
+          };
+          
+          setMessages(prev => [
+            ...prev,
+            responseMessage
+          ]);
+        }, 1000);
+      }
+      
+      // Clear input
+      setUserInput('');
+    }
+  };
+
+
+
+
+
+
+
 
   // input tokenlist
   const TokenList1 = (
@@ -6948,16 +7087,18 @@ function App() {
                           </div>
                         </div>
 
-                        <div className="challenge-intro-visual-side">
-                          {currentStep === 0 && (
+                        <div
+                          className={
+                            `challenge-intro-visual-side${animating ? ' is-animating' : ''}`
+                          }
+                        >                          {currentStep === 0 && (
 
-                            <div className="intro-image-container">
-                              <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
-                                <img src={part1image} className="intro-image" alt="Tutorial illustration" />
-                              </div>
+                          <div className="intro-image-container">
+                            <div className={`zoom-container ${animationStarted ? 'zoom-active' : ''}`}>
+                              <img src={part1image} className="intro-image" alt="Tutorial illustration" />
                             </div>
-                          )}
-
+                          </div>
+                        )}
                           {currentStep === 1 && (
                             <div className="xp-animation-container">
                               <div className="user-profile">
@@ -7034,11 +7175,9 @@ function App() {
                               </div>
                             </div>
                           )}
-
                           {currentStep === 2 && (
                             <div className="rewards-container">
                               <div className="rewards-stage">
-
                                 <img className="lbstand" src={lbstand} />
                               </div>
                             </div>
@@ -7084,11 +7223,66 @@ function App() {
             </div>
           ) : (
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
-              <div className="connect-wallet-background unconnected">
-                <div className="connect-wallet-content-container">
-                  <AuthCard {...alchemyconfig.ui.auth} />
-                </div>
-              </div>
+
+{showWelcomeScreen ? (
+ <div className="matrix-terminal">
+ <div className="terminal-header">
+   CRYSTAL EXCHANGE SECURE TERMINAL :: v3.7.0 :: ESTABLISHING CONNECTION...
+ </div>
+ 
+ <div 
+   className="chat-messages" 
+   id="chatMessages"
+   ref={chatContainerRef}
+ >
+   {messages.map((msg, index) => (
+     <div 
+       key={msg.id} 
+       className={`message ${msg.sender}`}
+       style={{ 
+         animationDelay: `${index * 0.5}s`,
+         opacity: msg.typing ? 0.5 : 1
+       }}
+     >
+       <div className="message-content">
+         {msg.text}
+         {msg.typing && <span className="message-typing"></span>}
+       </div>
+     </div>
+   ))}
+ </div>
+ 
+ <div className="terminal-input-container">
+   <span className="terminal-prompt">&gt;</span>
+   <input
+     type="text"
+     className="terminal-input"
+     placeholder="Type your response..."
+     value={userInput}
+     onChange={(e) => setUserInput(e.target.value)}
+     onKeyDown={handleKeyDown}
+     disabled={accessGranted}
+   />
+ </div>
+ 
+ {accessGranted && (
+   <div className="access-granted">
+     ACCESS GRANTED
+   </div>
+ )}
+</div>
+) : (
+  <div className="connect-wallet-username-wrapper"> 
+                          <CrystalObject />
+
+  <div className="onboarding-connect-wallet">
+
+    <div className="connect-wallet-content-container">
+      <AuthCard {...alchemyconfig.ui.auth} />
+    </div>
+  </div>
+  </div> 
+)}
             </div>
           )
         ) : null}

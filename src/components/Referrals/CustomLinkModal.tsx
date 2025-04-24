@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import closebutton from '../../assets/close_button.png';
 import { settings } from '../../settings.ts';
 import './CustomLinkModal.css';
@@ -42,9 +42,7 @@ const CustomLinkModal = ({
         onClose();
       }
     } else {
-      !account.connected
-        ? setpopup(4)
-        : setChain()
+      !account.connected ? setpopup(4) : setChain();
     }
   };
 
@@ -52,20 +50,23 @@ const CustomLinkModal = ({
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
   };
-  
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setRefLinkInput(value)
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
-    }
-    debounceTimerRef.current = setTimeout(() => {
-      setRefLinkString(value);
-      if (!isValidInput(value) && value.length > 0) {
-        setError(t('invalid'));
+
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      setRefLinkInput(value);
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
       }
-    }, 300);
-  }, [refLinkString]);
+      debounceTimerRef.current = setTimeout(() => {
+        setRefLinkString(value);
+        if (!isValidInput(value) && value.length > 0) {
+          setError(t('invalid'));
+        }
+      }, 300);
+    },
+    [refLinkString],
+  );
 
   if (!isOpen) return null;
 
@@ -111,9 +112,8 @@ const CustomLinkModal = ({
           onClick={handleCreate}
           disabled={
             isSigning ||
-            (account.connected &&
-              account.chainId == activechain &&
-              !!error) || !refLinkString
+            (account.connected && account.chainId == activechain && !!error) ||
+            !refLinkString
           }
         >
           {isSigning ? (
@@ -121,8 +121,7 @@ const CustomLinkModal = ({
               <div className="loading-spinner"></div>
               {t('signTxn')}
             </>
-          ) : account.connected &&
-            account.chainId === activechain ? (
+          ) : account.connected && account.chainId === activechain ? (
             <>{refLink ? t('customize') : t('create')}</>
           ) : account.connected ? (
             `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`

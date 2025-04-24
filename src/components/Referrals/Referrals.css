@@ -22,10 +22,12 @@
 .referral-background,
 .referral-mobile-background {
   border: 2px solid #1a1a1f;
-  user-select: none;
-  pointer-events: none;
   border-radius: 8px;
   height: 100%;
+  pointer-events: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
   width: 100%;
 }
 
@@ -35,7 +37,9 @@
 
 .referral-background-wrapper {
   position: relative;
-  user-select: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
   width: 100%;
 }
 
@@ -57,28 +61,26 @@
       #8b8eb8 50%,
       #7f82ac 75%,
       #7f82a1 100%);
+  background-size: 200% 200%;
   border: none;
   border-radius: 6px;
   box-shadow:
     inset 0 1px 1px rgb(255 255 255/35%),
     inset 0 -1px 1px rgb(0 0 0/45%),
     0 2px 8px rgb(170 174 207/10%);
-  background-size: 200% 200%;
-  border: none;
-  border-radius: 6px;
   color: #0f0f12;
   cursor: pointer;
   display: flex;
   font-size: 0.775rem;
   font-weight: 500;
   gap: 0.5rem;
+  height: 33px;
   justify-content: center;
   letter-spacing: -0.3px;
   margin-top: 0.3rem;
   padding: 0.55rem;
   transition: all 0.2s;
   width: 100%;
-  height: 33px;
 }
 
 
@@ -90,7 +92,6 @@
       #8b8eb8 50%,
       #7f82ac 75%,
       #7376a0 100%);
-  border: none !important;
   border: 1px solid rgb(255 255 255 / 10%);
   cursor: default;
   opacity: 0.4;
@@ -340,11 +341,12 @@
 
 .total-earnings-amount {
   background: rgba(255, 255, 255, 0.9);
-  background-clip: text;
+  -webkit-background-clip: text;
+          background-clip: text;
   font-size: 1.4rem;
   font-weight: 500;
-  -webkit-text-fill-color: transparent;
   letter-spacing: -0.5px;
+  -webkit-text-fill-color: transparent;
 }
 
 .token-breakdown-title {
@@ -516,7 +518,8 @@
 
 .main-title {
   background: linear-gradient(135deg, #fff 0, #aaaeec 100%);
-  background-clip: text;
+  -webkit-background-clip: text;
+          background-clip: text;
   font-size: 2.5rem;
   font-weight: 500;
   letter-spacing: -1px;
@@ -544,7 +547,8 @@
 
 .referral-background {
   height: 100%;
-  object-fit: cover;
+  -o-object-fit: cover;
+     object-fit: cover;
   width: 100%;
 }
 
