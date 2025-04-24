@@ -1,6 +1,7 @@
 import { readContracts } from '@wagmi/core';
 import { Share2, TrendingUp, Users, Zap } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
+import { encodeFunctionData } from 'viem';
 import { config } from '../../wagmi';
 
 import CustomLinkModal from './CustomLinkModal';
@@ -17,7 +18,6 @@ import ReferralBackground from '../../assets/referrals_bg.png';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 
 import './Referrals.css';
-import { encodeFunctionData } from 'viem';
 
 interface ReferralProps {
   tokenList: any;
@@ -49,7 +49,7 @@ const Referrals: React.FC<ReferralProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
-  usedRefAddress,
+  // usedRefAddress,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -62,7 +62,7 @@ const Referrals: React.FC<ReferralProps> = ({
   account,
   refetch,
   sendUserOperationAsync,
-  waitForTxReceipt,  
+  waitForTxReceipt,
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
@@ -94,6 +94,7 @@ const Referrals: React.FC<ReferralProps> = ({
     },
   ];
   const [copySuccess, setCopySuccess] = useState(false);
+  const [typedRefCode, setTypedRefCode] = useState<string>('');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -104,7 +105,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setCopySuccess(false);
     }, 3000);
   };
-  
+
   useEffect(() => {
     (async () => {
       const refs = (await readContracts(config, {
@@ -133,15 +134,14 @@ const Referrals: React.FC<ReferralProps> = ({
             functionName: 'addressToReferrer',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRef',
-            args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
-          },
+          // {
+          //   abi: CrystalReferralAbi,
+          //   address: settings.chainConfig[activechain].referralManager,
+          //   functionName: 'addressToRef',
+          //   args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
+          // },
         ],
       })) as any[];
-      console.log(refs);
       setRefLink(refs[0].result);
       setError(
         refs[1].result === '0x0000000000000000000000000000000000000000' ||
@@ -153,18 +153,18 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefAddress(
         refs[3].result || '0x0000000000000000000000000000000000000000',
       );
+      console.log(refs);
       const find = (await readContracts(config, {
         contracts: [
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
-            args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
+            args: [refs[3].result ?? '0x0000000000000000000000000000000000000000'],
           },
         ],
       })) as any[];
       setUsedRefLink(find[0].result);
-      console.log(find[0].result);
     })();
   }, [address, refLinkString]);
 
@@ -191,11 +191,30 @@ const Referrals: React.FC<ReferralProps> = ({
     }
   };
 
-  const handleSetRef = async(used: string) => {
+  const handleSetRef = async (used: string) => {
+    console.log(used);
+    if (used !== '') {
+      const lookup = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'refToAddress',
+            args: [used.toLowerCase()],
+          },
+        ],
+      })) as any[];
+
+      if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
+        setError(t('invalidRefCode'));
+        return true;
+      }
+    }
+
     try {
       const hash = await sendUserOperationAsync({
         uo: {
-          target:  settings.chainConfig[activechain].referralManager,
+          target: settings.chainConfig[activechain].referralManager,
           data: encodeFunctionData({
             abi: CrystalReferralAbi,
             functionName: 'setUsedRef',
@@ -210,6 +229,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefLink(used);
       return true;
     } catch (error) {
+      console.log(error);
       return false;
     }
   }
@@ -377,6 +397,8 @@ const Referrals: React.FC<ReferralProps> = ({
               usedRefLink={usedRefLink}
               setUsedRefLink={handleSetRef}
               refLink={refLink}
+              inputValue={typedRefCode}
+              setInputValue={setTypedRefCode}
             />
           </div>
           <div className="earnings-section">
@@ -434,11 +456,11 @@ const Referrals: React.FC<ReferralProps> = ({
               }
             >
               {isSigning ? (
-            <>
-              <div className="loading-spinner"></div>
-              {t('signTxn')}
-            </>
-          ) : account.connected && account.chainId === activechain
+                <>
+                  <div className="loading-spinner"></div>
+                  {t('signTxn')}
+                </>
+              ) : account.connected && account.chainId === activechain
                 ? totalClaimableFees === 0
                   ? t('nothingtoclaim')
                   : t('claimfees')

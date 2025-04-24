@@ -1,43 +1,53 @@
 import React, { useState } from 'react';
+
 import './EnterACode.css';
 
 interface EnterACodeProps {
-  setUsedRefLink: (refLink: string) => void;
-  usedRefLink: string;
+  usedRefLink?: string;
+  setUsedRefLink: (refLink: string) => Promise<boolean>;
   refLink: string;
+  inputValue: string;
+  setInputValue: (val: string) => void;
 }
 
 const EnterACode: React.FC<EnterACodeProps> = ({
+  usedRefLink = '',
   setUsedRefLink,
-  usedRefLink,
   refLink,
+  inputValue,
+  setInputValue,
 }) => {
-  const [refCode, setRefCode] = useState<string>(usedRefLink);
   const [error, setError] = useState<string>('');
-  const [success, setSuccess] = useState<string>(refCode ? ` ${refCode}` : '');
+  const [isClearing, setIsClearing] = useState<boolean>(false);
+
+  const normalizedUsed = usedRefLink.trim();
+  const hasCode = normalizedUsed !== '';
 
   const handleSubmit = async (): Promise<void> => {
-    if (!refCode) {
+    if (!inputValue.trim()) {
       setError(t('pleaseEnterCode'));
       return;
     }
-    if (refCode === refLink) {
+    if (inputValue.trim() === refLink.trim()) {
       setError(t('noSelfRefer'));
       return;
     }
 
-    setUsedRefLink(refCode);
-    setSuccess(`${refCode}`);
-  };
-
-  const handleClear = (): void => {
-    setRefCode('');
-    setUsedRefLink('');
     setError('');
-    setSuccess('');
+    const ok = await setUsedRefLink(inputValue.trim());
+    if (!ok) {
+      setError(t('setRefFailed'));
+    }
   };
 
-  console.log(usedRefLink);
+  const handleClear = async (): Promise<void> => {
+    if (!hasCode || isClearing) return;
+    setError('');
+    setIsClearing(true);
+
+    setUsedRefLink("");
+    setIsClearing(false);
+  };
 
   return (
     <div className="code-container">
@@ -45,50 +55,49 @@ const EnterACode: React.FC<EnterACodeProps> = ({
         {error && <span className="error-message">{error}</span>}
         <div className="header-container">
           <h2 className="code-title">
-            {!usedRefLink ? t('usingCode') : t('enterReferralCode')}
+            {!hasCode ? t('usingCode') : t('enterReferralCode')}
           </h2>
         </div>
         <p className="referral-subtitle">
-          {t('referralSubtitle')}
+          {t('referralSubtitle')}{' '}
           <a
             href="https://docs.crystal.exchange/community/referral-program"
             target="_blank"
             rel="noopener noreferrer"
             className="learn-more-link"
           >
-            {' '}
             {t('learnMore')}
           </a>
         </p>
-
         <div className="input-container">
           <div className="input-row">
             <div className="input-with-clear">
               <input
                 type="text"
-                value={usedRefLink !== '' ? success : refCode}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (usedRefLink == '') {
-                    setRefCode(e.target.value);
+                placeholder={t('enteracode')}
+                className={hasCode ? 'code-input-success' : 'code-input'}
+                readOnly={hasCode}
+                value={hasCode ? normalizedUsed : inputValue}
+                onChange={e => {
+                  if (!hasCode) {
+                    setInputValue(e.target.value);
                     setError('');
                   }
                 }}
-                placeholder={t('enteracode')}
-                className={usedRefLink !== '' ? 'code-input-success' : 'code-input'}
-                readOnly={usedRefLink !== ''}
               />
-              {usedRefLink !== '' && (
+              {hasCode && (
                 <button
                   onClick={handleClear}
+                  disabled={isClearing}
                   className="clear-icon-button"
                 >
-                  {t('clear')}
+                  {isClearing ? t('clearing') : t('clear')}
                 </button>
               )}
             </div>
             <button
               onClick={handleSubmit}
-              disabled={usedRefLink !== ''}
+              disabled={hasCode}
               className="code-button"
             >
               {t('setRef')}
