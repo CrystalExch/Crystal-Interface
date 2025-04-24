@@ -9,13 +9,13 @@ import EnterCode from './EnterACode';
 import FeatureModal from './FeatureModal';
 import ReferralStatsBar from './ReferralStatsBar';
 
-import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from '../../abis/CrystalReferralAbi';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-import ReferralBackground from '../../assets/referrals_bg.png';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
+import ReferralBackground from '../../assets/referrals_bg.png';
 
 import './Referrals.css';
 
@@ -126,7 +126,7 @@ const Referrals: React.FC<ReferralProps> = ({
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'referrerToReferredAddresses',
-            args: [address ?? '0x0000000000000000000000000000000000000000']
+            args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
           {
             abi: CrystalReferralAbi,
@@ -146,7 +146,9 @@ const Referrals: React.FC<ReferralProps> = ({
       setError(
         refs[1].result === '0x0000000000000000000000000000000000000000' ||
           refs[1].result == address
-          ? error == t('codeTaken') ? '' : error
+          ? error == t('codeTaken')
+            ? ''
+            : error
           : t('codeTaken'),
       );
       setReferredCount(Number(refs[2].result));
@@ -160,7 +162,9 @@ const Referrals: React.FC<ReferralProps> = ({
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
-            args: [refs[3].result ?? '0x0000000000000000000000000000000000000000'],
+            args: [
+              refs[3].result ?? '0x0000000000000000000000000000000000000000',
+            ],
           },
         ],
       })) as any[];
@@ -176,13 +180,11 @@ const Referrals: React.FC<ReferralProps> = ({
           data: encodeFunctionData({
             abi: CrystalReferralAbi,
             functionName: 'setReferral',
-            args: [
-              refLinkString
-            ],
+            args: [refLinkString],
           }),
           value: 0n,
         },
-      })
+      });
       await waitForTxReceipt(hash.hash);
       setRefLink(refLinkString);
       return true;
@@ -218,13 +220,11 @@ const Referrals: React.FC<ReferralProps> = ({
           data: encodeFunctionData({
             abi: CrystalReferralAbi,
             functionName: 'setUsedRef',
-            args: [
-              used
-            ],
+            args: [used],
           }),
           value: 0n,
         },
-      })
+      });
       await waitForTxReceipt(hash.hash);
       setUsedRefLink(used);
       return true;
@@ -232,7 +232,7 @@ const Referrals: React.FC<ReferralProps> = ({
       console.log(error);
       return false;
     }
-  }
+  };
 
   const handleClaimFees = async () => {
     if (account.connected && account.chainId === activechain) {
@@ -248,25 +248,23 @@ const Referrals: React.FC<ReferralProps> = ({
                 Array.from(
                   new Set(
                     Object.values(markets).map(
-                      (market) => market.address as `0x${string}`
-                    )
-                  )
+                      (market) => market.address as `0x${string}`,
+                    ),
+                  ),
                 ),
               ],
             }),
             value: 0n,
           },
-        })
+        });
         await waitForTxReceipt(hash.hash);
-        refetch()
+        refetch();
       } catch (error) {
       } finally {
         setIsSigning(false);
       }
     } else {
-      !account.connected
-        ? setpopup(4)
-        : setChain()
+      !account.connected ? setpopup(4) : setChain();
     }
   };
 
@@ -359,7 +357,8 @@ const Referrals: React.FC<ReferralProps> = ({
                       <div
                         className="action-button"
                         onClick={() => {
-                          const tweetText = 'Join me on @CrystalExch, the EVM\'s first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n';
+                          const tweetText =
+                            "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
                           const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
                           window.open(
                             `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`,
@@ -451,22 +450,24 @@ const Referrals: React.FC<ReferralProps> = ({
             <button
               className="claim-button"
               onClick={handleClaimFees}
-              disabled={isSigning ||
-                totalClaimableFees === 0
-              }
+              disabled={isSigning || totalClaimableFees === 0}
             >
               {isSigning ? (
                 <>
                   <div className="loading-spinner"></div>
                   {t('signTxn')}
                 </>
-              ) : account.connected && account.chainId === activechain
-                ? totalClaimableFees === 0
-                  ? t('nothingtoclaim')
-                  : t('claimfees')
-                : account.connected
-                  ? `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
-                  : t('connectWallet')}
+              ) : account.connected && account.chainId === activechain ? (
+                totalClaimableFees === 0 ? (
+                  t('nothingtoclaim')
+                ) : (
+                  t('claimfees')
+                )
+              ) : account.connected ? (
+                `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+              ) : (
+                t('connectWallet')
+              )}
             </button>
             <div className="help-text">{t('referralsHelp')}</div>
           </div>

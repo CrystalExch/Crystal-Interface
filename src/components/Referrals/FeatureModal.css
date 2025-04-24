@@ -1,17 +1,18 @@
 .feature-modal-overlay {
   align-items: center;
+  animation: fadeIn .2s ease-out forwards;
   background-color: rgb(0 0 0 / 70%);
   display: flex;
   inset: 0;
   justify-content: center;
   position: fixed;
   z-index: 4;
-  animation: fadeIn .2s ease-out forwards;
 }
 
 .feature-modal-container {
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   background-color: #19191c80;
-  backdrop-filter: blur(10px);
   border: 1.5px solid #1a1a1d7d;
   border-radius: 8px;
   max-width: 320px;

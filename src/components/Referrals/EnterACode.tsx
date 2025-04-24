@@ -45,7 +45,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
     setError('');
     setIsClearing(true);
 
-    setUsedRefLink("");
+    setUsedRefLink('');
     setIsClearing(false);
   };
 
@@ -78,7 +78,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
                 className={hasCode ? 'code-input-success' : 'code-input'}
                 readOnly={hasCode}
                 value={hasCode ? normalizedUsed : inputValue}
-                onChange={e => {
+                onChange={(e) => {
                   if (!hasCode) {
                     setInputValue(e.target.value);
                     setError('');

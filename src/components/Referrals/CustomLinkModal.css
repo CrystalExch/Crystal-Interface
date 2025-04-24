@@ -18,16 +18,17 @@
 }
 
 .modal-container {
+  animation: fadeIn.2s ease-out forwards;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
   background: transparent;
+  background-color: #19191c80;
+  border: 1.5px solid #1a1a1d7d;
   border-radius: 8px;
   max-width: 90vw;
   overflow: hidden;
   position: relative;
   width: 350px;
-  background-color: #19191c80;
-  backdrop-filter: blur(10px);
-  border: 1.5px solid #1a1a1d7d;
-  animation: fadeIn.2s ease-out forwards;
 }
 
 .modal-header {
@@ -78,10 +79,15 @@
   border-radius: 6px;
   color: #fff;
   font-size: 0.8rem;
+  height: 34px;
   margin: 5px 16px;
   padding: 10px;
   width: calc(100% - 32px);
-  height: 34px;
+}
+
+.modal-input::-moz-placeholder{
+  color:rgba(255, 255, 255, 0.5);
+  font-weight: 300;
 }
 
 .modal-input::placeholder{
@@ -90,9 +96,9 @@
 }
 
 .modal-input:focus {
-  outline: none;
   background: #00000050;
   border: 1px solid rgba(255, 255, 255, 0.1);
+  outline: none;
 
 
 }
@@ -148,13 +154,13 @@
   font-size: 0.85rem;
   font-weight: 500;
   gap: 8px;
+  height: 33px;
   justify-content: center;
   letter-spacing: -0.3px;
   margin: 16px;
   padding: 10px;
   transition: all 0.2s;
-  width: calc(100% - 32px);
-  height: 33px
+  width: calc(100% - 32px)
 }
 
 .customize-button:hover:not(:disabled) {
@@ -170,7 +176,6 @@
     #7f82ac 75%,
     #7376a0 100%
   );
-  border: none !important;
   border: 1px solid rgb(255 255 255 / 10%);
   box-shadow:
     inset 0 1px 1px rgb(255 255 255 / 15%),
