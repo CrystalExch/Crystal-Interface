@@ -33,10 +33,10 @@
   color: #ef4444;
   font-size: 0.75rem;
   font-weight: 300;
+  min-width: 320px;
+  padding-left: 200px;
   position: absolute;
   right: 10px;
-  padding-left: 200px;
-  min-width: 320px;
 }
 
 .input-container {
@@ -72,6 +72,10 @@
   transition: all 0.2s;
   width: 100%;
 }
+.code-input::-moz-placeholder{
+  color: #ededf571;
+  font-weight: 300  ;
+}
 .code-input::placeholder{
   color: #ededf571;
   font-weight: 300  ;
@@ -86,7 +90,9 @@
   outline: none;
   padding-right: 2rem;
   pointer-events: none;
-  user-select: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
 }
 
 .clear-icon-button {

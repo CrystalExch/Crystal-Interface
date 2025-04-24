@@ -7,7 +7,8 @@
 
 .stats-bar-wrapper {
   align-items: center;
-  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+          backdrop-filter: blur(5px);
   border: 1px solid rgba(255, 255, 255, 0.03);
   border-radius: 8px;
   display: flex;
@@ -89,7 +90,8 @@
 
 .stats-total-value {
   background: linear-gradient(135deg, #aaaecf 0%, #a5aaf0 100%);
-  background-clip: text;
+  -webkit-background-clip: text;
+          background-clip: text;
   font-size: 1.2rem;
   font-weight: 500;
   -webkit-text-fill-color: transparent;
