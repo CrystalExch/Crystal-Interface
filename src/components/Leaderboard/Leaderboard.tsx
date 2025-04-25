@@ -384,9 +384,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             src={LeaderboardImage}
             className="leaderboard-image"
           />
-          <button className="view-rules-button" onClick={handleViewRules}>
+          <a
+            href="https://docs.crystal.exchange/community/crystals"
+            target="_blank"
+            rel="noreferrer"
+            className="view-rules-button"
+            onClick={handleViewRules}>
             {t('viewRules')}
-          </button>
+          </a>
 
           <div className="countdown-timer">
             <div className="countdown-time">
@@ -424,14 +429,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="info-column">
               <div className="column-header">{t('username')}</div>
               <div className="column-content">
-              <div className="address-container">
-  <span className="leaderboard-user-address">
-    {address ? (
-      liveLeaderboard[address.toLowerCase()]?.username || getDisplayAddress(address)
-    ) : ''}
-    {address && <CopyButton textToCopy={address} />}
-  </span>
-</div>
+                <div className="address-container">
+                  <span className="leaderboard-user-address">
+                    {address ? (
+                      liveLeaderboard[address.toLowerCase()]?.username || getDisplayAddress(address)
+                    ) : ''}
+                    {address && <CopyButton textToCopy={address} />}
+                  </span>
+                </div>
               </div>
             </div>
             <div className="column-divider" />
@@ -510,45 +515,45 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   className={`leaderboard-row ${isCurrentUser ? 'current-user-row' : ''}`}
                 >
                   <div className="leaderboard-inner-row">
-                  <div className="row-rank">
-                    <span>#{absoluteRank}</span>
-                  </div>
-                  <div className="row-faction">
-                    <div className="row-pfp-container">
-                      <img
-                        src={defaultPfp}
-                        className="row-pfp-image"
-                      />
+                    <div className="row-rank">
+                      <span>#{absoluteRank}</span>
                     </div>
-                    <span className="faction-row-name">
-                      {getDisplayName(faction)}
-                      <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
-                    </span>
-                    <div className="user-self-tag">
-                      {isCurrentUser && orders.length > 0 && (
-                        <div className="orders-indicator-container">
-                          <div
-                            className="orders-indicator"
-                            title={`You have ${orders.length} open orders earning points`}
-                          ></div>
-                        </div>
-                      )}
-                      {isCurrentUser && (
-                        <span className="current-user-tag">You</span>
-                      )}
-                    </div>
+                    <div className="row-faction">
+                      <div className="row-pfp-container">
+                        <img
+                          src={defaultPfp}
+                          className="row-pfp-image"
+                        />
+                      </div>
+                      <span className="faction-row-name">
+                        {getDisplayName(faction)}
+                        <div className="copy-button-wrapper"><CopyButton textToCopy={faction.name} /></div>
+                      </span>
+                      <div className="user-self-tag">
+                        {isCurrentUser && orders.length > 0 && (
+                          <div className="orders-indicator-container">
+                            <div
+                              className="orders-indicator"
+                              title={`You have ${orders.length} open orders earning points`}
+                            ></div>
+                          </div>
+                        )}
+                        {isCurrentUser && (
+                          <span className="current-user-tag">You</span>
+                        )}
+                      </div>
 
-                  </div>
-                  <div className="row-xp">
-                    <div className="leaderboard-xp-amount">
-                      {formatPoints(faction.points || 0)}
-                      <img
-                        src={crystalxp}
-                        className="xp-icon"
-                      />
+                    </div>
+                    <div className="row-xp">
+                      <div className="leaderboard-xp-amount">
+                        {formatPoints(faction.points || 0)}
+                        <img
+                          src={crystalxp}
+                          className="xp-icon"
+                        />
+                      </div>
                     </div>
                   </div>
-                </div>
                 </div>
               );
             })}
