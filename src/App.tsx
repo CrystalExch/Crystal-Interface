@@ -1936,11 +1936,12 @@ function App() {
     } else {
       setExitingChallenge(true);
       setTimeout(() => {
+        // Only mark as completed when they finish the entire flow
+        localStorage.setItem('crystal_has_completed_onboarding', 'true');
         setpopup(0);
       });
     }
   };
-
   const handleCreateUsername = async () => {
     setUsernameError("");
 
@@ -2024,7 +2025,7 @@ function App() {
       stepAudioRef.current.currentTime = 0;
       stepAudioRef.current.play().catch(console.error);
     }
-
+  
     setIsTransitioning(true);
     setTransitionDirection('forward');
     setTimeout(() => {
@@ -2033,8 +2034,8 @@ function App() {
         setIsTransitioning(false);
       });
     });
+    
   };
-
   const backAudioRef = useRef<HTMLAudioElement>(null);
   const handleBackClick = () => {
     if (backAudioRef.current) {
@@ -3989,9 +3990,14 @@ function App() {
   }, [popup, showWelcomeScreen]);
 
 
-
-
-
+  useEffect(() => {
+    const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
+    if (!hasCompletedOnboarding && 
+        ![11, 12, 14, 15].includes(popup) && 
+        (!connected || popup === 0)) {
+      setpopup(14);
+    }
+  }, [connected, popup]);
 
 
 
@@ -7143,7 +7149,7 @@ function App() {
                       setShowWelcomeScreen(false);
                     }}
                   >
-                    Enter Now
+                    Begin Your Journey 
                   </button>
                 )}
               </div>
