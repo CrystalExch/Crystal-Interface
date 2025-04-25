@@ -447,15 +447,7 @@ function App() {
     const savedLayout = localStorage.getItem('crystal_layout');
     return savedLayout || 'default';
   });
-  const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
-      return 0
-    }
-    else {
-      localStorage.setItem('hasShownSocialPopup1', 'true');
-      return 9
-    }
-  });
+  const [popup, setpopup] = useState(0);
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -3966,54 +3958,48 @@ function App() {
 
 
   const [typedText, setTypedText] = useState("");
+  const typedTextRef = useRef("");
+  
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
       const welcomeText = "Crystal Exchange is a next-generation decentralized trading platform offering seamless swaps, limit orders, and advanced trading tools. Built for both beginners and professionals, Crystal provides institutional-grade liquidity with zero price impact trading. Join the future of decentralized finance with Crystal.";
-      
+  
       let index = 0;
-      setTypedText(""); 
+      typedTextRef.current = "";
+      setTypedText("");
       setAnimationStarted(false);
-      
+  
       const typingInterval = setInterval(() => {
         if (index < welcomeText.length) {
-          setTypedText(prev => prev + welcomeText.charAt(index));
+          typedTextRef.current += welcomeText.charAt(index);
+          setTypedText(typedTextRef.current);
           index++;
         } else {
           clearInterval(typingInterval);
           setAnimationStarted(true);
         }
       }, 30);
-      
+  
       return () => clearInterval(typingInterval);
     }
   }, [popup, showWelcomeScreen]);
 
 
   useEffect(() => {
-    // Check if we've already initialized the onboarding state for this session
-    // to prevent multiple state changes during page loads
     const sessionInitialized = sessionStorage.getItem('session_initialized');
-    
     if (!sessionInitialized) {
-      // Mark that we've checked onboarding status for this session
       sessionStorage.setItem('session_initialized', 'true');
-      
-      // Only then check if the user has completed onboarding
       const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-      
-      // Wait a moment after page load before showing the popup
-      // This helps avoid rendering issues during quick reloads
       const timer = setTimeout(() => {
         if (!hasCompletedOnboarding && popup === 0) {
           setpopup(14);
         }
-      }, 1000); // Small delay to ensure the page is fully loaded
+      }, 1000); 
       
       return () => clearTimeout(timer);
     }
-  }, []);  // Empty dependency array to run only once at mount
+  }, []); 
   
-  // Separate effect to handle connected state changes
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
     
@@ -4024,7 +4010,6 @@ function App() {
       setpopup(12);
     }
     else if (!hasCompletedOnboarding && popup === 0 && !loading) {
-      // Add safety condition to prevent black screen during loading
       setpopup(14);
     }
   }, [connected, user, loading]);
