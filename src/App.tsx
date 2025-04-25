@@ -1936,7 +1936,6 @@ function App() {
     } else {
       setExitingChallenge(true);
       setTimeout(() => {
-        // Only mark as completed when they finish the entire flow
         localStorage.setItem('crystal_has_completed_onboarding', 'true');
         setpopup(0);
       });
@@ -3991,14 +3990,44 @@ function App() {
 
 
   useEffect(() => {
+    // Check if we've already initialized the onboarding state for this session
+    // to prevent multiple state changes during page loads
+    const sessionInitialized = sessionStorage.getItem('session_initialized');
+    
+    if (!sessionInitialized) {
+      // Mark that we've checked onboarding status for this session
+      sessionStorage.setItem('session_initialized', 'true');
+      
+      // Only then check if the user has completed onboarding
+      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
+      
+      // Wait a moment after page load before showing the popup
+      // This helps avoid rendering issues during quick reloads
+      const timer = setTimeout(() => {
+        if (!hasCompletedOnboarding && popup === 0) {
+          setpopup(14);
+        }
+      }, 1000); // Small delay to ensure the page is fully loaded
+      
+      return () => clearTimeout(timer);
+    }
+  }, []);  // Empty dependency array to run only once at mount
+  
+  // Separate effect to handle connected state changes
+  useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    if (!hasCompletedOnboarding && 
-        ![11, 12, 14, 15].includes(popup) && 
-        (!connected || popup === 0)) {
+    
+    if (user && !connected && !loading) {
+      setpopup(11);
+    } 
+    else if (connected && popup === 11) {
+      setpopup(12);
+    }
+    else if (!hasCompletedOnboarding && popup === 0 && !loading) {
+      // Add safety condition to prevent black screen during loading
       setpopup(14);
     }
-  }, [connected, popup]);
-
+  }, [connected, user, loading]);
 
 
   // input tokenlist
@@ -7384,7 +7413,7 @@ function App() {
                 : ''
                 }`}
               onClick={() => {
-                setpopup(14);
+                setpopup(2);
               }}
             >
               <img className="button1pic" src={tokendict[tokenIn].image} />
