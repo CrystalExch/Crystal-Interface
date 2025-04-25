@@ -4,6 +4,9 @@ import iconusdt from '../../../../assets/iconusdt.png';
 import iconwbtc from '../../../../assets/iconwbtc.png';
 import iconweth from '../../../../assets/iconweth.png';
 import iconwmonad from '../../../../assets/iconwmonad.png';
+import iconsmon from '../../../../assets/iconsmon.png';
+import iconaprmon from '../../../../assets/iconaprmon.png';
+import iconshmon from '../../../../assets/iconshmon.png';
 
 export interface TokenInfoData {
   name: string;
@@ -16,13 +19,7 @@ export interface TokenInfoData {
   baseAddress?: string;
 }
 
-export type TokenSymbol =
-  | 'WETH'
-  | 'WBTC'
-  | 'MON'
-  | 'WMON'
-  | 'WSOL'
-  | 'USDT'
+export type TokenSymbol = any;
 
 export const tokenData: Record<TokenSymbol, TokenInfoData> = {
   MON: {
@@ -81,6 +78,36 @@ export const tokenData: Record<TokenSymbol, TokenInfoData> = {
     website: 'https://tether.to/',
     twitter: 'https://twitter.com/Tether_to',
     baseAddress: '0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D',
+  },
+  sMON: {
+    name: 'Kintsu Staked Monad',
+    image: iconsmon,
+    description:
+      "sMON is Kintsu’s Liquid Staking Token on Monad, DAO-aligned, and designed to let users earn staking rewards while staying composable across the ecosystem.",
+    website: 'https://kintsu.xyz/staking/',
+    twitter: 'https://x.com/kintsu_xyz',
+    discord: 'https://discord.com/invite/kintsu',
+    baseAddress: '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5',
+  },
+  aprMON: {
+    name: 'aPriori Staked Monad',
+    image: iconaprmon,
+    description:
+      "apr.",
+    website: 'https://stake.apr.io/',
+    twitter: 'https://x.com/apr_labs',
+    discord: 'https://discord.com/invite/apriori',
+    baseAddress: '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A',
+  },
+  shMON: {
+    name: 'shMonad',
+    image: iconshmon,
+    description:
+      "shMON: The world's first Holistic Liquid Staking Token with the best staking rewards on Monad.",
+    website: 'https://shmonad.xyz/',
+    twitter: 'https://x.com/0xFastLane',
+    discord: 'https://discord.fastlane.xyz',
+    baseAddress: '0x3a98250F98Dd388C211206983453837C8365BDc1',
   },
 };
 
