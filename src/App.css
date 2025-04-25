@@ -1748,6 +1748,20 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 
+.welcome-screen-content{
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 15px;
+  padding-bottom: 10px;
+  border-radius: 50px;
+  transition: all.2s ease;
+}
+
+.welcome-screen-content:hover{
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background-color: #070707;
+}
+
+
 .onboarding-info-icon{
   height: 14px;
   margin-right: 5px;
@@ -6614,7 +6628,7 @@ input[type="email"] {
 .welcome-text-container {
   max-width: 400px;
   position: relative;
-  margin-bottom: 10px;
+  margin-bottom: 5px;
 }
 
 .welcome-text {
@@ -6648,7 +6662,8 @@ input[type="email"] {
   letter-spacing: -0.5px;
   cursor: pointer;
   transition: all 0.3s ease;
-  animation: fadeInButton 0.8s ease forwards;
+  animation: fadeInButton 0.4s ease forwards;
+  margin: 3px 0
 }
 
 .welcome-enter-button:hover {

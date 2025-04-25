@@ -7218,30 +7218,30 @@ function App() {
               {showWelcomeScreen ? (
                 <div className="crystal-welcome-screen">
                   <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
-
-                  <div className="welcome-text-container">
-                    <p className="welcome-text">{typedText}</p>
+                  <div className="welcome-screen-content">
+                    <div className="welcome-text-container">
+                      <p className="welcome-text">{typedText}</p>
+                    </div>
+                    {animationStarted && (
+                      <button
+                        className="welcome-enter-button"
+                        onClick={() => {
+                          if (stepAudioRef.current) {
+                            stepAudioRef.current.currentTime = 0;
+                            stepAudioRef.current.play().catch(console.error);
+                          }
+                          setShowWelcomeScreen(false);
+                        }}
+                      >
+                        Begin Your Journey
+                      </button>
+                    )}
                   </div>
-
-                  {animationStarted && (
-                    <button
-                      className="welcome-enter-button"
-                      onClick={() => {
-                        if (stepAudioRef.current) {
-                          stepAudioRef.current.currentTime = 0;
-                          stepAudioRef.current.play().catch(console.error);
-                        }
-                        setShowWelcomeScreen(false);
-                      }}
-                    >
-                      Begin Your Journey
-                    </button>
-                  )}
                 </div>
               ) : (
                 <div className="connect-wallet-username-wrapper">
                   <CrystalObject />
-                  <div className="smart-wallet-reminder"><img className="onboarding-info-icon" src={infoicon}/>Using a Smart Wallet will give you a 1.25x multiplier on all Crystals</div>
+                  <div className="smart-wallet-reminder"><img className="onboarding-info-icon" src={infoicon} />Using a Smart Wallet will give you a 1.25x multiplier on all Crystals</div>
                   <div className="onboarding-connect-wallet">
                     <div className="connect-wallet-content-container">
                       <AuthCard {...alchemyconfig.ui.auth} />
@@ -7253,9 +7253,9 @@ function App() {
           )
         ) : null}
         {popup === 16 ? (
-        <div className="edit-username-bg">
-          <div ref={popupref} className="edit-username-container">
-            <div className="onboarding-split-container">
+          <div className="edit-username-bg">
+            <div ref={popupref} className="edit-username-container">
+              <div className="onboarding-split-container">
                 <div className="onboarding-content">
                   <div className="onboarding-header">
                     <h2 className="onboarding-title">Edit Your Username</h2>
@@ -7302,8 +7302,8 @@ function App() {
                   </button>
                 </div>
 
+              </div>
             </div>
-          </div>
           </div>
         ) : null}
       </div>
