@@ -68,7 +68,6 @@ const Referrals: React.FC<ReferralProps> = ({
   const [refLinkString, setRefLinkString] = useState(refLink);
   const [referredCount, setReferredCount] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
-  const [isClearingUsername, setIsClearingUsername] = useState(false);
   const [selectedFeatureIndex, setSelectedFeatureIndex] = useState<
     number | null
   >(null);
@@ -216,7 +215,6 @@ const Referrals: React.FC<ReferralProps> = ({
     }
 
     if (used === '') { // clear username
-      setIsClearingUsername(true);
       console.log("clearing");
       try {
         const hash = await sendUserOperationAsync({
@@ -235,8 +233,6 @@ const Referrals: React.FC<ReferralProps> = ({
         return true;
       } catch {
         return false;
-      } finally {
-        setIsClearingUsername(false);
       }
     } else {
       try {
