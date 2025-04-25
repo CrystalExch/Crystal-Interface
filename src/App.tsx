@@ -77,6 +77,8 @@ import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
+import infoicon from './assets/icon.png';
+
 import Xicon from './assets/Xicon.svg';
 import walletbackpack from './assets/walletbackpack.jpg'
 import walletcoinbase from './assets/walletcoinbase.png'
@@ -7239,6 +7241,7 @@ function App() {
               ) : (
                 <div className="connect-wallet-username-wrapper">
                   <CrystalObject />
+                  <div className="smart-wallet-reminder"><img className="onboarding-info-icon" src={infoicon}/>Using a Smart Wallet will give you a 1.25x multiplier on all Crystals</div>
                   <div className="onboarding-connect-wallet">
                     <div className="connect-wallet-content-container">
                       <AuthCard {...alchemyconfig.ui.auth} />
