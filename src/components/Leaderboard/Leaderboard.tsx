@@ -70,7 +70,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     const fetchUserPoints = () => {
       if (address) {
-        fetch('https://points-backend-b5a062cda7cd.herokuapp.com/user_points')
+        fetch('https://web-production-9a2f8.up.railway.app/user_points')
           .then((res) => res.json())
           .then((data: Record<string, { username: string; points: number }>) => {
             console.log(data);
