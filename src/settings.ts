@@ -58,7 +58,7 @@ export const settings: any = {
       balancegetter:
         '0xF6759341d82bB4Fc10e89E43c83568688Cada58f' as `0x${string}`,
       router: '0x4cECDc55CECE5fE10cF5982a43aa44Ad5C23479B' as `0x${string}`,
-      referralManager: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
+      referralManager: '0x4CFF02B454664491DCba165971bf3c0ea4e64e63' as `0x${string}`,
       firstblock: 10217713,
       ethticker: 'MON',
       wethticker: 'WMON',

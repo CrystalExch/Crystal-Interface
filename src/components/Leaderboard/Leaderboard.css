@@ -985,3 +985,19 @@
   align-items:center;
   gap:5px
 }
+
+
+.edit-username-button{
+  background:0 0;
+  border:1.5px solid rgba(255,255,255,.08);
+  border-radius:6px;
+  color:#ffffff95;
+  cursor:pointer;
+  font-size:.8rem;
+  font-weight:300;
+  padding:4px 16px;
+  height: 40px;
+  position:absolute;
+  right:15px;
+  top:15px
+}

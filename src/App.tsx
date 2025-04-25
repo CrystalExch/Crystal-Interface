@@ -77,6 +77,8 @@ import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
 import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
+import infoicon from './assets/icon.png';
+
 import Xicon from './assets/Xicon.svg';
 import walletbackpack from './assets/walletbackpack.jpg'
 import walletcoinbase from './assets/walletcoinbase.png'
@@ -447,15 +449,7 @@ function App() {
     const savedLayout = localStorage.getItem('crystal_layout');
     return savedLayout || 'default';
   });
-  const [popup, setpopup] = useState(() => {
-    if (localStorage.getItem('hasShownSocialPopup1') === 'true') {
-      return 0
-    }
-    else {
-      localStorage.setItem('hasShownSocialPopup1', 'true');
-      return 9
-    }
-  });
+  const [popup, setpopup] = useState(0);
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -2015,7 +2009,76 @@ function App() {
 
       return true;
     } catch (error) {
-      console.error("Error creating username:", error);
+      return false;
+    } finally {
+      setIsUsernameSigning(false);
+    }
+  };
+  const handleEditUsername = async () => {
+    setUsernameError("");
+
+    if (!usernameInput.trim()) {
+      setUsernameError("Please enter a username");
+      return;
+    }
+
+    if (usernameInput.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    setIsUsernameSigning(true);
+
+    try {
+      const read = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'usernameToAddress',
+            args: [usernameInput],
+          },
+        ]
+      })) as any[];
+
+      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+        setUsernameError("Username already taken");
+        setIsUsernameSigning(false);
+        return;
+      }
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      });
+
+      await waitForTxReceipt(hash.hash);
+
+      if (stepAudioRef.current) {
+        stepAudioRef.current.currentTime = 0;
+        stepAudioRef.current.play().catch(console.error);
+      }
+
+      setTimeout(() => {
+        setpopup(0);
+      });
+
+      return true;
+    } catch (error) {
       return false;
     } finally {
       setIsUsernameSigning(false);
@@ -3969,6 +4032,32 @@ function App() {
   }, [popup]);
 
 
+  const [typedText, setTypedText] = useState("");
+  const typedTextRef = useRef("");
+
+  useEffect(() => {
+    if (popup === 14 && showWelcomeScreen) {
+      const welcomeText = "Crystal Exchange is a next-generation decentralized trading platform offering seamless swaps, limit orders, and advanced trading tools. Built for both beginners and professionals, Crystal provides institutional-grade liquidity with zero price impact trading. Join the future of decentralized finance with Crystal.";
+
+      let index = 0;
+      typedTextRef.current = "";
+      setTypedText("");
+      setAnimationStarted(false);
+
+      const typingInterval = setInterval(() => {
+        if (index < welcomeText.length) {
+          typedTextRef.current += welcomeText.charAt(index);
+          setTypedText(typedTextRef.current);
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          setAnimationStarted(true);
+        }
+      }, 30);
+
+      return () => clearInterval(typingInterval);
+    }
+  }, [popup, showWelcomeScreen]);
 
 
   const [messages, setMessages] = useState([
@@ -3988,114 +4077,33 @@ function App() {
   ];
 
   useEffect(() => {
-    if (currentMessageIndex >= systemMessages.length) return;
-    
-    const timer = setTimeout(() => {
-      setMessages(prev => [
-        ...prev.slice(0, prev.length - (prev[prev.length - 1].typing ? 1 : 0)),
-        { 
-          id: prev.length, 
-          sender: 'system', 
-          text: systemMessages[currentMessageIndex], 
-          typing: false 
+    const sessionInitialized = sessionStorage.getItem('session_initialized');
+    if (!sessionInitialized) {
+      sessionStorage.setItem('session_initialized', 'true');
+      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
+      const timer = setTimeout(() => {
+        if (!hasCompletedOnboarding && popup === 0) {
+          setpopup(14);
         }
-      ]);
-      
-      if (currentMessageIndex < systemMessages.length - 1) {
-        setMessages(prev => [
-          ...prev,
-          { 
-            id: prev.length, 
-            sender: 'system', 
-            text: '', 
-            typing: true 
-          }
-        ]);
-      }
-      
-      setCurrentMessageIndex(prev => prev + 1);
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, [currentMessageIndex]);
+      }, 1000);
 
-
-
-  const handleKeyDown = (e: { key: string; }) => {
-    if (e.key === 'Enter' && userInput.trim()) {
-      const newUserMessage = { 
-        id: messages.length, 
-        sender: 'user', 
-        text: userInput.trim(), 
-        typing: false 
-      };
-      
-      setMessages(prev => [
-        ...prev.filter(m => !m.typing),
-        newUserMessage
-      ]);
-      
-      if (['trade', 'invest', 'market', 'crypto'].some(keyword => 
-        userInput.toLowerCase().includes(keyword)
-      )) {
-        setTimeout(() => {
-          const systemResponses = [
-            'Identity verified. You seem to understand our purpose.',
-            'Granting access to Crystal Exchange...',
-            'Welcome aboard. Your strategic trading journey begins now.'
-          ];
-          
-          const responseMessage = {
-            id: messages.length + 1, 
-            sender: 'system', 
-            text: systemResponses[Math.floor(Math.random() * systemResponses.length)],
-            typing: false
-          };
-          
-          setMessages(prev => [
-            ...prev,
-            responseMessage
-          ]);
-          
-          // Grant access after some interaction
-          setTimeout(() => {
-            setAccessGranted(true);
-            setShowWelcomeScreen(false); // Explicitly set this to false
-          }, 1500);
-        }, 1000);
-      } else {
-        // Generic response for other inputs
-        setTimeout(() => {
-          const genericResponses = [
-            'I see. Please tell me more about your interest in trading.',
-            'Could you elaborate on your trading goals?',
-            'Crystal Exchange offers advanced trading tools. What are you looking for?'
-          ];
-          
-          const responseMessage = {
-            id: messages.length + 1, 
-            sender: 'system', 
-            text: genericResponses[Math.floor(Math.random() * genericResponses.length)],
-            typing: false
-          };
-          
-          setMessages(prev => [
-            ...prev,
-            responseMessage
-          ]);
-        }, 1000);
-      }
-      
-      // Clear input
-      setUserInput('');
+      return () => clearTimeout(timer);
     }
-  };
+  }, []);
 
+  useEffect(() => {
+    const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
 
-
-
-
-
+    if (user && !connected && !loading) {
+      setpopup(11);
+    }
+    else if (connected && popup === 11) {
+      setpopup(12);
+    }
+    else if (!hasCompletedOnboarding && popup === 0 && !loading) {
+      setpopup(14);
+    }
+  }, [connected, user, loading]);
 
 
   // input tokenlist
@@ -7227,68 +7235,96 @@ function App() {
             </div>
           ) : (
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
-
-{showWelcomeScreen ? (
- <div className="matrix-terminal">
- <div className="terminal-header">
-   CRYSTAL EXCHANGE SECURE TERMINAL :: v3.7.0 :: ESTABLISHING CONNECTION...
- </div>
- 
- <div 
-   className="chat-messages" 
-   id="chatMessages"
-   ref={chatContainerRef}
- >
-   {messages.map((msg, index) => (
-     <div 
-       key={msg.id} 
-       className={`message ${msg.sender}`}
-       style={{ 
-         animationDelay: `${index * 0.5}s`,
-         opacity: msg.typing ? 0.5 : 1
-       }}
-     >
-       <div className="message-content">
-         {msg.text}
-         {msg.typing && <span className="message-typing"></span>}
-       </div>
-     </div>
-   ))}
- </div>
- 
- <div className="terminal-input-container">
-   <span className="terminal-prompt">&gt;</span>
-   <input
-     type="text"
-     className="terminal-input"
-     placeholder="Type your response..."
-     value={userInput}
-     onChange={(e) => setUserInput(e.target.value)}
-     onKeyDown={handleKeyDown}
-     disabled={accessGranted}
-   />
- </div>
- 
- {accessGranted && (
-   <div className="access-granted">
-     ACCESS GRANTED
-   </div>
- )}
-</div>
-) : (
-  <div className="connect-wallet-username-wrapper"> 
-                          <CrystalObject />
-
-  <div className="onboarding-connect-wallet">
-
-    <div className="connect-wallet-content-container">
-      <AuthCard {...alchemyconfig.ui.auth} />
-    </div>
-  </div>
-  </div> 
-)}
+              {showWelcomeScreen ? (
+                <div className="crystal-welcome-screen">
+                  <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
+                  <div className="welcome-screen-content">
+                    <div className="welcome-text-container">
+                      <p className="welcome-text">{typedText}</p>
+                    </div>
+                    {animationStarted && (
+                      <button
+                        className="welcome-enter-button"
+                        onClick={() => {
+                          if (stepAudioRef.current) {
+                            stepAudioRef.current.currentTime = 0;
+                            stepAudioRef.current.play().catch(console.error);
+                          }
+                          setShowWelcomeScreen(false);
+                        }}
+                      >
+                        Begin Your Journey
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="connect-wallet-username-wrapper">
+                  <CrystalObject />
+                  <div className="smart-wallet-reminder"><img className="onboarding-info-icon" src={infoicon} />Using a Smart Wallet will give you a 1.25x multiplier on all Crystals</div>
+                  <div className="onboarding-connect-wallet">
+                    <div className="connect-wallet-content-container">
+                      <AuthCard {...alchemyconfig.ui.auth} />
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )
+        ) : null}
+        {popup === 16 ? (
+          <div className="edit-username-bg">
+            <div ref={popupref} className="edit-username-container">
+              <div className="onboarding-split-container">
+                <div className="onboarding-content">
+                  <div className="onboarding-header">
+                    <h2 className="onboarding-title">Edit Your Username</h2>
+                    <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
+                  </div>
+
+                  <div className="onboarding-form">
+                    <div className="form-group">
+                      <label className="form-label">Your Wallet Address</label>
+                      <div className="wallet-address">{address || "0x1234...5678"}</div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="username" className="form-label">Username</label>
+                      <input
+                        type="text"
+                        id="username"
+                        className="username-input"
+                        placeholder="Enter a username"
+                        value={usernameInput || ""}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                      />
+                      {usernameError && (
+                        <p className="username-error">{usernameError}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+                    onClick={async () => {
+                      if (!usernameInput.trim() || isUsernameSigning) return;
+                      await handleEditUsername();
+                    }}
+                    disabled={!usernameInput.trim() || isUsernameSigning}
+                  >
+                    {isUsernameSigning ? (
+                      <div className="button-content">
+                        <div className="loading-spinner" />
+                        {t('signTransaction')}
+                      </div>
+                    ) : (
+                      "Edit Username"
+                    )}
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          </div>
         ) : null}
       </div>
     </>
