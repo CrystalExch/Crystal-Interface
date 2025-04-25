@@ -322,7 +322,7 @@ export const translations: any = {
     next: "Next",
     skip: "Skip",
     complete: "Complete",
-    challengeOverview: "Crystal Rewards: Season 0",
+    challengeOverview: "Introducing Crystal Rewards: Season 0",
     learnHowToCompete: "Compete to earn Crystals!",
     precisionMatters: "Place Limit Orders",
     placeYourBids: "Place your limit orders near the mid price. The closer, the better.",

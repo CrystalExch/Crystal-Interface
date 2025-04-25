@@ -2546,9 +2546,9 @@ function App() {
         const orderdata = data[3].result;
         setPrevOrderData(orderdata as any);
         if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] &&
-        orderdata[1] == prevOrderData[1] &&
-        orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
-        orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
+          orderdata[1] == prevOrderData[1] &&
+          orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
+          orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
           try {
             const buyOrdersRaw: bigint[] = [];
             const sellOrdersRaw: bigint[] = [];
@@ -3505,13 +3505,13 @@ function App() {
             ).toFixed(2)}`,
           );
         }
-        
+
         try {
           const data = json.data.series_collection;
           const processedMarkets = data.map((series: any) => {
             const idParts = series.id.split("-");
             const address = idParts[2];
-  
+
             const match = Object.values(markets).find(
               (m) => m.address.toLowerCase() === address.toLowerCase()
             );
@@ -3528,7 +3528,7 @@ function App() {
               .filter((c) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
               .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0);
             const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
-  
+
             return {
               ...match,
               pair: `${match.baseAsset}/${match.quoteAsset}`,
@@ -3547,7 +3547,7 @@ function App() {
         } catch (error) {
           console.error("error fetching candles:", error);
         }
-    
+
       } catch (error) {
         console.error("Error fetching data:", error);
         settradesloading(false);
@@ -3965,127 +3965,28 @@ function App() {
   }, [popup]);
 
 
-
-
-  const [messages, setMessages] = useState([
-    { id: 0, sender: 'system', text: 'Initializing secure connection...', typing: false },
-  ]);
-  const [userInput, setUserInput] = useState('');
-  const [accessGranted, setAccessGranted] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const chatContainerRef = useRef(null);
-
-  const systemMessages = [
-    'Initializing secure connection...',
-    'Connection established. Welcome to the Crystal Exchange Terminal.',
-    'I am CRYST-AI, the autonomous trading assistant.',
-    'Before I can grant you access, I need to verify your identity.',
-    'What brings you to Crystal Exchange today?'
-  ];
-
+  const [typedText, setTypedText] = useState("");
   useEffect(() => {
-    if (currentMessageIndex >= systemMessages.length) return;
-    
-    const timer = setTimeout(() => {
-      setMessages(prev => [
-        ...prev.slice(0, prev.length - (prev[prev.length - 1].typing ? 1 : 0)),
-        { 
-          id: prev.length, 
-          sender: 'system', 
-          text: systemMessages[currentMessageIndex], 
-          typing: false 
+    if (popup === 14 && showWelcomeScreen) {
+      const welcomeText = "Crystal Exchange is a next-generation decentralized trading platform offering seamless swaps, limit orders, and advanced trading tools. Built for both beginners and professionals, Crystal provides institutional-grade liquidity with zero price impact trading. Join the future of decentralized finance with Crystal.";
+      
+      let index = 0;
+      setTypedText(""); 
+      setAnimationStarted(false);
+      
+      const typingInterval = setInterval(() => {
+        if (index < welcomeText.length) {
+          setTypedText(prev => prev + welcomeText.charAt(index));
+          index++;
+        } else {
+          clearInterval(typingInterval);
+          setAnimationStarted(true);
         }
-      ]);
+      }, 30);
       
-      if (currentMessageIndex < systemMessages.length - 1) {
-        setMessages(prev => [
-          ...prev,
-          { 
-            id: prev.length, 
-            sender: 'system', 
-            text: '', 
-            typing: true 
-          }
-        ]);
-      }
-      
-      setCurrentMessageIndex(prev => prev + 1);
-    }, 2000);
-    
-    return () => clearTimeout(timer);
-  }, [currentMessageIndex]);
-
-
-
-  const handleKeyDown = (e: { key: string; }) => {
-    if (e.key === 'Enter' && userInput.trim()) {
-      const newUserMessage = { 
-        id: messages.length, 
-        sender: 'user', 
-        text: userInput.trim(), 
-        typing: false 
-      };
-      
-      setMessages(prev => [
-        ...prev.filter(m => !m.typing),
-        newUserMessage
-      ]);
-      
-      if (['trade', 'invest', 'market', 'crypto'].some(keyword => 
-        userInput.toLowerCase().includes(keyword)
-      )) {
-        setTimeout(() => {
-          const systemResponses = [
-            'Identity verified. You seem to understand our purpose.',
-            'Granting access to Crystal Exchange...',
-            'Welcome aboard. Your strategic trading journey begins now.'
-          ];
-          
-          const responseMessage = {
-            id: messages.length + 1, 
-            sender: 'system', 
-            text: systemResponses[Math.floor(Math.random() * systemResponses.length)],
-            typing: false
-          };
-          
-          setMessages(prev => [
-            ...prev,
-            responseMessage
-          ]);
-          
-          // Grant access after some interaction
-          setTimeout(() => {
-            setAccessGranted(true);
-            setShowWelcomeScreen(false); // Explicitly set this to false
-          }, 1500);
-        }, 1000);
-      } else {
-        // Generic response for other inputs
-        setTimeout(() => {
-          const genericResponses = [
-            'I see. Please tell me more about your interest in trading.',
-            'Could you elaborate on your trading goals?',
-            'Crystal Exchange offers advanced trading tools. What are you looking for?'
-          ];
-          
-          const responseMessage = {
-            id: messages.length + 1, 
-            sender: 'system', 
-            text: genericResponses[Math.floor(Math.random() * genericResponses.length)],
-            typing: false
-          };
-          
-          setMessages(prev => [
-            ...prev,
-            responseMessage
-          ]);
-        }, 1000);
-      }
-      
-      // Clear input
-      setUserInput('');
+      return () => clearInterval(typingInterval);
     }
-  };
+  }, [popup, showWelcomeScreen]);
 
 
 
@@ -7223,67 +7124,40 @@ function App() {
             </div>
           ) : (
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
-
-{showWelcomeScreen ? (
- <div className="matrix-terminal">
- <div className="terminal-header">
-   CRYSTAL EXCHANGE SECURE TERMINAL :: v3.7.0 :: ESTABLISHING CONNECTION...
- </div>
- 
- <div 
-   className="chat-messages" 
-   id="chatMessages"
-   ref={chatContainerRef}
- >
-   {messages.map((msg, index) => (
-     <div 
-       key={msg.id} 
-       className={`message ${msg.sender}`}
-       style={{ 
-         animationDelay: `${index * 0.5}s`,
-         opacity: msg.typing ? 0.5 : 1
-       }}
-     >
-       <div className="message-content">
-         {msg.text}
-         {msg.typing && <span className="message-typing"></span>}
-       </div>
-     </div>
-   ))}
- </div>
- 
- <div className="terminal-input-container">
-   <span className="terminal-prompt">&gt;</span>
-   <input
-     type="text"
-     className="terminal-input"
-     placeholder="Type your response..."
-     value={userInput}
-     onChange={(e) => setUserInput(e.target.value)}
-     onKeyDown={handleKeyDown}
-     disabled={accessGranted}
-   />
- </div>
- 
- {accessGranted && (
-   <div className="access-granted">
-     ACCESS GRANTED
-   </div>
- )}
-</div>
-) : (
-  <div className="connect-wallet-username-wrapper"> 
-                          <CrystalObject />
-
-  <div className="onboarding-connect-wallet">
-
-    <div className="connect-wallet-content-container">
-      <AuthCard {...alchemyconfig.ui.auth} />
-    </div>
-  </div>
-  </div> 
-)}
-            </div>
+            {showWelcomeScreen ? (
+              <div className="crystal-welcome-screen">
+                <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
+                
+                <div className="welcome-text-container">
+                  <p className="welcome-text">{typedText}</p>
+                </div>
+                
+                {animationStarted && (
+                  <button 
+                    className="welcome-enter-button"
+                    onClick={() => {
+                      if (stepAudioRef.current) {
+                        stepAudioRef.current.currentTime = 0;
+                        stepAudioRef.current.play().catch(console.error);
+                      }
+                      setShowWelcomeScreen(false);
+                    }}
+                  >
+                    Enter Now
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="connect-wallet-username-wrapper">
+                <CrystalObject />
+                <div className="onboarding-connect-wallet">
+                  <div className="connect-wallet-content-container">
+                    <AuthCard {...alchemyconfig.ui.auth} />
+                  </div>
+                </div>
+              </div> 
+            )}
+          </div>
           )
         ) : null}
       </div>

@@ -8,7 +8,7 @@ interface OverlayProps {
 
 const FullScreenOverlay: React.FC<OverlayProps> = ({ isVisible }) => {
   if (!isVisible) return null;
-  const uiLogo = '/logo_clear.png';
+  const uiLogo = '/3dlogo.png';
 
   return (
     <div className="overlay">
