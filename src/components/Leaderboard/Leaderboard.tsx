@@ -10,7 +10,6 @@ import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
-import { update } from 'three/examples/jsm/libs/tween.module.js';
 
 interface Faction {
   id: string;
@@ -81,6 +80,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   { points: info.points, username: info.username || '', referral_points: info.referral_points },
                 ] as const)
             );
+
+            console.log(updatedLiveLeaderboard);
 
             setLiveLeaderboard(updatedLiveLeaderboard);
           })
