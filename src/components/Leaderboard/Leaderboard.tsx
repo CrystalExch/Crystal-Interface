@@ -455,6 +455,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="info-column">
               <div className="column-header">{t('rank')}</div>
               <div className="column-content">{getUserRank()}</div>
+              <button
+                className="edit-username-button"         
+                onClick={() => {
+                setpopup(16);
+              }}>
+                Edit Username
+              </button>
             </div>
           </div>
         </div>

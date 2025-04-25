@@ -2005,7 +2005,76 @@ function App() {
 
       return true;
     } catch (error) {
-      console.error("Error creating username:", error);
+      return false;
+    } finally {
+      setIsUsernameSigning(false);
+    }
+  };
+  const handleEditUsername = async () => {
+    setUsernameError("");
+
+    if (!usernameInput.trim()) {
+      setUsernameError("Please enter a username");
+      return;
+    }
+
+    if (usernameInput.length < 3) {
+      setUsernameError("Username must be at least 3 characters");
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    setIsUsernameSigning(true);
+
+    try {
+      const read = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'usernameToAddress',
+            args: [usernameInput],
+          },
+        ]
+      })) as any[];
+
+      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+        setUsernameError("Username already taken");
+        setIsUsernameSigning(false);
+        return;
+      }
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      });
+
+      await waitForTxReceipt(hash.hash);
+
+      if (stepAudioRef.current) {
+        stepAudioRef.current.currentTime = 0;
+        stepAudioRef.current.play().catch(console.error);
+      }
+
+      setTimeout(() => {
+        setpopup(0);
+      });
+
+      return true;
+    } catch (error) {
       return false;
     } finally {
       setIsUsernameSigning(false);
@@ -2016,7 +2085,7 @@ function App() {
       stepAudioRef.current.currentTime = 0;
       stepAudioRef.current.play().catch(console.error);
     }
-  
+
     setIsTransitioning(true);
     setTransitionDirection('forward');
     setTimeout(() => {
@@ -2025,7 +2094,7 @@ function App() {
         setIsTransitioning(false);
       });
     });
-    
+
   };
   const backAudioRef = useRef<HTMLAudioElement>(null);
   const handleBackClick = () => {
@@ -3959,16 +4028,16 @@ function App() {
 
   const [typedText, setTypedText] = useState("");
   const typedTextRef = useRef("");
-  
+
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
       const welcomeText = "Crystal Exchange is a next-generation decentralized trading platform offering seamless swaps, limit orders, and advanced trading tools. Built for both beginners and professionals, Crystal provides institutional-grade liquidity with zero price impact trading. Join the future of decentralized finance with Crystal.";
-  
+
       let index = 0;
       typedTextRef.current = "";
       setTypedText("");
       setAnimationStarted(false);
-  
+
       const typingInterval = setInterval(() => {
         if (index < welcomeText.length) {
           typedTextRef.current += welcomeText.charAt(index);
@@ -3979,7 +4048,7 @@ function App() {
           setAnimationStarted(true);
         }
       }, 30);
-  
+
       return () => clearInterval(typingInterval);
     }
   }, [popup, showWelcomeScreen]);
@@ -3994,18 +4063,18 @@ function App() {
         if (!hasCompletedOnboarding && popup === 0) {
           setpopup(14);
         }
-      }, 1000); 
-      
+      }, 1000);
+
       return () => clearTimeout(timer);
     }
-  }, []); 
-  
+  }, []);
+
   useEffect(() => {
     const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    
+
     if (user && !connected && !loading) {
       setpopup(11);
-    } 
+    }
     else if (connected && popup === 11) {
       setpopup(12);
     }
@@ -7144,41 +7213,95 @@ function App() {
             </div>
           ) : (
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
-            {showWelcomeScreen ? (
-              <div className="crystal-welcome-screen">
-                <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
-                
-                <div className="welcome-text-container">
-                  <p className="welcome-text">{typedText}</p>
+              {showWelcomeScreen ? (
+                <div className="crystal-welcome-screen">
+                  <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
+
+                  <div className="welcome-text-container">
+                    <p className="welcome-text">{typedText}</p>
+                  </div>
+
+                  {animationStarted && (
+                    <button
+                      className="welcome-enter-button"
+                      onClick={() => {
+                        if (stepAudioRef.current) {
+                          stepAudioRef.current.currentTime = 0;
+                          stepAudioRef.current.play().catch(console.error);
+                        }
+                        setShowWelcomeScreen(false);
+                      }}
+                    >
+                      Begin Your Journey
+                    </button>
+                  )}
                 </div>
-                
-                {animationStarted && (
-                  <button 
-                    className="welcome-enter-button"
-                    onClick={() => {
-                      if (stepAudioRef.current) {
-                        stepAudioRef.current.currentTime = 0;
-                        stepAudioRef.current.play().catch(console.error);
-                      }
-                      setShowWelcomeScreen(false);
-                    }}
-                  >
-                    Begin Your Journey 
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="connect-wallet-username-wrapper">
-                <CrystalObject />
-                <div className="onboarding-connect-wallet">
-                  <div className="connect-wallet-content-container">
-                    <AuthCard {...alchemyconfig.ui.auth} />
+              ) : (
+                <div className="connect-wallet-username-wrapper">
+                  <CrystalObject />
+                  <div className="onboarding-connect-wallet">
+                    <div className="connect-wallet-content-container">
+                      <AuthCard {...alchemyconfig.ui.auth} />
+                    </div>
                   </div>
                 </div>
-              </div> 
-            )}
-          </div>
+              )}
+            </div>
           )
+        ) : null}
+        {popup === 16 ? (
+        <div className="edit-username-bg">
+          <div ref={popupref} className="edit-username-container">
+            <div className="onboarding-split-container">
+                <div className="onboarding-content">
+                  <div className="onboarding-header">
+                    <h2 className="onboarding-title">Edit Your Username</h2>
+                    <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
+                  </div>
+
+                  <div className="onboarding-form">
+                    <div className="form-group">
+                      <label className="form-label">Your Wallet Address</label>
+                      <div className="wallet-address">{address || "0x1234...5678"}</div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="username" className="form-label">Username</label>
+                      <input
+                        type="text"
+                        id="username"
+                        className="username-input"
+                        placeholder="Enter a username"
+                        value={usernameInput || ""}
+                        onChange={(e) => setUsernameInput(e.target.value)}
+                      />
+                      {usernameError && (
+                        <p className="username-error">{usernameError}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+                    onClick={async () => {
+                      if (!usernameInput.trim() || isUsernameSigning) return;
+                      await handleEditUsername();
+                    }}
+                    disabled={!usernameInput.trim() || isUsernameSigning}
+                  >
+                    {isUsernameSigning ? (
+                      <div className="button-content">
+                        <div className="loading-spinner" />
+                        {t('signTransaction')}
+                      </div>
+                    ) : (
+                      "Edit Username"
+                    )}
+                  </button>
+                </div>
+
+            </div>
+          </div>
+          </div>
         ) : null}
       </div>
     </>
