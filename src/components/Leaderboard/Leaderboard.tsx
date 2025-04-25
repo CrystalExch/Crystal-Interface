@@ -10,6 +10,7 @@ import LeaderboardImage from '../../assets/leaderboardbanner.png';
 import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
+import { update } from 'three/examples/jsm/libs/tween.module.js';
 
 interface Faction {
   id: string;
@@ -70,14 +71,14 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     const fetchUserPoints = () => {
       if (address) {
-        fetch('https://web-production-9a2f8.up.railway.app/user_points')
+        fetch('https://web-production-dd5d.up.railway.app/user_points')
           .then((res) => res.json())
-          .then((data: Record<string, { username: string; points: number }>) => {
+          .then((data: Record<string, { username: string; points: number; referral_points: number; }>) => {
             const updatedLiveLeaderboard = Object.fromEntries(
               Object.entries(data)
                 .map(([addr, info]) => [
                   addr.toLowerCase(),
-                  { points: info.points, username: info.username || '' },
+                  { points: info.points, username: info.username || '', referral_points: info.referral_points },
                 ] as const)
             );
 
