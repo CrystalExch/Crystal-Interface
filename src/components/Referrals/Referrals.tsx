@@ -68,6 +68,7 @@ const Referrals: React.FC<ReferralProps> = ({
   const [refLinkString, setRefLinkString] = useState(refLink);
   const [referredCount, setReferredCount] = useState(0);
   const [isSigning, setIsSigning] = useState(false);
+  const [isClearingUsername, setIsClearingUsername] = useState(false);
   const [selectedFeatureIndex, setSelectedFeatureIndex] = useState<
     number | null
   >(null);
@@ -168,6 +169,7 @@ const Referrals: React.FC<ReferralProps> = ({
           },
         ],
       })) as any[];
+      console.log(find);
       setUsedRefLink(find[0].result);
     })();
   }, [address, refLinkString]);
@@ -194,7 +196,6 @@ const Referrals: React.FC<ReferralProps> = ({
   };
 
   const handleSetRef = async (used: string) => {
-    console.log(used);
     if (used !== '') {
       const lookup = (await readContracts(config, {
         contracts: [
@@ -209,28 +210,54 @@ const Referrals: React.FC<ReferralProps> = ({
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
         setError(t('invalidRefCode'));
-        return true;
+        console.log("hi")
+        return false;
       }
     }
 
-    try {
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsedRef',
-            args: [used],
-          }),
-          value: 0n,
-        },
-      });
-      await waitForTxReceipt(hash.hash);
-      setUsedRefLink(used);
-      return true;
-    } catch (error) {
-      console.log(error);
-      return false;
+    if (used === '') { // clear username
+      setIsClearingUsername(true);
+      console.log("clearing");
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink('');
+        return true;
+      } catch {
+        return false;
+      } finally {
+        setIsClearingUsername(false);
+      }
+    } else {
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink(used);
+        return true;
+      } catch (error) {
+        console.log(error);
+        return false;
+      }
     }
   };
 

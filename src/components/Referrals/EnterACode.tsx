@@ -45,7 +45,8 @@ const EnterACode: React.FC<EnterACodeProps> = ({
     setError('');
     setIsClearing(true);
 
-    setUsedRefLink('');
+    await setUsedRefLink(''); 
+
     setIsClearing(false);
   };
 

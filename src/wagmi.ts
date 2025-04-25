@@ -7,7 +7,7 @@ export const config = createConfig({
   transports: {
     [10143]: fallback([
       http(
-        'https://testnet-rpc.monad.xyz',
+        'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5/',
         { batch: true },
       ),
     ]),

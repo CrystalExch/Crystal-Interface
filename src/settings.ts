@@ -24,7 +24,7 @@ export const settings: any = {
       rpcUrls: {
         default: {
           http: [
-            'https://testnet-rpc.monad.xyz',
+            'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5/',
           ],
         },
         alchemy: {
@@ -51,14 +51,14 @@ export const settings: any = {
     10143: {
       name: 'Monad',
       httpurl:
-        'https://testnet-rpc.monad.xyz',
+        'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5/',
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
       balancegetter:
         '0xF6759341d82bB4Fc10e89E43c83568688Cada58f' as `0x${string}`,
       router: '0x4cECDc55CECE5fE10cF5982a43aa44Ad5C23479B' as `0x${string}`,
-      referralManager: '0x57dF2B85aa54020c39aB1D9C56BaBa016F2E3eC9' as `0x${string}`,
+      referralManager: '0x4CFF02B454664491DCba165971bf3c0ea4e64e63' as `0x${string}`,
       firstblock: 10217713,
       ethticker: 'MON',
       wethticker: 'WMON',
