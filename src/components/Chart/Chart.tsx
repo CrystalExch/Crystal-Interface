@@ -27,7 +27,6 @@ interface ChartComponentProps {
   tradesloading: boolean;
   marketsData: any;
   updateChartData?: any;
-  chartHeaderData?: any;
   tradehistory?: any[];
   isMarksVisible: any;
 }

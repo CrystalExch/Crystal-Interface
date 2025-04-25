@@ -11,11 +11,11 @@
       1fr
     )
     minmax(70px, 0.6fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
-  height: 35px;
   justify-content: flex-start;
-  min-height: 35px;
+  height: 32px;
+  min-height: 32px;  
   min-width: 795px;
-  padding: 0;
+  padding: 1px 0 0 0;
   position: sticky;
   text-align: left;
   text-wrap: nowrap;

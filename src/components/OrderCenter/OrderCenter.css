@@ -163,7 +163,7 @@
   font-size: 0.8rem;
   font-weight: 300;
   overflow: visible;
-  padding: 5px 15px;
+  padding: 4px 15px;
   position: relative;
   text-overflow: ellipsis;
   text-wrap: nowrap;
@@ -190,17 +190,29 @@
   font-size: 0.75rem;
   font-weight: 300;
   justify-self: right;
-  margin-right: 19px;
+  margin-right: 38px;
+  padding: 0 0;
   overflow: hidden;
-  padding: 0 25px;
   position: relative;
   text-overflow: ellipsis;
   white-space: nowrap;
   z-index: 0;
 }
 
-.oc-market-ticker {
-  color: rgb(255 255 255 / 32.9%);
+.oc-cell.actions {
+  border-radius: 3px;
+  cursor: default;
+  display: flex;
+  font-size: 0.75rem;
+  font-weight: 300;
+  justify-self: right;
+  margin-right: 56.917px;
+  padding: 0 0;
+  overflow: hidden;
+  position: relative;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  z-index: 0;
 }
 
 .oc-no-data-container {
@@ -408,17 +420,6 @@
   }
 }
 
-.oc-filter-divider{
-  height: 15px;
-  width: 1px;
-  border-radius: 1px;
-  margin-left: 12px;
-  margin-right: -3px;
-  background-color: rgba(255, 255, 255, 0.07);
-}
-
-
-
 .orderhistory-content-wrapper {
   display: flex;
   flex-direction: column;
@@ -472,39 +473,18 @@
   padding-right: 11px;
 }
 
-.type-filter::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 16px;
-  max-width: 1.5px;
-  min-width: 1.5px;  background-color: rgba(255, 255, 255, 0.1);
-}
-
 .market-filter {
   margin-right: 11px;
   padding-right: 11px;
 }
 
-.market-filter::after {
+.oc-filter-item::after {
   content: '';
   position: absolute;
   right: 0;
-  top: 50%;
-  transform: translateY(-50%);
   height: 16px;
-  max-width: 1.5px;
-  min-width: 1.5px;  background-color: rgba(255, 255, 255, 0.1);
-}
-
-.oc-filter-divider {
-  height: 16px;
-  width: 1px;
-  background-color: rgba(255, 255, 255, 0.07);
-  margin-left: 4px;
-  margin-right: 2px;
+  width: 1.5px;
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .min-size-filter-container {
@@ -515,17 +495,4 @@
 .filter-section::after,
 .only-filter-section::after {
   display: none;
-}
-
-
-
-
-
-.size-filter-divider{
-  max-width: 1.5px;
-  min-width: 1.5px;
-  height: 16px;
-  background-color: rgba(255, 255, 255, 0.1);
-  margin: 0 10px;
-  margin-right: 2px;
 }

@@ -34,37 +34,31 @@ const PortfolioHeader: React.FC<PortfolioHeaderProps> = ({
 
   return (
     <div className="portfolio-header">
-      <div className="portfolio-column">
-        <SortableHeaderCell
-          columnKey="assets"
-          sortColumn={effectiveSortConfig.column}
-          sortOrder={effectiveSortConfig.direction}
-          onSort={handleSort}
-        >
-          {t('assets')}
-        </SortableHeaderCell>
-      </div>
-      <div className="portfolio-column">
-        <SortableHeaderCell
-          columnKey="balance"
-          sortColumn={effectiveSortConfig.column}
-          sortOrder={effectiveSortConfig.direction}
-          onSort={handleSort}
-        >
-          {t('bal')}
-        </SortableHeaderCell>
-      </div>
-      <div className="portfolio-column">
-        <SortableHeaderCell
-          columnKey="price"
-          sortColumn={effectiveSortConfig.column}
-          sortOrder={effectiveSortConfig.direction}
-          onSort={handleSort}
-        >
-          {t('price')}
-        </SortableHeaderCell>
-      </div>
-      <div className="portfolio-column"></div>
+      <SortableHeaderCell
+        columnKey="assets"
+        sortColumn={effectiveSortConfig.column}
+        sortOrder={effectiveSortConfig.direction}
+        onSort={handleSort}
+      >
+        {t('assets')}
+      </SortableHeaderCell>
+      <SortableHeaderCell
+        columnKey="balance"
+        sortColumn={effectiveSortConfig.column}
+        sortOrder={effectiveSortConfig.direction}
+        onSort={handleSort}
+      >
+        {t('bal')}
+      </SortableHeaderCell>
+      <SortableHeaderCell
+        columnKey="price"
+        sortColumn={effectiveSortConfig.column}
+        sortOrder={effectiveSortConfig.direction}
+        onSort={handleSort}
+      >
+        {t('price')}
+      </SortableHeaderCell>
+      <div className="oc-cell actions">{t('actions')}</div>
     </div>
   );
 };

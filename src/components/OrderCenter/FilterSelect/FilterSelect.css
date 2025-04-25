@@ -33,7 +33,7 @@
 .oc-filter-dropdown-list {
   animation: dropdownSlide 0.2s cubic-bezier(0.2, 0, 0.1, 1);
   backdrop-filter: blur(10px);
-  background-color: rgb(24, 24, 27);
+  background-color: #1a1a1f8f;
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   color: #ffffffbc;

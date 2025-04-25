@@ -58,7 +58,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     tradeHistoryRef.current = tradehistory;
     if (tradehistory.length > 0 && becameVisible) {
-      if (chartReady && marksRef.current && widgetRef.current?.activeChart()?.symbol()) {
+      if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
         const marks = tradehistory.filter(
           (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
         ).map((trade: any) => ({
@@ -84,7 +84,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
     }
     else if (tradehistory.length > 0 && isMarksVisible) {
-      if (chartReady && marksRef.current && widgetRef.current?.activeChart()?.symbol()) {
+      if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
         const marks = diff.filter(
           (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
         ).map((trade: any) => ({

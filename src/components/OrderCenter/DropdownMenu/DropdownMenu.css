@@ -12,7 +12,7 @@
   display: flex;
   font-size: 0.75rem;
   font-weight: 100;
-  margin: 6px 0;
+  margin: 5px 0;
   padding: 4px 5px;
   padding-left: 10px;
   text-align: left;
@@ -30,7 +30,7 @@
 
 .oc-dropdown-menu {
   backdrop-filter: blur(10px);
-  background-color: rgba(255, 255, 255, 0.05);
+  background-color: #1a1a1f8f;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
   color: #ffffffbc;

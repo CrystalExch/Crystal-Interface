@@ -173,7 +173,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
             onKeyDown={handlePageInputKeyDown}
             aria-label="Current page"
           />
-          <span> / {Math.max(totalPages, 1)}</span>
+          <span className="header-page-total"> / {Math.max(totalPages, 1)}</span>
         </div>
         <button 
           className="header-nav-button"

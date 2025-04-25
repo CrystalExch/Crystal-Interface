@@ -177,6 +177,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
       let maxPages = getTotalPages();
       setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
     };
+
     useEffect(() => {
       if (isPortfolio) {
         setActiveSection('balances');
@@ -204,22 +205,20 @@ const OrderCenter: React.FC<OrderCenterProps> =
       switch (activeSection) {
         case 'balances':
           return (
-            <>
+            <div className="portfolio-assets-container">
               <PortfolioHeader onSort={onSort} sortConfig={sortConfig} />
-              <div className="portfolio-assets-container">
-                <PortfolioContent
-                  trades={trades}
-                  tokenList={tokenList}
-                  setTokenIn={setTokenIn}
-                  setTokenOut={setTokenOut}
-                  setSendTokenIn={setSendTokenIn}
-                  setpopup={setpopup}
-                  sortConfig={sortConfig}
-                  tokenBalances={tokenBalances}
-                  isBlurred={isBlurred} 
-                />
-              </div>
-            </>
+              <PortfolioContent
+                trades={trades}
+                tokenList={tokenList}
+                setTokenIn={setTokenIn}
+                setTokenOut={setTokenOut}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                sortConfig={sortConfig}
+                tokenBalances={tokenBalances}
+                isBlurred={isBlurred} 
+              />
+            </div>
           );
         case 'orders':
           return (
@@ -299,7 +298,6 @@ const OrderCenter: React.FC<OrderCenterProps> =
       }
       
       const activeTabIndex = availableTabs.findIndex(tab => tab.key === activeSection);
-      
       if (activeTabIndex !== -1) {
         const activeTab = tabsRef.current[activeTabIndex];
         if (activeTab && activeTab.parentElement) {
@@ -308,11 +306,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
           indicator.style.left = `${activeTab.offsetLeft}px`;
         }
       }
-    };
-
-    useEffect(() => {
-      updateIndicatorPosition();
-    }, [activeSection, isMobileView, filteredOrders.length, hideBalances]);
+    }
 
     useEffect(() => {
       if (!isPortfolio && activeSection === 'balances') {
@@ -322,9 +316,10 @@ const OrderCenter: React.FC<OrderCenterProps> =
             : 'orders',
         );
       }
-    }, [isPortfolio, activeSection, setActiveSection]);
+    }, [isPortfolio, activeSection]);
 
     useEffect(() => {
+      updateIndicatorPosition();
       if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
         const resizeObserver = new ResizeObserver(() => {
           updateIndicatorPosition();
@@ -353,7 +348,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
       return () => {
         window.removeEventListener('resize', handleResize);
       };
-    }, []);
+    }, [activeSection]);
 
     return (
       <div

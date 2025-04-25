@@ -9,7 +9,7 @@
     )
     minmax(70px, 0.6fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
   justify-content: flex-start;
-  margin: -3px 0;
+  border-radius: 4px;
   min-width: 795px;
   text-align: left;
   user-select: none;

@@ -48,7 +48,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
 
   return (
     <div className="portfolio-row">
-      <div className="portfolio-column">
+      <div className="oc-cell">
         <img src={logo} className="asset-icon" />
         <div className="asset-details">
           <div className="asset-ticker">
@@ -58,17 +58,18 @@ const AssetRow: React.FC<AssetRowProps> = ({
           <div className="asset-name">{tokenName}</div>
         </div>
       </div>
-      <div className="portfolio-column">
+      <div className="oc-cell">
         <div className="amount-details">
           <div className={`usd-asset-amount ${isBlurred ? 'blurred' : ''}`}>
             {formatBalance(totalValue.toString(), 'usd')}
           </div>
           <div className={`asset-amount ${isBlurred ? 'blurred' : ''}`}>
-            {formatBalance(assetAmount, 'token')} {assetName}
+            {formatBalance(assetAmount, 'token')}
+            <span className="oc-market-ticker"> {assetName} </span>
           </div>
         </div>
       </div>
-      <div className="portfolio-column">
+      <div className="oc-cell limit-price">
         <div className="price-details">
           <div className="port-token-price">
             $
@@ -84,7 +85,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
           </div>
         </div>
       </div>
-      <div className="portfolio-column">
+      <div className="oc-cell">
         <div className="action-icons">
           <SwapIcon
             tokenaddress={tokenAddress}

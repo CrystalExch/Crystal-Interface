@@ -5,7 +5,7 @@ import AdditionalMetrics from './AdditionalMetrics/AdditionalMetrics';
 import TokenInfo from './TokenInfo/TokenInfo.tsx';
 
 import { formatCommas } from '../../../utils/numberDisplayFormat';
-
+import { settings } from '../../../settings.ts';
 import './ChartHeader.css';
 
 interface ChartHeaderProps {
@@ -31,6 +31,7 @@ interface ChartHeaderProps {
   marketsData: any;
   isChartLoading: boolean;
   simpleView: boolean;
+  tradesByMarket: any;
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -50,6 +51,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   marketsData,
   isChartLoading,
   simpleView,
+  tradesByMarket,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -151,14 +153,16 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         orderdata.liquiditySellOrders.length !== 0
           ? orderdata.liquiditySellOrders
           : [];
-      if (roundedBuys.length !== 0) {
-        const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize;
+      const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3]
+          / Number(markets[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.priceFactor)
+      if (roundedBuys.length !== 0 && quotePrice) {
+        const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize * quotePrice;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
       } else {
         setBuyLiquidity('n/a');
       }
-      if (roundedSells.length !== 0) {
-        const sellLiquidity = roundedSells[roundedSells.length - 1].totalSize;
+      if (roundedSells.length !== 0 && quotePrice) {
+        const sellLiquidity = roundedSells[roundedSells.length - 1].totalSize * quotePrice;
         setSellLiquidity(formatCommas(sellLiquidity.toFixed(2)));
       } else {
         setSellLiquidity('n/a');

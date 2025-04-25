@@ -13,10 +13,8 @@
   content: '';
   height: 16px;
   margin-left: 12px;
-  max-width: 1.5px;
-  min-width: 1.5px;  
+  width: 1.5px;
   background-color: rgba(255, 255, 255, 0.1);
-  
 }
 
 .show-text {
@@ -137,6 +135,10 @@
   font-size: 0.75rem;
 }
 
+.header-page-total {
+  white-space: nowrap;
+}
+
 .page-input {
   background: none;
   border: none;
@@ -152,7 +154,6 @@
   border-bottom: 1px solid transparent;
   transition: all 0.2s ease;
 }
-
 
 .filter-left-arrow {
   width: 13px;

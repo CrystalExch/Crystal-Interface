@@ -8,11 +8,11 @@
   grid-template-columns:
     40px minmax(120px, 1fr) minmax(125px, 1.1fr) minmax(115px, 1fr)
     minmax(90px, 0.9fr) minmax(125px, 1fr) minmax(100px, 0.3fr);
-  height: 35px;
   justify-content: flex-start;
-  min-height: 35px;
+  height: 32px;
+  min-height: 32px;  
   min-width: 580px;
-  padding: 0;
+  padding: 1px 0 0 0;
   position: sticky;
   text-align: left;
   text-wrap: nowrap;

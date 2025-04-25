@@ -236,7 +236,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date('2025-05-01T00:00:00-04:00');
+      const targetDate = new Date('2025-06-01T00:00:00-04:00');
       const now = new Date();
       const difference = targetDate.getTime() - now.getTime();
       if (difference <= 0) {

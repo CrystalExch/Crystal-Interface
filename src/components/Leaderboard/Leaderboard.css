@@ -279,7 +279,8 @@
   color:rgba(255,255,255,.8);
   font-size:.9rem;
   font-weight:300;
-  transform:scaleX(1.05)
+  transform: scaleX(1.03);
+  transform-origin: left;
 }
 .leaderboard-xp-amount{
   color:rgba(255,255,255,.7);

@@ -48,6 +48,7 @@ interface HeaderProps {
   trades?: any[];
   tradesloading?: boolean;
   chartHeaderData?: any;
+  tradesByMarket: any;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -71,7 +72,7 @@ const Header: React.FC<HeaderProps> = ({
   onMarketSelect,
   marketsData,
   chartHeaderData,
-
+  tradesByMarket,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -144,6 +145,7 @@ const Header: React.FC<HeaderProps> = ({
             marketsData={marketsData}
             isChartLoading={chartHeaderData.isChartLoading}
             simpleView={simpleView}
+            tradesByMarket={tradesByMarket}
           />
         </div>
 
