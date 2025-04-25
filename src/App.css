@@ -1752,16 +1752,10 @@ body:has(.right-column.show) .blur-background-popups {
 
 
 .welcome-screen-content{
-  border: 1px solid rgba(255, 255, 255, 0.1);
   padding: 15px;
   padding-bottom: 10px;
   border-radius: 50px;
   transition: all.2s ease;
-}
-
-.welcome-screen-content:hover{
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background-color: #070707;
 }
 
 
@@ -4840,6 +4834,7 @@ input[type="email"] {
     min-height: 0;
     min-height: max-content;
   }
+  
   .txpopup-container {
     flex-direction: column;
     right: 15px;
@@ -5508,11 +5503,24 @@ input[type="email"] {
 }
 
 .onboarding-crystal-logo {
-  width: 40px;
+  display: flex;
+  align-items: center;
   position: absolute;
   top: 20px;
   left: 20px;
   z-index: 52;
+}
+
+.onboarding-crystal-logo-image {
+  height: 1.9rem;
+  max-width: 100%;
+}
+
+.onboarding-crystal-text {
+  font-family: Orbitron, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #ffffff;
 }
 
 .skip-button {

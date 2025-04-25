@@ -73,20 +73,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         fetch('https://web-production-9a2f8.up.railway.app/user_points')
           .then((res) => res.json())
           .then((data: Record<string, { username: string; points: number }>) => {
-            console.log(data);
             const updatedLiveLeaderboard = Object.fromEntries(
               Object.entries(data)
-                .filter(
-                  ([addr]) =>
-                    addr.toLowerCase() !== '0xd40e6d7de5972b6a0493ffb7ab2cd799340127de'.toLowerCase()
-                )
                 .map(([addr, info]) => [
                   addr.toLowerCase(),
                   { points: info.points, username: info.username || '' },
                 ] as const)
             );
-
-            console.log(updatedLiveLeaderboard);
 
             setLiveLeaderboard(updatedLiveLeaderboard);
           })

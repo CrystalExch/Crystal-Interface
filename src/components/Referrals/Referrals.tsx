@@ -155,7 +155,6 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsedRefAddress(
         refs[3].result || '0x0000000000000000000000000000000000000000',
       );
-      console.log(refs);
       const find = (await readContracts(config, {
         contracts: [
           {
@@ -168,9 +167,9 @@ const Referrals: React.FC<ReferralProps> = ({
           },
         ],
       })) as any[];
-      console.log(find);
       setUsedRefLink(find[0].result);
     })();
+    console.log(referredCount)
   }, [address, refLinkString]);
 
   const handleCreateRef = async () => {
@@ -209,13 +208,11 @@ const Referrals: React.FC<ReferralProps> = ({
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
         setError(t('invalidRefCode'));
-        console.log("hi")
         return false;
       }
     }
 
     if (used === '') { // clear username
-      console.log("clearing");
       try {
         const hash = await sendUserOperationAsync({
           uo: {
@@ -251,7 +248,6 @@ const Referrals: React.FC<ReferralProps> = ({
         setUsedRefLink(used);
         return true;
       } catch (error) {
-        console.log(error);
         return false;
       }
     }

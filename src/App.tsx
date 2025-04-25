@@ -4037,7 +4037,7 @@ function App() {
 
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
-      const welcomeText = "Crystal Exchange is a next-generation decentralized trading platform offering seamless swaps, limit orders, and advanced trading tools. Built for both beginners and professionals, Crystal provides institutional-grade liquidity with zero price impact trading. Join the future of decentralized finance with Crystal.";
+      const welcomeText = "Welcome to the world's first on-chain CEX.";
 
       let index = 0;
       typedTextRef.current = "";
@@ -4058,23 +4058,6 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, showWelcomeScreen]);
-
-
-  const [messages, setMessages] = useState([
-    { id: 0, sender: 'system', text: 'Initializing secure connection...', typing: false },
-  ]);
-  const [userInput, setUserInput] = useState('');
-  const [accessGranted, setAccessGranted] = useState(false);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const chatContainerRef = useRef(null);
-
-  const systemMessages = [
-    'Initializing secure connection...',
-    'Connection established. Welcome to the Crystal Exchange Terminal.',
-    'I am CRYST-AI, the autonomous trading assistant.',
-    'Before I can grant you access, I need to verify your identity.',
-    'What brings you to Crystal Exchange today?'
-  ];
 
   useEffect(() => {
     const sessionInitialized = sessionStorage.getItem('session_initialized');
@@ -6974,7 +6957,10 @@ function App() {
                 className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15 ? 'active' : ''
                   }`}
               />
-              <img className="onboarding-crystal-logo" src={clearlogo}></img>
+              <div className="onboarding-crystal-logo" >
+                <img className="onboarding-crystal-logo-image" src={clearlogo}></img>
+                <span className="onboarding-crystal-text">CRYSTAL</span>
+              </div>
               <CrystalObject />
               <div className="step-indicators">
                 {[1, 2, 3, 4].map((index) => (
@@ -7237,7 +7223,10 @@ function App() {
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
               {showWelcomeScreen ? (
                 <div className="crystal-welcome-screen">
-                  <img className="onboarding-crystal-logo" src={clearlogo} alt="Crystal Exchange" />
+                <div className="onboarding-crystal-logo" >
+                  <img className="onboarding-crystal-logo-image" src={clearlogo}></img>
+                  <span className="onboarding-crystal-text">CRYSTAL</span>
+                </div>
                   <div className="welcome-screen-content">
                     <div className="welcome-text-container">
                       <p className="welcome-text">{typedText}</p>
@@ -11785,7 +11774,6 @@ function App() {
           onClick={async () => {
             if (connected && userchain === activechain) {
               let finalAmountIn = Number(amountIn);
-              console.log(finalAmountIn);
               if (isOutputBasedScaleOrder) {
                 const desiredOutput =
                   Number(scaleOutputString) *
@@ -11798,7 +11786,6 @@ function App() {
                   Number(scaleSkew)
                 );
               }
-              console.log(finalAmountIn);
               let o = calculateScaleOutput(
                 finalAmountIn,
                 Number(scaleStart),
@@ -11823,7 +11810,6 @@ function App() {
               }
               try {
                 if (tokenIn == eth) { // sell
-                  console.log(router, BigInt(finalAmountIn), action, price, param1, param2);
                   hash = await sendUserOperationAsync({
                     uo: multiBatchOrders(
                       router,
@@ -11943,7 +11929,6 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
-                console.log(error);
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
                     hash?.hash,

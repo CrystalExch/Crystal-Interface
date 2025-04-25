@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 const CrystalObject = () => {
@@ -65,83 +65,6 @@ const CrystalObject = () => {
     );
     envScene.add(envSphere);
     cubeCamera.update(renderer, envScene);
-
-    // --- Main crystal geometry ---
-    function createCrystalGeometry() {
-      const geometry = new THREE.BufferGeometry();
-      const vertices = [
-        0, -2, 0,
-        1.5, -0.8, 1.2,
-        -1.2, -1.0, 1.4,
-        -1.7, -0.7, -0.9,
-        0.9, -1.2, -1.5,
-        2.2, 0.5, 1.8,
-        -1.9, 0.7, 2.1,
-        -2.4, 0.4, -1.3,
-        1.4, 0.2, -2.1,
-        1.0, 1.9, 0.8,
-        -0.7, 2.3, 1.1,
-        -1.2, 1.7, -0.6,
-        0.5, 2.1, -0.9,
-        0, 3.2, 0
-      ];
-      const indices = [
-        0, 2, 1,
-        0, 3, 2,
-        0, 4, 3,
-        0, 1, 4,
-        1, 2, 6,
-        1, 6, 5,
-        2, 3, 7,
-        2, 7, 6,
-        3, 4, 8,
-        3, 8, 7,
-        4, 1, 5,
-        4, 5, 8,
-        5, 6, 10,
-        5, 10, 9,
-        6, 7, 11,
-        6, 11, 10,
-        7, 8, 12,
-        7, 12, 11,
-        8, 5, 9,
-        8, 9, 12,
-        9, 10, 13,
-        10, 11, 13,
-        11, 12, 13,
-        12, 9, 13
-      ];
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      geometry.setIndex(indices);
-      geometry.computeVertexNormals();
-      // Save original vertices for animation
-      geometry.userData = { originalPositions: vertices.slice() };
-      return geometry;
-    }
-    const crystalGeometry = createCrystalGeometry();
-
-    // --- Material for the main crystal ---
-    const crystalMaterial = new THREE.MeshPhysicalMaterial({
-      color: 0x9ea4f3,
-      metalness: 0.3,
-      roughness: 0,
-      wireframe: true,
-      flatShading: true,
-      transmission: 0.95,
-      thickness: 1,
-      reflectivity: 0.5,
-      clearcoat: 1,
-      clearcoatRoughness: 0,
-      ior: 2.5,
-      opacity: 1,
-      envMap: cubeRenderTarget.texture,
-      envMapIntensity: 1.5,
-      side: THREE.DoubleSide
-    });
-    const crystal = new THREE.Mesh(crystalGeometry, crystalMaterial);
-    // Scale the main crystal 30% smaller
-    crystal.scale.set(0.7, 0.7, 0.7);
-    crystalGroup.add(crystal);
 
     // --- Function to create small crystal geometry ---
     function createSmallCrystalGeometry(scale: number, variation: number) {
@@ -491,30 +414,6 @@ const CrystalObject = () => {
         smallCrystal.rotation.z += smallCrystal.userData.rotationSpeed * 0.7 * rotationMultiplier;
       });
 
-      // Animate main crystal vertices (pulsing + subtle magnetic effect)
-      const positions = crystalGeometry.attributes.position.array;
-      const originalPositions = crystalGeometry.userData.originalPositions;
-      for (let i = 0; i < positions.length; i += 3) {
-        const origX = originalPositions[i];
-        const origY = originalPositions[i + 1];
-        const origZ = originalPositions[i + 2];
-        const distFromCenter = Math.sqrt(origX * origX + origY * origY + origZ * origZ);
-        const pulseX = Math.sin(frame * 1.2 + distFromCenter) * 0.05;
-        const pulseY = Math.cos(frame * 0.9 + distFromCenter) * 0.05;
-        const pulseZ = Math.sin(frame * 1.5 + distFromCenter) * 0.05;
-        const magneticStrength = 1;
-        const magneticFactor = Math.exp(-distFromCenter * 1) * magneticStrength;
-        positions[i] = origX + pulseX + normalizedX * magneticFactor;
-        positions[i + 1] = origY + pulseY + normalizedY * magneticFactor;
-        positions[i + 2] = origZ + pulseZ;
-      }
-      crystalGeometry.attributes.position.needsUpdate = true;
-
-      const hueShift = Math.sin(frame * 0.5) * 0.1;
-      crystalMaterial.color.setHSL(0.6 + hueShift, 0.8, 0.7);
-      crystalMaterial.transmission = 0.95 + Math.sin(frame * 2) * 0.03;
-      crystalMaterial.envMapIntensity = 1.5 + Math.sin(frame * 1.3) * 0.3;
-
       pointLight1.position.x = Math.sin(frame * 1.2) * 6;
       pointLight1.position.z = Math.cos(frame * 0.9) * 6;
       pointLight1.intensity = 2 + Math.sin(frame * 4) * 1;
@@ -539,8 +438,6 @@ const CrystalObject = () => {
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('mousemove', handleMouseMove);
-      crystalGeometry.dispose();
-      crystalMaterial.dispose();
     };
   }, []);
 
