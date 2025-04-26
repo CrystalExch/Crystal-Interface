@@ -1,4 +1,3 @@
-import { Users } from 'lucide-react';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {
