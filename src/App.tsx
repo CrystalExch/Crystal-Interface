@@ -8840,8 +8840,19 @@ function App() {
                   setCurrentProText('scale');
                 }}
               >
-                {t('scale')}
-              </Link>
+            <TooltipLabel
+              label={t('scale')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    Scale orders allow you to place limit orders undetected. 
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />              
+          </Link>
+              
             </div>
           )}
         </div>
