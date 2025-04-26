@@ -6045,6 +6045,21 @@ input[type="email"] {
   }
 }
 
+@media(max-width: 400px){
+  
+}
+
+@media(max-width: 500px){
+  .onboarding-crystal-text{
+    display: none !important;
+  }
+  .account-setup-title{
+    text-align: center;
+    line-height: 1.2;
+    font-size: 1.2rem !important;
+    padding: 0 20px;
+  }
+}
 
 .top-right {
   position: absolute;
