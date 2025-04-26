@@ -390,7 +390,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="edit-username-button"
                 onClick={() => setpopup(16)}
               >
-                Edit Username
+                {t('editUsername')}
               </button>
             </div>
           </div>

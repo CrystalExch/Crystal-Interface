@@ -7302,18 +7302,18 @@ function App() {
               <div className="onboarding-split-container">
                 <div className="onboarding-content">
                   <div className="onboarding-header">
-                    <h2 className="onboarding-title">Edit Your Username</h2>
-                    <p className="onboarding-subtitle">This username will be visible on the leaderboard to all.</p>
+                    <h2 className="onboarding-title">{t("editUsername")}</h2>
+                    <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
                   </div>
 
                   <div className="onboarding-form">
                     <div className="form-group">
-                      <label className="form-label">Your Wallet Address</label>
+                      <label className="form-label">Y{t("yourWalletAddress")}</label>
                       <div className="wallet-address">{address || "0x1234...5678"}</div>
                     </div>
 
                     <div className="form-group">
-                      <label htmlFor="username" className="form-label">Username</label>
+                      <label htmlFor="username" className="form-label">{t('username')}</label>
                       <input
                         type="text"
                         id="username"
@@ -7341,7 +7341,7 @@ function App() {
                         {t('signTransaction')}
                       </div>
                     ) : (
-                      "Edit Username"
+                      t("editUsername")
                     )}
                   </button>
                 </div>
@@ -7433,8 +7433,19 @@ function App() {
                   setCurrentProText('scale');
                 }}
               >
-                {t('scale')}
-              </Link>
+            <TooltipLabel
+              label={t('scale')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    Scale orders allow you to place limit orders undetected. 
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />              
+          </Link>
+              
             </div>
           )}
         </div>
@@ -10355,12 +10366,9 @@ function App() {
               <Link
                 to="/send"
                 className="dropdown-item"
-                onClick={(e) => {
+                onClick={() => {
                   setShowSendDropdown(false);
                   setCurrentProText('send');
-                  if (location.pathname === '/send') {
-                    e.preventDefault();
-                  }
                 }}
               >
                 {t('send')}
@@ -10373,8 +10381,19 @@ function App() {
                   setCurrentProText('scale');
                 }}
               >
-                {t('scale')}
-              </Link>
+            <TooltipLabel
+              label={t('scale')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    Scale orders allow you to place limit orders undetected. 
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />              
+          </Link>
+              
             </div>
           )}
         </div>
@@ -11035,16 +11054,24 @@ function App() {
               <Link
                 to="/scale"
                 className="dropdown-item"
-                onClick={(e) => {
+                onClick={() => {
                   setShowSendDropdown(false);
                   setCurrentProText('scale');
-                  if (location.pathname === '/scale') {
-                    e.preventDefault();
-                  }
                 }}
               >
-                {t('scale')}
-              </Link>
+            <TooltipLabel
+              label={t('scale')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    Scale orders allow you to place limit orders undetected. 
+                  </div>
+                </div>
+              }
+              className="impact-label"
+            />              
+          </Link>
+              
             </div>
           )}
         </div>
