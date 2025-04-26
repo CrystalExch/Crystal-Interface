@@ -362,6 +362,16 @@ export const translations: any = {
     highPriceImpactMessage: "Warning! High Price Impact! Your trade will move the market price more than 5%",
     showTradeMarkers: "Show Trade Markers",
     usersReferred: "Users Referred",
+    editUsername: "Edit Username",
+    bonusCommission: "Bonus Commission",
+    editUsernameSubtitle: "This username will be visible on the leaderboard to all.",
+    yourWalletAddress: "Your Wallet Address",
+    usernameAlreadyTaken: "Username already taken",
+    minUsernameLength: "Username must be at least 3 characters",
+    usernameFilter: "Username can only contain letters, numbers, and underscores",
+    maxUsernameLength: "Username must be less than 20 characters",
+    
+
     
   },
   CN: {
@@ -723,6 +733,14 @@ export const translations: any = {
     custom: "自定义",
     showTradeMarkers: "显示交易标记",
     usersReferred: "推荐用户",
+    editUsername: "编辑用户名",
+    bonusCommission: "额外佣金",
+    editUsernameSubtitle: "此用户名将在排行榜上对所有人可见。",
+    yourWalletAddress: "您的钱包地址",
+    usernameAlreadyTaken: "用户名已被占用",
+    minUsernameLength: "用户名至少需要3个字符",
+    usernameFilter: "用户名只能包含字母、数字和下划线",
+    maxUsernameLength: "用户名必须少于20个字符",
   },
   JP: {
     trade: '取引',
@@ -1083,6 +1101,14 @@ export const translations: any = {
     custom: "カスタム",
     showTradeMarkers: '取引マーカーを表示',
     usersReferred: '紹介したユーザー',
+    editUsername: 'ユーザー名を編集',
+    bonusCommission: 'ボーナス手数料',
+    editUsernameSubtitle: 'このユーザー名はリーダーボードで全員に表示されます。',
+    yourWalletAddress: 'あなたのウォレットアドレス',
+    usernameAlreadyTaken: 'ユーザー名はすでに使用されています',
+    minUsernameLength: 'ユーザー名は最低3文字必要です',
+    usernameFilter: 'ユーザー名は文字、数字、アンダースコアのみ使用可能',
+    maxUsernameLength: 'ユーザー名は20文字未満でなければなりません',
 
   },
   KR: {
@@ -1444,6 +1470,14 @@ export const translations: any = {
     custom: "사용자 정의",
     showTradeMarkers: '거래 마커 표시',
     usersReferred: '추천한 사용자',
+    editUsername: '사용자 이름 편집',
+    bonusCommission: '보너스 수수료',
+    editUsernameSubtitle: '이 사용자 이름은 리더보드에 표시됩니다.',
+    yourWalletAddress: '당신의 지갑 주소',
+    usernameAlreadyTaken: '사용 중인 사용자 이름입니다',
+    minUsernameLength: '사용자 이름은 최소 3자 이상이어야 합니다',
+    usernameFilter: '사용자 이름은 문자, 숫자, 밑줄만 사용 가능합니다',
+    maxUsernameLength: '사용자 이름은 20자 미만이어야 합니다',
   },
   ES: {
     trade: 'Operar',
@@ -1804,6 +1838,14 @@ export const translations: any = {
     custom: "Personalizado",
     showTradeMarkers: 'Mostrar Marcadores de Comercio',
     usersReferred: 'Usuarios Referidos',
+    editUsername: 'Editar Nombre de Usuario',
+    bonusCommission: 'Comisión Extra',
+    editUsernameSubtitle: 'Este nombre de usuario aparecerá en la tabla de clasificación.',
+    yourWalletAddress: 'Tu Dirección de Billetera',
+    usernameAlreadyTaken: 'Este nombre de usuario ya está en uso',
+    minUsernameLength: 'El nombre de usuario debe tener al menos 3 caracteres',
+    usernameFilter: 'El nombre de usuario solo puede contener letras, números y guiones bajos',
+    maxUsernameLength: 'El nombre de usuario debe tener menos de 20 caracteres',
   }
 };
 
