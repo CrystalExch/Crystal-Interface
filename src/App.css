@@ -6248,26 +6248,31 @@ input[type="email"] {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
 }
 
 .mini-leaderboard-title {
   font-size: 0.9rem;
-  color: #aaaecf;
+  color: #f4f5fe;
   letter-spacing: -0.3px;
 }
 
+
+.mini-user-copy-icon{
+  width: 12px;
+  cursor: pointer;
+}
 .mini-leaderboard-time {
   font-size: 0.7rem;
   color: rgba(255, 255, 255, 0.6);
 }
 
 .mini-progress-bar {
-  height: 4px;
+  height: 6px;
   width: 100%;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 2px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   position: relative;
 }
 
@@ -6298,13 +6303,15 @@ input[type="email"] {
 
 .mini-user-rank {
   font-size: 0.9rem;
-  color: #aaaecf;
+  color: #7d7d7d;
   font-weight: 500;
 }
 
 .mini-user-address {
+  display: flex;
   font-size: 0.8rem;
   color: #ffffff;
+  gap: 4px;
 }
 
 .mini-user-copy {
@@ -6319,10 +6326,10 @@ input[type="email"] {
 
 .mini-user-points {
   font-size: 0.8rem;
-  color: #aaaecf;
+  color: #b2b2b2;
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 2px;
 }
 
 .mini-top-users {
@@ -6351,67 +6358,38 @@ input[type="email"] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  height: 80px;
+  justify-content: center;
+  height: 60px;
 }
 
-.mini-top-user::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 255, 255, 0.2) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shine 5s infinite linear;
-  z-index: 1;
-  pointer-events: none;
-}
+
 
 .mini-top-user-1 {
-  background: linear-gradient(45deg, rgba(60, 50, 0, 0.5), rgba(100, 80, 0, 0.7));
+  background:url(./assets/goldbg.png);
+  background-size:cover;
+  background-position:center;  
   border: 1px solid rgba(255, 215, 0, 0.3);
 }
 
-.mini-top-user-1::before {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(255, 215, 0, 0.4) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shine 5s infinite linear;
-}
+
 
 .mini-top-user-2 {
-  background: linear-gradient(45deg, rgba(40, 40, 40, 0.5), rgba(80, 80, 80, 0.7));
+  background:url(./assets/silverbg.png);
+  background-size:cover;
+  background-position:center;  
   border: 1px solid rgba(192, 192, 192, 0.3);
 }
 
-.mini-top-user-2::before {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(192, 192, 192, 0.4) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shine 5s infinite linear;
-}
+
 
 .mini-top-user-3 {
-  background: linear-gradient(45deg, rgba(60, 30, 0, 0.5), rgba(100, 50, 0, 0.7));
+  background:url(./assets/bronzebg.png);
+  background-size:cover;
+  background-position:center;  
   border: 1px solid rgba(176, 141, 87, 0.3);
 }
 
-.mini-top-user-3::before {
-  background: linear-gradient(90deg,
-      transparent 0%,
-      rgba(176, 141, 87, 0.4) 50%,
-      transparent 100%);
-  background-size: 200% 100%;
-  animation: shine 5s infinite linear;
-}
+
 
 .mini-token-container {
   display: flex;
@@ -6434,7 +6412,6 @@ input[type="email"] {
 .mini-top-points {
   font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.8);
-  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -6473,9 +6450,17 @@ input[type="email"] {
 }
 
 .mini-top-rank {
+  position: absolute;
   font-size: 1.5rem;
   font-weight: bold;
-  margin-top: 5px;
+  margin-left: 70px;
+}
+
+
+.mini-user-pfp{
+  border-radius: 50%;
+  height: 30px;
+  width: 30px;
 }
 
 .mini-top-rank-1 {
@@ -6494,7 +6479,6 @@ input[type="email"] {
 .mini-top-points {
   font-size: 0.65rem;
   color: rgba(255, 255, 255, 0.8);
-  margin-top: 2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;

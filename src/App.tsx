@@ -105,6 +105,10 @@ import veryright from './assets/veryright.png';
 import topleft from './assets/topleft.png';
 import circleleft from './assets/circleleft.png';
 import lbstand from './assets/lbstand.png';
+import firstPlacePfp from './assets/leaderboard_first.png';
+import secondPlacePfp from './assets/leaderboard_second.png';
+import thirdPlacePfp from './assets/leaderboard_third.png';
+import defaultPfp from './assets/leaderboard_default.png';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -1527,7 +1531,7 @@ function App() {
                       const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
                       const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
                       const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                      / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
                       const volume = newTrades.reduce((sum: number, trade: any) => {
                         const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
                         return sum + amount;
@@ -2611,9 +2615,9 @@ function App() {
         const orderdata = data[3].result;
         setPrevOrderData(orderdata as any);
         if (orderdata && Array.isArray(orderdata) && orderdata.length >= 4 && !(orderdata[0] == prevOrderData[0] &&
-        orderdata[1] == prevOrderData[1] &&
-        orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
-        orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
+          orderdata[1] == prevOrderData[1] &&
+          orderdata[2]?.toLowerCase() == prevOrderData[2]?.toLowerCase() &&
+          orderdata[3]?.toLowerCase() == prevOrderData[3]?.toLowerCase())) {
           try {
             const buyOrdersRaw: bigint[] = [];
             const sellOrdersRaw: bigint[] = [];
@@ -3570,13 +3574,13 @@ function App() {
             ).toFixed(2)}`,
           );
         }
-        
+
         try {
           const data = json.data.series_collection;
           const processedMarkets = data.map((series: any) => {
             const idParts = series.id.split("-");
             const address = idParts[2];
-  
+
             const match = Object.values(markets).find(
               (m) => m.address.toLowerCase() === address.toLowerCase()
             );
@@ -3590,12 +3594,12 @@ function App() {
             const lastPrice = candles[candles.length - 1].close;
             const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
             const quotePrice = match.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.[0]?.[3]
-            / Number(markets[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.priceFactor)
+              / Number(markets[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.priceFactor)
             const totalVolume = candles
               .filter((c) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
-              .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0)*quotePrice;
+              .reduce((acc: number, c) => acc + parseFloat(c.volume.toString()), 0) * quotePrice;
             const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
-  
+
             return {
               ...match,
               pair: `${match.baseAsset}/${match.quoteAsset}`,
@@ -3614,7 +3618,7 @@ function App() {
         } catch (error) {
           console.error("error fetching candles:", error);
         }
-    
+
       } catch (error) {
         console.error("Error fetching data:", error);
         settradesloading(false);
@@ -7101,7 +7105,7 @@ function App() {
                             <div className="xp-animation-container">
                               <div className="user-profile">
                                 <div className="self-pfp">
-                                  <img src={defaultProfilePic} className="profile-pic-second" alt="User profile" />
+                                  <img src={defaultPfp} className="profile-pic-second" alt="User profile" />
                                   <div className="username-display">@{usernameInput || "player123"}</div>
                                   <div className="xp-counter">
                                     <img
@@ -7113,7 +7117,7 @@ function App() {
                                         height: '23px',
                                         verticalAlign: 'middle',
                                       }}
-                                    />   <span className="self-pfp-xp">123123</span>
+                                    />   <span className="self-pfp-xp">8732.23</span>
 
                                   </div>
                                 </div>
@@ -7131,8 +7135,18 @@ function App() {
                                   <div className="mini-leaderboard-user">
                                     <div className="mini-leaderboard-user-left">
                                       <span className="mini-user-rank">#62</span>
-                                      <span className="mini-user-address">0x16A6...Bb5d
-                                        <span className="mini-user-copy">⧉</span>
+                                      <span className="mini-user-address">0x16A6...Bb5d <svg
+                                          className="mini-user-copy-icon"
+                                          viewBox="0 0 24 24"
+                                          fill="none"
+                                          stroke="#b8b7b7"
+                                          strokeWidth="2"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        >
+                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
                                       </span>
                                     </div>
                                     <div className="mini-user-points">
@@ -7143,8 +7157,8 @@ function App() {
 
                                   <div className="mini-top-users">
                                     <div className="mini-top-user mini-top-user-1">
-                                      <span className="mini-crown">👑</span>
                                       <span className="mini-top-rank mini-top-rank-1">1</span>
+                                      <img className="mini-user-pfp" src={firstPlacePfp} />
                                       <div className="mini-points-container">
                                         <img src={crystalxp} className="mini-token-icon" alt="Token" />
                                         <span className="mini-top-points">234,236</span>
@@ -7153,6 +7167,7 @@ function App() {
 
                                     <div className="mini-top-user mini-top-user-2">
                                       <span className="mini-top-rank mini-top-rank-2">2</span>
+                                      <img className="mini-user-pfp" src={secondPlacePfp} />
                                       <div className="mini-points-container">
 
                                         <img src={crystalxp} className="mini-token-icon" alt="Token" />
@@ -7162,6 +7177,7 @@ function App() {
 
                                     <div className="mini-top-user mini-top-user-3">
                                       <span className="mini-top-rank mini-top-rank-3">3</span>
+                                      <img className="mini-user-pfp" src={thirdPlacePfp} />
                                       <div className="mini-points-container">
 
                                         <img src={crystalxp} className="mini-token-icon" alt="Token" />
@@ -7223,10 +7239,10 @@ function App() {
             <div ref={popupref} className="connect-wallet-username-onboarding-bg">
               {showWelcomeScreen ? (
                 <div className="crystal-welcome-screen">
-                <div className="onboarding-crystal-logo" >
-                  <img className="onboarding-crystal-logo-image" src={clearlogo}></img>
-                  <span className="onboarding-crystal-text">CRYSTAL</span>
-                </div>
+                  <div className="onboarding-crystal-logo" >
+                    <img className="onboarding-crystal-logo-image" src={clearlogo}></img>
+                    <span className="onboarding-crystal-text">CRYSTAL</span>
+                  </div>
                   <div className="welcome-screen-content">
                     <div className="welcome-text-container">
                       <p className="welcome-text">{typedText}</p>
