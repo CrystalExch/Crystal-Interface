@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react';
 import React, { createContext, useContext, useState } from 'react';
 
 export const translations: any = {
@@ -360,6 +361,7 @@ export const translations: any = {
     confirmSwap: "Confirm Swap",
     highPriceImpactMessage: "Warning! High Price Impact! Your trade will move the market price more than 5%",
     showTradeMarkers: "Show Trade Markers",
+    usersReferred: "Users Referred",
     
   },
   CN: {
@@ -720,6 +722,7 @@ export const translations: any = {
     earnCrystals: "赚取水晶",
     custom: "自定义",
     showTradeMarkers: "显示交易标记",
+    usersReferred: "推荐用户",
   },
   JP: {
     trade: '取引',
@@ -1079,6 +1082,7 @@ export const translations: any = {
     earnCrystals: "クリスタルを獲得",
     custom: "カスタム",
     showTradeMarkers: '取引マーカーを表示',
+    usersReferred: '紹介したユーザー',
 
   },
   KR: {
@@ -1439,6 +1443,7 @@ export const translations: any = {
     earnCrystals: "크리스탈 수익",
     custom: "사용자 정의",
     showTradeMarkers: '거래 마커 표시',
+    usersReferred: '추천한 사용자',
   },
   ES: {
     trade: 'Operar',
@@ -1798,6 +1803,7 @@ export const translations: any = {
     earnCrystals: "Ganar cristales",
     custom: "Personalizado",
     showTradeMarkers: 'Mostrar Marcadores de Comercio',
+    usersReferred: 'Usuarios Referidos',
   }
 };
 

@@ -375,7 +375,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="column-divider" />
 
             <div className="info-column">
-              <div className="column-header">referrals</div>
+              <div className="column-header">{t("usersReferred")}</div>
               <div className="column-content">
                 {liveLeaderboard[address?.toLowerCase()]?.referral_points
                   ?.toLocaleString() || '0'}
