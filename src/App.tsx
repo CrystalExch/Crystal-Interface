@@ -1948,18 +1948,20 @@ function App() {
   const handleCreateUsername = async () => {
     setUsernameError("");
 
-    if (!usernameInput.trim()) {
-      setUsernameError("Please enter a username");
-      return;
-    }
 
     if (usernameInput.length < 3) {
-      setUsernameError("Username must be at least 3 characters");
+      setUsernameError(t("minUsernameLength"));
       return;
     }
 
+    if (usernameInput.length > 20) {
+      setUsernameError(t("maxUsernameLength"));
+      return;
+    }
+
+
     if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores");
+      setUsernameError(t("usernameFilter"));
       return;
     }
 
@@ -1978,7 +1980,7 @@ function App() {
       })) as any[];
 
       if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError("Username already taken");
+        setUsernameError(t("usernameAlreadyTaken"));
         setIsUsernameSigning(false);
         return;
       }
@@ -2025,13 +2027,13 @@ function App() {
   const handleEditUsername = async () => {
     setUsernameError("");
 
-    if (!usernameInput.trim()) {
-      setUsernameError("Please enter a username");
+    if (usernameInput.length < 3) {
+      setUsernameError(t("minUsernameLength"));
       return;
     }
 
-    if (usernameInput.length < 3) {
-      setUsernameError("Username must be at least 3 characters");
+    if (usernameInput.length > 20) {
+      setUsernameError(t("maxUsernameLength"));
       return;
     }
 
@@ -2055,7 +2057,7 @@ function App() {
       })) as any[];
 
       if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError("Username already taken");
+        setUsernameError(t("usernameAlreadyTaken"));
         setIsUsernameSigning(false);
         return;
       }
