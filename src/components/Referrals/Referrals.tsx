@@ -134,15 +134,8 @@ const Referrals: React.FC<ReferralProps> = ({
             functionName: 'addressToReferrer',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
-          // {
-          //   abi: CrystalReferralAbi,
-          //   address: settings.chainConfig[activechain].referralManager,
-          //   functionName: 'addressToRef',
-          //   args: [usedRefAddress ?? '0x0000000000000000000000000000000000000000'],
-          // },
         ],
       })) as any[];
-      console.log(refs);
       setRefLink(refs[0].result);
       setError(
         refs[1].result === '0x0000000000000000000000000000000000000000' ||
@@ -170,7 +163,6 @@ const Referrals: React.FC<ReferralProps> = ({
       })) as any[];
       setUsedRefLink(find[0].result);
     })();
-    console.log(referredCount)
   }, [address, refLinkString]);
 
   const handleCreateRef = async () => {
@@ -330,6 +322,7 @@ const Referrals: React.FC<ReferralProps> = ({
                   {refLink ? t('customize') : t('create')}
                 </button>
               </div>
+
               <div className="referral-link-box">
                 {refLink ? (
                   <>
@@ -350,17 +343,9 @@ const Referrals: React.FC<ReferralProps> = ({
                           strokeLinecap="round"
                           strokeLinejoin="round"
                         >
-                          <rect
-                            x="9"
-                            y="9"
-                            width="13"
-                            height="13"
-                            rx="2"
-                            ry="2"
-                          />
+                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                           <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                         </svg>
-
                         <svg
                           className={`ref-check-icon ${copySuccess ? 'visible' : ''}`}
                           viewBox="0 0 24 24"
@@ -381,8 +366,10 @@ const Referrals: React.FC<ReferralProps> = ({
                             "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
                           const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
                           window.open(
-                            `https://twitter.com/intent/tweet?text=${encodeURIComponent(tweetText)}&url=${encodeURIComponent(url)}`,
-                            '_blank',
+                            `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+                              tweetText
+                            )}&url=${encodeURIComponent(url)}`,
+                            '_blank'
                           );
                         }}
                       >
@@ -394,6 +381,11 @@ const Referrals: React.FC<ReferralProps> = ({
                   <span className="link-text">{t('noLink')}</span>
                 )}
               </div>
+
+              <div className="referred-count">
+                <strong>{t('referredUsers')}:</strong> {referredCount}
+              </div>
+
               <div className="features-grid">
                 {featureData.map((feature, idx) => (
                   <div
@@ -412,6 +404,7 @@ const Referrals: React.FC<ReferralProps> = ({
                 ))}
               </div>
             </div>
+
             <EnterCode
               usedRefLink={usedRefLink}
               setUsedRefLink={handleSetRef}
