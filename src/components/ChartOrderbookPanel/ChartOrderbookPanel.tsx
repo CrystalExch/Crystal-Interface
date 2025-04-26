@@ -34,8 +34,10 @@ interface ChartOrderbookPanelProps {
   marketsData: any;
   chartOrderData?: any;
   updateChartData?: any;
-  tradehistory?: any[]; 
-  isMarksVisible: any;
+  tradehistory: any; 
+  isMarksVisible: boolean;
+  orders: any;
+  isOrdersVisible: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -67,7 +69,9 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   marketsData,
   updateChartData,
   isMarksVisible,
-  tradehistory = [],
+  tradehistory,
+  orders,
+  isOrdersVisible,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -185,6 +189,8 @@ return (
           updateChartData={updateChartData}
           tradehistory={tradehistory} 
           isMarksVisible={isMarksVisible}
+          orders={orders}
+          isOrdersVisible={isOrdersVisible}
         />
       </div>
 

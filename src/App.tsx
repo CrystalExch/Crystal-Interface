@@ -95,7 +95,6 @@ import mobiletradeswap from './assets/mobile_trade_swap.png';
 import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
 import clearlogo from '../public/logo_clear.png';
-import defaultProfilePic from './assets/bh.png';
 import crystalxp from './assets/CrystalX.png';
 import part1image from './assets/part1intro.png';
 import topright from './assets/topright.png';
@@ -407,6 +406,10 @@ function App() {
   });
   const [isMarksVisible, setIsMarksVisible] = useState(() => {
     const saved = localStorage.getItem('crystal_marks_visible');
+    return saved !== null ? JSON.parse(saved) : true;
+  });
+  const [isOrdersVisible, setIsOrdersVisible] = useState(() => {
+    const saved = localStorage.getItem('crystal_orders_visible');
     return saved !== null ? JSON.parse(saved) : true;
   });
   const [isOrderbookVisible, setIsOrderbookVisible] = useState(() => {
@@ -6131,6 +6134,21 @@ function App() {
                     localStorage.setItem(
                       'crystal_marks_visible',
                       JSON.stringify(!isMarksVisible),
+                    );
+                  }}
+                />
+              </div>
+              <div className="trade-markers-toggle-row">
+                <span className="trade-markers-toggle-label">
+                  {t('showChartOrders')}
+                </span>
+                <ToggleSwitch
+                  checked={isOrdersVisible}
+                  onChange={() => {
+                    setIsOrdersVisible(!isOrdersVisible);
+                    localStorage.setItem(
+                      'crystal_orders_visible',
+                      JSON.stringify(!isOrdersVisible),
                     );
                   }}
                 />
@@ -12322,6 +12340,8 @@ function App() {
                                   updateChartData={setChartHeaderData}
                                   tradehistory={tradehistory}
                                   isMarksVisible={isMarksVisible}
+                                  orders={orders}
+                                  isOrdersVisible={isOrdersVisible}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12396,6 +12416,8 @@ function App() {
                               updateChartData={setChartHeaderData}
                               tradehistory={tradehistory}
                               isMarksVisible={isMarksVisible}
+                              orders={orders}
+                              isOrdersVisible={isOrdersVisible}
                             />
                           )}
                         </div>
@@ -12538,6 +12560,8 @@ function App() {
                                   updateChartData={setChartHeaderData}
                                   tradehistory={tradehistory}
                                   isMarksVisible={isMarksVisible}
+                                  orders={orders}
+                                  isOrdersVisible={isOrdersVisible}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12612,6 +12636,8 @@ function App() {
                               updateChartData={setChartHeaderData}
                               tradehistory={tradehistory}
                               isMarksVisible={isMarksVisible}
+                              orders={orders}
+                              isOrdersVisible={isOrdersVisible}
                             />
                           )}
                         </div>
@@ -12758,6 +12784,8 @@ function App() {
                                   updateChartData={setChartHeaderData}
                                   tradehistory={tradehistory}
                                   isMarksVisible={isMarksVisible}
+                                  orders={orders}
+                                  isOrdersVisible={isOrdersVisible}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12832,6 +12860,8 @@ function App() {
                               updateChartData={setChartHeaderData}
                               tradehistory={tradehistory}
                               isMarksVisible={isMarksVisible}
+                              orders={orders}
+                              isOrdersVisible={isOrdersVisible}
                             />
                           )}
                         </div>
@@ -12984,6 +13014,8 @@ function App() {
                                   updateChartData={setChartHeaderData}
                                   tradehistory={tradehistory}
                                   isMarksVisible={isMarksVisible}
+                                  orders={orders}
+                                  isOrdersVisible={isOrdersVisible}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -13058,6 +13090,8 @@ function App() {
                               updateChartData={setChartHeaderData}
                               tradehistory={tradehistory}
                               isMarksVisible={isMarksVisible}
+                              orders={orders}
+                              isOrdersVisible={isOrdersVisible}
                             />
                           )}
                         </div>
@@ -13211,6 +13245,8 @@ function App() {
                                   updateChartData={setChartHeaderData}
                                   tradehistory={tradehistory}
                                   isMarksVisible={isMarksVisible}
+                                  orders={orders}
+                                  isOrdersVisible={isOrdersVisible}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -13285,6 +13321,8 @@ function App() {
                               updateChartData={setChartHeaderData}
                               tradehistory={tradehistory}
                               isMarksVisible={isMarksVisible}
+                              orders={orders}
+                              isOrdersVisible={isOrdersVisible}
                             />
                           )}
                         </div>

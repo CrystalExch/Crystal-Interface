@@ -27,8 +27,10 @@ interface ChartComponentProps {
   tradesloading: boolean;
   marketsData: any;
   updateChartData?: any;
-  tradehistory?: any[];
-  isMarksVisible: any;
+  tradehistory: any;
+  isMarksVisible: boolean;
+  orders: any;
+  isOrdersVisible: boolean;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -39,6 +41,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   marketsData,
   tradehistory = [], 
   isMarksVisible,
+  orders,
+  isOrdersVisible,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -337,6 +341,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             setOverlayVisible={setOverlayVisible}
             tradehistory={tradehistory} 
             isMarksVisible={isMarksVisible}
+            orders={orders}
+            isOrdersVisible={isOrdersVisible}
           />
         ) : (
           <>

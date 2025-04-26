@@ -13,7 +13,9 @@ interface ChartCanvasProps {
   setSelectedInterval: any;
   setOverlayVisible: any;
   tradehistory: any;
-  isMarksVisible: any;
+  isMarksVisible: boolean;
+  orders: any;
+  isOrdersVisible: boolean;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -24,15 +26,20 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   setOverlayVisible,
   tradehistory,
   isMarksVisible,
+  orders,
+  isOrdersVisible,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
   const dataRef = useRef(data);
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
-  const marksRef = useRef<any>(isMarksVisible);
+  const ordersRef = useRef<any>(orders);
+  const marksRef = useRef<any>();
+  const chartOrdersRef = useRef<any>();
   const realtimeCallbackRef = useRef<any>({});
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
+  const isOrdersVisibleRef = useRef<boolean>(isOrdersVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
@@ -53,9 +60,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   }, [data]);
 
   useEffect(() => {
+    const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
     isMarksVisibleRef.current = isMarksVisible;
-    const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     tradeHistoryRef.current = tradehistory;
     if (tradehistory.length > 0 && becameVisible) {
       if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
@@ -114,7 +121,16 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         widgetRef.current?.activeChart()?.clearMarks();
       }
     }
-}, [tradehistory.length, isMarksVisible]);
+  }, [tradehistory.length, isMarksVisible]);
+
+  useEffect(() => {
+    const diff = orders.slice((ordersRef.current || []).length);
+    const becameVisible = !isOrdersVisibleRef.current && isOrdersVisible;
+    isOrdersVisibleRef.current = isOrdersVisible;
+    ordersRef.current = orders;
+    if (chartReady) {
+    }
+  }, [orders.length, isOrdersVisible]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
