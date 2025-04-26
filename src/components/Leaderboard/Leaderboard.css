@@ -586,7 +586,7 @@
   font-size:.8rem
 }
 .go-to-user-position-button{
-  background-color:rgba(171,176,224,.05);
+  border:1px solid rgba(255, 255, 255, 0.1);
   border-radius:4px;
   color:rgba(255,255,255,.4);
   cursor:pointer;
@@ -596,8 +596,8 @@
   transition:all.2s ease
 }
 .go-to-user-position-button:hover:not(:disabled){
-  background-color:rgba(171,176,224,.1);
-  border-color:rgba(171,176,224,.2)
+  border:1px solid rgba(255, 255, 255, 0.15);
+  background-color:rgba(255, 255, 255, 0.05);
 }
 .go-to-user-position-button:disabled{
   cursor:not-allowed;

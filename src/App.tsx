@@ -1936,6 +1936,7 @@ function App() {
     } else {
       setExitingChallenge(true);
       setTimeout(() => {
+        localStorage.setItem('crystal_has_completed_onboarding', 'true');
         setpopup(0);
       });
     }
