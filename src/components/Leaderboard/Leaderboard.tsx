@@ -70,7 +70,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     const fetchUserPoints = () => {
       if (address) {
-        fetch('https://web-production-dd5d.up.railway.app/user_points')
+        fetch('https://api.crystal.exchange/user_points')
           .then((res) => res.json())
           .then((data: Record<string, { username: string; points: number; referral_points: number; }>) => {
             const updatedLiveLeaderboard = Object.fromEntries(

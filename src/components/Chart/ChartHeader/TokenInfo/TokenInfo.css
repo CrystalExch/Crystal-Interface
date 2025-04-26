@@ -122,9 +122,13 @@
 }
 
 .symbol-skeleton {
+  display: flex;
+  align-items: center;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
   height: 17px;
-  margin-bottom: 3px;
-  width: 100px;
+  margin-bottom: 2px;
 }
 
 .symbol-skeleton,
@@ -136,9 +140,15 @@
 }
 
 .pair-skeleton {
+  align-items: center;
+  display: flex;
+  gap: 4px;
   height: 11px;
   margin-top: 2px;
-  width: 70px;
+}
+
+.pair-skeleton > *, .symbol-skeleton > * {
+  opacity: 0;
 }
 
 .symbol-skeleton::after,

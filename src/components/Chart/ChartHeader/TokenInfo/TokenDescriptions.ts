@@ -7,6 +7,10 @@ import iconwmonad from '../../../../assets/iconwmonad.png';
 import iconsmon from '../../../../assets/iconsmon.png';
 import iconaprmon from '../../../../assets/iconaprmon.png';
 import iconshmon from '../../../../assets/iconshmon.png';
+import icondak from '../../../../assets/icondak.png';
+import iconchog from '../../../../assets/iconchog.png';
+import iconyaki from '../../../../assets/iconyaki.png';
+
 
 export interface TokenInfoData {
   name: string;
@@ -90,10 +94,10 @@ export const tokenData: Record<TokenSymbol, TokenInfoData> = {
     baseAddress: '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5',
   },
   aprMON: {
-    name: 'aPriori Staked Monad',
+    name: 'aPriori Monad LST',
     image: iconaprmon,
     description:
-      "apr.",
+      "MEV Powered Monad Liquid Staking by aPriori",
     website: 'https://stake.apr.io/',
     twitter: 'https://x.com/apr_labs',
     discord: 'https://discord.com/invite/apriori',
@@ -108,6 +112,36 @@ export const tokenData: Record<TokenSymbol, TokenInfoData> = {
     twitter: 'https://x.com/0xFastLane',
     discord: 'https://discord.fastlane.xyz',
     baseAddress: '0x3a98250F98Dd388C211206983453837C8365BDc1',
+  },
+  DAK: {
+    name: 'Molandak',
+    image: icondak,
+    description:
+      "Known for courage and tradition, Molandak is home to the brave-hearted who rip challenges head-on.",
+    website: 'https://testnet.monad.xyz/',
+    twitter: 'https://x.com/monad_xyz',
+    discord: 'https://discord.com/invite/monad',
+    baseAddress: '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714',
+  },
+  CHOG: {
+    name: 'Chog',
+    image: iconchog,
+    description:
+      "Chog is the house for the wise and industrious who value intellect, strategy, and tireless work ethic.",
+    website: 'https://testnet.monad.xyz/',
+    twitter: 'https://x.com/monad_xyz',
+    discord: 'https://discord.com/invite/monad',
+    baseAddress: '0xE0590015A873bF326bd645c3E1266d4db41C4E6B',
+  },
+  YAKI: {
+    name: 'Moyaki',
+    image: iconyaki,
+    description:
+      "Moyaki swims for those who rise from humble beginnings with an unyielding drive to succeed.",
+    website: 'https://testnet.monad.xyz/',
+    twitter: 'https://x.com/monad_xyz',
+    discord: 'https://discord.com/invite/monad',
+    baseAddress: '0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50',
   },
 };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { tokenData, TokenSymbol } from '../tokenInfo';
+import { tokenData, TokenSymbol } from '../TokenDescriptions.ts';
 
 import infoicon from '../../../../../assets/icon.png';
 

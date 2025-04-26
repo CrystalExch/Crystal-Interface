@@ -490,7 +490,7 @@ export const settings: any = {
         },
         '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A': {
           ticker: 'aprMON',
-          name: 'aPriori Staked Monad',
+          name: 'aPriori Monad LST',
           address: '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A',
           decimals: BigInt(18),
           image: iconaprmon,

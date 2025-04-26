@@ -7550,7 +7550,7 @@ function App() {
                 : ''
                 }`}
               onClick={() => {
-                setpopup(14);
+                setpopup(1);
               }}
             >
               <img className="button1pic" src={tokendict[tokenIn].image} />

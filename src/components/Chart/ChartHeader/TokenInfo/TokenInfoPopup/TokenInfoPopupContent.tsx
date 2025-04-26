@@ -1,7 +1,7 @@
 import { Globe, MessageCircle, Twitter } from 'lucide-react';
 import {forwardRef} from 'react';
 
-import { tokenData, TokenSymbol } from '../tokenInfo';
+import { tokenData, TokenSymbol } from '../TokenDescriptions.ts';
 
 import closebutton from '../../../../../assets/close_button.png';
 

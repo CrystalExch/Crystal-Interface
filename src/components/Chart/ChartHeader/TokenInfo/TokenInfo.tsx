@@ -261,45 +261,36 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         )}
 
         <div className="token-details">
-          {isLoading && shouldShowFullHeader ? (
-            <>
-              <div className="symbol-skeleton" />
-              <div className="pair-skeleton" />
-            </>
-          ) : (
-            <>
-              <div className="trading-pair">
-                {shouldShowFullHeader ? (
-                  <>
-                    {activeMarket.baseAsset} /<span className="second-asset">{activeMarket.quoteAsset}</span>
-                  </>
-                ) : (
-                  <>
-                    <div className="search-market-text-container">
-                      <span className="search-market-text">{t("searchAMarket")}</span>
-                      <span className="second-asset">{t("browsePairs")}</span>
-                    </div>
-                  </>
-                )}
-              </div>
-              {shouldShowFullHeader && (
-                <div className="token-name">
-                  <span className="full-token-name">
-                    {tokendict[activeMarket.baseAddress].name}
-                  </span>
-                  <div
-                    className="token-actions"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <CopyButton textToCopy={marketAddress} />
-                    <TokenInfoPopup
-                      symbol={activeMarket.baseAsset}
-                      setpopup={setpopup}
-                    />
-                  </div>
+          <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
+            {shouldShowFullHeader ? (
+              <>
+                <span className="first-asset">{activeMarket.baseAsset} /</span><span className="second-asset">{activeMarket.quoteAsset}</span>
+              </>
+            ) : (
+              <>
+                <div className="search-market-text-container">
+                  <span className="search-market-text">{t("searchAMarket")}</span>
+                  <span className="second-asset">{t("browsePairs")}</span>
                 </div>
-              )}
-            </>
+              </>
+            )}
+          </div>
+          {shouldShowFullHeader && (
+            <div className={isLoading && shouldShowFullHeader ? 'pair-skeleton' : 'token-name'}>
+              <span className="full-token-name">
+                {tokendict[activeMarket.baseAddress].name}
+              </span>
+              <div
+                className="token-actions"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <CopyButton textToCopy={marketAddress} />
+                <TokenInfoPopup
+                  symbol={activeMarket.baseAsset}
+                  setpopup={setpopup}
+                />
+              </div>
+            </div>
           )}
         </div>
         <div className="markets-dropdown" ref={dropdownRef}>
