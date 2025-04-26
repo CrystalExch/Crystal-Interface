@@ -34,9 +34,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const dataRef = useRef(data);
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
-  const ordersRef = useRef<any>(orders);
+  const ordersRef = useRef(orders);
+  const orderLinesRef = useRef<any>([]);
   const marksRef = useRef<any>();
-  const chartOrdersRef = useRef<any>();
+  const prevTokenRef = useRef(activeMarket.baseAddress);
   const realtimeCallbackRef = useRef<any>({});
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const isOrdersVisibleRef = useRef<boolean>(isOrdersVisible);
@@ -63,7 +64,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
     const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
     isMarksVisibleRef.current = isMarksVisible;
-    tradeHistoryRef.current = tradehistory;
+    tradeHistoryRef.current = [...tradehistory];
     if (tradehistory.length > 0 && becameVisible) {
       if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
         const marks = tradehistory.filter(
@@ -126,11 +127,67 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   useEffect(() => {
     const diff = orders.slice((ordersRef.current || []).length);
     const becameVisible = !isOrdersVisibleRef.current && isOrdersVisible;
+    const marketChanged = prevTokenRef.current != activeMarket.baseAddress
+    prevTokenRef.current = activeMarket.baseAddress
     isOrdersVisibleRef.current = isOrdersVisible;
-    ordersRef.current = orders;
-    if (chartReady) {
+    ordersRef.current = [...orders];
+    if (orders.length > 0 && (becameVisible || marketChanged)) {
+      if (chartReady && widgetRef.current?.activeChart()?.symbol()) {
+        const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+        orders.forEach((order: any) => {
+          if (order[4] != marketKey) return;
+          orderLinesRef.current.push(widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
+          .setQuantity(order[8])
+          .setText(order[3] == 1 ? 'Buy Order' : 'Sell Order')
+          .setLineColor(order[3] == 1 ? '#00C176' : '#F23645')
+          .setBodyBackgroundColor(order[3] == 1 ? 'rgb(131, 251, 155)' : 'rgb(210, 82, 82)')
+          .onMove(() => {
+            console.log('Order line moved');
+          })
+          .onModify(() => {
+            console.log('Order line modified');
+          })
+          .onCancel(() => {
+            console.log('Order line cancelled');
+          }));
+        })
+      }
     }
-  }, [orders.length, isOrdersVisible]);
+    else if (orders.length > 0 && isOrdersVisible) {
+      if (chartReady && widgetRef.current?.activeChart()?.symbol()) {
+        const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+        diff.forEach((order: any) => {
+          if (order[4] != marketKey) return;
+          orderLinesRef.current.push(widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
+          .setQuantity(order[8])
+          .setText(order[3] == 1 ? 'Buy Order' : 'Sell Order')
+          .setLineColor(order[3] == 1 ? '#00C176' : '#F23645')
+          .setBodyBackgroundColor(order[3] == 1 ? 'rgb(131, 251, 155)' : 'rgb(210, 82, 82)')
+          .onMove(() => {
+            console.log('Order line moved');
+          })
+          .onModify(() => {
+            console.log('Order line modified');
+          })
+          .onCancel(() => {
+            console.log('Order line cancelled');
+          }));
+        })
+      }
+    }
+    else {
+      if (chartReady) {
+        orderLinesRef.current.forEach((orderLine: any) => {
+          try {
+            orderLine.remove();
+          } catch (error) {
+            console.error('Failed to remove order line', error);
+          }
+        });
+        orderLinesRef.current = [];
+      }
+    }
+  }, [orders.length, isOrdersVisible, activeMarket.baseAddress]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
