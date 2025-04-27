@@ -374,8 +374,8 @@ export const translations: any = {
     edit: "Edit",
     shareEarnText: "Share your referral link with friends and earn 25% of their fees.",
     totalUsersReferred: "Total Users Referred",
+    setRefFailed: "Failed to set referral code, code may be invalid",
     
-
     
   },
   CN: {
@@ -749,6 +749,7 @@ export const translations: any = {
     bonusCommision: "额外佣金",
     shareEarnText: "与朋友分享您的推荐链接，赚取25%的佣金。",
     totalUsersReferred: '推荐用户总数',
+    setRefFailed: '设置推荐码失败，可能是无效的代码',
   },
   JP: {
     trade: '取引',
@@ -1121,6 +1122,7 @@ export const translations: any = {
     bonusCommision: 'ボーナス手数料',
     shareEarnText: '友達とあなたの紹介リンクを共有して、25%の手数料を獲得してください。',
     totalUsersReferred: '紹介したユーザーの合計',
+    setRefFailed: 'リファラルコード設定失敗、無効なコードの可能性',
 
   },
   KR: {
@@ -1494,6 +1496,7 @@ export const translations: any = {
     bonusCommision: '보너스 수수료',
     shareEarnText: '친구와 추천 링크를 공유하여 25% 수수료를 얻으세요.',
     totalUsersReferred: '추천한 사용자 수',
+    setRefFailed: '추천 코드 설정 실패, 잘못된 코드일 수 있습니다',
   },
   ES: {
     trade: 'Operar',
@@ -1866,6 +1869,7 @@ export const translations: any = {
     bonusCommision: 'Comisión Extra',
     shareEarnText: 'Comparte tu enlace de referido con amigos y gana un 25% de comisión.',
     totalUsersReferred: 'Total de Usuarios Referidos',
+    setRefFailed: 'Fallo al establecer el código de referido, puede que sea inválido',
   }
 };
 

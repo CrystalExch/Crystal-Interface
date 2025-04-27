@@ -343,6 +343,7 @@ const Referrals: React.FC<ReferralProps> = ({
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
+
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
                 <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
