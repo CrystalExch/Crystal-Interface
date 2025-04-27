@@ -108,7 +108,8 @@ export const overrides = {
   "linetoolorder.bodyFontSize": 11, 
   "linetoolorder.bodyFontBold": true, 
   "linetoolorder.quantityFontSize": 11, 
-  "linetoolorder.quantityFontBold": false 
+  "linetoolorder.quantityFontBold": false ,
+  
 
 
 };

@@ -369,6 +369,9 @@ export const translations: any = {
     minUsernameLength: "Username must be at least 3 characters",
     usernameFilter: "Username can only contain letters, numbers, and underscores",
     maxUsernameLength: "Username must be less than 20 characters",
+    showChartOrders: "Show Chart Orders",
+    bonusCommision: "Bonus Commission",
+    edit: "Edit",
     
 
     
@@ -740,6 +743,8 @@ export const translations: any = {
     minUsernameLength: "用户名至少需要3个字符",
     usernameFilter: "用户名只能包含字母、数字和下划线",
     maxUsernameLength: "用户名必须少于20个字符",
+    showChartOrders: "显示图表订单",
+    bonusCommision: "额外佣金",
   },
   JP: {
     trade: '取引',
@@ -1108,6 +1113,8 @@ export const translations: any = {
     minUsernameLength: 'ユーザー名は最低3文字必要です',
     usernameFilter: 'ユーザー名は文字、数字、アンダースコアのみ使用可能',
     maxUsernameLength: 'ユーザー名は20文字未満でなければなりません',
+    showChartOrders: 'チャート注文を表示',
+    bonusCommision: 'ボーナス手数料',
 
   },
   KR: {
@@ -1477,6 +1484,8 @@ export const translations: any = {
     minUsernameLength: '사용자 이름은 최소 3자 이상이어야 합니다',
     usernameFilter: '사용자 이름은 문자, 숫자, 밑줄만 사용 가능합니다',
     maxUsernameLength: '사용자 이름은 20자 미만이어야 합니다',
+    showChartOrders: '차트 주문 표시',
+    bonusCommision: '보너스 수수료',
   },
   ES: {
     trade: 'Operar',
@@ -1845,6 +1854,8 @@ export const translations: any = {
     minUsernameLength: 'El nombre de usuario debe tener al menos 3 caracteres',
     usernameFilter: 'El nombre de usuario solo puede contener letras, números y guiones bajos',
     maxUsernameLength: 'El nombre de usuario debe tener menos de 20 caracteres',
+    showChartOrders: 'Mostrar Órdenes de Gráfico',
+    bonusCommision: 'Comisión Extra',
   }
 };
 

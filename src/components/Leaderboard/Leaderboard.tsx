@@ -348,7 +348,13 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
           <div className="leaderboard-user-info">
             <div className="info-column">
-              <div className="column-header">{t('username')}</div>
+              <div className="column-header">{t('username')}             <button
+                className="edit-username-button"
+                onClick={() => setpopup(16)}
+              >
+                {t('edit')}
+              </button>
+              </div>
               <div className="column-content">
                 <div className="address-container">
                   <span className="leaderboard-user-address">
@@ -375,7 +381,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="column-divider" />
 
             <div className="info-column">
-              <div className="column-header">{t("usersReferred")}</div>
+              <div className="column-header">{t("bonusCommision")}</div>
               <div className="column-content">
                 {liveLeaderboard[address?.toLowerCase()]?.referral_points
                   ?.toLocaleString() || '0'}
@@ -386,12 +392,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="info-column">
               <div className="column-header">{t('rank')}</div>
               <div className="column-content">{getUserRank()}</div>
-              <button
-                className="edit-username-button"
-                onClick={() => setpopup(16)}
-              >
-                {t('editUsername')}
-              </button>
+  
             </div>
           </div>
         </div>
