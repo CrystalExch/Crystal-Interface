@@ -47,7 +47,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
   const ordersRef = useRef(orders);
-  const orderLinesRef = useRef<any>([]);
   const marksRef = useRef<any>();
   const realtimeCallbackRef = useRef<any>({});
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
@@ -142,29 +141,13 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   useEffect(() => {
     try {
       if (chartReady) {
-        ordersRef.current = [...orders];
         if (orders.length > 0 && isOrdersVisible) {
-          orderLinesRef.current.forEach((orderLine: any) => {
-            const order = orderLine.getOrder();
-            const matchingOrder = orders.find((o: any) => o == order);
-            if (matchingOrder) {
-              orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-            }
-            else {
-              orderLine.remove()
-              const index = orderLinesRef.current.indexOf(orderLine);
-              if (index !== -1) {
-                orderLinesRef.current.splice(index, 1);
-              }
-            }
-          })
           if (widgetRef.current?.activeChart()?.symbol()) {
             const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
             const market = markets[marketKey]
             orders.forEach((order: any) => {
-              if (order[4] != marketKey || orderLinesRef.current.some((orderline: any) => {
-                return orderline.getOrder() == order;
-              })) return;
+              if (order[4] != marketKey || order?.[10]) return;
+
               const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(market.priceFactor))
               .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(market.baseDecimals), 3)))
               .setText(`Limit: ${(order[0] / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}`)
@@ -204,35 +187,34 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   await waitForTxReceipt(hash.hash);
                   refetch()
                   orderLine.remove()
-                  const index = orderLinesRef.current.indexOf(orderLine);
-                  if (index !== -1) {
-                    orderLinesRef.current.splice(index, 1);
-                  }
                 } catch (error) {
                   orderLine.setCancellable(true)
                 }
               })
               orderLine.getOrder = () => order;
-              orderLinesRef.current.push(orderLine);
+              order.push(orderLine);
             })
           }
         }
         else {
-          orderLinesRef.current.forEach((orderLine: any) => {
+          ordersRef.current.forEach((order: any) => {
             try {
-              orderLine.remove();
+              if (order?.[10] && typeof order[10].remove === 'function') {
+                order[10].remove();
+                order.splice(10, 1)
+              }
             } catch (error) {
               console.error('Failed to remove order line', error);
             }
           });
-          orderLinesRef.current = [];
         }
+        ordersRef.current = [...orders];
       }
     }
     catch(e) {
       console.log(e)
     }
-  }, [orders.length, isOrdersVisible, chartReady]);
+  }, [orders, isOrdersVisible, chartReady]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -502,10 +484,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
                 const market = markets[marketKey]
                 orders.forEach((order: any) => {
-                  if (order[4] != marketKey || orderLinesRef.current.some((orderline: any) => {
-                    return orderline.getOrder() == order;
-                  })) return;
-                  
+                  if (order[4] != marketKey || order?.[10]) return;
+
                   const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(market.priceFactor))
                   .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(market.baseDecimals), 3)))
                   .setText(`Limit: ${(order[0] / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}`)
@@ -545,16 +525,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       await waitForTxReceipt(hash.hash);
                       refetch()
                       orderLine.remove()
-                      const index = orderLinesRef.current.indexOf(orderLine);
-                      if (index !== -1) {
-                        orderLinesRef.current.splice(index, 1);
-                      }
                     } catch (error) {
                       orderLine.setCancellable(true)
                     }
                   })
                   orderLine.getOrder = () => order;
-                  orderLinesRef.current.push(orderLine);
+                  order.push(orderLine);
                 })
               }
             }

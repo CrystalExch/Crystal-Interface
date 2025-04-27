@@ -374,7 +374,7 @@ export const translations: any = {
     edit: "Edit",
     shareEarnText: "Share your referral link with friends and earn 25% of their fees.",
     totalUsersReferred: "Total Users Referred",
-    
+    scaleTooltip: "Place multiple limit orders between a specified price range in a single transaction",
 
     
   },

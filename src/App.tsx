@@ -60,6 +60,7 @@ import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { getTradeValue } from './utils/getTradeValue.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat.ts';
+import { formatDisplay } from './components/OrderCenter/utils/formatDisplay.ts';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -92,7 +93,6 @@ import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
-import notificationSound from './assets/notification.wav';
 import refreshicon from './assets/circulararrow.png';
 import clearlogo from '../public/logo_clear.png';
 import crystalxp from './assets/CrystalX.png';
@@ -158,16 +158,6 @@ function App() {
     client,
     waitForTxn: true,
   });
-  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
-  const stepAudioRef = useRef<HTMLAudioElement>(null);
-  const handleNextClick = () => {
-    if (stepAudioRef.current) {
-      stepAudioRef.current.currentTime = 0;
-      stepAudioRef.current.play().catch(console.error);
-    }
-    handleCompleteChallenge();
-  };
-
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -708,7 +698,7 @@ function App() {
   const { toggleFavorite } = useSharedContext();
 
   const audio = useMemo(() => {
-    const a = new Audio(notificationSound);
+    const a = new Audio(stepaudio);
     a.volume = 1;
     return a;
   }, []);
@@ -1270,6 +1260,10 @@ function App() {
                       );
                       if (index != -1) {
                         ordersChanged = true;
+                        if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                          temporders[index][10].remove();
+                          temporders[index].splice(10, 1)
+                        }
                         temporders.splice(index, 1);
                       }
                       let price = parseInt(chunk.slice(1, 20), 16);
@@ -1487,6 +1481,10 @@ function App() {
                               ]);
                               if (orderIndex != -1) {
                                 ordersChanged = true;
+                                if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                                  temporders[orderIndex][10].remove();
+                                  temporders[orderIndex].splice(10, 1)
+                                }
                                 temporders.splice(orderIndex, 1);
                               }
                               updatedCanceledOrders[canceledOrderIndex] = [
@@ -1500,6 +1498,9 @@ function App() {
                                 order[8] - newsize;
                             } else {
                               ordersChanged = true;
+                              if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                                temporders[orderIndex][10].setQuantity(formatDisplay(customRound((newsize / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                              }
                               temporders[orderIndex][7] =
                                 order[2] - newsize / order[0];
                               updatedCanceledOrders[canceledOrderIndex] = [
@@ -1909,6 +1910,12 @@ function App() {
   const [exitingChallenge, setExitingChallenge] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
+  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const handleNextClick = () => {
+    audio.currentTime = 0;
+    audio.play();
+    handleCompleteChallenge();
+  };
 
   useEffect(() => {
     if (currentStep === 0) {
@@ -2011,10 +2018,8 @@ function App() {
 
       await waitForTxReceipt(hash.hash);
 
-      if (stepAudioRef.current) {
-        stepAudioRef.current.currentTime = 0;
-        stepAudioRef.current.play().catch(console.error);
-      }
+      audio.currentTime = 0;
+      audio.play();
 
       setIsTransitioning(true);
       setTransitionDirection('forward');
@@ -2088,10 +2093,8 @@ function App() {
 
       await waitForTxReceipt(hash.hash);
 
-      if (stepAudioRef.current) {
-        stepAudioRef.current.currentTime = 0;
-        stepAudioRef.current.play().catch(console.error);
-      }
+      audio.currentTime = 0;
+      audio.play();
 
       setTimeout(() => {
         setpopup(0);
@@ -2105,10 +2108,8 @@ function App() {
     }
   };
   const handleSkipUsername = () => {
-    if (stepAudioRef.current) {
-      stepAudioRef.current.currentTime = 0;
-      stepAudioRef.current.play().catch(console.error);
-    }
+    audio.currentTime = 0;
+    audio.play();
 
     setIsTransitioning(true);
     setTransitionDirection('forward');
@@ -2561,14 +2562,14 @@ function App() {
       }
     }
   }, [amountsQuote, orders]);
-  
+
   // update state variables when data is loaded
   useEffect(() => {
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
         setStateIsLoading(false);
         setstateloading(false);
-        if (data?.[1]?.result) {
+        if (data?.[1]?.result != null) {
           setallowance(data[1].result);
         }
         let tempbalances = tokenBalances
@@ -4153,7 +4154,6 @@ function App() {
       setpopup(14);
     }
   }, [connected, user, loading]);
-
 
   // input tokenlist
   const TokenList1 = (
@@ -7297,11 +7297,6 @@ function App() {
                         {currentStep < 2 ? t('next') : t('getStarted')}
                       </button>
                       <audio
-                        ref={stepAudioRef}
-                        src={stepaudio}
-                        preload="auto"
-                      />
-                      <audio
                         ref={backAudioRef}
                         src={backaudio}
                         preload="auto"
@@ -7328,10 +7323,8 @@ function App() {
                       <button
                         className="welcome-enter-button"
                         onClick={() => {
-                          if (stepAudioRef.current) {
-                            stepAudioRef.current.currentTime = 0;
-                            stepAudioRef.current.play().catch(console.error);
-                          }
+                          audio.currentTime = 0;
+                          audio.play();
                           setShowWelcomeScreen(false);
                         }}
                       >
@@ -7496,7 +7489,7 @@ function App() {
               tooltipText={
                 <div>
                   <div className="tooltip-description">
-                    Scale orders allow you to place limit orders undetected. 
+                    {t('scaleTooltip')}
                   </div>
                 </div>
               }
@@ -8914,7 +8907,7 @@ function App() {
               tooltipText={
                 <div>
                   <div className="tooltip-description">
-                    Scale orders allow you to place limit orders undetected. 
+                    {t('scaleTooltip')}
                   </div>
                 </div>
               }
@@ -10444,7 +10437,7 @@ function App() {
               tooltipText={
                 <div>
                   <div className="tooltip-description">
-                    Scale orders allow you to place limit orders undetected. 
+                    {t('scaleTooltip')}
                   </div>
                 </div>
               }
@@ -11122,7 +11115,7 @@ function App() {
               tooltipText={
                 <div>
                   <div className="tooltip-description">
-                    Scale orders allow you to place limit orders undetected. 
+                    {t('scaleTooltip')}
                   </div>
                 </div>
               }
