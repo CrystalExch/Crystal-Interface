@@ -38,6 +38,11 @@ interface ChartOrderbookPanelProps {
   isMarksVisible: boolean;
   orders: any;
   isOrdersVisible: any;
+  router: any;
+  refetch: any;
+  sendUserOperationAsync: any;
+  setChain: any;
+  waitForTxReceipt: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
@@ -72,6 +77,11 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   tradehistory,
   orders,
   isOrdersVisible,
+  router,
+  refetch,
+  sendUserOperationAsync,
+  setChain,
+  waitForTxReceipt,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -191,6 +201,11 @@ return (
           isMarksVisible={isMarksVisible}
           orders={orders}
           isOrdersVisible={isOrdersVisible}
+          router={router}
+          refetch={refetch}
+          sendUserOperationAsync={sendUserOperationAsync}
+          setChain={setChain}
+          waitForTxReceipt={waitForTxReceipt}
         />
       </div>
 

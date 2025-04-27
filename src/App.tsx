@@ -1149,6 +1149,7 @@ function App() {
         setProcessedLogs(({ queue, set }: { queue: string[]; set: Set<string> }) => {
           setorders((orders) => {
             let temporders = orders;
+            let ordersChanged = false;
             if (Array.isArray(orderlogs)) {
               for (const log of orderlogs) {
                 const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
@@ -1179,6 +1180,7 @@ function App() {
                         parseInt(chunk.slice(32, 64), 16),
                         2,
                       ];
+                      ordersChanged = true;
                       temporders.push(order)
                       setcanceledorders((canceledorders) => [
                         ...canceledorders,
@@ -1267,6 +1269,7 @@ function App() {
                           sublist[4] == addresstoMarket[log['address']],
                       );
                       if (index != -1) {
+                        ordersChanged = true;
                         temporders.splice(index, 1);
                       }
                       let price = parseInt(chunk.slice(1, 20), 16);
@@ -1483,6 +1486,7 @@ function App() {
                                 0,
                               ]);
                               if (orderIndex != -1) {
+                                ordersChanged = true;
                                 temporders.splice(orderIndex, 1);
                               }
                               updatedCanceledOrders[canceledOrderIndex] = [
@@ -1495,6 +1499,7 @@ function App() {
                               updatedCanceledOrders[canceledOrderIndex][8] =
                                 order[8] - newsize;
                             } else {
+                              ordersChanged = true;
                               temporders[orderIndex][7] =
                                 order[2] - newsize / order[0];
                               updatedCanceledOrders[canceledOrderIndex] = [
@@ -1559,7 +1564,12 @@ function App() {
                 }
               });
             }
-            return temporders
+            if (ordersChanged) {
+              return [...temporders]
+            }
+            else {
+              return temporders
+            }
           });
           return { queue, set };
         })
@@ -2177,78 +2187,21 @@ function App() {
 
     const priceMap: { [key: string]: boolean } = {};
     if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
-      const market = activeMarket.baseAsset + activeMarket.quoteAsset;
-
       const filteredUserOrders = userOrders.filter((order) => {
-        const isBuy = Number(order[3]) === 1;
-        const matchesListType = isBuyOrderList ? isBuy : !isBuy;
-        const orderMarket = String(order[4]);
-        return matchesListType && orderMarket === market;
+        return isBuyOrderList == (Number(order[3]) === 1) && String(order[4]) === (activeMarket.baseAsset + activeMarket.quoteAsset);
       });
 
-      if (filteredUserOrders.length > 0) {
-        const displayedPrices = orders.map((order) => order.price);
-        const sortedDisplayedPrices = [...displayedPrices].sort((a, b) => a - b);
-
-        let scalingFactor = 1;
-        if (sortedDisplayedPrices.length > 0) {
-          const sampleOrderPrice = Number(filteredUserOrders[0][0]);
-          const averageDisplayPrice =
-            sortedDisplayedPrices.reduce((sum, price) => sum + price, 0) /
-            sortedDisplayedPrices.length;
-          const rawScaling = sampleOrderPrice / averageDisplayPrice;
-          const powerOf10 = Math.floor(Math.log10(rawScaling));
-          scalingFactor = Math.pow(10, powerOf10);
-        }
-
-        const bucketSpacing =
-          sortedDisplayedPrices.length > 1
-            ? Math.abs(sortedDisplayedPrices[1] - sortedDisplayedPrices[0])
-            : 1;
-        const tolerance = bucketSpacing * 0.5;
-
-        filteredUserOrders.forEach((order) => {
-          const rawOrderPrice = Number(order[0]);
-          const scaledOrderPrice = rawOrderPrice / scalingFactor;
-          const isBuyOrder = Number(order[3]) === 1;
-          let matchedPrice: number;
-
-          if (isBuyOrder) {
-            matchedPrice = sortedDisplayedPrices[0];
-            for (let i = 0; i < sortedDisplayedPrices.length; i++) {
-              if (
-                sortedDisplayedPrices[i] <= scaledOrderPrice &&
-                sortedDisplayedPrices[i] > matchedPrice
-              ) {
-                matchedPrice = sortedDisplayedPrices[i];
-              }
-            }
-          } else {
-            matchedPrice =
-              sortedDisplayedPrices[sortedDisplayedPrices.length - 1];
-            for (let i = sortedDisplayedPrices.length - 1; i >= 0; i--) {
-              if (
-                sortedDisplayedPrices[i] >= scaledOrderPrice &&
-                sortedDisplayedPrices[i] < matchedPrice
-              ) {
-                matchedPrice = sortedDisplayedPrices[i];
-              }
-            }
-          }
-
-          const diff = Math.abs(scaledOrderPrice - matchedPrice);
-          if (diff <= tolerance) {
-            priceMap[matchedPrice] = true;
-          }
-        });
-      }
+      filteredUserOrders.forEach((order) => {
+        priceMap[Number(Number(order[0]/Number(activeMarket.priceFactor)).toFixed(
+          Math.floor(Math.log10(Number(activeMarket.priceFactor)))
+        ))] = true;
+      });
     }
 
     const roundedOrders = orders.map((order) => {
-      const roundedPriceStr = Number(order.price).toFixed(
+      const roundedPrice = Number(Number(order.price).toFixed(
         Math.floor(Math.log10(Number(activeMarket.priceFactor)))
-      );
-      const roundedPrice = Number(roundedPriceStr);
+      ));
       const roundedSize =
         amountsQuote === 'Base'
           ? Number((order.size / order.price).toFixed(priceDecimals))
@@ -2506,6 +2459,109 @@ function App() {
     setTrades(processed);
   }, [tradesByMarket[activeMarketKey]]);
 
+  useEffect(() => {
+    if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
+      try {
+        const buyOrdersRaw: bigint[] = [];
+        const sellOrdersRaw: bigint[] = [];
+
+        for (let i = 2; i < prevOrderData[2].length; i += 64) {
+          const chunk = prevOrderData[2].slice(i, i + 64);
+          buyOrdersRaw.push(BigInt(`0x${chunk}`));
+        }
+
+        for (let i = 2; i < prevOrderData[3].length; i += 64) {
+          const chunk = prevOrderData[3].slice(i, i + 64);
+          sellOrdersRaw.push(BigInt(`0x${chunk}`));
+        }
+
+        const {
+          buyOrders: processedBuyOrders,
+          sellOrders: processedSellOrders,
+        } = processOrders(buyOrdersRaw, sellOrdersRaw);
+
+        if (mids && mids[activeMarketKey]) {
+          const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
+            processOrdersForDisplay(
+              processedBuyOrders,
+              amountsQuote,
+              mids[activeMarketKey][0],
+              orders,
+              true,
+            );
+          const {
+            roundedOrders: roundedSell,
+            defaultOrders: liquiditySell,
+          } = processOrdersForDisplay(
+            processedSellOrders,
+            amountsQuote,
+            mids[activeMarketKey][0],
+            orders,
+            false,
+          );
+
+          const highestBid =
+            roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
+          const lowestAsk =
+            roundedSell.length > 0 ? roundedSell[0].price : undefined;
+
+          const spread = {
+            spread:
+              highestBid !== undefined && lowestAsk !== undefined
+                ? lowestAsk - highestBid
+                : NaN,
+            averagePrice:
+              highestBid !== undefined && lowestAsk !== undefined
+                ? Number(
+                  ((highestBid + lowestAsk) / 2).toFixed(
+                    Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
+                  ),
+                )
+                : NaN,
+          };
+
+          roundedBuy.forEach((order, index) => {
+            const match = roundedBuyOrders.find(
+              (o) => o.price == order.price && o.size == order.size,
+            );
+            if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+              order.shouldFlash = true;
+            }
+          });
+          roundedSell.forEach((order, index) => {
+            const match = roundedSellOrders.find(
+              (o) => o.price == order.price && o.size == order.size,
+            );
+            if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+              order.shouldFlash = true;
+            }
+          });
+          setPriceFactor(Number(activeMarket.priceFactor));
+          setSymbolIn(activeMarket.quoteAsset);
+          setSymbolOut(activeMarket.baseAsset);
+          setSpreadData(spread);
+          setRoundedBuyOrders(roundedBuy);
+          setRoundedSellOrders(roundedSell);
+          setLiquidityBuyOrders(liquidityBuy);
+          setLiquiditySellOrders(liquiditySell);
+        }
+
+        setBaseInterval(1 / Number(activeMarket.priceFactor));
+        setOBInterval(
+          localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
+            ? Number(
+              localStorage.getItem(
+                `${activeMarket.baseAsset}_ob_interval`,
+              ),
+            )
+            : 1 / Number(activeMarket.priceFactor),
+        );
+      } catch (error) {
+        console.error(error);
+      }
+    }
+  }, [amountsQuote, orders]);
+  
   // update state variables when data is loaded
   useEffect(() => {
     if (!isLoading && data) {
@@ -2727,7 +2783,7 @@ function App() {
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt, amountsQuote, orders]);
+  }, [data, activechain, isLoading, activeTab, dataUpdatedAt]);
 
   // update display values when loading is finished
   useEffect(() => {
@@ -3134,7 +3190,7 @@ function App() {
               }
               orders1: orderMaps(where:{caller: "${address}"}) {
                 id
-                batches(first: 100, orderDirection: desc, orderBy: id) {
+                batches(first: 1000, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000, where:{status: 2}) {
                     id
@@ -12382,6 +12438,11 @@ function App() {
                                   isMarksVisible={isMarksVisible}
                                   orders={orders}
                                   isOrdersVisible={isOrdersVisible}
+                                  router={router}
+                                  refetch={refetch}
+                                  sendUserOperationAsync={sendUserOperationAsync}
+                                  setChain={handleSetChain}
+                                  waitForTxReceipt={waitForTxReceipt}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12458,6 +12519,11 @@ function App() {
                               isMarksVisible={isMarksVisible}
                               orders={orders}
                               isOrdersVisible={isOrdersVisible}
+                              router={router}
+                              refetch={refetch}
+                              sendUserOperationAsync={sendUserOperationAsync}
+                              setChain={handleSetChain}
+                              waitForTxReceipt={waitForTxReceipt}
                             />
                           )}
                         </div>
@@ -12602,6 +12668,11 @@ function App() {
                                   isMarksVisible={isMarksVisible}
                                   orders={orders}
                                   isOrdersVisible={isOrdersVisible}
+                                  router={router}
+                                  refetch={refetch}
+                                  sendUserOperationAsync={sendUserOperationAsync}
+                                  setChain={handleSetChain}
+                                  waitForTxReceipt={waitForTxReceipt}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12678,6 +12749,11 @@ function App() {
                               isMarksVisible={isMarksVisible}
                               orders={orders}
                               isOrdersVisible={isOrdersVisible}
+                              router={router}
+                              refetch={refetch}
+                              sendUserOperationAsync={sendUserOperationAsync}
+                              setChain={handleSetChain}
+                              waitForTxReceipt={waitForTxReceipt}
                             />
                           )}
                         </div>
@@ -12826,6 +12902,11 @@ function App() {
                                   isMarksVisible={isMarksVisible}
                                   orders={orders}
                                   isOrdersVisible={isOrdersVisible}
+                                  router={router}
+                                  refetch={refetch}
+                                  sendUserOperationAsync={sendUserOperationAsync}
+                                  setChain={handleSetChain}
+                                  waitForTxReceipt={waitForTxReceipt}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -12902,6 +12983,11 @@ function App() {
                               isMarksVisible={isMarksVisible}
                               orders={orders}
                               isOrdersVisible={isOrdersVisible}
+                              router={router}
+                              refetch={refetch}
+                              sendUserOperationAsync={sendUserOperationAsync}
+                              setChain={handleSetChain}
+                              waitForTxReceipt={waitForTxReceipt}
                             />
                           )}
                         </div>
@@ -13056,6 +13142,11 @@ function App() {
                                   isMarksVisible={isMarksVisible}
                                   orders={orders}
                                   isOrdersVisible={isOrdersVisible}
+                                  router={router}
+                                  refetch={refetch}
+                                  sendUserOperationAsync={sendUserOperationAsync}
+                                  setChain={handleSetChain}
+                                  waitForTxReceipt={waitForTxReceipt}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -13132,6 +13223,11 @@ function App() {
                               isMarksVisible={isMarksVisible}
                               orders={orders}
                               isOrdersVisible={isOrdersVisible}
+                              router={router}
+                              refetch={refetch}
+                              sendUserOperationAsync={sendUserOperationAsync}
+                              setChain={handleSetChain}
+                              waitForTxReceipt={waitForTxReceipt}
                             />
                           )}
                         </div>
@@ -13287,6 +13383,11 @@ function App() {
                                   isMarksVisible={isMarksVisible}
                                   orders={orders}
                                   isOrdersVisible={isOrdersVisible}
+                                  router={router}
+                                  refetch={refetch}
+                                  sendUserOperationAsync={sendUserOperationAsync}
+                                  setChain={handleSetChain}
+                                  waitForTxReceipt={waitForTxReceipt}
                                 />
                               )}
                               {(mobileView === 'orderbook' ||
@@ -13363,6 +13464,11 @@ function App() {
                               isMarksVisible={isMarksVisible}
                               orders={orders}
                               isOrdersVisible={isOrdersVisible}
+                              router={router}
+                              refetch={refetch}
+                              sendUserOperationAsync={sendUserOperationAsync}
+                              setChain={handleSetChain}
+                              waitForTxReceipt={waitForTxReceipt}
                             />
                           )}
                         </div>

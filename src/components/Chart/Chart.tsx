@@ -31,6 +31,11 @@ interface ChartComponentProps {
   isMarksVisible: boolean;
   orders: any;
   isOrdersVisible: boolean;
+  router: any;
+  refetch: any;
+  sendUserOperationAsync: any;
+  setChain: any;
+  waitForTxReceipt: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -43,6 +48,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   isMarksVisible,
   orders,
   isOrdersVisible,
+  router,
+  refetch,
+  sendUserOperationAsync,
+  setChain,
+  waitForTxReceipt,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -343,6 +353,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             isMarksVisible={isMarksVisible}
             orders={orders}
             isOrdersVisible={isOrdersVisible}
+            router={router}
+            refetch={refetch}
+            sendUserOperationAsync={sendUserOperationAsync}
+            setChain={setChain}
+            waitForTxReceipt={waitForTxReceipt}
           />
         ) : (
           <>

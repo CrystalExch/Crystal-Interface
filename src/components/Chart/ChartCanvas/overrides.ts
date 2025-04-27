@@ -1,5 +1,3 @@
-import { fraxtalSepolia } from "@account-kit/infra";
-
 export const overrides = {
   'paneProperties.backgroundType': 'solid',
   'paneProperties.background': '#0f0f12',
@@ -52,9 +50,9 @@ export const overrides = {
   'mainSeriesProperties.baselineStyle.topLineWidth': 2,
   'mainSeriesProperties.baselineStyle.bottomLineWidth': 2,
 
-  charts_dialogs_background_color: '#0f0f12',
-  charts_dialogs_text_color: '#aaaecf',
-  charts_toggles_button_text_color: '#aaaecf',
+  'charts_dialogs_background_color': '#0f0f12',
+  'charts_dialogs_text_color': '#aaaecf',
+  'charts_toggles_button_text_color': '#aaaecf',
   'popup.background.color': '#0f0f12',
   'popup.text.color': '#aaaecf',
   'calendar.background.color': '#0f0f12',
@@ -67,48 +65,5 @@ export const overrides = {
   'dialog.button.text.color': '#aaaecf',
   'dialog.input.background.color': '#0f0f12',
   'dialog.input.text.color': '#aaaecf',
-
-
-
-
-  "linetoolorder.bodyBackgroundColor": "#0f0f12",
-
-  "linetoolorder.cancelButtonBackgroundColor": "#0f0f12",
-  "linetoolorder.bodyBorderActiveBuyColor": "#FFFFFF20",
-  "linetoolorder.bodyBorderInactiveBuyColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.bodyBorderInactiveSellColor": "rgba(231, 86, 86, 0.5)",
-  "linetoolorder.bodyTextActiveBuyColor": "#000000",
-  "linetoolorder.bodyTextActiveStopColor": "#e75656",
-  "linetoolorder.bodyTextInactiveBuyColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.bodyTextInactiveSellColor": "rgba(231, 86, 86, 0.5)",
-  "linetoolorder.bodyTextInactiveLimitColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.bodyTextInactiveStopColor": "rgba(231, 86, 86, 0.5)",
-
-  "linetoolorder.quantityBackgroundActiveBuyColor": "#000000",
-  "linetoolorder.quantityBackgroundActiveSellColor": "#000000",
-  "linetoolorder.quantityBackgroundInactiveBuyColor": "#000000",
-  "linetoolorder.quantityBackgroundInactiveSellColor": "#000000",
-  "linetoolorder.quantityBorderActiveBuyColor": "#FFFFFF20",
-  "linetoolorder.quantityBorderActiveSellColor": "#e75656",
-  "linetoolorder.quantityBorderInactiveBuyColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.quantityBorderInactiveSellColor": "rgba(231, 86, 86, 0.5)",
-  "linetoolorder.quantityTextColor": "#FFFFFF",
-
-  "linetoolorder.cancelButtonBorderActiveBuyColor": "#FFFFFF20",
-  "linetoolorder.cancelButtonBorderActiveSellColor": "#e75656",
-  "linetoolorder.cancelButtonBorderInactiveBuyColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.cancelButtonBorderInactiveSellColor": "rgba(231, 86, 86, 0.5)",
-  "linetoolorder.cancelButtonIconActiveBuyColor": "#FFFFFF",
-  "linetoolorder.cancelButtonIconActiveSellColor": "#e75656",
-  "linetoolorder.cancelButtonIconInactiveBuyColor": "rgba(255, 255, 255, 0.5)",
-  "linetoolorder.cancelButtonIconInactiveSellColor": "rgba(231, 86, 86, 0.5)",
-
-  "linetoolorder.bodyFontFamily": "Funnel Display",
-  "linetoolorder.quantityFontFamily": "Funnel Display",
-  "linetoolorder.bodyFontSize": 11, 
-  "linetoolorder.bodyFontBold": true, 
-  "linetoolorder.quantityFontSize": 11, 
-  "linetoolorder.quantityFontBold": false 
-
 
 };
