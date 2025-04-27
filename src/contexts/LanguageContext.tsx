@@ -369,6 +369,11 @@ export const translations: any = {
     minUsernameLength: "Username must be at least 3 characters",
     usernameFilter: "Username can only contain letters, numbers, and underscores",
     maxUsernameLength: "Username must be less than 20 characters",
+    showChartOrders: "Show Chart Orders",
+    bonusCommision: "Bonus Commission",
+    edit: "Edit",
+    shareEarnText: "Share your referral link with friends and earn 25% of their fees.",
+    totalUsersReferred: "Total Users Referred",
     
 
     
@@ -740,6 +745,10 @@ export const translations: any = {
     minUsernameLength: "用户名至少需要3个字符",
     usernameFilter: "用户名只能包含字母、数字和下划线",
     maxUsernameLength: "用户名必须少于20个字符",
+    showChartOrders: "显示图表订单",
+    bonusCommision: "额外佣金",
+    shareEarnText: "与朋友分享您的推荐链接，赚取25%的佣金。",
+    totalUsersReferred: '推荐用户总数',
   },
   JP: {
     trade: '取引',
@@ -1108,6 +1117,10 @@ export const translations: any = {
     minUsernameLength: 'ユーザー名は最低3文字必要です',
     usernameFilter: 'ユーザー名は文字、数字、アンダースコアのみ使用可能',
     maxUsernameLength: 'ユーザー名は20文字未満でなければなりません',
+    showChartOrders: 'チャート注文を表示',
+    bonusCommision: 'ボーナス手数料',
+    shareEarnText: '友達とあなたの紹介リンクを共有して、25%の手数料を獲得してください。',
+    totalUsersReferred: '紹介したユーザーの合計',
 
   },
   KR: {
@@ -1477,6 +1490,10 @@ export const translations: any = {
     minUsernameLength: '사용자 이름은 최소 3자 이상이어야 합니다',
     usernameFilter: '사용자 이름은 문자, 숫자, 밑줄만 사용 가능합니다',
     maxUsernameLength: '사용자 이름은 20자 미만이어야 합니다',
+    showChartOrders: '차트 주문 표시',
+    bonusCommision: '보너스 수수료',
+    shareEarnText: '친구와 추천 링크를 공유하여 25% 수수료를 얻으세요.',
+    totalUsersReferred: '추천한 사용자 수',
   },
   ES: {
     trade: 'Operar',
@@ -1845,6 +1862,10 @@ export const translations: any = {
     minUsernameLength: 'El nombre de usuario debe tener al menos 3 caracteres',
     usernameFilter: 'El nombre de usuario solo puede contener letras, números y guiones bajos',
     maxUsernameLength: 'El nombre de usuario debe tener menos de 20 caracteres',
+    showChartOrders: 'Mostrar Órdenes de Gráfico',
+    bonusCommision: 'Comisión Extra',
+    shareEarnText: 'Comparte tu enlace de referido con amigos y gana un 25% de comisión.',
+    totalUsersReferred: 'Total de Usuarios Referidos',
   }
 };
 

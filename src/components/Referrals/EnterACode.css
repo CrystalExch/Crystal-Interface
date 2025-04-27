@@ -9,11 +9,31 @@
   position: relative;
 }
 
+
+@media (max-width: 860px) {
+  .code-box {
+    width: 100% !important;
+  }
+}
 .header-container {
   align-items: center;
   display: flex;
   justify-content: space-between;
   margin: 0.5rem 0 0 0;
+}.loader-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  border-top-color: #aaaecf;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .code-title {
@@ -71,6 +91,8 @@
   padding: 0 0.5rem;
   transition: all 0.2s;
   width: 100%;
+  height: 34px;
+
 }
 .code-input::-moz-placeholder{
   color: #ededf571;

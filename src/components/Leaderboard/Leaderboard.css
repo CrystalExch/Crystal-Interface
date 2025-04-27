@@ -145,8 +145,11 @@
   flex:1
 }
 .column-header{
+  display: flex;
+  justify-content: space-between;
   color:rgba(255,255,255,.6);
-  font-size:14px
+  font-size:14px;
+  padding-right:10px;
 }
 .column-content{
   align-items:center;
@@ -993,11 +996,10 @@
   border-radius:6px;
   color:#ffffff95;
   cursor:pointer;
-  font-size:.8rem;
+  font-size:.75rem;
   font-weight:300;
-  padding:4px 16px;
-  height: 40px;
-  position:absolute;
-  right:15px;
-  top:15px
+  padding:0px 8px;
+  height: 20px;
+
 }
+
