@@ -319,8 +319,7 @@
 
 .earnings-section {
   background: #0f0f12;
-  border-radius: 8px;
-  grid-row: span 2;
+  border-radius: 12px;
   padding: 0.5rem 1rem 0.7rem 1rem;
   max-width:  350px;
 }
@@ -572,9 +571,9 @@
   right: 20px;
   position: absolute;
   color: #aaaecf;
-  padding: 5px;
-  background-color: #7f88db33;
-  border-radius: 4px;
+  padding: 6px;
+  background-color: #aaaecf24;
+  border-radius: 6px;
 }
 
 
@@ -598,10 +597,9 @@
   width: 33%;
   height: 100px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid #1c1c23;
   background: #0f0f1277;
   border-radius: 12px; 
-  border-radius: 8px;
 }
 
 
@@ -625,9 +623,9 @@
   height: 100px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
-  background: radial-gradient(circle at 50% 50%, #1c1c228a, #09090a);
+  background: #0f0f12;
 
 }
 
@@ -642,9 +640,9 @@
   height: 100px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 8px;
+  border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
-  background: radial-gradient(circle at 50% 50%, #1c1c228a, #09090a);
+  background: #0f0f12;
 
 
 }
@@ -693,7 +691,8 @@
   height: 60px;
   width: 60px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-}
+  box-shadow: 0 0 10px rgb(170 174 207 / 50%);
+ }
 .referral-bg-placeholder {
   height: 400px;
   overflow: hidden;
@@ -868,6 +867,9 @@
 .lightning {
   width: 27px;
 }
+
+
+
 
 
 

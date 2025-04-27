@@ -370,6 +370,7 @@ const Referrals: React.FC<ReferralProps> = ({
                   />
             
                 </div>
+                <span className="referral-loader"></span>
                 <div className="features-grid">
                   <div
                     className="feature-card-left"
