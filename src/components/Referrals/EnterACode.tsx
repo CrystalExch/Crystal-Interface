@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-
 import './EnterACode.css';
 
 interface EnterACodeProps {
@@ -32,7 +31,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
       setError(t('noSelfRefer'));
       return;
     }
-
+    
     setError('');
     const ok = await setUsedRefLink(inputValue.trim());
     if (!ok) {
@@ -44,9 +43,9 @@ const EnterACode: React.FC<EnterACodeProps> = ({
     if (!hasCode || isClearing) return;
     setError('');
     setIsClearing(true);
-
-    await setUsedRefLink(''); 
-
+    
+    await setUsedRefLink('');
+    
     setIsClearing(false);
   };
 
@@ -92,7 +91,11 @@ const EnterACode: React.FC<EnterACodeProps> = ({
                   disabled={isClearing}
                   className="clear-icon-button"
                 >
-                  {isClearing ? t('clearing') : t('clear')}
+                  {isClearing ? (
+                    <span className="loader-spinner"></span>
+                  ) : (
+                    t('clear')
+                  )}
                 </button>
               )}
             </div>

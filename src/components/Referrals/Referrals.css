@@ -678,6 +678,8 @@
   overflow: hidden;
   position: relative;
   width: 100%;
+  border: 1px solid transparent;
+
 }
 
 .referral-background {
@@ -685,6 +687,20 @@
   -o-object-fit: cover;
      object-fit: cover;
   width: 100%;
+  transition: 0.3s ease all;
+
+}
+
+.referral-bg-placeholder:hover .referral-background{
+  filter: brightness(0.6);
+  transform: scale(1.3);
+  transition: 0.3s ease all;
+}
+
+.referral-bg-placeholder:hover {
+  border-color: rgba(255, 255, 255, 0.1);
+  border-radius: 12px 12px 0 0;
+  transition: 0.3 ease all;
 }
 
 .referral-bg-placeholder-content {
@@ -700,7 +716,7 @@
     height: auto;
     margin: 0 0 5px 0;
     overflow: visible;
-    padding: 0 5px;
+    padding: 0 8px;
   }
 
   .referral-content {
