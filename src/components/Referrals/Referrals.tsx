@@ -113,6 +113,13 @@ const Referrals: React.FC<ReferralProps> = ({
     addr && addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
   useEffect(() => {
+    if (!address) {
+      setCommissionBonus(0);
+      setUsername('');
+      setReferredCount(0);
+      return;
+    }
+    
     (async () => {
       const refs = (await readContracts(config, {
         contracts: [
@@ -172,16 +179,25 @@ const Referrals: React.FC<ReferralProps> = ({
       if (address) {
         fetch('https://api.crystal.exchange/user_points')
           .then(res => res.json())
-          .then((data: Record<string, [string, number, number]>) => {
+          .then((data) => {
             const userInfo = data[address.toLowerCase()];
             if (userInfo) {
-              const [username, points, referral_points] = userInfo;
-              setUsername(username || '');
-              setCommissionBonus(referral_points || 0);
+              const username = userInfo[0] || '';
+              const points = userInfo[1] || 0;
+              const referral_points = userInfo[2] || 0;
+              
+              setUsername(username);
+              const formattedValue = customRound(parseFloat(referral_points.toString()), 4);
+              setCommissionBonus(parseFloat(formattedValue));
+            } else {
+              setUsername('');
+              setCommissionBonus(0);
             }
           })
           .catch(err => {
             console.error('Error fetching user points:', err);
+            setUsername('');
+            setCommissionBonus(0);
           });
       }
     })();
@@ -321,7 +337,7 @@ const Referrals: React.FC<ReferralProps> = ({
          <span className="referral-count-number">{referredCount}</span> <span>{t('totalUsersReferred')}</span>
         </div>
         <div className="total-crystals-earned-container">
-        <span className="referral-count-number"> {commissionBonus}</span> <span className="referrals-bonus-content"> Crystal {t('bonusCommision')}</span>
+        <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystal {t('bonusCommision')}</span>
         </div>
         </div>
         <div className="referral-body-section">
@@ -381,11 +397,6 @@ const Referrals: React.FC<ReferralProps> = ({
                     <p className="feature-description">{t('tierBenefitsText')}</p>
                   </div>
                 </div>
-                {/* <ReferralStatsBar
-              tokenList={tokenList}
-              claimableFees={claimableFees}
-              totalClaimableFees={totalClaimableFees}
-            /> */}
               </div>
             </div>
             <div className="earnings-section">
