@@ -17,7 +17,7 @@ import customRound from '../../utils/customRound';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
-
+import crystal from '../../assets/CrystalX.png';
 import './Referrals.css';
 
 interface ReferralProps {
@@ -50,7 +50,6 @@ const Referrals: React.FC<ReferralProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
-  // usedRefAddress,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -74,6 +73,9 @@ const Referrals: React.FC<ReferralProps> = ({
   >(null);
   const [error, setError] = useState('');
   const isMobile = typeof window !== 'undefined' && window.innerWidth < 700;
+  const [username, setUsername] = useState('');
+  const [commissionBonus, setCommissionBonus] = useState(0);
+  
   const featureData = [
     {
       icon: <Users size={20} />,
@@ -106,6 +108,9 @@ const Referrals: React.FC<ReferralProps> = ({
       setCopySuccess(false);
     }, 3000);
   };
+
+  const getDisplayAddress = (addr: string) =>
+    addr && addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
   useEffect(() => {
     (async () => {
@@ -163,6 +168,22 @@ const Referrals: React.FC<ReferralProps> = ({
         ],
       })) as any[];
       setUsedRefLink(find[0].result);
+      
+      if (address) {
+        fetch('https://api.crystal.exchange/user_points')
+          .then(res => res.json())
+          .then((data: Record<string, [string, number, number]>) => {
+            const userInfo = data[address.toLowerCase()];
+            if (userInfo) {
+              const [username, points, referral_points] = userInfo;
+              setUsername(username || '');
+              setCommissionBonus(referral_points || 0);
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching user points:', err);
+          });
+      }
     })();
   }, [address, refLinkString]);
 
@@ -206,7 +227,7 @@ const Referrals: React.FC<ReferralProps> = ({
       }
     }
 
-    if (used === '') { // clear username
+    if (used === '') {
       try {
         const hash = await sendUserOperationAsync({
           uo: {
@@ -281,6 +302,10 @@ const Referrals: React.FC<ReferralProps> = ({
     }
   };
 
+  const displayName = username && username.trim() !== '' 
+    ? username 
+    : getDisplayAddress(address || '');
+
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
@@ -288,15 +313,15 @@ const Referrals: React.FC<ReferralProps> = ({
         <div className="referred-count">
          <img src={defaultPfp} className="referral-pfp" />
          <div className="referral-user-right-side">
-          <span className="referral-username">{address}</span>
+          <span className="referral-username">@{displayName}</span>
          <div className="user-points-subtitle">10% Point Rebates</div>
          </div>
         </div>
         <div className="total-referrals-container">
-         <span className="referral-count-number">{referredCount}</span> <span>{t('totalReferredUsers')}</span>
+         <span className="referral-count-number">{referredCount}</span> <span>{t('totalUsersReferred')}</span>
         </div>
         <div className="total-crystals-earned-container">
-        <span className="referral-count-number">{referredCount}</span> <span>{t('totalCrystalsEarned')}</span>
+        <span className="referral-count-number"> {commissionBonus}</span> <span className="referrals-bonus-content"> Crystal {t('bonusCommision')}</span>
         </div>
         </div>
         <div className="referral-body-section">
