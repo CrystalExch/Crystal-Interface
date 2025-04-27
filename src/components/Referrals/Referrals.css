@@ -29,7 +29,6 @@
 }
 .referral-background,
 .referral-mobile-background {
-  border: 1px solid #1a1a1f;
   border-radius: 12px 12px 0 0 ;
   height: 100%;
   pointer-events: none;
@@ -678,7 +677,9 @@
   overflow: hidden;
   position: relative;
   width: 100%;
-  border: 1px solid transparent;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px 12px 0 0;
+
 
 }
 
@@ -698,7 +699,6 @@
 }
 
 .referral-bg-placeholder:hover {
-  border-color: rgba(255, 255, 255, 0.1);
   border-radius: 12px 12px 0 0;
   transition: 0.3 ease all;
 }
