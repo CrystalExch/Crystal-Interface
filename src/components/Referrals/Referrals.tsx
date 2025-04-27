@@ -1,5 +1,5 @@
 import { readContracts } from '@wagmi/core';
-import { Share2, TrendingUp, Users, Zap } from 'lucide-react';
+import { Share2, TrendingUp, Users, Zap, Gem } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
 import { encodeFunctionData } from 'viem';
 import { config } from '../../wagmi';
@@ -335,14 +335,19 @@ const Referrals: React.FC<ReferralProps> = ({
         </div>
         <div className="total-referrals-container">
          <span className="referral-count-number">{referredCount}</span> <span>{t('totalUsersReferred')}</span>
+         <Users className="referred-count-icon"size={30} />
+
         </div>
         <div className="total-crystals-earned-container">
         <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystal {t('bonusCommision')}</span>
+        <Gem className="referred-count-icon" size={30} />
+
         </div>
         </div>
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
+
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
                 <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
@@ -365,6 +370,7 @@ const Referrals: React.FC<ReferralProps> = ({
                   />
             
                 </div>
+                <span className="referral-loader"></span>
                 <div className="features-grid">
                   <div
                     className="feature-card-left"
@@ -525,7 +531,7 @@ const Referrals: React.FC<ReferralProps> = ({
                           </svg>
                         </div>
                         <div
-                          className="action-button"
+                          className="share-button"
                           onClick={() => {
                             const tweetText =
                               "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";

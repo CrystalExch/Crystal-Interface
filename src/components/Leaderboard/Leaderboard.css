@@ -99,6 +99,10 @@
 }
 .progress-fill{
   background:linear-gradient(90deg,#a7acd8,#aaaecf);
+  box-shadow:
+  inset 0 1px 1px rgb(255 255 255 / 75%),
+  inset 0 -1px 1px rgb(0 0 0 / 75%),
+  0 2px 8px rgb(170 174 207 / 70%);
   border-radius:4px;
   height:100%
 }

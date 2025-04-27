@@ -99,7 +99,6 @@
       #8b8eb8 50%,
       #7f82ac 75%,
       #7376a0 100%);
-  border: 1px solid rgb(255 255 255 / 10%);
   cursor: default;
   opacity: 0.4;
 }
@@ -136,6 +135,19 @@
 }
 
 .action-button {
+  align-items: center;
+  background: 0 0;
+  border: none;
+  color: #aaaecf;
+  cursor: pointer;
+  font-size: 0.75rem;
+  justify-content: center;
+  padding: 0.3rem;
+  transition: all 0.2s;
+  margin-top: -15px;
+}
+
+.share-button{
   align-items: center;
   background: 0 0;
   border: none;
@@ -307,8 +319,7 @@
 
 .earnings-section {
   background: #0f0f12;
-  border-radius: 8px;
-  grid-row: span 2;
+  border-radius: 12px;
   padding: 0.5rem 1rem 0.7rem 1rem;
   max-width:  350px;
 }
@@ -386,11 +397,12 @@
 .token-breakdown {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
-  height: 250px;
+  height: 275px;
   margin: 0.5rem 0;
   overflow-y: scroll;
   padding: 3px 0;
-  scrollbar-color: #aaaecfe4 transparent;
+  scrollbar-color: #aaaecf18 transparent;
+  scrollbar-width: thin;
 }
 
 .token-breakdown::-webkit-scrollbar {
@@ -535,7 +547,7 @@
   pointer-events: none;
   position: absolute;
   text-align: center;
-  top: 9rem;
+  top: 10rem;
   height: 100%;
   width: 100%;
   z-index: 2;
@@ -552,6 +564,16 @@
   padding: 0;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 40px rgb(170 174 207 / 30%);
+}
+
+.referred-count-icon{
+  top: 20px;
+  right: 20px;
+  position: absolute;
+  color: #aaaecf;
+  padding: 6px;
+  background-color: #aaaecf24;
+  border-radius: 6px;
 }
 
 
@@ -575,10 +597,9 @@
   width: 33%;
   height: 100px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1.5px solid #1c1c23;
   background: #0f0f1277;
   border-radius: 12px; 
-  border-radius: 8px;
 }
 
 
@@ -601,10 +622,10 @@
   width: 33%;
   height: 100px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: grey;
-  background: #0f0f1277;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: rgba(128, 128, 128, 0.7);
+  background: #0f0f12;
 
 }
 
@@ -618,10 +639,10 @@
   width: 33%;
   height: 100px;
   backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  color: grey;
-  background: #0f0f1277;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  color: rgba(128, 128, 128, 0.7);
+  background: #0f0f12;
 
 
 }
@@ -638,14 +659,13 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.1); 
-  border-radius: 5px;
+  background-color: rgba(74, 81, 108, 0.15);
+  border-radius: 8px;
   width: 140px;
   padding: 2px;
-  letter-spacing: -0.7px;
+  letter-spacing: -0.5px;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.7);
 }
 .referral-user-right-side{
   display: flex;
@@ -671,9 +691,10 @@
   height: 60px;
   width: 60px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-}
+  box-shadow: 0 0 10px rgb(170 174 207 / 50%);
+ }
 .referral-bg-placeholder {
-  height: 375px;
+  height: 400px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -846,3 +867,9 @@
 .lightning {
   width: 27px;
 }
+
+
+
+
+
+

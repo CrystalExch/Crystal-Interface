@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './EnterACode.css';
 
 interface EnterACodeProps {
@@ -18,9 +18,20 @@ const EnterACode: React.FC<EnterACodeProps> = ({
 }) => {
   const [error, setError] = useState<string>('');
   const [isClearing, setIsClearing] = useState<boolean>(false);
-
+  const [isSigning, setIsSigning] = useState<boolean>(false); 
+  
   const normalizedUsed = usedRefLink.trim();
   const hasCode = normalizedUsed !== '';
+  
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError('');
+      }, 5000); 
+      
+      return () => clearTimeout(timer);
+    }
+  }, [error]); 
 
   const handleSubmit = async (): Promise<void> => {
     if (!inputValue.trim()) {
@@ -33,22 +44,29 @@ const EnterACode: React.FC<EnterACodeProps> = ({
     }
     
     setError('');
-    const ok = await setUsedRefLink(inputValue.trim());
-    if (!ok) {
-      setError(t('setRefFailed'));
+    setIsSigning(true);
+    
+    try {
+      const ok = await setUsedRefLink(inputValue.trim());
+      if (!ok) {
+        setError(t('setRefFailed'));
+      }
+    } finally {
+      setIsSigning(false); 
     }
   };
-
+  
   const handleClear = async (): Promise<void> => {
     if (!hasCode || isClearing) return;
     setError('');
     setIsClearing(true);
     
     await setUsedRefLink('');
+    setInputValue(''); 
     
     setIsClearing(false);
   };
-
+  
   return (
     <div className="code-container">
       <div className="code-box">
@@ -92,7 +110,7 @@ const EnterACode: React.FC<EnterACodeProps> = ({
                   className="clear-icon-button"
                 >
                   {isClearing ? (
-                    <span className="loader-spinner"></span>
+                    <span className="loader-spinner-white"></span>
                   ) : (
                     t('clear')
                   )}
@@ -101,10 +119,14 @@ const EnterACode: React.FC<EnterACodeProps> = ({
             </div>
             <button
               onClick={handleSubmit}
-              disabled={hasCode}
+              disabled={hasCode || isSigning}
               className="code-button"
             >
-              {t('setRef')}
+              {isSigning ? (
+                <span className="loader-spinner-black"></span>
+              ) : (
+                t('setRef')
+              )}
             </button>
           </div>
         </div>

@@ -20,7 +20,20 @@
   display: flex;
   justify-content: space-between;
   margin: 0.5rem 0 0 0;
-}.loader-spinner {
+}
+
+.loader-spinner-black {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(0, 0, 0, 0.3);
+  border-radius: 50%;
+  border-top-color: #000000;
+  animation: spin 1s ease-in-out infinite;
+}
+
+
+.loader-spinner-white {
   display: inline-block;
   width: 12px;
   height: 12px;
@@ -29,7 +42,6 @@
   border-top-color: #aaaecf;
   animation: spin 1s ease-in-out infinite;
 }
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -50,13 +62,14 @@
 }
 
 .error-message {
-  color: #ef4444;
+  color: #f26464;
+  background-color: #d64a342f;
+  border-radius: 4px;
   font-size: 0.75rem;
   font-weight: 300;
-  min-width: 320px;
-  padding-left: 200px;
   position: absolute;
   right: 10px;
+  padding: 2px 8px;
 }
 
 .input-container {
@@ -170,6 +183,7 @@
   padding: 0 1rem;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  width: 100px;
 }
 
 .code-button:hover:not(:disabled) {
