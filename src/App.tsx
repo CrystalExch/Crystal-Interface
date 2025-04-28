@@ -12272,7 +12272,7 @@ function App() {
                       );
                     }
                   }
-                  if (!client || !(allowance < amountIn)) {
+                  if (!client || !(allowance < finalAmountIn)) {
                     hash = await sendUserOperationAsync({
                       uo: multiBatchOrders(
                         router,
@@ -12456,6 +12456,8 @@ function App() {
       setChain={handleSetChain}
       waitForTxReceipt={waitForTxReceipt}
       address={address}
+      client={client}
+      newTxPopup={newTxPopup}
     />
   ), [
     onMarketSelect,
@@ -12482,6 +12484,8 @@ function App() {
     handleSetChain,
     waitForTxReceipt,
     address,
+    client,
+    newTxPopup
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (
