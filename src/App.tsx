@@ -121,7 +121,6 @@ import Referrals from './components/Referrals/Referrals.tsx';
 import ChartComponent from './components/Chart/Chart.tsx';
 import TokenInfoPopupContent from './components/Chart/ChartHeader/TokenInfo/TokenInfoPopup/TokenInfoPopupContent.tsx';
 import ChartOrderbookPanel from './components/ChartOrderbookPanel/ChartOrderbookPanel.tsx';
-import Footer from './components/Footer/Footer.tsx';
 import Header from './components/Header/Header.tsx';
 import LanguageSelector from './components/Header/LanguageSelector/LanguageSelector';
 import LoadingOverlay from './components/loading/LoadingComponent.tsx';
@@ -268,19 +267,6 @@ function App() {
   };
 
   // state vars
-  const showFooter = [
-    '/swap',
-    '/market',
-    '/limit',
-    '/send',
-    '/scale',
-    '/portfolio',
-    '/leaderboard',
-    '/mint',
-    '/referrals',
-    '/earn',
-    '/mint'
-  ].includes(location.pathname);
   const sortConfig = undefined;
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -12860,7 +12846,6 @@ function App() {
           tokendict={tokendict}
         />
       </div>
-      {showFooter && <Footer />}
     </div>
   );
 }

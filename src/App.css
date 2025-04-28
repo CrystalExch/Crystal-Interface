@@ -2057,7 +2057,7 @@ body:has(.right-column.show) .blur-background-popups {
 .app-wrapper {
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 45px);
+  height: calc(100vh - 8px);
   overflow: auto;
 }
 
