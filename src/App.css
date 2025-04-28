@@ -5473,15 +5473,10 @@ input[type="email"] {
   filter: brightness(0.9)
 }
 
-.create-username-button.disabled {
+.create-username-button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
-
-.create-username-button.disabled:hover {
-  cursor: not-allowed;
-}
-
 
 .create-username-button.signing {
   position: relative;
@@ -6668,5 +6663,3 @@ input[type="email"] {
     opacity: 0;
   }
 }
-
-/* SCALE TOOLTIP*/
