@@ -3812,9 +3812,6 @@ function App() {
     else if (hasCompletedOnboarding && connected && popup === 11) {
       setpopup(12);
     }
-    else if (!hasCompletedOnboarding && popup === 0 && !loading) {
-      setpopup(15);
-    }
     else if ((popup === 14 || popup === 15) && !connected) {
     }
 
@@ -4026,10 +4023,6 @@ function App() {
 
       audio.currentTime = 0;
       audio.play();
-
-      setTimeout(() => {
-        setpopup(0);
-      });
 
       return true;
     } catch (error) {
@@ -7030,7 +7023,6 @@ function App() {
         ) : null}
         {(popup === 14 || popup === 15 || isTransitioning) ? (
           <div ref={popupref} className="onboarding-container">
-
             <div
               className={`onboarding-background-blur ${
                 (isTransitioning && transitionDirection === 'forward') || popup === 15
@@ -7056,7 +7048,7 @@ function App() {
 
             {connected ? (
               <>
-                <div className="step-indicators">
+                <div ref={popupref} className="step-indicators">
                   {[1, 2, 3, 4].map((index) => (
                     <div
                       key={index}
@@ -7077,6 +7069,7 @@ function App() {
                   className={`onboarding-wrapper ${
                     isTransitioning ? `transitioning ${transitionDirection}` : ''
                   }`}
+                  ref={popupref}
                 >
                   <div
                     className={`onboarding-section username-section ${
@@ -7124,7 +7117,7 @@ function App() {
                               isUsernameSigning ? 'signing' : ''
                             } ${!usernameInput.trim() ? 'disabled' : ''}`}
                             onClick={async () => {
-                              if (!usernameInput.trim() || isUsernameSigning) return;
+                              if (!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername) return;
                               await (usernameInput ? handleEditUsername() : handleCreateUsername());
                             }}
                             disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername}
@@ -7138,12 +7131,18 @@ function App() {
                           </button>
                         </div>
 
-                        {!usernameInput || originalUsername !== '' && (
-                          <div className="onboarding-actions">
-                            <button className="skip-button" onClick={handleSkipUsername}>
-                              {!usernameInput ? 'Continue Without Username' : 'Continue'}
-                            </button>
-                          </div>
+                        {(!usernameInput || originalUsername !== '') && (
+                          <>
+                            <div className="onboarding-actions">
+                              <button
+                                className="skip-button"
+                                type="button"
+                                onClick={handleSkipUsername}
+                              >
+                                {!usernameInput ? "Continue Without Username" : "Continue"}
+                              </button>
+                            </div>
+                          </>
                         )}
                       </div>
                     </div>
