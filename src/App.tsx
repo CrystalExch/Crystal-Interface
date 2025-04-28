@@ -7386,7 +7386,7 @@ function App() {
                                   <div className="challenge-mini-leaderboard">
                                     <div className="mini-leaderboard-header">
                                       <span className="mini-leaderboard-title">
-                                        Season&nbsp;1 Leaderboard
+                                        Season 0 Leaderboard
                                       </span>
                                       <span className="mini-leaderboard-time">
                                         7d 22h 50m 54s
