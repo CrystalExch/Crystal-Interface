@@ -7,7 +7,6 @@ import { config } from '../../wagmi';
 import CustomLinkModal from './CustomLinkModal';
 import EnterCode from './EnterACode';
 import FeatureModal from './FeatureModal';
-import ReferralStatsBar from './ReferralStatsBar';
 
 import { CrystalReferralAbi } from '../../abis/CrystalReferralAbi';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
@@ -17,7 +16,7 @@ import customRound from '../../utils/customRound';
 import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
-import crystal from '../../assets/CrystalX.png';
+
 import './Referrals.css';
 
 interface ReferralProps {
@@ -72,7 +71,6 @@ const Referrals: React.FC<ReferralProps> = ({
     number | null
   >(null);
   const [error, setError] = useState('');
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 700;
   const [username, setUsername] = useState('');
   const [commissionBonus, setCommissionBonus] = useState(0);
   
@@ -183,7 +181,6 @@ const Referrals: React.FC<ReferralProps> = ({
             const userInfo = data[address.toLowerCase()];
             if (userInfo) {
               const username = userInfo[0] || '';
-              const points = userInfo[1] || 0;
               const referral_points = userInfo[2] || 0;
               
               setUsername(username);

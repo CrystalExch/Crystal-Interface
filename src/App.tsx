@@ -196,6 +196,7 @@ function App() {
     }
     return g;
   })();
+  const [pendingRefCode] = useState(() => searchParams.get('ref') || '');
 
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
@@ -655,6 +656,7 @@ function App() {
     () => Object.values(tokendict),
     [tokendict],
   );
+  const [typedRefCode, setTypedRefCode] = useState('');
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -1593,6 +1595,73 @@ function App() {
       liveStreamCancelled = true;
     }
   }, [HTTP_URL, address]);
+
+  useEffect(() => {
+    if (pendingRefCode && usedRefLink === '') {
+      console.log(pendingRefCode);
+      setUsedRefLink(pendingRefCode);
+    }
+  }, [pendingRefCode, usedRefLink]);
+
+  const handleSetRef = async (used: string) => {
+    if (used !== '') {
+      const lookup = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'refToAddress',
+            args: [used.toLowerCase()],
+          },
+        ],
+      })) as any[];
+
+      if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
+        // invalid code
+        return false;
+      }
+    }
+
+    if (used === '') {
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink('');
+        return true;
+      } catch {
+        return false;
+      }
+    } else {
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink(used);
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+  };
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -3961,7 +4030,7 @@ function App() {
       setIsTransitioning(true);
       setTransitionDirection('forward');
       setTimeout(() => {
-        setpopup(15);
+        setpopup(17);
         setCurrentStep(0);
         setTimeout(() => {
           setIsTransitioning(false);
@@ -4047,7 +4116,7 @@ function App() {
     setIsTransitioning(true);
     setTransitionDirection('forward');
     setTimeout(() => {
-      setpopup(15);
+      setpopup(17);
       setTimeout(() => {
         setIsTransitioning(false);
       });
@@ -7515,6 +7584,55 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 17 && (
+          <div ref={popupref} className="onboarding-popup">
+            <h2>Add a referral code (optional)</h2>
+
+            {usedRefLink ? (
+              <>
+                <p>
+                  We detected the code <strong>{usedRefLink}</strong> in your link.
+                  Continue to activate it, or enter a different one below.
+                </p>
+                <button
+                  className="continue-btn"
+                  onClick={() => {
+                    handleSetRef(usedRefLink);
+                    setpopup(15);
+                  }}
+                >
+                  Use this code
+                </button>
+              </>
+            ) : null}
+
+            <input
+              placeholder="Enter a code"
+              value={typedRefCode}
+              onChange={e => setTypedRefCode(e.target.value.trim())}
+            />
+
+            <div className="referral-actions">
+              <button
+                className="continue-btn"
+                disabled={!typedRefCode}
+                onClick={async () => {
+                  const ok = await handleSetRef(typedRefCode);
+                  if (ok) setpopup(15);
+                }}
+              >
+                Use this code
+              </button>
+
+              <button
+                className="skip-btn"
+                onClick={() => setpopup(15)}
+              >
+                Skip
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
