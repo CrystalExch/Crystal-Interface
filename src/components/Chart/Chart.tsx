@@ -34,6 +34,7 @@ interface ChartComponentProps {
   sendUserOperationAsync: any;
   setChain: any;
   waitForTxReceipt: any;
+  address: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -51,6 +52,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   sendUserOperationAsync,
   setChain,
   waitForTxReceipt,
+  address,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -356,6 +358,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             sendUserOperationAsync={sendUserOperationAsync}
             setChain={setChain}
             waitForTxReceipt={waitForTxReceipt}
+            address={address}
           />
         ) : (
           <>

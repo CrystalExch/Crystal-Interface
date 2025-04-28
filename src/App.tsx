@@ -12337,6 +12337,7 @@ function App() {
       sendUserOperationAsync={sendUserOperationAsync}
       setChain={handleSetChain}
       waitForTxReceipt={waitForTxReceipt}
+      address={address}
     />
   ), [
     onMarketSelect,
@@ -12361,7 +12362,8 @@ function App() {
     refetch,
     sendUserOperationAsync,
     handleSetChain,
-    waitForTxReceipt
+    waitForTxReceipt,
+    address,
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (

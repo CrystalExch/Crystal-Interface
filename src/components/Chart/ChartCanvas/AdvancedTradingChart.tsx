@@ -23,6 +23,7 @@ interface ChartCanvasProps {
   sendUserOperationAsync: any;
   setChain: any;
   waitForTxReceipt: any;
+  address: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -40,6 +41,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   sendUserOperationAsync,
   setChain,
   waitForTxReceipt,
+  address,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -139,7 +141,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       console.log(e)
     }
   }, [tradehistory.length, isMarksVisible]);
-
+  
   useEffect(() => {
     try {
       if (chartReady) {
@@ -171,6 +173,34 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   let price: any = [[]];
                   let param1: any = [[]];
                   let param2: any = [[]];
+                  if (order[3] == 1) {
+                    action[0].push(0)
+                    action[0].push(3)
+                    action[0].push(1)
+                    price[0].push(order[0])
+                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                    param1[0].push(BigInt(order[1]))
+                    param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
+                    param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
+                    param2[0].push(address)
+                    param2[0].push(address)
+                    param2[0].push(address)
+                  }
+                  else {
+                    action[0].push(0)
+                    action[0].push(4)
+                    action[0].push(2)
+                    price[0].push(order[0])
+                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                    param1[0].push(BigInt(order[1]))
+                    param1[0].push(order[2]-order[7])
+                    param1[0].push(order[2]-order[7])
+                    param2[0].push(address)
+                    param2[0].push(address)
+                    param2[0].push(address)
+                  }
                   await setChain();
                   let hash;
                   hash = await sendUserOperationAsync({uo: multiBatchOrders(
@@ -185,6 +215,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   await waitForTxReceipt(hash.hash);
                   refetch()
                 } catch (error) {
+                  console.log(error)
                   orderLine.setCancellable(true)
                   orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
                 }
@@ -523,7 +554,58 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   .setQuantityFont("bold 10px Funnel Display")
                   .setLineStyle(2)
                   .onMove(async () => {
-                    console.log('Order line moved', orderLine.getPrice());
+                    orderLine.setCancellable(false)
+                    try {
+                      let action: any = [[]];
+                      let price: any = [[]];
+                      let param1: any = [[]];
+                      let param2: any = [[]];
+                      if (order[3] == 1) {
+                        action[0].push(0)
+                        action[0].push(3)
+                        action[0].push(1)
+                        price[0].push(order[0])
+                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                        param1[0].push(BigInt(order[1]))
+                        param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
+                        param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
+                        param2[0].push(address)
+                        param2[0].push(address)
+                        param2[0].push(address)
+                      }
+                      else {
+                        action[0].push(0)
+                        action[0].push(4)
+                        action[0].push(2)
+                        price[0].push(order[0])
+                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
+                        param1[0].push(BigInt(order[1]))
+                        param1[0].push(order[2]-order[7])
+                        param1[0].push(order[2]-order[7])
+                        param2[0].push(address)
+                        param2[0].push(address)
+                        param2[0].push(address)
+                      }
+                      await setChain();
+                      let hash;
+                      hash = await sendUserOperationAsync({uo: multiBatchOrders(
+                        router,
+                        BigInt(0),
+                        [markets[order[4]].address],
+                        action,
+                        price,
+                        param1,
+                        param2,
+                      )})
+                      await waitForTxReceipt(hash.hash);
+                      refetch()
+                    } catch (error) {
+                      console.log(error)
+                      orderLine.setCancellable(true)
+                      orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                    }
                   })
                   .onCancel(async () => {
                     orderLine.setCancellable(false)
