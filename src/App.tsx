@@ -1907,30 +1907,30 @@ function App() {
     if (numOrders <= 1) {
       return 0n;
     }
-  
+
     const prices: bigint[] = Array.from({ length: numOrders }, (_, i) =>
       BigInt(Math.round(startPrice + ((endPrice - startPrice) * i) / (numOrders - 1)))
     );
-  
+
     const weights: bigint[] = Array.from({ length: numOrders }, (_, i) =>
       BigInt(Math.round(1e8 + ((skew - 1) * i * 1e8) / (numOrders - 1)))
     );
-  
+
     const S_p = prices.reduce((sum, price, i) => sum + (price * weights[i]), 0n);
     const S_w = weights.reduce((sum, w) => sum + w, 0n);
-  
+
     if (S_p === 0n || S_w === 0n || desiredOutput === 0n) {
       return 0n;
     }
-  
+
     let requiredInput: bigint;
-  
+
     if (tokenIn === activeMarket.quoteAddress) {
       requiredInput = (desiredOutput * S_p) / (BigInt(activeMarket.scaleFactor) * S_w);
     } else {
       requiredInput = (desiredOutput * BigInt(activeMarket.scaleFactor) * S_w) / S_p;
     }
-  
+
     return requiredInput;
   };
 
@@ -3959,8 +3959,8 @@ function App() {
   };
 
   const handleCompleteChallenge = () => {
-    if (currentStep < 2) { setCurrentStep(c => c+1); return; }
-  
+    if (currentStep < 2) { setCurrentStep(c => c + 1); return; }
+
     setExitingChallenge(true);
     setTimeout(() => {
       localStorage.setItem('crystal_has_completed_onboarding', 'true');
@@ -7102,11 +7102,10 @@ function App() {
         {(popup === 14 || popup === 15 || isTransitioning) ? (
           <div ref={popupref} className="onboarding-container">
             <div
-              className={`onboarding-background-blur ${
-                (isTransitioning && transitionDirection === 'forward') || popup === 15
+              className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
                   ? 'active'
                   : ''
-              }`}
+                }`}
             />
             <div className="onboarding-crystal-logo">
               <img className="onboarding-crystal-logo-image" src={clearlogo} />
@@ -7130,31 +7129,27 @@ function App() {
                   {[1, 2, 3, 4].map((index) => (
                     <div
                       key={index}
-                      className={`step-indicator ${
-                        popup === 14
+                      className={`step-indicator ${popup === 14
                           ? index === 1 ? 'active' : ''
                           : (currentStep + 2) === index ? 'active' : ''
-                      } ${
-                        popup === 14
+                        } ${popup === 14
                           ? index < 1 ? 'completed' : ''
                           : (currentStep + 2) > index ? 'completed' : ''
-                      } ${isTransitioning ? 'transitioning' : ''}`}
+                        } ${isTransitioning ? 'transitioning' : ''}`}
                     />
                   ))}
                 </div>
 
                 <div
-                  className={`onboarding-wrapper ${
-                    isTransitioning ? `transitioning ${transitionDirection}` : ''
-                  }`}
+                  className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
+                    }`}
                   ref={popupref}
                 >
                   <div
-                    className={`onboarding-section username-section ${
-                      popup === 14 || (isTransitioning && transitionDirection === 'backward')
+                    className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward')
                         ? 'active'
                         : ''
-                    } ${justEntered ? 'entering' : ''}`}
+                      } ${justEntered ? 'entering' : ''}`}
                   >
                     <div className="onboarding-split-container">
                       <div className="onboarding-left-side">
@@ -7191,9 +7186,8 @@ function App() {
                           </div>
 
                           <button
-                            className={`create-username-button ${
-                              isUsernameSigning ? 'signing' : ''
-                            } ${!usernameInput.trim() ? 'disabled' : ''}`}
+                            className={`create-username-button ${isUsernameSigning ? 'signing' : ''
+                              } ${!usernameInput.trim() ? 'disabled' : ''}`}
                             onClick={async () => {
                               if (!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername) return;
                               await (usernameInput ? handleEditUsername() : handleCreateUsername());
@@ -7227,12 +7221,11 @@ function App() {
                   </div>
 
                   <div
-                    className={`onboarding-section challenge-section ${
-                      popup === 15 ||
-                      (isTransitioning && transitionDirection === 'forward')
+                    className={`onboarding-section challenge-section ${popup === 15 ||
+                        (isTransitioning && transitionDirection === 'forward')
                         ? 'active'
                         : ''
-                    } ${exitingChallenge ? 'exiting' : ''}`}
+                      } ${exitingChallenge ? 'exiting' : ''}`}
                     data-step={currentStep}
                   >
                     <div className="challenge-intro-split-container">
@@ -7267,31 +7260,29 @@ function App() {
                                   {currentStep === 0
                                     ? t('precisionMatters')
                                     : currentStep === 1
-                                    ? t('earnCrystals')
-                                    : t('claimRewards')}
+                                      ? t('earnCrystals')
+                                      : t('claimRewards')}
                                 </h3>
                                 <p className="intro-description">
                                   {currentStep === 0
                                     ? t('placeYourBids')
                                     : currentStep === 1
-                                    ? t('midsGiveYou')
-                                    : t('competeOnLeaderboards')}
+                                      ? t('midsGiveYou')
+                                      : t('competeOnLeaderboards')}
                                 </p>
                               </div>
                             </div>
                           </div>
 
                           <div
-                            className={`challenge-intro-visual-side${
-                              animating ? ' is-animating' : ''
-                            }`}
+                            className={`challenge-intro-visual-side${animating ? ' is-animating' : ''
+                              }`}
                           >
                             {currentStep === 0 && (
                               <div className="intro-image-container">
                                 <div
-                                  className={`zoom-container${
-                                    animationStarted ? ' zoom-active' : ''
-                                  }`}
+                                  className={`zoom-container${animationStarted ? ' zoom-active' : ''
+                                    }`}
                                 >
                                   <img
                                     src={part1image}
@@ -7515,7 +7506,7 @@ function App() {
                       <CrystalObject />
 
                       <div className="onboarding-connect-wallet">
-                      {/* <div className="smart-wallet-reminder">
+                        {/* <div className="smart-wallet-reminder">
                         <img className="onboarding-info-icon" src={infoicon} />
                         Using a Smart Wallet will give you a&nbsp;1.25x multiplier on all Crystals
                       </div> */}
@@ -7586,58 +7577,58 @@ function App() {
         ) : null}
         {popup === 17 && (
           <div className="use-ref-bg">
-    <div ref={popupref} className="use-ref-content">
-      <div className="onboarding-header">
-        <h2 className="use-ref-title">Add a referral code (optional)</h2>
-        {usedRefLink ? (
-          <>
-            <p className="onboarding-subtitle">
-              We detected the code <strong>{usedRefLink}</strong> in your link.
-              Continue to activate it, or enter a different one below.
-            </p>
-            <button
-              className="create-username-button"
-              onClick={() => {
-                handleSetRef(usedRefLink);
-                setpopup(15);
-              }}
-            >
-              Use this code
-            </button>
-          </>
-        ) : null}
-        
-        <div className="form-group">
-          <input
-            className="username-input"
-            placeholder="Enter a code"
-            value={typedRefCode}
-            onChange={e => setTypedRefCode(e.target.value.trim())}
-          />
-        </div>
+            <div ref={popupref} className="use-ref-content">
+              <div className="onboarding-header">
+                <h2 className="use-ref-title">Add a referral code (optional)</h2>
+                {usedRefLink ? (
+                  <>
+                    <p className="onboarding-subtitle">
+                      We detected the code <strong>{usedRefLink}</strong> in your link.
+                      Continue to activate it, or enter a different one below.
+                    </p>
+                    <button
+                      className="create-username-button"
+                      onClick={() => {
+                        handleSetRef(usedRefLink);
+                        setpopup(15);
+                      }}
+                    >
+                      Use this code
+                    </button>
+                  </>
+                ) : null}
 
-        <div className="onboarding-actions">
-          <button
-            className={`create-username-button ${!typedRefCode ? 'disabled' : ''}`}
-            disabled={!typedRefCode}
-            onClick={async () => {
-              const ok = await handleSetRef(typedRefCode);
-              if (ok) setpopup(15);
-            }}
-          >
-            Use this code
-          </button>
+                <div className="form-group">
+                  <input
+                    className="username-input"
+                    placeholder="Enter a code"
+                    value={typedRefCode}
+                    onChange={e => setTypedRefCode(e.target.value.trim())}
+                  />
+                </div>
 
-          <button
-            className="skip-button"
-            onClick={() => setpopup(15)}
-          >
-            Skip
-          </button>
-        </div>
-      </div>
-    </div>
-</div>
+                <div className="onboarding-actions">
+                  <button
+                    className={`create-username-button ${!typedRefCode ? 'disabled' : ''}`}
+                    disabled={!typedRefCode}
+                    onClick={async () => {
+                      const ok = await handleSetRef(typedRefCode);
+                      if (ok) setpopup(15);
+                    }}
+                  >
+                    Use this code
+                  </button>
+
+                  <button
+                    className="skip-button"
+                    onClick={() => setpopup(15)}
+                  >
+                    Skip
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </>
@@ -11635,15 +11626,15 @@ function App() {
                         ).toString()
                       );
                       const percentage =
-                      tokenBalances[tokenIn] === BigInt(0)
-                        ? 0
-                        : Math.min(
-                          100,
-                          Math.floor(
-                            Number(
-                              (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
-                          ),
-                        );
+                        tokenBalances[tokenIn] === BigInt(0)
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                            ),
+                          );
                       setSliderPercent(percentage);
                       const slider = document.querySelector(
                         '.balance-amount-slider',

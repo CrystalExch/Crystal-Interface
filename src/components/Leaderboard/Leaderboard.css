@@ -326,6 +326,17 @@
   text-overflow: ellipsis;
   display: inline-block;
 }
+@media(max-width: 500px){
+  .faction-row-name{
+    max-width: 140px;
+  }
+  .faction-name {
+    max-width: 140px;
+  }
+  .leaderboard-user-address{
+    max-width: 140px;
+  }
+}
 .arrow{
   font-size:12px
 }
