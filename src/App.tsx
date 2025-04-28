@@ -4186,7 +4186,7 @@ function App() {
 
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
-      const welcomeText = "Welcome to the world's first on-chain CEX.";
+      const welcomeText = "Introducing Crystals: Season 0";
 
       let index = 0;
       typedTextRef.current = "";
@@ -4202,7 +4202,7 @@ function App() {
           clearInterval(typingInterval);
           setAnimationStarted(true);
         }
-      }, 30);
+      }, 100);
 
       return () => clearInterval(typingInterval);
     }
