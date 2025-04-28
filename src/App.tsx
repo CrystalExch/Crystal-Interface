@@ -7585,9 +7585,10 @@ function App() {
           </div>
         ) : null}
         {popup === 17 && (
+                    <div className="edit-username-bg">
+
           <div ref={popupref} className="onboarding-popup">
             <h2>Add a referral code (optional)</h2>
-
             {usedRefLink ? (
               <>
                 <p>
@@ -7631,6 +7632,7 @@ function App() {
                 Skip
               </button>
             </div>
+          </div>
           </div>
         )}
       </div>
