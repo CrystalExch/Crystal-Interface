@@ -77,8 +77,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       tradeHistoryRef.current = [...tradehistory];
       if (tradehistory.length > 0 && becameVisible) {
         if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
+          const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
           const marks = tradehistory.filter(
-            (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+            (trade: any) => trade[4]?.toLowerCase() == marketKey.toLowerCase()
           ).map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             time: trade[6],
@@ -103,8 +104,9 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
       else if (tradehistory.length > 0 && isMarksVisible) {
         if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
+          const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
           const marks = diff.filter(
-            (trade: any) => trade[4] == widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
+            (trade: any) => trade[4]?.toLowerCase() == marketKey.toLowerCase()
           ).map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             time: trade[6],
@@ -144,13 +146,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         if (orders.length > 0 && isOrdersVisible) {
           if (widgetRef.current?.activeChart()?.symbol()) {
             const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
-            const market = markets[marketKey]
             orders.forEach((order: any) => {
-              if (order[4] != marketKey || order?.[10]) return;
-
-              const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(market.priceFactor))
-              .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(market.baseDecimals), 3)))
-              .setText(`Limit: ${(order[0] / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}`)
+              if (order[4]?.toLowerCase() != marketKey.toLowerCase() || order?.[10]) return;
+              const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
+              .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+              .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
               .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
               .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
               .setQuantityTextColor('#0f0f12')
@@ -484,11 +484,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
                 const market = markets[marketKey]
                 orders.forEach((order: any) => {
-                  if (order[4] != marketKey || order?.[10]) return;
-
-                  const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(market.priceFactor))
-                  .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(market.baseDecimals), 3)))
-                  .setText(`Limit: ${(order[0] / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}`)
+                  if (order[4]?.toLowerCase() != marketKey.toLowerCase() || order?.[10]) return;
+                  const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                  .setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                  .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
                   .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                   .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                   .setQuantityTextColor('#0f0f12')

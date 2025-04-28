@@ -1904,265 +1904,6 @@ function App() {
     };
   }
 
-  const [isTransitioning, setIsTransitioning] = useState(false);
-  const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [justEntered, setJustEntered] = useState(false);
-  const [exitingChallenge, setExitingChallenge] = useState(false);
-  const [currentStep, setCurrentStep] = useState(0);
-  const [animationStarted, setAnimationStarted] = useState(false);
-  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
-  const handleNextClick = () => {
-    audio.currentTime = 0;
-    audio.play();
-    handleCompleteChallenge();
-  };
-
-  useEffect(() => {
-    if (currentStep === 0) {
-      const timer = setTimeout(() => {
-        setAnimationStarted(true);
-      }, 100);
-      return () => clearTimeout(timer);
-    } else {
-      setAnimationStarted(false);
-    }
-  }, [currentStep]);
-
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(prevStep => prevStep - 1);
-    }
-  };
-
-  const handleBackToUsername = () => {
-    setIsTransitioning(true);
-    setTransitionDirection('backward');
-    setExitingChallenge(true);
-
-    setTimeout(() => {
-      setpopup(14);
-      setJustEntered(true);
-      setCurrentStep(0);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-        setExitingChallenge(false);
-      });
-    }, 10);
-  };
-  const handleCompleteChallenge = () => {
-    if (currentStep < 2) {
-      setCurrentStep(currentStep + 1);
-    } else {
-      setExitingChallenge(true);
-      setTimeout(() => {
-        localStorage.setItem('crystal_has_completed_onboarding', 'true');
-        setpopup(0);
-      });
-    }
-  };
-
-  const handleCreateUsername = async () => {
-    setUsernameError("");
-
-
-    if (usernameInput.length < 3) {
-      setUsernameError(t("minUsernameLength"));
-      return;
-    }
-
-    if (usernameInput.length > 20) {
-      setUsernameError(t("maxUsernameLength"));
-      return;
-    }
-
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-      setUsernameError(t("usernameFilter"));
-      return;
-    }
-
-    setIsUsernameSigning(true);
-
-    try {
-      const read = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'usernameToAddress',
-            args: [usernameInput],
-          },
-        ]
-      })) as any[];
-
-      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError(t("usernameAlreadyTaken"));
-        setIsUsernameSigning(false);
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsername',
-            args: [
-              usernameInput
-            ],
-          }),
-          value: 0n,
-        },
-      });
-
-      await waitForTxReceipt(hash.hash);
-
-      audio.currentTime = 0;
-      audio.play();
-
-      setIsTransitioning(true);
-      setTransitionDirection('forward');
-      setTimeout(() => {
-        setpopup(15);
-        setCurrentStep(0);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setJustEntered(true);
-        });
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsUsernameSigning(false);
-    }
-  };
-  const handleEditUsername = async () => {
-    setUsernameError("");
-
-    if (usernameInput.length < 3) {
-      setUsernameError(t("minUsernameLength"));
-      return;
-    }
-
-    if (usernameInput.length > 20) {
-      setUsernameError(t("maxUsernameLength"));
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-      setUsernameError("Username can only contain letters, numbers, and underscores");
-      return;
-    }
-
-    setIsUsernameSigning(true);
-
-    try {
-      const read = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'usernameToAddress',
-            args: [usernameInput],
-          },
-        ]
-      })) as any[];
-
-      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError(t("usernameAlreadyTaken"));
-        setIsUsernameSigning(false);
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsername',
-            args: [
-              usernameInput
-            ],
-          }),
-          value: 0n,
-        },
-      });
-
-      await waitForTxReceipt(hash.hash);
-
-      audio.currentTime = 0;
-      audio.play();
-
-      setTimeout(() => {
-        setpopup(0);
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsUsernameSigning(false);
-    }
-  };
-  const handleSkipUsername = () => {
-    audio.currentTime = 0;
-    audio.play();
-
-    setIsTransitioning(true);
-    setTransitionDirection('forward');
-    setTimeout(() => {
-      setpopup(15);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      });
-    });
-  };
-
-  const backAudioRef = useRef<HTMLAudioElement>(null);
-  const handleBackClick = () => {
-    if (backAudioRef.current) {
-      backAudioRef.current.currentTime = 0;
-      backAudioRef.current.play().catch(console.error);
-    }
-    handleBack();
-  };
-  const handleBackToUsernameWithAudio = () => {
-    if (backAudioRef.current) {
-      backAudioRef.current.currentTime = 0;
-      backAudioRef.current.play().catch(console.error);
-    }
-    handleBackToUsername();
-  };
-  useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const read = await readContracts(config, {
-          contracts: [
-            {
-              abi: CrystalReferralAbi,
-              address: settings.chainConfig[activechain].referralManager,
-              functionName: 'addressToUsername',
-              args: [address as `0x${string}`],
-            },
-          ]
-        });
-
-        if (read[0]?.result?.length) {
-          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
-        }
-      } catch (error) {
-        console.error("Failed to fetch username:", error);
-      }
-    };
-
-    if (address) {
-      fetchUsername();
-    }
-  }, [address, activechain, config]);
-
   const processOrdersForDisplay = (
     orders: Order[],
     amountsQuote: string,
@@ -4085,6 +3826,266 @@ function App() {
       return () => resizeObserver.disconnect();
     }
   }, [popup, connected, user != null, loading]);
+
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState('forward');
+  const [justEntered, setJustEntered] = useState(false);
+  const [exitingChallenge, setExitingChallenge] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [animationStarted, setAnimationStarted] = useState(false);
+  const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const handleNextClick = () => {
+    audio.currentTime = 0;
+    audio.play();
+    handleCompleteChallenge();
+  };
+
+  useEffect(() => {
+    if (currentStep === 0) {
+      const timer = setTimeout(() => {
+        setAnimationStarted(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    } else {
+      setAnimationStarted(false);
+    }
+  }, [currentStep]);
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(prevStep => prevStep - 1);
+    }
+  };
+
+  const handleBackToUsername = () => {
+    setIsTransitioning(true);
+    setTransitionDirection('backward');
+    setExitingChallenge(true);
+
+    setTimeout(() => {
+      setpopup(14);
+      setJustEntered(true);
+      setCurrentStep(0);
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setExitingChallenge(false);
+      });
+    }, 10);
+  };
+  const handleCompleteChallenge = () => {
+    if (currentStep < 2) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      setExitingChallenge(true);
+      setTimeout(() => {
+        localStorage.setItem('crystal_has_completed_onboarding', 'true');
+        setpopup(0);
+      });
+    }
+  };
+
+  const handleCreateUsername = async () => {
+    setUsernameError("");
+
+
+    if (usernameInput.length < 3) {
+      setUsernameError(t("minUsernameLength"));
+      return;
+    }
+
+    if (usernameInput.length > 20) {
+      setUsernameError(t("maxUsernameLength"));
+      return;
+    }
+
+
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError(t("usernameFilter"));
+      return;
+    }
+
+    setIsUsernameSigning(true);
+
+    try {
+      const read = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'usernameToAddress',
+            args: [usernameInput],
+          },
+        ]
+      })) as any[];
+
+      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+        setUsernameError(t("usernameAlreadyTaken"));
+        setIsUsernameSigning(false);
+        return;
+      }
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      });
+
+      await waitForTxReceipt(hash.hash);
+
+      audio.currentTime = 0;
+      audio.play();
+
+      setIsTransitioning(true);
+      setTransitionDirection('forward');
+      setTimeout(() => {
+        setpopup(15);
+        setCurrentStep(0);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setJustEntered(true);
+        });
+      });
+
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setIsUsernameSigning(false);
+    }
+  };
+  const handleEditUsername = async () => {
+    setUsernameError("");
+
+    if (usernameInput.length < 3) {
+      setUsernameError(t("minUsernameLength"));
+      return;
+    }
+
+    if (usernameInput.length > 20) {
+      setUsernameError(t("maxUsernameLength"));
+      return;
+    }
+
+    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+      setUsernameError("Username can only contain letters, numbers, and underscores");
+      return;
+    }
+
+    setIsUsernameSigning(true);
+
+    try {
+      const read = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'usernameToAddress',
+            args: [usernameInput],
+          },
+        ]
+      })) as any[];
+
+      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
+        setUsernameError(t("usernameAlreadyTaken"));
+        setIsUsernameSigning(false);
+        return;
+      }
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: settings.chainConfig[activechain].referralManager,
+          data: encodeFunctionData({
+            abi: CrystalReferralAbi,
+            functionName: 'setUsername',
+            args: [
+              usernameInput
+            ],
+          }),
+          value: 0n,
+        },
+      });
+
+      await waitForTxReceipt(hash.hash);
+
+      audio.currentTime = 0;
+      audio.play();
+
+      setTimeout(() => {
+        setpopup(0);
+      });
+
+      return true;
+    } catch (error) {
+      return false;
+    } finally {
+      setIsUsernameSigning(false);
+    }
+  };
+  const handleSkipUsername = () => {
+    audio.currentTime = 0;
+    audio.play();
+
+    setIsTransitioning(true);
+    setTransitionDirection('forward');
+    setTimeout(() => {
+      setpopup(15);
+      setTimeout(() => {
+        setIsTransitioning(false);
+      });
+    });
+  };
+
+  const backAudioRef = useRef<HTMLAudioElement>(null);
+  const handleBackClick = () => {
+    if (backAudioRef.current) {
+      backAudioRef.current.currentTime = 0;
+      backAudioRef.current.play().catch(console.error);
+    }
+    handleBack();
+  };
+  const handleBackToUsernameWithAudio = () => {
+    if (backAudioRef.current) {
+      backAudioRef.current.currentTime = 0;
+      backAudioRef.current.play().catch(console.error);
+    }
+    handleBackToUsername();
+  };
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const read = await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToUsername',
+              args: [address as `0x${string}`],
+            },
+          ]
+        });
+
+        if (read[0]?.result?.length) {
+          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        }
+      } catch (error) {
+        console.error("Failed to fetch username:", error);
+      }
+    };
+
+    if (address) {
+      fetchUsername();
+    }
+  }, [address, activechain, config]);
+
   const [animating, setAnimating] = useState(false);
 
   useEffect(() => {
@@ -4092,6 +4093,7 @@ function App() {
     const timer = setTimeout(() => setAnimating(false), 300);
     return () => clearTimeout(timer);
   }, [currentStep]);
+
   useEffect(() => {
     if (popup !== 14 && popup !== 15) {
       setShowWelcomeScreen(true);
@@ -7359,7 +7361,7 @@ function App() {
 
                   <div className="onboarding-form">
                     <div className="form-group">
-                      <label className="form-label">Y{t("yourWalletAddress")}</label>
+                      <label className="form-label">{t("yourWalletAddress")}</label>
                       <div className="wallet-address">{address || "0x1234...5678"}</div>
                     </div>
 
@@ -12167,6 +12169,227 @@ function App() {
     </div>
   );
 
+  const renderChartComponent = useMemo(() => (
+    <ChartComponent
+      onMarketSelect={onMarketSelect}
+      tokendict={tokendict}
+      trades={tradesByMarket[activeMarketKey]}
+      universalTrades={tradesByMarket}
+      activeMarket={activeMarket}
+      orderdata={{
+        liquidityBuyOrders,
+        liquiditySellOrders,
+        spreadData,
+        priceFactor,
+        symbolIn,
+        symbolOut,
+      }}
+      tradesloading={tradesloading}
+      marketsData={sortedMarkets}
+      updateChartData={setChartHeaderData}
+      tradehistory={tradehistory}
+      isMarksVisible={isMarksVisible}
+      orders={orders}
+      isOrdersVisible={isOrdersVisible}
+      router={router}
+      refetch={refetch}
+      sendUserOperationAsync={sendUserOperationAsync}
+      setChain={handleSetChain}
+      waitForTxReceipt={waitForTxReceipt}
+    />
+  ), [
+    onMarketSelect,
+    tokendict,
+    tradesByMarket,
+    activeMarket,
+    activeMarketKey,
+    liquidityBuyOrders,
+    liquiditySellOrders,
+    spreadData,
+    priceFactor,
+    symbolIn,
+    symbolOut,
+    tradesloading,
+    sortedMarkets,
+    setChartHeaderData,
+    tradehistory,
+    isMarksVisible,
+    orders,
+    isOrdersVisible,
+    router,
+    refetch,
+    sendUserOperationAsync,
+    handleSetChain,
+    waitForTxReceipt
+  ]);
+
+  const TradeLayout = (swapComponent: JSX.Element) => (
+    <div className="trade-container">
+      {windowWidth <= 1020 && (
+        <div className="mobile-nav" data-active={mobileView}>
+          <div className="mobile-nav-inner">
+            <button
+              className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
+              onClick={() => setMobileView('chart')}
+            >
+              {t('chart')}
+            </button>
+            <button
+              className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
+              onClick={() => {
+                setMobileView('orderbook');
+                setOBTab('orderbook');
+              }}
+            >
+              {t('orderbook')}
+            </button>
+            <button
+              className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
+              onClick={() => {
+                setMobileView('trades');
+                setOBTab('trades');
+              }}
+            >
+              {t('trades')}
+            </button>
+            <div className="mobile-sliding-indicator" />
+          </div>
+        </div>
+      )}
+      <div
+        className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
+        style={{
+          flexDirection:
+            layoutSettings === 'alternative' ? 'row-reverse' : 'row',
+        }}
+      >
+        {simpleView ? (
+          <>
+            <div className="right-column">{swap}</div>
+          </>
+        ) : (
+          <>
+            <div className="chartandorderbookandordercenter">
+              <div className="chartandorderbook">
+                {windowWidth <= 1020 ? (
+                  <div className="trade-mobile-view-container">
+                    {mobileView === 'chart' && renderChartComponent}
+                    {(mobileView === 'orderbook' ||
+                      mobileView === 'trades') && (
+                        <OrderBook
+                          trades={trades}
+                          orderdata={{
+                            roundedBuyOrders,
+                            roundedSellOrders,
+                            spreadData,
+                            priceFactor,
+                            symbolIn,
+                            symbolOut,
+                          }}
+                          layoutSettings={layoutSettings}
+                          orderbookPosition={orderbookPosition}
+                          hideHeader={true}
+                          interval={baseInterval}
+                          amountsQuote={amountsQuote}
+                          setAmountsQuote={setAmountsQuote}
+                          obInterval={obInterval}
+                          setOBInterval={setOBInterval}
+                          viewMode={viewMode}
+                          setViewMode={setViewMode}
+                          activeTab={obTab}
+                          setActiveTab={setOBTab}
+                          updateLimitAmount={updateLimitAmount}
+                        />
+                      )}
+                  </div>
+                ) : (
+                  <ChartOrderbookPanel
+                    layoutSettings={layoutSettings}
+                    orderbookPosition={orderbookPosition}
+                    orderdata={{
+                      roundedBuyOrders,
+                      roundedSellOrders,
+                      spreadData,
+                      priceFactor,
+                      symbolIn,
+                      symbolOut,
+                      liquidityBuyOrders,
+                      liquiditySellOrders,
+                    }}
+                    isOrderbookVisible={isOrderbookVisible}
+                    orderbookWidth={orderbookWidth}
+                    setOrderbookWidth={setOrderbookWidth}
+                    obInterval={obInterval}
+                    amountsQuote={amountsQuote}
+                    setAmountsQuote={setAmountsQuote}
+                    obtrades={trades}
+                    setOBInterval={setOBInterval}
+                    baseInterval={baseInterval}
+                    viewMode={viewMode}
+                    setViewMode={setViewMode}
+                    activeTab={obTab}
+                    setActiveTab={setOBTab}
+                    updateLimitAmount={updateLimitAmount}
+                    renderChartComponent={renderChartComponent}
+                  />
+                )}
+              </div>
+              <div
+                className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
+              >
+                <div
+                  className="ordercenter-drag-handle"
+                  onMouseDown={handleVertMouseDown}
+                />
+              </div>
+              <OrderCenter
+                orders={orders}
+                tradehistory={tradehistory}
+                canceledorders={canceledorders}
+                router={router}
+                address={address}
+                trades={tradesByMarket}
+                currentMarket={
+                  activeMarketKey.replace(
+                    new RegExp(
+                      `^${wethticker}|${wethticker}$`,
+                      'g'
+                    ),
+                    ethticker
+                  )
+                }
+                orderCenterHeight={orderCenterHeight}
+                hideBalances={true}
+                tokenList={memoizedTokenList}
+                setTokenIn={setTokenIn}
+                setTokenOut={setTokenOut}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                sortConfig={{ column: 'balance', direction: 'desc' }}
+                onSort={emptyFunction}
+                tokenBalances={tokenBalances}
+                activeSection={activeSection}
+                setActiveSection={setActiveSection}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                setChain={handleSetChain}
+                waitForTxReceipt={waitForTxReceipt}
+                isVertDragging={isVertDragging}
+              />
+            </div>
+            {windowWidth > 1020 && (
+              <div className="right-column"> {swapComponent} </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
@@ -12355,1187 +12578,11 @@ function App() {
               />
             }
           />
-          <Route
-            path="/swap"
-            element={
-              <div className="trade-container">
-                {windowWidth <= 1020 && (
-                  <div className="mobile-nav" data-active={mobileView}>
-                    <div className="mobile-nav-inner">
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
-                        onClick={() => setMobileView('chart')}
-                      >
-                        {t('chart')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('orderbook');
-                          setOBTab('orderbook');
-                        }}
-                      >
-                        {t('orderbook')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('trades');
-                          setOBTab('trades');
-                        }}
-                      >
-                        {t('trades')}
-                      </button>
-                      <div className="mobile-sliding-indicator" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
-                  style={{
-                    flexDirection:
-                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  {simpleView ? (
-                    <>
-                      <div className="right-column">{swap}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="chartandorderbookandordercenter">
-                        <div className="chartandorderbook">
-                          {windowWidth <= 1020 ? (
-                            <div className="trade-mobile-view-container">
-                              {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={connected ? address : undefined}
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                  updateChartData={setChartHeaderData}
-                                  tradehistory={tradehistory}
-                                  isMarksVisible={isMarksVisible}
-                                  orders={orders}
-                                  isOrdersVisible={isOrdersVisible}
-                                  router={router}
-                                  refetch={refetch}
-                                  sendUserOperationAsync={sendUserOperationAsync}
-                                  setChain={handleSetChain}
-                                  waitForTxReceipt={waitForTxReceipt}
-                                />
-                              )}
-                              {(mobileView === 'orderbook' ||
-                                mobileView === 'trades') && (
-                                  <OrderBook
-                                    trades={trades}
-                                    orderdata={{
-                                      roundedBuyOrders,
-                                      roundedSellOrders,
-                                      spreadData,
-                                      priceFactor,
-                                      symbolIn,
-                                      symbolOut,
-                                    }}
-                                    layoutSettings={layoutSettings}
-                                    orderbookPosition={orderbookPosition}
-                                    hideHeader={true}
-                                    interval={baseInterval}
-                                    amountsQuote={amountsQuote}
-                                    setAmountsQuote={setAmountsQuote}
-                                    obInterval={obInterval}
-                                    setOBInterval={setOBInterval}
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    activeTab={obTab}
-                                    setActiveTab={setOBTab}
-                                    updateLimitAmount={updateLimitAmount}
-                                  />
-                                )}
-                            </div>
-                          ) : (
-                            <ChartOrderbookPanel
-                              onMarketSelect={onMarketSelect}
-                              tokendict={tokendict}
-                              universalTrades={tradesByMarket}
-                              userWalletAddress={
-                                connected
-                                  ? address
-                                  : undefined
-                              }
-                              layoutSettings={layoutSettings}
-                              orderbookPosition={orderbookPosition}
-                              trades={tradesByMarket[activeMarketKey]}
-                              orderdata={{
-                                roundedBuyOrders,
-                                roundedSellOrders,
-                                spreadData,
-                                priceFactor,
-                                symbolIn,
-                                symbolOut,
-                                liquidityBuyOrders,
-                                liquiditySellOrders,
-                              }}
-                              activeMarket={activeMarket}
-                              isOrderbookVisible={isOrderbookVisible}
-                              orderbookWidth={orderbookWidth}
-                              setOrderbookWidth={setOrderbookWidth}
-                              obInterval={obInterval}
-                              amountsQuote={amountsQuote}
-                              setAmountsQuote={setAmountsQuote}
-                              obtrades={trades}
-                              setOBInterval={setOBInterval}
-                              baseInterval={baseInterval}
-                              viewMode={viewMode}
-                              setViewMode={setViewMode}
-                              activeTab={obTab}
-                              setActiveTab={setOBTab}
-                              setpopup={setpopup}
-                              updateLimitAmount={updateLimitAmount}
-                              tradesloading={tradesloading}
-                              marketsData={sortedMarkets}
-                              updateChartData={setChartHeaderData}
-                              tradehistory={tradehistory}
-                              isMarksVisible={isMarksVisible}
-                              orders={orders}
-                              isOrdersVisible={isOrdersVisible}
-                              router={router}
-                              refetch={refetch}
-                              sendUserOperationAsync={sendUserOperationAsync}
-                              setChain={handleSetChain}
-                              waitForTxReceipt={waitForTxReceipt}
-                            />
-                          )}
-                        </div>
-
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                          />
-                        </div>
-
-                        <div
-                          className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging ? 'none' : 'height 0.1s ease',
-                          }}
-                        >
-                          <OrderCenter
-                            orders={orders}
-                            tradehistory={tradehistory}
-                            canceledorders={canceledorders}
-                            router={router}
-                            address={address}
-                            trades={tradesByMarket}
-                            currentMarket={
-                              activeMarketKey.replace(
-                                new RegExp(
-                                  `^${wethticker}|${wethticker}$`,
-                                  'g'
-                                ),
-                                ethticker
-                              )
-                            }
-                            orderCenterHeight={orderCenterHeight}
-                            hideBalances={true}
-                            tokenList={memoizedTokenList}
-                            setTokenIn={setTokenIn}
-                            setTokenOut={setTokenOut}
-                            setSendTokenIn={setSendTokenIn}
-                            setpopup={setpopup}
-                            sortConfig={{ column: 'balance', direction: 'desc' }}
-                            onSort={emptyFunction}
-                            tokenBalances={tokenBalances}
-                            activeSection={activeSection}
-                            setActiveSection={setActiveSection}
-                            filter={filter}
-                            setFilter={setFilter}
-                            onlyThisMarket={onlyThisMarket}
-                            setOnlyThisMarket={setOnlyThisMarket}
-                            refetch={refetch}
-                            sendUserOperationAsync={sendUserOperationAsync}
-                            setChain={handleSetChain}
-                            waitForTxReceipt={waitForTxReceipt}
-                          />
-                        </div>
-                      </div>
-                      {windowWidth > 1020 && (
-                        <div className="right-column"> {swap} </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            }
-          />
-          <Route
-            path="/market"
-            element={
-              <div className="trade-container">
-                {windowWidth <= 1020 && (
-                  <div className="mobile-nav" data-active={mobileView}>
-                    <div className="mobile-nav-inner">
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
-                        onClick={() => setMobileView('chart')}
-                      >
-                        {t('chart')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('orderbook');
-                          setOBTab('orderbook');
-                        }}
-                      >
-                        {t('orderbook')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('trades');
-                          setOBTab('trades');
-                        }}
-                      >
-                        {t('trades')}
-                      </button>
-                      <div className="mobile-sliding-indicator" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
-                  style={{
-                    flexDirection:
-                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  {simpleView ? (
-                    <>
-                      <div className="right-column">{swap}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="chartandorderbookandordercenter">
-                        <div className="chartandorderbook">
-                          {windowWidth <= 1020 ? (
-                            <div className="trade-mobile-view-container">
-                              {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={connected ? address : undefined}
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                  updateChartData={setChartHeaderData}
-                                  tradehistory={tradehistory}
-                                  isMarksVisible={isMarksVisible}
-                                  orders={orders}
-                                  isOrdersVisible={isOrdersVisible}
-                                  router={router}
-                                  refetch={refetch}
-                                  sendUserOperationAsync={sendUserOperationAsync}
-                                  setChain={handleSetChain}
-                                  waitForTxReceipt={waitForTxReceipt}
-                                />
-                              )}
-                              {(mobileView === 'orderbook' ||
-                                mobileView === 'trades') && (
-                                  <OrderBook
-                                    trades={trades}
-                                    orderdata={{
-                                      roundedBuyOrders,
-                                      roundedSellOrders,
-                                      spreadData,
-                                      priceFactor,
-                                      symbolIn,
-                                      symbolOut,
-                                    }}
-                                    layoutSettings={layoutSettings}
-                                    orderbookPosition={orderbookPosition}
-                                    hideHeader={true}
-                                    interval={baseInterval}
-                                    amountsQuote={amountsQuote}
-                                    setAmountsQuote={setAmountsQuote}
-                                    obInterval={obInterval}
-                                    setOBInterval={setOBInterval}
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    activeTab={obTab}
-                                    setActiveTab={setOBTab}
-                                    updateLimitAmount={updateLimitAmount}
-                                  />
-                                )}
-                            </div>
-                          ) : (
-                            <ChartOrderbookPanel
-                              onMarketSelect={onMarketSelect}
-                              tokendict={tokendict}
-                              universalTrades={tradesByMarket}
-                              userWalletAddress={
-                                connected
-                                  ? address
-                                  : undefined
-                              }
-                              layoutSettings={layoutSettings}
-                              orderbookPosition={orderbookPosition}
-                              trades={tradesByMarket[activeMarketKey]}
-                              orderdata={{
-                                roundedBuyOrders,
-                                roundedSellOrders,
-                                spreadData,
-                                priceFactor,
-                                symbolIn,
-                                symbolOut,
-                                liquidityBuyOrders,
-                                liquiditySellOrders,
-                              }}
-                              activeMarket={activeMarket}
-                              isOrderbookVisible={isOrderbookVisible}
-                              orderbookWidth={orderbookWidth}
-                              setOrderbookWidth={setOrderbookWidth}
-                              obInterval={obInterval}
-                              amountsQuote={amountsQuote}
-                              setAmountsQuote={setAmountsQuote}
-                              obtrades={trades}
-                              setOBInterval={setOBInterval}
-                              baseInterval={baseInterval}
-                              viewMode={viewMode}
-                              setViewMode={setViewMode}
-                              activeTab={obTab}
-                              setActiveTab={setOBTab}
-                              setpopup={setpopup}
-                              updateLimitAmount={updateLimitAmount}
-                              tradesloading={tradesloading}
-                              marketsData={sortedMarkets}
-                              updateChartData={setChartHeaderData}
-                              tradehistory={tradehistory}
-                              isMarksVisible={isMarksVisible}
-                              orders={orders}
-                              isOrdersVisible={isOrdersVisible}
-                              router={router}
-                              refetch={refetch}
-                              sendUserOperationAsync={sendUserOperationAsync}
-                              setChain={handleSetChain}
-                              waitForTxReceipt={waitForTxReceipt}
-                            />
-                          )}
-                        </div>
-
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                          />
-                        </div>
-
-                        <div
-                          className={`app-ordercenter-wrapper ${isVertDragging ? 'isVertDragging' : ''}`}
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging ? 'none' : 'height 0.1s ease',
-                          }}
-                        >
-                          <OrderCenter
-                            orders={orders}
-                            tradehistory={tradehistory}
-                            canceledorders={canceledorders}
-                            router={router}
-                            address={address}
-                            trades={tradesByMarket}
-                            currentMarket={
-                              activeMarketKey.replace(
-                                new RegExp(
-                                  `^${wethticker}|${wethticker}$`,
-                                  'g'
-                                ),
-                                ethticker
-                              )
-                            }
-                            orderCenterHeight={orderCenterHeight}
-                            hideBalances={true}
-                            tokenList={memoizedTokenList}
-                            setTokenIn={setTokenIn}
-                            setTokenOut={setTokenOut}
-                            setSendTokenIn={setSendTokenIn}
-                            setpopup={setpopup}
-                            sortConfig={{ column: 'balance', direction: 'desc' }}
-                            onSort={emptyFunction}
-                            tokenBalances={tokenBalances}
-                            activeSection={activeSection}
-                            setActiveSection={setActiveSection}
-                            filter={filter}
-                            setFilter={setFilter}
-                            onlyThisMarket={onlyThisMarket}
-                            setOnlyThisMarket={setOnlyThisMarket}
-                            refetch={refetch}
-                            sendUserOperationAsync={sendUserOperationAsync}
-                            setChain={handleSetChain}
-                            waitForTxReceipt={waitForTxReceipt}
-                          />
-                        </div>
-                      </div>
-                      {windowWidth > 1020 && (
-                        <div className="right-column"> {swap} </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            }
-          />
-          <Route
-            path="/limit"
-            element={
-              <div className="trade-container">
-                {windowWidth <= 1020 && (
-                  <div className="mobile-nav" data-active={mobileView}>
-                    <div className="mobile-nav-inner">
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
-                        onClick={() => setMobileView('chart')}
-                      >
-                        {t('chart')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('orderbook');
-                          setOBTab('orderbook');
-                        }}
-                      >
-                        {t('orderbook')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('trades');
-                          setOBTab('trades');
-                        }}
-                      >
-                        {t('trades')}
-                      </button>
-                      <div className="mobile-sliding-indicator" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
-                  style={{
-                    flexDirection:
-                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  {simpleView ? (
-                    <>
-                      <div className="right-column">{limit}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="chartandorderbookandordercenter">
-                        <div className="chartandorderbook">
-                          {windowWidth <= 1020 ? (
-                            <div className="trade-mobile-view-container">
-                              {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={
-                                    connected
-                                      ? address
-                                      : undefined
-                                  }
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                  updateChartData={setChartHeaderData}
-                                  tradehistory={tradehistory}
-                                  isMarksVisible={isMarksVisible}
-                                  orders={orders}
-                                  isOrdersVisible={isOrdersVisible}
-                                  router={router}
-                                  refetch={refetch}
-                                  sendUserOperationAsync={sendUserOperationAsync}
-                                  setChain={handleSetChain}
-                                  waitForTxReceipt={waitForTxReceipt}
-                                />
-                              )}
-                              {(mobileView === 'orderbook' ||
-                                mobileView === 'trades') && (
-                                  <OrderBook
-                                    trades={trades}
-                                    orderdata={{
-                                      roundedBuyOrders,
-                                      roundedSellOrders,
-                                      spreadData,
-                                      priceFactor,
-                                      symbolIn,
-                                      symbolOut,
-                                    }}
-                                    layoutSettings={layoutSettings}
-                                    orderbookPosition={orderbookPosition}
-                                    hideHeader={true}
-                                    interval={baseInterval}
-                                    amountsQuote={amountsQuote}
-                                    setAmountsQuote={setAmountsQuote}
-                                    obInterval={obInterval}
-                                    setOBInterval={setOBInterval}
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    activeTab={obTab}
-                                    setActiveTab={setOBTab}
-                                    updateLimitAmount={updateLimitAmount}
-                                  />
-                                )}
-                            </div>
-                          ) : (
-                            <ChartOrderbookPanel
-                              onMarketSelect={onMarketSelect}
-                              tokendict={tokendict}
-                              universalTrades={tradesByMarket}
-                              userWalletAddress={
-                                connected
-                                  ? address
-                                  : undefined
-                              }
-                              layoutSettings={layoutSettings}
-                              orderbookPosition={orderbookPosition}
-                              trades={tradesByMarket[activeMarketKey]}
-                              orderdata={{
-                                roundedBuyOrders,
-                                roundedSellOrders,
-                                spreadData,
-                                priceFactor,
-                                symbolIn,
-                                symbolOut,
-                                liquidityBuyOrders,
-                                liquiditySellOrders,
-                              }}
-                              activeMarket={activeMarket}
-                              isOrderbookVisible={isOrderbookVisible}
-                              orderbookWidth={orderbookWidth}
-                              setOrderbookWidth={setOrderbookWidth}
-                              obInterval={obInterval}
-                              amountsQuote={amountsQuote}
-                              setAmountsQuote={setAmountsQuote}
-                              obtrades={trades}
-                              setOBInterval={setOBInterval}
-                              baseInterval={baseInterval}
-                              viewMode={viewMode}
-                              setViewMode={setViewMode}
-                              activeTab={obTab}
-                              setActiveTab={setOBTab}
-                              setpopup={setpopup}
-                              updateLimitAmount={updateLimitAmount}
-                              tradesloading={tradesloading}
-                              marketsData={sortedMarkets}
-                              updateChartData={setChartHeaderData}
-                              tradehistory={tradehistory}
-                              isMarksVisible={isMarksVisible}
-                              orders={orders}
-                              isOrdersVisible={isOrdersVisible}
-                              router={router}
-                              refetch={refetch}
-                              sendUserOperationAsync={sendUserOperationAsync}
-                              setChain={handleSetChain}
-                              waitForTxReceipt={waitForTxReceipt}
-                            />
-                          )}
-                        </div>
-
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                            style={{
-                              position: 'relative',
-                              width: '100%',
-                              cursor: 'row-resize',
-                            }}
-                          />
-                        </div>
-                        <div
-                          className="app-ordercenter-wrapper"
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging
-                              ? 'none'
-                              : 'height 0.1s ease',
-                          }}
-                        >
-                          <OrderCenter
-                            orders={orders}
-                            tradehistory={tradehistory}
-                            canceledorders={canceledorders}
-                            router={router}
-                            address={address}
-                            trades={tradesByMarket}
-                            currentMarket={
-                              activeMarketKey.replace(
-                                new RegExp(
-                                  `^${wethticker}|${wethticker}$`,
-                                  'g'
-                                ),
-                                ethticker
-                              )
-                            }
-                            orderCenterHeight={orderCenterHeight}
-                            hideBalances={true}
-                            tokenList={memoizedTokenList}
-                            setTokenIn={setTokenIn}
-                            setTokenOut={setTokenOut}
-                            setSendTokenIn={setSendTokenIn}
-                            setpopup={setpopup}
-                            sortConfig={{ column: 'balance', direction: 'desc' }}
-                            onSort={emptyFunction}
-                            tokenBalances={tokenBalances}
-                            activeSection={activeSection}
-                            setActiveSection={setActiveSection}
-                            filter={filter}
-                            setFilter={setFilter}
-                            onlyThisMarket={onlyThisMarket}
-                            setOnlyThisMarket={setOnlyThisMarket}
-                            refetch={refetch}
-                            sendUserOperationAsync={sendUserOperationAsync}
-                            setChain={handleSetChain}
-                            waitForTxReceipt={waitForTxReceipt}
-                          />
-                        </div>
-                      </div>
-                      {windowWidth > 1020 && (
-                        <div className="right-column"> {limit} </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            }
-          />
-          <Route
-            path="/send"
-            element={
-              <div className="trade-container">
-                {windowWidth <= 1020 && (
-                  <div className="mobile-nav" data-active={mobileView}>
-                    <div className="mobile-nav-inner">
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
-                        onClick={() => setMobileView('chart')}
-                      >
-                        {t('chart')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('orderbook');
-                          setOBTab('orderbook');
-                        }}
-                      >
-                        {t('orderbook')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('trades');
-                          setOBTab('trades');
-                        }}
-                      >
-                        {t('trades')}
-                      </button>
-                      <div className="mobile-sliding-indicator" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
-                  style={{
-                    flexDirection:
-                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  {simpleView ? (
-                    <>
-                      <div className="right-column">{send}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="chartandorderbookandordercenter">
-                        <div className="chartandorderbook">
-                          {windowWidth <= 1020 ? (
-                            <div className="trade-mobile-view-container">
-                              {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={
-                                    connected
-                                      ? address
-                                      : undefined
-                                  }
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                  updateChartData={setChartHeaderData}
-                                  tradehistory={tradehistory}
-                                  isMarksVisible={isMarksVisible}
-                                  orders={orders}
-                                  isOrdersVisible={isOrdersVisible}
-                                  router={router}
-                                  refetch={refetch}
-                                  sendUserOperationAsync={sendUserOperationAsync}
-                                  setChain={handleSetChain}
-                                  waitForTxReceipt={waitForTxReceipt}
-                                />
-                              )}
-                              {(mobileView === 'orderbook' ||
-                                mobileView === 'trades') && (
-                                  <OrderBook
-                                    trades={trades}
-                                    orderdata={{
-                                      roundedBuyOrders,
-                                      roundedSellOrders,
-                                      spreadData,
-                                      priceFactor,
-                                      symbolIn,
-                                      symbolOut,
-                                    }}
-                                    layoutSettings={layoutSettings}
-                                    orderbookPosition={orderbookPosition}
-                                    hideHeader={true}
-                                    interval={baseInterval}
-                                    amountsQuote={amountsQuote}
-                                    setAmountsQuote={setAmountsQuote}
-                                    obInterval={obInterval}
-                                    setOBInterval={setOBInterval}
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    activeTab={obTab}
-                                    setActiveTab={setOBTab}
-                                    updateLimitAmount={updateLimitAmount}
-                                  />
-                                )}
-                            </div>
-                          ) : (
-                            <ChartOrderbookPanel
-                              onMarketSelect={onMarketSelect}
-                              tokendict={tokendict}
-                              universalTrades={tradesByMarket}
-                              userWalletAddress={
-                                connected
-                                  ? address
-                                  : undefined
-                              }
-                              layoutSettings={layoutSettings}
-                              orderbookPosition={orderbookPosition}
-                              trades={tradesByMarket[activeMarketKey]}
-                              orderdata={{
-                                roundedBuyOrders,
-                                roundedSellOrders,
-                                spreadData,
-                                priceFactor,
-                                symbolIn,
-                                symbolOut,
-                                liquidityBuyOrders,
-                                liquiditySellOrders,
-                              }}
-                              activeMarket={activeMarket}
-                              isOrderbookVisible={isOrderbookVisible}
-                              orderbookWidth={orderbookWidth}
-                              setOrderbookWidth={setOrderbookWidth}
-                              obInterval={obInterval}
-                              amountsQuote={amountsQuote}
-                              setAmountsQuote={setAmountsQuote}
-                              obtrades={trades}
-                              setOBInterval={setOBInterval}
-                              baseInterval={baseInterval}
-                              viewMode={viewMode}
-                              setViewMode={setViewMode}
-                              activeTab={obTab}
-                              setActiveTab={setOBTab}
-                              setpopup={setpopup}
-                              updateLimitAmount={updateLimitAmount}
-                              tradesloading={tradesloading}
-                              marketsData={sortedMarkets}
-                              updateChartData={setChartHeaderData}
-                              tradehistory={tradehistory}
-                              isMarksVisible={isMarksVisible}
-                              orders={orders}
-                              isOrdersVisible={isOrdersVisible}
-                              router={router}
-                              refetch={refetch}
-                              sendUserOperationAsync={sendUserOperationAsync}
-                              setChain={handleSetChain}
-                              waitForTxReceipt={waitForTxReceipt}
-                            />
-                          )}
-                        </div>
-
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                            style={{
-                              position: 'relative',
-                              width: '100%',
-                              cursor: 'row-resize',
-                            }}
-                          />
-                        </div>
-
-                        <div
-                          className="app-ordercenter-wrapper"
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging
-                              ? 'none'
-                              : 'height 0.1s ease',
-                          }}
-                        >
-                          <OrderCenter
-                            orders={orders}
-                            tradehistory={tradehistory}
-                            canceledorders={canceledorders}
-                            router={router}
-                            address={address}
-                            trades={tradesByMarket}
-                            currentMarket={
-                              activeMarketKey.replace(
-                                new RegExp(
-                                  `^${wethticker}|${wethticker}$`,
-                                  'g'
-                                ),
-                                ethticker
-                              )
-                            }
-                            orderCenterHeight={orderCenterHeight}
-                            hideBalances={true}
-                            tokenList={memoizedTokenList}
-                            setTokenIn={setTokenIn}
-                            setTokenOut={setTokenOut}
-                            setSendTokenIn={setSendTokenIn}
-                            setpopup={setpopup}
-                            sortConfig={{ column: 'balance', direction: 'desc' }}
-                            onSort={emptyFunction}
-                            tokenBalances={tokenBalances}
-                            activeSection={activeSection}
-                            setActiveSection={setActiveSection}
-                            filter={filter}
-                            setFilter={setFilter}
-                            onlyThisMarket={onlyThisMarket}
-                            setOnlyThisMarket={setOnlyThisMarket}
-                            refetch={refetch}
-                            sendUserOperationAsync={sendUserOperationAsync}
-                            setChain={handleSetChain}
-                            waitForTxReceipt={waitForTxReceipt}
-                          />
-                        </div>
-                      </div>
-                      {windowWidth > 1020 && (
-                        <div className="right-column"> {send} </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            }
-          />
-          <Route
-            path="/scale"
-            element={
-              <div className="trade-container">
-                {windowWidth <= 1020 && (
-                  <div className="mobile-nav" data-active={mobileView}>
-                    <div className="mobile-nav-inner">
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'chart' ? 'active' : ''}`}
-                        onClick={() => setMobileView('chart')}
-                      >
-                        {t('chart')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'orderbook' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('orderbook');
-                          setOBTab('orderbook');
-                        }}
-                      >
-                        {t('orderbook')}
-                      </button>
-                      <button
-                        className={`mobile-nav-link ${mobileView === 'trades' ? 'active' : ''}`}
-                        onClick={() => {
-                          setMobileView('trades');
-                          setOBTab('trades');
-                        }}
-                      >
-                        {t('trades')}
-                      </button>
-                      <div className="mobile-sliding-indicator" />
-                    </div>
-                  </div>
-                )}
-                <div
-                  className={`main-content-wrapper ${simpleView ? 'simple-view' : ''}`}
-                  style={{
-                    flexDirection:
-                      layoutSettings === 'alternative' ? 'row-reverse' : 'row',
-                  }}
-                >
-                  {simpleView ? (
-                    <>
-                      <div className="right-column">{scale}</div>
-                    </>
-                  ) : (
-                    <>
-                      <div className="chartandorderbookandordercenter">
-                        <div className="chartandorderbook">
-                          {windowWidth <= 1020 ? (
-                            <div className="trade-mobile-view-container">
-                              {mobileView === 'chart' && (
-                                <ChartComponent
-                                  onMarketSelect={onMarketSelect}
-                                  tokendict={tokendict}
-                                  trades={tradesByMarket[activeMarketKey]}
-                                  universalTrades={tradesByMarket}
-                                  activeMarket={activeMarket}
-                                  orderdata={{
-                                    liquidityBuyOrders,
-                                    liquiditySellOrders,
-                                    spreadData,
-                                    priceFactor,
-                                    symbolIn,
-                                    symbolOut,
-                                  }}
-                                  userWalletAddress={
-                                    connected
-                                      ? address
-                                      : undefined
-                                  }
-                                  setpopup={setpopup}
-                                  tradesloading={tradesloading}
-                                  marketsData={sortedMarkets}
-                                  updateChartData={setChartHeaderData}
-                                  tradehistory={tradehistory}
-                                  isMarksVisible={isMarksVisible}
-                                  orders={orders}
-                                  isOrdersVisible={isOrdersVisible}
-                                  router={router}
-                                  refetch={refetch}
-                                  sendUserOperationAsync={sendUserOperationAsync}
-                                  setChain={handleSetChain}
-                                  waitForTxReceipt={waitForTxReceipt}
-                                />
-                              )}
-                              {(mobileView === 'orderbook' ||
-                                mobileView === 'trades') && (
-                                  <OrderBook
-                                    trades={trades}
-                                    orderdata={{
-                                      roundedBuyOrders,
-                                      roundedSellOrders,
-                                      spreadData,
-                                      priceFactor,
-                                      symbolIn,
-                                      symbolOut,
-                                    }}
-                                    layoutSettings={layoutSettings}
-                                    orderbookPosition={orderbookPosition}
-                                    hideHeader={true}
-                                    interval={baseInterval}
-                                    amountsQuote={amountsQuote}
-                                    setAmountsQuote={setAmountsQuote}
-                                    obInterval={obInterval}
-                                    setOBInterval={setOBInterval}
-                                    viewMode={viewMode}
-                                    setViewMode={setViewMode}
-                                    activeTab={obTab}
-                                    setActiveTab={setOBTab}
-                                    updateLimitAmount={updateLimitAmount}
-                                  />
-                                )}
-                            </div>
-                          ) : (
-                            <ChartOrderbookPanel
-                              onMarketSelect={onMarketSelect}
-                              tokendict={tokendict}
-                              universalTrades={tradesByMarket}
-                              userWalletAddress={
-                                connected
-                                  ? address
-                                  : undefined
-                              }
-                              layoutSettings={layoutSettings}
-                              orderbookPosition={orderbookPosition}
-                              trades={tradesByMarket[activeMarketKey]}
-                              orderdata={{
-                                roundedBuyOrders,
-                                roundedSellOrders,
-                                spreadData,
-                                priceFactor,
-                                symbolIn,
-                                symbolOut,
-                                liquidityBuyOrders,
-                                liquiditySellOrders,
-                              }}
-                              activeMarket={activeMarket}
-                              isOrderbookVisible={isOrderbookVisible}
-                              orderbookWidth={orderbookWidth}
-                              setOrderbookWidth={setOrderbookWidth}
-                              obInterval={obInterval}
-                              amountsQuote={amountsQuote}
-                              setAmountsQuote={setAmountsQuote}
-                              obtrades={trades}
-                              setOBInterval={setOBInterval}
-                              baseInterval={baseInterval}
-                              viewMode={viewMode}
-                              setViewMode={setViewMode}
-                              activeTab={obTab}
-                              setActiveTab={setOBTab}
-                              setpopup={setpopup}
-                              updateLimitAmount={updateLimitAmount}
-                              tradesloading={tradesloading}
-                              marketsData={sortedMarkets}
-                              updateChartData={setChartHeaderData}
-                              tradehistory={tradehistory}
-                              isMarksVisible={isMarksVisible}
-                              orders={orders}
-                              isOrdersVisible={isOrdersVisible}
-                              router={router}
-                              refetch={refetch}
-                              sendUserOperationAsync={sendUserOperationAsync}
-                              setChain={handleSetChain}
-                              waitForTxReceipt={waitForTxReceipt}
-                            />
-                          )}
-                        </div>
-
-                        <div
-                          className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
-                        >
-                          <div
-                            className="ordercenter-drag-handle"
-                            onMouseDown={handleVertMouseDown}
-                            style={{
-                              position: 'relative',
-                              width: '100%',
-                              cursor: 'row-resize',
-                            }}
-                          />
-                        </div>
-                        <div
-                          className="app-ordercenter-wrapper"
-                          style={{
-                            height: `${isOrderCenterVisible ? `${orderCenterHeight}px` : '0px'}`,
-                            transition: isVertDragging
-                              ? 'none'
-                              : 'height 0.1s ease',
-                          }}
-                        >
-                          <OrderCenter
-                            orders={orders}
-                            tradehistory={tradehistory}
-                            canceledorders={canceledorders}
-                            router={router}
-                            address={address}
-                            trades={tradesByMarket}
-                            currentMarket={
-                              activeMarketKey.replace(
-                                new RegExp(
-                                  `^${wethticker}|${wethticker}$`,
-                                  'g'
-                                ),
-                                ethticker
-                              )
-                            }
-                            orderCenterHeight={orderCenterHeight}
-                            hideBalances={true}
-                            tokenList={memoizedTokenList}
-                            setTokenIn={setTokenIn}
-                            setTokenOut={setTokenOut}
-                            setSendTokenIn={setSendTokenIn}
-                            setpopup={setpopup}
-                            sortConfig={{ column: 'balance', direction: 'desc' }}
-                            onSort={emptyFunction}
-                            tokenBalances={tokenBalances}
-                            activeSection={activeSection}
-                            setActiveSection={setActiveSection}
-                            filter={filter}
-                            setFilter={setFilter}
-                            onlyThisMarket={onlyThisMarket}
-                            setOnlyThisMarket={setOnlyThisMarket}
-                            refetch={refetch}
-                            sendUserOperationAsync={sendUserOperationAsync}
-                            setChain={handleSetChain}
-                            waitForTxReceipt={waitForTxReceipt}
-                          />
-                        </div>
-                      </div>
-                      {windowWidth > 1020 && (
-                        <div className="right-column"> {scale} </div>
-                      )}
-                    </>
-                  )}
-                </div>
-              </div>
-            }
-          />
+          <Route path="/swap" element={TradeLayout(swap)} />
+          <Route path="/market" element={TradeLayout(swap)} />
+          <Route path="/limit" element={TradeLayout(limit)} />
+          <Route path="/send" element={TradeLayout(send)} />
+          <Route path="/scale" element={TradeLayout(scale)} />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}

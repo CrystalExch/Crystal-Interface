@@ -19,6 +19,7 @@
 
 .order-list-items.bottom-aligned {
   justify-content: flex-end;
+  flex-direction: column-reverse;
 }
 
 .order-list-items.top-aligned {

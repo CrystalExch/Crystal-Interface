@@ -595,7 +595,7 @@
 .go-to-user-position-button{
   border:1px solid rgba(255, 255, 255, 0.1);
   border-radius:4px;
-  color:rgba(255,255,255,.4);
+  color:rgba(255,255,255,.8);
   cursor:pointer;
   font-size:.75rem;
   font-weight:200;
@@ -614,12 +614,12 @@
   box-shadow:#aaaecf 0 0 0 2px,#aaaecf 0 0 20px
 }
 .leaderboard-control-left-arrow{
-  opacity:.7;
+  opacity:.8;
   transform:rotate(90deg);
   width:12px
 }
 .leaderboard-control-right-arrow{
-  opacity:.7;
+  opacity:.8;
   transform:rotate(270deg);
   width:12px
 }
@@ -998,7 +998,7 @@
   background:0 0;
   border:1.5px solid rgba(255,255,255,.08);
   border-radius:6px;
-  color:#ffffff95;
+  color:rgba(255,255,255,.8);
   cursor:pointer;
   font-size:.75rem;
   font-weight:300;

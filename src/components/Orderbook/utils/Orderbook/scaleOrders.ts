@@ -2,7 +2,6 @@ interface Order {
   price: number;
   size: number;
   totalSize: number;
-  changeType?: boolean;
   isPhantom?: boolean;
   shouldFlash: boolean;
   userPrice: boolean;

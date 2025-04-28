@@ -130,7 +130,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     const lastSellSize = processedSellOrders
       .filter((order) => order.price !== 0)
       .slice(-1)[0]?.totalSize || 0;
-  
     return Math.max(lastBuySize, lastSellSize);
   }, [processedBuyOrders, processedSellOrders]);
   

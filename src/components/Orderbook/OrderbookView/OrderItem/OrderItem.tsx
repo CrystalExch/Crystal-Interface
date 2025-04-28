@@ -7,12 +7,11 @@ import './OrderItem.css';
 interface OrderItemProps {
   price: number;
   size: number;
-  runningTotalSize: number;
+  totalSize: number;
   color: string;
   width: number;
   extra: number;
   isBuyOrder: boolean;
-  changeType?: boolean;
   priceFactor: number;
   isHighlighted: boolean;
   isBoundary: boolean;
@@ -28,7 +27,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
     {
       price,
       size,
-      runningTotalSize,
+      totalSize,
       color,
       width,
       extra,
@@ -98,7 +97,7 @@ const OrderItem = React.forwardRef<HTMLLIElement, OrderItemProps>(
               {formatCommas(size.toFixed(maxDecimals))}
             </span>
             <span className="total-size">
-              {formatCommas(runningTotalSize.toFixed(maxDecimals))}
+              {formatCommas(totalSize.toFixed(maxDecimals))}
             </span>
           </div>
         </div>

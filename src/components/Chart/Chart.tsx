@@ -22,8 +22,6 @@ interface ChartComponentProps {
   universalTrades: any[];
   activeMarket: any;
   orderdata: any;
-  userWalletAddress?: string | null | undefined;
-  setpopup: (value: number) => void;
   tradesloading: boolean;
   marketsData: any;
   updateChartData?: any;

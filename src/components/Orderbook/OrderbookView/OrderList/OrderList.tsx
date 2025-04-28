@@ -62,20 +62,11 @@ const OrderList: React.FC<OrderListProps> = ({
     return 0;
   };
 
-  const displayedOrders = useMemo(() => {
-    const updatedOrders = roundedOrders.map((order) => ({
-      ...order,
-      runningTotalSize: order.totalSize,
-      changeType: true,
-    }));
-    return isBuyOrderList ? updatedOrders : updatedOrders.reverse();
-  }, [roundedOrders, isBuyOrderList]);
-
   const maxDecimals = useMemo(() => {
     let max = 0;
-    displayedOrders.forEach((order) => {
+    roundedOrders.forEach((order) => {
       const sizeDecimals = getDecimalPlaces(order.size);
-      const totalSizeDecimals = getDecimalPlaces(order.runningTotalSize || 0);
+      const totalSizeDecimals = getDecimalPlaces(order.totalSize || 0);
       max = Math.max(max, sizeDecimals, totalSizeDecimals);
     });
 
@@ -84,7 +75,7 @@ const OrderList: React.FC<OrderListProps> = ({
     }
 
     return max;
-  }, [displayedOrders, amountsQuote]);
+  }, [roundedOrders, amountsQuote]);
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!containerRef.current) return;
@@ -122,9 +113,7 @@ const OrderList: React.FC<OrderListProps> = ({
 
   useEffect(() => {
     if (selectedIndex !== null) {
-      const ordersInRange = isBuyOrderList
-        ? roundedOrders.slice(0, selectedIndex + 1)
-        : roundedOrders.slice(0, Math.max(0, roundedOrders.length - selectedIndex));
+      const ordersInRange = roundedOrders.slice(0, selectedIndex + 1)
 
       const highlightRawData = calculateHighlightData(
         ordersInRange,
@@ -141,12 +130,11 @@ const OrderList: React.FC<OrderListProps> = ({
     }
   }, [
     selectedIndex,
-    displayedOrders,
+    roundedOrders,
     isBuyOrderList,
     amountsQuote,
     symbolQuote + symbolBase,
     spreadPrice,
-    roundedOrders,
   ]);
 
   return (
@@ -162,19 +150,18 @@ const OrderList: React.FC<OrderListProps> = ({
       <ul
         className={`order-list-items ${isBuyOrderList ? 'top-aligned' : 'bottom-aligned'}`}
       >
-        {displayedOrders.map((order, index) => {
+        {roundedOrders.map((order, index) => {
           return (
             <OrderItem
               key={`order-${index}-${order.price}-${order.size}-${order.isPhantom === true ? 'phantom' : 'real'}`}
               ref={(el) => (orderRefs.current[index] = el)}
               price={order.price}
               size={order.size}
-              runningTotalSize={order.runningTotalSize || 0}
+              totalSize={order.totalSize || 0}
               color={color}
-              width={(order.runningTotalSize / maxTotalSize) * 100}
+              width={(order.totalSize / maxTotalSize) * 100}
               extra={extra}
               isBuyOrder={isBuyOrderList}
-              changeType={order.changeType}
               priceFactor={priceFactor}
               isHighlighted={
                 selectedIndex === null || order.price === 0

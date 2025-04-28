@@ -1,20 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-import ChartComponent from '../Chart/Chart';
 import OrderBook from '../Orderbook/Orderbook';
 
 import './ChartOrderbookPanel.css';
 
 interface ChartOrderbookPanelProps {
-  onMarketSelect: (market: { quoteAddress: any; baseAddress: any; }) => void;
-  tokendict: Record<string, any>;
-  universalTrades: any[];
-  userWalletAddress?: string | null;
   layoutSettings: string;
   orderbookPosition: string;
-  trades: any[];
   orderdata: any;
-  activeMarket: any;
   isOrderbookVisible: boolean;
   orderbookWidth: number;
   setOrderbookWidth: any;
@@ -28,33 +21,14 @@ interface ChartOrderbookPanelProps {
   setViewMode: any;
   activeTab: 'orderbook' | 'trades';
   setActiveTab: any;
-  setpopup: (value: number) => void;
   updateLimitAmount: any;
-  tradesloading: boolean;
-  marketsData: any;
-  chartOrderData?: any;
-  updateChartData?: any;
-  tradehistory: any; 
-  isMarksVisible: boolean;
-  orders: any;
-  isOrdersVisible: any;
-  router: any;
-  refetch: any;
-  sendUserOperationAsync: any;
-  setChain: any;
-  waitForTxReceipt: any;
+  renderChartComponent: any;
 }
 
 const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
-  onMarketSelect,
-  tokendict,
-  universalTrades,
-  userWalletAddress,
   layoutSettings,
   orderbookPosition,
-  trades,
   orderdata,
-  activeMarket,
   isOrderbookVisible,
   orderbookWidth,
   setOrderbookWidth,
@@ -68,20 +42,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   setViewMode,
   activeTab,
   setActiveTab,
-  setpopup,
   updateLimitAmount,
-  tradesloading,
-  marketsData,
-  updateChartData,
-  isMarksVisible,
-  tradehistory,
-  orders,
-  isOrdersVisible,
-  router,
-  refetch,
-  sendUserOperationAsync,
-  setChain,
-  waitForTxReceipt,
+  renderChartComponent,
 }) => {
   const [isDragging, setIsDragging] = useState(false);
 
@@ -185,28 +147,7 @@ return (
   >
     <>
       <div className="chart-container">
-        <ChartComponent
-          onMarketSelect={onMarketSelect}
-          tokendict={tokendict}
-          trades={trades}
-          universalTrades={universalTrades}
-          activeMarket={activeMarket}
-          orderdata={orderdata}
-          userWalletAddress={userWalletAddress}
-          setpopup={setpopup}
-          tradesloading={tradesloading}
-          marketsData={marketsData}
-          updateChartData={updateChartData}
-          tradehistory={tradehistory} 
-          isMarksVisible={isMarksVisible}
-          orders={orders}
-          isOrdersVisible={isOrdersVisible}
-          router={router}
-          refetch={refetch}
-          sendUserOperationAsync={sendUserOperationAsync}
-          setChain={setChain}
-          waitForTxReceipt={waitForTxReceipt}
-        />
+        {renderChartComponent}
       </div>
 
       <div className={`spacer ${!isOrderbookVisible ? 'collapsed' : ''}`}>

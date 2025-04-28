@@ -166,7 +166,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     if (pos < 3) {
       setCurrentPage(0);
       setTimeout(() => {
-        document.querySelector('.top-factions')?.scrollIntoView({ behavior: 'smooth' });
+        document.querySelector('.leaderboard-banner')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     } else {
       const adj = pos - 3;
@@ -325,7 +325,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <span className="progress-bar-amount-header">
                   {Object.values(liveLeaderboard)
                     .reduce((sum, v) => sum + v.points, 0)
-                    .toLocaleString()} / 10,000,000
+                    .toLocaleString()} / 1,000,000,000
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -338,7 +338,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     ? '5%'
                     : `${
                         (Object.values(liveLeaderboard).reduce((sum, v) => sum + v.points, 0) /
-                          10000000) *
+                          1000000000) *
                         100
                       }%`,
                 }}

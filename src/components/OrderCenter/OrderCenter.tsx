@@ -48,6 +48,7 @@ interface OrderCenterProps {
   setChain: any;
   waitForTxReceipt: any;
   isBlurred?: boolean;
+  isVertDragging?: boolean;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -82,6 +83,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     setChain,
     isBlurred,
     waitForTxReceipt,
+    isVertDragging,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -357,7 +359,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
         style={{
           position: 'relative',
           height: orderCenterHeight === 0 ? '0px' : `${orderCenterHeight}px`,
-          transition: 'height 0.1s ease',
+          transition: isVertDragging ? 'none' : 'height 0.1s ease',
           overflow: 'visible',
         }}
       >
