@@ -226,7 +226,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         return favorites.includes(market.baseAddress.toLowerCase());
       case 'LSTs':
         return market.pair.includes('aprMON') || market.pair.includes('sMON') || market.pair.includes('shMON');
-      case 'Meme':
+      case 'Memes':
         return market.pair.includes('YAKI') || market.pair.includes('CHOG') || market.pair.includes('DAK');
       case 'Stablecoins':
         return market.pair.includes('USDT');
@@ -391,7 +391,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               </div>
               
               <div className="market-filter-tabs" ref={filterTabsRef}>
-                {['All', 'Favorites', 'LSTs', 'Meme','Stablecoins', 'Chains'].map((filter) => (
+                {['All', 'Favorites', 'LSTs', 'Memes','Stablecoins'].map((filter) => (
                   <button
                     key={filter}
                     className={`filter-tab ${activeFilter === filter ? 'active' : ''}`}
