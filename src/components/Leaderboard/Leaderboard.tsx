@@ -358,7 +358,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <div className="column-content">
                 <div className="address-container">
                   <span className="leaderboard-user-address">
-                    {address
+                    @{address
                       ? liveLeaderboard[address.toLowerCase()]?.username ||
                         getDisplayAddress(address)
                       : ''}

@@ -50,6 +50,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [shouldFocus, setShouldFocus] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('All');
+  const filterTabsRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
@@ -69,6 +71,43 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isDropdownOpen, isAdvancedView, setpopup]);
+
+  // Handle filter tabs scroll gradients
+  useEffect(() => {
+    const handleFilterScroll = () => {
+      const filterTabsElement = filterTabsRef.current;
+      
+      if (filterTabsElement) {
+        const scrollLeft = filterTabsElement.scrollLeft;
+        const scrollWidth = filterTabsElement.scrollWidth;
+        const clientWidth = filterTabsElement.clientWidth;
+        
+        if (scrollLeft > 0) {
+          filterTabsElement.classList.add('show-left-gradient');
+        } else {
+          filterTabsElement.classList.remove('show-left-gradient');
+        }
+        
+        if (scrollLeft + clientWidth < scrollWidth - 2) {
+          filterTabsElement.classList.add('show-right-gradient');
+        } else {
+          filterTabsElement.classList.remove('show-right-gradient');
+        }
+      }
+    };
+    
+    const filterTabsElement = filterTabsRef.current;
+    if (filterTabsElement && isDropdownVisible) {
+      filterTabsElement.addEventListener('scroll', handleFilterScroll);
+      handleFilterScroll();
+    }
+    
+    return () => {
+      if (filterTabsElement) {
+        filterTabsElement.removeEventListener('scroll', handleFilterScroll);
+      }
+    };
+  }, [isDropdownVisible]);
 
   const toggleDropdown = () => {
     if (!isDropdownOpen) {
@@ -182,13 +221,32 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     }
   };
 
+  const filterMarketsByTab = (market: any) => {
+    switch (activeFilter) {
+      case 'Favorites':
+        return favorites.includes(market.baseAddress.toLowerCase());
+      case 'LSTs':
+        return market.pair.includes('aprMON') || market.pair.includes('sMON') || market.pair.includes('shMON');
+      case 'Meme':
+        return market.pair.includes('YAKI') || market.pair.includes('CHOG') || market.pair.includes('DAK');
+      case 'Stablecoins':
+        return market.pair.includes('USDT');
+      case 'Chains':
+        return market.pair.includes('WBTC') || market.pair.includes('WETH') || market.pair.includes('WBTC') || market.pair.includes('WSOL');
+      case 'All':
+      default:
+        return true;
+    }
+  };
+
   const filteredMarkets = marketsData.filter((market) => {
     const matchesSearch = market?.pair
       .toLowerCase()
       .includes(searchQuery.toLowerCase());
     const notWeth =
       market?.baseAddress !== settings.chainConfig[activechain].weth;
-    return matchesSearch && notWeth;
+    const matchesFilter = filterMarketsByTab(market);
+    return matchesSearch && notWeth && matchesFilter;
   });
 
   const sortedMarkets = [...filteredMarkets].sort((a, b) => {
@@ -332,6 +390,19 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   </div>
                 </div>
               </div>
+              
+              <div className="market-filter-tabs" ref={filterTabsRef}>
+                {['All', 'Favorites', 'LSTs', 'Meme','Stablecoins', 'Chains'].map((filter) => (
+                  <button
+                    key={filter}
+                    className={`filter-tab ${activeFilter === filter ? 'active' : ''}`}
+                    onClick={() => setActiveFilter(filter)}
+                  >
+                    {filter}
+                  </button>
+                ))}
+              </div>
+
               <div className="markets-list-header">
                 <div className="favorites-header" />
                 <div onClick={() => handleSort('volume')}>

@@ -7359,7 +7359,7 @@ function App() {
 
                   <div className="onboarding-form">
                     <div className="form-group">
-                      <label className="form-label">Y{t("yourWalletAddress")}</label>
+                      <label className="form-label">{t("yourWalletAddress")}</label>
                       <div className="wallet-address">{address || "0x1234...5678"}</div>
                     </div>
 
