@@ -297,22 +297,21 @@
   justify-content:flex-end;
   align-items:center
 }
-.leaderboard-user-address{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-}
+
 
 .leaderboard-user-address {
+  display: flex;
   max-width: 250px; 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
-  padding-right: 10px;
 }
 
+
+.address-string{
+  padding-right: 5px;
+}
 .faction-name {
   max-width: 250px;
   white-space: nowrap;
