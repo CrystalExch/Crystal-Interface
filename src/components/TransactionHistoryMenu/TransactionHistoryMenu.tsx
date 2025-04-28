@@ -523,7 +523,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
               <div className="tx-detail-value">
                 {isFailed ? 
                   <span className="txdetail-status-failed">
-                    {tx.currentAction.replace('Failed', '')} ({t('failed')})
+                    {tx.currentAction.charAt(0).toUpperCase() + tx.currentAction.slice(1).replace('Failed', '')} ({t('failed')})
                   </span> : 
                   tx.currentAction.charAt(0).toUpperCase() + tx.currentAction.slice(1)
                 }

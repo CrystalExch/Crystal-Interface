@@ -1771,7 +1771,7 @@ function App() {
   }
 
   const calculateScaleOutput = (
-    amountIn: number,
+    amountIn: bigint,
     startPrice: number,
     endPrice: number,
     numOrders: number,
@@ -1785,7 +1785,7 @@ function App() {
       )
     );
 
-    let orderSizes: number[];
+    let orderSizes: bigint[];
     let factorSum: number;
 
     if (tokenIn == activeMarket.quoteAddress) {
@@ -1795,7 +1795,7 @@ function App() {
       );
       const x = (Number(amountIn) * Number(activeMarket.scaleFactor)) / factorSum;
       orderSizes = Array.from({ length: numOrders }, (_, i) =>
-        Math.round(x * (1 + ((skew - 1) * i) / (numOrders - 1)))
+        BigInt(Math.round(x * (1 + ((skew - 1) * i) / (numOrders - 1))))
       );
     } else {
       factorSum = Array.from({ length: numOrders }).reduce(
@@ -1804,52 +1804,61 @@ function App() {
       );
       const x = Number(amountIn) / factorSum;
       orderSizes = Array.from({ length: numOrders }, (_, i) =>
-        Math.round(x * (1 + ((skew - 1) * i) / (numOrders - 1)))
+        BigInt(Math.round(x * (1 + ((skew - 1) * i) / (numOrders - 1))))
       );
     }
-    const orderUsdValues: number[] = prices.map((price, i) =>
-      Math.round((price * orderSizes[i]) / Number(activeMarket.scaleFactor)))
-    let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, 0);
-    let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, 0);
+    const orderUsdValues: bigint[] = prices.map((price, i) =>
+      ((BigInt(price) * orderSizes[i]) / activeMarket.scaleFactor))
+    let totalUsdValue = orderUsdValues.reduce((sum, val) => sum + val, BigInt(0));
+    let totalTokenValue = orderSizes.reduce((sum, val) => sum + val, BigInt(0));
     if (tokenIn == activeMarket.quoteAddress) {
       if (totalUsdValue != amountIn) {
-        orderUsdValues[orderUsdValues.length - 1] += (amountIn - totalUsdValue)
-        totalUsdValue = amountIn
+        orderUsdValues[orderUsdValues.length - 1] += amountIn - totalUsdValue
       }
     }
     else {
       if (totalTokenValue != amountIn) {
-        orderSizes[orderSizes.length - 1] += (amountIn - totalTokenValue)
-        totalTokenValue = amountIn
+        orderSizes[orderSizes.length - 1] += amountIn - totalTokenValue
       }
     }
     return prices.map((price, i) => [price, orderSizes[i], orderUsdValues[i]])
   }
 
   const calculateScaleInput = (
-    desiredOutput: number,
+    desiredOutput: bigint,
     startPrice: number,
     endPrice: number,
     numOrders: number,
     skew: number,
-  ): number => {
-    const prices: number[] = Array.from({ length: numOrders }, (_, i) =>
-      Math.round(startPrice + ((endPrice - startPrice) * i) / (numOrders - 1))
-    );
-    const weights: number[] = Array.from({ length: numOrders }, (_, i) =>
-      1 + ((skew - 1) * i) / (numOrders - 1)
-    );
-
-    const S_p = prices.reduce((sum, price, i) => sum + price * weights[i], 0);
-    const S_w = weights.reduce((sum, w) => sum + w, 0);
-
-    let requiredInput: number;
-    if (tokenIn === activeMarket.quoteAddress) {
-      requiredInput = (desiredOutput * S_p) / (Number(activeMarket.scaleFactor) * S_w);
-    } else {
-      requiredInput = (desiredOutput * Number(activeMarket.scaleFactor) * S_w) / S_p;
+  ): bigint => {
+    if (numOrders <= 1) {
+      return 0n;
     }
-    return Math.round(requiredInput);
+  
+    const prices: bigint[] = Array.from({ length: numOrders }, (_, i) =>
+      BigInt(Math.round(startPrice + ((endPrice - startPrice) * i) / (numOrders - 1)))
+    );
+  
+    const weights: bigint[] = Array.from({ length: numOrders }, (_, i) =>
+      BigInt(Math.round(1e8 + ((skew - 1) * i * 1e8) / (numOrders - 1)))
+    );
+  
+    const S_p = prices.reduce((sum, price, i) => sum + (price * weights[i]), 0n);
+    const S_w = weights.reduce((sum, w) => sum + w, 0n);
+  
+    if (S_p === 0n || S_w === 0n || desiredOutput === 0n) {
+      return 0n;
+    }
+  
+    let requiredInput: bigint;
+  
+    if (tokenIn === activeMarket.quoteAddress) {
+      requiredInput = (desiredOutput * S_p) / (BigInt(activeMarket.scaleFactor) * S_w);
+    } else {
+      requiredInput = (desiredOutput * BigInt(activeMarket.scaleFactor) * S_w) / S_p;
+    }
+  
+    return requiredInput;
   };
 
   // oc resizers
@@ -2766,10 +2775,10 @@ function App() {
           (amountIn === BigInt(0) ||
             scaleStart == BigInt(0) || scaleEnd == BigInt(0) || scaleOrders == BigInt(0) || scaleOrders == BigInt(1) || scaleSkew == 0 ||
             calculateScaleOutput(
-              Number(amountIn),
+              amountIn,
               Number(scaleStart),
               Number(scaleEnd),
-              Number(scaleOrders),
+              Number(scaleOrders || 2),
               Number(scaleSkew)
             ).some((order) => order[2] < activeMarket.minSize) ||
             amountIn > tokenBalances[tokenIn] ||
@@ -2806,10 +2815,10 @@ function App() {
                           : 6
                         : (
                           calculateScaleOutput(
-                            Number(amountIn),
+                            amountIn,
                             Number(scaleStart),
                             Number(scaleEnd),
-                            Number(scaleOrders),
+                            Number(scaleOrders || 2),
                             Number(scaleSkew)
                           ).some((order) => order[2] < activeMarket.minSize)
                         ) ? 7 : scaleOrders <= BigInt(1) ? 8 : scaleSkew == 0 ? 9
@@ -3669,7 +3678,7 @@ function App() {
               .replace(/\.0+$/, ''),
           );
         }
-      } else if (activeTab == 'swap' || activeTab == 'market') {
+      } else if (path == 'swap' || path == 'market') {
         setCurrentProText('pro');
       } else if (path == 'scale') {
         setswitched(false);
@@ -11376,24 +11385,50 @@ function App() {
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
                     setScaleOutputString(e.currentTarget.value);
                     setIsOutputBasedScaleOrder(true);
-                    const outputValue =
-                      Number(e.currentTarget.value || "0") *
-                      10 ** Number(tokendict[tokenOut].decimals);
+                    const outputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.currentTarget.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenOut].decimals),
+                      ),
+                    )
+                    setAmountOutScale(outputValue);
                     if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                       const requiredInput = calculateScaleInput(
-                        Number(outputValue),
+                        outputValue,
                         Number(scaleStart),
                         Number(scaleEnd),
                         Number(scaleOrders),
                         Number(scaleSkew)
                       );
-                      setamountIn(BigInt(requiredInput));
+                      setamountIn(requiredInput);
                       setInputString(
                         customRound(
-                          requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                          Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
                           3
                         ).toString()
                       );
+                      const percentage =
+                      tokenBalances[tokenIn] === BigInt(0)
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                          ),
+                        );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }
                 }}
@@ -11561,7 +11596,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(price),
                           Number(scaleEnd),
                           Number(scaleOrders),
@@ -11570,7 +11605,7 @@ function App() {
                         setamountIn(BigInt(requiredInput));
                         setInputString(
                           customRound(
-                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
                             3
                           ).toString()
                         );
@@ -11650,7 +11685,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(price),
                           Number(scaleOrders),
@@ -11659,7 +11694,7 @@ function App() {
                         setamountIn(BigInt(requiredInput));
                         setInputString(
                           customRound(
-                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
                             3
                           ).toString()
                         );
@@ -11704,16 +11739,16 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(scaleEnd),
                           Number(temporders),
                           Number(scaleSkew)
                         );
-                        setamountIn(BigInt(requiredInput));
+                        setamountIn(requiredInput);
                         setInputString(
                           customRound(
-                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
                             3
                           ).toString()
                         );
@@ -11753,16 +11788,16 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals),
+                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(scaleEnd),
                           Number(scaleOrders),
                           Number(skew)
                         );
-                        setamountIn(BigInt(requiredInput));
+                        setamountIn(requiredInput);
                         setInputString(
                           customRound(
-                            requiredInput / 10 ** Number(tokendict[tokenIn].decimals),
+                            Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
                             3
                           ).toString()
                         );
@@ -11899,13 +11934,13 @@ function App() {
           className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
             if (connected && userchain === activechain) {
-              let finalAmountIn = Number(amountIn);
+              let finalAmountIn = amountIn;
               if (isOutputBasedScaleOrder) {
                 const desiredOutput =
                   Number(scaleOutputString) *
                   10 ** Number(tokendict[tokenOut].decimals);
                 finalAmountIn = calculateScaleInput(
-                  desiredOutput,
+                  BigInt(desiredOutput),
                   Number(scaleStart),
                   Number(scaleEnd),
                   Number(scaleOrders),
@@ -11923,7 +11958,9 @@ function App() {
               let price: any = [[]];
               let param1: any = [[]];
               let param2: any = [[]];
+              let sum = BigInt(0)
               o.forEach((order) => {
+                sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
                 action[0].push(tokenIn == activeMarket.quoteAddress ? 1 : 2);
                 price[0].push(order[0]);
                 param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
@@ -12055,6 +12092,7 @@ function App() {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
               } catch (error) {
+                console.log(error)
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
                     hash?.hash,
