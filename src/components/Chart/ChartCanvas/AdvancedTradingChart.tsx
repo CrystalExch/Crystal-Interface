@@ -165,7 +165,29 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               .setQuantityFont("bold 10px Funnel Display")
               .setLineStyle(2)
               .onMove(async () => {
-                console.log('Order line moved', orderLine.getPrice());
+                orderLine.setCancellable(false)
+                try {
+                  let action: any = [[]];
+                  let price: any = [[]];
+                  let param1: any = [[]];
+                  let param2: any = [[]];
+                  await setChain();
+                  let hash;
+                  hash = await sendUserOperationAsync({uo: multiBatchOrders(
+                    router,
+                    BigInt(0),
+                    [markets[order[4]].address],
+                    action,
+                    price,
+                    param1,
+                    param2,
+                  )})
+                  await waitForTxReceipt(hash.hash);
+                  refetch()
+                } catch (error) {
+                  orderLine.setCancellable(true)
+                  orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                }
               })
               .onCancel(async () => {
                 orderLine.setCancellable(false)
@@ -482,7 +504,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
             if (orders.length > 0 && isOrdersVisible) {
               if (widgetRef.current?.activeChart()?.symbol()) {
                 const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]
-                const market = markets[marketKey]
                 orders.forEach((order: any) => {
                   if (order[4]?.toLowerCase() != marketKey.toLowerCase() || order?.[10]) return;
                   const orderLine = widgetRef.current.activeChart().createOrderLine().setPrice(order[0] / Number(markets[order[4]].priceFactor))
