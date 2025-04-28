@@ -680,8 +680,6 @@
   position: relative;
   scrollbar-width: none; 
   -ms-overflow-style: none; 
-  mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
-  -webkit-mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
 }
 
 .market-filter-tabs::-webkit-scrollbar {
