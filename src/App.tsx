@@ -7435,11 +7435,12 @@ function App() {
                   ) : (
                     <div className="connect-wallet-username-wrapper">
                       <CrystalObject />
+
+                      <div className="onboarding-connect-wallet">
                       <div className="smart-wallet-reminder">
                         <img className="onboarding-info-icon" src={infoicon} />
                         Using a Smart Wallet will give you a&nbsp;1.25x multiplier on all Crystals
                       </div>
-                      <div className="onboarding-connect-wallet">
                         <div className="connect-wallet-content-container">
                           <AuthCard {...alchemyconfig.ui.auth} />
                         </div>
