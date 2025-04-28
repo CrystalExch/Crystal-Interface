@@ -72,7 +72,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, [isDropdownOpen, isAdvancedView, setpopup]);
 
-  // Handle filter tabs scroll gradients
   useEffect(() => {
     const handleFilterScroll = () => {
       const filterTabsElement = filterTabsRef.current;
@@ -232,7 +231,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       case 'Stablecoins':
         return market.pair.includes('USDT');
       case 'Chains':
-        return market.pair.includes('WBTC') || market.pair.includes('WETH') || market.pair.includes('WBTC') || market.pair.includes('WSOL');
+        return market.pair.includes('WBTC') || market.pair.includes('WETH') || market.pair.includes('WBTC') || market.pair.includes('WSOL') || market.pair.includes('MON/USDC');
       case 'All':
       default:
         return true;
