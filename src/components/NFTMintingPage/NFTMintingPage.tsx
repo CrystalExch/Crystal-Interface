@@ -13,7 +13,7 @@ const NFTMintingPage: React.FC = () => {
   });
   
   const nftData = {
-    name: "???",
+    name: "Crystal x ???",
     description: "Trade on Crystal to become eligible for our first NFT drop, coming soon...",
     imageUrl: LeaderboardBanner,
     remainingSupply: 1000,
@@ -25,7 +25,7 @@ const NFTMintingPage: React.FC = () => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-05-05T15:00:00Z");
+      const targetDate = new Date("2025-05-01T05:00:00Z");
       const now = new Date();
       
       const difference = targetDate.getTime() - now.getTime();
@@ -115,7 +115,7 @@ const NFTMintingPage: React.FC = () => {
                 
                 <div className="nft-supply-container">
                   <div className="nft-supply-text">
-                    <span>{supplySold} / {nftData.totalSupply}</span>
+                    <span>{supplySold} / {'???'}</span>
                     <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% Minted</span>
                   </div>
                   <div className="nft-supply-bar">

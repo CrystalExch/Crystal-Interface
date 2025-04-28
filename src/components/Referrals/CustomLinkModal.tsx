@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import closebutton from '../../assets/close_button.png';
 import { settings } from '../../settings.ts';
 import './CustomLinkModal.css';
@@ -12,8 +12,8 @@ const CustomLinkModal = ({
   refLink,
   setpopup,
   setChain,
-  error,
   setError,
+  error,
   account,
 }: {
   isOpen: boolean;
@@ -24,13 +24,11 @@ const CustomLinkModal = ({
   refLink: any;
   setpopup: any;
   setChain: any;
-  error: any;
   setError: any;
+  error: any;
   account: any;
 }) => {
   const [isSigning, setIsSigning] = useState(false);
-  const [refLinkInput, setRefLinkInput] = useState(refLinkString);
-  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleCreate = async () => {
     if (account.connected && account.chainId === activechain) {
@@ -54,16 +52,10 @@ const CustomLinkModal = ({
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
-      setRefLinkInput(value);
-      if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
-      }
-      debounceTimerRef.current = setTimeout(() => {
+      if (isValidInput(value) || value === "") {
         setRefLinkString(value);
-        if (!isValidInput(value) && value.length > 0) {
-          setError(t('invalid'));
-        }
-      }, 300);
+        setError('')
+      }
     },
     [refLinkString],
   );
@@ -90,7 +82,7 @@ const CustomLinkModal = ({
         <div className="input-wrapper">
           <input
             className={`modal-input ${error ? 'has-error' : ''}`}
-            value={refLinkInput}
+            value={refLinkString}
             onChange={handleInputChange}
             placeholder={refLink ? t('enteracode') : t('createCode')}
             maxLength={20}
@@ -103,7 +95,7 @@ const CustomLinkModal = ({
           <br />
           <span className="ref-link-structure">
             https://app.crystal.exchange?ref={' '}
-            <div className="ref-url">{refLinkInput}</div>
+            <div className="ref-url">{refLinkString}</div>
           </span>
         </div>
 
@@ -112,7 +104,6 @@ const CustomLinkModal = ({
           onClick={handleCreate}
           disabled={
             isSigning ||
-            (account.connected && account.chainId == activechain && !!error) ||
             !refLinkString
           }
         >

@@ -47,8 +47,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   orders,
   address,
 }) => {
-  const [showChallengeIntro, setShowChallengeIntro] = useState<boolean>(false);
-
   const [userData, setUserData] = useState<UserDisplayData>({
     userXP: 0,
     logo: '',
@@ -76,7 +74,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         .then(res => res.json())
         .then((data: Record<string, [string, number, number]>) => {
           const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(data).map(([addr, info]) => {
+            Object.entries(data).filter(([addr, _]) => addr !== '0xe7d1f4ab222d94389b82981f99c58824ff42a7d0').map(([addr, info]) => {
               const [username, points, referral_points] = info;
               return [
                 addr.toLowerCase(),
@@ -111,10 +109,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       username: userInfo.username || '',
     });
 
-    const seen = localStorage.getItem('has_seen_challenge_intro') === 'true';
-    if (!seen) {
-      setShowChallengeIntro(true);
-    }
   }, [address, liveLeaderboard]);
 
   useEffect(() => {
@@ -269,15 +263,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     ));
 
   const formatPoints = (p: number) => (p < 0.001 ? '<0.001' : p.toLocaleString());
-
-  useEffect(() => {
-    if (address && !showChallengeIntro) {
-      if (!localStorage.getItem('has_seen_challenge_intro')) {
-        setShowChallengeIntro(true);
-      }
-    }
-  }, [address, showChallengeIntro]);
-
   const handleConnectWallet = () => setpopup(4);
 
   return (
@@ -301,15 +286,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="leaderboard-banner">
         <div className="banner-overlay">
           <img src={LeaderboardImage} className="leaderboard-image" />
-          <a
-            href="https://docs.crystal.exchange/community/crystals"
-            target="_blank"
-            rel="noreferrer"
+          <div
             className="view-rules-button"
-            onClick={() => setShowChallengeIntro(true)}
+            onClick={() => setpopup(15)}
           >
             {t('viewRules')}
-          </a>
+          </div>
 
           <div className="countdown-timer">
             <div className="countdown-time">
@@ -382,7 +364,10 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <div className="column-divider" />
 
             <div className="info-column">
+            <div className="earned-xp-header">
+            <img src={crystalxp} className="xp-icon" />
               <div className="column-header">{t("bonusCommision")}</div>
+              </div>
               <div className="column-content">
                 {liveLeaderboard[address?.toLowerCase()]?.referral_points
                   ?.toLocaleString() || '0'}

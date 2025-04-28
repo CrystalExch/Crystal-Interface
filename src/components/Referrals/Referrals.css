@@ -10,7 +10,7 @@
 .referral-content {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
   max-width: 1450px;
   overflow: hidden;
   width: 100%;
@@ -25,7 +25,7 @@
 }
 .referral-top-section{
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 .referral-background,
 .referral-mobile-background {
@@ -397,7 +397,7 @@
 .token-breakdown {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
-  height: 275px;
+  height: 276.333px;
   margin: 0.5rem 0;
   overflow-y: scroll;
   padding: 3px 0;
@@ -512,13 +512,9 @@
   margin: 0.2rem 0.5rem 0.5rem 0.5rem;
 }
 
-.referral-grid {
-
-}
-
 .left-column {
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .refer-section {
@@ -529,7 +525,7 @@
   border-radius: 8px;
   width: 50%;
   padding: 0 1rem;
-  gap: 8px;
+  gap: 4px;
 }
 
 .refer-header-content{
@@ -584,7 +580,7 @@
 .referral-header {
   align-items: center;
   display: flex;
-  gap: 8px;
+  gap: 4px;
 }
 
 .referred-count{
@@ -659,7 +655,6 @@
   justify-content: center;
   background-color: rgba(74, 81, 108, 0.15);
   border-radius: 8px;
-  width: 140px;
   padding: 2px;
   letter-spacing: -0.5px;
   font-size: 0.8rem;
@@ -681,7 +676,7 @@
 .referral-body-section{
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
 }
 
 .referral-pfp{
@@ -816,7 +811,6 @@
 
   .left-column {
     flex-direction: column;
-    gap: 4px;
     height: auto;
   }
 

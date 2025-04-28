@@ -1718,7 +1718,6 @@ body:has(.right-column.show) .blur-background-popups {
   /* overflow-y: auto; */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  transform: translate(calc(-50%/1.2), calc(-50%/1.2));
   z-index: 12;
   width: 350px;
   border-radius: 16px;
@@ -1726,7 +1725,6 @@ body:has(.right-column.show) .blur-background-popups {
   flex-direction: column;
   max-width: 90vw;
   padding: 0;
-  transform: scale(1.1);
   backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255, 255, 255, 0.05);
 }
@@ -1735,8 +1733,8 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   align-items: center;
   position: absolute;
-  color: #ffffffb9;
-  font-size: 0.72rem;
+  color: #ffffff;
+  font-size: 0.75rem;
   width: 350px;
   height: 35px;
   top:-40px;
@@ -1748,7 +1746,6 @@ body:has(.right-column.show) .blur-background-popups {
   overflow: hidden;
   z-index: 10;
   padding: 5px 10px;
-  backdrop-filter: blur(10px);
 }
 
 
@@ -5284,10 +5281,9 @@ input[type="email"] {
   justify-content: center;
   max-width: 400px;
   width: 100%;
-  height: 325px;
   backdrop-filter: blur(5px);
   padding: 10px;
-  padding-top: 20px;
+  padding-top: 15px;
   border-radius: 12px;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 8px;
@@ -5389,6 +5385,7 @@ input[type="email"] {
   text-align: center;
   color: #e4e3e3d6;
   letter-spacing: -0.5px;
+  margin-bottom: 5px;
 }
 .use-ref-title{
   font-size: 1.2rem;
@@ -5403,7 +5400,6 @@ input[type="email"] {
   text-align: center;
   justify-self: center;
   color: #aaaaaad6;
-  margin-bottom: 10px;
   line-height: 1.2;
   letter-spacing: -0.3px;
   max-width: 400px;
@@ -5722,10 +5718,10 @@ input[type="email"] {
 .intro-description {
   font-size: 0.9rem;
   line-height: 1.6;
-  color: #bebebe;
+  color: #aaaecf;
   letter-spacing: -0.4px;
   max-width: 250px;
-
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
 .account-setup-footer {
@@ -6658,7 +6654,7 @@ input[type="email"] {
   color: black;
   border: none;
   border-radius: 0.5rem;
-  padding: 6px 14px;
+  padding: 6px 15px;
   font-size: 1rem;
   font-weight: 475;
   cursor: pointer;

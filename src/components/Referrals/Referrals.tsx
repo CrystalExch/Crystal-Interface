@@ -40,6 +40,7 @@ interface ReferralProps {
   refetch: any;
   sendUserOperationAsync: any;
   waitForTxReceipt: any;
+  client: any;
 }
 
 const Referrals: React.FC<ReferralProps> = ({
@@ -62,6 +63,7 @@ const Referrals: React.FC<ReferralProps> = ({
   refetch,
   sendUserOperationAsync,
   waitForTxReceipt,
+  client,
 }) => {
   const [bgLoaded, setBgLoaded] = useState(false);
   const [refLinkString, setRefLinkString] = useState(refLink);
@@ -130,12 +132,6 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'refToAddress',
-            args: [refLinkString.toLowerCase()],
-          },
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
             functionName: 'referrerToReferredAddresses',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
@@ -148,17 +144,9 @@ const Referrals: React.FC<ReferralProps> = ({
         ],
       })) as any[];
       setRefLink(refs[0].result);
-      setError(
-        refs[1].result === '0x0000000000000000000000000000000000000000' ||
-          refs[1].result == address
-          ? error == t('codeTaken')
-            ? ''
-            : error
-          : t('codeTaken'),
-      );
-      setReferredCount(Number(refs[2].result));
+      setReferredCount(Number(refs[1].result));
       setUsedRefAddress(
-        refs[3].result || '0x0000000000000000000000000000000000000000',
+        refs[2].result || '0x0000000000000000000000000000000000000000',
       );
       const find = (await readContracts(config, {
         contracts: [
@@ -167,7 +155,7 @@ const Referrals: React.FC<ReferralProps> = ({
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
             args: [
-              refs[3].result ?? '0x0000000000000000000000000000000000000000',
+              refs[2].result ?? '0x0000000000000000000000000000000000000000',
             ],
           },
         ],
@@ -198,10 +186,26 @@ const Referrals: React.FC<ReferralProps> = ({
           });
       }
     })();
-  }, [address, refLinkString]);
+  }, [address]);
 
   const handleCreateRef = async () => {
     try {
+      let lookup
+      lookup = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'refToAddress',
+            args: [refLinkString.toLowerCase()],
+          },
+        ],
+      })) as any[];
+
+      if (lookup[0].result != '0x0000000000000000000000000000000000000000') {
+        setError(t('codeTaken'));
+        return false;
+      }
       const hash = await sendUserOperationAsync({
         uo: {
           target: settings.chainConfig[activechain].referralManager,
@@ -222,8 +226,9 @@ const Referrals: React.FC<ReferralProps> = ({
   };
 
   const handleSetRef = async (used: string) => {
+    let lookup
     if (used !== '') {
-      const lookup = (await readContracts(config, {
+      lookup = (await readContracts(config, {
         contracts: [
           {
             abi: CrystalReferralAbi,
@@ -254,7 +259,8 @@ const Referrals: React.FC<ReferralProps> = ({
           },
         });
         await waitForTxReceipt(hash.hash);
-        setUsedRefLink('');
+        setUsedRefLink(used);
+        setUsedRefAddress('0x0000000000000000000000000000000000000000')
         return true;
       } catch {
         return false;
@@ -274,6 +280,7 @@ const Referrals: React.FC<ReferralProps> = ({
         });
         await waitForTxReceipt(hash.hash);
         setUsedRefLink(used);
+        setUsedRefAddress(lookup?.[0].result)
         return true;
       } catch (error) {
         return false;
@@ -327,7 +334,7 @@ const Referrals: React.FC<ReferralProps> = ({
          <img src={defaultPfp} className="referral-pfp" />
          <div className="referral-user-right-side">
           <span className="referral-username">@{displayName}</span>
-         <div className="user-points-subtitle">10% Point Rebates</div>
+          <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
          </div>
         </div>
         <div className="total-referrals-container">
@@ -336,7 +343,7 @@ const Referrals: React.FC<ReferralProps> = ({
 
         </div>
         <div className="total-crystals-earned-container">
-        <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystal {t('bonusCommision')}</span>
+        <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystals From Referrals </span>
         <Gem className="referred-count-icon" size={30} />
 
         </div>

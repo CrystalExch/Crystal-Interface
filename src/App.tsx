@@ -196,7 +196,6 @@ function App() {
     }
     return g;
   })();
-  const [pendingRefCode] = useState(() => searchParams.get('ref') || '');
 
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
@@ -656,7 +655,7 @@ function App() {
     () => Object.values(tokendict),
     [tokendict],
   );
-  const [typedRefCode, setTypedRefCode] = useState('');
+  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -1595,73 +1594,6 @@ function App() {
       liveStreamCancelled = true;
     }
   }, [HTTP_URL, address]);
-
-  useEffect(() => {
-    if (pendingRefCode && usedRefLink === '') {
-      console.log(pendingRefCode);
-      setUsedRefLink(pendingRefCode);
-    }
-  }, [pendingRefCode, usedRefLink]);
-
-  const handleSetRef = async (used: string) => {
-    if (used !== '') {
-      const lookup = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'refToAddress',
-            args: [used.toLowerCase()],
-          },
-        ],
-      })) as any[];
-
-      if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        // invalid code
-        return false;
-      }
-    }
-
-    if (used === '') {
-      try {
-        const hash = await sendUserOperationAsync({
-          uo: {
-            target: settings.chainConfig[activechain].referralManager,
-            data: encodeFunctionData({
-              abi: CrystalReferralAbi,
-              functionName: 'setUsedRef',
-              args: [used],
-            }),
-            value: 0n,
-          },
-        });
-        await waitForTxReceipt(hash.hash);
-        setUsedRefLink('');
-        return true;
-      } catch {
-        return false;
-      }
-    } else {
-      try {
-        const hash = await sendUserOperationAsync({
-          uo: {
-            target: settings.chainConfig[activechain].referralManager,
-            data: encodeFunctionData({
-              abi: CrystalReferralAbi,
-              functionName: 'setUsedRef',
-              args: [used],
-            }),
-            value: 0n,
-          },
-        });
-        await waitForTxReceipt(hash.hash);
-        setUsedRefLink(used);
-        return true;
-      } catch (error) {
-        return false;
-      }
-    }
-  };
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -3918,6 +3850,78 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const [isRefSigning, setIsRefSigning] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSetRef = async (used: string) => {
+    let lookup
+    setIsRefSigning(true);
+    if (used !== '') {
+      lookup = (await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'refToAddress',
+            args: [used.toLowerCase()],
+          },
+        ],
+      })) as any[];
+
+      if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
+        setError(t('invalidRefCode'));
+        setIsRefSigning(false);
+        return false;
+      }
+    }
+
+    if (used === '') {
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink(used);
+        setUsedRefAddress('0x0000000000000000000000000000000000000000')
+        setIsRefSigning(false);
+        return true;
+      } catch {
+        setIsRefSigning(false);
+        return false;
+      }
+    } else {
+      try {
+        const hash = await sendUserOperationAsync({
+          uo: {
+            target: settings.chainConfig[activechain].referralManager,
+            data: encodeFunctionData({
+              abi: CrystalReferralAbi,
+              functionName: 'setUsedRef',
+              args: [used],
+            }),
+            value: 0n,
+          },
+        });
+        await waitForTxReceipt(hash.hash);
+        setUsedRefLink(used);
+        setUsedRefAddress(lookup?.[0].result)
+        setIsRefSigning(false);
+        return true;
+      } catch (error) {
+        setIsRefSigning(false);
+        return false;
+      }
+    }
+  };
+
   const handleNextClick = () => {
     audio.currentTime = 0;
     audio.play();
@@ -3965,6 +3969,7 @@ function App() {
     setTimeout(() => {
       localStorage.setItem('crystal_has_completed_onboarding', 'true');
       setpopup(0);
+      setCurrentStep(0)
     }, 300);
   };
 
@@ -4026,7 +4031,6 @@ function App() {
 
       audio.currentTime = 0;
       audio.play();
-
       setIsTransitioning(true);
       setTransitionDirection('forward');
       setTimeout(() => {
@@ -4101,7 +4105,15 @@ function App() {
 
       audio.currentTime = 0;
       audio.play();
-
+      setIsTransitioning(true);
+      setTransitionDirection('forward');
+      setTimeout(() => {
+        setpopup(17);
+        setTimeout(() => {
+          setIsTransitioning(false);
+          setJustEntered(true);
+        });
+      });
       return true;
     } catch (error) {
       return false;
@@ -4154,6 +4166,14 @@ function App() {
 
         if (read[0]?.result?.length) {
           setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
+            setTimeout(() => {
+              setpopup(15);
+              setTimeout(() => {
+                setIsTransitioning(false);
+              });
+            });
+          }
           setOriginalUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
         }
       } catch (error) {
@@ -4180,10 +4200,9 @@ function App() {
     }
   }, [popup]);
 
-
   const [typedText, setTypedText] = useState("");
   const typedTextRef = useRef("");
-
+  
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
       const welcomeText = "Introducing Crystals: Season 0";
@@ -4222,7 +4241,7 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, []);
-
+  
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -7099,7 +7118,7 @@ function App() {
             </div>
           </div>
         ) : null}
-        {(popup === 14 || popup === 15 || isTransitioning) ? (
+        {(popup === 14 || popup === 15 || popup === 17 || isTransitioning) ? (
           <div ref={popupref} className="onboarding-container">
             <div
               className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
@@ -7114,7 +7133,7 @@ function App() {
             <CrystalObject />
 
             {user && !connected && (
-              <div ref={popupref} className="generating-address-popup">
+              <div className="generating-address-popup">
                 <span className="loader"></span>
                 <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
                 <p className="generating-address-text">
@@ -7122,10 +7141,9 @@ function App() {
                 </p>
               </div>
             )}
-
             {connected ? (
               <>
-                <div ref={popupref} className="step-indicators">
+                <div className="step-indicators">
                   {[1, 2, 3, 4].map((index) => (
                     <div
                       key={index}
@@ -7143,10 +7161,55 @@ function App() {
                 <div
                   className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
                     }`}
-                  ref={popupref}
                 >
+                              {popup == 17 && (    <div className="onboarding-section active">
+            <div className="onboarding-split-container">
+                      <div className="onboarding-left-side">
+                        <div className="onboarding-content">
+              <div className="onboarding-header">
+                <h2 className="use-ref-title">Add a referral code (optional)</h2>
+                <div className="form-group">
+                {error && <span className="error-message">{error}</span>}
+
+                  <input
+                    className="username-input"
+                    placeholder="Enter a code"
+                    value={typedRefCode}
+                    onChange={e => {setTypedRefCode(e.target.value.trim()); setError('')}}
+                  />
+                </div>
+
+                <div className="onboarding-actions">
+                  <button
+                    className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
+                    disabled={!typedRefCode || isRefSigning}
+                    onClick={async () => {
+                      const ok = await handleSetRef(typedRefCode);
+                      if (ok) setpopup(15);
+                    }}
+                  >
+                   {isRefSigning ? (
+                              <div className="button-content">
+                                <div className="loading-spinner" />
+                                {t('signTransaction')}
+                              </div>
+                            ) : t('setReferral')}
+                  </button>
+
+                  <button
+                    className="skip-button"
+                    onClick={() => setpopup(15)}
+                  >
+                    Skip
+                  </button>
+                </div>
+              </div>            </div>
+              </div>
+              </div>
+
+          </div>)}
                   <div
-                    className={`onboarding-section username-section ${popup === 14 || (isTransitioning && transitionDirection === 'backward')
+                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!originalUsername || transitionDirection == 'backward')
                         ? 'active'
                         : ''
                       } ${justEntered ? 'entering' : ''}`}
@@ -7156,10 +7219,10 @@ function App() {
                         <div className="onboarding-content">
                           <div className="onboarding-header">
                             <h2 className="onboarding-title">
-                              {usernameInput ? 'Edit Name' : 'Enter a Name'}
+                              {originalUsername ? 'Edit Name' : 'Enter a Name'}
                             </h2>
                             <p className="onboarding-subtitle">
-                              {usernameInput
+                              {originalUsername
                                 ? 'Update the name that appears on the leaderboard.'
                                 : 'This username will be visible on the leaderboard to all.'}
                             </p>
@@ -7199,7 +7262,7 @@ function App() {
                                 <div className="loading-spinner" />
                                 {t('signTransaction')}
                               </div>
-                            ) : usernameInput ? t('editUsername') : 'Create Username'}
+                            ) : originalUsername ? t('editUsername') : 'Create Username'}
                           </button>
                         </div>
 
@@ -7471,7 +7534,6 @@ function App() {
             ) : (
               !user && (
                 <div
-                  ref={popupref}
                   className="connect-wallet-username-onboarding-bg"
                 >
                   {showWelcomeScreen ? (
@@ -7496,7 +7558,7 @@ function App() {
                               setShowWelcomeScreen(false);
                             }}
                           >
-                            Begin Your Journey
+                            Explore Now
                           </button>
                         )}
                       </div>
@@ -7506,10 +7568,10 @@ function App() {
                       <CrystalObject />
 
                       <div className="onboarding-connect-wallet">
-                        {/* <div className="smart-wallet-reminder">
+                        <div className="smart-wallet-reminder">
                         <img className="onboarding-info-icon" src={infoicon} />
-                        Using a Smart Wallet will give you a&nbsp;1.25x multiplier on all Crystals
-                      </div> */}
+                        Use a Smart Wallet to receive a multiplier on all Crystals
+                      </div>
                         <div className="connect-wallet-content-container">
                           <AuthCard {...alchemyconfig.ui.auth} />
                         </div>
@@ -7521,7 +7583,7 @@ function App() {
             )}
           </div>
         ) : null}
-        {popup === 16 ? (
+         {popup === 16 ? (
           <div className="edit-username-bg">
             <div ref={popupref} className="edit-username-container">
               <div className="onboarding-split-container">
@@ -7575,61 +7637,6 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 17 && (
-          <div className="use-ref-bg">
-            <div ref={popupref} className="use-ref-content">
-              <div className="onboarding-header">
-                <h2 className="use-ref-title">Add a referral code (optional)</h2>
-                {usedRefLink ? (
-                  <>
-                    <p className="onboarding-subtitle">
-                      We detected the code <strong>{usedRefLink}</strong> in your link.
-                      Continue to activate it, or enter a different one below.
-                    </p>
-                    <button
-                      className="create-username-button"
-                      onClick={() => {
-                        handleSetRef(usedRefLink);
-                        setpopup(15);
-                      }}
-                    >
-                      Use this code
-                    </button>
-                  </>
-                ) : null}
-
-                <div className="form-group">
-                  <input
-                    className="username-input"
-                    placeholder="Enter a code"
-                    value={typedRefCode}
-                    onChange={e => setTypedRefCode(e.target.value.trim())}
-                  />
-                </div>
-
-                <div className="onboarding-actions">
-                  <button
-                    className={`create-username-button ${!typedRefCode ? 'disabled' : ''}`}
-                    disabled={!typedRefCode}
-                    onClick={async () => {
-                      const ok = await handleSetRef(typedRefCode);
-                      if (ok) setpopup(15);
-                    }}
-                  >
-                    Use this code
-                  </button>
-
-                  <button
-                    className="skip-button"
-                    onClick={() => setpopup(15)}
-                  >
-                    Skip
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </>
   );
@@ -12769,6 +12776,7 @@ function App() {
                 }}
                 refetch={refRefetch}
                 sendUserOperationAsync={sendUserOperationAsync}
+                client={client}
               />
             }
           />
