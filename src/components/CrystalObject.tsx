@@ -1,136 +1,96 @@
-import { useEffect, useRef } from 'react';
-import * as THREE from 'three';
+import { useEffect, useRef } from 'react'
+import * as THREE from 'three'
 
 const CrystalObject = () => {
-  const mountRef = useRef<HTMLDivElement>(null);
-  // Store current mouse position
-  const mousePos = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  // Add animation start time reference
-  const startTime = useRef(Date.now());
+  const mountRef = useRef<HTMLDivElement>(null)
+  const clock = useRef(new THREE.Clock())
 
   useEffect(() => {
-    // Scene and camera setup
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      65,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    camera.position.z = 7;
+    // Scene & camera
+    const scene = new THREE.Scene()
+    const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000)
+    camera.position.z = 7
 
-    // Renderer setup
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: true,
-      precision: 'highp'
-    });
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.5;
-    if (mountRef.current) {
-      mountRef.current.appendChild(renderer.domElement);
-    }
+    // Renderer
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, precision: 'highp' })
+    renderer.setSize(window.innerWidth, window.innerHeight)
+    renderer.setClearColor(0x000000, 0)
+    renderer.setPixelRatio(window.devicePixelRatio)
+    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMappingExposure = 1.5
+    if (mountRef.current) mountRef.current.appendChild(renderer.domElement)
 
-    // Create groups for the main crystal and small crystals
-    const crystalGroup = new THREE.Group();
-    scene.add(crystalGroup);
-    const smallCrystalsGroup = new THREE.Group();
-    crystalGroup.add(smallCrystalsGroup);
-
-    // --- Gradient environment texture ---
+    // Gradient environment
     function createGradientTexture() {
-      const canvas = document.createElement('canvas');
-      canvas.width = 256;
-      canvas.height = 256;
-      const context = canvas.getContext('2d');
-      if (!context) throw new Error('Could not get 2D context');
-      const gradient = context.createLinearGradient(0, 0, 0, 256);
-      gradient.addColorStop(0, '#111122');
-      gradient.addColorStop(1, '#334466');
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, 256, 256);
-      return canvas;
+      const canvas = document.createElement('canvas')
+      canvas.width = 256
+      canvas.height = 256
+      const ctx = canvas.getContext('2d')!
+      const grad = ctx.createLinearGradient(0, 0, 0, 256)
+      grad.addColorStop(0, '#111122')
+      grad.addColorStop(1, '#334466')
+      ctx.fillStyle = grad
+      ctx.fillRect(0, 0, 256, 256)
+      return canvas
     }
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256);
-    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget);
-    scene.add(cubeCamera);
-    const envScene = new THREE.Scene();
-    const gradientTexture = new THREE.CanvasTexture(createGradientTexture());
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256)
+    const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget)
+    scene.add(cubeCamera)
+    const envScene = new THREE.Scene()
     const envSphere = new THREE.Mesh(
       new THREE.SphereGeometry(100, 32, 32),
-      new THREE.MeshBasicMaterial({ map: gradientTexture, side: THREE.BackSide })
-    );
-    envScene.add(envSphere);
-    cubeCamera.update(renderer, envScene);
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(createGradientTexture()), side: THREE.BackSide })
+    )
+    envScene.add(envSphere)
+    cubeCamera.update(renderer, envScene)
 
-    // --- Function to create small crystal geometry ---
+    // Small-crystal geometry
     function createSmallCrystalGeometry(scale: number, variation: number) {
-      const geometry = new THREE.BufferGeometry();
-      // Multiply scale by 0.7 so small crystals are 30% smaller
-      const finalScale = 0.7 * scale;
-      const applyVariation = (val: number) => val * (1 + (Math.random() - 0.5) * variation);
+      const geo = new THREE.BufferGeometry()
+      const s = scale * 0.7
+      const v = (n: number) => n * s * (1 + (Math.random() - 0.5) * variation)
       const vertices = [
-        0, applyVariation(-2) * finalScale, 0,
-        applyVariation(1.5) * finalScale, applyVariation(-0.8) * finalScale, applyVariation(1.2) * finalScale,
-        applyVariation(-1.2) * finalScale, applyVariation(-1.0) * finalScale, applyVariation(1.4) * finalScale,
-        applyVariation(-1.7) * finalScale, applyVariation(-0.7) * finalScale, applyVariation(-0.9) * finalScale,
-        applyVariation(0.9) * finalScale, applyVariation(-1.2) * finalScale, applyVariation(-1.5) * finalScale,
-        applyVariation(2.2) * finalScale, applyVariation(0.5) * finalScale, applyVariation(1.8) * finalScale,
-        applyVariation(-1.9) * finalScale, applyVariation(0.7) * finalScale, applyVariation(2.1) * finalScale,
-        applyVariation(-2.4) * finalScale, applyVariation(0.4) * finalScale, applyVariation(-1.3) * finalScale,
-        applyVariation(1.4) * finalScale, applyVariation(0.2) * finalScale, applyVariation(-2.1) * finalScale,
-        applyVariation(1.0) * finalScale, applyVariation(1.9) * finalScale, applyVariation(0.8) * finalScale,
-        applyVariation(-0.7) * finalScale, applyVariation(2.3) * finalScale, applyVariation(1.1) * finalScale,
-        applyVariation(-1.2) * finalScale, applyVariation(1.7) * finalScale, applyVariation(-0.6) * finalScale,
-        applyVariation(0.5) * finalScale, applyVariation(2.1) * finalScale, applyVariation(-0.9) * finalScale,
-        0, applyVariation(3.2) * finalScale, 0
-      ];
-      const indices = [
-        0, 2, 1,
-        0, 3, 2,
-        0, 4, 3,
-        0, 1, 4,
-        1, 2, 6,
-        1, 6, 5,
-        2, 3, 7,
-        2, 7, 6,
-        3, 4, 8,
-        3, 8, 7,
-        4, 1, 5,
-        4, 5, 8,
-        5, 6, 10,
-        5, 10, 9,
-        6, 7, 11,
-        6, 11, 10,
-        7, 8, 12,
-        7, 12, 11,
-        8, 5, 9,
-        8, 9, 12,
-        9, 10, 13,
-        10, 11, 13,
-        11, 12, 13,
-        12, 9, 13
-      ];
-      geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
-      geometry.setIndex(indices);
-      geometry.computeVertexNormals();
-      geometry.userData = { originalPositions: vertices.slice() };
-      return geometry;
+        0, v(-2), 0,
+        v(1.5), v(-0.8), v(1.2),
+        v(-1.2), v(-1.0), v(1.4),
+        v(-1.7), v(-0.7), v(-0.9),
+        v(0.9), v(-1.2), v(-1.5),
+        v(2.2), v(0.5), v(1.8),
+        v(-1.9), v(0.7), v(2.1),
+        v(-2.4), v(0.4), v(-1.3),
+        v(1.4), v(0.2), v(-2.1),
+        v(1.0), v(1.9), v(0.8),
+        v(-0.7), v(2.3), v(1.1),
+        v(-1.2), v(1.7), v(-0.6),
+        v(0.5), v(2.1), v(-0.9),
+        0, v(3.2), 0,
+      ]
+      const idx = [
+        0,2,1, 0,3,2, 0,4,3, 0,1,4,
+        1,2,6, 1,6,5, 2,3,7, 2,7,6,
+        3,4,8, 3,8,7, 4,1,5, 4,5,8,
+        5,6,10,5,10,9,6,7,11,6,11,10,
+        7,8,12,7,12,11,8,5,9,8,9,12,
+        9,10,13,10,11,13,11,12,13,12,9,13
+      ]
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
+      geo.setIndex(idx)
+      geo.computeVertexNormals()
+      return geo
     }
 
-    // --- Create small crystals ---  
-    // This function creates a set of small crystals and adds them to the group.
-    function createSmallCrystals(count: number, entranceDirection: string) {
-      const crystalColors = [0x9ea4f3, 0x9ea4f3, 0x9ea4f3, 0x9ea4f3, 0x9ea4f3];
-      const smallCrystals = [];
+    // Create crystals
+    const crystalGroup = new THREE.Group()
+    const smallCrystalsGroup = new THREE.Group()
+    scene.add(crystalGroup)
+    crystalGroup.add(smallCrystalsGroup)
+
+    function createSmallCrystals(count: number, dir: string) {
+      const colors = [0x9ea4f3, 0x9ea4f3, 0x9ea4f3, 0x9ea4f3, 0x9ea4f3]
+      const meshes: THREE.Mesh[] = []
       for (let i = 0; i < count; i++) {
-        const colorIndex = Math.floor(Math.random() * crystalColors.length);
-        const crystalColor = crystalColors[colorIndex];
-        const smallCrystalMaterial = new THREE.MeshPhysicalMaterial({
-          color: crystalColor,
+        const mat = new THREE.MeshPhysicalMaterial({
+          color: colors[i % colors.length],
           metalness: 0.3 + Math.random() * 0.2,
           roughness: Math.random() * 0.1,
           wireframe: true,
@@ -143,319 +103,154 @@ const CrystalObject = () => {
           opacity: 1,
           envMap: cubeRenderTarget.texture,
           envMapIntensity: 1.2 + Math.random() * 0.6,
-          side: THREE.DoubleSide
-        });
-        // Here, the base scale is reduced by 0.7 (30% smaller)
-        const scale = 0.7 * (0.15 + Math.random() * 0.25);
-        const smallCrystalGeometry = createSmallCrystalGeometry(scale, 0.4);
-        const smallCrystal = new THREE.Mesh(smallCrystalGeometry, smallCrystalMaterial);
+          side: THREE.DoubleSide,
+        })
+        const scaleBase = 0.15 + Math.random() * 0.25
+        const geo = createSmallCrystalGeometry(scaleBase, 0.4)
+        const mesh = new THREE.Mesh(geo, mat)
 
-        // Position using a spherical distribution
-        const radius = 3 + Math.random() * 1.5;
-        const theta = Math.random() * Math.PI * 2;
-        const phi = (Math.random() * 0.8 + 0.1) * Math.PI;
-        
-        // Final position (where crystals will end up)
-        const finalX = radius * Math.sin(phi) * Math.cos(theta);
-        const finalY = radius * Math.cos(phi) + (Math.random() - 0.5) * 1.5;
-        const finalZ = radius * Math.sin(phi) * Math.sin(theta);
-        
-        // Generate a starting position even farther away, based on the entrance direction
-        const entranceDistance = 25 + Math.random() * 15; // 25-40 units away for more dramatic effect
-        
-        let startX, startY, startZ;
-        
-        // Define different entrance directions
-        switch(entranceDirection) {
-          case 'random':
-            // Completely random direction from far away
-            const randomAngle = Math.random() * Math.PI * 2;
-            const randomElevation = Math.random() * Math.PI;
-            startX = Math.sin(randomElevation) * Math.cos(randomAngle) * entranceDistance;
-            startY = Math.cos(randomElevation) * entranceDistance;
-            startZ = Math.sin(randomElevation) * Math.sin(randomAngle) * entranceDistance;
-            break;
-          case 'left':
-            // From left side (-X direction)
-            startX = -entranceDistance;
-            startY = finalY + (Math.random() - 0.5) * 10;
-            startZ = finalZ + (Math.random() - 0.5) * 10;
-            break;
-          case 'right':
-            // From right side (+X direction)
-            startX = entranceDistance;
-            startY = finalY + (Math.random() - 0.5) * 10;
-            startZ = finalZ + (Math.random() - 0.5) * 10;
-            break;
-          case 'top':
-            // From top (+Y direction)
-            startX = finalX + (Math.random() - 0.5) * 10;
-            startY = entranceDistance;
-            startZ = finalZ + (Math.random() - 0.5) * 10;
-            break;
-          case 'bottom':
-            // From bottom (-Y direction)
-            startX = finalX + (Math.random() - 0.5) * 10;
-            startY = -entranceDistance;
-            startZ = finalZ + (Math.random() - 0.5) * 10;
-            break;
-          case 'front':
-            // From front (+Z direction)
-            startX = finalX + (Math.random() - 0.5) * 10;
-            startY = finalY + (Math.random() - 0.5) * 10;
-            startZ = entranceDistance;
-            break;
-          case 'back':
-            // From back (-Z direction)
-            startX = finalX + (Math.random() - 0.5) * 10;
-            startY = finalY + (Math.random() - 0.5) * 10;
-            startZ = -entranceDistance;
-            break;
+        const r = 3 + Math.random() * 1.5
+        const theta = Math.random() * Math.PI * 2
+        const phi = (Math.random() * 0.8 + 0.1) * Math.PI
+        const fx = r * Math.sin(phi) * Math.cos(theta)
+        const fy = r * Math.cos(phi) + (Math.random() - 0.5) * 1.5
+        const fz = r * Math.sin(phi) * Math.sin(theta)
+
+        let sx = 0, sy = 0, sz = 0
+        const d = 25 + Math.random() * 15
+        switch (dir) {
+          case 'left':   sx = -d; sy = fy + (Math.random() - 0.5) * 10; sz = fz + (Math.random() - 0.5) * 10; break
+          case 'right':  sx = d;  sy = fy + (Math.random() - 0.5) * 10; sz = fz + (Math.random() - 0.5) * 10; break
+          case 'top':    sx = fx + (Math.random() - 0.5) * 10; sy = d;  sz = fz + (Math.random() - 0.5) * 10; break
+          case 'bottom': sx = fx + (Math.random() - 0.5) * 10; sy = -d; sz = fz + (Math.random() - 0.5) * 10; break
+          case 'front':  sx = fx + (Math.random() - 0.5) * 10; sy = fy + (Math.random() - 0.5) * 10; sz = d;  break
+          case 'back':   sx = fx + (Math.random() - 0.5) * 10; sy = fy + (Math.random() - 0.5) * 10; sz = -d; break
           default:
-            // Default to random if direction is not recognized
-            const defaultAngle = Math.random() * Math.PI * 2;
-            const defaultElevation = Math.random() * Math.PI;
-            startX = Math.sin(defaultElevation) * Math.cos(defaultAngle) * entranceDistance;
-            startY = Math.cos(defaultElevation) * entranceDistance;
-            startZ = Math.sin(defaultElevation) * Math.sin(defaultAngle) * entranceDistance;
+            const a = Math.random() * Math.PI * 2
+            const e = Math.random() * Math.PI
+            sx = Math.sin(e) * Math.cos(a) * d
+            sy = Math.cos(e) * d
+            sz = Math.sin(e) * Math.sin(a) * d
         }
-        
-        // Set initial position to start position
-        smallCrystal.position.set(startX, startY, startZ);
-        
-        // Store initial and final positions for animation
-        smallCrystal.userData = {
+
+        mesh.position.set(sx, sy, sz)
+        mesh.userData = {
+          startPosition: new THREE.Vector3(sx, sy, sz),
+          finalPosition: new THREE.Vector3(fx, fy, fz),
+          originalPosition: new THREE.Vector3(fx, fy, fz),
           rotationSpeed: (Math.random() - 0.5) * 0.01,
           oscillationSpeed: 0.5 + Math.random() * 1.5,
           oscillationAmplitude: 0.05 + Math.random() * 0.1,
-          // Store both start and target positions
-          startPosition: new THREE.Vector3(startX, startY, startZ),
-          finalPosition: new THREE.Vector3(finalX, finalY, finalZ),
-          originalPosition: new THREE.Vector3(finalX, finalY, finalZ), // for oscillation reference
-          // Fixed random mouse response factors for smooth, individual motion
-          mouseFactorX: (Math.random() - 0.5) * 0.5,
-          mouseFactorY: (Math.random() - 0.5) * 0.5,
-          mouseSensitivity: 0.2 + Math.random() * 0.1,
-          // Animation params
-          entranceSpeed: 0.5 + Math.random() * 0.3, // Slower base speed for entrance animation
-          entranceDelay: Math.random() * 1.5, // Longer, more varied delays for more staggered effect
-          entranceProgress: 0 // Current progress of entrance animation
-        };
-        
-        smallCrystal.rotation.x = Math.random() * Math.PI * 2;
-        smallCrystal.rotation.y = Math.random() * Math.PI * 2;
-        smallCrystal.rotation.z = Math.random() * Math.PI * 2;
-        
-        smallCrystalsGroup.add(smallCrystal);
-        smallCrystals.push(smallCrystal);
-      }
-      return smallCrystals;
-    }
-
-    // Create the original set of small crystals (15-25)
-    createSmallCrystals(Math.floor(5 + Math.random() * 5), 'random');
-
-    // Create crystal groups with more varied timing for fluid appearance
-    // Additional delay offset for each group to create a wave-like formation
-    let groupDelayOffset = 0;
-    
-    // Create additional crystal groups from various directions
-    const leftCount = 10 + Math.floor(Math.random() * 5);
-    const leftCrystals = createSmallCrystals(leftCount, 'left');
-    leftCrystals.forEach(crystal => {
-      // Final position adjusted (shifted left)
-      crystal.userData.finalPosition.x -= 2;
-      crystal.userData.originalPosition.x -= 2;
-      // Add delay offset to this group
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-    
-    // Increase offset for next group
-    groupDelayOffset += 0.5;
-    
-    const rightCount = 5 + Math.floor(Math.random() * 11);
-    const rightCrystals = createSmallCrystals(rightCount, 'right');
-    rightCrystals.forEach(crystal => {
-      // Final position adjusted (shifted right)
-      crystal.userData.finalPosition.x += 2;
-      crystal.userData.originalPosition.x += 2;
-      // Add delay offset to this group
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-    
-    // Increase offset for next group
-    groupDelayOffset += 0.5;
-    
-    // Add more crystal groups from other directions for a more dramatic effect
-    const topCrystals = createSmallCrystals(1 + Math.floor(Math.random() * 7), 'top');
-    topCrystals.forEach(crystal => {
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-    
-    groupDelayOffset += 0.5;
-    
-    const bottomCrystals = createSmallCrystals(1 + Math.floor(Math.random() * 7), 'bottom');
-    bottomCrystals.forEach(crystal => {
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-    
-    groupDelayOffset += 0.5;
-    
-    const frontCrystals = createSmallCrystals(1 + Math.floor(Math.random() * 7), 'front');
-    frontCrystals.forEach(crystal => {
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-    
-    groupDelayOffset += 0.5;
-    
-    const backCrystals = createSmallCrystals(1 + Math.floor(Math.random() * 7), 'back');
-    backCrystals.forEach(crystal => {
-      crystal.userData.entranceDelay += groupDelayOffset;
-    });
-
-    // --- Lighting setup ---
-    const ambientLight = new THREE.AmbientLight(0x404040, 0.8);
-    scene.add(ambientLight);
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.5);
-    directionalLight.position.set(1, 2, 4);
-    scene.add(directionalLight);
-    const fillLight = new THREE.DirectionalLight(0xcce8ff, 1.8);
-    fillLight.position.set(-4, -1, 2);
-    scene.add(fillLight);
-    const rimLight = new THREE.DirectionalLight(0xffffff, 2.2);
-    rimLight.position.set(0, 0, -5);
-    scene.add(rimLight);
-    const pointLight1 = new THREE.PointLight(0xc7ccf9, 3, 20, 2);
-    pointLight1.position.set(5, 3, 5);
-    scene.add(pointLight1);
-    const pointLight2 = new THREE.PointLight(0x9a9ec7, 3, 20, 2);
-    pointLight2.position.set(-5, -2, 3);
-    scene.add(pointLight2);
-    const pointLight3 = new THREE.PointLight(0xf5f5ff, 2.5, 20, 2);
-    pointLight3.position.set(0, -5, -5);
-    scene.add(pointLight3);
-
-    // --- Mouse interaction ---
-    const handleMouseMove = (event: { clientX: number; clientY: number; }) => {
-      mousePos.current.x = event.clientX;
-      mousePos.current.y = event.clientY;
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-
-    // --- Animation loop ---
-    let frame = 0;
-    const animate = () => {
-      frame += 0.01;
-      requestAnimationFrame(animate);
-
-      // Calculate elapsed time for entrance animation
-      const elapsed = (Date.now() - startTime.current) / 1000; // time in seconds
-
-      // Overall rotation of the crystal group
-      crystalGroup.rotation.y = frame * 1;
-      crystalGroup.rotation.z = Math.sin(frame * 0.2) * 0.15;
-      crystalGroup.rotation.x = Math.sin(frame * 0.3) * 0.15;
-
-      // Normalized mouse coordinates
-      const normalizedX = (mousePos.current.x - window.innerWidth / 2) / (window.innerWidth / 2);
-      const normalizedY = -(mousePos.current.y - window.innerHeight / 2) / (window.innerHeight / 2);
-
-      // Animate each small crystal individually
-      smallCrystalsGroup.children.forEach(smallCrystal => {
-        // Handle entrance animation
-        const entranceDelay = smallCrystal.userData.entranceDelay;
-        const entranceSpeed = smallCrystal.userData.entranceSpeed;
-        
-        // Only start animation after delay
-        if (elapsed > entranceDelay) {
-          // Calculate entrance progress (0 to 1) - SLOWED DOWN
-          smallCrystal.userData.entranceProgress = Math.min(
-            1, 
-            (elapsed - entranceDelay) * (entranceSpeed * 0.4) // Reduced speed by 60%
-          );
-          
-          const progress = smallCrystal.userData.entranceProgress;
-          
-          // Smoother easing function (quintic easing out)
-          const easedProgress = 1 - Math.pow(1 - progress, 5);
-          
-          // Interpolate position from start to final
-          if (progress < 1) {
-            const startPos = smallCrystal.userData.startPosition;
-            const finalPos = smallCrystal.userData.finalPosition;
-            
-            smallCrystal.position.x = startPos.x + (finalPos.x - startPos.x) * easedProgress;
-            smallCrystal.position.y = startPos.y + (finalPos.y - startPos.y) * easedProgress;
-            smallCrystal.position.z = startPos.z + (finalPos.z - startPos.z) * easedProgress;
-          } else {
-            // Animation complete, apply regular oscillation
-            const oscSpeed = smallCrystal.userData.oscillationSpeed;
-            const oscAmp = smallCrystal.userData.oscillationAmplitude;
-            const origPos = smallCrystal.userData.originalPosition;
-            const sensitivity = smallCrystal.userData.mouseSensitivity;
-            
-            // Add a fluid transition between entrance animation and regular oscillation
-            const transitionFactor = Math.min(1, (progress - 1) * 5 + 1); // Smooth transition after reaching final position
-            
-            // Apply oscillation and a fixed, per-crystal mouse offset with transition
-            smallCrystal.position.x = origPos.x + Math.sin(frame * oscSpeed) * oscAmp * transitionFactor + normalizedX * sensitivity * smallCrystal.userData.mouseFactorX;
-            smallCrystal.position.y = origPos.y + Math.cos(frame * oscSpeed * 0.8) * oscAmp * transitionFactor + normalizedY * sensitivity * smallCrystal.userData.mouseFactorY;
-            smallCrystal.position.z = origPos.z + Math.sin(frame * oscSpeed * 1.2) * oscAmp * transitionFactor;
-          }
+          entranceSpeed: 0.5 + Math.random() * 0.3,
+          entranceDelay: Math.random() * 1.5,
+          entranceProgress: 0,
         }
 
-        // Calculate a rotation multiplier that increases as crystals approach their destinations
-        // This creates a fluid effect where crystals spin faster as they arrive
-        const rotationMultiplier = smallCrystal.userData.entranceProgress > 0 ? 
-                                 Math.min(1, smallCrystal.userData.entranceProgress * 3) : 0;
-        
-        smallCrystal.rotation.x += smallCrystal.userData.rotationSpeed * rotationMultiplier;
-        smallCrystal.rotation.y += smallCrystal.userData.rotationSpeed * 1.3 * rotationMultiplier;
-        smallCrystal.rotation.z += smallCrystal.userData.rotationSpeed * 0.7 * rotationMultiplier;
-      });
+        smallCrystalsGroup.add(mesh)
+        meshes.push(mesh)
+      }
+      return meshes
+    }
 
-      pointLight1.position.x = Math.sin(frame * 1.2) * 6;
-      pointLight1.position.z = Math.cos(frame * 0.9) * 6;
-      pointLight1.intensity = 2 + Math.sin(frame * 4) * 1;
-      pointLight2.position.y = Math.sin(frame * 1.5) * 6;
-      pointLight2.intensity = 2 + Math.cos(frame * 3.5) * 1;
-      pointLight3.intensity = 2 + Math.sin(frame * 5) * 1;
+    let delayOffset = 0
+    createSmallCrystals(Math.floor(5 + Math.random() * 5), 'random')
+    createSmallCrystals(10 + Math.floor(Math.random() * 5), 'left').forEach(c => {
+      c.userData.finalPosition.x -= 2
+      c.userData.originalPosition.x -= 2
+      c.userData.entranceDelay += delayOffset
+    })
+    delayOffset += 0.5
+    createSmallCrystals(5 + Math.floor(Math.random() * 11), 'right').forEach(c => {
+      c.userData.finalPosition.x += 2
+      c.userData.originalPosition.x += 2
+      c.userData.entranceDelay += delayOffset
+    })
+    delayOffset += 0.5
+    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+    delayOffset += 0.5
+    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+    delayOffset += 0.5
+    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+    delayOffset += 0.5
+    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
 
-      renderer.render(scene, camera);
-    };
+    // Lighting
+    scene.add(new THREE.AmbientLight(0x404040, 0.8))
+    const dirLight = new THREE.DirectionalLight(0xffffff, 2.5)
+    dirLight.position.set(1, 2, 4)
+    scene.add(dirLight)
+    const fillLight = new THREE.DirectionalLight(0xcce8ff, 1.8)
+    fillLight.position.set(-4, -1, 2)
+    scene.add(fillLight)
+    const rimLight = new THREE.DirectionalLight(0xffffff, 2.2)
+    rimLight.position.set(0, 0, -5)
+    scene.add(rimLight)
 
     const handleResize = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      renderer.setSize(width, height);
-      camera.aspect = width / height;
-      camera.updateProjectionMatrix();
-    };
-    window.addEventListener('resize', handleResize);
-    animate();
+      const w = window.innerWidth
+      const h = window.innerHeight
+      renderer.setSize(w, h)
+      camera.aspect = w / h
+      camera.updateProjectionMatrix()
+    }
+    window.addEventListener('resize', handleResize)
 
-    // Cleanup on unmount
+    const animate = () => {
+      requestAnimationFrame(animate)
+      const elapsed = clock.current.getElapsedTime()
+
+      // Gentle rotation of the entire crystal group
+      crystalGroup.rotation.y = elapsed * 0.2
+      crystalGroup.rotation.z = Math.sin(elapsed * 0.1) * 0.1
+      crystalGroup.rotation.x = Math.sin(elapsed * 0.15) * 0.1
+
+      // Animate each crystal individually
+      smallCrystalsGroup.children.forEach((c: any) => {
+        const u = c.userData
+        if (elapsed > u.entranceDelay) {
+          const p = Math.min(1, (elapsed - u.entranceDelay) * (u.entranceSpeed * 0.4))
+          u.entranceProgress = p
+          const ep = 1 - Math.pow(1 - p, 5)
+          if (p < 1) {
+            c.position.lerpVectors(u.startPosition, u.finalPosition, ep)
+          } else {
+            const tf = Math.min(1, (p - 1) * 5 + 1)
+            c.position.x = u.originalPosition.x + Math.sin(elapsed * u.oscillationSpeed) * u.oscillationAmplitude * tf
+            c.position.y = u.originalPosition.y + Math.cos(elapsed * u.oscillationSpeed * 0.8) * u.oscillationAmplitude * tf
+            c.position.z = u.originalPosition.z + Math.sin(elapsed * u.oscillationSpeed * 1.2) * u.oscillationAmplitude * tf
+          }
+        }
+        const rm = u.entranceProgress > 0 ? Math.min(1, u.entranceProgress * 3) : 0
+        c.rotation.x += u.rotationSpeed * rm
+        c.rotation.y += u.rotationSpeed * 1.3 * rm
+        c.rotation.z += u.rotationSpeed * 0.7 * rm
+      })
+
+      renderer.render(scene, camera)
+    }
+    animate()
+
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('mousemove', handleMouseMove);
-    };
-  }, []);
+      window.removeEventListener('resize', handleResize)
+      if (mountRef.current) mountRef.current.removeChild(renderer.domElement)
+    }
+  }, [])
 
   return (
-    <div 
-      ref={mountRef} 
-      style={{ 
-        position: 'absolute', 
+    <div
+      ref={mountRef}
+      style={{
+        position: 'absolute',
         top: '50vh',
         left: '50vw',
         transform: 'translate(-50%, -50%)',
-        width: '100vw', 
+        width: '100vw',
         height: '100vh',
         zIndex: 1,
-        pointerEvents: 'none' 
+        pointerEvents: 'none',
       }}
     />
-  );
-};
+  )
+}
 
-export default CrystalObject;
+export default CrystalObject

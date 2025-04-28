@@ -358,10 +358,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               <div className="column-content">
                 <div className="address-container">
                   <span className="leaderboard-user-address">
-                    @{address
+                    @<span className="address-string">{address
                       ? liveLeaderboard[address.toLowerCase()]?.username ||
                         getDisplayAddress(address)
                       : ''}
+                      </span>
                     {address && <CopyButton textToCopy={address} />}
                   </span>
                 </div>
