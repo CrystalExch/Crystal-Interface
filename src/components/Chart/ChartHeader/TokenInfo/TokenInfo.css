@@ -652,3 +652,52 @@
   margin: 0;
   margin-top: -6px;
 }
+
+
+.market-filter-tabs {
+  display: flex;
+  padding: 5px 6px;
+  padding-bottom: 0;
+  overflow-x: scroll;
+}
+
+
+.filter-tab:hover {
+  background-color: #2a2a378f;
+}
+
+.filter-tab.active {
+  color: #cad2e2;
+  background-color: #2a2a378f;
+}
+
+
+.market-filter-tabs {
+  display: flex;
+  padding: 5px 6px;
+  padding-bottom: 0;
+  overflow-x: auto;
+  position: relative;
+  scrollbar-width: none; 
+  -ms-overflow-style: none; 
+  mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 30px, black calc(100% - 30px), transparent);
+}
+
+.market-filter-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-tab {
+  background: none;
+  border: none;
+  color: #6b7280;
+  cursor: pointer;
+  font-size: 0.75rem;
+  padding: 3px 10px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  background-color: #1c1c238f;
+  margin: 0 2px;
+  flex-shrink: 0; 
+}
