@@ -4091,15 +4091,20 @@ function App() {
 
       audio.currentTime = 0;
       audio.play();
-      setIsTransitioning(true);
-      setTransitionDirection('forward');
-      setTimeout(() => {
-        setpopup(17);
+      if (popup == 16) {
+        setpopup(0)
+      }
+      else {
+        setIsTransitioning(true);
+        setTransitionDirection('forward');
         setTimeout(() => {
-          setIsTransitioning(false);
-          setJustEntered(true);
+          setpopup(17);
+          setTimeout(() => {
+            setIsTransitioning(false);
+            setJustEntered(true);
+          });
         });
-      });
+      }
       return true;
     } catch (error) {
       return false;
