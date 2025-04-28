@@ -5261,6 +5261,12 @@ input[type="email"] {
   justify-self: center;
 }
 
+
+.use-ref-bg{
+  display: flex;
+  align-self: center;
+  justify-self: center;
+}
 .onboarding-left-side {
   width: 100%;
   height: 100%;
@@ -5282,6 +5288,23 @@ input[type="email"] {
   backdrop-filter: blur(5px);
   padding: 10px;
   padding-top: 20px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+  background-color: rgba(0, 0, 0, 0.3)
+}
+
+
+
+.use-ref-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  max-width: 400px;
+  width: 100%;
+  backdrop-filter: blur(5px);
+  padding: 20px;
+  padding-bottom: 10px;
   border-radius: 12px;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
   margin-bottom: 8px;
@@ -5366,6 +5389,13 @@ input[type="email"] {
   text-align: center;
   color: #e4e3e3d6;
   letter-spacing: -0.5px;
+}
+.use-ref-title{
+  font-size: 1.2rem;
+  text-align: center;
+  color: #e4e3e3d6;
+  letter-spacing: -0.5px;
+  margin-bottom: 10px;
 }
 
 .onboarding-subtitle {

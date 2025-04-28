@@ -7585,55 +7585,59 @@ function App() {
           </div>
         ) : null}
         {popup === 17 && (
-                    <div className="edit-username-bg">
+          <div className="use-ref-bg">
+    <div ref={popupref} className="use-ref-content">
+      <div className="onboarding-header">
+        <h2 className="use-ref-title">Add a referral code (optional)</h2>
+        {usedRefLink ? (
+          <>
+            <p className="onboarding-subtitle">
+              We detected the code <strong>{usedRefLink}</strong> in your link.
+              Continue to activate it, or enter a different one below.
+            </p>
+            <button
+              className="create-username-button"
+              onClick={() => {
+                handleSetRef(usedRefLink);
+                setpopup(15);
+              }}
+            >
+              Use this code
+            </button>
+          </>
+        ) : null}
+        
+        <div className="form-group">
+          <input
+            className="username-input"
+            placeholder="Enter a code"
+            value={typedRefCode}
+            onChange={e => setTypedRefCode(e.target.value.trim())}
+          />
+        </div>
 
-          <div ref={popupref} className="onboarding-popup">
-            <h2>Add a referral code (optional)</h2>
-            {usedRefLink ? (
-              <>
-                <p>
-                  We detected the code <strong>{usedRefLink}</strong> in your link.
-                  Continue to activate it, or enter a different one below.
-                </p>
-                <button
-                  className="continue-btn"
-                  onClick={() => {
-                    handleSetRef(usedRefLink);
-                    setpopup(15);
-                  }}
-                >
-                  Use this code
-                </button>
-              </>
-            ) : null}
+        <div className="onboarding-actions">
+          <button
+            className={`create-username-button ${!typedRefCode ? 'disabled' : ''}`}
+            disabled={!typedRefCode}
+            onClick={async () => {
+              const ok = await handleSetRef(typedRefCode);
+              if (ok) setpopup(15);
+            }}
+          >
+            Use this code
+          </button>
 
-            <input
-              placeholder="Enter a code"
-              value={typedRefCode}
-              onChange={e => setTypedRefCode(e.target.value.trim())}
-            />
-
-            <div className="referral-actions">
-              <button
-                className="continue-btn"
-                disabled={!typedRefCode}
-                onClick={async () => {
-                  const ok = await handleSetRef(typedRefCode);
-                  if (ok) setpopup(15);
-                }}
-              >
-                Use this code
-              </button>
-
-              <button
-                className="skip-btn"
-                onClick={() => setpopup(15)}
-              >
-                Skip
-              </button>
-            </div>
-          </div>
-          </div>
+          <button
+            className="skip-button"
+            onClick={() => setpopup(15)}
+          >
+            Skip
+          </button>
+        </div>
+      </div>
+    </div>
+</div>
         )}
       </div>
     </>
