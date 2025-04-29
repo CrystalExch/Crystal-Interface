@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import crystalxp from '../../assets/CrystalX.png';
 import arrow from '../../assets/arrow.svg';
 import CrownIcon from '../../assets/crownicon.png';
@@ -215,6 +215,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return () => clearInterval(timer);
   }, []);
 
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (currentPage > 0 && bottomSentinelRef.current) {
+      bottomSentinelRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',   
+      });
+    }
+  }, [currentPage]);
+
   const getDisplayAddress = (addr: string) =>
     addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
@@ -425,7 +437,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="header-bonus">{t('totalXP')}</div>
         </div>
 
-        <div className="leaderboard-rows">
+        <div className="leaderboard-rows"
+         ref={rowsRef}  >
           {loading
             ? renderLoadingRows()
             : getCurrentPageItems().map(faction => {
@@ -509,6 +522,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
+        <div ref={bottomSentinelRef} />
+
       </div>
     </div>
   );
