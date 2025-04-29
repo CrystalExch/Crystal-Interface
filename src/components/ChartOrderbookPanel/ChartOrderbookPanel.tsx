@@ -8,6 +8,8 @@ interface ChartOrderbookPanelProps {
   layoutSettings: string;
   orderbookPosition: string;
   orderdata: any;
+  windowWidth: any;
+  mobileView: any;
   isOrderbookVisible: boolean;
   orderbookWidth: number;
   setOrderbookWidth: any;
@@ -29,6 +31,8 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   layoutSettings,
   orderbookPosition,
   orderdata,
+  windowWidth,
+  mobileView,
   isOrderbookVisible,
   orderbookWidth,
   setOrderbookWidth,
@@ -136,21 +140,19 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
     transition: isDragging ? 'none' : 'width 0.1s ease',
   };
 
-
-return (
-  <div
-    className={`chart-orderbook-panel ${isDragging ? 'isDragging' : ''}`}
-    ref={widthRef}
-    style={{
-      flexDirection: orderbookPosition == 'left' ? 'row-reverse' : 'row',
-    }}
-  >
-    <>
-      <div className="chart-container">
+  return (
+    <div
+      className={windowWidth > 1020 ? `chart-orderbook-panel ${isDragging ? 'isDragging' : ''}` : "trade-mobile-view-container"}
+      ref={widthRef}
+      style={windowWidth > 1020 ? {
+        flexDirection: orderbookPosition == 'left' ? 'row-reverse' : 'row',
+      } : {}}
+    >
+      <div className={(windowWidth > 1020 || mobileView === 'chart') ? 'chart-container' : 'hidden'}>
         {renderChartComponent}
       </div>
 
-      <div className={`spacer ${!isOrderbookVisible ? 'collapsed' : ''}`}>
+      <div className={windowWidth > 1020 ? `spacer ${!isOrderbookVisible ? 'collapsed' : ''}` : 'hidden'}>
         <div
           className="drag-handle"
           onMouseDown={handleMouseDown}
@@ -161,15 +163,15 @@ return (
       </div>
 
       <div
-        className={`orderbook-container ${!isOrderbookVisible ? 'collapsed' : ''}`}
-        style={orderBookStyle}
+        className={(windowWidth > 1020 || (mobileView === 'orderbook' || mobileView === 'trades')) ? (mobileView === 'orderbook' || mobileView === 'trades') ? 'orderbook-container-mobile' : `orderbook-container ${!isOrderbookVisible ? 'collapsed' : ''}` : 'hidden'}
+        style={windowWidth > 1020 ? orderBookStyle : {}}
       >
         <OrderBook
           trades={obtrades}
           orderdata={orderdata}
           layoutSettings={layoutSettings}
           orderbookPosition={orderbookPosition}
-          hideHeader={false}
+          hideHeader={windowWidth > 1020 ? false : true}
           interval={baseInterval}
           amountsQuote={amountsQuote}
           setAmountsQuote={setAmountsQuote}
@@ -182,9 +184,8 @@ return (
           updateLimitAmount={updateLimitAmount}
         />
       </div>
-    </>
-  </div>
-);
+    </div>
+  );
 };
 
 export default ChartOrderbookPanel;

@@ -4,7 +4,7 @@
   color: #fff;
   display: flex;
   flex: none;
-  height: 60px;
+  height: 57px;
   justify-content: space-between;
   left: 55px; 
   padding-right: 5px;
@@ -25,6 +25,7 @@ body.sidebar-expanded .app-header {
   align-items: center;
   display: flex;
 }
+
 .left-header {
   flex-grow: 1;
   display: flex;
@@ -34,16 +35,27 @@ body.sidebar-expanded .app-header {
 
 .hamburger {
   background: none;
-  border: 1px solid #f7f7f706;
+  border: 1.5px solid rgba(255, 255, 255, .07);
   border-radius: 7px;
   cursor: pointer;
   display: none;
   flex-direction: column;
   height: 35px;
+  min-width: 35px;
   justify-content: space-around;
   padding: 10px;
   position: relative;
   transition: transform.3s ease-in-out;
+}
+
+.extitle {
+  align-items: center;
+  color: #fff;
+  display: flex;
+  font-size: 1.1rem;
+  font-weight: 500;
+  margin-right: 6px;
+  text-decoration: none;
 }
 
 .hamburger-image {
@@ -58,9 +70,6 @@ body.sidebar-expanded .app-header {
 .crystal-name {
   font-family: Orbitron, sans-serif;
   font-size: 1.1rem;
-  font-weight: 400;
-  margin-left: 25px;
-  display: none;
 }
 
 .connect-button {
@@ -294,11 +303,16 @@ body.sidebar-expanded .app-header {
   }
 }
 
-
 @media(max-width: 600px){
   .right-header {
     margin-right: 0px;
     margin-left: 0px;
+  }
+}
+
+@media(max-width: 550px){
+  .crystal-name {
+    display: none;
   }
 }
 
@@ -325,8 +339,7 @@ body.sidebar-expanded .app-header {
 }
 
 .extitle-logo{
-  width: 32px;
-  height: 32px;
+  height: 1.9rem;
 }
 
 .mobile-left-header{
@@ -344,7 +357,7 @@ body.sidebar-expanded .app-header {
   }
   .left-header{
     position: absolute;
-    top: 58px;
+    top: 55px;
   }
   .app-header{
     align-items: center;

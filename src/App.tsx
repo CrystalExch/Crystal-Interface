@@ -126,7 +126,6 @@ import LanguageSelector from './components/Header/LanguageSelector/LanguageSelec
 import LoadingOverlay from './components/loading/LoadingComponent.tsx';
 import FullScreenOverlay from './components/loading/LoadingScreen.tsx';
 import NavigationProgress from './components/NavigationProgress.tsx';
-import OrderBook from './components/Orderbook/Orderbook.tsx';
 import OrderCenter from './components/OrderCenter/OrderCenter.tsx';
 import SortArrow from './components/OrderCenter/SortArrow/SortArrow.tsx';
 import PortfolioContent from './components/Portfolio/BalancesContent/BalancesContent.tsx';
@@ -12525,74 +12524,43 @@ function App() {
       >
         {simpleView ? (
           <>
-            <div className="right-column">{swap}</div>
+            <div className="right-column">{swapComponent}</div>
           </>
         ) : (
           <>
             <div className="chartandorderbookandordercenter">
               <div className="chartandorderbook">
-                {windowWidth <= 1020 ? (
-                  <div className="trade-mobile-view-container">
-                    {mobileView === 'chart' && renderChartComponent}
-                    {(mobileView === 'orderbook' ||
-                      mobileView === 'trades') && (
-                        <OrderBook
-                          trades={trades}
-                          orderdata={{
-                            roundedBuyOrders,
-                            roundedSellOrders,
-                            spreadData,
-                            priceFactor,
-                            symbolIn,
-                            symbolOut,
-                          }}
-                          layoutSettings={layoutSettings}
-                          orderbookPosition={orderbookPosition}
-                          hideHeader={true}
-                          interval={baseInterval}
-                          amountsQuote={amountsQuote}
-                          setAmountsQuote={setAmountsQuote}
-                          obInterval={obInterval}
-                          setOBInterval={setOBInterval}
-                          viewMode={viewMode}
-                          setViewMode={setViewMode}
-                          activeTab={obTab}
-                          setActiveTab={setOBTab}
-                          updateLimitAmount={updateLimitAmount}
-                        />
-                      )}
-                  </div>
-                ) : (
-                  <ChartOrderbookPanel
-                    layoutSettings={layoutSettings}
-                    orderbookPosition={orderbookPosition}
-                    orderdata={{
-                      roundedBuyOrders,
-                      roundedSellOrders,
-                      spreadData,
-                      priceFactor,
-                      symbolIn,
-                      symbolOut,
-                      liquidityBuyOrders,
-                      liquiditySellOrders,
-                    }}
-                    isOrderbookVisible={isOrderbookVisible}
-                    orderbookWidth={orderbookWidth}
-                    setOrderbookWidth={setOrderbookWidth}
-                    obInterval={obInterval}
-                    amountsQuote={amountsQuote}
-                    setAmountsQuote={setAmountsQuote}
-                    obtrades={trades}
-                    setOBInterval={setOBInterval}
-                    baseInterval={baseInterval}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
-                    activeTab={obTab}
-                    setActiveTab={setOBTab}
-                    updateLimitAmount={updateLimitAmount}
-                    renderChartComponent={renderChartComponent}
-                  />
-                )}
+                <ChartOrderbookPanel
+                  layoutSettings={layoutSettings}
+                  orderbookPosition={orderbookPosition}
+                  orderdata={{
+                    roundedBuyOrders,
+                    roundedSellOrders,
+                    spreadData,
+                    priceFactor,
+                    symbolIn,
+                    symbolOut,
+                    liquidityBuyOrders,
+                    liquiditySellOrders,
+                  }}
+                  windowWidth={windowWidth}
+                  mobileView={mobileView}
+                  isOrderbookVisible={isOrderbookVisible}
+                  orderbookWidth={orderbookWidth}
+                  setOrderbookWidth={setOrderbookWidth}
+                  obInterval={obInterval}
+                  amountsQuote={amountsQuote}
+                  setAmountsQuote={setAmountsQuote}
+                  obtrades={trades}
+                  setOBInterval={setOBInterval}
+                  baseInterval={baseInterval}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  activeTab={obTab}
+                  setActiveTab={setOBTab}
+                  updateLimitAmount={updateLimitAmount}
+                  renderChartComponent={renderChartComponent}
+                />
               </div>
               <div
                 className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}

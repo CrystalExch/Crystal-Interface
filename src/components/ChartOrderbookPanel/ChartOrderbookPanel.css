@@ -11,6 +11,10 @@
   overflow: hidden;
 }
 
+.orderbook-container-mobile {
+  overflow: hidden;
+}
+
 .chart-container {
   flex: 1;
   min-width: 0;

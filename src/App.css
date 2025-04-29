@@ -51,7 +51,7 @@ html {
 }
 
 .headerfiller {
-  height: 60px;
+  height: 57px;
 }
 
 .average-price::before,
@@ -2062,7 +2062,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
-  min-height: 865px;
+  min-height: 735px;
 }
 
 .trade-container {
