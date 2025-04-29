@@ -150,7 +150,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
     }
     catch(e) {
-      console.log(e)
     }
   }, [tradehistory.length, isMarksVisible]);
   
@@ -352,7 +351,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
     }
     catch(e) {
-      console.log(e)
     }
   }, [orders, isOrdersVisible, chartReady]);
 
@@ -598,6 +596,21 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     });
 
     return () => {
+      try {
+        ordersRef.current.forEach((order: any) => {
+          try {
+            if (order?.[10] && typeof order[10].remove === 'function') {
+              order[10].remove();
+              order.splice(10, 1)
+            }
+          } catch (error) {
+            console.error('Failed to remove order line', error);
+          }
+        });
+      }
+      catch(e) {
+      }
+
       widgetRef.current.remove();
     };
   }, []);
@@ -803,7 +816,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
     }
     catch(e) {
-      console.log(e)
     }
   }, [
     activeMarket.quoteAsset,

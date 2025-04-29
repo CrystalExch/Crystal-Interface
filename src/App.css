@@ -1041,7 +1041,7 @@ body:has(.right-column.show) .blur-background-popups {
 .connect-wallet-background.connected {
   border-radius: 8px;
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
-  height: min(385px, 90vh);
+  height: min(405px, 90vh);
   left: 50%;
   overflow: hidden;
   position: fixed;
@@ -1065,7 +1065,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .portfolio-popup-graph {
-  height: 160px;
+  height: 180px;
   margin-top: 60px;
   position: relative;
   width: 102.5%;
@@ -2062,7 +2062,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
-  min-height: 735px;
+  min-height: 762px;
 }
 
 .trade-container {
