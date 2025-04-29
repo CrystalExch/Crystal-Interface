@@ -527,7 +527,7 @@
 @media (max-width:768px){
   .pagination-controls{
       flex-direction:column;
-      gap:15px
+      gap:5px
   }
   .page-navigation{
       justify-content:center;

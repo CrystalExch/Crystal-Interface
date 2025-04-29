@@ -5,6 +5,7 @@
   height: 100%;
   justify-content: center;
   width: 100%;
+  margin-bottom: 8px;
 }
 
 .referral-content {
@@ -14,15 +15,10 @@
   max-width: 1450px;
   overflow: hidden;
   width: 100%;
-  padding-top: 70px;
   padding-right: 5px;
+  margin-top: max(0px, calc((100vh - 770px) / 3));
 }
 
-@media(max-height: 950px) {
-  .referral-content {
-    padding-top: 0;
-  }
-}
 .referral-top-section{
   display: flex;
   gap: 4px;
@@ -727,7 +723,7 @@
     height: auto;
     margin: 0 0 5px 0;
     overflow: visible;
-    padding: 0 8px;
+    padding: 0 5px;
   }
 
   .referral-content {
@@ -745,7 +741,6 @@
 
   .left-column {
     flex-direction: column;
-    height: 380px;
   }
 
   .refer-section{
