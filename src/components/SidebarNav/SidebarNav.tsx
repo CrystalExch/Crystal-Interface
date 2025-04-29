@@ -10,6 +10,8 @@ import leaderboard from '../../assets/leaderboard.png';
 import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import docs from '../../assets/docs.png';
+import vault from '../../assets/vault.png';
+
 import SidebarTooltip from './SidebarTooltip';
 
 interface SidebarNavProps {
@@ -165,6 +167,15 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           >
             <img src={mint} className="sidebar-icon" />
             <span className="sidebar-label">{t('mint')}</span>
+          </Link>
+          <Link
+            to="/vaults"
+            className={`page-mode-button ${path === '/vaults' ? 'active' : ''}`}
+            onMouseEnter={(e) => handleTooltip(e, t('Vaults'))}
+            onMouseLeave={handleTooltipHide}
+          >
+            <img src={vault} className="sidebar-icon" />
+            <span className="sidebar-label">{t('Vaults')}</span>
           </Link>
         </div>
 

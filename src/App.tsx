@@ -140,6 +140,7 @@ import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
+import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -2081,6 +2082,8 @@ function App() {
         break;
       case '/mint':
         title = 'Mint | Crystal';
+      case '/vaults':
+          title = 'Vaults | Crystal';
         break;
       case '/swap':
       case '/market':
@@ -12785,6 +12788,8 @@ function App() {
             element={
               <NFTMintingPage />
             }>
+          </Route>
+          <Route path="/vaults" element={<EarnVaults/>} >
           </Route>
           <Route
             path="/portfolio"
