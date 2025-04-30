@@ -6059,7 +6059,7 @@ function App() {
               {portChartLoading ? (
                 <div
                   className="portfolio-popup-graph"
-                  style={{ marginTop: 15, marginBottom: 10, height: 195 }}
+                  style={{ marginTop: 15, marginBottom: 10, height: 215 }}
                 >
                   <LoadingOverlay
                     isVisible={true}
@@ -6114,6 +6114,7 @@ function App() {
                   setpopup={setpopup}
                   sortConfig={{ column: 'balance', direction: 'desc' }}
                   tokenBalances={tokenBalances}
+                  isBlurred={isBlurred}
                 />
               </div>
             </div>
