@@ -2067,7 +2067,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
-  min-height: 762px;
+  min-height: 746px;
 }
 
 .trade-container {
