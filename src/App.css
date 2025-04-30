@@ -6633,9 +6633,9 @@ input[type="email"] {
 }
 
 .welcome-text {
-  font-size: 3rem;
+  font-size: 2.5rem;
   line-height: 1;
-  letter-spacing: -0.4px;
+  letter-spacing: -1px;
   color: #ffffff;
   margin: 0;
 }
@@ -6659,17 +6659,14 @@ input[type="email"] {
   padding: 6px 15px;
   font-size: 1rem;
   font-weight: 475;
+  letter-spacing: -0.5px;
   cursor: pointer;
   transition: all 0.5s ease;
   animation: fadeInButton 0.4s ease forwards;
 }
 
 .welcome-enter-button:hover {
-  box-shadow:
-  0 0 8px rgba(170, 174, 207, 0.6),
-  0 0 15px rgba(170, 174, 207, 0.5),
-  inset 0 1px 1px rgba(255, 255, 255, 0.35),
-  inset 0 -1px 1px rgba(0, 0, 0, 0.55);
+  filter: brightness(0.9);  
 }
 
 @keyframes fadeInButton {
