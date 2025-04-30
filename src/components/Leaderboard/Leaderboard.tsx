@@ -340,59 +340,77 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </div>
           </div>
 
-          <div className="leaderboard-user-info">
-            <div className="info-column">
-              <div className="column-header">{t('username')}             <button
-                className="edit-username-button"
-                onClick={() => setpopup(16)}
-              >
-                {t('edit')}
-              </button>
-              </div>
-              <div className="column-content">
-                <div className="address-container">
-                  <span className="leaderboard-user-address">
-                    @<span className="address-string">{address
-                      ? liveLeaderboard[address.toLowerCase()]?.username ||
-                        getDisplayAddress(address)
-                      : ''}
-                      </span>
-                    {address && <CopyButton textToCopy={address} />}
-                  </span>
-                </div>
-              </div>
-            </div>
-            <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="earned-xp-header">
-                <img src={crystalxp} className="xp-icon" />
-                <div className="column-header">{t('earned')}</div>
-              </div>
-              <div className="column-content">
-                {userData.userXP.toLocaleString()}
-              </div>
-            </div>
-            <div className="column-divider" />
+<div className="leaderboard-user-info">
+  <div className="info-column">
+    <div className="column-header">{t('username')}             <button
+      className="edit-username-button"
+      onClick={() => setpopup(16)}
+    >
+      {t('edit')}
+    </button>
+    </div>
+    <div className="column-content">
+      <div className="address-container">
+        {loading ? (
+          <span className="leaderboard-user-address account-loading-animation" style={{ width: '120px', height: '14px', borderRadius: '6px' }}></span>
+        ) : (
+          <span className="leaderboard-user-address">
+            @<span className="address-string">{address
+              ? liveLeaderboard[address.toLowerCase()]?.username ||
+                getDisplayAddress(address)
+              : ''}
+              </span>
+            {address && <CopyButton textToCopy={address} />}
+          </span>
+        )}
+      </div>
+    </div>
+  </div>
+  <div className="column-divider" />
 
-            <div className="info-column">
-            <div className="earned-xp-header">
-            <img src={crystalxp} className="xp-icon" />
-              <div className="column-header">{t("bonusCommision")}</div>
-              </div>
-              <div className="column-content">
-                {liveLeaderboard[address?.toLowerCase()]?.referral_points
-                  ?.toLocaleString() || '0'}
-              </div>
-            </div>
-            <div className="column-divider" />
+  <div className="info-column">
+    <div className="earned-xp-header">
+      <img src={crystalxp} className="xp-icon" />
+      <div className="column-header">{t('earned')}</div>
+    </div>
+    <div className="column-content">
+      {loading ? (
+        <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px' }}></span>
+      ) : (
+        userData.userXP.toLocaleString()
+      )}
+    </div>
+  </div>
+  <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="column-header">{t('rank')}</div>
-              <div className="column-content">{getUserRank()}</div>
-  
-            </div>
-          </div>
+  <div className="info-column">
+    <div className="earned-xp-header">
+      <img src={crystalxp} className="xp-icon" />
+      <div className="column-header">{t("bonusCommision")}</div>
+    </div>
+    <div className="column-content">
+      {loading ? (
+        <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px' }}></span>
+      ) : (
+        (liveLeaderboard[address?.toLowerCase()]?.referral_points
+          ?.toLocaleString() || '0')
+      )}
+    </div>
+  </div>
+  <div className="column-divider" />
+
+  <div className="info-column">
+    <div className="column-header">{t('rank')}</div>
+    <div className="column-content">
+      {loading ? (
+        <span className="account-rank-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px' }}></span>
+      ) : (
+        getUserRank()
+      )}
+    </div>
+  </div>
+</div>
         </div>
       </div>
 
