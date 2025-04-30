@@ -25,7 +25,7 @@ const NFTMintingPage: React.FC = () => {
 
   useEffect(() => {
     const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-05-01T05:00:00Z");
+      const targetDate = new Date("2025-05-10T05:00:00Z");
       const now = new Date();
       
       const difference = targetDate.getTime() - now.getTime();

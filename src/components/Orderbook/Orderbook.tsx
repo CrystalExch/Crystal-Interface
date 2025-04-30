@@ -10,7 +10,7 @@ interface OrderBookProps {
   orderdata: any;
   layoutSettings: any;
   orderbookPosition: any;
-  hideHeader?: boolean;
+  hideHeader: boolean;
   interval: number;
   amountsQuote: any;
   setAmountsQuote: any;
@@ -28,7 +28,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
   orderdata,
   layoutSettings,
   orderbookPosition,
-  hideHeader = false,
+  hideHeader,
   interval,
   amountsQuote,
   setAmountsQuote,
@@ -80,7 +80,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
     return () => {
       resizeObserver.disconnect();
     };
-  }, [activeTab, layoutSettings, orderbookPosition]);
+  }, [activeTab, layoutSettings, orderbookPosition, hideHeader]);
 
   return (
     <div className="ob-container" ref={containerRef}>

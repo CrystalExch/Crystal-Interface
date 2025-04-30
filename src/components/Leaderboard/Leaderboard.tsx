@@ -221,7 +221,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   useEffect(() => {
     if (currentPage > 0 && bottomSentinelRef.current) {
       bottomSentinelRef.current.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'auto',
         block: 'center',   
       });
     }
@@ -329,7 +329,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="progress-fill"
                 style={{
                   width: loading
-                    ? '5%'
+                    ? '0%'
                     : `${
                         (Object.values(liveLeaderboard).reduce((sum, v) => sum + v.points, 0) /
                           1000000000) *
@@ -350,16 +350,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
               </button>
               </div>
               <div className="column-content">
-                <div className="address-container">
-                  <span className="leaderboard-user-address">
-                    @<span className="address-string">{address
+                  {loading ? <div className="leaderboard-address-loading" /> : <span className="leaderboard-user-address">
+                    <span className="address-string">{address
                       ? liveLeaderboard[address.toLowerCase()]?.username ||
                         getDisplayAddress(address)
                       : ''}
                       </span>
                     {address && <CopyButton textToCopy={address} />}
                   </span>
-                </div>
+                  }
               </div>
             </div>
             <div className="column-divider" />
@@ -370,27 +369,40 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="column-header">{t('earned')}</div>
               </div>
               <div className="column-content">
-                {userData.userXP.toLocaleString()}
+                {loading ? (
+                  <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
+                ) : (
+                  userData.userXP.toLocaleString()
+                )}
               </div>
             </div>
             <div className="column-divider" />
 
             <div className="info-column">
-            <div className="earned-xp-header">
-            <img src={crystalxp} className="xp-icon" />
-              <div className="column-header">{t("bonusCommision")}</div>
+              <div className="earned-xp-header">
+                <img src={crystalxp} className="xp-icon" />
+                <div className="column-header">{t("bonusCommision")}</div>
               </div>
               <div className="column-content">
-                {liveLeaderboard[address?.toLowerCase()]?.referral_points
-                  ?.toLocaleString() || '0'}
+                {loading ? (
+                  <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
+                ) : (
+                  (liveLeaderboard[address?.toLowerCase()]?.referral_points
+                    ?.toLocaleString() || '0')
+                )}
               </div>
             </div>
             <div className="column-divider" />
 
             <div className="info-column">
               <div className="column-header">{t('rank')}</div>
-              <div className="column-content">{getUserRank()}</div>
-  
+              <div className="column-content">
+                {loading ? (
+                  <span className="account-rank-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
+                ) : (
+                  getUserRank()
+                )}
+              </div>
             </div>
           </div>
         </div>

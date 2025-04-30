@@ -333,7 +333,7 @@ const Referrals: React.FC<ReferralProps> = ({
         <div className="referred-count">
          <img src={defaultPfp} className="referral-pfp" />
          <div className="referral-user-right-side">
-          <span className="referral-username">@{displayName}</span>
+          <span className="referral-username">{displayName}</span>
           <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
          </div>
         </div>

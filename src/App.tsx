@@ -640,7 +640,6 @@ function App() {
     () => Object.values(tokendict),
     [tokendict],
   );
-  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -683,8 +682,6 @@ function App() {
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
   >('desc');
-  const [usernameInput, setUsernameInput] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   const { toggleFavorite } = useSharedContext();
 
   const audio = useMemo(() => {
@@ -3835,8 +3832,16 @@ function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
+
+  const isValidInput = (value: string) => {
+    const regex = /^[a-zA-Z0-9-]{0,20}$/;
+    return regex.test(value);
+  };
 
   const handleSetRef = async (used: string) => {
     let lookup
@@ -7165,7 +7170,12 @@ function App() {
                     className="username-input"
                     placeholder="Enter a code"
                     value={typedRefCode}
-                    onChange={e => {setTypedRefCode(e.target.value.trim()); setError('')}}
+                    onChange={e => {
+                      const value = e.target.value.trim();
+                      if (isValidInput(value) || value === "") {
+                        setTypedRefCode(value);
+                        setError('')
+                      }}}
                   />
                 </div>
 
@@ -7232,7 +7242,11 @@ function App() {
                                 className="username-input"
                                 placeholder={usernameInput ? usernameInput : 'Enter a username'}
                                 value={usernameInput || ''}
-                                onChange={(e) => setUsernameInput(e.target.value)}
+                                onChange={e => {
+                                  const value = e.target.value.trim();
+                                  if (isValidInput(value) || value === "") {
+                                    setUsernameInput(value);
+                                  }}}
                               />
                               {usernameError && <p className="username-error">{usernameError}</p>}
                             </div>
@@ -7597,7 +7611,11 @@ function App() {
                         className="username-input"
                         placeholder="Enter a username"
                         value={usernameInput || ""}
-                        onChange={(e) => setUsernameInput(e.target.value)}
+                        onChange={e => {
+                          const value = e.target.value.trim();
+                          if (isValidInput(value) || value === "") {
+                            setUsernameInput(value);
+                          }}}
                       />
                       {usernameError && (
                         <p className="username-error">{usernameError}</p>
@@ -7664,7 +7682,7 @@ function App() {
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -7726,7 +7744,6 @@ function App() {
             </div>
           )}
         </div>
-
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -9091,7 +9108,7 @@ function App() {
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -9144,7 +9161,6 @@ function App() {
             </div>
           )}
         </div>
-
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -10621,7 +10637,7 @@ function App() {
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -11299,7 +11315,7 @@ function App() {
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"

@@ -301,17 +301,17 @@
 
 .leaderboard-user-address {
   display: flex;
-  max-width: 250px; 
+}
+
+.address-string{
+  padding-right: 5px;
+  max-width: 180px; 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
 }
 
-
-.address-string{
-  padding-right: 5px;
-}
 .faction-name {
   max-width: 250px;
   white-space: nowrap;
@@ -588,7 +588,8 @@
   align-items:center;
   justify-content:center;
   background-color:rgba(171,176,224,.2);
-  border-radius:5px
+  border-radius: 5px;
+  margin-left: 3px;
 }
 .pagination-controls{
   align-items:center;
@@ -845,8 +846,23 @@
   height:16px;
   overflow:hidden;
   position:relative;
-  width:120px
+  width:200px
 }
+
+.leaderboard-address-loading{
+  animation:total-xp-shimmer 3s infinite linear;
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.2) 25%,rgba(255,255,255,.2) 35%,rgba(255,255,255,.05) 60%);
+  background-size:200% 100%;
+  border-radius:4px;
+  display:inline-block;
+  margin-top: 4px;
+  height:16px;
+  overflow:hidden;
+  position:relative;
+  width: 100%;
+  max-width: 200px;
+}
+
 .xp-display.loading{
   display:flex;
   justify-content:flex-end
@@ -947,7 +963,7 @@
 .orders-indicator-container{
   display:flex;
   margin-left:8px;
-  position:relative
+  position:relative;
 }
 .orders-indicator{
   background-color:#aaaecf;
@@ -969,7 +985,7 @@
   left:50%;
   padding:5px 10px;
   position:absolute;
-  top:-30px;
+  top:-36px;
   transform:translateX(-50%);
   white-space:nowrap;
   z-index:10;
