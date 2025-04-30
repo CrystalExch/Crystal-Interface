@@ -653,20 +653,19 @@
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.7);
   width: 40%;
+  min-width: 120px;
 }
 .referral-user-right-side{
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%; 
+  min-width: 0;
+  overflow: hidden; 
+  flex: 1; 
+  flex-shrink: 1;
 }
 
-.referral-username{
-  color: #fff;
-  font-size: 1.25rem;
-  font-weight: 500;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
 .referral-body-section{
   display: flex;
   flex-direction: column;
@@ -774,18 +773,18 @@
 
   .total-crystals-earned-container{
     width: 100%;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .total-referrals-container{
     width: 100%;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .referred-count{
     width: 100%;
-    padding-top: 4px;
-    padding-bottom: 4px;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 }
 @media (width <=700px) {
@@ -859,8 +858,15 @@
   width: 27px;
 }
 
-
-
-
-
-
+.referral-username {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.5px;
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
