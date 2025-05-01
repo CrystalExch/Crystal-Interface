@@ -6641,32 +6641,43 @@ input[type="email"] {
 }
 
 .welcome-enter-button {
-  background: linear-gradient(135deg,
-      #aaaecf 0,
-      #9a9ec7 25%,
-      #8b8eb8 50%,
-      #7f82ac 75%,
-      #7f82a1 100%);
+  font-family: Orbitron, sans-serif;
+  padding: .75rem 1.5rem .65rem;
+  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7, #8b8eb8, #7f82ac, #7376a0);
   border: none;
-  border-radius: 6px;
-  box-shadow:
-    inset 0 1px 1px rgb(255 255 255/35%),
-    inset 0 -1px 1px rgb(0 0 0/55%),
-    0 2px 8px rgb(170 174 207/10%);
-  color: black;
-  border: none;
-  border-radius: 0.5rem;
-  padding: 6px 15px;
-  font-size: 1rem;
-  font-weight: 475;
-  letter-spacing: -0.5px;
-  cursor: pointer;
-  transition: all 0.5s ease;
-  animation: fadeInButton 0.4s ease forwards;
+  border-radius: .5rem;
+  box-shadow: inset 0 1px 1px #ffffff26, inset 0 -1px 1px #00000026, 0 2px 8px #aaaecf33;
+  color: #111114;
+  font-weight: 700;
+  font-size: .8rem;
+  transition: all .3s ease;
+  overflow: hidden;
+  position: relative;
+  text-decoration: none;
 }
 
 .welcome-enter-button:hover {
-  filter: brightness(0.9);  
+  cursor:pointer;
+  box-shadow:inset 0 1px 1px rgba(255,255,255,.15),inset 0 -1px 1px rgba(0,0,0,.15),0 4px 12px rgba(170,174,207,.2);
+  filter:brightness(1.1);
+  transform:scale(1.03)
+}
+
+.welcome-enter-button::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .3), transparent);
+  transform: skew(-20deg);
+  transition: left .6s ease;
+  pointer-events: none;
+}
+
+.welcome-enter-button:hover::after{
+  left:120%
 }
 
 @keyframes fadeInButton {
