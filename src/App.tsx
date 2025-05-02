@@ -7563,7 +7563,7 @@ function App() {
                               setShowWelcomeScreen(false);
                             }}
                           >
-                            Explore Now
+                            EXPLORE NOW
                           </button>
                         )}
                       </div>
