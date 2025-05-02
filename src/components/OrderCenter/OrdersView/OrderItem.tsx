@@ -87,7 +87,7 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
             {market.baseAsset}-{market.quoteAsset}
           </div>
           <div className={`order-type ${isBuyOrder ? 'buy' : 'sell'}`}>
-            <span className="order-type-capitalized">
+          <span className={`order-type-capitalized ${isBuyOrder ? 'buy' : 'sell'}`}>
               {isBuyOrder ? t('buy') : t('sell')}
             </span>
             <CopyButton textToCopy={market.baseAddress} />

@@ -254,17 +254,42 @@
   align-items: center;
   color: #6b7280;
   display: inline-flex;
-  font-size: 0.75rem;
   gap: 4px;
   margin-top: -3px;
 }
 
-.order-type-capitalized {
+.order-type-capitalized.sell {
+  display: flex;
+  align-items: center;
   text-transform: uppercase;
+  background-color: #de464630;
+  padding: 0 3px;
+  padding-bottom: 1px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  height: 15px;
+  margin-top: 2px;
+
 }
+
+
+
+.order-type-capitalized.buy {
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  background-color: #6aca6230;
+  padding: 0 3px;
+  padding-bottom: 1px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  height: 15px;
+  margin-top: 2px;}
+
 
 .order-type.buy {
   color: #65ed92;
+  
 }
 
 .order-type.buy,
@@ -389,6 +414,7 @@
 .price-gap {
   font-size: 0.75rem;
   margin-top: -2px;
+  color: #ffffff89 !important;
 }
 
 .oc-types-rectangle {
