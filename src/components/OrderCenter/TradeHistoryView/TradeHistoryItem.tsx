@@ -72,7 +72,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
             {market.baseAsset}-{market.quoteAsset}
           </div>
           <div className={`order-type ${trade[2] === 1 ? 'buy' : 'sell'}`}>
-            <span className="order-type-capitalized">
+          <span className={`order-type-capitalized ${trade[2] === 1 ? 'buy' : 'sell'}`}>
               {trade[2] === 1 ? t('buy') : t('sell')}
             </span>
             <CopyButton textToCopy={market.baseAddress} />
