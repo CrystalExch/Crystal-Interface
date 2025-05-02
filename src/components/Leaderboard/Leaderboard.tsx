@@ -70,7 +70,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         })
         .then((data) => {
           if (!mounted) return;
-          console.log(data);
           setOverview(data);
         })
         .catch((err) => {
