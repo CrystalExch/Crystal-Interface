@@ -301,6 +301,7 @@
 
 .leaderboard-user-address {
   display: flex;
+  gap: 3px;
 }
 
 .address-string{
@@ -1057,4 +1058,3 @@
   height: 20px;
 
 }
-
