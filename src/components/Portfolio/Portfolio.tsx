@@ -270,6 +270,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
             portChartLoading={portChartLoading}
             chartDays={chartDays}
             setChartDays={setChartDays}
+            isBlurred={isBlurred}
           />
         </div>
       )}
