@@ -6099,6 +6099,7 @@ function App() {
                       portChartLoading={portChartLoading}
                       chartDays={chartDays}
                       setChartDays={setChartDays}
+                      isBlurred={isBlurred}
                     />
                   </div>
                 </>

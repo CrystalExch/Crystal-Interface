@@ -75,7 +75,8 @@ const Referrals: React.FC<ReferralProps> = ({
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
   const [commissionBonus, setCommissionBonus] = useState(0);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const featureData = [
     {
       icon: <Users size={20} />,
@@ -117,6 +118,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setCommissionBonus(0);
       setUsername('');
       setReferredCount(0);
+      setIsLoading(false);
       return;
     }
     
@@ -160,9 +162,12 @@ const Referrals: React.FC<ReferralProps> = ({
       setUsername('')
       setReferredCount(0)
       setCommissionBonus(0)
+      setIsLoading(false)
       return
     }
 
+    setIsLoading(true);
+    
     const fetchInfo = async () => {
       try {
         const res = await fetch(
@@ -173,11 +178,15 @@ const Referrals: React.FC<ReferralProps> = ({
         setReferredCount(data.referred_users || 0)
         const pts = parseFloat(data.referral_points?.toString() || '0')
         setCommissionBonus(parseFloat(customRound(pts, 4)))
+        setIsLoading(false)
+        setIsLoading(false)
       } catch (err) {
         console.error('user_info fetch failed', err)
         setUsername('')
         setReferredCount(0)
         setCommissionBonus(0)
+        setIsLoading(false)
+        setIsLoading(false)
       }
     }
 
@@ -328,32 +337,47 @@ const Referrals: React.FC<ReferralProps> = ({
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
         <div className="referral-header">
-        <div className="referred-count">
-         <img src={defaultPfp} className="referral-pfp" />
-         <div className="referral-user-right-side">
-          <span className="referral-username">{displayName}</span>
-          <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
-         </div>
-        </div>
-        <div className="total-referrals-container">
-         <span className="referral-count-number">{referredCount}</span> <span>{t('totalUsersReferred')}</span>
-         <Users className="referred-count-icon"size={30} />
-
-        </div>
-        <div className="total-crystals-earned-container">
-        <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystals From Referrals </span>
-        <Gem className="referred-count-icon" size={30} />
-
-        </div>
+          <div className="referred-count">
+            <img src={defaultPfp} className="referral-pfp" />
+            <div className="referral-user-right-side">
+              {isLoading ? (
+                <>
+                  <div className="referrals-skeleton referrals-username-skeleton"></div>
+                  <div className="referrals-skeleton referrals-multiplier-skeleton"></div>
+                </>
+              ) : (
+                <>
+                  <span className="referral-username">{displayName}</span>
+                  <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="total-referrals-container">
+            {isLoading ? (
+              <div className="referrals-skeleton referrals-count-skeleton"></div>
+            ) : (
+              <span className="referral-count-number">{referredCount}</span>
+            )}
+            <span>{t('totalUsersReferred')}</span>
+            <Users className="referred-count-icon" size={30} />
+          </div>
+          <div className="total-crystals-earned-container">
+            {isLoading ? (
+              <div className="referrals-skeleton referrals-count-skeleton"></div>
+            ) : (
+              <span className="referral-count-number">{commissionBonus}</span>
+            )}
+            <span className="referrals-bonus-content"> Crystals From Referrals </span>
+            <Gem className="referred-count-icon" size={30} />
+          </div>
         </div>
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
-
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
                 <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
-
               </div>
               <div className="referral-background-container">
                 <div className="referral-bg-placeholder">
@@ -370,34 +394,24 @@ const Referrals: React.FC<ReferralProps> = ({
                     src={ReferralMobileBackground}
                     className="referral-mobile-background"
                   />
-            
                 </div>
                 <span className="referral-loader"></span>
                 <div className="features-grid">
-                  <div
-                    className="feature-card-left"
-
-                  >
+                  <div className="feature-card-left">
                     <div className="feature-icon">
                       <Users size={20} />
                     </div>
                     <h3 className="feature-title">{t('communityRewards')}</h3>
                     <p className="feature-description">{t('communityRewardsText')}</p>
                   </div>
-                  <div
-                    className="feature-card-middle"
-
-                  >
+                  <div className="feature-card-middle">
                     <div className="feature-icon">
                       <Zap size={20} />
                     </div>
                     <h3 className="feature-title">{t('instantTracking')}</h3>
                     <p className="feature-description">{t('instantTrackingText')}</p>
                   </div>
-                  <div
-                    className="feature-card-right"
-
-                  >
+                  <div className="feature-card-right">
                     <div className="feature-icon">
                       <TrendingUp size={20} />
                     </div>
@@ -554,10 +568,6 @@ const Referrals: React.FC<ReferralProps> = ({
                     <span className="link-text">{t('noLink')}</span>
                   )}
                 </div>
-
-
-
-
               </div>
               <div className="enter-code-container">
                 <EnterCode
