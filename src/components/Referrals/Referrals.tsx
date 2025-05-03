@@ -132,21 +132,14 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'referrerToReferredAddresses',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToReferrer',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
         ],
       })) as any[];
       setRefLink(refs[0].result);
-      setReferredCount(Number(refs[1].result));
       setUsedRefAddress(
-        refs[2].result || '0x0000000000000000000000000000000000000000',
+        refs[1].result || '0x0000000000000000000000000000000000000000',
       );
       const find = (await readContracts(config, {
         contracts: [
@@ -155,38 +148,45 @@ const Referrals: React.FC<ReferralProps> = ({
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
             args: [
-              refs[2].result ?? '0x0000000000000000000000000000000000000000',
+              refs[1].result ?? '0x0000000000000000000000000000000000000000',
             ],
           },
         ],
       })) as any[];
       setUsedRefLink(find[0].result);
-      
-      if (address) {
-        fetch('https://api.crystal.exchange/user_points')
-          .then(res => res.json())
-          .then((data) => {
-            const userInfo = data[address.toLowerCase()];
-            if (userInfo) {
-              const username = userInfo[0] || '';
-              const referral_points = userInfo[2] || 0;
-              
-              setUsername(username);
-              const formattedValue = customRound(parseFloat(referral_points.toString()), 4);
-              setCommissionBonus(parseFloat(formattedValue));
-            } else {
-              setUsername('');
-              setCommissionBonus(0);
-            }
-          })
-          .catch(err => {
-            console.error('Error fetching user points:', err);
-            setUsername('');
-            setCommissionBonus(0);
-          });
-      }
     })();
   }, [address]);
+
+  useEffect(() => {
+    if (!address) {
+      setUsername('')
+      setReferredCount(0)
+      setCommissionBonus(0)
+      return
+    }
+
+    const fetchInfo = async () => {
+      try {
+        const res = await fetch(
+          `https://api.crystal.exchange/user_info/${address.toLowerCase()}`
+        )
+        const data = await res.json()
+        setUsername(data.username || '')
+        setReferredCount(data.referred_users || 0)
+        const pts = parseFloat(data.referral_points?.toString() || '0')
+        setCommissionBonus(parseFloat(customRound(pts, 4)))
+      } catch (err) {
+        console.error('user_info fetch failed', err)
+        setUsername('')
+        setReferredCount(0)
+        setCommissionBonus(0)
+      }
+    }
+
+    fetchInfo()
+    const iv = setInterval(fetchInfo, 3000)
+    return () => clearInterval(iv)
+  }, [address])
 
   const handleCreateRef = async () => {
     try {

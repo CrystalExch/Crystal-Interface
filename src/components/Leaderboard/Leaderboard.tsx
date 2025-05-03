@@ -62,7 +62,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
     const fetchOverview = () => {
       fetch(
-        `https://api.crystal.exchange/user_points/overview/${address}?index=${currentPage}`
+        `https://api.crystal.exchange/points/${address}?index=${currentPage}`
       )
         .then((res) => {
           if (!res.ok) throw new Error(`status ${res.status}`);
