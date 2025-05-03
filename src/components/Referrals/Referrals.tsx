@@ -155,9 +155,7 @@ const Referrals: React.FC<ReferralProps> = ({
       })) as any[];
       setUsedRefLink(find[0].result);
     })();
-  }, [address]);
 
-  useEffect(() => {
     if (!address) {
       setUsername('')
       setReferredCount(0)
@@ -186,7 +184,7 @@ const Referrals: React.FC<ReferralProps> = ({
     fetchInfo()
     const iv = setInterval(fetchInfo, 3000)
     return () => clearInterval(iv)
-  }, [address])
+  }, [address]);
 
   const handleCreateRef = async () => {
     try {
