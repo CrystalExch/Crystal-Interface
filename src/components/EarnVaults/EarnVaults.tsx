@@ -415,16 +415,14 @@ const VaultEarnVaults: React.FC = () => {
                       
                       <div className="vault-col vault-apy-col">
                         <div className="vault-apy-value">{vault.apy}%</div>
-                        <div className="vault-apy-label">APY</div>
                       </div>
                       
                       <div className="vault-col vault-tvl-col">
                         <div className="vault-tvl-value">{vault.tvl}</div>
-                        <div className="vault-tvl-label">TVL</div>
                       </div>
                       
                       <div className="vault-col vault-balance-col">
-                        <div className="tokenlistbalance">{vault.userBalance}</div>
+                        <div className="vault-deposit-amount">${vault.userBalance}</div>
                       </div>
                       
                       <div className="vault-col vault-action-col">

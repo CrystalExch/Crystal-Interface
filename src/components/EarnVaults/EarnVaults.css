@@ -87,12 +87,11 @@
 }
 
 .vault-tag {
-  font-size: 0.65rem;
+  font-size: 0.6rem;
   padding: 0rem 0.5rem;
   border-radius: 4px;
-  background-color: rgba(79, 70, 229, 0.15);
-  color: #aaaecfda;
-  font-weight: 450;
+  background-color: rgba(177, 175, 223, 0.07);
+  color: #daddf479;
 }
 
 .deposit-button {
@@ -120,7 +119,8 @@
   font-size: 0.9rem;
 }
 
-.vault-tvl-value {
+.vault-tvl-value,
+.vault-deposit-amount{
   font-weight: 400;
   font-size: 0.9rem;
   color: #ffffffcf;
