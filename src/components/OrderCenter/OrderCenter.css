@@ -84,7 +84,9 @@
 
 .market-name {
   font-weight: 450;
-  margin-bottom: -3px;
+  margin-bottom: 0px;
+  margin-top: -3px;
+
 }
 
 .market-cell {
@@ -254,17 +256,43 @@
   align-items: center;
   color: #6b7280;
   display: inline-flex;
-  font-size: 0.75rem;
   gap: 4px;
   margin-top: -3px;
 }
 
-.order-type-capitalized {
+.order-type-capitalized.sell {
+  display: flex;
+  align-items: center;
   text-transform: uppercase;
+  background-color: #de464630;
+  padding: 0 3px;
+  border-radius: 3px;
+  font-size: 0.65rem;
+  height: 12px;
+
 }
+
+
+
+.order-type-capitalized.buy {
+  display: flex;
+  align-items: center;
+  text-transform: uppercase;
+  background-color: #6aca6230;
+  padding: 0 4px;
+  padding-bottom: 1px;
+  border-radius: 3px;
+  padding-top: 0.5px;
+  font-size: 0.65rem;
+  height: 12px;
+}
+
 
 .order-type.buy {
   color: #65ed92;
+  margin-top: -4px;
+
+  
 }
 
 .order-type.buy,
@@ -275,6 +303,7 @@
 
 .order-type.sell {
   color: rgb(240 103 103);
+  margin-top: -4px;
 }
 
 .order-value {
@@ -389,6 +418,7 @@
 .price-gap {
   font-size: 0.75rem;
   margin-top: -2px;
+  color: #ffffff89 !important;
 }
 
 .oc-types-rectangle {

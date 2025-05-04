@@ -27,6 +27,7 @@ interface PortfolioGraphProps {
   portChartLoading: any;
   chartDays: any;
   setChartDays: any;
+  isBlurred: boolean;
 }
 
 interface CustomTooltipProps extends TooltipProps<number, string> {
@@ -94,6 +95,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
     portChartLoading,
     chartDays,
     setChartDays,
+    isBlurred,
   }) => {
     const { setHigh, setLow, setDays, setTimeRange } = useSharedContext();
     const gradientId = `colorValue-${isPopup ? 'popup' : 'main'}`;
@@ -309,6 +311,11 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        {isBlurred && <div className="graph-blurred"></div>}
+
+
+
+
       </div>
     );
   },

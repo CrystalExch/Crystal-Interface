@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import crystalxp from '../../assets/CrystalX.png';
 import arrow from '../../assets/arrow.svg';
 import CrownIcon from '../../assets/crownicon.png';
@@ -11,271 +11,148 @@ import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
 
-interface Faction {
-  id: string;
-  name: string;
-  points: number;
-  referral_points?: number;
-  level: number;
+interface OverviewResponse {
+  address: string;
+  username: string;
   rank: number;
-  xp?: number;
-  logo?: string;
-  username?: string;
-}
-
-interface UserDisplayData {
-  userXP: number;
-  logo: string;
-  username?: string;
-}
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
+  boosted_points: number;
+  referral_points: number;
+  global_total_points: number;
+  wallets_above_0_01: number;
+  top_three: Array<{
+    address: string;
+    username: string;
+    total_points: number;
+    boosted_points: number;
+    referral_points: number;
+  }>;
+  page: {
+    [address: string]: [string, number, number];
+  };
 }
 
 interface LeaderboardProps {
   setpopup?: (value: number) => void;
-  orders: any;
-  address: any;
+  orders: any[];
+  address: string | null;
 }
+
+const ITEMS_FIRST_PAGE = 47;
+const ITEMS_OTHER_PAGES = 50;
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
   setpopup = () => {},
   orders,
   address,
 }) => {
-  const [userData, setUserData] = useState<UserDisplayData>({
-    userXP: 0,
-    logo: '',
-    username: '',
-  });
+  const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
+  const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   });
-  const [liveLeaderboard, setLiveLeaderboard] = useState<{
-    [address: string]: { points: number; username: string; referral_points: number };
-  }>({});
-  const loading = Object.keys(liveLeaderboard).length === 0;
-  const [allFactions, setAllFactions] = useState<Faction[]>([]);
-  const ITEMS_PER_PAGE = currentPage === 0 ? 47 : 50;
+
+  const loading = !overview;
 
   useEffect(() => {
-    const fetchUserPoints = () => {
-      if (!address) return;
+    if (!address) return;
+    let mounted = true;
 
-      fetch('https://api.crystal.exchange/user_points')
-        .then(res => res.json())
-        .then((data: Record<string, [string, number, number]>) => {
-          const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(data).filter(([addr, _]) => addr !== '0xe7d1f4ab222d94389b82981f99c58824ff42a7d0').map(([addr, info]) => {
-              const [username, points, referral_points] = info;
-              return [
-                addr.toLowerCase(),
-                {
-                  points,
-                  username: username || '',
-                  referral_points,
-                },
-              ] as const;
-            })
-          );
-
-          setLiveLeaderboard(updatedLiveLeaderboard);
+    const fetchOverview = () => {
+      fetch(
+        `https://api.crystal.exchange/points/${address}?index=${currentPage}`
+      )
+        .then((res) => {
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          return res.json() as Promise<OverviewResponse>;
         })
-        .catch(err => {
-          console.error('Error fetching user points:', err);
+        .then((data) => {
+          if (!mounted) return;
+          setOverview(data);
+        })
+        .catch((err) => {
+          console.error('fetch overview error', err);
         });
     };
 
-    fetchUserPoints();
-    const interval = setInterval(fetchUserPoints, 3000);
-    return () => clearInterval(interval);
-  }, [address]);
-
-  useEffect(() => {
-    const lower = address?.toLowerCase();
-    const userInfo = liveLeaderboard[lower] || { points: 0, username: '', referral_points: 0 };
-
-    setUserData({
-      userXP: userInfo.points,
-      logo: '',
-      username: userInfo.username || '',
-    });
-
-  }, [address, liveLeaderboard]);
-
-  useEffect(() => {
-    if (Object.keys(liveLeaderboard).length === 0) return;
-
-    const me = address?.toLowerCase();
-    const liveEntries: Faction[] = Object.entries(liveLeaderboard).map(
-      ([addr, data]) => {
-        const isMe = addr === me;
-        const displayPoints = isMe
-          ? data.points
-          : data.points + (data.referral_points || 0);
-
-        return {
-          id: addr,
-          name: addr,
-          username: data.username || '',
-          points: displayPoints,
-          referral_points: data.referral_points,
-          level: Math.max(1, Math.floor(displayPoints / 1000)),
-          rank: 0,
-          logo: '',
-        };
-      }
-    );
-
-    liveEntries.sort((a, b) => b.points - a.points);
-    liveEntries.forEach((entry, idx) => {
-      entry.rank = idx + 1;
-    });
-    setAllFactions(liveEntries);
-  }, [liveLeaderboard]);
-
-  const getUserRank = () => {
-    if (!address || allFactions.length === 0) return 'N/A';
-    const f = allFactions.find(f => f.id.toLowerCase() === address.toLowerCase());
-    return f ? `#${f.rank}` : 'N/A';
-  };
-
-  const findUserPosition = () => {
-    if (!address) return -1;
-    const idx = allFactions.findIndex(f => f.id.toLowerCase() === address.toLowerCase());
-    return idx >= 0 ? idx : -1;
-  };
-
-  const goToUserPosition = () => {
-    const pos = findUserPosition();
-    if (pos === -1) return;
-    if (pos < 3) {
-      setCurrentPage(0);
-      setTimeout(() => {
-        document.querySelector('.leaderboard-banner')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      const adj = pos - 3;
-      const page = Math.floor(adj / ITEMS_PER_PAGE);
-      setCurrentPage(page);
-      setTimeout(() => {
-        document.querySelector('.current-user-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    }
-  };
-
-  const totalPages = Math.ceil((allFactions.length - 3) / ITEMS_PER_PAGE);
-
-  const getCurrentPageItems = () => {
-    let start: number, count: number;
-    if (currentPage === 0) {
-      start = 3; count = 47;
-    } else {
-      start = 3 + 47 + (currentPage - 1) * 50;
-      count = 50;
-    }
-    return allFactions.slice(start, start + count);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 0) setCurrentPage(currentPage - 1);
-  };
-  const goToNextPage = () => {
-    if (currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
-  };
-
-  const topThreeUsers = allFactions.slice(0, 3);
+    fetchOverview();
+    const iv = setInterval(fetchOverview, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, [address, currentPage]);
 
   useEffect(() => {
     const calculate = () => {
       const target = new Date('2025-06-01T00:00:00-04:00').getTime();
-      const now = Date.now();
-      const diff = target - now;
+      const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft({ days, hours, minutes, seconds });
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
     };
-
     calculate();
-    const timer = setInterval(calculate, 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(calculate, 1000);
+    return () => clearInterval(t);
   }, []);
 
-  const rowsRef = useRef<HTMLDivElement>(null);
-  const bottomSentinelRef = useRef<HTMLDivElement>(null);
+  const handleConnectWallet = () => setpopup(4);
 
-  useEffect(() => {
-    if (currentPage > 0 && bottomSentinelRef.current) {
-      bottomSentinelRef.current.scrollIntoView({
-        behavior: 'auto',
-        block: 'center',   
-      });
-    }
-  }, [currentPage]);
+  const totalPages = overview
+    ? (() => {
+        const totalUsers = overview.wallets_above_0_01;
+        const afterTop3 = Math.max(totalUsers - 3, 0);
+        if (afterTop3 <= ITEMS_FIRST_PAGE) return 1;
+        return 1 + Math.ceil((afterTop3 - ITEMS_FIRST_PAGE) / ITEMS_OTHER_PAGES);
+      })()
+    : 1;
 
-  const getDisplayAddress = (addr: string) =>
-    addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+  const goToPreviousPage = () => {
+    if (currentPage > 0) setCurrentPage((p) => p - 1);
+  };
+  const goToNextPage = () => {
+    if (overview && currentPage < totalPages - 1) setCurrentPage((p) => p + 1);
+  };
 
-  const getDisplayName = (f: Faction) =>
-    f.username && f.username.trim() !== '' && f.username !== f.name
-      ? f.username
-      : getDisplayAddress(f.name);
-
-  const isUserAddress = (addr: string) =>
-    address && addr.toLowerCase() === address.toLowerCase();
-
-  const getTopThreePfp = (i: number) => {
-    switch (i) {
-      case 0: return firstPlacePfp;
-      case 1: return secondPlacePfp;
-      case 2: return thirdPlacePfp;
-      default: return defaultPfp;
+  const goToUserPosition = () => {
+    if (!overview) return;
+    const r = overview.rank;
+    if (r <= 3) {
+      setCurrentPage(0);
+      setTimeout(
+        () =>
+          document
+            .querySelector('.leaderboard-banner')
+            ?.scrollIntoView({ behavior: 'smooth' }),
+        100
+      );
+    } else {
+      let page = 0;
+      if (r > 3 + ITEMS_FIRST_PAGE) {
+        page = 1 + Math.floor((r - (3 + ITEMS_FIRST_PAGE) - 1) / ITEMS_OTHER_PAGES);
+      }
+      setCurrentPage(page);
+      setTimeout(
+        () =>
+          document
+            .querySelector('.current-user-row')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+        200
+      );
     }
   };
 
-  const renderLoadingTopThree = () =>
-    [0, 1, 2].map(i => (
-      <div key={i} className={`faction-card rank-${i + 1}`}>
-        {i === 0 && <div className="crown-icon-container"><img src={CrownIcon} className="crown-icon" /></div>}
-        <div className="faction-rank">{i + 1}</div>
-        <div className="faction-info">
-          <div className="pfp-container"><div className="pfp-loading account-loading-animation" /></div>
-          <div className="account-top-name-loading account-loading-animation" />
-          <div className="account-top-xp-loading account-loading-animation" />
-        </div>
-      </div>
-    ));
-
-  const renderLoadingRows = () =>
-    Array(ITEMS_PER_PAGE).fill(0).map((_, i) => (
-      <div key={i} className="leaderboard-row">
-        <div className="leaderboard-inner-row">
-          <div className="row-rank"><span className="loading-placeholder" /></div>
-          <div className="row-faction">
-            <div className="row-pfp-container"><div className="row-pfp-loading loading-placeholder" /></div>
-            <span className="faction-row-name loading-placeholder" />
-          </div>
-          <div className="row-xp"><div className="leaderboard-xp-amount loading-placeholder" /></div>
-        </div>
-      </div>
-    ));
-
-  const formatPoints = (p: number) => (p < 0.001 ? '<0.001' : p.toLocaleString());
-  const handleConnectWallet = () => setpopup(4);
+  const getDisplayAddress = (addr: string) =>
+    addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
 
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
@@ -298,13 +175,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="leaderboard-banner">
         <div className="banner-overlay">
           <img src={LeaderboardImage} className="leaderboard-image" />
-          <div
-            className="view-rules-button"
-            onClick={() => setpopup(15)}
-          >
+          <div className="view-rules-button" onClick={() => setpopup(15)}>
             {t('viewRules')}
           </div>
-
           <div className="countdown-timer">
             <div className="countdown-time">
               {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
@@ -317,9 +190,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="total-xp-loading" />
               ) : (
                 <span className="progress-bar-amount-header">
-                  {Object.values(liveLeaderboard)
-                    .reduce((sum, v) => sum + v.points, 0)
-                    .toLocaleString()} / 1,000,000,000
+                  {overview!.global_total_points.toLocaleString()} / 1,000,000,000
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -329,118 +200,124 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="progress-fill"
                 style={{
                   width: loading
-                    ? '0%'
-                    : `${
-                        (Object.values(liveLeaderboard).reduce((sum, v) => sum + v.points, 0) /
-                          1000000000) *
-                        100
-                      }%`,
+                    ? '5%'
+                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
                 }}
               />
             </div>
           </div>
 
-          <div className="leaderboard-user-info">
-            <div className="info-column">
-              <div className="column-header">{t('username')}             <button
-                className="edit-username-button"
-                onClick={() => setpopup(16)}
-              >
-                {t('edit')}
-              </button>
-              </div>
-              <div className="column-content">
-                  {loading ? <div className="leaderboard-address-loading" /> : <span className="leaderboard-user-address">
-                    <span className="address-string">{address
-                      ? liveLeaderboard[address.toLowerCase()]?.username ||
-                        getDisplayAddress(address)
-                      : ''}
-                      </span>
-                    {address && <CopyButton textToCopy={address} />}
+          {!loading && (
+            <div className="leaderboard-user-info">
+              <div className="info-column">
+                <div className="column-header">
+                  {t('username')}{' '}
+                  <button
+                    className="edit-username-button"
+                    onClick={() => setpopup(16)}
+                  >
+                    {t('edit')}
+                  </button>
+                </div>
+                <div className="column-content">
+                  <span className="leaderboard-user-address">
+                    @{overview!.username || getDisplayAddress(overview!.address)}
+                    <CopyButton textToCopy={overview!.address} />
                   </span>
-                  }
+                </div>
               </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="earned-xp-header">
-                <img src={crystalxp} className="xp-icon" />
-                <div className="column-header">{t('earned')}</div>
+              <div className="info-column">
+                <div className="earned-xp-header">
+                  <img src={crystalxp} className="xp-icon" />
+                  <div className="column-header">{t('earned')}</div>
+                </div>
+                <div className="column-content">
+                  {overview!.boosted_points.toLocaleString()}
+                </div>
               </div>
-              <div className="column-content">
-                {loading ? (
-                  <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
-                ) : (
-                  userData.userXP.toLocaleString()
-                )}
-              </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="earned-xp-header">
-                <img src={crystalxp} className="xp-icon" />
-                <div className="column-header">{t("bonusCommision")}</div>
+              <div className="info-column">
+                <div className="earned-xp-header">
+                  <img src={crystalxp} className="xp-icon" />
+                  <div className="column-header">{t('bonusCommision')}</div>
+                </div>
+                <div className="column-content">
+                  {overview!.referral_points.toLocaleString()}
+                </div>
               </div>
-              <div className="column-content">
-                {loading ? (
-                  <span className="account-xp-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
-                ) : (
-                  (liveLeaderboard[address?.toLowerCase()]?.referral_points
-                    ?.toLocaleString() || '0')
-                )}
-              </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="column-header">{t('rank')}</div>
-              <div className="column-content">
-                {loading ? (
-                  <span className="account-rank-loading account-loading-animation" style={{ height: '14px', borderRadius: '6px', marginTop: '4px' }}></span>
-                ) : (
-                  getUserRank()
-                )}
+              <div className="info-column">
+                <div className="column-header">{t('rank')}</div>
+                <div className="column-content">#{overview!.rank}</div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       <div className="top-factions">
         {loading
-          ? renderLoadingTopThree()
-          : topThreeUsers.map((f, i) => (
-              <div
-                key={f.id}
-                className={`faction-card rank-${i + 1} ${
-                  isUserAddress(f.name) ? 'user-faction' : ''
-                }`}
-              >
-                {i === 0 && (
-                  <div className="crown-icon-container">
-                    <img src={CrownIcon} className="crown-icon" />
-                  </div>
-                )}
-                <div className="faction-rank">{i + 1}</div>
-                <div className="faction-info">
-                  <div className="pfp-container">
-                    <img src={getTopThreePfp(i)} className="pfp-image" />
-                  </div>
-                  <div className="faction-name">
-                    {getDisplayName(f)}
-                    <div className="copy-button-wrapper">
-                      <CopyButton textToCopy={f.name} />
+          ? Array(3)
+              .fill(0)
+              .map((_, i) => (
+                <div key={i} className={`faction-card rank-${i + 1}`}>
+                  {i === 0 && (
+                    <div className="crown-icon-container">
+                      <img src={CrownIcon} className="crown-icon" />
                     </div>
-                  </div>
-                  <div className="faction-xp">
-                    {formatPoints(f.points)}
-                    <img src={crystalxp} className="top-xp-icon" />
+                  )}
+                  <div className="faction-rank">{i + 1}</div>
+                  <div className="faction-info">
+                    <div className="pfp-container">
+                      <div className="pfp-loading account-loading-animation" />
+                    </div>
+                    <div className="account-top-name-loading account-loading-animation" />
+                    <div className="account-top-xp-loading account-loading-animation" />
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+          : overview!.top_three.map((f, i) => {
+              const displayName =
+                f.username && f.username !== f.address
+                  ? f.username
+                  : getDisplayAddress(f.address);
+              return (
+                <div
+                  key={f.address}
+                  className={`faction-card rank-${i + 1} ${
+                    overview!.address === f.address ? 'user-faction' : ''
+                  }`}
+                >
+                  {i === 0 && (
+                    <div className="crown-icon-container">
+                      <img src={CrownIcon} className="crown-icon" />
+                    </div>
+                  )}
+                  <div className="faction-rank">{i + 1}</div>
+                  <div className="faction-info">
+                    <div className="pfp-container">
+                      <img src={[firstPlacePfp, secondPlacePfp, thirdPlacePfp][i]} className="pfp-image" />
+                    </div>
+                    <div className="faction-name">
+                      {displayName}
+                      <div className="copy-button-wrapper">
+                        <CopyButton textToCopy={f.address} />
+                      </div>
+                    </div>
+                    <div className="faction-xp">
+                      {f.total_points < 0.001
+                        ? '<0.001'
+                        : f.total_points.toLocaleString()}
+                      <img src={crystalxp} className="top-xp-icon" />
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
       </div>
 
       <div className="full-leaderboard">
@@ -449,64 +326,98 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="header-bonus">{t('totalXP')}</div>
         </div>
 
-        <div className="leaderboard-rows"
-         ref={rowsRef}  >
+        <div className="leaderboard-rows">
           {loading
-            ? renderLoadingRows()
-            : getCurrentPageItems().map(faction => {
-                const isCurrent = isUserAddress(faction.name);
-                return (
-                  <div
-                    key={faction.id}
-                    className={`leaderboard-row ${
-                      isCurrent ? 'current-user-row' : ''
-                    }`}
-                  >
+            ? Array(
+                (currentPage === 0 ? ITEMS_FIRST_PAGE : ITEMS_OTHER_PAGES)
+              )
+                .fill(0)
+                .map((_, i) => (
+                  <div key={i} className="leaderboard-row">
                     <div className="leaderboard-inner-row">
                       <div className="row-rank">
-                        <span>#{faction.rank}</span>
+                        <span className="loading-placeholder" />
                       </div>
                       <div className="row-faction">
                         <div className="row-pfp-container">
-                          <img src={defaultPfp} className="row-pfp-image" />
+                          <div className="row-pfp-loading loading-placeholder" />
                         </div>
-                        <span className="faction-row-name">
-                          {getDisplayName(faction)}
-                          <div className="copy-button-wrapper">
-                            <CopyButton textToCopy={faction.name} />
-                          </div>
-                        </span>
-                        <div className="user-self-tag">
-                          {isCurrent && orders.length > 0 && (
-                            <div className="orders-indicator-container">
-                              <div
-                                className="orders-indicator"
-                                title={`You have ${orders.length} open orders earning points`}
-                              />
-                            </div>
-                          )}
-                          {isCurrent && (
-                            <span className="current-user-tag">You</span>
-                          )}
-                        </div>
+                        <span className="faction-row-name loading-placeholder" />
                       </div>
                       <div className="row-xp">
-                        <div className="leaderboard-xp-amount">
-                          {formatPoints(faction.points)}
-                          <img src={crystalxp} className="xp-icon" />
-                        </div>
+                        <div className="leaderboard-xp-amount loading-placeholder" />
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                ))
+            : Object.entries(overview!.page).map(
+                ([addr, [username, boosted, referral]], idx) => {
+                  const total = boosted + referral;
+                  const displayName =
+                    username && username !== addr
+                      ? username
+                      : getDisplayAddress(addr);
+
+                  const startIndex =
+                    currentPage === 0
+                      ? 3
+                      : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
+                  const rank = startIndex + idx + 1;
+
+                  const isCurrent = addr === overview!.address;
+                  return (
+                    <div
+                      key={addr}
+                      className={`leaderboard-row ${
+                        isCurrent ? 'current-user-row' : ''
+                      }`}
+                    >
+                      <div className="leaderboard-inner-row">
+                        <div className="row-rank">
+                          <span>#{rank}</span>
+                        </div>
+                        <div className="row-faction">
+                          <div className="row-pfp-container">
+                            <img src={defaultPfp} className="row-pfp-image" />
+                          </div>
+                          <span className="faction-row-name">
+                            {displayName}
+                            <div className="copy-button-wrapper">
+                              <CopyButton textToCopy={addr} />
+                            </div>
+                          </span>
+                          <div className="user-self-tag">
+                            {isCurrent && orders.length > 0 && (
+                              <div className="orders-indicator-container">
+                                <div
+                                  className="orders-indicator"
+                                  title={`You have ${orders.length} open orders earning points`}
+                                />
+                              </div>
+                            )}
+                            {isCurrent && (
+                              <span className="current-user-tag">You</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="row-xp">
+                          <div className="leaderboard-xp-amount">
+                            {total < 0.001 ? '<0.001' : total.toLocaleString()}
+                            <img src={crystalxp} className="xp-icon" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )}
         </div>
 
         <div className="pagination-controls">
           <button
             className="go-to-user-position-button"
             onClick={goToUserPosition}
-            disabled={findUserPosition() === -1 || loading}
+            disabled={!overview || loading}
           >
             {t('viewYourPosition')}
           </button>
@@ -521,8 +432,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
 
             <div className="page-indicator">
-              {t('page')} {currentPage + 1} {t('of')}{' '}
-              {loading ? '1' : totalPages || 1}
+              {t('page')} {currentPage + 1} {t('of')} {totalPages}
             </div>
 
             <button
@@ -534,8 +444,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
-        <div ref={bottomSentinelRef} />
-
       </div>
     </div>
   );

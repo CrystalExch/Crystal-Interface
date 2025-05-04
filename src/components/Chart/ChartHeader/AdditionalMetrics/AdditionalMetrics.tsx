@@ -17,7 +17,7 @@ interface AdditionalMetricsProps {
 
 const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
   metrics,
-  isLoading = false
+  isLoading = false,
 }) => {
   const [showLeftArrow, setShowLeftArrow] = useState(false);
   const [showRightArrow, setShowRightArrow] = useState(false);
@@ -45,11 +45,9 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
       const isAtRightEdge =
         container.scrollLeft + container.clientWidth >= container.scrollWidth - 10;
       
-      // Only show arrows when there's content to scroll to
       const newShowLeftArrow = isScrollable && !isAtLeftEdge;
       const newShowRightArrow = isScrollable && !isAtRightEdge;
       
-      // Update fade visibility to match arrow visibility
       const newShowLeftFade = newShowLeftArrow;
       const newShowRightFade = newShowRightArrow;
 
@@ -98,6 +96,7 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
             label={metric.label}
             value={metric.value}
             isLoading={isLoading}
+            isLiquidityMetric={metric.label === t('availableLiquidity')}
           />
         ))}
       </div>

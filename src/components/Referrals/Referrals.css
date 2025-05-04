@@ -870,3 +870,52 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.referrals-skeleton {
+  background: #2d2d3b;
+  border-radius: 4px;
+  height: 11px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  position: relative;
+  width: 160px;
+}
+
+.referrals-skeleton::after {
+  animation: shimmer 2s infinite;
+  background-image: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0%) 0,
+    rgb(255 255 255 / 5%) 20%,
+    rgb(255 255 255 / 10%) 60%,
+    rgb(255 255 255 / 0%)
+  );
+  content: '';
+  inset: 0;
+  position: absolute;
+  transform: translateX(-100%);
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.referrals-username-skeleton {
+  height: 25px;
+  width: 120px;
+  margin-bottom: 4px;
+}
+
+.referrals-multiplier-skeleton {
+  height: 16px;
+  width: 80px;
+}
+
+.referrals-count-skeleton {
+  height: 32px;
+  width: 60px;
+  margin-bottom: 4px;
+}

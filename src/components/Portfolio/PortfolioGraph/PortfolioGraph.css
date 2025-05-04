@@ -76,3 +76,14 @@
     left 0.3s ease,
     width 0.3s ease;
 }
+
+.graph-blurred {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: calc(100% - 30px);
+  width: 60px; 
+  backdrop-filter: blur(6px); 
+  pointer-events: none;
+  z-index: 1; 
+}
