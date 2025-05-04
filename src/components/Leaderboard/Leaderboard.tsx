@@ -34,7 +34,7 @@ interface OverviewResponse {
 interface LeaderboardProps {
   setpopup?: (value: number) => void;
   orders: any[];
-  address: string | null;
+  address: any;
 }
 
 const ITEMS_FIRST_PAGE = 47;
