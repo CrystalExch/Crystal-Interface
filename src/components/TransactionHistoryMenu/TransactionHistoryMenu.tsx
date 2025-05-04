@@ -136,7 +136,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       else if (transactions.length > 0 && walletAddress) {
         const existingIds = new Set(prev[0].map((tx: any) => tx.identifier));
         const newTx = transactions.filter((tx) => !existingIds.has(tx.identifier));
-        setPendingNotifs((prev: any) => {return Math.min(prev + newTx.length, 100)});
+        setTimeout(() => {setPendingNotifs((prev: any) => {return Math.min(prev + newTx.length, 100)})}, 0);
         const merged = [...prev[0], ...newTx];
         merged.sort((a, b) => b.timestamp - a.timestamp);
         result = merged.slice(0, 100);

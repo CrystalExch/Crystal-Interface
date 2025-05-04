@@ -343,7 +343,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 order.splice(10, 1)
               }
             } catch (error) {
-              console.error('Failed to remove order line', error);
             }
           });
         }

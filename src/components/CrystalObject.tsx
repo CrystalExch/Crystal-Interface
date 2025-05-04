@@ -42,11 +42,7 @@ const CrystalObject = () => {
       new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(createGradientTexture()), side: THREE.BackSide })
     )
     envScene.add(envSphere)
-    // Delay cubemap generation to idle
-    requestIdleCallback(() => {
-      cubeCamera.update(renderer, envScene)
-    })
-
+    cubeCamera.update(renderer, envScene)
 
     // Small-crystal geometry
     function createSmallCrystalGeometry(scale: number, variation: number) {

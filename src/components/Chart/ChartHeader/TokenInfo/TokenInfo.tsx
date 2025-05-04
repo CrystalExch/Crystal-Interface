@@ -222,17 +222,15 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const filterMarketsByTab = (market: any) => {
     switch (activeFilter) {
-      case 'Favorites':
+      case 'favorites':
         return favorites.includes(market.baseAddress.toLowerCase());
-      case 'LSTs':
+      case 'lsts':
         return market.pair.includes('aprMON') || market.pair.includes('sMON') || market.pair.includes('shMON');
-      case 'Memes':
-        return market.pair.includes('YAKI') || market.pair.includes('CHOG') || market.pair.includes('DAK');
-      case 'Stablecoins':
+      case 'stablecoins':
         return market.pair.includes('USDT');
-      case 'Chains':
-        return market.pair.includes('WBTC') || market.pair.includes('WETH') || market.pair.includes('WBTC') || market.pair.includes('WSOL') || market.pair.includes('MON/USDC');
-      case 'All':
+      case 'memes':
+        return market.pair.includes('YAKI') || market.pair.includes('CHOG') || market.pair.includes('DAK');
+      case 'all':
       default:
         return true;
     }
@@ -391,13 +389,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               </div>
               
               <div className="market-filter-tabs" ref={filterTabsRef}>
-                {['All', 'Favorites', 'LSTs', 'Memes','Stablecoins'].map((filter) => (
+                {['all', 'favorites', 'lsts', 'stablecoins', 'memes'].map((filter) => (
                   <button
                     key={filter}
                     className={`filter-tab ${activeFilter === filter ? 'active' : ''}`}
                     onClick={() => setActiveFilter(filter)}
                   >
-                    {filter}
+                    {t(filter)}
                   </button>
                 ))}
               </div>

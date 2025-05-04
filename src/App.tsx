@@ -1062,6 +1062,8 @@ function App() {
   useEffect(() => {
     let liveStreamCancelled = false;
     let blockNumber = '';
+    let worker: any;
+
     (async () => {
       blockNumber = '0x' + (await getBlockNumber(config) - BigInt(10)).toString(16)
     })()
@@ -1127,265 +1129,261 @@ function App() {
           setorders((orders) => {
             let temporders = orders;
             let ordersChanged = false;
-            if (Array.isArray(orderlogs)) {
-              for (const log of orderlogs) {
-                const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-                if (!set.has(logIdentifier) && addresstoMarket[log['address']] && log['topics'][1].slice(26) ==
-                  address?.slice(2).toLowerCase()) {
-                  if (queue.length >= 1000) {
-                    const removed = queue.shift();
-                    set.delete(removed!);
-                  }
-                  queue.push(logIdentifier);
-                  set.add(logIdentifier);
-                  let _timestamp = parseInt(log['blockTimestamp'], 16);
-                  let _orderdata = log['data'].slice(130);
-                  for (let i = 0; i < _orderdata.length; i += 64) {
-                    let chunk = _orderdata.slice(i, i + 64);
-                    let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
-                    if (_isplace) {
-                      let order = [
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(20, 32), 16),
-                        parseInt(chunk.slice(32, 64), 16) /
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(0, 1), 16),
-                        addresstoMarket[log['address']],
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        parseInt(chunk.slice(32, 64), 16),
-                        2,
-                      ];
-                      ordersChanged = true;
-                      temporders.push(order)
-                      setcanceledorders((canceledorders) => [
-                        ...canceledorders,
-                        [
-                          parseInt(chunk.slice(1, 20), 16),
-                          parseInt(chunk.slice(20, 32), 16),
-                          parseInt(chunk.slice(32, 64), 16) /
-                          parseInt(chunk.slice(1, 20), 16),
-                          parseInt(chunk.slice(0, 1), 16),
-                          addresstoMarket[log['address']],
-                          log['transactionHash'],
-                          _timestamp,
-                          0,
-                          parseInt(chunk.slice(32, 64), 16),
-                          2,
-                        ],
-                      ]);
-                      let price = parseInt(chunk.slice(1, 20), 16);
-                      let buy = parseInt(chunk.slice(0, 1), 16);
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountquote = (
-                        parseInt(chunk.slice(32, 64), 16) /
-                        (Number(
-                          markets[addresstoMarket[log['address']]].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        parseInt(chunk.slice(32, 64), 16) /
-                        price /
-                        10 **
-                        Number(
-                          markets[addresstoMarket[log['address']]]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
-                        '',
-                      );
-                    } else {
-                      setcanceledorders((canceledorders) => {
-                        let updatedCanceledOrders: any[];
-                        let canceledOrderIndex: number;
-                        updatedCanceledOrders = [...canceledorders];
-                        canceledOrderIndex = updatedCanceledOrders.findIndex(
-                          (canceledOrder) =>
-                            canceledOrder[0] ===
-                            parseInt(chunk.slice(1, 20), 16) &&
-                            canceledOrder[1] ===
-                            parseInt(chunk.slice(20, 32), 16) &&
-                            canceledOrder[4] ===
-                            addresstoMarket[log['address']],
-                        );
-                        if (canceledOrderIndex !== -1) {
-                          updatedCanceledOrders[canceledOrderIndex] = [
-                            ...updatedCanceledOrders[canceledOrderIndex],
-                          ];
-                          updatedCanceledOrders[canceledOrderIndex][9] = 0;
-                          updatedCanceledOrders[canceledOrderIndex][8] =
-                            updatedCanceledOrders[canceledOrderIndex][8] -
-                            parseInt(chunk.slice(32, 64), 16);
-                          updatedCanceledOrders[canceledOrderIndex][6] =
-                            _timestamp;
-                        }
-                        return updatedCanceledOrders;
-                      });
-                      let index = temporders.findIndex(
-                        (sublist: any) =>
-                          sublist[0] == parseInt(chunk.slice(1, 20), 16) &&
-                          sublist[1] == parseInt(chunk.slice(20, 32), 16) &&
-                          sublist[4] == addresstoMarket[log['address']],
-                      );
-                      if (index != -1) {
-                        ordersChanged = true;
-                        if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                          temporders[index][10].remove();
-                          temporders[index].splice(10, 1)
-                        }
-                        temporders.splice(index, 1);
-                      }
-                      let price = parseInt(chunk.slice(1, 20), 16);
-                      let buy = parseInt(chunk.slice(0, 1), 16) == 3;
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountquote = (
-                        parseInt(chunk.slice(32, 64), 16) /
-                        (Number(
-                          markets[addresstoMarket[log['address']]].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        parseInt(chunk.slice(32, 64), 16) /
-                        price /
-                        10 **
-                        Number(
-                          markets[addresstoMarket[log['address']]]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-            if (Array.isArray(tradelogs)) {
-              settradesByMarket((tradesByMarket: any) => {
-                let temptradesByMarket = { ...tradesByMarket };
-                for (const log of tradelogs) {
+            setcanceledorders((canceledorders) => {
+              let tempcanceledorders = canceledorders;
+              let canceledOrdersChanged = false;
+              if (Array.isArray(orderlogs)) {
+                for (const log of orderlogs) {
                   const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-                  if (!set.has(logIdentifier) && addresstoMarket[log['address']]) {
-                    if (queue.length >= 1000) {
+                  if (!set.has(logIdentifier) && addresstoMarket[log['address']] && log['topics'][1].slice(26) ==
+                    address?.slice(2).toLowerCase()) {
+                    if (queue.length >= 10000) {
                       const removed = queue.shift();
                       set.delete(removed!);
                     }
                     queue.push(logIdentifier);
                     set.add(logIdentifier);
+                    ordersChanged = true;
+                    canceledOrdersChanged = true;
                     let _timestamp = parseInt(log['blockTimestamp'], 16);
-                    let _orderdata = log['data'].slice(258);
-                    const marketKey = addresstoMarket[log['address']];
-                    if (
-                      log['topics'][1].slice(26) ==
-                      address?.slice(2).toLowerCase()
-                    ) {
-                      settradehistory((tradehistory) => [
-                        ...tradehistory,
-                        [
-                          parseInt(log['data'].slice(2, 34), 16),
-                          parseInt(log['data'].slice(34, 66), 16),
-                          parseInt(log['data'].slice(66, 67), 16),
-                          parseInt(log['data'].slice(98, 130), 16),
-                          marketKey,
+                    let _orderdata = log['data'].slice(130);
+                    for (let i = 0; i < _orderdata.length; i += 64) {
+                      let chunk = _orderdata.slice(i, i + 64);
+                      let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                      if (_isplace) {
+                        let buy = parseInt(chunk.slice(0, 1), 16);
+                        let price = parseInt(chunk.slice(1, 20), 16);
+                        let id = parseInt(chunk.slice(20, 32), 16);
+                        let size = parseInt(chunk.slice(32, 64), 16);
+                        let order = [
+                          price,
+                          id,
+                          size /
+                          price,
+                          buy,
+                          addresstoMarket[log['address']],
                           log['transactionHash'],
                           _timestamp,
-                          1,
-                        ],
-                      ]);
-                      let buy = parseInt(log['data'].slice(66, 67), 16);
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountin = customRound(
-                        parseInt(log['data'].slice(2, 34), 16) /
-                        10 **
-                        Number(
-                          buy
-                            ? markets[addresstoMarket[log['address']]]
-                              .quoteDecimals
-                            : markets[addresstoMarket[log['address']]]
+                          0,
+                          size,
+                          2,
+                        ];
+                        temporders.push(order)
+                        tempcanceledorders.push([
+                          price,
+                          id,
+                          size /
+                          price,
+                          buy,
+                          addresstoMarket[log['address']],
+                          log['transactionHash'],
+                          _timestamp,
+                          0,
+                          size,
+                          2,
+                        ])
+                        let quoteasset =
+                          markets[addresstoMarket[log['address']]].quoteAddress;
+                        let baseasset =
+                          markets[addresstoMarket[log['address']]].baseAddress;
+                        let amountquote = (
+                          size /
+                          (Number(
+                            markets[addresstoMarket[log['address']]].scaleFactor,
+                          ) *
+                            10 **
+                            Number(
+                              markets[addresstoMarket[log['address']]]
+                                .quoteDecimals,
+                            ))
+                        ).toFixed(2);
+                        let amountbase = customRound(
+                          size /
+                          price /
+                          10 **
+                          Number(
+                            markets[addresstoMarket[log['address']]]
                               .baseDecimals,
-                        ),
-                        3,
-                      );
-                      let amountout = customRound(
-                        parseInt(log['data'].slice(34, 66), 16) /
-                        10 **
-                        Number(
-                          buy
-                            ? markets[addresstoMarket[log['address']]]
-                              .baseDecimals
-                            : markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'swap',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        amountin,
-                        amountout,
-                        '',
-                        '',
-                      );
-                    }
-                    if (marketKey) {
-                      if (!Array.isArray(temptradesByMarket[marketKey])) {
-                        temptradesByMarket[marketKey] = [];
-                      }
-                      temptradesByMarket[marketKey] = [
-                        ...temptradesByMarket[marketKey],
-                        [
-                          parseInt(log['data'].slice(2, 34), 16),
-                          parseInt(log['data'].slice(34, 66), 16),
-                          parseInt(log['data'].slice(66, 67), 16),
-                          parseInt(log['data'].slice(98, 130), 16),
-                          marketKey,
+                          ),
+                          3,
+                        );
+                        newTxPopup(
                           log['transactionHash'],
-                          _timestamp,
-                        ],
-                      ];
+                          'limit',
+                          buy ? quoteasset : baseasset,
+                          buy ? baseasset : quoteasset,
+                          buy ? amountquote : amountbase,
+                          buy ? amountbase : amountquote,
+                          `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
+                          '',
+                        );
+                      } else {
+                        let buy = parseInt(chunk.slice(0, 1), 16) == 3;
+                        let price = parseInt(chunk.slice(1, 20), 16);
+                        let id = parseInt(chunk.slice(20, 32), 16);
+                        let size = parseInt(chunk.slice(32, 64), 16);
+                        let canceledOrderIndex: number;
+                        canceledOrderIndex = tempcanceledorders.findIndex(
+                          (canceledOrder) =>
+                            canceledOrder[0] ==
+                            price &&
+                            canceledOrder[1] ==
+                            id &&
+                            canceledOrder[4] ==
+                            addresstoMarket[log['address']],
+                        );
+                        if (canceledOrderIndex !== -1) {
+                          tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                          tempcanceledorders[canceledOrderIndex][9] = 0;
+                          tempcanceledorders[canceledOrderIndex][8] =
+                          tempcanceledorders[canceledOrderIndex][8] -
+                            size;
+                            tempcanceledorders[canceledOrderIndex][6] =
+                            _timestamp;
+                        }
+                        let index = temporders.findIndex(
+                          (sublist: any) =>
+                            sublist[0] == price &&
+                            sublist[1] == id &&
+                            sublist[4] == addresstoMarket[log['address']],
+                        );
+                        if (index != -1) {
+                          if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                            temporders[index] = [...temporders[index]]
+                            temporders[index][10].remove();
+                            temporders[index].splice(10, 1)
+                          }
+                          temporders.splice(index, 1);
+                        }
+                        let quoteasset =
+                          markets[addresstoMarket[log['address']]].quoteAddress;
+                        let baseasset =
+                          markets[addresstoMarket[log['address']]].baseAddress;
+                        let amountquote = (
+                          size /
+                          (Number(
+                            markets[addresstoMarket[log['address']]].scaleFactor,
+                          ) *
+                            10 **
+                            Number(
+                              markets[addresstoMarket[log['address']]]
+                                .quoteDecimals,
+                            ))
+                        ).toFixed(2);
+                        let amountbase = customRound(
+                          size /
+                          price /
+                          10 **
+                          Number(
+                            markets[addresstoMarket[log['address']]]
+                              .baseDecimals,
+                          ),
+                          3,
+                        );
+                        newTxPopup(
+                          log['transactionHash'],
+                          'cancel',
+                          buy ? quoteasset : baseasset,
+                          buy ? baseasset : quoteasset,
+                          buy ? amountquote : amountbase,
+                          buy ? amountbase : amountquote,
+                          `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
+                          '',
+                        );
+                      }
                     }
-                    setcanceledorders((canceledorders) => {
-                      let updatedCanceledOrders = [...canceledorders];
+                  }
+                }
+              }
+              if (Array.isArray(tradelogs)) {
+                settradesByMarket((tradesByMarket: any) => {
+                  let temptradesByMarket = { ...tradesByMarket };
+                  for (const log of tradelogs) {
+                    const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+                    if (!set.has(logIdentifier) && addresstoMarket[log['address']]) {
+                      if (queue.length >= 10000) {
+                        const removed = queue.shift();
+                        set.delete(removed!);
+                      }
+                      queue.push(logIdentifier);
+                      set.add(logIdentifier);
+                      let _timestamp = parseInt(log['blockTimestamp'], 16);
+                      let _orderdata = log['data'].slice(258);
+                      const marketKey = addresstoMarket[log['address']];
+                      if (
+                        log['topics'][1].slice(26) ==
+                        address?.slice(2).toLowerCase()
+                      ) {
+                        settradehistory((tradehistory) => [
+                          ...tradehistory,
+                          [
+                            parseInt(log['data'].slice(2, 34), 16),
+                            parseInt(log['data'].slice(34, 66), 16),
+                            parseInt(log['data'].slice(66, 67), 16),
+                            parseInt(log['data'].slice(98, 130), 16),
+                            marketKey,
+                            log['transactionHash'],
+                            _timestamp,
+                            1,
+                          ],
+                        ]);
+                        let buy = parseInt(log['data'].slice(66, 67), 16);
+                        let quoteasset =
+                          markets[addresstoMarket[log['address']]].quoteAddress;
+                        let baseasset =
+                          markets[addresstoMarket[log['address']]].baseAddress;
+                        let amountin = customRound(
+                          parseInt(log['data'].slice(2, 34), 16) /
+                          10 **
+                          Number(
+                            buy
+                              ? markets[addresstoMarket[log['address']]]
+                                .quoteDecimals
+                              : markets[addresstoMarket[log['address']]]
+                                .baseDecimals,
+                          ),
+                          3,
+                        );
+                        let amountout = customRound(
+                          parseInt(log['data'].slice(34, 66), 16) /
+                          10 **
+                          Number(
+                            buy
+                              ? markets[addresstoMarket[log['address']]]
+                                .baseDecimals
+                              : markets[addresstoMarket[log['address']]]
+                                .quoteDecimals,
+                          ),
+                          3,
+                        );
+                        newTxPopup(
+                          log['transactionHash'],
+                          'swap',
+                          buy ? quoteasset : baseasset,
+                          buy ? baseasset : quoteasset,
+                          amountin,
+                          amountout,
+                          '',
+                          '',
+                        );
+                      }
+                      if (marketKey) {
+                        if (!Array.isArray(temptradesByMarket[marketKey])) {
+                          temptradesByMarket[marketKey] = [];
+                        }
+                        temptradesByMarket[marketKey] = [
+                          ...temptradesByMarket[marketKey],
+                          [
+                            parseInt(log['data'].slice(2, 34), 16),
+                            parseInt(log['data'].slice(34, 66), 16),
+                            parseInt(log['data'].slice(66, 67), 16),
+                            parseInt(log['data'].slice(98, 130), 16),
+                            marketKey,
+                            log['transactionHash'],
+                            _timestamp,
+                          ],
+                        ];
+                      }
                       settradehistory((tradehistory: any) => {
                         let updatedTradeHistory = [...tradehistory];
                         for (let i = 0; i < _orderdata.length; i += 64) {
@@ -1400,7 +1398,7 @@ function App() {
                               sublist[4] == marketKey,
                           );
                           let canceledOrderIndex =
-                            updatedCanceledOrders.findIndex(
+                            tempcanceledorders.findIndex(
                               (sublist: any) =>
                                 sublist[0] ==
                                 parseInt(chunk.slice(1, 20), 16) &&
@@ -1409,6 +1407,10 @@ function App() {
                                 sublist[4] == marketKey,
                             );
                           if (orderIndex != -1 && canceledOrderIndex != -1) {
+                            ordersChanged = true;
+                            canceledOrdersChanged = true;
+                            temporders[orderIndex] = [...temporders[orderIndex]]
+                            tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                             let order = temporders[orderIndex];
                             let buy = order[3];
                             let quoteasset =
@@ -1466,92 +1468,90 @@ function App() {
                                 Math.floor(Date.now() / 1000),
                                 0,
                               ]);
-                              if (orderIndex != -1) {
-                                ordersChanged = true;
-                                if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                                  temporders[orderIndex][10].remove();
-                                  temporders[orderIndex].splice(10, 1)
-                                }
-                                temporders.splice(orderIndex, 1);
+                              if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                                temporders[orderIndex][10].remove();
+                                temporders[orderIndex].splice(10, 1)
                               }
-                              updatedCanceledOrders[canceledOrderIndex] = [
-                                ...updatedCanceledOrders[canceledOrderIndex],
-                              ];
-                              updatedCanceledOrders[canceledOrderIndex][9] =
+                              temporders.splice(orderIndex, 1);
+                              tempcanceledorders[canceledOrderIndex][9] =
                                 1;
-                              updatedCanceledOrders[canceledOrderIndex][7] =
+                                tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
-                              updatedCanceledOrders[canceledOrderIndex][8] =
+                                tempcanceledorders[canceledOrderIndex][8] =
                                 order[8] - newsize;
                             } else {
-                              ordersChanged = true;
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
                                 temporders[orderIndex][10].setQuantity(formatDisplay(customRound((newsize / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                               }
                               temporders[orderIndex][7] =
                                 order[2] - newsize / order[0];
-                              updatedCanceledOrders[canceledOrderIndex] = [
-                                ...updatedCanceledOrders[canceledOrderIndex],
+                                tempcanceledorders[canceledOrderIndex] = [
+                                ...tempcanceledorders[canceledOrderIndex],
                               ];
-                              updatedCanceledOrders[canceledOrderIndex][7] =
+                              tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
                             }
                           }
                         }
                         return updatedTradeHistory;
                       });
-                      return updatedCanceledOrders;
-                    });
+                    }
                   }
-                }
-                if (!Object.keys(tradesByMarket).every(key =>
-                  Array.isArray(tradesByMarket[key]) &&
-                  Array.isArray(temptradesByMarket[key]) &&
-                  tradesByMarket[key].length == temptradesByMarket[key].length
-                )) {
-                  setMarketsData((marketsData) =>
-                    marketsData.map((market) => {
-                      if (!market) return;
-                      const marketKey = market?.marketKey.replace(
-                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                        ethticker
-                      );
-                      const trades = temptradesByMarket[marketKey] || [];
-                      const prevlength = tradesByMarket[marketKey]?.length || 0;
-                      const newTrades = trades.length > prevlength ? trades.slice(prevlength) : [];
-                      if (newTrades.length < 1) return market;
-                      const firstKlineOpen: number =
-                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                          ? Number(market?.series[0].open)
-                          : 0;
-                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                      const volume = newTrades.reduce((sum: number, trade: any) => {
-                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                        return sum + amount;
-                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-                      return {
-                        ...market,
-                        volume: formatCommas(
-                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                        ),
-                        currentPrice: formatSubscript(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                        ),
-                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: currentPriceRaw - firstKlineOpen
-                      };
-                    })
-                  );
-                  return { ...temptradesByMarket };
-                }
-                else {
-                  return tradesByMarket
-                }
-              });
-            }
+                  if (!Object.keys(tradesByMarket).every(key =>
+                    Array.isArray(tradesByMarket[key]) &&
+                    Array.isArray(temptradesByMarket[key]) &&
+                    tradesByMarket[key].length == temptradesByMarket[key].length
+                  )) {
+                    setMarketsData((marketsData) =>
+                      marketsData.map((market) => {
+                        if (!market) return;
+                        const marketKey = market?.marketKey.replace(
+                          new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                          ethticker
+                        );
+                        const trades = temptradesByMarket[marketKey] || [];
+                        const prevlength = tradesByMarket[marketKey]?.length || 0;
+                        const newTrades = trades.length > prevlength ? trades.slice(prevlength) : [];
+                        if (newTrades.length < 1) return market;
+                        const firstKlineOpen: number =
+                          market?.series && Array.isArray(market?.series) && market?.series.length > 0
+                            ? Number(market?.series[0].open)
+                            : 0;
+                        const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                        const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                        const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                          / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                        const volume = newTrades.reduce((sum: number, trade: any) => {
+                          const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                          return sum + amount;
+                        }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+                        return {
+                          ...market,
+                          volume: formatCommas(
+                            (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                          ),
+                          currentPrice: formatSubscript(
+                            (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          ),
+                          priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                          priceChangeAmount: currentPriceRaw - firstKlineOpen
+                        };
+                      })
+                    );
+                    return { ...temptradesByMarket };
+                  }
+                  else {
+                    return tradesByMarket
+                  }
+                });
+              }
+              if (canceledOrdersChanged) {
+                return [...tempcanceledorders]
+              }
+              else {
+                return tempcanceledorders
+              }
+            })
             if (ordersChanged) {
               return [...temporders]
             }
@@ -1562,19 +1562,35 @@ function App() {
           return { queue, set };
         })
       } catch (error) {
+        console.log(error)
       }
     };
 
-    let interval: any;
-    const timeout = setTimeout(() => {
-      interval = setInterval(fetchData, 1000);
-    }, 2000);
-
+    const initWorker = () => {
+      const workerCode = `
+        setTimeout(() => {
+          setInterval(() => {
+            self.postMessage('fetch');
+          }, 1000);
+        }, 2000);
+      `;
+      
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+      
+      worker.onmessage = () => {
+        fetchData();
+      };
+    };
+  
+    initWorker();
+  
     return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
+      if (worker) {
+        worker.terminate();
+      }
       liveStreamCancelled = true;
-    }
+    };
   }, [HTTP_URL, address]);
 
   const handleSearchKeyDown = (
