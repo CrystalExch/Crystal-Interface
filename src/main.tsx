@@ -28,7 +28,10 @@ window.fetch = async (...args) => {
         headers: { "Content-Type": "application/json" },
       }
     ));
+  } else if (typeof url === "string" && url.includes("logger_config_v1")) {
+    return Promise.resolve(new Response(null, { status: 204 }));
   }
+  
   return originalFetch(...args);
 };
 

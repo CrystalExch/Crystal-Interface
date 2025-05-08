@@ -4,8 +4,11 @@ import * as THREE from 'three'
 const CrystalObject = () => {
   const mountRef = useRef<HTMLDivElement>(null)
   const clock = useRef(new THREE.Clock())
+  let hasInitialized = false
 
   useEffect(() => {
+    if (hasInitialized) return;
+    hasInitialized = true;
     // Scene & camera
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000)
@@ -147,7 +150,6 @@ const CrystalObject = () => {
         mesh.userData = {
           startPosition: new THREE.Vector3(sx, sy, sz),
           finalPosition: new THREE.Vector3(fx, fy, fz),
-          originalPosition: new THREE.Vector3(fx, fy, fz),
           rotationSpeed: (Math.random() - 0.5) * 0.01,
           oscillationSpeed: 0.5 + Math.random() * 1.5,
           oscillationAmplitude: 0.05 + Math.random() * 0.2,
@@ -163,27 +165,19 @@ const CrystalObject = () => {
     }
 
     let delayOffset = 0
-    createSmallCrystals(5 + Math.floor(Math.random() * 3), 'random')
+    createSmallCrystals(5, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(6 + Math.floor(Math.random() * 4), 'right').forEach(c => {
-      c.userData.finalPosition.x -= 2
-      c.userData.originalPosition.x -= 2
-      c.userData.entranceDelay += delayOffset
-    })
+    createSmallCrystals(5, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(6 + Math.floor(Math.random() * 4), 'right').forEach(c => {
-      c.userData.finalPosition.x += 2
-      c.userData.originalPosition.x += 2
-      c.userData.entranceDelay += delayOffset
-    })
+    createSmallCrystals(5, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(1 + Math.floor(Math.random() * 4), 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+    createSmallCrystals(5, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(1 + Math.floor(Math.random() * 4), 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(1 + Math.floor(Math.random() * 4), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
     delayOffset += 0.25
-    createSmallCrystals(1 + Math.floor(Math.random() * 4), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
 
     // Lighting
     scene.add(new THREE.AmbientLight(0x404040, 0.8))
@@ -219,29 +213,37 @@ const CrystalObject = () => {
       smallCrystalsGroup.children.forEach((c: any) => {
         const u = c.userData
         if (elapsed > u.entranceDelay) {
-          const p = Math.min(1, (elapsed - u.entranceDelay) * (u.entranceSpeed * 0.4))
+          const p = Math.min(1, (elapsed - u.entranceDelay) * (u.entranceSpeed * 0.2))
           u.entranceProgress = p
           const ep = 1 - Math.pow(1 - p, 5)
           if (p < 1) {
             c.position.lerpVectors(u.startPosition, u.finalPosition, ep)
           } else {
+            if (!u.hasStartedOscillating) {
+              u.oscillationStartTime = elapsed
+              u.hasStartedOscillating = true
+            }
+            
+            const t = elapsed - u.oscillationStartTime
             const tf = Math.min(1, (p - 1) * 5 + 1)
-            c.position.x = u.originalPosition.x + Math.sin(elapsed * u.oscillationSpeed) * u.oscillationAmplitude * tf
-            c.position.y = u.originalPosition.y + Math.cos(elapsed * u.oscillationSpeed * 0.8) * u.oscillationAmplitude * tf
-            c.position.z = u.originalPosition.z + Math.sin(elapsed * u.oscillationSpeed * 1.2) * u.oscillationAmplitude * tf
+            
+            c.position.x = u.finalPosition.x + Math.sin(t * u.oscillationSpeed) * u.oscillationAmplitude * tf
+            c.position.y = u.finalPosition.y + (Math.cos(t * u.oscillationSpeed * 0.8) - 1) * u.oscillationAmplitude * tf
+            c.position.z = u.finalPosition.z + Math.sin(t * u.oscillationSpeed * 1.2) * u.oscillationAmplitude * tf                        
           }
         }
-        const rm = u.entranceProgress > 0 ? Math.min(1, u.entranceProgress * 3) : 0
-        c.rotation.x += u.rotationSpeed * rm
-        c.rotation.y += u.rotationSpeed * 1.3 * rm
-        c.rotation.z += u.rotationSpeed * 0.7 * rm
+        c.rotation.x += u.rotationSpeed * 1
+        c.rotation.y += u.rotationSpeed * 1.3 * 1
+        c.rotation.z += u.rotationSpeed * 0.7 * 1
       })
 
       renderer.render(scene, camera)
     }
+    
     animate()
 
     return () => {
+      hasInitialized = false
       window.removeEventListener('resize', handleResize)
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement)
     }

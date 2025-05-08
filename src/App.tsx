@@ -149,6 +149,11 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
+  useEffect(() => {
+    if (!localStorage.getItem("noSSR")) {
+      localStorage.setItem("noSSR", "true");
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -305,10 +310,13 @@ function App() {
         if (token) {
           token = getAddress(token);
           for (const market in markets) {
+            if (markets[market].baseAddress == token) {
+              return markets[market].quoteAddress;
+            }
+          }
+          for (const market in markets) {
             if (markets[market].quoteAddress == token) {
               return markets[market].baseAddress;
-            } else if (markets[market].baseAddress == token) {
-              return markets[market].quoteAddress;
             }
           }
         }
@@ -334,10 +342,13 @@ function App() {
             return tokenOut;
           } else {
             for (const market in markets) {
+              if (markets[market].baseAddress == tokenIn) {
+                return markets[market].quoteAddress;
+              }
+            }
+            for (const market in markets) {
               if (markets[market].quoteAddress == tokenIn) {
                 return markets[market].baseAddress;
-              } else if (markets[market].baseAddress == tokenIn) {
-                return markets[market].quoteAddress;
               }
             }
           }
@@ -347,10 +358,13 @@ function App() {
       tokenIn = getAddress(tokenIn);
       if (tokendict[tokenIn]) {
         for (const market in markets) {
+          if (markets[market].baseAddress == tokenIn) {
+            return markets[market].quoteAddress;
+          }
+        }
+        for (const market in markets) {
           if (markets[market].quoteAddress == tokenIn) {
             return markets[market].baseAddress;
-          } else if (markets[market].baseAddress == tokenIn) {
-            return markets[market].quoteAddress;
           }
         }
       }
@@ -2913,6 +2927,7 @@ function App() {
         settradehistory([]);
         setorders([]);
         setcanceledorders([]);
+        setrecipient('');
       }, 10);
       isAddressInfoFetching = true;
       (async () => {
@@ -3566,21 +3581,30 @@ function App() {
         if (multihop || isWrap) {
           let token;
           let pricefetchmarket;
+          let found = false;
           for (const market in markets) {
-            if (markets[market].quoteAddress === tokenOut) {
-              token = tokendict[markets[market].baseAddress];
-              pricefetchmarket = getMarket(
-                markets[market].baseAddress,
-                tokenOut,
-              );
-              setTokenIn(markets[market].baseAddress);
-            } else if (markets[market].baseAddress === tokenOut) {
+            if (markets[market].baseAddress === tokenOut) {
               token = tokendict[markets[market].quoteAddress];
               pricefetchmarket = getMarket(
                 markets[market].quoteAddress,
                 tokenOut,
               );
               setTokenIn(markets[market].quoteAddress);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenOut) {
+                token = tokendict[markets[market].baseAddress];
+                pricefetchmarket = getMarket(
+                  markets[market].baseAddress,
+                  tokenOut,
+                );
+                setTokenIn(markets[market].baseAddress);
+                break;
+              }
             }
           }
           setamountIn(
@@ -3687,13 +3711,22 @@ function App() {
         setswitched(false);
         if (multihop || isWrap) {
           let token;
+          let found = false;
           for (const market in markets) {
-            if (markets[market].quoteAddress === tokenOut) {
-              token = tokendict[markets[market].baseAddress];
-              setTokenIn(markets[market].baseAddress);
-            } else if (markets[market].baseAddress === tokenOut) {
+            if (markets[market].baseAddress === tokenOut) {
               token = tokendict[markets[market].quoteAddress];
               setTokenIn(markets[market].quoteAddress);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenOut) {
+                token = tokendict[markets[market].baseAddress];
+                setTokenIn(markets[market].baseAddress);
+                break;
+              }
             }
           }
           setamountIn(
@@ -4319,17 +4352,26 @@ function App() {
                         if (path && path.length > 1 && (activeTab == 'swap' || activeTab == 'market')) {
                           newTokenOut = tokenOut;
                         } else {
+                          let found = false;
                           for (const market in markets) {
                             if (
-                              markets[market].quoteAddress === token.address
-                            ) {
-                              setTokenOut(markets[market].baseAddress);
-                              newTokenOut = markets[market].baseAddress;
-                            } else if (
                               markets[market].baseAddress === token.address
                             ) {
                               setTokenOut(markets[market].quoteAddress);
                               newTokenOut = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                                markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenOut(markets[market].baseAddress);
+                                newTokenOut = markets[market].baseAddress;
+                                break;
+                              }
                             }
                           }
                         }
@@ -4515,13 +4557,22 @@ function App() {
                         ]
                       ) {
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenOut(markets[market].baseAddress);
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
                           }
                         }
                       }
@@ -4641,14 +4692,9 @@ function App() {
                     ) {
                       pricefetchmarket = getMarket(token.address, tokenOut);
                     } else {
+                      let found = false;
                       for (const market in markets) {
-                        if (markets[market].quoteAddress === token.address) {
-                          setTokenOut(markets[market].baseAddress);
-                          pricefetchmarket = getMarket(
-                            token.address,
-                            markets[market].baseAddress,
-                          );
-                        } else if (
+                        if (
                           markets[market].baseAddress === token.address
                         ) {
                           setTokenOut(markets[market].quoteAddress);
@@ -4656,6 +4702,20 @@ function App() {
                             token.address,
                             markets[market].quoteAddress,
                           );
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (!found) {
+                        for (const market in markets) {
+                          if (markets[market].quoteAddress === token.address) {
+                            setTokenOut(markets[market].baseAddress);
+                            pricefetchmarket = getMarket(
+                              token.address,
+                              markets[market].baseAddress,
+                            );
+                            break;
+                          }
                         }
                       }
                     }
@@ -4780,13 +4840,22 @@ function App() {
                         ]
                       ) {
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenOut(markets[market].baseAddress);
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
                           }
                         }
                       }
@@ -5011,17 +5080,26 @@ function App() {
                         if (path && path.length > 1) {
                           newTokenIn = tokenIn;
                         } else {
+                          let found = false;
                           for (const market in markets) {
                             if (
-                              markets[market].quoteAddress === token.address
-                            ) {
-                              setTokenIn(markets[market].baseAddress);
-                              newTokenIn = markets[market].baseAddress;
-                            } else if (
                               markets[market].baseAddress === token.address
                             ) {
                               setTokenIn(markets[market].quoteAddress);
                               newTokenIn = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                              markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenIn(markets[market].baseAddress);
+                                newTokenIn = markets[market].baseAddress;
+                                break;
+                              }
                             }
                           }
                         }
@@ -5185,15 +5263,24 @@ function App() {
                       ) {
                         newTokenIn = tokenIn;
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenIn(markets[market].baseAddress);
-                            newTokenIn = markets[market].baseAddress;
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenIn(markets[market].quoteAddress);
                             newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
                           }
                         }
                       }
@@ -5311,15 +5398,24 @@ function App() {
                       ) {
                         newTokenIn = tokenIn;
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenIn(markets[market].baseAddress);
-                            newTokenIn = markets[market].baseAddress;
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenIn(markets[market].quoteAddress);
                             newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
                           }
                         }
                       }
@@ -7587,8 +7683,6 @@ function App() {
                     </div>
                   ) : (
                     <div className="connect-wallet-username-wrapper">
-                      <CrystalObject />
-
                       <div className="onboarding-connect-wallet">
                         <div className="smart-wallet-reminder">
                         <img className="onboarding-info-icon" src={infoicon} />
@@ -8239,7 +8333,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={sliderPercent}
+              value={address ? sliderPercent : 0}
+              disabled={!address}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -10166,7 +10261,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={sliderPercent}
+              value={address ? sliderPercent : 0}
+              disabled={!address}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -12068,7 +12164,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={sliderPercent}
+              value={address ? sliderPercent : 0}
+              disabled={!address}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =

@@ -3680,10 +3680,11 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .dropdown-item {
   display: block;
-  padding: 4px 1px;
+  padding: 3px 1px 4px 1px;
   color: #ffffff90;
   text-decoration: none;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  font-weight: 400;
   transition: background-color 0.2s, color 0.2s;
   text-align: center;
 }
@@ -3691,6 +3692,10 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .dropdown-item:hover {
   background-color: rgba(170, 174, 207, 0.02);
   color: #ffffffd0;
+}
+
+.dropdown-item span {
+  font-weight: 400 !important
 }
 
 
@@ -3731,8 +3736,10 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   background: #101012;
 }
 
+.main-content-wrapper.simple-view .dropdown-item span {
+  font-size: 0.8rem !important;
+}
 .main-content-wrapper.simple-view .dropdown-item:hover {
-  font-size: 0.8rem;
   background: #111113;
 }
 

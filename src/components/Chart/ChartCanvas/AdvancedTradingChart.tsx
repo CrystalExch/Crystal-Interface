@@ -106,7 +106,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
-              hour12: false,
+              hourCycle: 'h23',
             })
             .replace(/, \d{2}$/, ''),
             label: trade[2] == 0 ? 'S' : 'B',
@@ -133,7 +133,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
-              hour12: false,
+              hourCycle: 'h23',
             })
             .replace(/, \d{2}$/, ''),
             label: trade[2] == 0 ? 'S' : 'B',
@@ -518,7 +518,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               hour: '2-digit',
               minute: '2-digit',
               second: '2-digit',
-              hour12: false,
+              hourCycle: 'h23',
             })
             .replace(/, \d{2}$/, ''),
             label: trade[2] == 0 ? 'S' : 'B',
