@@ -162,6 +162,7 @@
   align-items: flex-start;
   margin-left: 0;
   box-shadow: 0 -15px 4px 4px #0f0f12;
+  border-radius: 8px;
 }
 
 .sidebar-bottom a,
