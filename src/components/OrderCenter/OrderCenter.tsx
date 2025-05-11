@@ -28,8 +28,7 @@ interface OrderCenterProps {
   orderCenterHeight: number;
   hideBalances?: boolean;
   tokenList: any[];
-  setTokenIn: (token: any) => void;
-  setTokenOut: (token: any) => void;
+  onMarketSelect: (token: any) => void;
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   hideMarketFilter?: boolean;
@@ -64,8 +63,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     hideBalances = false,
     hideMarketFilter = false,
     tokenList,
-    setTokenIn,
-    setTokenOut,
+    onMarketSelect,
     setSendTokenIn,
     setpopup,
     sortConfig,
@@ -212,8 +210,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               <PortfolioContent
                 trades={trades}
                 tokenList={tokenList}
-                setTokenIn={setTokenIn}
-                setTokenOut={setTokenOut}
+                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={sortConfig}

@@ -16,7 +16,6 @@ import {
 import './Chart.css';
 
 interface ChartComponentProps {
-  onMarketSelect: any;
   tokendict: any;
   trades: any[];
   universalTrades: any[];

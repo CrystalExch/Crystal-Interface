@@ -20,8 +20,7 @@ interface AssetRowProps {
   price: number;
   totalValue: number;
   showLock?: boolean;
-  setTokenIn: any;
-  setTokenOut: any;
+  onMarketSelect: any;
   setSendTokenIn: any;
   setpopup: any;
   priceChange: number;
@@ -36,8 +35,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
   tokenAddress,
   price,
   totalValue,
-  setTokenIn,
-  setTokenOut,
+  onMarketSelect,
   setSendTokenIn,
   setpopup,
   priceChange,
@@ -89,8 +87,7 @@ const AssetRow: React.FC<AssetRowProps> = ({
         <div className="action-icons">
           <SwapIcon
             tokenaddress={tokenAddress}
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
+            onMarketSelect={onMarketSelect}
             setpopup={setpopup}
           />
           <SendIcon

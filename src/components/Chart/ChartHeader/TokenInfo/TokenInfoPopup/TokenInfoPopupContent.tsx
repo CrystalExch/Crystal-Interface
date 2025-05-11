@@ -39,7 +39,7 @@ const TokenInfoPopupContent = forwardRef<
               className="token-info-modal-link"
             >
               <Globe size={14} />
-              {t('landing')}
+              {t('website')}
             </a>
           )}
 

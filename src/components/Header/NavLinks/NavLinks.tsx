@@ -151,7 +151,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
                   rel="noopener noreferrer"
                   onClick={toggleMenu}
                 >
-                  <span className="item-title">{t('landing')}</span>
+                  <span className="item-title">{t('website')}</span>
                 </a>
                 <a
                   href="https://discord.gg/CrystalExch"
@@ -285,7 +285,7 @@ const NavLinks: React.FC<NavLinksProps> = ({
                 >
                   <div className="tradedrop-item-content">
                     <div className="tradedrop-text">
-                      <span className="tradedrop-title">{t('landing')}</span>
+                      <span className="tradedrop-title">{t('website')}</span>
                       <span className="tradedrop-subtitle">
                         {t('visit_homepage')}
                       </span>

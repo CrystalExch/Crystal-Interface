@@ -18,8 +18,7 @@ interface SortConfig {
 interface PortfolioContentProps {
   trades: TradesByMarket;
   tokenList: any;
-  setTokenIn: any;
-  setTokenOut: any;
+  onMarketSelect: any;
   setSendTokenIn: any;
   setpopup: any;
   sortConfig: SortConfig;
@@ -30,8 +29,7 @@ interface PortfolioContentProps {
 const PortfolioContent: React.FC<PortfolioContentProps> = ({
   trades,
   tokenList,
-  setTokenIn,
-  setTokenOut,
+  onMarketSelect,
   setSendTokenIn,
   setpopup,
   sortConfig,
@@ -161,8 +159,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
             tokenAddress={token.address}
             price={token.price}
             totalValue={token.value}
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
+            onMarketSelect={onMarketSelect}
             setSendTokenIn={setSendTokenIn}
             setpopup={setpopup}
             priceChange={token.priceChange.percentageChange}

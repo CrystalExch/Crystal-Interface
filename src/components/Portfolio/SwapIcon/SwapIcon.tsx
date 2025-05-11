@@ -1,22 +1,17 @@
 import React, { useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { settings } from '../../../settings.ts';
 import './SwapIcon.css';
 
 interface SwapIconProps {
   tokenaddress: string;
-  setTokenIn: (address: string) => void;
-  setTokenOut: (address: string) => void;
   setpopup: (value: number) => void;
+  onMarketSelect: any;
 }
 
 const SwapIcon: React.FC<SwapIconProps> = ({
   tokenaddress,
-  setTokenIn,
-  setTokenOut,
   setpopup,
+  onMarketSelect,
 }) => {
-  const navigate = useNavigate();
   const hoverRef = useRef<HTMLDivElement>(null);
   
   return (
@@ -24,16 +19,25 @@ const SwapIcon: React.FC<SwapIconProps> = ({
       className="swap-icon"
       ref={hoverRef}
       onClick={() => {
-        if (!(location.pathname == '/market') && !(location.pathname == '/swap')) {
-          navigate(`/market`);
-        }
-        setTokenIn(
-          tokenaddress === settings.chainConfig[activechain].usdc
-            ? settings.chainConfig[activechain].eth
-            : settings.chainConfig[activechain].usdc,
-        );
-        setTokenOut(tokenaddress);
         setpopup(0);
+        let found = false;
+        for (const market in markets) {
+          if (
+            markets[market].baseAddress === tokenaddress
+          ) {
+            found = true;
+            onMarketSelect({quoteAddress: markets[market].quoteAddress, baseAddress: tokenaddress})
+            break;
+          }
+        }
+        if (!found) {
+          for (const market in markets) {
+            if (markets[market].quoteAddress === tokenaddress) {
+              onMarketSelect({quoteAddress: tokenaddress, baseAddress: markets[market].baseAddress})
+              break;
+            }
+          }
+        }
       }}
     >
       {t('swap')}

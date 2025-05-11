@@ -1425,7 +1425,7 @@ function App() {
                             canceledOrdersChanged = true;
                             temporders[orderIndex] = [...temporders[orderIndex]]
                             tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                            let order = temporders[orderIndex];
+                            let order = [...temporders[orderIndex]];
                             let buy = order[3];
                             let quoteasset =
                               markets[addresstoMarket[log['address']]]
@@ -1499,9 +1499,6 @@ function App() {
                               }
                               temporders[orderIndex][7] =
                                 order[2] - newsize / order[0];
-                                tempcanceledorders[canceledOrderIndex] = [
-                                ...tempcanceledorders[canceledOrderIndex],
-                              ];
                               tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
                             }
@@ -1613,10 +1610,9 @@ function App() {
     if (e.key === 'Enter' && sortedMarkets.length > 0) {
       e.preventDefault();
       const selectedMarket = sortedMarkets[selectedIndex];
-      handleMarketSelect(
-        selectedMarket.baseAddress,
-        selectedMarket.quoteAddress,
-      );
+      setSearchQuery('');
+      setpopup(0);
+      onMarketSelect(selectedMarket)
     } else if (e.key === 'Escape') {
       setSearchQuery('');
     } else if (e.key === 'ArrowDown') {
@@ -1685,18 +1681,6 @@ function App() {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
-
-  const handleMarketSelect = (baseToken: string, quoteToken: string): void => {
-    if (location.pathname !== '/limit') {
-      navigate('/limit');
-    }
-
-    setTokenIn(quoteToken);
-    setTokenOut(baseToken);
-
-    setSearchQuery('');
-    setpopup(0);
   };
 
   const handleRefreshQuote = async (e: any) => {
@@ -3845,15 +3829,13 @@ function App() {
 
   // popup
   useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-
-    if (hasCompletedOnboarding && user && !connected && !loading) {
-      setpopup(11);
+    if (user && !connected && !loading) {
+      if (localStorage.getItem('crystal_has_completed_onboarding') === 'true') {
+        setpopup(11);
+      }
     }
-    else if (hasCompletedOnboarding && connected && popup === 11) {
+    else if (connected && popup === 11) {
       setpopup(12);
-    }
-    else if ((popup === 14 || popup === 15) && !connected) {
     }
 
     if (popupref.current && blurref.current) {
@@ -4270,21 +4252,6 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, showWelcomeScreen]);
-
-  useEffect(() => {
-    const sessionInitialized = sessionStorage.getItem('session_initialized');
-    if (!sessionInitialized) {
-      sessionStorage.setItem('session_initialized', 'true');
-      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-      const timer = setTimeout(() => {
-        if (!hasCompletedOnboarding && popup === 0) {
-          setpopup(14);
-        }
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
   
   // input tokenlist
   const TokenList1 = (
@@ -6221,8 +6188,7 @@ function App() {
                 <PortfolioContent
                   trades={tradesByMarket}
                   tokenList={Object.values(tokendict)}
-                  setTokenIn={setTokenIn}
-                  setTokenOut={setTokenOut}
+                  onMarketSelect={onMarketSelect}
                   setSendTokenIn={setSendTokenIn}
                   setpopup={setpopup}
                   sortConfig={{ column: 'balance', direction: 'desc' }}
@@ -6729,12 +6695,11 @@ function App() {
                   <div
                     key={market.pair}
                     className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
-                    onClick={() =>
-                      handleMarketSelect(
-                        market.baseAddress,
-                        market.quoteAddress,
-                      )
-                    }
+                    onClick={() => {
+                      setSearchQuery('');
+                      setpopup(0);
+                      onMarketSelect(market)
+                    }}
                     onMouseEnter={() => setSelectedIndex(index)}
                     role="button"
                     tabIndex={-1}
@@ -9150,7 +9115,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={`${t('fee')} (0.0${isWrap ? '0' : String(Number(BigInt(100000) - activeMarket.fee) / 10).replace(/\./g, "")})%`}
+              label={`${t('fee')} (0.${isWrap ? '00' : String(Number(BigInt(100000) - activeMarket.fee) / 100).replace(/\./g, "")}%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -10681,7 +10646,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={t('fee')}
+              label={`${t('fee')} (0.00%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -12523,7 +12488,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={t('fee')}
+              label={`${t('fee')} (0.00%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -12555,7 +12520,6 @@ function App() {
 
   const renderChartComponent = useMemo(() => (
     <ChartComponent
-      onMarketSelect={onMarketSelect}
       tokendict={tokendict}
       trades={tradesByMarket[activeMarketKey]}
       universalTrades={tradesByMarket}
@@ -12585,7 +12549,6 @@ function App() {
       newTxPopup={newTxPopup}
     />
   ), [
-    onMarketSelect,
     tokendict,
     tradesByMarket,
     activeMarket,
@@ -12720,8 +12683,7 @@ function App() {
                 orderCenterHeight={orderCenterHeight}
                 hideBalances={true}
                 tokenList={memoizedTokenList}
-                setTokenIn={setTokenIn}
-                setTokenOut={setTokenOut}
+                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={{ column: 'balance', direction: 'desc' }}
@@ -12898,8 +12860,7 @@ function App() {
                 address={address ?? ''}
                 isBlurred={isBlurred}
                 setIsBlurred={setIsBlurred}
-                setTokenIn={setTokenIn}
-                setTokenOut={setTokenOut}
+                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 tokenBalances={tokenBalances}

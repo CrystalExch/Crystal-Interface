@@ -483,7 +483,7 @@ export const settings: any = {
         },
         '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5': {
           ticker: 'sMON',
-          name: 'Kintsu Staked Monad',
+          name: 'Kintsu Staked MON',
           address: '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5',
           decimals: BigInt(18),
           image: iconsmon,

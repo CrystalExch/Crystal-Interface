@@ -42,8 +42,7 @@ interface PortfolioProps {
   address: string;
   isBlurred: any;
   setIsBlurred: any;
-  setTokenIn: (token: any) => void;
-  setTokenOut: (token: any) => void;
+  onMarketSelect: any;
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   tokenBalances: any;
@@ -80,8 +79,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   address,
   isBlurred,
   setIsBlurred,
-  setTokenIn,
-  setTokenOut,
+  onMarketSelect,
   setSendTokenIn,
   setpopup,
   tokenBalances,
@@ -386,8 +384,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           currentMarket={''}
           orderCenterHeight={orderCenterHeight}
           tokenList={tokenList}
-          setTokenIn={setTokenIn}
-          setTokenOut={setTokenOut}
+          onMarketSelect={onMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
           sortConfig={sortConfig}
