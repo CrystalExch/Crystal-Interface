@@ -2582,7 +2582,7 @@ body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
   background: #26262c;
   border-radius: 4px;
   display: inline-block;
-  height: 11px;
+  height: 12px;
   margin-right: 3px;
   overflow: hidden;
   position: relative;
@@ -3164,7 +3164,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   background-color: #c8ccf111;
   border-radius: 4px;
   box-shadow: 0 2px 8px rgb(0 0 0/20%);
-  color: #ffffff95;
+  color: #ffffffcf;
   display: flex;
   font-size: 0.7rem;
   font-weight: 300;
@@ -4878,10 +4878,25 @@ input[type="email"] {
   }
 }
 
+@media (width>=1320px) {
+  .right-column {
+    min-width: 300px;
+    width: 300px;
+  }
+}
+
+
+@media (width>=1500px) {
+  .right-column {
+    min-width: 320px;
+    width: 320px;
+  }
+}
+
 @media (width>=1920px) {
   .right-column {
-    min-width: 310px;
-    width: 310px;
+    min-width: 340px;
+    width: 340px;
   }
 }
 

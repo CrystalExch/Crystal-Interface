@@ -2330,7 +2330,7 @@ function App() {
             acc[token.address] = balance;
             return acc;
           }, {});
-          if (stateloading) {
+          if (stateloading || sliderPercent == 0) {
             const percentage = !tempbalances[tokenIn]
               ? 0
               : Math.min(
@@ -3099,6 +3099,12 @@ function App() {
       })();
     }
     else if (!user) {
+      setSliderPercent(0)
+      const slider = document.querySelector('.balance-amount-slider');
+      const popup = document.querySelector('.slider-percentage-popup');
+      if (slider && popup) {
+        (popup as HTMLElement).style.left = `${15 / 2}px`;
+      }
       setTransactions([]);
       settradehistory([]);
       setorders([]);
@@ -7852,6 +7858,13 @@ function App() {
                 ) => {
                   setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setInputString(e.currentTarget.value);
+                    if (
+                      (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
                     const inputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -7859,7 +7872,6 @@ function App() {
                       ),
                     );
                     setswitched(false);
-                    setInputString(e.currentTarget.value);
                     debouncedSetAmount(inputValue);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
@@ -7896,6 +7908,13 @@ function App() {
                     return;
                   }
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setInputString(e.target.value);
+                    if (
+                      (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
                     const inputValue = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
@@ -7903,7 +7922,6 @@ function App() {
                       ),
                     );
                     setswitched(false);
-                    setInputString(e.target.value);
                     debouncedSetAmount(inputValue);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
@@ -8156,6 +8174,13 @@ function App() {
                 ) => {
                   setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setoutputString(e.currentTarget.value);
+                    if (
+                      (outputString.endsWith('.') && e.currentTarget.value === outputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === outputString)
+                    ) {
+                      return;
+                    }
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -8163,7 +8188,6 @@ function App() {
                       ),
                     );
                     setswitched(true);
-                    setoutputString(e.currentTarget.value);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.currentTarget.value);
@@ -8177,6 +8201,13 @@ function App() {
                     return;
                   }
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setoutputString(e.target.value);
+                    if (
+                      (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
@@ -8184,7 +8215,6 @@ function App() {
                       ),
                     );
                     setswitched(true);
-                    setoutputString(e.target.value);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.target.value);
@@ -8231,7 +8261,12 @@ function App() {
                   ? '$0.00'
                   : (() => {
                     const outputUSD = calculateUSDValue(
-                      amountOutSwap,
+                      BigInt(
+                        Math.round(
+                          (parseFloat(outputString || '0') || 0) *
+                          10 ** Number(tokendict[tokenOut].decimals),
+                        ),
+                      ),
                       tradesByMarket[
                       (({ baseAsset, quoteAsset }) =>
                         (baseAsset === wethticker ? ethticker : baseAsset) +
@@ -8264,11 +8299,11 @@ function App() {
                       inputUSD > 0
                         ? ((outputUSD - inputUSD) / inputUSD) * 100
                         : 0;
-
+                    
                     return (
                       <div className="output-usd-container">
                         <span>{formatUSDDisplay(outputUSD)}</span>
-                        {inputUSD > 0 && (
+                        {inputUSD > 0 && !displayValuesLoading && !stateIsLoading && (
                           <span
                             className={`output-percentage ${percentageDiff >= 0 ? 'positive' : 'negative'}`}
                           >
@@ -8298,8 +8333,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={address ? sliderPercent : 0}
-              disabled={!address}
+              value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -8375,31 +8410,21 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                    if (connected) {
+                      const newAmount =
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setswitched(false);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    if (isWrap) {
-                      setoutputString(
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setswitched(false);
+                      setInputString(
                         newAmount == BigInt(0)
                           ? ''
                           : customRound(
@@ -8408,18 +8433,30 @@ function App() {
                             3,
                           ).toString(),
                       );
-                      setamountOutSwap(newAmount);
-                    }
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
+                      debouncedSetAmount(newAmount);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >
@@ -9281,6 +9318,12 @@ function App() {
                 setIsComposing(false);
                 if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                   setInputString(e.currentTarget.value);
+                  if (
+                    (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                    (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -9358,6 +9401,12 @@ function App() {
 
                 if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
                   setInputString(e.target.value);
+                  if (
+                    (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                    (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.target.value || '0') || 0) *
@@ -10226,8 +10275,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={address ? sliderPercent : 0}
-              disabled={!address}
+              value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -10322,71 +10371,73 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                    if (connected) {
+                      const newAmount =
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    setamountOutLimit(
-                      limitPrice != BigInt(0) && newAmount != BigInt(0)
-                        ? tokenIn === activeMarket?.baseAddress
-                          ? (newAmount * limitPrice) /
-                          (activeMarket.scaleFactor || BigInt(1))
-                          : (newAmount *
-                            (activeMarket.scaleFactor || BigInt(1))) /
-                          limitPrice
-                        : BigInt(0),
-                    );
-                    setlimitoutputString(
-                      (limitPrice != BigInt(0) && newAmount != BigInt(0)
-                        ? tokenIn === activeMarket?.baseAddress
-                          ? customRound(
-                            Number(
-                              (newAmount * limitPrice) /
-                              (activeMarket.scaleFactor || BigInt(1)),
-                            ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
-                            3,
-                          )
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
                           : customRound(
-                            Number(
-                              (newAmount *
-                                (activeMarket.scaleFactor || BigInt(1))) /
-                              limitPrice,
-                            ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
                             3,
-                          )
-                        : ''
-                      ).toString(),
-                    );
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      setamountOutLimit(
+                        limitPrice != BigInt(0) && newAmount != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) /
+                            (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount *
+                              (activeMarket.scaleFactor || BigInt(1))) /
+                            limitPrice
+                          : BigInt(0),
+                      );
+                      setlimitoutputString(
+                        (limitPrice != BigInt(0) && newAmount != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number(
+                                (newAmount * limitPrice) /
+                                (activeMarket.scaleFactor || BigInt(1)),
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number(
+                                (newAmount *
+                                  (activeMarket.scaleFactor || BigInt(1))) /
+                                limitPrice,
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >
@@ -11487,7 +11538,13 @@ function App() {
                 }
 
                 if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
-                  setInputString(e.currentTarget.value);
+                  setInputString(e.target.value);
+                  if (
+                    (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                    (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   setIsOutputBasedScaleOrder(false);
                   const inputValue = BigInt(
                     Math.round(
@@ -12129,8 +12186,8 @@ function App() {
               min="0"
               max="100"
               step="1"
-              value={address ? sliderPercent : 0}
-              disabled={!address}
+              value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -12197,7 +12254,8 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
+                    if (connected) {
+                      const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
                           settings.chainConfig[activechain].gasamount >
@@ -12232,6 +12290,7 @@ function App() {
                       const rect = slider.getBoundingClientRect();
                       popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
                         }px`;
+                    }
                     }
                   }}
                 >
