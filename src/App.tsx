@@ -8203,8 +8203,8 @@ function App() {
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
                     setoutputString(e.target.value);
                     if (
-                      (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
-                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                      (outputString.endsWith('.') && e.target.value === outputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === outputString)
                     ) {
                       return;
                     }
