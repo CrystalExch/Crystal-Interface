@@ -200,7 +200,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="progress-fill"
                 style={{
                   width: loading
-                    ? '5%'
+                    ? '0%'
                     : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
                 }}
               />

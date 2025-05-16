@@ -72,6 +72,7 @@
   position: absolute;
   top: 0;
   z-index: 0;
+  transition: width 1s ease;
 }
 
 .order-content {

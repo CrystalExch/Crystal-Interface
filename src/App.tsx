@@ -199,6 +199,7 @@ function App() {
     }
     return g;
   })();
+  const txReceiptResolvers = new Map<string, () => void>();
 
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
@@ -218,7 +219,7 @@ function App() {
       })() ||
       (() => {
         const path = findShortestPath(token1, token2);
-        if (path && path.length > 2 && activeTab != 'limit') {
+        if (path && path.length > 2 && location.pathname.slice(1) != 'limit') {
           let fee = BigInt(1);
           for (let i = 0; i < path.length - 1; i++) {
             fee *= getMarket(path[i], path[i + 1]).fee;
@@ -287,8 +288,7 @@ function App() {
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
-  const [activeTab, setActiveTab] = useState(location.pathname.slice(1));
-  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'market' || activeTab == 'limit' ? 'pro' : t(activeTab.toLowerCase()));
+  const [currentProText, setCurrentProText] = useState(location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' || location.pathname.slice(1) == 'limit' ? 'pro' : t(location.pathname.slice(1).toLowerCase()));
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
@@ -296,7 +296,7 @@ function App() {
     {},
   );
   const [tokenIn, setTokenIn] = useState(() => {
-    if (activeTab == 'send') {
+    if (location.pathname.slice(1) == 'send') {
       const token = searchParams.get('token');
       if (token && tokendict[getAddress(token)]) {
         return getAddress(token);
@@ -326,7 +326,7 @@ function App() {
   });
   const [tokenOut, setTokenOut] = useState(() => {
     let tokenIn =
-      activeTab == 'send'
+      location.pathname.slice(1) == 'send'
         ? searchParams.get('token')
         : searchParams.get('tokenIn');
     let tokenOut = searchParams.get('tokenOut');
@@ -338,7 +338,7 @@ function App() {
           return tokenOut;
         } else {
           const path = findShortestPath(tokenIn, tokenOut);
-          if (path && path.length > 1 && activeTab == 'swap') {
+          if (path && path.length > 1 && location.pathname.slice(1) == 'swap') {
             return tokenOut;
           } else {
             for (const market in markets) {
@@ -483,7 +483,7 @@ function App() {
     return BigInt(0);
   });
   const [amountOutSwap, setamountOutSwap] = useState(() => {
-    if (activeTab == 'swap' || activeTab == 'market') {
+    if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount) {
         setswitched(true);
@@ -507,7 +507,7 @@ function App() {
     return '';
   });
   const [outputString, setoutputString] = useState(() => {
-    if (activeTab == 'swap' || activeTab == 'market') {
+    if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount && Number(amount) > 0) {
         return customRound(
@@ -586,6 +586,7 @@ function App() {
     tokenBalances,
     setTotalAccountValue,
     marketsData,
+    (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
@@ -786,7 +787,15 @@ function App() {
 
   const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
     if (!client) {
-      return (await waitForTransactionReceipt(config, { hash: hash })).transactionHash
+      return await Promise.race([
+        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          txReceiptResolvers.delete(hash);
+          return r.transactionHash;
+        }),
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.set(hash, resolve);
+        }),
+      ]);
     }
     return hash
   }, [client])
@@ -1037,13 +1046,19 @@ function App() {
         ],
       },
     ],
-    query: { refetchInterval: simpleView ? 5000 : 1000, gcTime: 0 },
+    query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 700 : 5000, gcTime: 0 },
   });
 
   // fetch ref data
   const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
     batchSize: 0,
     contracts: [
+      {
+        address: settings.chainConfig[activechain].referralManager,
+        abi: CrystalReferralAbi as any,
+        functionName: 'addressToReferrer',
+        args: [address ?? '0x0000000000000000000000000000000000000000'],
+      },
       ...Array.from(
         new Set(
           Object.values(markets).map(
@@ -1136,7 +1151,7 @@ function App() {
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
-        blockNumber = '0x' + (parseInt(result[0].result, 16) - 10).toString(16);
+        blockNumber = '0x' + (parseInt(result[0].result, 16) - 5).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs(({ queue, set }: { queue: string[]; set: Set<string> }) => {
@@ -1157,6 +1172,11 @@ function App() {
                     }
                     queue.push(logIdentifier);
                     set.add(logIdentifier);
+                    const resolve = txReceiptResolvers.get(log['transactionHash']);
+                    if (resolve) {
+                      resolve();
+                      txReceiptResolvers.delete(log['transactionHash']);
+                    }
                     ordersChanged = true;
                     canceledOrdersChanged = true;
                     let _timestamp = parseInt(log['blockTimestamp'], 16);
@@ -1321,6 +1341,11 @@ function App() {
                       }
                       queue.push(logIdentifier);
                       set.add(logIdentifier);
+                      const resolve = txReceiptResolvers.get(log['transactionHash']);
+                      if (resolve) {
+                        resolve();
+                        txReceiptResolvers.delete(log['transactionHash']);
+                      }
                       let _timestamp = parseInt(log['blockTimestamp'], 16);
                       let _orderdata = log['data'].slice(258);
                       const marketKey = addresstoMarket[log['address']];
@@ -1582,7 +1607,7 @@ function App() {
         setTimeout(() => {
           setInterval(() => {
             self.postMessage('fetch');
-          }, 1000);
+          }, 700);
         }, 2000);
       `;
       
@@ -2114,6 +2139,9 @@ function App() {
   // referral data
   useEffect(() => {
     if (!refDataLoading && refData) {
+      setUsedRefAddress(
+        refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
+      );
       setClaimableFees(() => {
         let newFees = {};
         let totalFees = 0;
@@ -2141,34 +2169,34 @@ function App() {
             ) * quotePrice;
             if (!(newFees as any)[market.quoteAsset]) {
               (newFees as any)[market.quoteAsset] =
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex+1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex+1].result) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.quoteAsset] +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex+1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex+1].result) /
                 10 ** Number(market.quoteDecimals);
             }
 
             if (!(newFees as any)[market.baseAsset]) {
               (newFees as any)[market.baseAsset] =
-                Number(refData[baseIndex].result) /
+                Number(refData[baseIndex+1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex].result) * midValue) /
+                (Number(refData[baseIndex+1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.baseAsset] +=
-                Number(refData[baseIndex].result) /
+                Number(refData[baseIndex+1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex].result) * midValue) /
+                (Number(refData[baseIndex+1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             }
@@ -2535,7 +2563,7 @@ function App() {
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt]);
+  }, [data, activechain, isLoading, location.pathname.slice(1), dataUpdatedAt]);
 
   // update display values when loading is finished
   useEffect(() => {
@@ -2943,7 +2971,7 @@ function App() {
               }
               orders1: orderMaps(where:{caller: "${address}"}) {
                 id
-                batches(first: 1000, orderDirection: desc, orderBy: id) {
+                batches(first: 200, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000, where:{status: 2}) {
                     id
@@ -3377,7 +3405,7 @@ function App() {
         settradesloading(false);
         if (
           sendInputString === '' &&
-          activeTab === 'send' &&
+          location.pathname.slice(1) === 'send' &&
           amountIn &&
           BigInt(amountIn) != BigInt(0)
         ) {
@@ -3521,12 +3549,11 @@ function App() {
           : { amountIn }),
       });
     }
-  }, [tokenIn, tokenOut, activeTab, amountIn, amountOutSwap, switched]);
+  }, [tokenIn, tokenOut, location.pathname.slice(1), amountIn, amountOutSwap, switched]);
 
   // update active tab
   useEffect(() => {
     const path = location.pathname.slice(1);
-    setActiveTab(path);
     if (path === 'swap') {
       setSimpleView(true);
     } else if (path === 'market') {
@@ -3874,6 +3901,7 @@ function App() {
   const [usernameError, setUsernameError] = useState("");
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
+  const backAudioRef = useRef<HTMLAudioElement>(null);
 
   const isValidInput = (value: string) => {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
@@ -4076,6 +4104,7 @@ function App() {
       setIsUsernameSigning(false);
     }
   };
+
   const handleEditUsername = async () => {
     setUsernameError("");
 
@@ -4153,6 +4182,7 @@ function App() {
       setIsUsernameSigning(false);
     }
   };
+
   const handleSkipUsername = () => {
     audio.currentTime = 0;
     audio.play();
@@ -4167,7 +4197,6 @@ function App() {
     });
   };
 
-  const backAudioRef = useRef<HTMLAudioElement>(null);
   const handleBackClick = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
@@ -4175,6 +4204,7 @@ function App() {
     }
     handleBack();
   };
+
   const handleBackToUsernameWithAudio = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
@@ -4182,6 +4212,7 @@ function App() {
     }
     handleBackToUsername();
   };
+
   useEffect(() => {
     const fetchUsername = async () => {
       try {
@@ -4309,7 +4340,7 @@ function App() {
                   settokenString('');
                   setTokenIn(token.address);
                   setStateIsLoading(true);
-                  if (activeTab == 'swap' || activeTab == 'market') {
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
                     if (token.address !== tokenOut) {
                       if (
                         markets[
@@ -4322,7 +4353,7 @@ function App() {
                         newTokenOut = tokenOut;
                       } else {
                         const path = findShortestPath(token.address, tokenOut);
-                        if (path && path.length > 1 && (activeTab == 'swap' || activeTab == 'market')) {
+                        if (path && path.length > 1 && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
                           newTokenOut = tokenOut;
                         } else {
                           let found = false;
@@ -4519,7 +4550,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'limit') {
+                  } else if (location.pathname.slice(1) == 'limit') {
                     if (token.address != tokenOut) {
                       if (
                         markets[
@@ -4650,7 +4681,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'send') {
+                  } else if (location.pathname.slice(1) == 'send') {
                     setlimitChase(true);
                     if (token.address == tokenOut && multihop == false) {
                       setTokenOut(tokenIn);
@@ -4802,7 +4833,7 @@ function App() {
                           `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
                       }
                     }
-                  } else if (activeTab == 'scale') {
+                  } else if (location.pathname.slice(1) == 'scale') {
                     if (token.address != tokenOut) {
                       if (
                         markets[
@@ -5034,7 +5065,7 @@ function App() {
                   settokenString('');
                   setTokenOut(token.address);
                   setStateIsLoading(true);
-                  if (activeTab == 'swap' || activeTab == 'market') {
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -5224,7 +5255,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'limit') {
+                  } else if (location.pathname.slice(1) == 'limit') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -5359,7 +5390,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'scale') {
+                  } else if (location.pathname.slice(1) == 'scale') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -7735,11 +7766,11 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'market' || location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
             onClick={(e) => {
               if ((location.pathname === '/swap' && simpleView) ||
                 (location.pathname === '/market' && !simpleView)) {
@@ -7751,7 +7782,7 @@ function App() {
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -7759,7 +7790,7 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab === 'send' || activeTab === 'scale' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'send' || location.pathname.slice(1) === 'scale' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
@@ -9194,17 +9225,17 @@ function App() {
   // limit ui component
   const limit = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
             onClick={(e) => {
               if (location.pathname === '/limit') {
                 e.preventDefault();
@@ -9217,7 +9248,7 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
@@ -10743,17 +10774,17 @@ function App() {
   // send ui component
   const send = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -10761,7 +10792,7 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
@@ -11421,17 +11452,17 @@ function App() {
   // scale ui component
   const scale = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -11439,7 +11470,7 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
@@ -12778,7 +12809,7 @@ function App() {
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
       {windowWidth <= 1020 &&
         !simpleView &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(activeTab) && (
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
           <>
             <button
               className="mobile-trade-button"
@@ -12808,7 +12839,7 @@ function App() {
               <img src={mobiletradeswap} className="trade-mobile-switch" />
             </button>
             <div className={`right-column ${showTrade ? 'show' : ''}`}>
-              {activeTab == 'swap' || activeTab == 'market' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
+              {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
             </div>
           </>
         )}

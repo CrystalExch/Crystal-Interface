@@ -50,6 +50,7 @@ const Referrals: React.FC<ReferralProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
+  usedRefAddress,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -134,28 +135,15 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToReferrer',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
-        ],
-      })) as any[];
-      setRefLink(refs[0].result);
-      setUsedRefAddress(
-        refs[1].result || '0x0000000000000000000000000000000000000000',
-      );
-      const find = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
             args: [
-              refs[1].result ?? '0x0000000000000000000000000000000000000000',
+              usedRefAddress ?? '0x0000000000000000000000000000000000000000',
             ],
           },
         ],
       })) as any[];
-      setUsedRefLink(find[0].result);
+      setRefLink(refs[0].result);
+      setUsedRefLink(refs[1].result);
     })();
 
     if (!address) {

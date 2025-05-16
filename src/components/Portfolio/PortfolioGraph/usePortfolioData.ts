@@ -17,6 +17,7 @@ export const usePortfolioData = (
   tokenBalances: any,
   setTotalAccountValue: any,
   marketsData: any,
+  shouldFetchGraph: boolean,
 ): PortfolioData => {
   const [state, setState] = useState<PortfolioData>({
     chartData: [],
@@ -159,10 +160,11 @@ export const usePortfolioData = (
         if (marketsData.length > 0) {
           isFetching = true;
           const balanceResults = await (async () => {
-            if (!address) return {};
+            if (!address || !shouldFetchGraph) return {};
         
             try {
               const startblock = await getBlockNumber(config);
+              await new Promise(resolve => setTimeout(resolve, 1000));
               const dateRange = generateDateRange();
               const results: Record<string, any> = {};
               const simplifiedTokenList = tokenList.map((token) => ({
@@ -171,7 +173,7 @@ export const usePortfolioData = (
                 decimals: token.decimals,
               }));
         
-              const batchSize = 1;
+              const batchSize = 3;
               for (let i = 0; i < dateRange.length; i += batchSize) {
                 if (!isFetching) return;
                 const batch = dateRange.slice(i, i + batchSize);
@@ -228,7 +230,7 @@ export const usePortfolioData = (
                 });
         
                 if (i + batchSize < dateRange.length) {
-                  await new Promise((resolve) => setTimeout(resolve, 100));
+                  await new Promise((resolve) => setTimeout(resolve, 600));
                 }
               }
         
@@ -254,10 +256,11 @@ export const usePortfolioData = (
         setState((prev) => ({ ...prev, portChartLoading: false }));
       }
     };
+    
     fetchData();
 
     return () => { isFetching = false; };
-  }, [address, chartDays, marketsData.length]);
+  }, [shouldFetchGraph, address, chartDays, marketsData.length]);
 
   return state;
 };
