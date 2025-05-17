@@ -4160,7 +4160,7 @@ function App() {
           ]
         });
 
-        if (read[0]?.result?.length) {
+        if (read[0]?.result?.length != null) {
           setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
           setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "")
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
