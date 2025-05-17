@@ -8,6 +8,7 @@ import { TokenAbi } from '../../../abis/TokenAbi';
 import {
   readContracts,
 } from '@wagmi/core'
+import normalizeTicker from '../../../utils/normalizeTicker';
 import { settings } from '../../../settings';
 import { config } from '../../../wagmi';
 import { maxUint256 } from 'viem';
@@ -360,7 +361,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       container: chartRef.current,
       library_path: '/charting_library/',
       autosize: true,
-      symbol: `${activeMarket.baseAsset}/${activeMarket.quoteAsset}`,
+      symbol: `${normalizeTicker(activeMarket.baseAsset, activechain)}/${normalizeTicker(activeMarket.quoteAsset, activechain)}`,
       interval: '5',
       timezone: 'Etc/UTC',
       locale: 'en',
@@ -547,7 +548,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
     widgetRef.current.onChartReady(() => {
       setChartReady(true)
-      const marketId = `${activeMarketRef.current.baseAsset}_${activeMarketRef.current.quoteAsset}`;
+      const marketId = `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}_${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`;
       const chartId = `layout_${marketId}`;
       localAdapterRef.current
         ?.getChartContent(chartId)
@@ -580,8 +581,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           };
 
           const chartData = {
-            symbol: `${activeMarketRef.current.baseAsset}/${activeMarketRef.current.quoteAsset}`,
-            name: `chart for ${activeMarketRef.current.baseAsset}/${activeMarketRef.current.quoteAsset}`,
+            symbol: `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
+            name: `chart for ${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
             content: JSON.stringify(layout),
             id: undefined,
             resolution: selectedInterval,
@@ -620,7 +621,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       if (chartReady) {
         setOverlayVisible(true);
         widgetRef.current.setSymbol(
-          `${activeMarketRef.current.baseAsset}/${activeMarketRef.current.quoteAsset}`,
+          `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
           selectedInterval === '1d'
             ? '1D'
             : selectedInterval === '4h'
@@ -817,8 +818,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
     catch(e) {
     }
   }, [
-    activeMarket.quoteAsset,
-    activeMarket.baseAsset,
+    normalizeTicker(activeMarket.quoteAsset, activechain),
+    normalizeTicker(activeMarket.baseAsset, activechain),
     activeMarket.priceFactor,
     selectedInterval,
   ]);
