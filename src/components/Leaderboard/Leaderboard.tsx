@@ -35,6 +35,7 @@ interface LeaderboardProps {
   setpopup?: (value: number) => void;
   orders: any[];
   address: any;
+  username: any;
 }
 
 const ITEMS_FIRST_PAGE = 47;
@@ -44,6 +45,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   setpopup = () => {},
   orders,
   address,
+  username,
 }) => {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -221,7 +223,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 </div>
                 <div className="column-content">
                   <span className="leaderboard-user-address">
-                    @{overview!.username || getDisplayAddress(overview!.address)}
+                    @{username || overview!.username || getDisplayAddress(overview!.address)}
                     <CopyButton textToCopy={overview!.address} />
                   </span>
                 </div>
@@ -281,7 +283,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 </div>
               ))
           : overview!.top_three.map((f, i) => {
-              const displayName =
+              const displayName = overview!.address === f.address ? username || overview!.username || getDisplayAddress(overview!.address) : 
                 f.username && f.username !== f.address
                   ? f.username
                   : getDisplayAddress(f.address);
@@ -351,11 +353,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   </div>
                 ))
             : Object.entries(overview!.page).map(
-                ([addr, [username, boosted, referral]], idx) => {
+                ([addr, [_username, boosted, referral]], idx) => {
                   const total = boosted + referral;
-                  const displayName =
-                    username && username !== addr
-                      ? username
+                  const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) : 
+                  _username && _username !== addr
+                      ? _username
                       : getDisplayAddress(addr);
 
                   const startIndex =

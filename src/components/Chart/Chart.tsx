@@ -5,7 +5,7 @@ import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
 import ChartCanvas from './ChartCanvas/ChartCanvas';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
-
+import normalizeTicker from '../../utils/normalizeTicker.ts';
 import { settings } from '../../settings.ts';
 import { formatCommas } from '../../utils/numberDisplayFormat.ts';
 import {
@@ -238,8 +238,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   };
 
   useEffect(() => {
-    updateCandlestickData(selectedInterval, trades, activeMarket.baseAsset);
-  }, [selectedInterval, activeMarket.baseAsset]);
+    updateCandlestickData(selectedInterval, trades, normalizeTicker(activeMarket.baseAsset, activechain));
+  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain)]);
 
   useEffect(() => {
     if (!marketsData || !activeMarket) return;

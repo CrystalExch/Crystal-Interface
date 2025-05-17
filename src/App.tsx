@@ -669,7 +669,6 @@ function App() {
     set: new Set(),
   });
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [originalUsername, setOriginalUsername] = useState('');
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
@@ -1690,7 +1689,7 @@ function App() {
       refocusSearchInput();
     }
   };
-
+  
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -2372,8 +2371,6 @@ function App() {
   useEffect(() => {
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
-        setStateIsLoading(false);
-        setstateloading(false);
         if (data?.[1]?.result != null) {
           setallowance(data[1].result);
         }
@@ -2404,7 +2401,9 @@ function App() {
           }
           setTokenBalances(tempbalances);
         }
-        if (data?.[0]?.result) {
+        if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
+          setStateIsLoading(false);
+          setstateloading(false);
           if (switched == false && !isWrap) {
             const outputValue = BigInt(data[0].result?.at(-1) || BigInt(0));
             setamountOutSwap(outputValue);
@@ -3911,6 +3910,7 @@ function App() {
   const [usernameError, setUsernameError] = useState("");
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
+  const [username, setUsername] = useState('')
   const backAudioRef = useRef<HTMLAudioElement>(null);
 
   const isValidInput = (value: string) => {
@@ -4038,97 +4038,20 @@ function App() {
     }, 300);
   };
 
-  const handleCreateUsername = async () => {
+  const handleEditUsername = async (_usernameInput: any) => {
     setUsernameError("");
 
-
-    if (usernameInput.length < 3) {
+    if (_usernameInput.length < 3) {
       setUsernameError(t("minUsernameLength"));
       return;
     }
 
-    if (usernameInput.length > 20) {
+    if (_usernameInput.length > 20) {
       setUsernameError(t("maxUsernameLength"));
       return;
     }
 
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-      setUsernameError(t("usernameFilter"));
-      return;
-    }
-
-    setIsUsernameSigning(true);
-
-    try {
-      const read = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'usernameToAddress',
-            args: [usernameInput],
-          },
-        ]
-      })) as any[];
-
-      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError(t("usernameAlreadyTaken"));
-        setIsUsernameSigning(false);
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsername',
-            args: [
-              usernameInput
-            ],
-          }),
-          value: 0n,
-        },
-      });
-
-      await waitForTxReceipt(hash.hash);
-
-      audio.currentTime = 0;
-      audio.play();
-      setIsTransitioning(true);
-      setTransitionDirection('forward');
-      setTimeout(() => {
-        setpopup(17);
-        setCurrentStep(0);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setJustEntered(true);
-        });
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsUsernameSigning(false);
-    }
-  };
-
-  const handleEditUsername = async () => {
-    setUsernameError("");
-
-    if (usernameInput.length < 3) {
-      setUsernameError(t("minUsernameLength"));
-      return;
-    }
-
-    if (usernameInput.length > 20) {
-      setUsernameError(t("maxUsernameLength"));
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+    if (!/^[a-zA-Z0-9_]+$/.test(_usernameInput)) {
       setUsernameError("Username can only contain letters, numbers, and underscores");
       return;
     }
@@ -4142,7 +4065,7 @@ function App() {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'usernameToAddress',
-            args: [usernameInput],
+            args: [_usernameInput],
           },
         ]
       })) as any[];
@@ -4160,7 +4083,7 @@ function App() {
             abi: CrystalReferralAbi,
             functionName: 'setUsername',
             args: [
-              usernameInput
+              _usernameInput
             ],
           }),
           value: 0n,
@@ -4168,7 +4091,7 @@ function App() {
       });
 
       await waitForTxReceipt(hash.hash);
-
+      setUsername(_usernameInput);
       audio.currentTime = 0;
       audio.play();
       if (popup == 16) {
@@ -4239,6 +4162,7 @@ function App() {
 
         if (read[0]?.result?.length) {
           setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "")
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
               setpopup(15);
@@ -4247,7 +4171,6 @@ function App() {
               });
             });
           }
-          setOriginalUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
         }
       } catch (error) {
         console.error("Failed to fetch username:", error);
@@ -7334,7 +7257,7 @@ function App() {
 
           </div>)}
                   <div
-                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!originalUsername || transitionDirection == 'backward')
+                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!username || transitionDirection == 'backward')
                         ? 'active'
                         : ''
                       } ${justEntered ? 'entering' : ''}`}
@@ -7344,10 +7267,10 @@ function App() {
                         <div className="onboarding-content">
                           <div className="onboarding-header">
                             <h2 className="onboarding-title">
-                              {originalUsername ? 'Edit Name' : 'Enter a Name'}
+                              {username ? 'Edit Name' : 'Enter a Name'}
                             </h2>
                             <p className="onboarding-subtitle">
-                              {originalUsername
+                              {username
                                 ? 'Update the name that appears on the leaderboard.'
                                 : 'This username will be visible on the leaderboard to all.'}
                             </p>
@@ -7381,21 +7304,21 @@ function App() {
                             className={`create-username-button ${isUsernameSigning ? 'signing' : ''
                               } ${!usernameInput.trim() ? 'disabled' : ''}`}
                             onClick={async () => {
-                              if (!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername) return;
-                              await (usernameInput ? handleEditUsername() : handleCreateUsername());
+                              if (!usernameInput.trim() || isUsernameSigning || usernameInput === username) return;
+                              await handleEditUsername(usernameInput)
                             }}
-                            disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername}
+                            disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === username}
                           >
                             {isUsernameSigning ? (
                               <div className="button-content">
                                 <div className="loading-spinner" />
                                 {t('signTransaction')}
                               </div>
-                            ) : originalUsername ? t('editUsername') : 'Create Username'}
+                            ) : username ? t('editUsername') : 'Create Username'}
                           </button>
                         </div>
 
-                        {(!usernameInput || originalUsername !== '') && (
+                        {(!usernameInput || username !== '') && (
                           <>
                             <div className="onboarding-actions">
                               <button
@@ -7749,7 +7672,7 @@ function App() {
                     className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
                     onClick={async () => {
                       if (!usernameInput.trim() || isUsernameSigning) return;
-                      await handleEditUsername();
+                      await handleEditUsername(usernameInput);
                     }}
                     disabled={!usernameInput.trim() || isUsernameSigning}
                   >
@@ -12938,6 +12861,7 @@ function App() {
                 setpopup={setpopup}
                 orders={orders}
                 address={address}
+                username={username}
               />
             }
           />
