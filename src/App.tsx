@@ -678,7 +678,6 @@ function App() {
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
-  const blurref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialMousePosRef = useRef(0);
@@ -3898,22 +3897,6 @@ function App() {
       setpopup(12);
     }
 
-    if (popupref.current && blurref.current) {
-      const updateBlurSize = () => {
-        if (popupref.current && blurref.current) {
-          const { offsetWidth, offsetHeight } = popupref.current;
-          blurref.current.style.width = `${offsetWidth}px`;
-          blurref.current.style.height = `${offsetHeight}px`;
-        }
-      };
-
-      updateBlurSize();
-
-      const resizeObserver = new ResizeObserver(updateBlurSize);
-      resizeObserver.observe(popupref.current);
-
-      return () => resizeObserver.disconnect();
-    }
   }, [popup, connected, user != null, loading]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -5606,7 +5589,6 @@ function App() {
   //popup modals
   const Modals = (
     <>
-      {popup ? <div ref={blurref} className="popup-blur"></div> : <></>}
       <div className={`blur-background-popups ${popup != 0 ? 'active' : ''}`}>
         {popup === 1 ? ( // token select
           <div ref={popupref} className="tokenselectbg">

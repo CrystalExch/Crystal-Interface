@@ -1029,19 +1029,6 @@ body:has(.right-column.show) .blur-background-popups {
   z-index: 11 !important;
 }
 
-
-.popup-blur {
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  backdrop-filter: blur(10px);
-  border-radius: 8px;
-  position: absolute;
-  z-index: 11;
-  animation: fadeIn .2s ease-out forwards;
-  box-shadow: 0 4px 8px #0003;
-}
-
 .connect-wallet-background.connected {
   border-radius: 8px;
   box-shadow: 0 4px 30px rgb(0 0 0/10%);
@@ -1049,7 +1036,7 @@ body:has(.right-column.show) .blur-background-popups {
   left: 50%;
   overflow: hidden;
   position: fixed;
-  padding: 14px 14px 4px;
+  padding: 14px 10px 4px 10px;
   top: 50%;
   width: min(480px, 90vw);
 }
@@ -1078,7 +1065,7 @@ body:has(.right-column.show) .blur-background-popups {
 .portfolio-content-popup {
   height: 128px;
   margin-top: 6px;
-  margin-left: -8px;
+  margin-left: -11px;
   overflow: auto;
   -ms-overflow-style: auto;
   scrollbar-width: none;
@@ -2925,7 +2912,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transition: opacity.2s ease-out;
   border: 1.5px solid #1a1a1d7d;
   box-sizing: content-box;
-  background: #19191c80;
+  background: #0f0f10;
 }
 
 
@@ -3349,7 +3336,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .search-markets-dropdown-popup {
   border-radius: 8px;
-  background: #19191c80;
+  background: #0f0f10;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   left: 50%;
   overflow: hidden;
@@ -3814,7 +3801,7 @@ body:has(.popup-blur) {
   border: 1.5px solid #1a1a1de8 !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
-  background-color: #19191c80 !important;
+  background-color: #0f0f10 !important;
   backdrop-filter: blur(10px);
   max-width: 300px !important;
 }
@@ -4017,7 +4004,7 @@ input[type="email"] {
   flex-direction: column;
   border: 1.5px solid #1a1a1d7d;
   box-sizing: content-box;
-  background: #19191c80;
+  background: #0f0f10;
   border-radius: 8px;
   padding: 20px 0px;
   text-align: center;
@@ -4123,12 +4110,10 @@ input[type="email"] {
   padding: 15px;
   gap: 8px;
   box-sizing: content-box;
-  background: #19191c80;
+  background: #0f0f10;
   display: flex;
   flex-direction: column;
   border: 1.5px solid #1a1a1d7d;
-  box-sizing: content-box;
-  background: #19191c80;
   text-align: center;
   animation: fadeIn.2s ease-out;
   transform: translate(-50%, -50%);
