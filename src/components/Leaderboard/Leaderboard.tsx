@@ -66,7 +66,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const loading = !overview;
   const placeholderCount = (loading || paginationLoading)
     ? (paginationLoading && prevPageRef.current === 0 && currentPage === 1
-      ? ITEMS_FIRST_PAGE
+      ? ITEMS_OTHER_PAGES
       : currentPage === 0
         ? ITEMS_FIRST_PAGE
         : ITEMS_OTHER_PAGES)
@@ -128,12 +128,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     return () => clearInterval(t);
   }, []);
   useEffect(() => {
-    if (!paginationLoading && manualPaging && rowsRef.current) {
+    if (manualPaging && rowsRef.current) {
       const rows = rowsRef.current.querySelectorAll<HTMLElement>('.leaderboard-row');
       if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior: 'auto' });
       setManualPaging(false);
     }
-  }, [paginationLoading, manualPaging]);
+  }, [manualPaging]);
 
   const handleConnectWallet = () => setpopup(4);
 
@@ -379,7 +379,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="header-bonus">{t('totalXP')}</div>
         </div>
 
-<div
+        <div
   ref={rowsRef}
   className={`leaderboard-rows ${paginationLoading ? 'is-loading' : ''}`}
 >
