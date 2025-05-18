@@ -1183,8 +1183,7 @@
 }
 
 .leaderboard-xp-amount .number-roller .digit-roller-container {
-  min-width: 0.45em;
-  letter-spacing: -0.5px;
+  min-width: 0.6em;
 }
 
 .column-content .number-roller,
@@ -1193,15 +1192,4 @@
   font-size: inherit;
   font-weight: inherit;
   color: inherit;
-}
-
-/* For mobile responsiveness */
-@media (max-width: 768px) {
-  .digit-roller-container {
-    min-width: 0.5em;
-  }
-  
-  .leaderboard-xp-amount .number-roller .digit-roller-container {
-    min-width: 0.4em;
-  }
 }
