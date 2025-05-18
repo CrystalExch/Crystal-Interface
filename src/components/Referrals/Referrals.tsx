@@ -316,11 +316,9 @@ const Referrals: React.FC<ReferralProps> = ({
       !account.connected ? setpopup(4) : setChain();
     }
   };
-
-  const displayName = username && username.trim() !== '' 
-    ? username 
-    : getDisplayAddress(address || '');
-
+const displayName = username && username.trim() !== '' 
+  ? (username.startsWith('0x') ? getDisplayAddress(username) : username)
+  : getDisplayAddress(address || '');
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">

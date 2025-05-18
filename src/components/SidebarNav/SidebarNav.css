@@ -27,6 +27,7 @@
   padding-top: 10px;
   background: #0f0f12;
   transition: width 0.3s ease;
+  overflow: hidden;
 }
 
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import crystalxp from '../../assets/CrystalX.png';
 import arrow from '../../assets/arrow.svg';
 import CrownIcon from '../../assets/crownicon.png';
@@ -42,7 +42,7 @@ const ITEMS_FIRST_PAGE = 47;
 const ITEMS_OTHER_PAGES = 50;
 
 const Leaderboard: React.FC<LeaderboardProps> = ({
-  setpopup = () => {},
+  setpopup = () => { },
   orders,
   address,
   username,
@@ -55,12 +55,31 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     minutes: 0,
     seconds: 0,
   });
+  const [paginationLoading, setPaginationLoading] = useState(false);
+  const [manualPaging, setManualPaging] = useState(false);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const prevPageRef = useRef<number>(currentPage);
 
+  useEffect(() => {
+    prevPageRef.current = currentPage;
+  }, [currentPage]);
   const loading = !overview;
+  const placeholderCount = (loading || paginationLoading)
+    ? (paginationLoading && prevPageRef.current === 0 && currentPage === 1
+      ? ITEMS_FIRST_PAGE
+      : currentPage === 0
+        ? ITEMS_FIRST_PAGE
+        : ITEMS_OTHER_PAGES)
+    : 0;
 
+  
   useEffect(() => {
     if (!address) return;
     let mounted = true;
+
+    if (overview) {
+      setPaginationLoading(true);
+    }
 
     const fetchOverview = () => {
       fetch(
@@ -73,9 +92,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         .then((data) => {
           if (!mounted) return;
           setOverview(data);
+          setPaginationLoading(false);
         })
         .catch((err) => {
           console.error('fetch overview error', err);
+          setPaginationLoading(false);
         });
     };
 
@@ -106,35 +127,54 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
     const t = setInterval(calculate, 1000);
     return () => clearInterval(t);
   }, []);
+  useEffect(() => {
+    if (!paginationLoading && manualPaging && rowsRef.current) {
+      const rows = rowsRef.current.querySelectorAll<HTMLElement>('.leaderboard-row');
+      if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior: 'auto' });
+      setManualPaging(false);
+    }
+  }, [paginationLoading, manualPaging]);
 
   const handleConnectWallet = () => setpopup(4);
 
   const totalPages = overview
     ? (() => {
-        const totalUsers = overview.wallets_above_0_01;
-        const afterTop3 = Math.max(totalUsers - 3, 0);
-        if (afterTop3 <= ITEMS_FIRST_PAGE) return 1;
-        return 1 + Math.ceil((afterTop3 - ITEMS_FIRST_PAGE) / ITEMS_OTHER_PAGES);
-      })()
+      const totalUsers = overview.wallets_above_0_01;
+      const afterTop3 = Math.max(totalUsers - 3, 0);
+      if (afterTop3 <= ITEMS_FIRST_PAGE) return 1;
+      return 1 + Math.ceil((afterTop3 - ITEMS_FIRST_PAGE) / ITEMS_OTHER_PAGES);
+    })()
     : 1;
 
   const goToPreviousPage = () => {
-    if (currentPage > 0) setCurrentPage((p) => p - 1);
+    if (currentPage > 0) {
+    setManualPaging(true);
+     setPaginationLoading(true);
+      setCurrentPage((p) => p - 1);
+    }
   };
+
   const goToNextPage = () => {
-    if (overview && currentPage < totalPages - 1) setCurrentPage((p) => p + 1);
+    if (overview && currentPage < totalPages - 1) {
+      setManualPaging(true);
+      setPaginationLoading(true);
+      setCurrentPage((p) => p + 1);
+    }
   };
 
   const goToUserPosition = () => {
     if (!overview) return;
     const r = overview.rank;
+
     if (r <= 3) {
+      setPaginationLoading(true);
       setCurrentPage(0);
       setTimeout(
-        () =>
+        () => {
           document
             .querySelector('.leaderboard-banner')
-            ?.scrollIntoView({ behavior: 'smooth' }),
+            ?.scrollIntoView({ behavior: 'smooth' });
+        },
         100
       );
     } else {
@@ -142,12 +182,18 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       if (r > 3 + ITEMS_FIRST_PAGE) {
         page = 1 + Math.floor((r - (3 + ITEMS_FIRST_PAGE) - 1) / ITEMS_OTHER_PAGES);
       }
-      setCurrentPage(page);
+
+      if (currentPage !== page) {
+        setPaginationLoading(true);
+        setCurrentPage(page);
+      }
+
       setTimeout(
-        () =>
+        () => {
           document
             .querySelector('.current-user-row')
-            ?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
         200
       );
     }
@@ -223,9 +269,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 </div>
                 <div className="column-content">
                   <span className="leaderboard-user-address">
-                    @{username || overview!.username || getDisplayAddress(overview!.address)}
+                    @{username && username.trim() !== ''
+                      ? (username.startsWith('0x') ? getDisplayAddress(username) : username)
+                      : overview!.username && overview!.username.trim() !== ''
+                        ? (overview!.username.startsWith('0x') ? getDisplayAddress(overview!.username) : overview!.username)
+                        : getDisplayAddress(overview!.address)}
                     <CopyButton textToCopy={overview!.address} />
                   </span>
+
+
                 </div>
               </div>
               <div className="column-divider" />
@@ -264,62 +316,61 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="top-factions">
         {loading
           ? Array(3)
-              .fill(0)
-              .map((_, i) => (
-                <div key={i} className={`faction-card rank-${i + 1}`}>
-                  {i === 0 && (
-                    <div className="crown-icon-container">
-                      <img src={CrownIcon} className="crown-icon" />
-                    </div>
-                  )}
-                  <div className="faction-rank">{i + 1}</div>
-                  <div className="faction-info">
-                    <div className="pfp-container">
-                      <div className="pfp-loading account-loading-animation" />
-                    </div>
-                    <div className="account-top-name-loading account-loading-animation" />
-                    <div className="account-top-xp-loading account-loading-animation" />
+            .fill(0)
+            .map((_, i) => (
+              <div key={i} className={`faction-card rank-${i + 1}`}>
+                {i === 0 && (
+                  <div className="crown-icon-container">
+                    <img src={CrownIcon} className="crown-icon" />
                   </div>
+                )}
+                <div className="faction-rank">{i + 1}</div>
+                <div className="faction-info">
+                  <div className="pfp-container">
+                    <div className="pfp-loading account-loading-animation" />
+                  </div>
+                  <div className="account-top-name-loading account-loading-animation" />
+                  <div className="account-top-xp-loading account-loading-animation" />
                 </div>
-              ))
+              </div>
+            ))
           : overview!.top_three.map((f, i) => {
-              const displayName = overview!.address === f.address ? username || overview!.username || getDisplayAddress(overview!.address) : 
-                f.username && f.username !== f.address
-                  ? f.username
-                  : getDisplayAddress(f.address);
-              return (
-                <div
-                  key={f.address}
-                  className={`faction-card rank-${i + 1} ${
-                    overview!.address === f.address ? 'user-faction' : ''
+            const displayName = overview!.address === f.address ? username || overview!.username || getDisplayAddress(overview!.address) :
+              f.username && f.username !== f.address
+                ? f.username
+                : getDisplayAddress(f.address);
+            return (
+              <div
+                key={f.address}
+                className={`faction-card rank-${i + 1} ${overview!.address === f.address ? 'user-faction' : ''
                   }`}
-                >
-                  {i === 0 && (
-                    <div className="crown-icon-container">
-                      <img src={CrownIcon} className="crown-icon" />
-                    </div>
-                  )}
-                  <div className="faction-rank">{i + 1}</div>
-                  <div className="faction-info">
-                    <div className="pfp-container">
-                      <img src={[firstPlacePfp, secondPlacePfp, thirdPlacePfp][i]} className="pfp-image" />
-                    </div>
-                    <div className="faction-name">
-                      {displayName}
-                      <div className="copy-button-wrapper">
-                        <CopyButton textToCopy={f.address} />
-                      </div>
-                    </div>
-                    <div className="faction-xp">
-                      {f.total_points < 0.001
-                        ? '<0.001'
-                        : f.total_points.toLocaleString()}
-                      <img src={crystalxp} className="top-xp-icon" />
+              >
+                {i === 0 && (
+                  <div className="crown-icon-container">
+                    <img src={CrownIcon} className="crown-icon" />
+                  </div>
+                )}
+                <div className="faction-rank">{i + 1}</div>
+                <div className="faction-info">
+                  <div className="pfp-container">
+                    <img src={[firstPlacePfp, secondPlacePfp, thirdPlacePfp][i]} className="pfp-image" />
+                  </div>
+                  <div className="faction-name">
+                    {displayName}
+                    <div className="copy-button-wrapper">
+                      <CopyButton textToCopy={f.address} />
                     </div>
                   </div>
+                  <div className="faction-xp">
+                    {f.total_points < 0.001
+                      ? '<0.001'
+                      : f.total_points.toLocaleString()}
+                    <img src={crystalxp} className="top-xp-icon" />
+                  </div>
                 </div>
-              );
-            })}
+              </div>
+            );
+          })}
       </div>
 
       <div className="full-leaderboard">
@@ -328,91 +379,90 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="header-bonus">{t('totalXP')}</div>
         </div>
 
-        <div className="leaderboard-rows">
-          {loading
-            ? Array(
-                (currentPage === 0 ? ITEMS_FIRST_PAGE : ITEMS_OTHER_PAGES)
-              )
-                .fill(0)
-                .map((_, i) => (
-                  <div key={i} className="leaderboard-row">
-                    <div className="leaderboard-inner-row">
-                      <div className="row-rank">
-                        <span className="loading-placeholder" />
+<div
+  ref={rowsRef}
+  className={`leaderboard-rows ${paginationLoading ? 'is-loading' : ''}`}
+>
+  {(loading || paginationLoading)
+    ? Array(placeholderCount).fill(0).map((_, i) => (
+        <div key={i} className="leaderboard-row">
+                <div className="leaderboard-inner-row">
+                  <div className="row-rank">
+                    <span className="loading-placeholder" />
+                  </div>
+                  <div className="row-faction">
+                    <div className="row-pfp-container">
+                      <div className="row-pfp-loading loading-placeholder" />
+                    </div>
+                    <span className="faction-row-name loading-placeholder" />
+                  </div>
+                  <div className="row-xp">
+                    <div className="leaderboard-xp-amount loading-placeholder" />
+                  </div>
+                </div>
+              </div>
+            ))
+          : Object.entries(overview!.page).map(
+            ([addr, [_username, boosted, referral]], idx) => {
+              const total = boosted + referral;
+              const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) :
+                _username && _username !== addr
+                  ? _username
+                  : getDisplayAddress(addr);
+
+              const startIndex =
+                currentPage === 0
+                  ? 3
+                  : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
+              const rank = startIndex + idx + 1;
+
+              const isCurrent = addr === overview!.address;
+
+              return (
+                <div
+                  key={addr}
+                  className={`leaderboard-row ${isCurrent ? 'current-user-row' : ''
+                    }`}
+                >
+                  <div className="leaderboard-inner-row">
+                    <div className="row-rank">
+                      <span>#{rank}</span>
+                    </div>
+                    <div className="row-faction">
+                      <div className="row-pfp-container">
+                        <img src={defaultPfp} className="row-pfp-image" />
                       </div>
-                      <div className="row-faction">
-                        <div className="row-pfp-container">
-                          <div className="row-pfp-loading loading-placeholder" />
+                      <span className="faction-row-name">
+                        {displayName}
+                        <div className="copy-button-wrapper">
+                          <CopyButton textToCopy={addr} />
                         </div>
-                        <span className="faction-row-name loading-placeholder" />
+                      </span>
+                      <div className="user-self-tag">
+                        {isCurrent && orders.length > 0 && (
+                          <div className="orders-indicator-container">
+                            <div
+                              className="orders-indicator"
+                              title={`You have ${orders.length} open orders earning points`}
+                            />
+                          </div>
+                        )}
+                        {isCurrent && (
+                          <span className="current-user-tag">You</span>
+                        )}
                       </div>
-                      <div className="row-xp">
-                        <div className="leaderboard-xp-amount loading-placeholder" />
+                    </div>
+                    <div className="row-xp">
+                      <div className="leaderboard-xp-amount">
+                        {total < 0.001 ? '<0.001' : total.toLocaleString()}
+                        <img src={crystalxp} className="xp-icon" />
                       </div>
                     </div>
                   </div>
-                ))
-            : Object.entries(overview!.page).map(
-                ([addr, [_username, boosted, referral]], idx) => {
-                  const total = boosted + referral;
-                  const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) : 
-                  _username && _username !== addr
-                      ? _username
-                      : getDisplayAddress(addr);
-
-                  const startIndex =
-                    currentPage === 0
-                      ? 3
-                      : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
-                  const rank = startIndex + idx + 1;
-
-                  const isCurrent = addr === overview!.address;
-                  return (
-                    <div
-                      key={addr}
-                      className={`leaderboard-row ${
-                        isCurrent ? 'current-user-row' : ''
-                      }`}
-                    >
-                      <div className="leaderboard-inner-row">
-                        <div className="row-rank">
-                          <span>#{rank}</span>
-                        </div>
-                        <div className="row-faction">
-                          <div className="row-pfp-container">
-                            <img src={defaultPfp} className="row-pfp-image" />
-                          </div>
-                          <span className="faction-row-name">
-                            {displayName}
-                            <div className="copy-button-wrapper">
-                              <CopyButton textToCopy={addr} />
-                            </div>
-                          </span>
-                          <div className="user-self-tag">
-                            {isCurrent && orders.length > 0 && (
-                              <div className="orders-indicator-container">
-                                <div
-                                  className="orders-indicator"
-                                  title={`You have ${orders.length} open orders earning points`}
-                                />
-                              </div>
-                            )}
-                            {isCurrent && (
-                              <span className="current-user-tag">You</span>
-                            )}
-                          </div>
-                        </div>
-                        <div className="row-xp">
-                          <div className="leaderboard-xp-amount">
-                            {total < 0.001 ? '<0.001' : total.toLocaleString()}
-                            <img src={crystalxp} className="xp-icon" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-              )}
+                </div>
+              );
+            }
+          )}
         </div>
 
         <div className="pagination-controls">
@@ -428,7 +478,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <button
               className="pagination-arrow prev-arrow"
               onClick={goToPreviousPage}
-              disabled={currentPage === 0 || loading}
+              disabled={currentPage === 0 || loading || paginationLoading}
             >
               <img src={arrow} className="leaderboard-control-left-arrow" />
             </button>
@@ -440,7 +490,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <button
               className="pagination-arrow next-arrow"
               onClick={goToNextPage}
-              disabled={currentPage >= totalPages - 1 || loading}
+              disabled={currentPage >= totalPages - 1 || loading || paginationLoading}
             >
               <img src={arrow} className="leaderboard-control-right-arrow" />
             </button>

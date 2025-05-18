@@ -2910,7 +2910,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transform: translate(-50%, -50%);
   z-index: 12;
   transition: opacity.2s ease-out;
-  border: 1.5px solid #1a1a1d7d;
   box-sizing: content-box;
   background: #0f0f10;
 }
