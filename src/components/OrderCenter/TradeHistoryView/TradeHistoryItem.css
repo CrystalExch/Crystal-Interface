@@ -3,11 +3,11 @@
   color: #ffffffca;
   display: grid;
   grid-template-columns:
-  40px minmax(120px, 1fr) minmax(125px, 1.1fr) minmax(115px, 1fr)
+  40px minmax(120px, 1fr) minmax(125px, 1.1fr) minmax(100px, 1fr)
   minmax(90px, 0.9fr) minmax(125px, 1fr) minmax(100px, 0.3fr);
   justify-content: flex-start;
   border-radius: 4px;
-  min-width: 580px;
+  min-width: 700px;
   padding: 0;
   text-align: left;
   user-select: none;
