@@ -163,21 +163,38 @@ const CrystalObject = () => {
       }
       return meshes
     }
-
-    let delayOffset = 0
-    createSmallCrystals(5, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(5, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(5, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(5, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.25
-    createSmallCrystals(2 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    if (window.innerWidth < 1020) {
+      let delayOffset = 0
+      createSmallCrystals(3, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(0 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(1 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(1 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    }
+    else {
+      let delayOffset = 0
+      createSmallCrystals(5, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    }
 
     // Lighting
     scene.add(new THREE.AmbientLight(0x404040, 0.8))

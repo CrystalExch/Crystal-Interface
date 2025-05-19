@@ -4050,11 +4050,6 @@ const handleWelcomeTransition = () => {
     if (currentStep < 2) { setCurrentStep(c => c + 1); return; }
 
     setExitingChallenge(true);
-    setTimeout(() => {
-      localStorage.setItem('crystal_has_completed_onboarding', 'true');
-      setpopup(0);
-      setCurrentStep(0)
-    }, 300);
   };
 
   const handleEditUsername = async (_usernameInput: any) => {
@@ -4117,15 +4112,7 @@ const handleWelcomeTransition = () => {
         setpopup(0)
       }
       else {
-        setIsTransitioning(true);
-        setTransitionDirection('forward');
-        setTimeout(() => {
-          setpopup(17);
-          setTimeout(() => {
-            setIsTransitioning(false);
-            setJustEntered(true);
-          });
-        });
+        setpopup(17);
       }
       return true;
     } catch (error) {
@@ -4138,15 +4125,7 @@ const handleWelcomeTransition = () => {
   const handleSkipUsername = () => {
     audio.currentTime = 0;
     audio.play();
-
-    setIsTransitioning(true);
-    setTransitionDirection('forward');
-    setTimeout(() => {
-      setpopup(17);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      });
-    });
+    setpopup(17);
   };
 
   const handleBackClick = () => {
@@ -7181,7 +7160,7 @@ const handleWelcomeTransition = () => {
           </div>
         ) : null}
         {(popup === 14 || popup === 15 || popup === 17 || isTransitioning) ? (
-          <div ref={popupref} className="onboarding-container">
+          <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
             <div
               className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
                 ? 'active'
@@ -7474,7 +7453,7 @@ const handleWelcomeTransition = () => {
                                       <div className="mini-leaderboard-user-left">
                                         <span className="mini-user-rank">#62</span>
                                         <span className="mini-user-address">
-                                          0x16A6...Bb5d
+                                          0xB080...c423
                                           <svg
                                             className="mini-user-copy-icon"
                                             viewBox="0 0 24 24"
@@ -7609,44 +7588,44 @@ const handleWelcomeTransition = () => {
                 <div
                   className="connect-wallet-username-onboarding-bg"
                 >
-    {showWelcomeScreen || isTransitioning ? (
-      <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
-        <div className="onboarding-crystal-logo">
-          <img
-            className="onboarding-crystal-logo-image"
-            src={clearlogo}
-          />
-          <span className="onboarding-crystal-text">CRYSTAL</span>
-        </div>
-        <div className="welcome-screen-content">
-          <div className="welcome-text-container">
-            <p className="welcome-text">{typedText}</p>
-          </div>
-          {animationStarted && (
-            <button
-              className="welcome-enter-button"
-              onClick={handleWelcomeTransition}
-            >
-              EXPLORE NOW
-            </button>
-          )}
-        </div>
-      </div>
-                  ) : (
-                      <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
-      <div className="onboarding-connect-wallet">
-        <div className="smart-wallet-reminder">
-          <img className="onboarding-info-icon" src={infoicon} />
-          Use a Smart Wallet to receive a multiplier on all Crystals
-        </div>
-        <div className="connect-wallet-content-container">
-          <AuthCard {...alchemyconfig.ui.auth} />
-        </div>
-      </div>
-    </div>
+            {showWelcomeScreen || isTransitioning ? (
+              <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
+                <div className="onboarding-crystal-logo">
+                  <img
+                    className="onboarding-crystal-logo-image"
+                    src={clearlogo}
+                  />
+                  <span className="onboarding-crystal-text">CRYSTAL</span>
+                </div>
+                <div className="welcome-screen-content">
+                  <div className="welcome-text-container">
+                    <p className="welcome-text">{typedText}</p>
+                  </div>
+                  {animationStarted && (
+                    <button
+                      className="welcome-enter-button"
+                      onClick={handleWelcomeTransition}
+                    >
+                      EXPLORE NOW
+                    </button>
                   )}
                 </div>
-              )
+              </div>
+            ) : (
+            <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
+              <div className="onboarding-connect-wallet">
+                <div className="smart-wallet-reminder">
+                  <img className="onboarding-info-icon" src={infoicon} />
+                  Use a Smart Wallet to receive a multiplier on all Crystals
+                </div>
+                <div className="connect-wallet-content-container">
+                  <AuthCard {...alchemyconfig.ui.auth} />
+                </div>
+              </div>
+            </div>
+            )}
+            </div>
+            )
             )}
           </div>
         ) : null}
@@ -12891,6 +12870,9 @@ const handleWelcomeTransition = () => {
                 orders={orders}
                 address={address}
                 username={username}
+                setIsTransitioning={setIsTransitioning}
+                setTransitionDirection={setTransitionDirection}
+                setJustEntered={setJustEntered}
               />
             }
           />

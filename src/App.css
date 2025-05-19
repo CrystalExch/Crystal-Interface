@@ -1716,6 +1716,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex-direction: column;
   max-width: 90vw;
   padding: 0;
+  background: #0f0f12c0;
   backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255, 255, 255, 0.05);
 }
@@ -1730,12 +1731,11 @@ body:has(.right-column.show) .blur-background-popups {
   height: 35px;
   top:-40px;
   line-height: 1.2;
-  z-index: 1;
+  z-index: 12;
   border: 1.5px solid rgba(255, 255, 255, 0.07);
-  background-color: #000000aa;
+  background-color: #0f0f12f0;
   border-radius: 12px;
   overflow: hidden;
-  z-index: 10;
   padding: 5px 10px;
 }
 
@@ -5584,7 +5584,7 @@ input[type="email"] {
 }
 
 .challenge-section.exiting {
-  animation: fadeOut 0.2s ease forwards;
+  animation: fadeOut 1s ease forwards;
 }
 
 .challenge-intro-split-container {
@@ -6649,7 +6649,7 @@ input[type="email"] {
   max-width: 1000px;
   text-align: left;
   position: relative;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
 }
 .welcome-text {
   display: flex;
