@@ -59,7 +59,7 @@ export const settings: any = {
         '0xF6759341d82bB4Fc10e89E43c83568688Cada58f' as `0x${string}`,
       router: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
       referralManager: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
-      firstblock: 10217713,
+      firstblock: 17536756,
       ethticker: 'MON',
       wethticker: 'WMON',
       explorer: 'https://testnet.monadexplorer.com',
