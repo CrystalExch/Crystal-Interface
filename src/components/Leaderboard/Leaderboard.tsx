@@ -20,54 +20,93 @@ const DigitRoller: React.FC<DigitRollerProps> = ({
   digit,
   duration = 600,
 }) => {
-  const prevRef = useRef(parseInt(digit, 10) || 0);
+  const prevDigitRef = useRef<string>(digit);
   const wheelRef = useRef<HTMLDivElement>(null);
+  const [transitioning, setTransitioning] = useState(false);
 
-useEffect(() => {
-  const node = wheelRef.current;
-  if (!node) return;
+  useEffect(() => {
+    const node = wheelRef.current;
+    if (!node) return;
 
-  const from = prevRef.current;                  
-  const to   = parseInt(digit, 10) || 0;          
-  const DIGIT_HEIGHT = 1.2;                          
-  const distance   = (to - from + 10) % 10;         
+    // Only trigger animation if the digit has changed
+    if (digit === prevDigitRef.current) return;
 
-  if (distance === 0) {
-    node.style.transition = '';
-    node.style.transform  = `translateY(-${to * DIGIT_HEIGHT}em)`;
-    return;
-  }
+    const from = parseInt(prevDigitRef.current, 10) || 0;
+    const to = parseInt(digit, 10) || 0;
+    const DIGIT_HEIGHT = 1.2;
+    
+    // Calculate the shortest path to roll to the new digit
+    const distance = (to - from + 10) % 10;
 
-  const endIndex = from + distance;              
-
-  requestAnimationFrame(() => {
-    node.style.transition = `transform ${duration}ms ease-in-out`;
-    node.style.transform  = `translateY(-${endIndex * DIGIT_HEIGHT}em)`;
-  });
-
-  const onEnd = () => {
-    node.style.transition = '';                    
-    requestAnimationFrame(() => {
-      prevRef.current = to;                        
+    if (distance === 0) {
+      // If digits are the same, just set the position without animation
+      node.style.transition = '';
       node.style.transform = `translateY(-${to * DIGIT_HEIGHT}em)`;
+      return;
+    }
+
+    // Set transitioning flag to prevent multiple animations
+    setTransitioning(true);
+    
+    // Start the animation
+    requestAnimationFrame(() => {
+      node.style.transition = `transform ${duration}ms ease-in-out`;
+      node.style.transform = `translateY(-${(from + distance) * DIGIT_HEIGHT}em)`;
     });
-  };
 
-  node.addEventListener('transitionend', onEnd, { once: true });
-  return () => { node.removeEventListener('transitionend', onEnd); };
-}, [digit, duration]);
+    // Handle the end of transition
+    const onEnd = () => {
+      // Reset transition to prevent any side effects
+      node.style.transition = '';
+      
+      // Update the previous digit reference
+      prevDigitRef.current = digit;
+      
+      // Ensure the final position is exactly where it should be
+      requestAnimationFrame(() => {
+        node.style.transform = `translateY(-${to * DIGIT_HEIGHT}em)`;
+        setTransitioning(false);
+      });
+    };
 
-const staticDigits = Array.from({length: 20}, (_, i) => i % 10);
+    node.addEventListener('transitionend', onEnd, { once: true });
+    return () => {
+      node.removeEventListener('transitionend', onEnd);
+    };
+  }, [digit, duration]);
 
-return (
-  <div className="digit-roller-container">
-    <div ref={wheelRef} className="digit-wheel">
-      {staticDigits.map((n, i) => <div key={i}>{n}</div>)}
+  // Create an array of digits from 0 to 9, repeated twice to handle transitions
+  const staticDigits = Array.from({ length: 20 }, (_, i) => i % 10);
+
+  return (
+    <div className="digit-roller-container">
+      <div 
+        ref={wheelRef} 
+        className="digit-wheel"
+        style={{
+          transform: `translateY(-${parseInt(prevDigitRef.current, 10) * 1.2}em)`,
+          width: '0.6em', // Set consistent width for all digits
+          textAlign: 'center',
+        }}
+      >
+        {staticDigits.map((n, i) => (
+          <div 
+            key={i} 
+            style={{
+              height: '1.2em',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: '100%'
+            }}
+          >
+            {n}
+          </div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
 };
-
 
 interface NumberRollerProps {
   value: number;
@@ -82,15 +121,17 @@ const NumberRoller: React.FC<NumberRollerProps> = ({
   decimals = 2,
   suffix
 }) => {
+  // Format the value with proper decimal places
   const formattedValue = value.toLocaleString(undefined, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
   });
   
+  // Split into individual characters
   const characters = formattedValue.split('');
   
   return (
-    <div className="number-roller">
+    <div className="number-roller" style={{ display: 'inline-flex', alignItems: 'center' }}>
       {characters.map((char, index) => (
         char === '.' || char === ',' ? (
           <span key={`separator-${index}`} className="separator">{char}</span>
@@ -488,93 +529,93 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         </div>
 
         <div
-  ref={rowsRef}
-  className={`leaderboard-rows ${paginationLoading ? 'is-loading' : ''}`}
->
-  {(loading || paginationLoading)
-    ? Array(placeholderCount).fill(0).map((_, i) => (
-        <div key={i} className="leaderboard-row">
-                <div className="leaderboard-inner-row">
-                  <div className="row-rank">
-                    <span className="loading-placeholder" />
-                  </div>
-                  <div className="row-faction">
-                    <div className="row-pfp-container">
-                      <div className="row-pfp-loading loading-placeholder" />
-                    </div>
-                    <span className="faction-row-name loading-placeholder" />
-                  </div>
-                  <div className="row-xp">
-                    <div className="leaderboard-xp-amount loading-placeholder" />
-                  </div>
-                </div>
-              </div>
-            ))
-          : Object.entries(overview!.page).map(
-            ([addr, [_username, boosted, referral]], idx) => {
-              const total = boosted + referral;
-              const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) :
-                _username && _username !== addr
-                  ? _username
-                  : getDisplayAddress(addr);
-
-              const startIndex =
-                currentPage === 0
-                  ? 3
-                  : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
-              const rank = startIndex + idx + 1;
-
-              const isCurrent = addr === overview!.address;
-
-              return (
-                <div
-                  key={addr}
-                  className={`leaderboard-row ${isCurrent ? 'current-user-row' : ''
-                    }`}
-                >
+          ref={rowsRef}
+          className={`leaderboard-rows ${paginationLoading ? 'is-loading' : ''}`}
+        >
+          {(loading || paginationLoading)
+            ? Array(placeholderCount).fill(0).map((_, i) => (
+                <div key={i} className="leaderboard-row">
                   <div className="leaderboard-inner-row">
                     <div className="row-rank">
-                      <span>#{rank}</span>
+                      <span className="loading-placeholder" />
                     </div>
                     <div className="row-faction">
                       <div className="row-pfp-container">
-                        <img src={defaultPfp} className="row-pfp-image" />
+                        <div className="row-pfp-loading loading-placeholder" />
                       </div>
-                      <span className="faction-row-name">
-                        {displayName}
-                        <div className="copy-button-wrapper">
-                          <CopyButton textToCopy={addr} />
-                        </div>
-                      </span>
-                      <div className="user-self-tag">
-                        {isCurrent && orders.length > 0 && (
-                          <div className="orders-indicator-container">
-                            <div
-                              className="orders-indicator"
-                              title={`You have ${orders.length} open orders earning points`}
-                            />
-                          </div>
-                        )}
-                        {isCurrent && (
-                          <span className="current-user-tag">You</span>
-                        )}
-                      </div>
+                      <span className="faction-row-name loading-placeholder" />
                     </div>
                     <div className="row-xp">
-                      <div className="leaderboard-xp-amount">
-                        <NumberRoller 
-                          value={total < 0.01 ? 0 : total}
-                          decimals={2}
-                          duration={800}
-                          suffix={<img src={crystalxp} className="xp-icon" />}
-                        />
-                      </div>
+                      <div className="leaderboard-xp-amount loading-placeholder" />
                     </div>
                   </div>
                 </div>
-              );
-            }
-          )}
+              ))
+            : Object.entries(overview!.page).map(
+              ([addr, [_username, boosted, referral]], idx) => {
+                const total = boosted + referral;
+                const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) :
+                  _username && _username !== addr
+                    ? _username
+                    : getDisplayAddress(addr);
+
+                const startIndex =
+                  currentPage === 0
+                    ? 3
+                    : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
+                const rank = startIndex + idx + 1;
+
+                const isCurrent = addr === overview!.address;
+
+                return (
+                  <div
+                    key={addr}
+                    className={`leaderboard-row ${isCurrent ? 'current-user-row' : ''
+                      }`}
+                  >
+                    <div className="leaderboard-inner-row">
+                      <div className="row-rank">
+                        <span>#{rank}</span>
+                      </div>
+                      <div className="row-faction">
+                        <div className="row-pfp-container">
+                          <img src={defaultPfp} className="row-pfp-image" />
+                        </div>
+                        <span className="faction-row-name">
+                          {displayName}
+                          <div className="copy-button-wrapper">
+                            <CopyButton textToCopy={addr} />
+                          </div>
+                        </span>
+                        <div className="user-self-tag">
+                          {isCurrent && orders.length > 0 && (
+                            <div className="orders-indicator-container">
+                              <div
+                                className="orders-indicator"
+                                title={`You have ${orders.length} open orders earning points`}
+                              />
+                            </div>
+                          )}
+                          {isCurrent && (
+                            <span className="current-user-tag">You</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="row-xp">
+                        <div className="leaderboard-xp-amount">
+                          <NumberRoller 
+                            value={total < 0.01 ? 0 : total}
+                            decimals={2}
+                            duration={800}
+                            suffix={<img src={crystalxp} className="xp-icon" />}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+            )}
         </div>
 
         <div className="pagination-controls">
