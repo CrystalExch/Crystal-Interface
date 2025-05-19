@@ -6652,6 +6652,8 @@ input[type="email"] {
   margin-bottom: 10px;
 }
 .welcome-text {
+  display: flex;
+  text-align: center;
   font-size: 2rem;
   letter-spacing: -1.5px;
   margin: 0;
@@ -6661,6 +6663,7 @@ input[type="email"] {
   -webkit-background-clip: text;
   background-clip: text;
   text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
+  line-height: 1.2;
 }
 
 
