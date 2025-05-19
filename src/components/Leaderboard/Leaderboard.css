@@ -1186,11 +1186,11 @@
 }
 
 .faction-xp .number-roller .digit-roller-container {
-  min-width: 0.6em;
+  min-width: 0.5em;
 }
 
 .leaderboard-xp-amount .number-roller .digit-roller-container {
-  min-width: 0.6em;
+  min-width: 0.5em;
 }
 
 .column-content .number-roller,
