@@ -108,7 +108,8 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         action,
         price,
         param1,
-        param2
+        param2,
+        '0x0000000000000000000000000000000000000000'
       )})
       await waitForTxReceipt(hash.hash);
       refetch()

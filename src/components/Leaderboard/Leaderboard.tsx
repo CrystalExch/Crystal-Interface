@@ -373,7 +373,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           })}
       </div>
 
-      <div className="full-leaderboard">
         <div className="leaderboard-headers">
           <div className="header-rank">{t('rank')}</div>
           <div className="header-bonus">{t('totalXP')}</div>
@@ -496,7 +495,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 };

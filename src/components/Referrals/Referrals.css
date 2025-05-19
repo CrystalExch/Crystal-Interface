@@ -1,22 +1,23 @@
 .referral-scroll-wrapper {
+  align-items: center;
   background: rgb(6 6 6);
   box-sizing: border-box;
   display: flex;
   height: 100%;
   justify-content: center;
   width: 100%;
-  margin-bottom: 8px;
+  min-height: 600px;
 }
 
 .referral-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 1450px;
+  max-width: 1250px;
   overflow: hidden;
   width: 100%;
   padding-right: 5px;
-  margin-top: max(0px, calc((100vh - 770px) / 3));
+  margin-top: max(0px, calc((100vh - 1500px) / 7));
 }
 
 .referral-top-section{
@@ -208,18 +209,18 @@
 .feature-card-left {
   border: 1px solid rgba(186, 189, 211, 0.1);
   border-radius: 0  0 0 12px;
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 .feature-card-middle {
   border: 1px solid rgba(186, 189, 211, 0.1);
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 .feature-card-right {
   border: 1px solid rgba(186, 189, 211, 0.1);
   border-radius: 0  0 12px 0;
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 
@@ -316,7 +317,7 @@
 .earnings-section {
   background: #0f0f12;
   border-radius: 12px;
-  padding: 0.5rem 1rem 0.7rem 1rem;
+  padding: 0.25rem 1rem 0.25rem 1rem;
   max-width:  350px;
 }
 
@@ -393,7 +394,7 @@
 .token-breakdown {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
-  height: 198.333px;
+  height: 162px;
   margin: 0.5rem 0;
   overflow-y: scroll;
   padding: 3px 0;
@@ -587,8 +588,7 @@
   bottom: 50px;
   left: 50px;
   flex: 1;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  height: 78px;
   border: 1.5px solid #1c1c23;
   background: #0f0f1277;
   border-radius: 12px; 
@@ -612,8 +612,7 @@
   bottom: 50px;
   left: 50px;
   flex: 1;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  height: 78px;
   border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
   background: #0f0f12;
@@ -627,8 +626,7 @@
   bottom: 50px;
   left: 50px;
   flex: 1;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  height: 78px;
   border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
   background: #0f0f12;
@@ -638,7 +636,7 @@
   color: #fff;
   font-size: 1.5rem;
   font-weight: 400;
-  margin: 0;
+  margin-bottom: -4px;
   letter-spacing: -0.5px;
 }
 
@@ -646,14 +644,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(74, 81, 108, 0.15);
+  background-color: #6a74d3a1;
   border-radius: 8px;
   padding: 2px;
   letter-spacing: -0.5px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.7);
-  width: 40%;
-  min-width: 120px;
+  width: 30%;
+  min-width: 130px;
+  margin-top: -4px;
 }
 .referral-user-right-side{
   display: flex;
@@ -674,13 +673,13 @@
 
 .referral-pfp{
   border-radius: 50%;
-  height: 60px;
-  width: 60px;
+  height: 53px;
+  width: 53px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 10px rgb(170 174 207 / 50%);
  }
 .referral-bg-placeholder {
-  height: 328px;
+  max-height: 288px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -696,7 +695,7 @@
      object-fit: cover;
   width: 100%;
   transition: 0.3s ease all;
-
+  margin-top: -20px;
 }
 
 .referral-bg-placeholder:hover .referral-background{
@@ -733,7 +732,7 @@
   }
 }
 
-@media (width <=860px) {
+@media (max-width: 1020px) {
 
   .feature-card {
     align-items: center;
@@ -745,7 +744,7 @@
 
   .refer-section{
     width: 100%;
-    padding: 15px;
+    padding: 0.5rem 1.5rem 1rem 1.5rem;
   }
   .enter-code-container{
     width: 100%;
@@ -756,7 +755,7 @@
   }
 }
 
-@media(width <=840px) {
+@media (max-width: 1020px) {
   .referral-top-section {
     flex-direction: column;
   }

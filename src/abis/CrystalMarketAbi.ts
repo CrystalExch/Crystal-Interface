@@ -5,6 +5,16 @@ export const CrystalMarketAbi = [
 		"type": "constructor"
 	},
 	{
+		"inputs": [],
+		"name": "ActionFailed",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "SlippageExceeded",
+		"type": "error"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -32,7 +42,7 @@ export const CrystalMarketAbi = [
 				"type": "bytes"
 			}
 		],
-		"name": "OrderFilled",
+		"name": "OrdersFilled",
 		"type": "event"
 	},
 	{
@@ -210,9 +220,58 @@ export const CrystalMarketAbi = [
 				"internalType": "address",
 				"name": "owner",
 				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
 			}
 		],
 		"name": "batchOrders",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "returnData",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "actions",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "prices",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "param1",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "address[]",
+				"name": "param2",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "batchOrdersRequireSuccess",
 		"outputs": [
 			{
 				"internalType": "uint256[]",

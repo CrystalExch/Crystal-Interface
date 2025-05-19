@@ -13,7 +13,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
 
@@ -235,7 +234,7 @@ const Referrals: React.FC<ReferralProps> = ({
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError(t('invalidRefCode'));
+        setError(t('setRefFailed'));
         return false;
       }
     }
@@ -363,7 +362,7 @@ const displayName = username && username.trim() !== ''
             <div className="referral-background-wrapper">
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
-                <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
+                <h1 className="referrals-subtitle">{t('claimSubtitle')}</h1>
               </div>
               <div className="referral-background-container">
                 <div className="referral-bg-placeholder">
@@ -376,10 +375,6 @@ const displayName = username && username.trim() !== ''
                   {!bgLoaded && (
                     <div className="referral-bg-placeholder-content"></div>
                   )}
-                  <img
-                    src={ReferralMobileBackground}
-                    className="referral-mobile-background"
-                  />
                 </div>
                 <span className="referral-loader"></span>
                 <div className="features-grid">

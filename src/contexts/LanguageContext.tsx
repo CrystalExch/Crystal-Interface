@@ -375,9 +375,8 @@ export const translations: any = {
     shareEarnText: "Share your referral link with friends and earn 25% of their fees.",
     totalUsersReferred: "Total Users Referred",
     scaleTooltip: "Place multiple limit orders between a specified price range in a single transaction",
-
-    setRefFailed: "Failed to set referral code, code may be invalid",
-    
+    setRefFailed: "Invalid referral code",
+    claimSubtitle: "Save on fees and earn extra rewards through the referral program"
     
   },
   CN: {

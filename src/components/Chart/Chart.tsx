@@ -36,6 +36,7 @@ interface ChartComponentProps {
   address: any;
   client: any;
   newTxPopup: any;
+  usedRefAddress: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -55,7 +56,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   waitForTxReceipt,
   address,
   client,
-  newTxPopup
+  newTxPopup,
+  usedRefAddress,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -364,6 +366,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             address={address}
             client={client}
             newTxPopup={newTxPopup}
+            usedRefAddress={usedRefAddress}
           />
         ) : (
           <>
