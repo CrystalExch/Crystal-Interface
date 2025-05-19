@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import './NFTMintingPage.css';
+
 import LeaderboardBanner from '../../assets/MintTeaser.png';
+
+import './NFTMintingPage.css';
 
 const NFTMintingPage: React.FC = () => {
   const [mintLoading, setMintLoading] = useState(false);
