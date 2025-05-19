@@ -14,7 +14,7 @@ const NFTMintingPage: React.FC = () => {
   
   const nftData = {
     name: "Crystal x ???",
-    description: "Trade on Crystal to become eligible for our first NFT drop, coming soon...",
+    description: t('mintDesc'),
     imageUrl: LeaderboardBanner,
     remainingSupply: 1000,
     totalSupply: 1000,
@@ -88,8 +88,8 @@ const NFTMintingPage: React.FC = () => {
         </div>
         <div className="nft-swapmodal">
           <div className="nft-header">
-            <h1 className="nft-tokenselectheader1">Mint NFT</h1>
-            <p className="nft-tokenselectheader2">Create your exclusive digital collectible</p>
+            <h1 className="nft-tokenselectheader1">{t('mintTitle')}</h1>
+            <p className="nft-tokenselectheader2">{t('mintSubtitle')}</p>
           </div>
 
           <div className="nft-content">
@@ -101,22 +101,22 @@ const NFTMintingPage: React.FC = () => {
                 <div className="nft-stats-grid">
                   <div className="nft-stat-item">
                     <div className="nft-stat-value">{nftData.mints24h}</div>
-                    <div className="nft-stat-label">24h Mints</div>
+                    <div className="nft-stat-label">{t('day')} {t('mintCount')}</div>
                   </div>
                   <div className="nft-stat-item">
                     <div className="nft-stat-value">{nftData.holders}</div>
-                    <div className="nft-stat-label">Holders</div>
+                    <div className="nft-stat-label">{t('holders')}</div>
                   </div>
                   <div className="nft-stat-item">
                     <div className="nft-stat-value">{nftData.eligible}</div>
-                    <div className="nft-stat-label">Eligible</div>
+                    <div className="nft-stat-label">{t('eligible')}</div>
                   </div>
                 </div>
                 
                 <div className="nft-supply-container">
                   <div className="nft-supply-text">
                     <span>{supplySold} / {'???'}</span>
-                    <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% Minted</span>
+                    <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% {t('minted')}</span>
                   </div>
                   <div className="nft-supply-bar">
                     <div className="nft-supply-progress" style={{ width: `${percentageSold}%` }}></div>
@@ -124,8 +124,8 @@ const NFTMintingPage: React.FC = () => {
                 </div>
                 
                 <div className="nft-price-container">
-                  <div className="nft-label-container">Price</div>
-                  <div className="nft-value-container">Free</div>
+                  <div className="nft-label-container">{t('price')}</div>
+                  <div className="nft-value-container">{t('free')}</div>
                 </div>
                 
               </div>
@@ -138,7 +138,7 @@ const NFTMintingPage: React.FC = () => {
                 {mintLoading ? (
                   <div className="nft-button-content">
                     <div className="nft-loading-spinner"></div>
-                    <span>Minting...</span>
+                    <span>{t('minting')}</span>
                   </div>
                 ) : (
                   "Mint NFT"
