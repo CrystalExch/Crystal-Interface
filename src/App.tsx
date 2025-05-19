@@ -243,7 +243,7 @@ function App() {
               fee: fee,
               image: getMarket(path.at(-2), path.at(-1)).image,
               website: getMarket(path.at(-2), path.at(-1)).website,
-            };   
+            };
           }
           return {
             quoteAsset: getMarket(path.at(0), path.at(1)).quoteAsset,
@@ -1295,9 +1295,9 @@ function App() {
                               tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                               tempcanceledorders[canceledOrderIndex][9] = 0;
                               tempcanceledorders[canceledOrderIndex][8] =
-                              tempcanceledorders[canceledOrderIndex][8] -
+                                tempcanceledorders[canceledOrderIndex][8] -
                                 size;
-                                tempcanceledorders[canceledOrderIndex][6] =
+                              tempcanceledorders[canceledOrderIndex][6] =
                                 _timestamp;
                             }
                             let index = temporders.findIndex(
@@ -1533,9 +1533,9 @@ function App() {
                               temporders.splice(orderIndex, 1);
                               tempcanceledorders[canceledOrderIndex][9] =
                                 1;
-                                tempcanceledorders[canceledOrderIndex][7] =
+                              tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
-                                tempcanceledorders[canceledOrderIndex][8] =
+                              tempcanceledorders[canceledOrderIndex][8] =
                                 order[8] - newsize;
                             } else {
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
@@ -1635,17 +1635,17 @@ function App() {
           }, 700);
         }, 2000);
       `;
-      
+
       const blob = new Blob([workerCode], { type: 'application/javascript' });
       worker = new Worker(URL.createObjectURL(blob));
-      
+
       worker.onmessage = () => {
         fetchData();
       };
     };
-  
+
     initWorker();
-  
+
     return () => {
       if (worker) {
         worker.terminate();
@@ -1689,7 +1689,7 @@ function App() {
       refocusSearchInput();
     }
   };
-  
+
   useEffect(() => {
     if (showSendDropdown) {
       const handleClick = (event: MouseEvent) => {
@@ -2194,34 +2194,34 @@ function App() {
             ) * quotePrice;
             if (!(newFees as any)[market.quoteAsset]) {
               (newFees as any)[market.quoteAsset] =
-                Number(refData[quoteIndex+1].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex+1].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.quoteAsset] +=
-                Number(refData[quoteIndex+1].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex+1].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
             }
 
             if (!(newFees as any)[market.baseAsset]) {
               (newFees as any)[market.baseAsset] =
-                Number(refData[baseIndex+1].result) /
+                Number(refData[baseIndex + 1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex+1].result) * midValue) /
+                (Number(refData[baseIndex + 1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.baseAsset] +=
-                Number(refData[baseIndex+1].result) /
+                Number(refData[baseIndex + 1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex+1].result) * midValue) /
+                (Number(refData[baseIndex + 1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             }
@@ -3499,7 +3499,26 @@ function App() {
       }
     })();
   }, [activechain]);
+const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
+const [isConnectEntering, setIsConnectEntering] = useState(false);
 
+const handleWelcomeTransition = () => {
+  audio.currentTime = 0;
+  audio.play();
+  
+  setIsTransitioning(true);
+  setIsWelcomeExiting(true);
+  
+  setTimeout(() => {
+    setIsConnectEntering(true);
+  }, 200);
+  
+  setTimeout(() => {
+    setShowWelcomeScreen(false);
+    setIsTransitioning(false);
+    setIsWelcomeExiting(false);
+  }, 400);
+};
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && popup != 11) {
@@ -4198,7 +4217,7 @@ function App() {
 
   const [typedText, setTypedText] = useState("");
   const typedTextRef = useRef("");
-  
+
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
       const welcomeText = "Introducing Crystals: Season 0";
@@ -4222,7 +4241,7 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, showWelcomeScreen]);
-  
+
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -5031,7 +5050,7 @@ function App() {
                           if (!found) {
                             for (const market in markets) {
                               if (
-                              markets[market].quoteAddress === token.address
+                                markets[market].quoteAddress === token.address
                               ) {
                                 setTokenIn(markets[market].baseAddress);
                                 newTokenIn = markets[market].baseAddress;
@@ -7165,8 +7184,8 @@ function App() {
           <div ref={popupref} className="onboarding-container">
             <div
               className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
-                  ? 'active'
-                  : ''
+                ? 'active'
+                : ''
                 }`}
             />
             <div className="onboarding-crystal-logo">
@@ -7191,8 +7210,8 @@ function App() {
                     <div
                       key={index}
                       className={`step-indicator ${popup === 14
-                          ? index === 1 ? 'active' : ''
-                          : (currentStep + 2) === index ? 'active' : ''
+                        ? index === 1 ? 'active' : ''
+                        : (currentStep + 2) === index ? 'active' : ''
                         } ${popup === 14
                           ? index < 1 ? 'completed' : ''
                           : (currentStep + 2) > index ? 'completed' : ''
@@ -7205,61 +7224,62 @@ function App() {
                   className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
                     }`}
                 >
-                              {popup == 17 && (    <div className="onboarding-section active">
-            <div className="onboarding-split-container">
+                  {popup == 17 && (<div className="onboarding-section active">
+                    <div className="onboarding-split-container">
                       <div className="onboarding-left-side">
                         <div className="onboarding-content">
-              <div className="onboarding-header">
-                <h2 className="use-ref-title">Add a referral code (optional)</h2>
-                <div className="form-group">
-                {error && <span className="error-message">{error}</span>}
+                          <div className="onboarding-header">
+                            <h2 className="use-ref-title">Add a referral code (optional)</h2>
+                            <div className="form-group">
+                              {error && <span className="error-message">{error}</span>}
 
-                  <input
-                    className="username-input"
-                    placeholder="Enter a code"
-                    value={typedRefCode}
-                    onChange={e => {
-                      const value = e.target.value.trim();
-                      if (isValidInput(value) || value === "") {
-                        setTypedRefCode(value);
-                        setError('')
-                      }}}
-                  />
-                </div>
+                              <input
+                                className="username-input"
+                                placeholder="Enter a code"
+                                value={typedRefCode}
+                                onChange={e => {
+                                  const value = e.target.value.trim();
+                                  if (isValidInput(value) || value === "") {
+                                    setTypedRefCode(value);
+                                    setError('')
+                                  }
+                                }}
+                              />
+                            </div>
 
-                <div className="onboarding-actions">
-                  <button
-                    className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
-                    disabled={!typedRefCode || isRefSigning}
-                    onClick={async () => {
-                      const ok = await handleSetRef(typedRefCode);
-                      if (ok) setpopup(15);
-                    }}
-                  >
-                   {isRefSigning ? (
-                              <div className="button-content">
-                                <div className="loading-spinner" />
-                                {t('signTransaction')}
-                              </div>
-                            ) : t('setReferral')}
-                  </button>
+                            <div className="onboarding-actions">
+                              <button
+                                className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
+                                disabled={!typedRefCode || isRefSigning}
+                                onClick={async () => {
+                                  const ok = await handleSetRef(typedRefCode);
+                                  if (ok) setpopup(15);
+                                }}
+                              >
+                                {isRefSigning ? (
+                                  <div className="button-content">
+                                    <div className="loading-spinner" />
+                                    {t('signTransaction')}
+                                  </div>
+                                ) : t('setReferral')}
+                              </button>
 
-                  <button
-                    className="skip-button"
-                    onClick={() => setpopup(15)}
-                  >
-                    Skip
-                  </button>
-                </div>
-              </div>            </div>
-              </div>
-              </div>
+                              <button
+                                className="skip-button"
+                                onClick={() => setpopup(15)}
+                              >
+                                Skip
+                              </button>
+                            </div>
+                          </div>            </div>
+                      </div>
+                    </div>
 
-          </div>)}
+                  </div>)}
                   <div
                     className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!username || transitionDirection == 'backward')
-                        ? 'active'
-                        : ''
+                      ? 'active'
+                      : ''
                       } ${justEntered ? 'entering' : ''}`}
                   >
                     <div className="onboarding-split-container">
@@ -7294,7 +7314,8 @@ function App() {
                                   const value = e.target.value.trim();
                                   if (isValidInput(value) || value === "") {
                                     setUsernameInput(value);
-                                  }}}
+                                  }
+                                }}
                               />
                               {usernameError && <p className="username-error">{usernameError}</p>}
                             </div>
@@ -7337,9 +7358,9 @@ function App() {
 
                   <div
                     className={`onboarding-section challenge-section ${popup === 15 ||
-                        (isTransitioning && transitionDirection === 'forward')
-                        ? 'active'
-                        : ''
+                      (isTransitioning && transitionDirection === 'forward')
+                      ? 'active'
+                      : ''
                       } ${exitingChallenge ? 'exiting' : ''}`}
                     data-step={currentStep}
                   >
@@ -7588,52 +7609,48 @@ function App() {
                 <div
                   className="connect-wallet-username-onboarding-bg"
                 >
-                  {showWelcomeScreen ? (
-                    <div className="crystal-welcome-screen">
-                      <div className="onboarding-crystal-logo">
-                        <img
-                          className="onboarding-crystal-logo-image"
-                          src={clearlogo}
-                        />
-                        <span className="onboarding-crystal-text">CRYSTAL</span>
-                      </div>
-                      <div className="welcome-screen-content">
-                        <div className="welcome-text-container">
-                          <p className="welcome-text">{typedText}</p>
-                        </div>
-                        {animationStarted && (
-                          <button
-                            className="welcome-enter-button"
-                            onClick={() => {
-                              audio.currentTime = 0;
-                              audio.play();
-                              setShowWelcomeScreen(false);
-                            }}
-                          >
-                            EXPLORE NOW
-                          </button>
-                        )}
-                      </div>
-                    </div>
+    {showWelcomeScreen || isTransitioning ? (
+      <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
+        <div className="onboarding-crystal-logo">
+          <img
+            className="onboarding-crystal-logo-image"
+            src={clearlogo}
+          />
+          <span className="onboarding-crystal-text">CRYSTAL</span>
+        </div>
+        <div className="welcome-screen-content">
+          <div className="welcome-text-container">
+            <p className="welcome-text">{typedText}</p>
+          </div>
+          {animationStarted && (
+            <button
+              className="welcome-enter-button"
+              onClick={handleWelcomeTransition}
+            >
+              EXPLORE NOW
+            </button>
+          )}
+        </div>
+      </div>
                   ) : (
-                    <div className="connect-wallet-username-wrapper">
-                      <div className="onboarding-connect-wallet">
-                        <div className="smart-wallet-reminder">
-                        <img className="onboarding-info-icon" src={infoicon} />
-                        Use a Smart Wallet to receive a multiplier on all Crystals
-                      </div>
-                        <div className="connect-wallet-content-container">
-                          <AuthCard {...alchemyconfig.ui.auth} />
-                        </div>
-                      </div>
-                    </div>
+                      <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
+      <div className="onboarding-connect-wallet">
+        <div className="smart-wallet-reminder">
+          <img className="onboarding-info-icon" src={infoicon} />
+          Use a Smart Wallet to receive a multiplier on all Crystals
+        </div>
+        <div className="connect-wallet-content-container">
+          <AuthCard {...alchemyconfig.ui.auth} />
+        </div>
+      </div>
+    </div>
                   )}
                 </div>
               )
             )}
           </div>
         ) : null}
-         {popup === 16 ? (
+        {popup === 16 ? (
           <div className="edit-username-bg">
             <div ref={popupref} className="edit-username-container">
               <div className="onboarding-split-container">
@@ -7661,7 +7678,8 @@ function App() {
                           const value = e.target.value.trim();
                           if (isValidInput(value) || value === "") {
                             setUsernameInput(value);
-                          }}}
+                          }
+                        }}
                       />
                       {usernameError && (
                         <p className="username-error">{usernameError}</p>
@@ -8262,7 +8280,7 @@ function App() {
                       inputUSD > 0
                         ? ((outputUSD - inputUSD) / inputUSD) * 100
                         : 0;
-                    
+
                     return (
                       <div className="output-usd-container">
                         <span>{formatUSDDisplay(outputUSD)}</span>
@@ -12219,41 +12237,41 @@ function App() {
                   onClick={() => {
                     if (connected) {
                       const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                      setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
-                    }
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
-                    }
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                        setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                      }
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >

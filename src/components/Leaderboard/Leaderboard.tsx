@@ -11,6 +11,102 @@ import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
 
+interface DigitRollerProps {
+  digit: string;
+  duration?: number;
+}
+
+const DigitRoller: React.FC<DigitRollerProps> = ({
+  digit,
+  duration = 600,
+}) => {
+  const prevRef = useRef(parseInt(digit, 10) || 0);
+  const wheelRef = useRef<HTMLDivElement>(null);
+
+useEffect(() => {
+  const node = wheelRef.current;
+  if (!node) return;
+
+  const from = prevRef.current;                  
+  const to   = parseInt(digit, 10) || 0;          
+  const DIGIT_HEIGHT = 1.2;                          
+  const distance   = (to - from + 10) % 10;         
+
+  if (distance === 0) {
+    node.style.transition = '';
+    node.style.transform  = `translateY(-${to * DIGIT_HEIGHT}em)`;
+    return;
+  }
+
+  const endIndex = from + distance;              
+
+  requestAnimationFrame(() => {
+    node.style.transition = `transform ${duration}ms ease-in-out`;
+    node.style.transform  = `translateY(-${endIndex * DIGIT_HEIGHT}em)`;
+  });
+
+  const onEnd = () => {
+    node.style.transition = '';                    
+    requestAnimationFrame(() => {
+      prevRef.current = to;                        
+      node.style.transform = `translateY(-${to * DIGIT_HEIGHT}em)`;
+    });
+  };
+
+  node.addEventListener('transitionend', onEnd, { once: true });
+  return () => { node.removeEventListener('transitionend', onEnd); };
+}, [digit, duration]);
+
+const staticDigits = Array.from({length: 20}, (_, i) => i % 10);
+
+return (
+  <div className="digit-roller-container">
+    <div ref={wheelRef} className="digit-wheel">
+      {staticDigits.map((n, i) => <div key={i}>{n}</div>)}
+    </div>
+  </div>
+);
+};
+
+
+interface NumberRollerProps {
+  value: number;
+  duration?: number;
+  decimals?: number;
+  suffix?: React.ReactNode;
+}
+
+const NumberRoller: React.FC<NumberRollerProps> = ({ 
+  value, 
+  duration = 1000,
+  decimals = 2,
+  suffix
+}) => {
+  const formattedValue = value.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+  
+  const characters = formattedValue.split('');
+  
+  return (
+    <div className="number-roller">
+      {characters.map((char, index) => (
+        char === '.' || char === ',' ? (
+          <span key={`separator-${index}`} className="separator">{char}</span>
+        ) : (
+          <DigitRoller 
+            key={`digit-${index}`} 
+            digit={char} 
+            duration={duration}
+          />
+        )
+      ))}
+      {suffix && <span className="roller-suffix">{suffix}</span>}
+    </div>
+  );
+};
+
 interface OverviewResponse {
   address: string;
   username: string;
@@ -201,7 +297,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   const getDisplayAddress = (addr: string) =>
     addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
-
+    
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
       {!address && (
@@ -238,7 +334,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="total-xp-loading" />
               ) : (
                 <span className="progress-bar-amount-header">
-                  {overview!.global_total_points.toLocaleString()} / 1,000,000,000
+                  <NumberRoller 
+                    value={overview!.global_total_points}
+                    decimals={2}
+                    duration={800}
+                  /> / 1,000,000,000.00
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -276,8 +376,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         : getDisplayAddress(overview!.address)}
                     <CopyButton textToCopy={overview!.address} />
                   </span>
-
-
                 </div>
               </div>
               <div className="column-divider" />
@@ -288,7 +386,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   <div className="column-header">{t('earned')}</div>
                 </div>
                 <div className="column-content">
-                  {overview!.boosted_points.toLocaleString()}
+                  <NumberRoller 
+                    value={overview!.boosted_points} 
+                    decimals={2}
+                    duration={800}
+                  />
                 </div>
               </div>
               <div className="column-divider" />
@@ -299,7 +401,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                   <div className="column-header">{t('bonusCommision')}</div>
                 </div>
                 <div className="column-content">
-                  {overview!.referral_points.toLocaleString()}
+                  <NumberRoller 
+                    value={overview!.referral_points} 
+                    decimals={2}
+                    duration={800}
+                  />
                 </div>
               </div>
               <div className="column-divider" />
@@ -362,10 +468,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     </div>
                   </div>
                   <div className="faction-xp">
-                    {f.total_points < 0.001
-                      ? '<0.001'
-                      : f.total_points.toLocaleString()}
-                    <img src={crystalxp} className="top-xp-icon" />
+                    <NumberRoller 
+                      value={f.total_points < 0.01 ? 0 : f.total_points}
+                      decimals={2}
+                      duration={800}
+                      suffix={<img src={crystalxp} className="top-xp-icon" />}
+                    />
                   </div>
                 </div>
               </div>
@@ -453,8 +561,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     </div>
                     <div className="row-xp">
                       <div className="leaderboard-xp-amount">
-                        {total < 0.001 ? '<0.001' : total.toLocaleString()}
-                        <img src={crystalxp} className="xp-icon" />
+                        <NumberRoller 
+                          value={total < 0.01 ? 0 : total}
+                          decimals={2}
+                          duration={800}
+                          suffix={<img src={crystalxp} className="xp-icon" />}
+                        />
                       </div>
                     </div>
                   </div>

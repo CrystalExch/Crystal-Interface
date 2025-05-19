@@ -13,7 +13,7 @@
   top: 0;
   z-index: 10;
   transition: left 0.3s ease;
-  padding-bottom: 5px;
+  padding-bottom: 4px;
 }
 
 body.sidebar-expanded .app-header {
