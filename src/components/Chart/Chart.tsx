@@ -142,6 +142,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         body: JSON.stringify({ query }),
       });
       const json = await res1.json();
+      console.log(json);
       allCandles = allCandles
         .concat(json.data.series_collection?.[0]?.series1)
         .concat(json.data.series_collection?.[0]?.series2)
