@@ -4050,6 +4050,11 @@ const handleWelcomeTransition = () => {
     if (currentStep < 2) { setCurrentStep(c => c + 1); return; }
 
     setExitingChallenge(true);
+    setTimeout(() => {
+      localStorage.setItem('crystal_has_completed_onboarding', 'true');
+      setpopup(0);
+      setCurrentStep(0)
+    }, 1000);
   };
 
   const handleEditUsername = async (_usernameInput: any) => {
