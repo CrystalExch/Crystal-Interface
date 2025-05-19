@@ -1058,17 +1058,26 @@
   height: 20px;
 
 }
-
 .digit-roller-container {
-  display: inline-block;
   position: relative;
-  min-width: 0.6em;
-  text-align: center;
-  height: 1.2em;
   overflow: hidden;
-  vertical-align: bottom;
+  height: 1.2em;              
+  line-height: 1.2em;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 35%,
+    black 85%,
+    transparent 100%
+  );
 }
-
 .static-digit {
   height: 1.2em;
   display: flex;
@@ -1092,7 +1101,7 @@
   align-items: center;
   justify-content: center;
   animation-name: digitRoll;
-  animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1); /* Enhanced ease-in-out */
+  animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
   animation-fill-mode: both;
   opacity: 0;
 }

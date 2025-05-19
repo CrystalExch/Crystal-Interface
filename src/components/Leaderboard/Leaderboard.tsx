@@ -16,72 +16,58 @@ interface DigitRollerProps {
   duration?: number;
 }
 
-const DigitRoller: React.FC<DigitRollerProps> = ({ digit, duration = 1000 }) => {
-  const [previousDigit, setPreviousDigit] = useState(digit);
-  const [isAnimating, setIsAnimating] = useState(false);
-  
-  useEffect(() => {
-    if (digit !== previousDigit) {
-      setIsAnimating(true);
-      
-      const current = parseInt(previousDigit, 10) || 0;
-      const target = parseInt(digit, 10) || 0;
-      
-      let distance = (target - current + 10) % 10;
-      if (distance === 0) distance = 10; 
-      
-      const digitRotationTime = 100;
-      const totalAnimationTime = distance * digitRotationTime;
-      
-      const timer = setTimeout(() => {
-        setIsAnimating(false);
-        setPreviousDigit(digit);
-      }, totalAnimationTime);
-      
-      return () => clearTimeout(timer);
-    }
-  }, [digit, previousDigit]);
+const DigitRoller: React.FC<DigitRollerProps> = ({
+  digit,
+  duration = 600,
+}) => {
+  const prevRef = useRef(parseInt(digit, 10) || 0);
+  const wheelRef = useRef<HTMLDivElement>(null);
 
-  const generateDigitSequence = () => {
-    const current = parseInt(previousDigit, 10) || 0;
-    const target = parseInt(digit, 10) || 0;
-    
-    const sequence = [];
-    let next = current;
-    
-    do {
-      next = (next + 1) % 10;
-      sequence.push(next);
-    } while (next !== target);
-    
-    return sequence;
+useEffect(() => {
+  const node = wheelRef.current;
+  if (!node) return;
+
+  const from = prevRef.current;                  
+  const to   = parseInt(digit, 10) || 0;          
+  const DIGIT_HEIGHT = 1.2;                          
+  const distance   = (to - from + 10) % 10;         
+
+  if (distance === 0) {
+    node.style.transition = '';
+    node.style.transform  = `translateY(-${to * DIGIT_HEIGHT}em)`;
+    return;
+  }
+
+  const endIndex = from + distance;              
+
+  requestAnimationFrame(() => {
+    node.style.transition = `transform ${duration}ms ease-in-out`;
+    node.style.transform  = `translateY(-${endIndex * DIGIT_HEIGHT}em)`;
+  });
+
+  const onEnd = () => {
+    node.style.transition = '';                    
+    requestAnimationFrame(() => {
+      prevRef.current = to;                        
+      node.style.transform = `translateY(-${to * DIGIT_HEIGHT}em)`;
+    });
   };
 
-  return (
-    <div className="digit-roller-container">
-      {!isAnimating ? (
-        <div className="static-digit">{previousDigit}</div>
-      ) : (
-        <div className="digit-wheel">
-          <div className="wheel-digit static-first">{previousDigit}</div>
-          
-          {generateDigitSequence().map((num, idx) => (
-            <div 
-              key={idx} 
-              className="wheel-digit"
-              style={{
-                animationDelay: `${idx * 150}ms`, 
-                animationDuration: '300ms'
-              }}
-            >
-              {num}
-            </div>
-          ))}
-        </div>
-      )}
+  node.addEventListener('transitionend', onEnd, { once: true });
+  return () => { node.removeEventListener('transitionend', onEnd); };
+}, [digit, duration]);
+
+const staticDigits = Array.from({length: 20}, (_, i) => i % 10);
+
+return (
+  <div className="digit-roller-container">
+    <div ref={wheelRef} className="digit-wheel">
+      {staticDigits.map((n, i) => <div key={i}>{n}</div>)}
     </div>
-  );
+  </div>
+);
 };
+
 
 interface NumberRollerProps {
   value: number;
@@ -312,10 +298,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const getDisplayAddress = (addr: string) =>
     addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
     
-  const fixedDecimals = (num: number) => {
-    return num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
-
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
       {!address && (
