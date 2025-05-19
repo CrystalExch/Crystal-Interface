@@ -334,7 +334,7 @@ const displayName = username && username.trim() !== ''
               ) : (
                 <>
                   <span className="referral-username">{displayName}</span>
-                  <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
+                  <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x {t('pointMultiplier')}</div>
                 </>
               )}
             </div>
@@ -354,7 +354,7 @@ const displayName = username && username.trim() !== ''
             ) : (
               <span className="referral-count-number">{commissionBonus}</span>
             )}
-            <span className="referrals-bonus-content"> Crystals From Referrals </span>
+            <span className="referrals-bonus-content">{t('crystalsFromReferrals')}</span>
             <Gem className="referred-count-icon" size={30} />
           </div>
         </div>
@@ -363,7 +363,7 @@ const displayName = username && username.trim() !== ''
             <div className="referral-background-wrapper">
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
-                <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
+                <h1 className="referrals-subtitle">{t('refAd')}</h1>
               </div>
               <div className="referral-background-container">
                 <div className="referral-bg-placeholder">
