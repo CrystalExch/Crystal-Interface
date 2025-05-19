@@ -44,103 +44,101 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
     [];
 
   return (
-    <div className="orderhistory-content-wrapper">
-      <div className="order-history-oc-container">
-        <div className="order-history-oc-header">
-          <div className="ghost" />
-          <SortableHeaderCell
-            columnKey="markets"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            {t('markets')}
-          </SortableHeaderCell>
-          <SortableHeaderCell
-            columnKey="tradeValue"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            <TooltipLabel
-              label={t('tradeValue')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">
-                    {t('tradeValueSubtitle')}
-                  </div>
+    <div className="order-history-content-wrapper">
+      <div className="order-history-oc-header">
+        <div className="ghost" />
+        <SortableHeaderCell
+          columnKey="markets"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('markets')}
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="tradeValue"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          <TooltipLabel
+            label={t('tradeValue')}
+            tooltipText={
+              <div>
+                <div className="tooltip-description">
+                  {t('tradeValueSubtitle')}
                 </div>
-              }
-              className="impact-label"
-            />
-          </SortableHeaderCell>
-          <SortableHeaderCell
-            columnKey="price"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            {t('price')}
-          </SortableHeaderCell>
-          <SortableHeaderCell
-            columnKey="amountFilled"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            <TooltipLabel
-              label={t('amountFilled')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">
-                    {t('amountFilledSubtitle')}
-                  </div>
+              </div>
+            }
+            className="impact-label"
+          />
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="price"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('price')}
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="amountFilled"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          <TooltipLabel
+            label={t('amountFilled')}
+            tooltipText={
+              <div>
+                <div className="tooltip-description">
+                  {t('amountFilledSubtitle')}
                 </div>
-              }
-              className="impact-label"
+              </div>
+            }
+            className="impact-label"
+          />
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="status"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          <TooltipLabel
+            label={t('status')}
+            tooltipText={
+              <div>
+                <div className="tooltip-description">{t('statusSubtitle')}</div>
+              </div>
+            }
+            className="impact-label"
+          />
+        </SortableHeaderCell>
+        <SortableHeaderCell
+          columnKey="time"
+          sortColumn={sortColumn}
+          sortOrder={sortOrder}
+          onSort={handleSort}
+        >
+          {t('time')}
+        </SortableHeaderCell>
+        <span className="oc-cell view">{t('view')}</span>
+      </div>
+      
+      <div className="order-history-items-container">
+        {currentItems.length > 0 ? (
+          currentItems.map((item, index) => (
+            <OrderHistoryItem
+              key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
+              order={item}
+              market={markets[item[4]]}
+              quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
+              / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
             />
-          </SortableHeaderCell>
-          <SortableHeaderCell
-            columnKey="status"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            <TooltipLabel
-              label={t('status')}
-              tooltipText={
-                <div>
-                  <div className="tooltip-description">{t('statusSubtitle')}</div>
-                </div>
-              }
-              className="impact-label"
-            />
-          </SortableHeaderCell>
-          <SortableHeaderCell
-            columnKey="time"
-            sortColumn={sortColumn}
-            sortOrder={sortOrder}
-            onSort={handleSort}
-          >
-            {t('time')}
-          </SortableHeaderCell>
-          <span className="oc-cell view">{t('view')}</span>
-        </div>
-        
-        <div className="order-history-items-container">
-          {currentItems.length > 0 ? (
-            currentItems.map((item, index) => (
-              <OrderHistoryItem
-                key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
-                order={item}
-                market={markets[item[4]]}
-                quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
-                / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
-              />
-            ))
-          ) : (null
-          )}
-        </div>
+          ))
+        ) : (null
+        )}
       </div>
     </div>
   );
