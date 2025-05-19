@@ -6034,9 +6034,10 @@ input[type="email"] {
 
   .challenge-intro-visual-side {
     max-width:  100vw;
+    height: 300px;
     width: 80vw;
-    margin: 0 20px
   }
+
 
   .circle-bottom,
   .circle-left,
@@ -6072,10 +6073,27 @@ input[type="email"] {
   .challenge-mini-leaderboard{
     margin-top: 80px !important;
   }
+  .intro-image-container{
+    margin-bottom: -20%;
+  }
+  .lbstand{
+    width: 120% !important;
+    margin-top: 10vw;
+    border-radius: 12px;
+  }
 }
-
+@media(max-width: 460px){
+  .challenge-mini-leaderboard{
+    max-width: 300px !important;
+  }
+  .mini-top-rank{
+    margin-left: 6% !important;
+  }
+}
 @media(max-width: 400px){
-  
+    .intro-image-container{
+    margin-bottom: -40%;
+  }
 }
 
 @media(max-width: 500px){
@@ -6635,56 +6653,52 @@ input[type="email"] {
   max-width: 1000px;
   text-align: left;
   position: relative;
-  margin-bottom: 30px;
+  margin-bottom: 10px;
+}
+.welcome-text {
+  font-size: 2rem;
+  letter-spacing: -1.5px;
+  margin: 0;
+  background: linear-gradient(135deg, #a0a0a0, #e8e8e8, #ffffff, #e8e8e8, #a0a0a0);
+  background-size: 400% 400%;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
 }
 
-.welcome-text {
-  font-size: 2.5rem;
-  line-height: 1;
-  letter-spacing: -1px;
-  color: #ffffff;
-  margin: 0;
-}
 
 .welcome-enter-button {
-  font-family: Orbitron, sans-serif;
-  padding: .75rem 1.5rem .65rem;
-  background: linear-gradient(135deg, #aaaecf 0, #9a9ec7, #8b8eb8, #7f82ac, #7376a0);
-  border: none;
+  padding: .5rem 1.5rem;
+ border: none;
   border-radius: .5rem;
-  box-shadow: inset 0 1px 1px #ffffff26, inset 0 -1px 1px #00000026, 0 2px 8px #aaaecf33;
-  color: #111114;
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 12px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);  color: #111114;
   font-weight: 700;
   font-size: .8rem;
   transition: all .3s ease;
   overflow: hidden;
   position: relative;
   text-decoration: none;
+  letter-spacing: -0.5px;
 }
 
 .welcome-enter-button:hover {
   cursor:pointer;
-  box-shadow:inset 0 1px 1px rgba(255,255,255,.15),inset 0 -1px 1px rgba(0,0,0,.15),0 4px 12px rgba(170,174,207,.2);
   filter:brightness(1.1);
   transform:scale(1.03)
 }
 
-.welcome-enter-button::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(120deg, transparent, rgba(255, 255, 255, .3), transparent);
-  transform: skew(-20deg);
-  transition: left .6s ease;
-  pointer-events: none;
-}
-
-.welcome-enter-button:hover::after{
-  left:120%
-}
 
 @keyframes fadeInButton {
   0% {
@@ -6709,3 +6723,35 @@ input[type="email"] {
     opacity: 0;
   }
 }
+
+@keyframes zoomOutFade {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes zoomInFade {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.welcome-screen-exit {
+  animation: zoomOutFade 0.6s ease-out forwards;
+}
+
+
+
+
+
+
