@@ -36,14 +36,14 @@ body.sidebar-expanded .app-header {
 .hamburger {
   background: none;
   border: 1.5px solid rgba(255, 255, 255, .07);
-  border-radius: 7px;
+  border-radius: 5px;
   cursor: pointer;
   display: none;
   flex-direction: column;
-  height: 35px;
-  min-width: 35px;
-  justify-content: space-around;
-  padding: 10px;
+  height: 34px;
+  min-width: 34px;
+  justify-content: center;
+  align-items: center;
   position: relative;
   transition: transform.3s ease-in-out;
 }
@@ -55,12 +55,13 @@ body.sidebar-expanded .app-header {
   font-size: 1.1rem;
   font-weight: 500;
   margin-right: 6px;
+  margin-left: 4px;
   text-decoration: none;
 }
 
 .hamburger-image {
   opacity: 0.5;
-  width: 15px;
+  width: 16px;
 }
 
 .crystal-logo {
@@ -353,7 +354,7 @@ body.sidebar-expanded .app-header {
   }
   .mobile-left-header{
     display: flex;
-    margin-left: 0px;
+    margin-left: 5px;
   }
   .left-header{
     position: absolute;

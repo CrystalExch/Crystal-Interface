@@ -219,7 +219,7 @@ function App() {
       })() ||
       (() => {
         const path = findShortestPath(token1, token2);
-        if (path && path.length > 2 && location.pathname.slice(1) != 'limit') {
+        if (path && path.length > 2) {
           let fee = BigInt(1);
           for (let i = 0; i < path.length - 1; i++) {
             fee *= getMarket(path[i], path[i + 1]).fee;
@@ -1139,7 +1139,7 @@ function App() {
                 ),
                 topics: [
                   [
-                    '0x9e2343fa67d709721d4042719dd2bb7443822bc095cdeef583b66cb1cd5887eb',
+                    '0xc3bcf95b5242764f3f2dc3e504ce05823a3b50c4ccef5e660d13beab2f51f2ca',
                   ],
                 ],
               },
@@ -2227,7 +2227,7 @@ function App() {
             }
           }
         });
-        setTotalClaimableFees(totalFees);
+        setTotalClaimableFees(totalFees || 0);
 
         return newFees;
       });
@@ -2838,12 +2838,12 @@ function App() {
             amountIn > tokenBalances[tokenIn] ||
             (
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress) || (scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                  tokenIn == activeMarket.baseAddress && addliquidityonly) || (scaleEnd >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)))) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)))) &&
           connected &&
           userchain == activechain,
         );
@@ -2855,15 +2855,15 @@ function App() {
                 ? 1 : scaleEnd == BigInt(0) ? 2
                   : amountIn <= tokenBalances[tokenIn]
                     ? ((scaleStart >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress) ||
+                      tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                       (scaleStart <= highestBid &&
-                        tokenIn == activeMarket.baseAddress))
+                        tokenIn == activeMarket.baseAddress && addliquidityonly))
                       ? tokenIn == activeMarket.quoteAddress
                         ? 3
                         : 4 : ((scaleEnd >= lowestAsk &&
-                          tokenIn == activeMarket.quoteAddress) ||
+                          tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                           (scaleEnd <= highestBid &&
-                            tokenIn == activeMarket.baseAddress))
+                            tokenIn == activeMarket.baseAddress && addliquidityonly))
                         ? tokenIn == activeMarket.quoteAddress
                           ? 5
                           : 6
@@ -3953,7 +3953,7 @@ const handleWelcomeTransition = () => {
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError(t('invalidRefCode'));
+        setError(t('setRefFailed'));
         setIsRefSigning(false);
         return false;
       }
@@ -11886,9 +11886,9 @@ const handleWelcomeTransition = () => {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -11909,9 +11909,9 @@ const handleWelcomeTransition = () => {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleStart >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                     (scaleStart <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
+                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -11975,9 +11975,9 @@ const handleWelcomeTransition = () => {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleEnd >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -11998,9 +11998,9 @@ const handleWelcomeTransition = () => {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                     (scaleEnd <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
+                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -12312,7 +12312,7 @@ const handleWelcomeTransition = () => {
               let sum = BigInt(0)
               o.forEach((order) => {
                 sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
-                action[0].push(tokenIn == activeMarket.quoteAddress ? 1 : 2);
+                action[0].push(tokenIn == activeMarket.quoteAddress ? addliquidityonly ? 1 : 5 : addliquidityonly ? 6 : 2);
                 price[0].push(order[0]);
                 param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
                 param2[0].push(tokenIn == eth ? router : address);
@@ -12333,6 +12333,7 @@ const handleWelcomeTransition = () => {
                       price,
                       param1,
                       param2,
+                      usedRefAddress
                     )
                   })
                 } else {
@@ -12355,6 +12356,7 @@ const handleWelcomeTransition = () => {
                         price,
                         param1,
                         param2,
+                        usedRefAddress
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
@@ -12412,6 +12414,7 @@ const handleWelcomeTransition = () => {
                         price,
                         param1,
                         param2,
+                        usedRefAddress
                       )
                     })
                   }
@@ -12520,9 +12523,15 @@ const handleWelcomeTransition = () => {
             />
           </div>
           <ToggleSwitch
-            checked={true}
-            onChange={() => { }}
-            disabled={true}
+            checked={addliquidityonly}
+            onChange={() => {
+              const newValue = !addliquidityonly;
+              setAddLiquidityOnly(newValue);
+              localStorage.setItem(
+                'crystal_add_liquidity_only',
+                JSON.stringify(newValue),
+              );
+            }}
           />
         </div>
         <div className="trade-fee">
@@ -12587,6 +12596,7 @@ const handleWelcomeTransition = () => {
       address={address}
       client={client}
       newTxPopup={newTxPopup}
+      usedRefAddress={usedRefAddress}
     />
   ), [
     tokendict,
@@ -12613,7 +12623,8 @@ const handleWelcomeTransition = () => {
     waitForTxReceipt,
     address,
     client,
-    newTxPopup
+    newTxPopup,
+    usedRefAddress
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (

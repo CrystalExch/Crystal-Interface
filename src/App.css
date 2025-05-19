@@ -2053,10 +2053,6 @@ body:has(.right-column.show) .blur-background-popups {
   overflow: auto;
 }
 
-body:has(.referral-scroll-wrapper) .app-wrapper:not(:has(.overlay)) {
-  min-height: 746px;
-}
-
 .trade-container {
   box-sizing: border-box;
 }

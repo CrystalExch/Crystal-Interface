@@ -13,7 +13,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
 
@@ -235,7 +234,7 @@ const Referrals: React.FC<ReferralProps> = ({
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError(t('invalidRefCode'));
+        setError(t('setRefFailed'));
         return false;
       }
     }
@@ -376,10 +375,6 @@ const displayName = username && username.trim() !== ''
                   {!bgLoaded && (
                     <div className="referral-bg-placeholder-content"></div>
                   )}
-                  <img
-                    src={ReferralMobileBackground}
-                    className="referral-mobile-background"
-                  />
                 </div>
                 <span className="referral-loader"></span>
                 <div className="features-grid">

@@ -206,7 +206,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculate = () => {
-      const target = new Date('2025-06-01T00:00:00-04:00').getTime();
+      const target = new Date('2025-06-20T00:00:00-04:00').getTime();
       const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -481,7 +481,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           })}
       </div>
 
-      <div className="full-leaderboard">
         <div className="leaderboard-headers">
           <div className="header-rank">{t('rank')}</div>
           <div className="header-bonus">{t('totalXP')}</div>
@@ -608,7 +607,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
-      </div>
     </div>
   );
 };

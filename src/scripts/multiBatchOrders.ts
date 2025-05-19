@@ -9,13 +9,14 @@ const multiBatchOrders = (
   price: bigint[][],
   param1: bigint[][],
   param2: `0x${string}`[][],
+  referrer: `0x${string}`,
 ) => {
   return {
       target: address,
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
         functionName: 'multiBatchOrders',
-        args: [markets, action, price, param1, param2],
+        args: [markets, action, price, param1, param2, referrer],
       }),
       value: value,
     }

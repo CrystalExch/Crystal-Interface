@@ -2,19 +2,12 @@ import React, { useEffect, useRef, useState } from 'react';
 import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 
 import cancelOrder from '../../../scripts/cancelOrder';
-import multiBatchOrders from '../../../scripts/multiBatchOrders';
-import approve from '../../../scripts/approve';
-import { TokenAbi } from '../../../abis/TokenAbi';
-import {
-  readContracts,
-} from '@wagmi/core'
+import replaceOrder from '../../../scripts/replaceOrder';
 import normalizeTicker from '../../../utils/normalizeTicker';
-import { settings } from '../../../settings';
-import { config } from '../../../wagmi';
-import { maxUint256 } from 'viem';
 import { overrides } from './overrides';
 import customRound from '../../../utils/customRound';
 import { formatDisplay } from '../../OrderCenter/utils';
+import { settings } from '../../../settings';
 import './AdvancedTradingChart.css';
 
 interface ChartCanvasProps {
@@ -35,6 +28,7 @@ interface ChartCanvasProps {
   address: any;
   client: any;
   newTxPopup: any;
+  usedRefAddress: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -52,9 +46,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   sendUserOperationAsync,
   setChain,
   waitForTxReceipt,
-  address,
-  client,
-  newTxPopup
+  usedRefAddress,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -181,125 +173,20 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               .onMove(async () => {
                 orderLine.setCancellable(false)
                 try {
-                  let action: any = [[]];
-                  let price: any = [[]];
-                  let param1: any = [[]];
-                  let param2: any = [[]];
-                  if (order[3] == 1) {
-                    action[0].push(0)
-                    action[0].push(3)
-                    action[0].push(1)
-                    price[0].push(order[0])
-                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                    param1[0].push(BigInt(order[1]))
-                    param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
-                    param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
-                    param2[0].push(address)
-                    param2[0].push(address)
-                    param2[0].push(address)
-                  }
-                  else {
-                    action[0].push(0)
-                    action[0].push(4)
-                    action[0].push(2)
-                    price[0].push(order[0])
-                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                    price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                    param1[0].push(BigInt(order[1]))
-                    param1[0].push(order[2]-order[7])
-                    param1[0].push(order[2]-order[7])
-                    param2[0].push(address)
-                    param2[0].push(address)
-                    param2[0].push(address)
-                  }
                   await setChain();
                   let hash;
-                  const tokenIn = (order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress)
-                  const allowance = (await readContracts(config, {
-                    contracts: [
-                      {
-                        abi: TokenAbi,
-                        address: (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                        functionName: 'allowance',
-                        args: [
-                          address as `0x${string}`,
-                          markets[order[4]].address,
-                        ],
-                      },
-                    ]
-                  }))?.[0]?.result || BigInt(0)
-                  if (allowance < (order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) {
-                    if (client) {
-                      let uo = []
-                      uo.push(approve(
-                        (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                        markets[order[4]].address,
-                        maxUint256,
-                      ))
-                      uo.push(multiBatchOrders(
-                        router,
-                        BigInt(0),
-                        [markets[order[4]].address],
-                        action,
-                        price,
-                        param1,
-                        param2,
-                      ))
-                      hash = await sendUserOperationAsync({ uo: uo })
-                      newTxPopup(
-                        hash.hash,
-                        'approve',
-                        (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                        '',
-                        customRound(
-                          Number((order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) /
-                          10 ** Number(order[3] == 1 ? markets[order[4]].quoteDecimals : markets[order[4]].baseDecimals),
-                          3,
-                        ),
-                        0,
-                        '',
-                        activeMarket.address,
-                      );
-                    }
-                    else {
-                      hash = await sendUserOperationAsync({
-                        uo: approve(
-                          (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                          markets[order[4]].address,
-                          maxUint256,
-                        )
-                      })
-                      newTxPopup(
-                        (client
-                          ? hash.hash
-                          : await waitForTxReceipt(hash.hash)
-                        ),
-                        'approve',
-                        (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                        '',
-                        customRound(
-                          Number((order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) /
-                          10 ** Number(order[3] == 1 ? markets[order[4]].quoteDecimals : markets[order[4]].baseDecimals),
-                          3,
-                        ),
-                        0,
-                        '',
-                        activeMarket.address,
-                      );
-                    }
-                  }
-                  if (!client || !(allowance < (order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7]))) {
-                    hash = await sendUserOperationAsync({uo: multiBatchOrders(
-                      router,
-                      BigInt(0),
-                      [markets[order[4]].address],
-                      action,
-                      price,
-                      param1,
-                      param2,
-                    )})
-                  }
+                  hash = await sendUserOperationAsync({uo: replaceOrder(
+                    router,
+                    BigInt(0),
+                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                    false,
+                    BigInt(order[0]),
+                    BigInt(order[1]),
+                    BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)),
+                    BigInt(0),
+                    usedRefAddress
+                  )})
                   await waitForTxReceipt(hash.hash);
                   refetch()
                 } catch (error) {
@@ -656,125 +543,20 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   .onMove(async () => {
                     orderLine.setCancellable(false)
                     try {
-                      let action: any = [[]];
-                      let price: any = [[]];
-                      let param1: any = [[]];
-                      let param2: any = [[]];
-                      if (order[3] == 1) {
-                        action[0].push(0)
-                        action[0].push(3)
-                        action[0].push(1)
-                        price[0].push(order[0])
-                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                        param1[0].push(BigInt(order[1]))
-                        param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
-                        param1[0].push(((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)))
-                        param2[0].push(address)
-                        param2[0].push(address)
-                        param2[0].push(address)
-                      }
-                      else {
-                        action[0].push(0)
-                        action[0].push(4)
-                        action[0].push(2)
-                        price[0].push(order[0])
-                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                        price[0].push(BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)))
-                        param1[0].push(BigInt(order[1]))
-                        param1[0].push(order[2]-order[7])
-                        param1[0].push(order[2]-order[7])
-                        param2[0].push(address)
-                        param2[0].push(address)
-                        param2[0].push(address)
-                      }
                       await setChain();
                       let hash;
-                      const tokenIn = (order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress)
-                      const allowance = (await readContracts(config, {
-                        contracts: [
-                          {
-                            abi: TokenAbi,
-                            address: (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                            functionName: 'allowance',
-                            args: [
-                              address as `0x${string}`,
-                              markets[order[4]].address,
-                            ],
-                          },
-                        ]
-                      }))?.[0]?.result || BigInt(0)
-                      if (allowance < (order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) {
-                        if (client) {
-                          let uo = []
-                          uo.push(approve(
-                            (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                            markets[order[4]].address,
-                            maxUint256,
-                          ))
-                          uo.push(multiBatchOrders(
-                            router,
-                            BigInt(0),
-                            [markets[order[4]].address],
-                            action,
-                            price,
-                            param1,
-                            param2,
-                          ))
-                          hash = await sendUserOperationAsync({ uo: uo })
-                          newTxPopup(
-                            hash.hash,
-                            'approve',
-                            (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                            '',
-                            customRound(
-                              Number((order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) /
-                              10 ** Number(order[3] == 1 ? markets[order[4]].quoteDecimals : markets[order[4]].baseDecimals),
-                              3,
-                            ),
-                            0,
-                            '',
-                            activeMarket.address,
-                          );
-                        }
-                        else {
-                          hash = await sendUserOperationAsync({
-                            uo: approve(
-                              (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                              markets[order[4]].address,
-                              maxUint256,
-                            )
-                          })
-                          newTxPopup(
-                            (client
-                              ? hash.hash
-                              : await waitForTxReceipt(hash.hash)
-                            ),
-                            'approve',
-                            (tokenIn == settings.chainConfig[activechain].eth as `0x${string}` ? settings.chainConfig[activechain].weth as `0x${string}` : tokenIn as `0x${string}`),
-                            '',
-                            customRound(
-                              Number((order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7])) /
-                              10 ** Number(order[3] == 1 ? markets[order[4]].quoteDecimals : markets[order[4]].baseDecimals),
-                              3,
-                            ),
-                            0,
-                            '',
-                            activeMarket.address,
-                          );
-                        }
-                      }
-                      if (!client || !(allowance < (order[3] == 1 ? ((BigInt(order[8])/markets[order[4]].scaleFactor) - (BigInt(order[7])*BigInt(order[0])/markets[order[4]].scaleFactor)) : order[2]-order[7]))) {
-                        hash = await sendUserOperationAsync({uo: multiBatchOrders(
-                          router,
-                          BigInt(0),
-                          [markets[order[4]].address],
-                          action,
-                          price,
-                          param1,
-                          param2,
-                        )})
-                      }
+                      hash = await sendUserOperationAsync({uo: replaceOrder(
+                        router,
+                        BigInt(0),
+                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                        false,
+                        BigInt(order[0]),
+                        BigInt(order[1]),
+                        BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)),
+                        BigInt(0),
+                        usedRefAddress
+                      )})
                       await waitForTxReceipt(hash.hash);
                       refetch()
                     } catch (error) {
