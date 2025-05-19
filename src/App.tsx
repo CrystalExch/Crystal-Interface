@@ -2227,7 +2227,7 @@ function App() {
             }
           }
         });
-        setTotalClaimableFees(totalFees);
+        setTotalClaimableFees(totalFees || 0);
 
         return newFees;
       });

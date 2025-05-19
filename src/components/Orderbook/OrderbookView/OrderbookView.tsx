@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useMemo, useState } from 'react';
 
 import DropdownContext from './DropdownContext/DropdownContext';
 import OrderList from './OrderList/OrderList';
@@ -50,7 +50,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
-  const [rowHeight, setRowHeight] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const heightUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -69,12 +68,16 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
     }, 100);
   }, [containerHeight]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const resizeObserver = new ResizeObserver(updateContainerHeight);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
-    updateContainerHeight();
+    const rect = containerRef.current?.getBoundingClientRect();
+    const newHeight = rect?.height || 0;
+    if (Math.abs(newHeight - containerHeight) > 1 && newHeight != 0) {
+      setContainerHeight(newHeight);
+    }
     return () => {
       if (heightUpdateTimeoutRef.current) {
         clearTimeout(heightUpdateTimeoutRef.current);
@@ -82,19 +85,6 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       resizeObserver.disconnect();
     };
   }, [updateContainerHeight]);
-
-  useEffect(() => {
-    const probe = document.createElement('div');
-    probe.style.position = 'absolute';
-    probe.style.visibility = 'hidden';
-    probe.style.height = 'auto';
-    probe.style.whiteSpace = 'nowrap';
-    probe.className = 'order-list-probe';
-    document.body.appendChild(probe);
-    const measuredHeight = probe.getBoundingClientRect().height;
-    setRowHeight(measuredHeight || 20.5);
-    document.body.removeChild(probe);
-  }, []);
 
   useEffect(() => {
     localStorage.setItem('ob_viewmode', viewMode);
@@ -107,9 +97,9 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       true,
       viewMode,
       containerHeight,
-      rowHeight || 20.5,
+      20.5,
     );
-  }, [roundedBuy, obInterval, viewMode, containerHeight, rowHeight]);
+  }, [roundedBuy, obInterval, viewMode, containerHeight]);
   
   const { orders: processedSellOrders, leftoverPerRow: extraSell } = useMemo(() => {
     return scaleOrders(
@@ -118,10 +108,10 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       false,
       viewMode,
       containerHeight,
-      rowHeight || 20.5,
+      20.5
     );
-  }, [roundedSell, obInterval, viewMode, containerHeight, rowHeight]);
-  
+  }, [roundedSell, obInterval, viewMode, containerHeight]);
+
   const adjustedMaxSize = useMemo(() => {
     const lastBuySize = processedBuyOrders
       .filter((order) => order.price !== 0)

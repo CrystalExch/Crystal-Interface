@@ -19,7 +19,7 @@ export function scaleOrders(
   containerHeight: number,
   rowHeight: number,
 ): { orders: Order[]; leftoverPerRow: number } {
-  if (!orders || !Array.isArray(orders)) {
+  if (!orders || !Array.isArray(orders) || containerHeight == 0) {
     return { orders: [], leftoverPerRow: 0 };
   }
 
