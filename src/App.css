@@ -5174,6 +5174,7 @@ input[type="email"] {
   justify-content: center;
   background-color: rgb(0, 0, 0);
   overflow: hidden;
+  opacity: 1;
 }
 
 
@@ -5187,6 +5188,7 @@ input[type="email"] {
   transition: backdrop-filter 0.3s ease;
   pointer-events: none;
   z-index: 50;
+  opacity: 1;
 }
 
 .onboarding-background-blur.active {
@@ -5584,7 +5586,17 @@ input[type="email"] {
 }
 
 .challenge-section.exiting {
-  animation: fadeOut 1s ease forwards;
+  animation: fadeOut 0.3s ease forwards;
+}
+
+.onboarding-background-blur.exiting {
+  transition: opacity 0.3s;
+  opacity: 0;
+}
+
+.onboarding-container.exiting {
+  transition: opacity 0.3s;
+  opacity: 0;
 }
 
 .challenge-intro-split-container {

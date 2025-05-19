@@ -4054,7 +4054,8 @@ const handleWelcomeTransition = () => {
       localStorage.setItem('crystal_has_completed_onboarding', 'true');
       setpopup(0);
       setCurrentStep(0)
-    }, 1000);
+      setExitingChallenge(false);
+    }, 250);
   };
 
   const handleEditUsername = async (_usernameInput: any) => {
@@ -7167,7 +7168,7 @@ const handleWelcomeTransition = () => {
         {(popup === 14 || popup === 15 || popup === 17 || isTransitioning) ? (
           <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
             <div
-              className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
+              className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || popup === 15
                 ? 'active'
                 : ''
                 }`}

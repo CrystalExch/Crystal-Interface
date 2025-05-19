@@ -379,7 +379,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 setTimeout(() => {
                   setIsTransitioning(false);
                   setJustEntered(true);
-                });
+                }, 500);
               });
             }}>
             {t('viewRules')}
