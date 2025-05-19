@@ -20,54 +20,99 @@ const DigitRoller: React.FC<DigitRollerProps> = ({
   digit,
   duration = 600,
 }) => {
-  const prevRef = useRef(parseInt(digit, 10) || 0);
+  const prevDigitRef = useRef(parseInt(digit, 10) || 0);
+  const [sequence, setSequence] = useState<number[]>([prevDigitRef.current]);
+  const [isAnimating, setIsAnimating] = useState(false);
   const wheelRef = useRef<HTMLDivElement>(null);
 
-useEffect(() => {
-  const node = wheelRef.current;
-  if (!node) return;
+  useEffect(() => {
+    const from = prevDigitRef.current;
+    const to = parseInt(digit, 10) || 0;
 
-  const from = prevRef.current;                  
-  const to   = parseInt(digit, 10) || 0;          
-  const DIGIT_HEIGHT = 1.2;                          
-  const distance   = (to - from + 10) % 10;         
+    if (from === to && sequence.length === 1 && !isAnimating) {
+      return;
+    }
 
-  if (distance === 0) {
-    node.style.transition = '';
-    node.style.transform  = `translateY(-${to * DIGIT_HEIGHT}em)`;
-    return;
-  }
+    setIsAnimating(true);
 
-  const endIndex = from + distance;              
+    let newSequenceForAnimation: number[];
+    if (from === to) {
+      newSequenceForAnimation = [to];
+    } else {
+      newSequenceForAnimation = [from];
+      let next = from;
+      do {
+        next = (next + 1) % 10;
+        newSequenceForAnimation.push(next);
+      } while (next !== to);
+    }
+    setSequence(newSequenceForAnimation);
 
-  requestAnimationFrame(() => {
-    node.style.transition = `transform ${duration}ms ease-in-out`;
-    node.style.transform  = `translateY(-${endIndex * DIGIT_HEIGHT}em)`;
-  });
+  }, [digit]); 
 
-  const onEnd = () => {
-    node.style.transition = '';                    
-    requestAnimationFrame(() => {
-      prevRef.current = to;                        
-      node.style.transform = `translateY(-${to * DIGIT_HEIGHT}em)`;
-    });
-  };
+  useEffect(() => {
+    const node = wheelRef.current;
+    if (!node) return;
 
-  node.addEventListener('transitionend', onEnd, { once: true });
-  return () => { node.removeEventListener('transitionend', onEnd); };
-}, [digit, duration]);
+    let transitionEndListener: (() => void) | undefined;
+    let rAFId: number | undefined;
 
-const staticDigits = Array.from({length: 20}, (_, i) => i % 10);
+    if (isAnimating) {
+      if (sequence.length > 1) {
+        const targetDigitInSequence = sequence[sequence.length - 1];
 
-return (
-  <div className="digit-roller-container">
-    <div ref={wheelRef} className="digit-wheel">
-      {staticDigits.map((n, i) => <div key={i}>{n}</div>)}
+        rAFId = requestAnimationFrame(() => {
+          if (wheelRef.current) {
+            wheelRef.current.style.transition = `transform ${duration}ms ease-in-out`;
+            wheelRef.current.style.transform = `translateY(-${(sequence.length - 1) * 1.2}em)`;
+          }
+        });
+
+        transitionEndListener = () => {
+          prevDigitRef.current = targetDigitInSequence;
+          setSequence([targetDigitInSequence]);
+        };
+        node.addEventListener('transitionend', transitionEndListener, { once: true });
+
+      } else if (sequence.length === 1) {
+        node.style.transition = 'none';
+        node.style.transform = 'translateY(0)';
+        setIsAnimating(false); 
+        prevDigitRef.current = sequence[0]; 
+      }
+    } else {
+        if (node.style.transform !== 'translateY(0px)' && node.style.transform !== 'translateY(0)') {
+             node.style.transform = 'translateY(0)';
+        }
+        if (node.style.transition !== 'none') {
+            node.style.transition = 'none';
+        }
+    }
+
+    return () => { 
+      if (rAFId) {
+        cancelAnimationFrame(rAFId);
+      }
+      if (transitionEndListener && node) {
+        node.removeEventListener('transitionend', transitionEndListener);
+      }
+    };
+  }, [sequence, isAnimating, duration]);
+
+  return (
+    <div className="digit-roller-container">
+      <div
+        ref={wheelRef}
+        className="digit-wheel"
+        style={{ transform: 'translateY(0)', transition: 'none' }}
+      >
+        {sequence.map((n, i) => (
+          <div key={i}>{n}</div>
+        ))}
+      </div>
     </div>
-  </div>
-);
+  );
 };
-
 
 interface NumberRollerProps {
   value: number;
@@ -206,7 +251,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculate = () => {
-      const target = new Date('2025-06-20T00:00:00-04:00').getTime();
+      const target = new Date('2025-06-01T00:00:00-04:00').getTime();
       const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -481,6 +526,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           })}
       </div>
 
+      <div className="full-leaderboard">
         <div className="leaderboard-headers">
           <div className="header-rank">{t('rank')}</div>
           <div className="header-bonus">{t('totalXP')}</div>
@@ -607,6 +653,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             </button>
           </div>
         </div>
+      </div>
     </div>
   );
 };
