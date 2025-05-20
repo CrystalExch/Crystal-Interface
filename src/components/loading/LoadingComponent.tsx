@@ -16,7 +16,7 @@ const Overlay: React.FC<OverlayProps> = ({
   bgcolor,
   height = 0,
   minLogoHeight = 30,
-  maxLogoHeight = 70,
+  maxLogoHeight = 75,
 }) => {
   if (!isVisible) return null;
   const uiLogo = '/CrystalLogo.png';

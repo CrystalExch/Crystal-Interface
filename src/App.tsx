@@ -6109,7 +6109,7 @@ const handleWelcomeTransition = () => {
                   <LoadingOverlay
                     isVisible={true}
                     bgcolor={'#00000000'}
-                    height={40}
+                    height={30}
                   />
                 </div>
               ) : (
