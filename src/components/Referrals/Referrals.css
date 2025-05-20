@@ -644,16 +644,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: #6a74d3a1;
-  border-radius: 8px;
-  padding: 2px;
+  background-color: #969bc93b;
+  border: 1px solid #aaaecf7e;
+  border-radius: 4px;
+  padding: 1px;
   letter-spacing: -0.5px;
   font-size: 0.75rem;
-  color: rgba(255, 255, 255, 0.7);
+  color: #bcc0ea;
   width: 30%;
   min-width: 130px;
   margin-top: -4px;
 }
+
 .referral-user-right-side{
   display: flex;
   flex-direction: column;
