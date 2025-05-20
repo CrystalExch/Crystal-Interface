@@ -6767,3 +6767,37 @@ input[type="email"] {
 
 
 
+.account-setup-footer {
+  display: flex;
+  position: fixed; 
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 40px;
+  padding-top: 10px;
+  bottom: 40px;
+  left: 0;
+  padding-bottom: env(safe-area-inset-bottom); 
+  z-index: 100; 
+}
+
+@supports (-webkit-touch-callout: none) {
+  .account-setup-footer {
+    bottom: max(40px, env(safe-area-inset-bottom));
+  }
+}
+
+.onboarding-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+@media not all and (min-resolution:.001dpcm) { 
+  @supports (-webkit-appearance:none) {
+    .account-setup-footer {
+      position: fixed;
+      bottom: 240px !important;
+      z-index: 9999;
+    }
+  }
+}
