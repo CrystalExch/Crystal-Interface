@@ -6796,7 +6796,7 @@ input[type="email"] {
   @supports (-webkit-appearance:none) {
     .account-setup-footer {
       position: fixed;
-      bottom: 40px !important;
+      bottom: 240px !important;
       z-index: 9999;
     }
   }
