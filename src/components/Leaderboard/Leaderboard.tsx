@@ -179,7 +179,6 @@ interface LeaderboardProps {
   username: any;
   setIsTransitioning: any;
   setTransitionDirection: any;
-  setJustEntered: any;
 }
 
 const ITEMS_FIRST_PAGE = 47;
@@ -192,7 +191,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   username,
   setIsTransitioning,
   setTransitionDirection,
-  setJustEntered,
 }) => {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -257,7 +255,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculate = () => {
-      const target = new Date('2025-06-01T00:00:00-04:00').getTime();
+      const target = new Date('2025-06-20T00:00:00-04:00').getTime();
       const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -378,7 +376,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 setpopup(15);
                 setTimeout(() => {
                   setIsTransitioning(false);
-                  setJustEntered(true);
                 }, 500);
               });
             }}>
@@ -400,7 +397,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     value={overview!.global_total_points}
                     decimals={2}
                     duration={800}
-                  /> / 1,000,000,000.00
+                  /> / 10,000,000,000.00
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -411,7 +408,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '0%'
-                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
+                    : `${(overview!.global_total_points / 10_000_000_000) * 100}%`,
                 }}
               />
             </div>

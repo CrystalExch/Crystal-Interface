@@ -3498,26 +3498,7 @@ function App() {
       }
     })();
   }, [activechain]);
-const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
-const [isConnectEntering, setIsConnectEntering] = useState(false);
 
-const handleWelcomeTransition = () => {
-  audio.currentTime = 0;
-  audio.play();
-  
-  setIsTransitioning(true);
-  setIsWelcomeExiting(true);
-  
-  setTimeout(() => {
-    setIsConnectEntering(true);
-  }, 200);
-  
-  setTimeout(() => {
-    setShowWelcomeScreen(false);
-    setIsTransitioning(false);
-    setIsWelcomeExiting(false);
-  }, 400);
-};
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && popup != 11) {
@@ -3918,7 +3899,6 @@ const handleWelcomeTransition = () => {
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [justEntered, setJustEntered] = useState(false);
   const [exitingChallenge, setExitingChallenge] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
@@ -3929,8 +3909,29 @@ const handleWelcomeTransition = () => {
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
   const [username, setUsername] = useState('')
+  const [usernameResolved, setUsernameResolved] = useState(false)
+  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
+  const [isConnectEntering, setIsConnectEntering] = useState(false);
   const backAudioRef = useRef<HTMLAudioElement>(null);
 
+  const handleWelcomeTransition = () => {
+    audio.currentTime = 0;
+    audio.play();
+    
+    setIsTransitioning(true);
+    setIsWelcomeExiting(true);
+    
+    setTimeout(() => {
+      setIsConnectEntering(true);
+    }, 200);
+    
+    setTimeout(() => {
+      setShowWelcomeScreen(false);
+      setIsTransitioning(false);
+      setIsWelcomeExiting(false);
+    }, 200);
+  };
+  
   const isValidInput = (value: string) => {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
@@ -4035,7 +4036,6 @@ const handleWelcomeTransition = () => {
 
     setTimeout(() => {
       setpopup(14);
-      setJustEntered(true);
       setCurrentStep(0);
 
       setTimeout(() => {
@@ -4159,7 +4159,8 @@ const handleWelcomeTransition = () => {
 
         if (read[0]?.result?.length != null) {
           setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
-          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "")
+          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
               setpopup(15);
@@ -7161,7 +7162,7 @@ const handleWelcomeTransition = () => {
         {(popup === 14 || popup === 15 || popup === 17 || isTransitioning) ? (
           <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
             <div
-              className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || popup === 15
+              className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || (popup === 15 && connected)
                 ? 'active'
                 : ''
                 }`}
@@ -7263,10 +7264,10 @@ const handleWelcomeTransition = () => {
 
                   </div>)}
                   <div
-                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!username || transitionDirection == 'backward')
+                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning)) && ((!username && usernameResolved) || transitionDirection == 'backward')
                       ? 'active'
                       : ''
-                      } ${justEntered ? 'entering' : ''}`}
+                      }`}
                   >
                     <div className="onboarding-split-container">
                       <div className="onboarding-left-side">
@@ -12876,7 +12877,6 @@ const handleWelcomeTransition = () => {
                 username={username}
                 setIsTransitioning={setIsTransitioning}
                 setTransitionDirection={setTransitionDirection}
-                setJustEntered={setJustEntered}
               />
             }
           />

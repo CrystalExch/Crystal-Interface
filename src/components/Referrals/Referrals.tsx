@@ -102,7 +102,7 @@ const Referrals: React.FC<ReferralProps> = ({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
-      `https://app.crystal.exchange/swap?ref=${refLink}`,
+      `https://app.crystal.exchange?ref=${refLink}`,
     );
     setCopySuccess(true);
     setTimeout(() => {
@@ -496,7 +496,7 @@ const displayName = username && username.trim() !== ''
                     <>
                       <span className="link-text">
                         <span className="link-base">
-                          https://app.crystal.exchange/swap?ref=
+                          https://app.crystal.exchange?ref=
                         </span>
                         <span className="link-url">{refLink}</span>
                       </span>
@@ -532,7 +532,7 @@ const displayName = username && username.trim() !== ''
                           onClick={() => {
                             const tweetText =
                               "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
-                            const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
+                            const url = `https://app.crystal.exchange?ref=${refLink}`;
                             window.open(
                               `https://twitter.com/intent/tweet?text=${encodeURIComponent(
                                 tweetText
