@@ -113,7 +113,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       .slice(-1)[0]?.totalSize || 0;
     return Math.max(lastBuySize, lastSellSize);
   }, [processedBuyOrders, processedSellOrders]);
-  
+
   return (
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className={`ob-controls ${!show ? 'hidden' : ''}`}>
@@ -135,7 +135,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           symbolQuote={symbolQuote}
           symbolBase={symbolBase}
         />
-        {viewMode === 'both' && containerHeight && (
+        {viewMode === 'both' && containerHeight != 0 && (
           <div className="view-both">
             <OrderList
               roundedOrders={processedSellOrders}
@@ -172,7 +172,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             />
           </div>
         )}
-        {viewMode === 'sell' && containerHeight && (
+        {viewMode === 'sell' && containerHeight != 0 && (
           <div className="ob-sell-only">
             <OrderList
               roundedOrders={processedSellOrders}
@@ -195,7 +195,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             />
           </div>
         )}
-        {viewMode === 'buy' && containerHeight && (
+        {viewMode === 'buy' && containerHeight != 0 && (
           <div className="ob-buy-only">
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}
