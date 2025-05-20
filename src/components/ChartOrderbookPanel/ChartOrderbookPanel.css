@@ -8,10 +8,7 @@
 
 .orderbook-container {
   overflow: hidden;
-}
-
-.orderbook-container-mobile {
-  overflow: hidden;
+  height: 100%;
 }
 
 .chart-container {
