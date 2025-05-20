@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
   const [inPic, setInPic] = useState('');
   const [outPic, setOutPic] = useState('');
-  const backgroundlesslogo = '/logo_clear.png';
+  const backgroundlesslogo = '/CrystalLogo.png';
 
   useEffect(() => {
     if (activeMarket && tokendict) {

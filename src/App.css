@@ -5539,15 +5539,16 @@ input[type="email"] {
 }
 
 .onboarding-crystal-logo-image {
-  height: 1.9rem;
+  height: 1.6rem;
   max-width: 100%;
 }
 
 .onboarding-crystal-text {
   font-family: Orbitron, sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   font-weight: 500;
   color: #ffffff;
+  margin-left: 3px;
 }
 
 .skip-button {

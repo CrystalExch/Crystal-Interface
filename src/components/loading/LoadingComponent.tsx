@@ -15,14 +15,14 @@ const Overlay: React.FC<OverlayProps> = ({
   isVisible,
   bgcolor,
   height = 0,
-  minLogoHeight = 50,
-  maxLogoHeight = 100,
+  minLogoHeight = 30,
+  maxLogoHeight = 70,
 }) => {
   if (!isVisible) return null;
-  const uiLogo = '/logo_clear.png';
+  const uiLogo = '/CrystalLogo.png';
 
   const calculateLogoStyle = () => {
-    const heightPercentage = height === 0 ? '20%' : `${height}%`;
+    const heightPercentage = height === 0 ? '16%' : `${height}%`;
     
     return {
       height: heightPercentage,

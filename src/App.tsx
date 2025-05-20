@@ -94,7 +94,6 @@ import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import refreshicon from './assets/circulararrow.png';
-import clearlogo from '../public/logo_clear.png';
 import crystalxp from './assets/CrystalX.png';
 import part1image from './assets/part1intro.png';
 import topright from './assets/topright.png';
@@ -200,7 +199,7 @@ function App() {
     return g;
   })();
   const txReceiptResolvers = new Map<string, () => void>();
-
+  const clearlogo = '/CrystalLogo.png';
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
     return (
@@ -4127,13 +4126,7 @@ const handleWelcomeTransition = () => {
       setIsUsernameSigning(false);
     }
   };
-
-  const handleSkipUsername = () => {
-    audio.currentTime = 0;
-    audio.play();
-    setpopup(17);
-  };
-
+  
   const handleBackClick = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
@@ -7238,7 +7231,11 @@ const handleWelcomeTransition = () => {
                                 disabled={!typedRefCode || isRefSigning}
                                 onClick={async () => {
                                   const ok = await handleSetRef(typedRefCode);
-                                  if (ok) setpopup(15);
+                                  if (ok) {
+                                    audio.currentTime = 0;
+                                    audio.play();
+                                    setpopup(15);
+                                  }
                                 }}
                               >
                                 {isRefSigning ? (
@@ -7251,7 +7248,11 @@ const handleWelcomeTransition = () => {
 
                               <button
                                 className="skip-button"
-                                onClick={() => setpopup(15)}
+                                onClick={() => {
+                                  audio.currentTime = 0;
+                                  audio.play();
+                                  setpopup(15)}
+                                }
                               >
                                 Skip
                               </button>
@@ -7330,7 +7331,11 @@ const handleWelcomeTransition = () => {
                               <button
                                 className="skip-button"
                                 type="button"
-                                onClick={handleSkipUsername}
+                                onClick={() => {
+                                  audio.currentTime = 0;
+                                  audio.play();
+                                  setpopup(17);
+                                }}
                               >
                                 {!usernameInput ? "Continue Without Username" : "Continue"}
                               </button>
@@ -7596,13 +7601,6 @@ const handleWelcomeTransition = () => {
                 >
             {showWelcomeScreen || isTransitioning ? (
               <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
-                <div className="onboarding-crystal-logo">
-                  <img
-                    className="onboarding-crystal-logo-image"
-                    src={clearlogo}
-                  />
-                  <span className="onboarding-crystal-text">CRYSTAL</span>
-                </div>
                 <div className="welcome-screen-content">
                   <div className="welcome-text-container">
                     <p className="welcome-text">{typedText}</p>
