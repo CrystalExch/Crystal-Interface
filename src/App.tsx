@@ -53,6 +53,7 @@ import swapTokensForExactETH from './scripts/swapTokensForExactETH';
 import swapTokensForExactTokens from './scripts/swapTokensForExactTokens';
 import unwrapeth from './scripts/unwrapeth';
 import wrapeth from './scripts/wrapeth';
+import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
 
 // import utils
@@ -8488,6 +8489,20 @@ function App() {
                     'unwrap',
                     weth,
                     eth,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
+                } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true){
+                  hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
+                  newTxPopup(
+                    (client
+                      ? hash.hash
+                      : await waitForTxReceipt(hash.hash)),
+                    'stake',
+                    eth,
+                    tokenOut,
                     customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
                     customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
                     '',

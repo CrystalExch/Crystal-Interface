@@ -367,6 +367,47 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
       );
     }
 
+    if (currentAction === 'stake') {
+      return (
+        <div className="txpopup-inner">
+          <div className="txpopup-main-content">
+            <div className="txpopup-title">{t('stakeComplete')}</div>
+            <div className="txpopup-swap-details">
+              <div className="txpopup-token-group">
+                <img src={tokenIn.image} className="txpopup-token-icon" />
+                <span className="txpopup-amount">
+                  {formatBalance(
+                    amountIn,
+                    tokenIn.ticker === 'USDC' ? 'usd' : 'token',
+                  ) +
+                    ' ' +
+                    tokenIn.ticker}
+                </span>
+                <span className="txpopup-arrow">→</span>
+                <img src={tokenOut.image} className="txpopup-token-icon" />
+                <span className="txpopup-amount">
+                  {formatBalance(
+                    amountOut,
+                    tokenOut.ticker === 'USDC' ? 'usd' : 'token',
+                  ) +
+                    ' ' +
+                    tokenOut.ticker}
+                </span>
+              </div>
+            </div>
+          </div>
+          <a
+            className="view-transaction"
+            href={explorerLink}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('viewOnExplorer')}
+          </a>
+        </div>
+      );
+    }
+
     if (currentAction === 'unwrap') {
       return (
         <div className="txpopup-inner">

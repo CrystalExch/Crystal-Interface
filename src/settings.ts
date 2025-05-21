@@ -487,6 +487,7 @@ export const settings: any = {
           address: '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5',
           decimals: BigInt(18),
           image: iconsmon,
+          lst: true,
         },
         '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A': {
           ticker: 'aprMON',
@@ -494,6 +495,7 @@ export const settings: any = {
           address: '0xb2f82D0f38dc453D596Ad40A37799446Cc89274A',
           decimals: BigInt(18),
           image: iconaprmon,
+          lst: true,
         },
         '0x3a98250F98Dd388C211206983453837C8365BDc1': {
           ticker: 'shMON',
@@ -501,6 +503,7 @@ export const settings: any = {
           address: '0x3a98250F98Dd388C211206983453837C8365BDc1',
           decimals: BigInt(18),
           image: iconshmon,
+          lst: true,
         },
         '0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714': {
           ticker: 'DAK',
