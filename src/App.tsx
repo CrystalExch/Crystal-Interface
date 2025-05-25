@@ -1187,7 +1187,7 @@ function App() {
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
-        blockNumber = '0x' + (parseInt(result[0].result, 16) - 5).toString(16);
+        blockNumber = '0x' + (parseInt(result[0].result, 16) - 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs(({ queue, set }: { queue: string[]; set: Set<string> }) => {
@@ -8493,7 +8493,7 @@ function App() {
                             (amountOutSwap * slippage + 5000n) / 10000n,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8510,7 +8510,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8532,7 +8532,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8547,7 +8547,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8559,7 +8559,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8574,7 +8574,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8623,7 +8623,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8640,7 +8640,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8654,7 +8654,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8671,7 +8671,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8689,7 +8689,7 @@ function App() {
                             (amountIn * 10000n + slippage / 2n) / slippage,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8706,7 +8706,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8728,7 +8728,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8743,7 +8743,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8755,7 +8755,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8770,7 +8770,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8819,7 +8819,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8836,7 +8836,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8850,7 +8850,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8867,7 +8867,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -10434,7 +10434,7 @@ function App() {
                         BigInt(2),
                         amountIn,
                         limitPrice,
-                        BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                        BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                         usedRefAddress as `0x${string}`,
                       )
                     })
@@ -10470,7 +10470,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         ))
                       }
@@ -10542,7 +10542,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         )
                       })

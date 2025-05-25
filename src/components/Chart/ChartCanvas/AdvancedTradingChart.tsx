@@ -178,8 +178,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   hash = await sendUserOperationAsync({uo: replaceOrder(
                     router,
                     BigInt(0),
-                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                     false,
                     BigInt(order[0]),
                     BigInt(order[1]),
@@ -548,8 +548,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       hash = await sendUserOperationAsync({uo: replaceOrder(
                         router,
                         BigInt(0),
-                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                         false,
                         BigInt(order[0]),
                         BigInt(order[1]),
