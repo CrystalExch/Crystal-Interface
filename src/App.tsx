@@ -6353,6 +6353,16 @@ function App() {
                       }}
                     />
                   </div>
+                  <div className="audio-toggle-row">
+                    <span className="audio-toggle-label">{t('hideScamWicks')}</span>
+                    <ToggleSwitch
+                      checked={isAudioEnabled}
+                      onChange={() => {
+                        setIsAudioEnabled(!isAudioEnabled);
+                        localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+                      }}
+                    />
+                  </div>
 
                   <button
                     className="revert-settings-button"
@@ -7085,12 +7095,12 @@ function App() {
 
               <div className="high-impact-details">
                 <div className="high-impact-detail-row">
-                  <span>{t('priceImpact')}</span>
+                  <span className="high-impact-value-title">{t('priceImpact')}</span>
                   <span className="high-impact-value">{priceImpact}</span>
                 </div>
 
                 <div className="high-impact-detail-row">
-                  <span>{t('pay')}</span>
+                  <span className="high-impact-value-title">{t('pay')}</span>
                   <span className="high-impact-value">
                     {formatDisplayValue(
                       amountIn,
@@ -7100,7 +7110,7 @@ function App() {
                 </div>
 
                 <div className="high-impact-detail-row">
-                  <span>{t('receive')}</span>
+                  <span className="high-impact-value-title">{t('receive')}</span>
                   <span className="high-impact-value">
                     {formatDisplayValue(
                       amountOutSwap,

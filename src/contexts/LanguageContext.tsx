@@ -404,6 +404,7 @@ export const translations: any = {
     minted: "Minted",
     free: "Free",
     minting: "Minting...",
+    hideScamWicks: "Hide Scam Wicks",
   },
   CN: {
     trade: "交易",
@@ -808,6 +809,7 @@ export const translations: any = {
     minted: "已铸造",
     free: "免费",
     minting: "正在铸造…",
+    hideScamWicks: "隐藏欺诈蜡烛",
   },
   JP: {
     trade: "取引",
@@ -1212,6 +1214,7 @@ export const translations: any = {
     minted: "ミント済み",
     free: "無料",
     minting: "ミント中…",
+    hideScamWicks: "詐欺ウィックを非表示",
   },
   KR: {
     trade: '거래',
@@ -1616,6 +1619,7 @@ export const translations: any = {
     minted: "민팅 완료",
     free: "무료",
     minting: "민팅 중…",
+    hideScamWicks: "사기 꼬리 숨기기",
   },
   ES: {
     trade: 'Comerciar',
@@ -2020,6 +2024,7 @@ export const translations: any = {
     minted: "Minteado",
     free: "Gratis",
     minting: "Minteando…",
+    hideScamWicks: "Ocultar mechas de estafa",
   },
 };
 
