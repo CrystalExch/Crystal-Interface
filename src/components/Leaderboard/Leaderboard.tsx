@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import crystalxp from '../../assets/CrystalX.png';
 import arrow from '../../assets/arrow.svg';
 import CrownIcon from '../../assets/crownicon.png';
@@ -11,260 +11,343 @@ import CopyButton from '../CopyButton/CopyButton';
 
 import './Leaderboard.css';
 
-interface Faction {
-  id: string;
-  name: string;
-  points: number;
-  referral_points?: number;
-  level: number;
+interface DigitRollerProps {
+  digit: string;
+  duration?: number;
+}
+
+const DigitRoller: React.FC<DigitRollerProps> = ({
+  digit,
+  duration = 600,
+}) => {
+  const prevDigitRef = useRef(parseInt(digit, 10) || 0);
+  const [sequence, setSequence] = useState<number[]>([prevDigitRef.current]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const wheelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const from = prevDigitRef.current;
+    const to = parseInt(digit, 10) || 0;
+
+    if (from === to && sequence.length === 1 && !isAnimating) {
+      return;
+    }
+
+    setIsAnimating(true);
+
+    let newSequenceForAnimation: number[];
+    if (from === to) {
+      newSequenceForAnimation = [to];
+    } else {
+      newSequenceForAnimation = [from];
+      let next = from;
+      do {
+        next = (next + 1) % 10;
+        newSequenceForAnimation.push(next);
+      } while (next !== to);
+    }
+    setSequence(newSequenceForAnimation);
+
+  }, [digit]); 
+
+  useEffect(() => {
+    const node = wheelRef.current;
+    if (!node) return;
+
+    let transitionEndListener: (() => void) | undefined;
+    let rAFId: number | undefined;
+
+    if (isAnimating) {
+      if (sequence.length > 1) {
+        const targetDigitInSequence = sequence[sequence.length - 1];
+
+        rAFId = requestAnimationFrame(() => {
+          if (wheelRef.current) {
+            wheelRef.current.style.transition = `transform ${duration}ms ease-in-out`;
+            wheelRef.current.style.transform = `translateY(-${(sequence.length - 1) * 1.2}em)`;
+          }
+        });
+
+        transitionEndListener = () => {
+          prevDigitRef.current = targetDigitInSequence;
+          setSequence([targetDigitInSequence]);
+        };
+        node.addEventListener('transitionend', transitionEndListener, { once: true });
+
+      } else if (sequence.length === 1) {
+        node.style.transition = 'none';
+        node.style.transform = 'translateY(0)';
+        setIsAnimating(false); 
+        prevDigitRef.current = sequence[0]; 
+      }
+    } else {
+        if (node.style.transform !== 'translateY(0px)' && node.style.transform !== 'translateY(0)') {
+             node.style.transform = 'translateY(0)';
+        }
+        if (node.style.transition !== 'none') {
+            node.style.transition = 'none';
+        }
+    }
+
+    return () => { 
+      if (rAFId) {
+        cancelAnimationFrame(rAFId);
+      }
+      if (transitionEndListener && node) {
+        node.removeEventListener('transitionend', transitionEndListener);
+      }
+    };
+  }, [sequence, isAnimating, duration]);
+
+  return (
+    <div className="digit-roller-container">
+      <div
+        ref={wheelRef}
+        className="digit-wheel"
+        style={{ transform: 'translateY(0)', transition: 'none' }}
+      >
+        {sequence.map((n, i) => (
+          <div key={i}>{n}</div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+interface NumberRollerProps {
+  value: number;
+  duration?: number;
+  decimals?: number;
+  suffix?: React.ReactNode;
+}
+
+const NumberRoller: React.FC<NumberRollerProps> = ({ 
+  value, 
+  duration = 1000,
+  decimals = 2,
+  suffix
+}) => {
+  const formattedValue = value.toLocaleString(undefined, {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals
+  });
+  
+  const characters = formattedValue.split('');
+
+  return (
+    <div className="number-roller">
+      {characters.map((char, index) => (
+        char === '.' || char === ',' ? (
+          <span key={`separator-${index}`} className="separator">{char}</span>
+        ) : (
+          <DigitRoller 
+            key={`digit-${index}`} 
+            digit={char} 
+            duration={duration}
+          />
+        )
+      ))}
+      {suffix && <span className="roller-suffix">{suffix}</span>}
+    </div>
+  );
+};
+
+interface OverviewResponse {
+  address: string;
+  username: string;
   rank: number;
-  xp?: number;
-  logo?: string;
-  username?: string;
-}
-
-interface UserDisplayData {
-  userXP: number;
-  logo: string;
-  username?: string;
-}
-
-interface TimeLeft {
-  days: number;
-  hours: number;
-  minutes: number;
-  seconds: number;
+  boosted_points: number;
+  referral_points: number;
+  global_total_points: number;
+  wallets_above_0_01: number;
+  top_three: Array<{
+    address: string;
+    username: string;
+    total_points: number;
+    boosted_points: number;
+    referral_points: number;
+  }>;
+  page: {
+    [address: string]: [string, number, number];
+  };
 }
 
 interface LeaderboardProps {
   setpopup?: (value: number) => void;
-  orders: any;
+  orders: any[];
   address: any;
+  username: any;
+  setIsTransitioning: any;
+  setTransitionDirection: any;
 }
 
+const ITEMS_FIRST_PAGE = 47;
+const ITEMS_OTHER_PAGES = 50;
+
 const Leaderboard: React.FC<LeaderboardProps> = ({
-  setpopup = () => {},
+  setpopup = () => { },
   orders,
   address,
+  username,
+  setIsTransitioning,
+  setTransitionDirection,
 }) => {
-  const [userData, setUserData] = useState<UserDisplayData>({
-    userXP: 0,
-    logo: '',
-    username: '',
-  });
+  const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft>({
+  const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
     minutes: 0,
     seconds: 0,
   });
-  const [liveLeaderboard, setLiveLeaderboard] = useState<{
-    [address: string]: { points: number; username: string; referral_points: number };
-  }>({});
-  const loading = Object.keys(liveLeaderboard).length === 0;
-  const [allFactions, setAllFactions] = useState<Faction[]>([]);
-  const ITEMS_PER_PAGE = currentPage === 0 ? 47 : 50;
+  const [paginationLoading, setPaginationLoading] = useState(false);
+  const [manualPaging, setManualPaging] = useState(false);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const prevPageRef = useRef<number>(currentPage);
+    const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
+
 
   useEffect(() => {
-    const fetchUserPoints = () => {
-      if (!address) return;
+    prevPageRef.current = currentPage;
+  }, [currentPage]);
+  const loading = !overview;
+  const placeholderCount = (loading || paginationLoading)
+    ? (paginationLoading && prevPageRef.current === 0 && currentPage === 1
+      ? ITEMS_OTHER_PAGES
+      : currentPage === 0
+        ? ITEMS_FIRST_PAGE
+        : ITEMS_OTHER_PAGES)
+    : 0;
+  
+  useEffect(() => {
+    if (!address) return;
+    let mounted = true;
 
-      fetch('https://api.crystal.exchange/user_points')
-        .then(res => res.json())
-        .then((data: Record<string, [string, number, number]>) => {
-          const updatedLiveLeaderboard = Object.fromEntries(
-            Object.entries(data).filter(([addr, _]) => addr !== '0xe7d1f4ab222d94389b82981f99c58824ff42a7d0').map(([addr, info]) => {
-              const [username, points, referral_points] = info;
-              return [
-                addr.toLowerCase(),
-                {
-                  points,
-                  username: username || '',
-                  referral_points,
-                },
-              ] as const;
-            })
-          );
+    if (overview) {
+      setPaginationLoading(true);
+    }
 
-          setLiveLeaderboard(updatedLiveLeaderboard);
+    const fetchOverview = () => {
+      fetch(
+        `https://points-fix-production.up.railway.app/points/${address}?index=${currentPage}`
+      )
+        .then((res) => {
+          if (!res.ok) throw new Error(`status ${res.status}`);
+          return res.json() as Promise<OverviewResponse>;
         })
-        .catch(err => {
-          console.error('Error fetching user points:', err);
+        .then((data) => {
+          if (!mounted) return;
+          setOverview(data);
+          setPaginationLoading(false);
+        })
+       .catch((err) => {
+          console.error('fetch overview error', err);
+          setPaginationLoading(false);
         });
     };
 
-    fetchUserPoints();
-    const interval = setInterval(fetchUserPoints, 3000);
-    return () => clearInterval(interval);
-  }, [address]);
-
-  useEffect(() => {
-    const lower = address?.toLowerCase();
-    const userInfo = liveLeaderboard[lower] || { points: 0, username: '', referral_points: 0 };
-
-    setUserData({
-      userXP: userInfo.points,
-      logo: '',
-      username: userInfo.username || '',
-    });
-
-  }, [address, liveLeaderboard]);
-
-  useEffect(() => {
-    if (Object.keys(liveLeaderboard).length === 0) return;
-
-    const me = address?.toLowerCase();
-    const liveEntries: Faction[] = Object.entries(liveLeaderboard).map(
-      ([addr, data]) => {
-        const isMe = addr === me;
-        const displayPoints = isMe
-          ? data.points
-          : data.points + (data.referral_points || 0);
-
-        return {
-          id: addr,
-          name: addr,
-          username: data.username || '',
-          points: displayPoints,
-          referral_points: data.referral_points,
-          level: Math.max(1, Math.floor(displayPoints / 1000)),
-          rank: 0,
-          logo: '',
-        };
-      }
-    );
-
-    liveEntries.sort((a, b) => b.points - a.points);
-    liveEntries.forEach((entry, idx) => {
-      entry.rank = idx + 1;
-    });
-    setAllFactions(liveEntries);
-  }, [liveLeaderboard]);
-
-  const getUserRank = () => {
-    if (!address || allFactions.length === 0) return 'N/A';
-    const f = allFactions.find(f => f.id.toLowerCase() === address.toLowerCase());
-    return f ? `#${f.rank}` : 'N/A';
-  };
-
-  const findUserPosition = () => {
-    if (!address) return -1;
-    const idx = allFactions.findIndex(f => f.id.toLowerCase() === address.toLowerCase());
-    return idx >= 0 ? idx : -1;
-  };
-
-  const goToUserPosition = () => {
-    const pos = findUserPosition();
-    if (pos === -1) return;
-    if (pos < 3) {
-      setCurrentPage(0);
-      setTimeout(() => {
-        document.querySelector('.leaderboard-banner')?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      const adj = pos - 3;
-      const page = Math.floor(adj / ITEMS_PER_PAGE);
-      setCurrentPage(page);
-      setTimeout(() => {
-        document.querySelector('.current-user-row')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 100);
-    }
-  };
-
-  const totalPages = Math.ceil((allFactions.length - 3) / ITEMS_PER_PAGE);
-
-  const getCurrentPageItems = () => {
-    let start: number, count: number;
-    if (currentPage === 0) {
-      start = 3; count = 47;
-    } else {
-      start = 3 + 47 + (currentPage - 1) * 50;
-      count = 50;
-    }
-    return allFactions.slice(start, start + count);
-  };
-
-  const goToPreviousPage = () => {
-    if (currentPage > 0) setCurrentPage(currentPage - 1);
-  };
-  const goToNextPage = () => {
-    if (currentPage < totalPages - 1) setCurrentPage(currentPage + 1);
-  };
-
-  const topThreeUsers = allFactions.slice(0, 3);
+    fetchOverview();
+    const iv = setInterval(fetchOverview, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(iv);
+    };
+  }, [address, currentPage]);
 
   useEffect(() => {
     const calculate = () => {
-      const target = new Date('2025-06-01T00:00:00-04:00').getTime();
-      const now = Date.now();
-      const diff = target - now;
+      const target = new Date('2025-07-01T00:00:00-04:00').getTime();
+      const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
         return;
       }
-      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
-      setTimeLeft({ days, hours, minutes, seconds });
+      setTimeLeft({
+        days: Math.floor(diff / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((diff / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((diff / (1000 * 60)) % 60),
+        seconds: Math.floor((diff / 1000) % 60),
+      });
     };
-
     calculate();
-    const timer = setInterval(calculate, 1000);
-    return () => clearInterval(timer);
+    const t = setInterval(calculate, 1000);
+    return () => clearInterval(t);
   }, []);
+  useEffect(() => {
+    if (manualPaging && rowsRef.current) {
+      const rows = rowsRef.current.querySelectorAll<HTMLElement>('.leaderboard-row');
+      if (rows.length) rows[rows.length - 1].scrollIntoView({ behavior: 'auto' });
+      setManualPaging(false);
+    }
+  }, [manualPaging]);
 
-  const getDisplayAddress = (addr: string) =>
-    addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+  const handleConnectWallet = () => setpopup(4);
 
-  const getDisplayName = (f: Faction) =>
-    f.username && f.username.trim() !== '' && f.username !== f.name
-      ? f.username
-      : getDisplayAddress(f.name);
+  const totalPages = overview
+    ? (() => {
+      const totalUsers = overview.wallets_above_0_01;
+      const afterTop3 = Math.max(totalUsers - 3, 0);
+      if (afterTop3 <= ITEMS_FIRST_PAGE) return 1;
+      return 1 + Math.ceil((afterTop3 - ITEMS_FIRST_PAGE) / ITEMS_OTHER_PAGES);
+    })()
+    : 1;
 
-  const isUserAddress = (addr: string) =>
-    address && addr.toLowerCase() === address.toLowerCase();
-
-  const getTopThreePfp = (i: number) => {
-    switch (i) {
-      case 0: return firstPlacePfp;
-      case 1: return secondPlacePfp;
-      case 2: return thirdPlacePfp;
-      default: return defaultPfp;
+  const goToPreviousPage = () => {
+    if (currentPage > 0) {
+    setManualPaging(true);
+     setPaginationLoading(true);
+      setCurrentPage((p) => p - 1);
     }
   };
 
-  const renderLoadingTopThree = () =>
-    [0, 1, 2].map(i => (
-      <div key={i} className={`faction-card rank-${i + 1}`}>
-        {i === 0 && <div className="crown-icon-container"><img src={CrownIcon} className="crown-icon" /></div>}
-        <div className="faction-rank">{i + 1}</div>
-        <div className="faction-info">
-          <div className="pfp-container"><div className="pfp-loading account-loading-animation" /></div>
-          <div className="account-top-name-loading account-loading-animation" />
-          <div className="account-top-xp-loading account-loading-animation" />
-        </div>
-      </div>
-    ));
+  const goToNextPage = () => {
+    if (overview && currentPage < totalPages - 1) {
+      setManualPaging(true);
+      setPaginationLoading(true);
+      setCurrentPage((p) => p + 1);
+    }
+  };
 
-  const renderLoadingRows = () =>
-    Array(ITEMS_PER_PAGE).fill(0).map((_, i) => (
-      <div key={i} className="leaderboard-row">
-        <div className="leaderboard-inner-row">
-          <div className="row-rank"><span className="loading-placeholder" /></div>
-          <div className="row-faction">
-            <div className="row-pfp-container"><div className="row-pfp-loading loading-placeholder" /></div>
-            <span className="faction-row-name loading-placeholder" />
-          </div>
-          <div className="row-xp"><div className="leaderboard-xp-amount loading-placeholder" /></div>
-        </div>
-      </div>
-    ));
+  const goToUserPosition = () => {
+    if (!overview) return;
+    const r = overview.rank;
 
-  const formatPoints = (p: number) => (p < 0.001 ? '<0.001' : p.toLocaleString());
-  const handleConnectWallet = () => setpopup(4);
+    if (r <= 3) {
+      setPaginationLoading(true);
+      setCurrentPage(0);
+      setTimeout(
+        () => {
+          document
+            .querySelector('.leaderboard-banner')
+            ?.scrollIntoView({ behavior: 'smooth' });
+        },
+        100
+      );
+    } else {
+      let page = 0;
+      if (r > 3 + ITEMS_FIRST_PAGE) {
+        page = 1 + Math.floor((r - (3 + ITEMS_FIRST_PAGE) - 1) / ITEMS_OTHER_PAGES);
+      }
 
+      if (currentPage !== page) {
+        setPaginationLoading(true);
+        setCurrentPage(page);
+      }
+
+      setTimeout(
+        () => {
+          document
+            .querySelector('.current-user-row')
+            ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        },
+        200
+      );
+    }
+  };
+
+  const getDisplayAddress = (addr: string) =>
+    addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
+    
   return (
     <div className={`leaderboard-container ${loading ? 'is-loading' : ''}`}>
       {!address && (
@@ -286,13 +369,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
       <div className="leaderboard-banner">
         <div className="banner-overlay">
           <img src={LeaderboardImage} className="leaderboard-image" />
-          <div
-            className="view-rules-button"
-            onClick={() => setpopup(15)}
-          >
+          <div className="view-rules-button" onClick={() => 
+            {
+              setIsTransitioning(true);
+              setTransitionDirection('forward');
+              setTimeout(() => {
+                setpopup(15);
+                setTimeout(() => {
+                  setIsTransitioning(false);
+                }, 500);
+              });
+            }}>
             {t('viewRules')}
           </div>
-
           <div className="countdown-timer">
             <div className="countdown-time">
               {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
@@ -305,9 +394,11 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="total-xp-loading" />
               ) : (
                 <span className="progress-bar-amount-header">
-                  {Object.values(liveLeaderboard)
-                    .reduce((sum, v) => sum + v.points, 0)
-                    .toLocaleString()} / 1,000,000,000
+                  <NumberRoller 
+                    value={overview!.global_total_points}
+                    decimals={2}
+                    duration={800}
+                  /> / 1,000,000,000.00
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -317,82 +408,108 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 className="progress-fill"
                 style={{
                   width: loading
-                    ? '5%'
-                    : `${
-                        (Object.values(liveLeaderboard).reduce((sum, v) => sum + v.points, 0) /
-                          1000000000) *
-                        100
-                      }%`,
+                    ? '0%'
+                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
                 }}
               />
             </div>
           </div>
 
-          <div className="leaderboard-user-info">
-            <div className="info-column">
-              <div className="column-header">{t('username')}             <button
-                className="edit-username-button"
-                onClick={() => setpopup(16)}
-              >
-                {t('edit')}
-              </button>
-              </div>
-              <div className="column-content">
-                <div className="address-container">
+          {!loading && (
+            <div className="leaderboard-user-info">
+              <div className="info-column">
+                <div className="column-header">
+                  {t('username')}{' '}
+                  <button
+                    className="edit-username-button"
+                    onClick={() => setpopup(16)}
+                  >
+                    {t('edit')}
+                  </button>
+                </div>
+                <div className="column-content">
                   <span className="leaderboard-user-address">
-                    @<span className="address-string">{address
-                      ? liveLeaderboard[address.toLowerCase()]?.username ||
-                        getDisplayAddress(address)
-                      : ''}
-                      </span>
-                    {address && <CopyButton textToCopy={address} />}
+                    @{username && username.trim() !== ''
+                      ? (username.startsWith('0x') ? getDisplayAddress(username) : username)
+                      : overview!.username && overview!.username.trim() !== ''
+                        ? (overview!.username.startsWith('0x') ? getDisplayAddress(overview!.username) : overview!.username)
+                        : getDisplayAddress(overview!.address)}
+                    <CopyButton textToCopy={overview!.address} />
                   </span>
                 </div>
               </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="earned-xp-header">
-                <img src={crystalxp} className="xp-icon" />
-                <div className="column-header">{t('earned')}</div>
+              <div className="info-column">
+                <div className="earned-xp-header">
+                  <img src={crystalxp} className="xp-icon" />
+                  <div className="column-header">{t('earned')}</div>
+                </div>
+                <div className="column-content">
+                  <NumberRoller 
+                    value={overview!.boosted_points} 
+                    decimals={2}
+                    duration={800}
+                  />
+                </div>
               </div>
-              <div className="column-content">
-                {userData.userXP.toLocaleString()}
-              </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-            <div className="earned-xp-header">
-            <img src={crystalxp} className="xp-icon" />
-              <div className="column-header">{t("bonusCommision")}</div>
+              <div className="info-column">
+                <div className="earned-xp-header">
+                  <img src={crystalxp} className="xp-icon" />
+                  <div className="column-header">{t('bonusCommision')}</div>
+                </div>
+                <div className="column-content">
+                  <NumberRoller 
+                    value={overview!.referral_points} 
+                    decimals={2}
+                    duration={800}
+                  />
+                </div>
               </div>
-              <div className="column-content">
-                {liveLeaderboard[address?.toLowerCase()]?.referral_points
-                  ?.toLocaleString() || '0'}
-              </div>
-            </div>
-            <div className="column-divider" />
+              <div className="column-divider" />
 
-            <div className="info-column">
-              <div className="column-header">{t('rank')}</div>
-              <div className="column-content">{getUserRank()}</div>
-  
+              <div className="info-column">
+                <div className="column-header">{t('rank')}</div>
+                <div className="column-content">#{overview!.rank}</div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
       <div className="top-factions">
         {loading
-          ? renderLoadingTopThree()
-          : topThreeUsers.map((f, i) => (
+          ? Array(3)
+            .fill(0)
+            .map((_, i) => (
+              <div key={i} className={`faction-card rank-${i + 1}`}>
+                {i === 0 && (
+                  <div className="crown-icon-container">
+                    <img src={CrownIcon} className="crown-icon" />
+                  </div>
+                )}
+                <div className="faction-rank">{i + 1}</div>
+                <div className="faction-info">
+                  <div className="pfp-container">
+                    <div className="pfp-loading account-loading-animation" />
+                  </div>
+                  <div className="account-top-name-loading account-loading-animation" />
+                  <div className="account-top-xp-loading account-loading-animation" />
+                </div>
+              </div>
+            ))
+          : overview!.top_three.map((f, i) => {
+            const displayName = overview!.address === f.address ? username || overview!.username || getDisplayAddress(overview!.address) :
+              f.username && f.username !== f.address
+                ? f.username
+                : getDisplayAddress(f.address);
+            return (
               <div
-                key={f.id}
-                className={`faction-card rank-${i + 1} ${
-                  isUserAddress(f.name) ? 'user-faction' : ''
-                }`}
+                key={f.address}
+                className={`faction-card rank-${i + 1} ${overview!.address === f.address ? 'user-faction' : ''
+                  }`}
               >
                 {i === 0 && (
                   <div className="crown-icon-container">
@@ -402,21 +519,26 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 <div className="faction-rank">{i + 1}</div>
                 <div className="faction-info">
                   <div className="pfp-container">
-                    <img src={getTopThreePfp(i)} className="pfp-image" />
+                    <img src={[firstPlacePfp, secondPlacePfp, thirdPlacePfp][i]} className="pfp-image" />
                   </div>
                   <div className="faction-name">
-                    {getDisplayName(f)}
+                    {displayName}
                     <div className="copy-button-wrapper">
-                      <CopyButton textToCopy={f.name} />
+                      <CopyButton textToCopy={f.address} />
                     </div>
                   </div>
                   <div className="faction-xp">
-                    {formatPoints(f.points)}
-                    <img src={crystalxp} className="top-xp-icon" />
+                    <NumberRoller 
+                      value={f.total_points < 0.01 ? 0 : f.total_points}
+                      decimals={2}
+                      duration={800}
+                      suffix={<img src={crystalxp} className="top-xp-icon" />}
+                    />
                   </div>
                 </div>
               </div>
-            ))}
+            );
+          })}
       </div>
 
       <div className="full-leaderboard">
@@ -425,63 +547,108 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           <div className="header-bonus">{t('totalXP')}</div>
         </div>
 
-        <div className="leaderboard-rows">
-          {loading
-            ? renderLoadingRows()
-            : getCurrentPageItems().map(faction => {
-                const isCurrent = isUserAddress(faction.name);
-                return (
-                  <div
-                    key={faction.id}
-                    className={`leaderboard-row ${
-                      isCurrent ? 'current-user-row' : ''
+        <div
+  ref={rowsRef}
+  className={`leaderboard-rows ${paginationLoading ? 'is-loading' : ''}`}
+>
+  {(loading || paginationLoading)
+    ? Array(placeholderCount).fill(0).map((_, i) => (
+        <div key={i} className="leaderboard-row">
+                <div className="leaderboard-inner-row">
+                  <div className="row-rank">
+                    <span className="loading-placeholder" />
+                  </div>
+                  <div className="row-faction">
+                    <div className="row-pfp-container">
+                      <div className="row-pfp-loading loading-placeholder" />
+                    </div>
+                    <span className="faction-row-name loading-placeholder" />
+                  </div>
+                  <div className="row-xp">
+                    <div className="leaderboard-xp-amount loading-placeholder" />
+                  </div>
+                </div>
+              </div>
+            ))
+          : Object.entries(overview!.page).map(
+            ([addr, [_username, boosted, referral]], idx) => {
+              const total = boosted + referral;
+              const displayName = overview!.address === addr ? username || overview!.username || getDisplayAddress(overview!.address) :
+                _username && _username !== addr
+                  ? _username
+                  : getDisplayAddress(addr);
+
+              const startIndex =
+                currentPage === 0
+                  ? 3
+                  : 3 + ITEMS_FIRST_PAGE + (currentPage - 1) * ITEMS_OTHER_PAGES;
+              const rank = startIndex + idx + 1;
+
+              const isCurrent = addr === overview!.address;
+
+              return (
+                <div
+                  key={addr}
+                  className={`leaderboard-row ${isCurrent ? 'current-user-row' : ''
                     }`}
-                  >
-                    <div className="leaderboard-inner-row">
-                      <div className="row-rank">
-                        <span>#{faction.rank}</span>
+                >
+                  <div className="leaderboard-inner-row">
+                    <div className="row-rank">
+                      <span>#{rank}</span>
+                    </div>
+                    <div className="row-faction">
+                      <div className="row-pfp-container">
+                        <img src={defaultPfp} className="row-pfp-image" />
                       </div>
-                      <div className="row-faction">
-                        <div className="row-pfp-container">
-                          <img src={defaultPfp} className="row-pfp-image" />
+                      <span className="faction-row-name">
+                        {displayName}
+                        <div className="copy-button-wrapper">
+                          <CopyButton textToCopy={addr} />
                         </div>
-                        <span className="faction-row-name">
-                          {getDisplayName(faction)}
-                          <div className="copy-button-wrapper">
-                            <CopyButton textToCopy={faction.name} />
-                          </div>
-                        </span>
-                        <div className="user-self-tag">
-                          {isCurrent && orders.length > 0 && (
-                            <div className="orders-indicator-container">
-                              <div
-                                className="orders-indicator"
-                                title={`You have ${orders.length} open orders earning points`}
-                              />
-                            </div>
-                          )}
-                          {isCurrent && (
-                            <span className="current-user-tag">You</span>
-                          )}
-                        </div>
+                      </span>
+                      <div className="user-self-tag">
+{isCurrent && orders.length > 0 && (
+  <div className="orders-indicator-container">
+    <div
+      className="orders-indicator"
+      onMouseEnter={() => setShowOrdersTooltip(true)}
+      onMouseLeave={() => setShowOrdersTooltip(false)}
+    >
+      {showOrdersTooltip && (
+        <div className="custom-tooltip">
+          You have {orders.length} open orders earning points
+        </div>
+      )}
+    </div>
+  </div>
+)}
+                        {isCurrent && (
+                          <span className="current-user-tag">You</span>
+                        )}
                       </div>
-                      <div className="row-xp">
-                        <div className="leaderboard-xp-amount">
-                          {formatPoints(faction.points)}
-                          <img src={crystalxp} className="xp-icon" />
-                        </div>
+                    </div>
+                    <div className="row-xp">
+                      <div className="leaderboard-xp-amount">
+                        <NumberRoller 
+                          value={total < 0.01 ? 0 : total}
+                          decimals={2}
+                          duration={800}
+                          suffix={<img src={crystalxp} className="xp-icon" />}
+                        />
                       </div>
                     </div>
                   </div>
-                );
-              })}
+                </div>
+              );
+            }
+          )}
         </div>
 
         <div className="pagination-controls">
           <button
             className="go-to-user-position-button"
             onClick={goToUserPosition}
-            disabled={findUserPosition() === -1 || loading}
+            disabled={!overview || loading}
           >
             {t('viewYourPosition')}
           </button>
@@ -490,20 +657,19 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
             <button
               className="pagination-arrow prev-arrow"
               onClick={goToPreviousPage}
-              disabled={currentPage === 0 || loading}
+              disabled={currentPage === 0 || loading || paginationLoading}
             >
               <img src={arrow} className="leaderboard-control-left-arrow" />
             </button>
 
             <div className="page-indicator">
-              {t('page')} {currentPage + 1} {t('of')}{' '}
-              {loading ? '1' : totalPages || 1}
+              {t('page')} {currentPage + 1} {t('of')} {totalPages}
             </div>
 
             <button
               className="pagination-arrow next-arrow"
               onClick={goToNextPage}
-              disabled={currentPage >= totalPages - 1 || loading}
+              disabled={currentPage >= totalPages - 1 || loading || paginationLoading}
             >
               <img src={arrow} className="leaderboard-control-right-arrow" />
             </button>

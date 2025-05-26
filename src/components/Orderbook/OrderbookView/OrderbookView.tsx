@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useMemo, useState } from 'react';
 
 import DropdownContext from './DropdownContext/DropdownContext';
 import OrderList from './OrderList/OrderList';
@@ -50,50 +50,31 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [containerHeight, setContainerHeight] = useState<number>(0);
-  const [rowHeight, setRowHeight] = useState<number>(0);
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const heightUpdateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updateContainerHeight = useCallback(() => {
+  const updateContainerHeight = () => {
     if (!containerRef.current) return;
-    if (heightUpdateTimeoutRef.current) {
-      clearTimeout(heightUpdateTimeoutRef.current);
-    }
-    heightUpdateTimeoutRef.current = setTimeout(() => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      const newHeight = rect?.height || 0;
-      if (Math.abs(newHeight - containerHeight) > 1 && newHeight != 0) {
-        setContainerHeight(newHeight);
-      }
-    }, 100);
-  }, [containerHeight]);
+    const rect = containerRef.current?.getBoundingClientRect();
+    const newHeight = rect?.height || 0;
+    setContainerHeight(prev =>
+      Math.abs(newHeight - prev) > 1 && newHeight !== 0 ? newHeight : prev
+    );
+  }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
+    const rect = containerRef.current?.getBoundingClientRect();
+    const newHeight = rect?.height || 0;
+    setContainerHeight(prev =>
+      Math.abs(newHeight - prev) > 1 && newHeight !== 0 ? newHeight : prev
+    );
     const resizeObserver = new ResizeObserver(updateContainerHeight);
     if (containerRef.current) {
       resizeObserver.observe(containerRef.current);
     }
-    updateContainerHeight();
     return () => {
-      if (heightUpdateTimeoutRef.current) {
-        clearTimeout(heightUpdateTimeoutRef.current);
-      }
       resizeObserver.disconnect();
     };
-  }, [updateContainerHeight]);
-
-  useEffect(() => {
-    const probe = document.createElement('div');
-    probe.style.position = 'absolute';
-    probe.style.visibility = 'hidden';
-    probe.style.height = 'auto';
-    probe.style.whiteSpace = 'nowrap';
-    probe.className = 'order-list-probe';
-    document.body.appendChild(probe);
-    const measuredHeight = probe.getBoundingClientRect().height;
-    setRowHeight(measuredHeight || 20.5);
-    document.body.removeChild(probe);
   }, []);
 
   useEffect(() => {
@@ -107,9 +88,9 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       true,
       viewMode,
       containerHeight,
-      rowHeight || 20.5,
+      20.5,
     );
-  }, [roundedBuy, obInterval, viewMode, containerHeight, rowHeight]);
+  }, [roundedBuy, obInterval, viewMode, containerHeight]);
   
   const { orders: processedSellOrders, leftoverPerRow: extraSell } = useMemo(() => {
     return scaleOrders(
@@ -118,10 +99,10 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       false,
       viewMode,
       containerHeight,
-      rowHeight || 20.5,
+      20.5
     );
-  }, [roundedSell, obInterval, viewMode, containerHeight, rowHeight]);
-  
+  }, [roundedSell, obInterval, viewMode, containerHeight]);
+
   const adjustedMaxSize = useMemo(() => {
     const lastBuySize = processedBuyOrders
       .filter((order) => order.price !== 0)
@@ -132,7 +113,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
       .slice(-1)[0]?.totalSize || 0;
     return Math.max(lastBuySize, lastSellSize);
   }, [processedBuyOrders, processedSellOrders]);
-  
+
   return (
     <DropdownContext.Provider value={{ openDropdown, setOpenDropdown }}>
       <div className={`ob-controls ${!show ? 'hidden' : ''}`}>
@@ -154,7 +135,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
           symbolQuote={symbolQuote}
           symbolBase={symbolBase}
         />
-        {viewMode === 'both' && (
+        {viewMode === 'both' && containerHeight != 0 && (
           <div className="view-both">
             <OrderList
               roundedOrders={processedSellOrders}
@@ -191,7 +172,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             />
           </div>
         )}
-        {viewMode === 'sell' && (
+        {viewMode === 'sell' && containerHeight != 0 && (
           <div className="ob-sell-only">
             <OrderList
               roundedOrders={processedSellOrders}
@@ -214,7 +195,7 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
             />
           </div>
         )}
-        {viewMode === 'buy' && (
+        {viewMode === 'buy' && containerHeight != 0 && (
           <div className="ob-buy-only">
             <SpreadDisplay
               averagePrice={spreadData.averagePrice}

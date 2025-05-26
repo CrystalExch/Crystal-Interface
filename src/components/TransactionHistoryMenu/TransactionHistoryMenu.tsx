@@ -136,7 +136,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
       else if (transactions.length > 0 && walletAddress) {
         const existingIds = new Set(prev[0].map((tx: any) => tx.identifier));
         const newTx = transactions.filter((tx) => !existingIds.has(tx.identifier));
-        setPendingNotifs((prev: any) => {return Math.min(prev + newTx.length, 100)});
+        setTimeout(() => {setPendingNotifs((prev: any) => {return Math.min(prev + newTx.length, 100)})}, 0);
         const merged = [...prev[0], ...newTx];
         merged.sort((a, b) => b.timestamp - a.timestamp);
         result = merged.slice(0, 100);
@@ -340,6 +340,34 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
         <div className="txhistory-inner">
           <div className="txhistory-main-content">
             <div className="txhistory-title">{t('wrapComplete')}
+              <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
+            </div>
+            <div className="txhistory-swap-details">
+              <div className="txhistory-token-group">
+                <img src={tokenIn.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
+                  {formatBalance(tx.amountIn, tokenIn.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenIn.ticker}
+                </span>
+                <span className="txhistory-arrow">→</span>
+                <img src={tokenOut.image} className="txhistory-token-icon" />
+                <span className="txhistory-amount">
+                  {formatBalance(tx.amountOut, tokenOut.ticker === 'USDC' ? 'usd' : 'token') + ' ' + tokenOut.ticker}
+                </span>
+              </div>
+            </div>
+          </div>
+          <a className="txhistory-view-transaction" href={tx.explorerLink} target="_blank" rel="noopener noreferrer">
+            {t('viewOnExplorer')}
+          </a>
+        </div>
+      );
+    }
+
+    if (tx.currentAction === 'stake') {
+      return (
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
+            <div className="txhistory-title">{t('stakeComplete')}
               <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
             <div className="txhistory-swap-details">

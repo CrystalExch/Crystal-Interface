@@ -1,28 +1,25 @@
 .referral-scroll-wrapper {
+  align-items: center;
   background: rgb(6 6 6);
   box-sizing: border-box;
   display: flex;
   height: 100%;
   justify-content: center;
   width: 100%;
+  min-height: 600px;
 }
 
 .referral-content {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  max-width: 1450px;
+  max-width: 1250px;
   overflow: hidden;
   width: 100%;
-  padding-top: 70px;
   padding-right: 5px;
+  margin-top: max(0px, calc((100vh - 1500px) / 7));
 }
 
-@media(max-height: 950px) {
-  .referral-content {
-    padding-top: 0;
-  }
-}
 .referral-top-section{
   display: flex;
   gap: 4px;
@@ -212,18 +209,18 @@
 .feature-card-left {
   border: 1px solid rgba(186, 189, 211, 0.1);
   border-radius: 0  0 0 12px;
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 .feature-card-middle {
   border: 1px solid rgba(186, 189, 211, 0.1);
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 .feature-card-right {
   border: 1px solid rgba(186, 189, 211, 0.1);
   border-radius: 0  0 12px 0;
-  padding: 1rem 0.7rem 0.7rem 0.7rem;
+  padding: 0.75rem 0.7rem 0.5rem 0.7rem;
   text-align: center;
 }
 
@@ -320,7 +317,7 @@
 .earnings-section {
   background: #0f0f12;
   border-radius: 12px;
-  padding: 0.5rem 1rem 0.7rem 1rem;
+  padding: 0.25rem 1rem 0.25rem 1rem;
   max-width:  350px;
 }
 
@@ -397,7 +394,7 @@
 .token-breakdown {
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 8px;
-  height: 276.333px;
+  height: 162px;
   margin: 0.5rem 0;
   overflow-y: scroll;
   padding: 3px 0;
@@ -543,7 +540,7 @@
   pointer-events: none;
   position: absolute;
   text-align: center;
-  top: 10rem;
+  top: 8rem;
   height: 100%;
   width: 100%;
   z-index: 2;
@@ -590,9 +587,8 @@
   padding-left: 20px;
   bottom: 50px;
   left: 50px;
-  width: 33%;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  flex: 1;
+  height: 78px;
   border: 1.5px solid #1c1c23;
   background: #0f0f1277;
   border-radius: 12px; 
@@ -615,13 +611,11 @@
   padding-left: 20px;
   bottom: 50px;
   left: 50px;
-  width: 33%;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  flex: 1;
+  height: 78px;
   border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
   background: #0f0f12;
-
 }
 
 .total-crystals-earned-container{
@@ -631,21 +625,18 @@
   padding-left: 20px;
   bottom: 50px;
   left: 50px;
-  width: 33%;
-  height: 100px;
-  backdrop-filter: blur(10px);
+  flex: 1;
+  height: 78px;
   border-radius: 12px;
   color: rgba(128, 128, 128, 0.7);
   background: #0f0f12;
-
-
 }
 
 .referral-count-number{
   color: #fff;
   font-size: 1.5rem;
   font-weight: 400;
-  margin: 0;
+  margin-bottom: -4px;
   letter-spacing: -0.5px;
 }
 
@@ -653,26 +644,29 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgba(74, 81, 108, 0.15);
-  border-radius: 8px;
-  padding: 2px;
+  background-color: #969bc93b;
+  border: 1px solid #aaaecf7e;
+  border-radius: 4px;
+  padding: 1px;
   letter-spacing: -0.5px;
-  font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.75rem;
+  color: #bcc0ea;
+  width: 30%;
+  min-width: 130px;
+  margin-top: -4px;
 }
+
 .referral-user-right-side{
   display: flex;
   flex-direction: column;
   gap: 4px;
+  width: 100%; 
+  min-width: 0;
+  overflow: hidden; 
+  flex: 1; 
+  flex-shrink: 1;
 }
 
-.referral-username{
-  color: #fff;
-  font-size: 1.25rem;
-  font-weight: 500;
-  margin: 0;
-  letter-spacing: -0.5px;
-}
 .referral-body-section{
   display: flex;
   flex-direction: column;
@@ -681,13 +675,13 @@
 
 .referral-pfp{
   border-radius: 50%;
-  height: 60px;
-  width: 60px;
+  height: 53px;
+  width: 53px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 10px rgb(170 174 207 / 50%);
  }
 .referral-bg-placeholder {
-  height: 400px;
+  max-height: 288px;
   overflow: hidden;
   position: relative;
   width: 100%;
@@ -703,7 +697,7 @@
      object-fit: cover;
   width: 100%;
   transition: 0.3s ease all;
-
+  margin-top: -20px;
 }
 
 .referral-bg-placeholder:hover .referral-background{
@@ -730,7 +724,7 @@
     height: auto;
     margin: 0 0 5px 0;
     overflow: visible;
-    padding: 0 8px;
+    padding: 0 5px;
   }
 
   .referral-content {
@@ -740,7 +734,7 @@
   }
 }
 
-@media (width <=860px) {
+@media (max-width: 1020px) {
 
   .feature-card {
     align-items: center;
@@ -748,12 +742,11 @@
 
   .left-column {
     flex-direction: column;
-    height: 380px;
   }
 
   .refer-section{
     width: 100%;
-    padding: 15px;
+    padding: 0.5rem 1.5rem 1rem 1.5rem;
   }
   .enter-code-container{
     width: 100%;
@@ -764,7 +757,7 @@
   }
 }
 
-@media(width <=840px) {
+@media (max-width: 1020px) {
   .referral-top-section {
     flex-direction: column;
   }
@@ -781,12 +774,18 @@
 
   .total-crystals-earned-container{
     width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .total-referrals-container{
     width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
   .referred-count{
     width: 100%;
+    padding-top: 12px;
+    padding-bottom: 12px;
   }
 }
 @media (width <=700px) {
@@ -860,8 +859,65 @@
   width: 27px;
 }
 
+.referral-username {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.5px;
+  width: 100%;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
+.referrals-skeleton {
+  background: #2d2d3b;
+  border-radius: 4px;
+  height: 11px;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  position: relative;
+  width: 160px;
+}
 
+.referrals-skeleton::after {
+  animation: shimmer 2s infinite;
+  background-image: linear-gradient(
+    90deg,
+    rgb(255 255 255 / 0%) 0,
+    rgb(255 255 255 / 5%) 20%,
+    rgb(255 255 255 / 10%) 60%,
+    rgb(255 255 255 / 0%)
+  );
+  content: '';
+  inset: 0;
+  position: absolute;
+  transform: translateX(-100%);
+}
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
 
+.referrals-username-skeleton {
+  height: 21px;
+  width: 120px;
+  margin: 0 0 2px 0;
+}
 
+.referrals-multiplier-skeleton {
+  height: 21px;
+  width: 150px;
+  margin: 0;
+}
+
+.referrals-count-skeleton {
+  height: 28px;
+  width: 60px;
+  margin-bottom: -1px;
+}

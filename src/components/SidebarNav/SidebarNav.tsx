@@ -25,7 +25,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const { t } = useLanguage();
   const [expanded, setExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const backgroundlesslogo = '/logo_clear.png';
+  const backgroundlesslogo = '/CrystalLogo.png';
 
   const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({
     content: '',

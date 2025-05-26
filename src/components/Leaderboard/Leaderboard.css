@@ -104,7 +104,8 @@
   inset 0 -1px 1px rgb(0 0 0 / 75%),
   0 2px 8px rgb(170 174 207 / 70%);
   border-radius:4px;
-  height:100%
+  height:100%;
+  transition: width 0.5s ease;
 }
 .xp-display{
   color:rgba(255,255,255,.7);
@@ -164,9 +165,7 @@
   display:flex;
   gap:20px;
   justify-content:space-between;
-  margin-bottom:30px;
-  margin-left:5px;
-  margin-top:-10px;
+  margin: -10px 7px 5px 7px;
   padding:20px 0 0;
   perspective:1500px;
   transform-style:preserve-3d
@@ -209,7 +208,8 @@
   display:flex;
   font-size:1.1rem;
   font-weight:400;
-  align-items:center
+  align-items:center;
+  margin-top: -5px;
 }
 .full-leaderboard{
   border:1.5px solid rgba(255,255,255,.02);
@@ -301,17 +301,18 @@
 
 .leaderboard-user-address {
   display: flex;
-  max-width: 250px; 
+  gap: 3px;
+}
+
+.address-string{
+  padding-right: 5px;
+  max-width: 180px; 
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: inline-block;
 }
 
-
-.address-string{
-  padding-right: 5px;
-}
 .faction-name {
   max-width: 250px;
   white-space: nowrap;
@@ -527,7 +528,7 @@
 @media (max-width:768px){
   .pagination-controls{
       flex-direction:column;
-      gap:15px
+      gap:5px
   }
   .page-navigation{
       justify-content:center;
@@ -588,7 +589,8 @@
   align-items:center;
   justify-content:center;
   background-color:rgba(171,176,224,.2);
-  border-radius:5px
+  border-radius: 5px;
+  margin-left: 3px;
 }
 .pagination-controls{
   align-items:center;
@@ -600,7 +602,6 @@
   padding:5px;
   padding-top:4px;
   position:relative;
-  margin-top:12px
 }
 .pagination-arrow{
   align-items:center;
@@ -687,12 +688,11 @@
 }
 .leaderboard-row .row-rank .loading-placeholder{
   height:20px;
-  width:25px
+  width:23px
 }
 .leaderboard-row .faction-row-name.loading-placeholder{
   display:inline-block;
   height:18px;
-  margin-left:8px;
   width:120px
 }
 .leaderboard-row .leaderboard-xp-amount.loading-placeholder{
@@ -845,8 +845,23 @@
   height:16px;
   overflow:hidden;
   position:relative;
-  width:120px
+  width:200px
 }
+
+.leaderboard-address-loading{
+  animation:total-xp-shimmer 3s infinite linear;
+  background:linear-gradient(90deg,rgba(255,255,255,.05) 0,rgba(255,255,255,.2) 25%,rgba(255,255,255,.2) 35%,rgba(255,255,255,.05) 60%);
+  background-size:200% 100%;
+  border-radius:4px;
+  display:inline-block;
+  margin-top: 4px;
+  height:16px;
+  overflow:hidden;
+  position:relative;
+  width: 100%;
+  max-width: 200px;
+}
+
 .xp-display.loading{
   display:flex;
   justify-content:flex-end
@@ -947,7 +962,7 @@
 .orders-indicator-container{
   display:flex;
   margin-left:8px;
-  position:relative
+  position:relative;
 }
 .orders-indicator{
   background-color:#aaaecf;
@@ -958,23 +973,7 @@
   position:relative;
   z-index:2
 }
-.orders-indicator:hover::after{
-  backdrop-filter:blur(10px);
-  background:rgba(194,194,244,.2);
-  border:1px solid #aaaecf3c;
-  border-radius:4px;
-  color:#bcbcbc;
-  content:attr(title);
-  font-size:.75rem;
-  left:50%;
-  padding:5px 10px;
-  position:absolute;
-  top:-30px;
-  transform:translateX(-50%);
-  white-space:nowrap;
-  z-index:10;
-  letter-spacing:-.3px
-}
+
 .orders-indicator::before{
   content:'';
   position:absolute;
@@ -1041,4 +1040,164 @@
   height: 20px;
 
 }
+.digit-roller-container {
+  position: relative;
+  overflow: hidden;
+  height: 1.2em;              
+  line-height: 1.2em;
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 25%,
+    black 85%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    black 35%,
+    black 85%,
+    transparent 100%
+  );
+}
+.static-digit {
+  height: 1.2em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
+.digit-wheel {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.wheel-digit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation-name: digitRoll;
+  animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
+  animation-fill-mode: both;
+  opacity: 0;
+}
+
+.wheel-digit.static-first {
+  opacity: 1;
+  animation: firstDigitFade 150ms cubic-bezier(0.42, 0, 0.58, 1) forwards;
+}
+
+@keyframes firstDigitFade {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 0.9;
+    transform: translateY(-30%);
+  }
+  70% {
+    opacity: 0.3;
+    transform: translateY(-70%);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+}
+
+@keyframes digitRoll {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  15% {
+    transform: translateY(70%);
+    opacity: 0.3;
+  }
+  30% {
+    transform: translateY(30%);
+    opacity: 0.9;
+  }
+  40% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateY(-30%);
+    opacity: 0.9;
+  }
+  85% {
+    transform: translateY(-70%);
+    opacity: 0.3;
+  }
+  100% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+}
+
+.number-roller {
+  display: inline-flex;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.roller-suffix {
+  margin-left: 4px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.separator {
+  margin: 0 1px;
+}
+
+.faction-xp .number-roller {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+
+.faction-xp .number-roller .digit-roller-container {
+  min-width: 0.5em;
+}
+
+.leaderboard-xp-amount .number-roller .digit-roller-container {
+  min-width: 0.5em;
+}
+
+.column-content .number-roller,
+.progress-bar-amount-header .number-roller,
+.leaderboard-xp-amount .number-roller {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+}
+.custom-tooltip {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(194, 194, 244, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(170, 174, 207, 0.24);
+  border-radius: 4px;
+  color: #bcbcbc;
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  white-space: nowrap;
+  z-index: 10;
+  letter-spacing: -0.3px;
+  pointer-events: none;
+}

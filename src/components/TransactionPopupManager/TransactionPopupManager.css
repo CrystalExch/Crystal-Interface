@@ -1,5 +1,5 @@
 .popup-stack-container {
-    bottom: 55px;
+    bottom: 20px;
     display: flex;
     gap: 10px;
     pointer-events: none;
@@ -27,7 +27,6 @@
     pointer-events: auto;
     width: 270px;
     --expanded-y: 0px;
-    backdrop-filter: blur(5px);
 }
 
 .popup-stack-container .popup-hover-trigger:hover .popup-stack-item {

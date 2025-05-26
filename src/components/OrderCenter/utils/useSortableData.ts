@@ -34,7 +34,11 @@ export function useSortableData(
         return sortOrder === 'asc' ? comparison : -comparison;
       }
 
-      return 0;
+      const aTime = getValue(a, 'time', trades);
+      const bTime = getValue(b, 'time', trades);
+      const timeComparison = aTime - bTime;
+    
+      return sortOrder === 'asc' ? timeComparison : -timeComparison;
     });
 
     return sorted;

@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
   const [inPic, setInPic] = useState('');
   const [outPic, setOutPic] = useState('');
-  const backgroundlesslogo = '/logo_clear.png';
+  const backgroundlesslogo = '/CrystalLogo.png';
 
   useEffect(() => {
     if (activeMarket && tokendict) {
@@ -124,7 +124,10 @@ const Header: React.FC<HeaderProps> = ({
         >
           <img src={Hamburger} className="hamburger-image" />
         </button>
-        <img src={backgroundlesslogo} className="extitle-logo" />
+        <div className="extitle">
+          <img src={backgroundlesslogo} className="extitle-logo" />
+          <span className="crystal-name">CRYSTAL</span>
+        </div>
         </div> 
         <div className="left-header">
 

@@ -53,6 +53,7 @@ import swapTokensForExactETH from './scripts/swapTokensForExactETH';
 import swapTokensForExactTokens from './scripts/swapTokensForExactTokens';
 import unwrapeth from './scripts/unwrapeth';
 import wrapeth from './scripts/wrapeth';
+import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
 
 // import utils
@@ -68,6 +69,7 @@ import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
+import { shMonadAbi } from './abis/shMonadAbi.ts';
 
 // import types
 import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
@@ -94,7 +96,6 @@ import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
 import mobiletradeswap from './assets/mobile_trade_swap.png';
 import refreshicon from './assets/circulararrow.png';
-import clearlogo from '../public/logo_clear.png';
 import crystalxp from './assets/CrystalX.png';
 import part1image from './assets/part1intro.png';
 import topright from './assets/topright.png';
@@ -126,7 +127,6 @@ import LanguageSelector from './components/Header/LanguageSelector/LanguageSelec
 import LoadingOverlay from './components/loading/LoadingComponent.tsx';
 import FullScreenOverlay from './components/loading/LoadingScreen.tsx';
 import NavigationProgress from './components/NavigationProgress.tsx';
-import OrderBook from './components/Orderbook/Orderbook.tsx';
 import OrderCenter from './components/OrderCenter/OrderCenter.tsx';
 import SortArrow from './components/OrderCenter/SortArrow/SortArrow.tsx';
 import PortfolioContent from './components/Portfolio/BalancesContent/BalancesContent.tsx';
@@ -151,6 +151,11 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 
 function App() {
+  useEffect(() => {
+    if (!localStorage.getItem("noSSR")) {
+      localStorage.setItem("noSSR", "true");
+    }
+  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
@@ -196,7 +201,8 @@ function App() {
     }
     return g;
   })();
-
+  const txReceiptResolvers = new Map<string, () => void>();
+  const clearlogo = '/CrystalLogo.png';
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
     return (
@@ -215,29 +221,49 @@ function App() {
       })() ||
       (() => {
         const path = findShortestPath(token1, token2);
-        if (path && path.length > 2 && activeTab != 'limit') {
+        if (path && path.length > 2) {
           let fee = BigInt(1);
           for (let i = 0; i < path.length - 1; i++) {
             fee *= getMarket(path[i], path[i + 1]).fee;
           }
           fee /= BigInt(100000 ** (path.length - 2));
+          if (path.at(-1) != usdc) {
+            return {
+              quoteAsset: getMarket(path.at(-2), path.at(-1)).quoteAsset,
+              baseAsset: getMarket(path.at(-2), path.at(-1)).baseAsset,
+              path: path,
+              quoteAddress: getMarket(path.at(-2), path.at(-1)).quoteAddress,
+              baseAddress: getMarket(path.at(-2), path.at(-1)).baseAddress,
+              quoteDecimals: getMarket(path.at(-2), path.at(-1)).quoteDecimals,
+              baseDecimals: getMarket(path.at(-2), path.at(-1)).baseDecimals,
+              address: getMarket(path.at(-2), path.at(-1)).address,
+              scaleFactor: getMarket(path.at(-2), path.at(-1)).scaleFactor,
+              priceFactor: getMarket(path.at(-2), path.at(-1)).priceFactor,
+              tickSize: getMarket(path.at(-2), path.at(-1)).tickSize,
+              minSize: getMarket(path.at(-2), path.at(-1)).minSize,
+              maxPrice: getMarket(path.at(-2), path.at(-1)).maxPrice,
+              fee: fee,
+              image: getMarket(path.at(-2), path.at(-1)).image,
+              website: getMarket(path.at(-2), path.at(-1)).website,
+            };
+          }
           return {
-            quoteAsset: getMarket(path.at(-2), path.at(-1)).quoteAsset,
-            baseAsset: getMarket(path.at(-2), path.at(-1)).baseAsset,
+            quoteAsset: getMarket(path.at(0), path.at(1)).quoteAsset,
+            baseAsset: getMarket(path.at(0), path.at(1)).baseAsset,
             path: path,
-            quoteAddress: getMarket(path.at(-2), path.at(-1)).quoteAddress,
-            baseAddress: getMarket(path.at(-2), path.at(-1)).baseAddress,
-            quoteDecimals: getMarket(path.at(-2), path.at(-1)).quoteDecimals,
-            baseDecimals: getMarket(path.at(-2), path.at(-1)).baseDecimals,
-            address: getMarket(path.at(-2), path.at(-1)).address,
-            scaleFactor: getMarket(path.at(-2), path.at(-1)).scaleFactor,
-            priceFactor: getMarket(path.at(-2), path.at(-1)).priceFactor,
-            tickSize: getMarket(path.at(-2), path.at(-1)).tickSize,
-            minSize: getMarket(path.at(-2), path.at(-1)).minSize,
-            maxPrice: getMarket(path.at(-2), path.at(-1)).maxPrice,
+            quoteAddress: getMarket(path.at(0), path.at(1)).quoteAddress,
+            baseAddress: getMarket(path.at(0), path.at(1)).baseAddress,
+            quoteDecimals: getMarket(path.at(0), path.at(1)).quoteDecimals,
+            baseDecimals: getMarket(path.at(0), path.at(1)).baseDecimals,
+            address: getMarket(path.at(0), path.at(1)).address,
+            scaleFactor: getMarket(path.at(0), path.at(1)).scaleFactor,
+            priceFactor: getMarket(path.at(0), path.at(1)).priceFactor,
+            tickSize: getMarket(path.at(0), path.at(1)).tickSize,
+            minSize: getMarket(path.at(0), path.at(1)).minSize,
+            maxPrice: getMarket(path.at(0), path.at(1)).maxPrice,
             fee: fee,
-            image: getMarket(path.at(-2), path.at(-1)).image,
-            website: getMarket(path.at(-2), path.at(-1)).website,
+            image: getMarket(path.at(0), path.at(1)).image,
+            website: getMarket(path.at(0), path.at(1)).website,
           };
         }
       })()
@@ -284,8 +310,7 @@ function App() {
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [showHoverTooltip, setShowHoverTooltip] = useState(false);
-  const [activeTab, setActiveTab] = useState(location.pathname.slice(1));
-  const [currentProText, setCurrentProText] = useState(activeTab == 'swap' || activeTab == 'market' || activeTab == 'limit' ? 'pro' : t(activeTab.toLowerCase()));
+  const [currentProText, setCurrentProText] = useState(location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' || location.pathname.slice(1) == 'limit' ? 'pro' : t(location.pathname.slice(1).toLowerCase()));
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
@@ -293,7 +318,7 @@ function App() {
     {},
   );
   const [tokenIn, setTokenIn] = useState(() => {
-    if (activeTab == 'send') {
+    if (location.pathname.slice(1) == 'send') {
       const token = searchParams.get('token');
       if (token && tokendict[getAddress(token)]) {
         return getAddress(token);
@@ -307,10 +332,13 @@ function App() {
         if (token) {
           token = getAddress(token);
           for (const market in markets) {
+            if (markets[market].baseAddress == token) {
+              return markets[market].quoteAddress;
+            }
+          }
+          for (const market in markets) {
             if (markets[market].quoteAddress == token) {
               return markets[market].baseAddress;
-            } else if (markets[market].baseAddress == token) {
-              return markets[market].quoteAddress;
             }
           }
         }
@@ -320,7 +348,7 @@ function App() {
   });
   const [tokenOut, setTokenOut] = useState(() => {
     let tokenIn =
-      activeTab == 'send'
+      location.pathname.slice(1) == 'send'
         ? searchParams.get('token')
         : searchParams.get('tokenIn');
     let tokenOut = searchParams.get('tokenOut');
@@ -332,14 +360,17 @@ function App() {
           return tokenOut;
         } else {
           const path = findShortestPath(tokenIn, tokenOut);
-          if (path && path.length > 1 && activeTab == 'swap') {
+          if (path && path.length > 1 && location.pathname.slice(1) == 'swap') {
             return tokenOut;
           } else {
             for (const market in markets) {
+              if (markets[market].baseAddress == tokenIn) {
+                return markets[market].quoteAddress;
+              }
+            }
+            for (const market in markets) {
               if (markets[market].quoteAddress == tokenIn) {
                 return markets[market].baseAddress;
-              } else if (markets[market].baseAddress == tokenIn) {
-                return markets[market].quoteAddress;
               }
             }
           }
@@ -349,10 +380,13 @@ function App() {
       tokenIn = getAddress(tokenIn);
       if (tokendict[tokenIn]) {
         for (const market in markets) {
+          if (markets[market].baseAddress == tokenIn) {
+            return markets[market].quoteAddress;
+          }
+        }
+        for (const market in markets) {
           if (markets[market].quoteAddress == tokenIn) {
             return markets[market].baseAddress;
-          } else if (markets[market].baseAddress == tokenIn) {
-            return markets[market].quoteAddress;
           }
         }
       }
@@ -471,7 +505,7 @@ function App() {
     return BigInt(0);
   });
   const [amountOutSwap, setamountOutSwap] = useState(() => {
-    if (activeTab == 'swap' || activeTab == 'market') {
+    if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount) {
         setswitched(true);
@@ -495,7 +529,7 @@ function App() {
     return '';
   });
   const [outputString, setoutputString] = useState(() => {
-    if (activeTab == 'swap' || activeTab == 'market') {
+    if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
       const amount = searchParams.get('amountOut');
       if (amount && Number(amount) > 0) {
         return customRound(
@@ -574,6 +608,7 @@ function App() {
     tokenBalances,
     setTotalAccountValue,
     marketsData,
+    (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
   const [trades, setTrades] = useState<
@@ -636,17 +671,14 @@ function App() {
     set: new Set(),
   });
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
-  const [originalUsername, setOriginalUsername] = useState('');
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
     () => Object.values(tokendict),
     [tokendict],
   );
-  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
-  const blurref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const initialMousePosRef = useRef(0);
@@ -685,8 +717,6 @@ function App() {
   const [sortDirection, setSortDirection] = useState<
     'asc' | 'desc' | undefined
   >('desc');
-  const [usernameInput, setUsernameInput] = useState("");
-  const [usernameError, setUsernameError] = useState("");
   const { toggleFavorite } = useSharedContext();
 
   const audio = useMemo(() => {
@@ -777,7 +807,15 @@ function App() {
 
   const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
     if (!client) {
-      return (await waitForTransactionReceipt(config, { hash: hash })).transactionHash
+      return await Promise.race([
+        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          txReceiptResolvers.delete(hash);
+          return r.transactionHash;
+        }),
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.set(hash, resolve);
+        }),
+      ]);
     }
     return hash
   }, [client])
@@ -1008,14 +1046,14 @@ function App() {
         ],
       },
       {
-        address: activeMarket?.address,
         abi: CrystalMarketAbi,
+        address: activeMarket?.address,
         functionName: 'getPriceLevelsFromMid',
         args: [BigInt(1000000)],
       },
       {
+        abi: CrystalDataHelperAbi,
         address: balancegetter,
-        abi: CrystalDataHelperAbi as any,
         functionName: 'getPrices',
         args: [
           Array.from(
@@ -1027,14 +1065,37 @@ function App() {
           ),
         ],
       },
+      ...(tokenIn == eth && tokendict[tokenOut]?.lst == true
+        ? [
+            {
+              abi: shMonadAbi,
+              address: tokenOut,
+              functionName: 'convertToShares',
+              args: [amountIn],
+            },
+          ]
+        : tokenOut == eth && tokendict[tokenIn]?.lst == true ? [
+          {
+            abi: shMonadAbi,
+            address: tokenIn,
+            functionName: 'convertToAssets',
+            args: [amountIn],
+          },
+        ] : []) as any,
     ],
-    query: { refetchInterval: simpleView ? 5000 : 1000, gcTime: 0 },
-  });
+    query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 700 : 5000, gcTime: 0 },
+  }) as any;
 
   // fetch ref data
   const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
     batchSize: 0,
     contracts: [
+      {
+        address: settings.chainConfig[activechain].referralManager,
+        abi: CrystalReferralAbi as any,
+        functionName: 'addressToReferrer',
+        args: [address ?? '0x0000000000000000000000000000000000000000'],
+      },
       ...Array.from(
         new Set(
           Object.values(markets).map(
@@ -1067,6 +1128,8 @@ function App() {
   useEffect(() => {
     let liveStreamCancelled = false;
     let blockNumber = '';
+    let worker: any;
+
     (async () => {
       blockNumber = '0x' + (await getBlockNumber(config) - BigInt(10)).toString(16)
     })()
@@ -1095,7 +1158,7 @@ function App() {
                 ),
                 topics: [
                   [
-                    '0x9e2343fa67d709721d4042719dd2bb7443822bc095cdeef583b66cb1cd5887eb',
+                    '0xc3bcf95b5242764f3f2dc3e504ce05823a3b50c4ccef5e660d13beab2f51f2ca',
                   ],
                 ],
               },
@@ -1130,269 +1193,275 @@ function App() {
         const orderlogs = result?.[2]?.result;
         setProcessedLogs(({ queue, set }: { queue: string[]; set: Set<string> }) => {
           setorders((orders) => {
-            let temporders = orders;
+            let temporders = [...orders];
             let ordersChanged = false;
-            if (Array.isArray(orderlogs)) {
-              for (const log of orderlogs) {
-                const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-                if (!set.has(logIdentifier) && addresstoMarket[log['address']] && log['topics'][1].slice(26) ==
-                  address?.slice(2).toLowerCase()) {
-                  if (queue.length >= 1000) {
-                    const removed = queue.shift();
-                    set.delete(removed!);
-                  }
-                  queue.push(logIdentifier);
-                  set.add(logIdentifier);
-                  let _timestamp = parseInt(log['blockTimestamp'], 16);
-                  let _orderdata = log['data'].slice(130);
-                  for (let i = 0; i < _orderdata.length; i += 64) {
-                    let chunk = _orderdata.slice(i, i + 64);
-                    let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
-                    if (_isplace) {
-                      let order = [
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(20, 32), 16),
-                        parseInt(chunk.slice(32, 64), 16) /
-                        parseInt(chunk.slice(1, 20), 16),
-                        parseInt(chunk.slice(0, 1), 16),
-                        addresstoMarket[log['address']],
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        parseInt(chunk.slice(32, 64), 16),
-                        2,
-                      ];
-                      ordersChanged = true;
-                      temporders.push(order)
-                      setcanceledorders((canceledorders) => [
-                        ...canceledorders,
-                        [
-                          parseInt(chunk.slice(1, 20), 16),
-                          parseInt(chunk.slice(20, 32), 16),
-                          parseInt(chunk.slice(32, 64), 16) /
-                          parseInt(chunk.slice(1, 20), 16),
-                          parseInt(chunk.slice(0, 1), 16),
-                          addresstoMarket[log['address']],
-                          log['transactionHash'],
-                          _timestamp,
-                          0,
-                          parseInt(chunk.slice(32, 64), 16),
-                          2,
-                        ],
-                      ]);
-                      let price = parseInt(chunk.slice(1, 20), 16);
-                      let buy = parseInt(chunk.slice(0, 1), 16);
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountquote = (
-                        parseInt(chunk.slice(32, 64), 16) /
-                        (Number(
-                          markets[addresstoMarket[log['address']]].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        parseInt(chunk.slice(32, 64), 16) /
-                        price /
-                        10 **
-                        Number(
-                          markets[addresstoMarket[log['address']]]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
-                        '',
-                      );
-                    } else {
-                      setcanceledorders((canceledorders) => {
-                        let updatedCanceledOrders: any[];
-                        let canceledOrderIndex: number;
-                        updatedCanceledOrders = [...canceledorders];
-                        canceledOrderIndex = updatedCanceledOrders.findIndex(
-                          (canceledOrder) =>
-                            canceledOrder[0] ===
-                            parseInt(chunk.slice(1, 20), 16) &&
-                            canceledOrder[1] ===
-                            parseInt(chunk.slice(20, 32), 16) &&
-                            canceledOrder[4] ===
-                            addresstoMarket[log['address']],
-                        );
-                        if (canceledOrderIndex !== -1) {
-                          updatedCanceledOrders[canceledOrderIndex] = [
-                            ...updatedCanceledOrders[canceledOrderIndex],
-                          ];
-                          updatedCanceledOrders[canceledOrderIndex][9] = 0;
-                          updatedCanceledOrders[canceledOrderIndex][8] =
-                            updatedCanceledOrders[canceledOrderIndex][8] -
-                            parseInt(chunk.slice(32, 64), 16);
-                          updatedCanceledOrders[canceledOrderIndex][6] =
-                            _timestamp;
-                        }
-                        return updatedCanceledOrders;
-                      });
-                      let index = temporders.findIndex(
-                        (sublist: any) =>
-                          sublist[0] == parseInt(chunk.slice(1, 20), 16) &&
-                          sublist[1] == parseInt(chunk.slice(20, 32), 16) &&
-                          sublist[4] == addresstoMarket[log['address']],
-                      );
-                      if (index != -1) {
-                        ordersChanged = true;
-                        if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                          temporders[index][10].remove();
-                          temporders[index].splice(10, 1)
-                        }
-                        temporders.splice(index, 1);
-                      }
-                      let price = parseInt(chunk.slice(1, 20), 16);
-                      let buy = parseInt(chunk.slice(0, 1), 16) == 3;
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountquote = (
-                        parseInt(chunk.slice(32, 64), 16) /
-                        (Number(
-                          markets[addresstoMarket[log['address']]].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        parseInt(chunk.slice(32, 64), 16) /
-                        price /
-                        10 **
-                        Number(
-                          markets[addresstoMarket[log['address']]]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-            if (Array.isArray(tradelogs)) {
+            setcanceledorders((canceledorders) => {
+              let tempcanceledorders = [...canceledorders];
+              let canceledOrdersChanged = false;
               settradesByMarket((tradesByMarket: any) => {
                 let temptradesByMarket = { ...tradesByMarket };
-                for (const log of tradelogs) {
-                  const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-                  if (!set.has(logIdentifier) && addresstoMarket[log['address']]) {
-                    if (queue.length >= 1000) {
-                      const removed = queue.shift();
-                      set.delete(removed!);
-                    }
-                    queue.push(logIdentifier);
-                    set.add(logIdentifier);
-                    let _timestamp = parseInt(log['blockTimestamp'], 16);
-                    let _orderdata = log['data'].slice(258);
-                    const marketKey = addresstoMarket[log['address']];
-                    if (
-                      log['topics'][1].slice(26) ==
-                      address?.slice(2).toLowerCase()
-                    ) {
-                      settradehistory((tradehistory) => [
-                        ...tradehistory,
-                        [
-                          parseInt(log['data'].slice(2, 34), 16),
-                          parseInt(log['data'].slice(34, 66), 16),
-                          parseInt(log['data'].slice(66, 67), 16),
-                          parseInt(log['data'].slice(98, 130), 16),
-                          marketKey,
-                          log['transactionHash'],
-                          _timestamp,
-                          1,
-                        ],
-                      ]);
-                      let buy = parseInt(log['data'].slice(66, 67), 16);
-                      let quoteasset =
-                        markets[addresstoMarket[log['address']]].quoteAddress;
-                      let baseasset =
-                        markets[addresstoMarket[log['address']]].baseAddress;
-                      let amountin = customRound(
-                        parseInt(log['data'].slice(2, 34), 16) /
-                        10 **
-                        Number(
-                          buy
-                            ? markets[addresstoMarket[log['address']]]
-                              .quoteDecimals
-                            : markets[addresstoMarket[log['address']]]
-                              .baseDecimals,
-                        ),
-                        3,
-                      );
-                      let amountout = customRound(
-                        parseInt(log['data'].slice(34, 66), 16) /
-                        10 **
-                        Number(
-                          buy
-                            ? markets[addresstoMarket[log['address']]]
-                              .baseDecimals
-                            : markets[addresstoMarket[log['address']]]
-                              .quoteDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'swap',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        amountin,
-                        amountout,
-                        '',
-                        '',
-                      );
-                    }
-                    if (marketKey) {
-                      if (!Array.isArray(temptradesByMarket[marketKey])) {
-                        temptradesByMarket[marketKey] = [];
+                let tradesByMarketChanged = false;
+                settradehistory((tradehistory: any) => {
+                  let updatedTradeHistory = [...tradehistory];
+                  let tradeHistoryChanged = false;
+                  if (Array.isArray(orderlogs)) {
+                    for (const log of orderlogs) {
+                      const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+                      const marketKey = addresstoMarket[log['address']];
+                      if (!set.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
+                        address?.slice(2).toLowerCase()) {
+                        if (queue.length >= 10000) {
+                          const removed = queue.shift();
+                          set.delete(removed!);
+                        }
+                        queue.push(logIdentifier);
+                        set.add(logIdentifier);
+                        const resolve = txReceiptResolvers.get(log['transactionHash']);
+                        if (resolve) {
+                          resolve();
+                          txReceiptResolvers.delete(log['transactionHash']);
+                        }
+                        ordersChanged = true;
+                        canceledOrdersChanged = true;
+                        let _timestamp = parseInt(log['blockTimestamp'], 16);
+                        let _orderdata = log['data'].slice(130);
+                        for (let i = 0; i < _orderdata.length; i += 64) {
+                          let chunk = _orderdata.slice(i, i + 64);
+                          let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                          if (_isplace) {
+                            let buy = parseInt(chunk.slice(0, 1), 16);
+                            let price = parseInt(chunk.slice(1, 20), 16);
+                            let id = parseInt(chunk.slice(20, 32), 16);
+                            let size = parseInt(chunk.slice(32, 64), 16);
+                            let order = [
+                              price,
+                              id,
+                              size /
+                              price,
+                              buy,
+                              marketKey,
+                              log['transactionHash'],
+                              _timestamp,
+                              0,
+                              size,
+                              2,
+                            ];
+                            temporders.push(order)
+                            tempcanceledorders.push([
+                              price,
+                              id,
+                              size /
+                              price,
+                              buy,
+                              marketKey,
+                              log['transactionHash'],
+                              _timestamp,
+                              0,
+                              size,
+                              2,
+                            ])
+                            let quoteasset =
+                              markets[marketKey].quoteAddress;
+                            let baseasset =
+                              markets[marketKey].baseAddress;
+                            let amountquote = (
+                              size /
+                              (Number(
+                                markets[marketKey].scaleFactor,
+                              ) *
+                                10 **
+                                Number(
+                                  markets[marketKey]
+                                    .quoteDecimals,
+                                ))
+                            ).toFixed(2);
+                            let amountbase = customRound(
+                              size /
+                              price /
+                              10 **
+                              Number(
+                                markets[marketKey]
+                                  .baseDecimals,
+                              ),
+                              3,
+                            );
+                            newTxPopup(
+                              log['transactionHash'],
+                              'limit',
+                              buy ? quoteasset : baseasset,
+                              buy ? baseasset : quoteasset,
+                              buy ? amountquote : amountbase,
+                              buy ? amountbase : amountquote,
+                              `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                              '',
+                            );
+                          } else {
+                            let buy = parseInt(chunk.slice(0, 1), 16) == 3;
+                            let price = parseInt(chunk.slice(1, 20), 16);
+                            let id = parseInt(chunk.slice(20, 32), 16);
+                            let size = parseInt(chunk.slice(32, 64), 16);
+                            let canceledOrderIndex: number;
+                            canceledOrderIndex = tempcanceledorders.findIndex(
+                              (canceledOrder) =>
+                                canceledOrder[0] ==
+                                price &&
+                                canceledOrder[1] ==
+                                id &&
+                                canceledOrder[4] ==
+                                marketKey,
+                            );
+                            if (canceledOrderIndex !== -1) {
+                              tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                              tempcanceledorders[canceledOrderIndex][9] = 0;
+                              tempcanceledorders[canceledOrderIndex][8] =
+                                tempcanceledorders[canceledOrderIndex][8] -
+                                size;
+                              tempcanceledorders[canceledOrderIndex][6] =
+                                _timestamp;
+                            }
+                            let index = temporders.findIndex(
+                              (sublist: any) =>
+                                sublist[0] == price &&
+                                sublist[1] == id &&
+                                sublist[4] == marketKey,
+                            );
+                            if (index != -1) {
+                              if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                                temporders[index] = [...temporders[index]]
+                                temporders[index][10].remove();
+                                temporders[index].splice(10, 1)
+                              }
+                              temporders.splice(index, 1);
+                            }
+                            let quoteasset =
+                              markets[marketKey].quoteAddress;
+                            let baseasset =
+                              markets[marketKey].baseAddress;
+                            let amountquote = (
+                              size /
+                              (Number(
+                                markets[marketKey].scaleFactor,
+                              ) *
+                                10 **
+                                Number(
+                                  markets[marketKey]
+                                    .quoteDecimals,
+                                ))
+                            ).toFixed(2);
+                            let amountbase = customRound(
+                              size /
+                              price /
+                              10 **
+                              Number(
+                                markets[marketKey]
+                                  .baseDecimals,
+                              ),
+                              3,
+                            );
+                            newTxPopup(
+                              log['transactionHash'],
+                              'cancel',
+                              buy ? quoteasset : baseasset,
+                              buy ? baseasset : quoteasset,
+                              buy ? amountquote : amountbase,
+                              buy ? amountbase : amountquote,
+                              `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                              '',
+                            );
+                          }
+                        }
                       }
-                      temptradesByMarket[marketKey] = [
-                        ...temptradesByMarket[marketKey],
-                        [
-                          parseInt(log['data'].slice(2, 34), 16),
-                          parseInt(log['data'].slice(34, 66), 16),
-                          parseInt(log['data'].slice(66, 67), 16),
-                          parseInt(log['data'].slice(98, 130), 16),
-                          marketKey,
-                          log['transactionHash'],
-                          _timestamp,
-                        ],
-                      ];
                     }
-                    setcanceledorders((canceledorders) => {
-                      let updatedCanceledOrders = [...canceledorders];
-                      settradehistory((tradehistory: any) => {
-                        let updatedTradeHistory = [...tradehistory];
+                  }
+                  if (Array.isArray(tradelogs)) {
+                    for (const log of tradelogs) {
+                      const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+                      const marketKey = addresstoMarket[log['address']];
+                      if (!set.has(logIdentifier) && marketKey) {
+                        if (queue.length >= 10000) {
+                          const removed = queue.shift();
+                          set.delete(removed!);
+                        }
+                        queue.push(logIdentifier);
+                        set.add(logIdentifier);
+                        const resolve = txReceiptResolvers.get(log['transactionHash']);
+                        if (resolve) {
+                          resolve();
+                          txReceiptResolvers.delete(log['transactionHash']);
+                        }
+                        let _timestamp = parseInt(log['blockTimestamp'], 16);
+                        let _orderdata = log['data'].slice(258);
+                        if (
+                          log['topics'][1].slice(26) ==
+                          address?.slice(2).toLowerCase()
+                        ) {
+                          tradeHistoryChanged = true;
+                          updatedTradeHistory.push([
+                            parseInt(log['data'].slice(2, 34), 16),
+                            parseInt(log['data'].slice(34, 66), 16),
+                            parseInt(log['data'].slice(66, 67), 16),
+                            parseInt(log['data'].slice(98, 130), 16),
+                            marketKey,
+                            log['transactionHash'],
+                            _timestamp,
+                            1,
+                          ])
+                          let buy = parseInt(log['data'].slice(66, 67), 16);
+                          let quoteasset =
+                            markets[marketKey].quoteAddress;
+                          let baseasset =
+                            markets[marketKey].baseAddress;
+                          let amountin = customRound(
+                            parseInt(log['data'].slice(2, 34), 16) /
+                            10 **
+                            Number(
+                              buy
+                                ? markets[marketKey]
+                                  .quoteDecimals
+                                : markets[marketKey]
+                                  .baseDecimals,
+                            ),
+                            3,
+                          );
+                          let amountout = customRound(
+                            parseInt(log['data'].slice(34, 66), 16) /
+                            10 **
+                            Number(
+                              buy
+                                ? markets[marketKey]
+                                  .baseDecimals
+                                : markets[marketKey]
+                                  .quoteDecimals,
+                            ),
+                            3,
+                          );
+                          newTxPopup(
+                            log['transactionHash'],
+                            'swap',
+                            buy ? quoteasset : baseasset,
+                            buy ? baseasset : quoteasset,
+                            amountin,
+                            amountout,
+                            '',
+                            '',
+                          );
+                        }
+                        tradesByMarketChanged = true;
+                        if (!Array.isArray(temptradesByMarket[marketKey])) {
+                          temptradesByMarket[marketKey] = [];
+                        }
+                        temptradesByMarket[marketKey] = [
+                          ...temptradesByMarket[marketKey],
+                          [
+                            parseInt(log['data'].slice(2, 34), 16),
+                            parseInt(log['data'].slice(34, 66), 16),
+                            parseInt(log['data'].slice(66, 67), 16),
+                            parseInt(log['data'].slice(98, 130), 16),
+                            marketKey,
+                            log['transactionHash'],
+                            _timestamp,
+                          ],
+                        ];
                         for (let i = 0; i < _orderdata.length; i += 64) {
                           let chunk = _orderdata.slice(i, i + 64);
                           let newsize = parseInt(chunk.slice(32, 64), 16);
@@ -1405,7 +1474,7 @@ function App() {
                               sublist[4] == marketKey,
                           );
                           let canceledOrderIndex =
-                            updatedCanceledOrders.findIndex(
+                            tempcanceledorders.findIndex(
                               (sublist: any) =>
                                 sublist[0] ==
                                 parseInt(chunk.slice(1, 20), 16) &&
@@ -1414,24 +1483,28 @@ function App() {
                                 sublist[4] == marketKey,
                             );
                           if (orderIndex != -1 && canceledOrderIndex != -1) {
-                            let order = temporders[orderIndex];
+                            ordersChanged = true;
+                            canceledOrdersChanged = true;
+                            temporders[orderIndex] = [...temporders[orderIndex]]
+                            tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                            let order = [...temporders[orderIndex]];
                             let buy = order[3];
                             let quoteasset =
-                              markets[addresstoMarket[log['address']]]
+                              markets[marketKey]
                                 .quoteAddress;
                             let baseasset =
-                              markets[addresstoMarket[log['address']]]
+                              markets[marketKey]
                                 .baseAddress;
                             let amountquote = (
                               ((order[2] - order[7] - newsize / order[0]) *
                                 order[0]) /
                               (Number(
-                                markets[addresstoMarket[log['address']]]
+                                markets[marketKey]
                                   .scaleFactor,
                               ) *
                                 10 **
                                 Number(
-                                  markets[addresstoMarket[log['address']]]
+                                  markets[marketKey]
                                     .quoteDecimals,
                                 ))
                             ).toFixed(2);
@@ -1439,7 +1512,7 @@ function App() {
                               (order[2] - order[7] - newsize / order[0]) /
                               10 **
                               Number(
-                                markets[addresstoMarket[log['address']]]
+                                markets[marketKey]
                                   .baseDecimals,
                               ),
                               3,
@@ -1451,10 +1524,11 @@ function App() {
                               buy ? baseasset : quoteasset,
                               buy ? amountquote : amountbase,
                               buy ? amountbase : amountquote,
-                              `${order[0] / Number(markets[addresstoMarket[log['address']]].priceFactor)} ${markets[addresstoMarket[log['address']]].quoteAsset}`,
+                              `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
                               '',
                             );
                             if (newsize == 0) {
+                              tradeHistoryChanged = true;
                               updatedTradeHistory.push([
                                 order[3] == 1
                                   ? (order[2] * order[0]) /
@@ -1471,115 +1545,132 @@ function App() {
                                 Math.floor(Date.now() / 1000),
                                 0,
                               ]);
-                              if (orderIndex != -1) {
-                                ordersChanged = true;
-                                if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                                  temporders[orderIndex][10].remove();
-                                  temporders[orderIndex].splice(10, 1)
-                                }
-                                temporders.splice(orderIndex, 1);
+                              if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                                temporders[orderIndex][10].remove();
+                                temporders[orderIndex].splice(10, 1)
                               }
-                              updatedCanceledOrders[canceledOrderIndex] = [
-                                ...updatedCanceledOrders[canceledOrderIndex],
-                              ];
-                              updatedCanceledOrders[canceledOrderIndex][9] =
+                              temporders.splice(orderIndex, 1);
+                              tempcanceledorders[canceledOrderIndex][9] =
                                 1;
-                              updatedCanceledOrders[canceledOrderIndex][7] =
+                              tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
-                              updatedCanceledOrders[canceledOrderIndex][8] =
+                              tempcanceledorders[canceledOrderIndex][8] =
                                 order[8] - newsize;
                             } else {
-                              ordersChanged = true;
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
                                 temporders[orderIndex][10].setQuantity(formatDisplay(customRound((newsize / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                               }
                               temporders[orderIndex][7] =
                                 order[2] - newsize / order[0];
-                              updatedCanceledOrders[canceledOrderIndex] = [
-                                ...updatedCanceledOrders[canceledOrderIndex],
-                              ];
-                              updatedCanceledOrders[canceledOrderIndex][7] =
+                              tempcanceledorders[canceledOrderIndex][7] =
                                 order[2] - newsize / order[0];
                             }
                           }
                         }
-                        return updatedTradeHistory;
-                      });
-                      return updatedCanceledOrders;
-                    });
-                  }
-                }
-                if (!Object.keys(tradesByMarket).every(key =>
-                  Array.isArray(tradesByMarket[key]) &&
-                  Array.isArray(temptradesByMarket[key]) &&
-                  tradesByMarket[key].length == temptradesByMarket[key].length
-                )) {
-                  setMarketsData((marketsData) =>
-                    marketsData.map((market) => {
-                      if (!market) return;
-                      const marketKey = market?.marketKey.replace(
-                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                        ethticker
+                      }
+                    }
+                    if (!Object.keys(tradesByMarket).every(key =>
+                      Array.isArray(tradesByMarket[key]) &&
+                      Array.isArray(temptradesByMarket[key]) &&
+                      tradesByMarket[key].length == temptradesByMarket[key].length
+                    )) {
+                      setMarketsData((marketsData) =>
+                        marketsData.map((market) => {
+                          if (!market) return;
+                          const marketKey = market?.marketKey.replace(
+                            new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                            ethticker
+                          );
+                          const trades = temptradesByMarket[marketKey] || [];
+                          const prevlength = tradesByMarket[marketKey]?.length || 0;
+                          const newTrades = trades.length > prevlength ? trades.slice(prevlength) : [];
+                          if (newTrades.length < 1) return market;
+                          const firstKlineOpen: number =
+                            market?.series && Array.isArray(market?.series) && market?.series.length > 0
+                              ? Number(market?.series[0].open)
+                              : 0;
+                          const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                          const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                          const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                            / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                          const volume = newTrades.reduce((sum: number, trade: any) => {
+                            const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                            return sum + amount;
+                          }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+                          return {
+                            ...market,
+                            volume: formatCommas(
+                              (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                            ),
+                            currentPrice: formatSubscript(
+                              (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                            ),
+                            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                            priceChangeAmount: currentPriceRaw - firstKlineOpen
+                          };
+                        })
                       );
-                      const trades = temptradesByMarket[marketKey] || [];
-                      const prevlength = tradesByMarket[marketKey]?.length || 0;
-                      const newTrades = trades.length > prevlength ? trades.slice(prevlength) : [];
-                      if (newTrades.length < 1) return market;
-                      const firstKlineOpen: number =
-                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                          ? Number(market?.series[0].open)
-                          : 0;
-                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                      const volume = newTrades.reduce((sum: number, trade: any) => {
-                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                        return sum + amount;
-                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-                      return {
-                        ...market,
-                        volume: formatCommas(
-                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                        ),
-                        currentPrice: formatSubscript(
-                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                        ),
-                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                        priceChangeAmount: currentPriceRaw - firstKlineOpen
-                      };
-                    })
-                  );
-                  return { ...temptradesByMarket };
+                    }
+                  }
+                  if (tradeHistoryChanged) {
+                    return updatedTradeHistory
+                  }
+                  else {
+                    return tradehistory
+                  }
+                });
+                if (tradesByMarketChanged) {
+                  return temptradesByMarket;
                 }
                 else {
                   return tradesByMarket
                 }
               });
-            }
+              if (canceledOrdersChanged) {
+                return tempcanceledorders
+              }
+              else {
+                return canceledorders
+              }
+            })
             if (ordersChanged) {
-              return [...temporders]
+              return temporders
             }
             else {
-              return temporders
+              return orders
             }
           });
           return { queue, set };
         })
-      } catch (error) {
+      } catch {
       }
     };
 
-    let interval: any;
-    const timeout = setTimeout(() => {
-      interval = setInterval(fetchData, 1000);
-    }, 2000);
+    const initWorker = () => {
+      const workerCode = `
+        setTimeout(() => {
+          setInterval(() => {
+            self.postMessage('fetch');
+          }, 700);
+        }, 2000);
+      `;
+
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+
+      worker.onmessage = () => {
+        fetchData();
+      };
+    };
+
+    initWorker();
 
     return () => {
-      clearTimeout(timeout);
-      clearInterval(interval);
+      if (worker) {
+        worker.terminate();
+      }
       liveStreamCancelled = true;
-    }
+    };
   }, [HTTP_URL, address]);
 
   const handleSearchKeyDown = (
@@ -1588,10 +1679,9 @@ function App() {
     if (e.key === 'Enter' && sortedMarkets.length > 0) {
       e.preventDefault();
       const selectedMarket = sortedMarkets[selectedIndex];
-      handleMarketSelect(
-        selectedMarket.baseAddress,
-        selectedMarket.quoteAddress,
-      );
+      setSearchQuery('');
+      setpopup(0);
+      onMarketSelect(selectedMarket)
     } else if (e.key === 'Escape') {
       setSearchQuery('');
     } else if (e.key === 'ArrowDown') {
@@ -1660,18 +1750,6 @@ function App() {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
-
-  const handleMarketSelect = (baseToken: string, quoteToken: string): void => {
-    if (location.pathname !== '/limit') {
-      navigate('/limit');
-    }
-
-    setTokenIn(quoteToken);
-    setTokenOut(baseToken);
-
-    setSearchQuery('');
-    setpopup(0);
   };
 
   const handleRefreshQuote = async (e: any) => {
@@ -1912,21 +1990,13 @@ function App() {
     userOrders: any[],
     isBuyOrderList: boolean
   ) => {
-    const priceDecimals =
-      Math.floor(
-        Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
-      ) -
-        Math.floor(Math.log10(Number(activeMarket.priceFactor))) >
-        -5
-        ? Math.max(
+    const priceDecimals = Math.max(
           0,
           Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
           Math.floor(
-            Math.log10(Number(latestPrice) / Number(activeMarket.priceFactor))
-          ) +
-          1
+            Math.log10(Number(latestPrice))
+          ) + (Math.log10(Number(latestPrice)) < -1 ? Math.log10(Number(latestPrice)) + 1 : 0)
         )
-        : 0;
 
     const priceMap: { [key: string]: boolean } = {};
     if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
@@ -2107,6 +2177,9 @@ function App() {
   // referral data
   useEffect(() => {
     if (!refDataLoading && refData) {
+      setUsedRefAddress(
+        refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
+      );
       setClaimableFees(() => {
         let newFees = {};
         let totalFees = 0;
@@ -2134,40 +2207,40 @@ function App() {
             ) * quotePrice;
             if (!(newFees as any)[market.quoteAsset]) {
               (newFees as any)[market.quoteAsset] =
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.quoteAsset] +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
               totalFees +=
-                Number(refData[quoteIndex].result) /
+                Number(refData[quoteIndex + 1].result) /
                 10 ** Number(market.quoteDecimals);
             }
 
             if (!(newFees as any)[market.baseAsset]) {
               (newFees as any)[market.baseAsset] =
-                Number(refData[baseIndex].result) /
+                Number(refData[baseIndex + 1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex].result) * midValue) /
+                (Number(refData[baseIndex + 1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             } else {
               (newFees as any)[market.baseAsset] +=
-                Number(refData[baseIndex].result) /
+                Number(refData[baseIndex + 1].result) /
                 10 ** Number(market.baseDecimals);
               totalFees +=
-                (Number(refData[baseIndex].result) * midValue) /
+                (Number(refData[baseIndex + 1].result) * midValue) /
                 Number(market.scaleFactor) /
                 10 ** Number(market.quoteDecimals);
             }
           }
         });
-        setTotalClaimableFees(totalFees);
+        setTotalClaimableFees(totalFees || 0);
 
         return newFees;
       });
@@ -2225,82 +2298,42 @@ function App() {
           sellOrders: processedSellOrders,
         } = processOrders(buyOrdersRaw, sellOrdersRaw);
 
-        if (mids && mids[activeMarketKey]) {
-          const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
-            processOrdersForDisplay(
-              processedBuyOrders,
-              amountsQuote,
-              mids[activeMarketKey][0],
-              orders,
-              true,
-            );
-          const {
-            roundedOrders: roundedSell,
-            defaultOrders: liquiditySell,
-          } = processOrdersForDisplay(
-            processedSellOrders,
+        const { roundedOrders: roundedBuy, } =
+          processOrdersForDisplay(
+            processedBuyOrders,
             amountsQuote,
-            mids[activeMarketKey][0],
+            processedBuyOrders?.[0]?.price && processedSellOrders?.[0]?.price ? (processedBuyOrders?.[0]?.price + processedSellOrders?.[0]?.price) / 2 : processedBuyOrders?.[0]?.price,
             orders,
-            false,
+            true,
           );
-
-          const highestBid =
-            roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-          const lowestAsk =
-            roundedSell.length > 0 ? roundedSell[0].price : undefined;
-
-          const spread = {
-            spread:
-              highestBid !== undefined && lowestAsk !== undefined
-                ? lowestAsk - highestBid
-                : NaN,
-            averagePrice:
-              highestBid !== undefined && lowestAsk !== undefined
-                ? Number(
-                  ((highestBid + lowestAsk) / 2).toFixed(
-                    Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
-                  ),
-                )
-                : NaN,
-          };
-
-          roundedBuy.forEach((order, index) => {
-            const match = roundedBuyOrders.find(
-              (o) => o.price == order.price && o.size == order.size,
-            );
-            if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-              order.shouldFlash = true;
-            }
-          });
-          roundedSell.forEach((order, index) => {
-            const match = roundedSellOrders.find(
-              (o) => o.price == order.price && o.size == order.size,
-            );
-            if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-              order.shouldFlash = true;
-            }
-          });
-          setPriceFactor(Number(activeMarket.priceFactor));
-          setSymbolIn(activeMarket.quoteAsset);
-          setSymbolOut(activeMarket.baseAsset);
-          setSpreadData(spread);
-          setRoundedBuyOrders(roundedBuy);
-          setRoundedSellOrders(roundedSell);
-          setLiquidityBuyOrders(liquidityBuy);
-          setLiquiditySellOrders(liquiditySell);
-        }
-
-        setBaseInterval(1 / Number(activeMarket.priceFactor));
-        setOBInterval(
-          localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
-            ? Number(
-              localStorage.getItem(
-                `${activeMarket.baseAsset}_ob_interval`,
-              ),
-            )
-            : 1 / Number(activeMarket.priceFactor),
+        const {
+          roundedOrders: roundedSell,
+        } = processOrdersForDisplay(
+          processedSellOrders,
+          amountsQuote,
+          processedBuyOrders?.[0]?.price && processedSellOrders?.[0]?.price ? (processedBuyOrders?.[0]?.price + processedSellOrders?.[0]?.price) / 2 : processedSellOrders?.[0]?.price,
+          orders,
+          false,
         );
+
+        roundedBuy.forEach((order, index) => {
+          const match = roundedBuyOrders.find(
+            (o) => o.price == order.price && o.size == order.size,
+          );
+          if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+            order.shouldFlash = true;
+          }
+        });
+        roundedSell.forEach((order, index) => {
+          const match = roundedSellOrders.find(
+            (o) => o.price == order.price && o.size == order.size,
+          );
+          if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+            order.shouldFlash = true;
+          }
+        });
+        setRoundedBuyOrders(roundedBuy);
+        setRoundedSellOrders(roundedSell);
       } catch (error) {
         console.error(error);
       }
@@ -2311,8 +2344,6 @@ function App() {
   useEffect(() => {
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
-        setStateIsLoading(false);
-        setstateloading(false);
         if (data?.[1]?.result != null) {
           setallowance(data[1].result);
         }
@@ -2323,7 +2354,7 @@ function App() {
             acc[token.address] = balance;
             return acc;
           }, {});
-          if (stateloading) {
+          if (stateloading || sliderPercent == 0) {
             const percentage = !tempbalances[tokenIn]
               ? 0
               : Math.min(
@@ -2343,7 +2374,9 @@ function App() {
           }
           setTokenBalances(tempbalances);
         }
-        if (data?.[0]?.result) {
+        if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
+          setStateIsLoading(false);
+          setstateloading(false);
           if (switched == false && !isWrap) {
             const outputValue = BigInt(data[0].result?.at(-1) || BigInt(0));
             setamountOutSwap(outputValue);
@@ -2444,71 +2477,69 @@ function App() {
               sellOrders: processedSellOrders,
             } = processOrders(buyOrdersRaw, sellOrdersRaw);
 
-            if (tempmids && tempmids[activeMarketKey]) {
-              const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
-                processOrdersForDisplay(
-                  processedBuyOrders,
-                  amountsQuote,
-                  tempmids[activeMarketKey][0],
-                  orders,
-                  true,
-                );
-              const {
-                roundedOrders: roundedSell,
-                defaultOrders: liquiditySell,
-              } = processOrdersForDisplay(
-                processedSellOrders,
+            const { roundedOrders: roundedBuy, defaultOrders: liquidityBuy } =
+              processOrdersForDisplay(
+                processedBuyOrders,
                 amountsQuote,
-                tempmids[activeMarketKey][0],
+                processedBuyOrders?.[0]?.price && processedSellOrders?.[0]?.price ? (processedBuyOrders?.[0]?.price + processedSellOrders?.[0]?.price) / 2 : processedBuyOrders?.[0]?.price,
                 orders,
-                false,
+                true,
               );
+            const {
+              roundedOrders: roundedSell,
+              defaultOrders: liquiditySell,
+            } = processOrdersForDisplay(
+              processedSellOrders,
+              amountsQuote,
+              processedBuyOrders?.[0]?.price && processedSellOrders?.[0]?.price ? (processedBuyOrders?.[0]?.price + processedSellOrders?.[0]?.price) / 2 : processedSellOrders?.[0]?.price,
+              orders,
+              false,
+            );
 
-              const highestBid =
-                roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
-              const lowestAsk =
-                roundedSell.length > 0 ? roundedSell[0].price : undefined;
+            const highestBid =
+              roundedBuy.length > 0 ? roundedBuy[0].price : undefined;
+            const lowestAsk =
+              roundedSell.length > 0 ? roundedSell[0].price : undefined;
 
-              const spread = {
-                spread:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? lowestAsk - highestBid
-                    : NaN,
-                averagePrice:
-                  highestBid !== undefined && lowestAsk !== undefined
-                    ? Number(
-                      ((highestBid + lowestAsk) / 2).toFixed(
-                        Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
-                      ),
-                    )
-                    : NaN,
-              };
+            const spread = {
+              spread:
+                highestBid !== undefined && lowestAsk !== undefined
+                  ? lowestAsk - highestBid
+                  : NaN,
+              averagePrice:
+                highestBid !== undefined && lowestAsk !== undefined
+                  ? Number(
+                    ((highestBid + lowestAsk) / 2).toFixed(
+                      Math.floor(Math.log10(Number(activeMarket.priceFactor))) + 1,
+                    ),
+                  )
+                  : NaN,
+            };
 
-              roundedBuy.forEach((order, index) => {
-                const match = roundedBuyOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              roundedSell.forEach((order, index) => {
-                const match = roundedSellOrders.find(
-                  (o) => o.price == order.price && o.size == order.size,
-                );
-                if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
-                  order.shouldFlash = true;
-                }
-              });
-              setPriceFactor(Number(activeMarket.priceFactor));
-              setSymbolIn(activeMarket.quoteAsset);
-              setSymbolOut(activeMarket.baseAsset);
-              setSpreadData(spread);
-              setRoundedBuyOrders(roundedBuy);
-              setRoundedSellOrders(roundedSell);
-              setLiquidityBuyOrders(liquidityBuy);
-              setLiquiditySellOrders(liquiditySell);
-            }
+            roundedBuy.forEach((order, index) => {
+              const match = roundedBuyOrders.find(
+                (o) => o.price == order.price && o.size == order.size,
+              );
+              if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                order.shouldFlash = true;
+              }
+            });
+            roundedSell.forEach((order, index) => {
+              const match = roundedSellOrders.find(
+                (o) => o.price == order.price && o.size == order.size,
+              );
+              if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+                order.shouldFlash = true;
+              }
+            });
+            setPriceFactor(Number(activeMarket.priceFactor));
+            setSymbolIn(activeMarket.quoteAsset);
+            setSymbolOut(activeMarket.baseAsset);
+            setSpreadData(spread);
+            setRoundedBuyOrders(roundedBuy);
+            setRoundedSellOrders(roundedSell);
+            setLiquidityBuyOrders(liquidityBuy);
+            setLiquiditySellOrders(liquiditySell);
 
             setBaseInterval(1 / Number(activeMarket.priceFactor));
             setOBInterval(
@@ -2528,7 +2559,7 @@ function App() {
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, activeTab, dataUpdatedAt]);
+  }, [data, activechain, isLoading, location.pathname.slice(1), dataUpdatedAt]);
 
   // update display values when loading is finished
   useEffect(() => {
@@ -2778,12 +2809,12 @@ function App() {
             amountIn > tokenBalances[tokenIn] ||
             (
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress) || (scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                  tokenIn == activeMarket.baseAddress && addliquidityonly) || (scaleEnd >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)))) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)))) &&
           connected &&
           userchain == activechain,
         );
@@ -2795,15 +2826,15 @@ function App() {
                 ? 1 : scaleEnd == BigInt(0) ? 2
                   : amountIn <= tokenBalances[tokenIn]
                     ? ((scaleStart >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress) ||
+                      tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                       (scaleStart <= highestBid &&
-                        tokenIn == activeMarket.baseAddress))
+                        tokenIn == activeMarket.baseAddress && addliquidityonly))
                       ? tokenIn == activeMarket.quoteAddress
                         ? 3
                         : 4 : ((scaleEnd >= lowestAsk &&
-                          tokenIn == activeMarket.quoteAddress) ||
+                          tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                           (scaleEnd <= highestBid &&
-                            tokenIn == activeMarket.baseAddress))
+                            tokenIn == activeMarket.baseAddress && addliquidityonly))
                         ? tokenIn == activeMarket.quoteAddress
                           ? 5
                           : 6
@@ -2904,6 +2935,7 @@ function App() {
         settradehistory([]);
         setorders([]);
         setcanceledorders([]);
+        setrecipient('');
       }, 10);
       isAddressInfoFetching = true;
       (async () => {
@@ -2935,7 +2967,7 @@ function App() {
               }
               orders1: orderMaps(where:{caller: "${address}"}) {
                 id
-                batches(first: 1000, orderDirection: desc, orderBy: id) {
+                batches(first: 200, orderDirection: desc, orderBy: id) {
                   id
                   orders(first: 1000, where:{status: 2}) {
                     id
@@ -3091,6 +3123,12 @@ function App() {
       })();
     }
     else if (!user) {
+      setSliderPercent(0)
+      const slider = document.querySelector('.balance-amount-slider');
+      const popup = document.querySelector('.slider-percentage-popup');
+      if (slider && popup) {
+        (popup as HTMLElement).style.left = `${15 / 2}px`;
+      }
       setTransactions([]);
       settradehistory([]);
       setorders([]);
@@ -3119,7 +3157,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xE67B22228362f54C207623857Ac01b0f8FA1E14f" }
+              where: { contractAddress: "0xCd5455B24f3622A1CfEce944615AE5Bc8f36Ee18" }
             ) {
               id
               caller
@@ -3136,7 +3174,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xF5272255FeF2Ce9735944706625597011f45c986" }
+              where: { contractAddress: "0x97fa0031E2C9a21F0727bcaB884E15c090eC3ee3" }
             ) {
               id
               caller
@@ -3153,7 +3191,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xf49847295eEB5f262e29aa309B2aF39E983c1734" }
+              where: { contractAddress: "0x33C5Dc9091952870BD1fF47c89fA53D63f9729b6" }
             ) {
               id
               caller
@@ -3170,7 +3208,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x7589404f183bE0A02290d4e488aDB95dd742d6B3" }
+              where: { contractAddress: "0xcB5ec6D6d0E49478119525E4013ff333Fc46B742" }
             ) {
               id
               caller
@@ -3187,7 +3225,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x3B82f2321977137C80825237B85D154B665e11ee" }
+              where: { contractAddress: "0x93cBC4b52358c489665680182f0056f4F23C76CD" }
             ) {
               id
               caller
@@ -3204,7 +3242,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x68dee54ba048ffb3844b5fdbd008c08ca75fe4fd" }
+              where: { contractAddress: "0xf00A3bd942DC0e32d07048ED6255E281667784f6" }
             ) {
               id
               caller
@@ -3221,7 +3259,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xc97992ba107c3b3f8b880bf29b07b424c86b8d23" }
+              where: { contractAddress: "0x3051ec9feFaEc14F2bAB836FAb5A4c970A71874a" }
             ) {
               id
               caller
@@ -3238,7 +3276,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0x2bc10e58afff05d0e185eaabc1b300399da71f20" }
+              where: { contractAddress: "0x9fA48CFB43829A932A227E4d7996e310ccf40E9C" }
             ) {
               id
               caller
@@ -3255,7 +3293,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xf26d6be3e29ceca7044e248bac3c3a09841dd072" }
+              where: { contractAddress: "0x45f7db719367bbf9E508D3CeA401EBC62fc732A9" }
             ) {
               id
               caller
@@ -3272,7 +3310,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xaff5c2e1814d979465cbac2913eab8e23f443a7f" }
+              where: { contractAddress: "0x5a6f296032AaAE6737ed5896bC09D01dc2d42507" }
             ) {
               id
               caller
@@ -3289,7 +3327,7 @@ function App() {
               first: 50,
               orderBy: timeStamp,
               orderDirection: desc,
-              where: { contractAddress: "0xcaf1e006ea025c36346dd7f35fd14d2a52288953" }
+              where: { contractAddress: "0xCF16582dC82c4C17fA5b54966ee67b74FD715fB5" }
             ) {
               id
               caller
@@ -3363,7 +3401,7 @@ function App() {
         settradesloading(false);
         if (
           sendInputString === '' &&
-          activeTab === 'send' &&
+          location.pathname.slice(1) === 'send' &&
           amountIn &&
           BigInt(amountIn) != BigInt(0)
         ) {
@@ -3507,12 +3545,11 @@ function App() {
           : { amountIn }),
       });
     }
-  }, [tokenIn, tokenOut, activeTab, amountIn, amountOutSwap, switched]);
+  }, [tokenIn, tokenOut, location.pathname.slice(1), amountIn, amountOutSwap, switched]);
 
   // update active tab
   useEffect(() => {
     const path = location.pathname.slice(1);
-    setActiveTab(path);
     if (path === 'swap') {
       setSimpleView(true);
     } else if (path === 'market') {
@@ -3557,21 +3594,30 @@ function App() {
         if (multihop || isWrap) {
           let token;
           let pricefetchmarket;
+          let found = false;
           for (const market in markets) {
-            if (markets[market].quoteAddress === tokenOut) {
-              token = tokendict[markets[market].baseAddress];
-              pricefetchmarket = getMarket(
-                markets[market].baseAddress,
-                tokenOut,
-              );
-              setTokenIn(markets[market].baseAddress);
-            } else if (markets[market].baseAddress === tokenOut) {
+            if (markets[market].baseAddress === tokenOut) {
               token = tokendict[markets[market].quoteAddress];
               pricefetchmarket = getMarket(
                 markets[market].quoteAddress,
                 tokenOut,
               );
               setTokenIn(markets[market].quoteAddress);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenOut) {
+                token = tokendict[markets[market].baseAddress];
+                pricefetchmarket = getMarket(
+                  markets[market].baseAddress,
+                  tokenOut,
+                );
+                setTokenIn(markets[market].baseAddress);
+                break;
+              }
             }
           }
           setamountIn(
@@ -3678,13 +3724,22 @@ function App() {
         setswitched(false);
         if (multihop || isWrap) {
           let token;
+          let found = false;
           for (const market in markets) {
-            if (markets[market].quoteAddress === tokenOut) {
-              token = tokendict[markets[market].baseAddress];
-              setTokenIn(markets[market].baseAddress);
-            } else if (markets[market].baseAddress === tokenOut) {
+            if (markets[market].baseAddress === tokenOut) {
               token = tokendict[markets[market].quoteAddress];
               setTokenIn(markets[market].quoteAddress);
+              found = true;
+              break;
+            }
+          }
+          if (!found) {
+            for (const market in markets) {
+              if (markets[market].quoteAddress === tokenOut) {
+                token = tokendict[markets[market].baseAddress];
+                setTokenIn(markets[market].baseAddress);
+                break;
+              }
             }
           }
           setamountIn(
@@ -3803,44 +3858,56 @@ function App() {
 
   // popup
   useEffect(() => {
-    const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-
-    if (hasCompletedOnboarding && user && !connected && !loading) {
-      setpopup(11);
+    if (user && !connected && !loading) {
+      if (localStorage.getItem('crystal_has_completed_onboarding') === 'true') {
+        setpopup(11);
+      }
     }
-    else if (hasCompletedOnboarding && connected && popup === 11) {
+    else if (connected && popup === 11) {
       setpopup(12);
     }
-    else if ((popup === 14 || popup === 15) && !connected) {
-    }
 
-    if (popupref.current && blurref.current) {
-      const updateBlurSize = () => {
-        if (popupref.current && blurref.current) {
-          const { offsetWidth, offsetHeight } = popupref.current;
-          blurref.current.style.width = `${offsetWidth}px`;
-          blurref.current.style.height = `${offsetHeight}px`;
-        }
-      };
-
-      updateBlurSize();
-
-      const resizeObserver = new ResizeObserver(updateBlurSize);
-      resizeObserver.observe(popupref.current);
-
-      return () => resizeObserver.disconnect();
-    }
   }, [popup, connected, user != null, loading]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
-  const [justEntered, setJustEntered] = useState(false);
   const [exitingChallenge, setExitingChallenge] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [animationStarted, setAnimationStarted] = useState(false);
   const [isUsernameSigning, setIsUsernameSigning] = useState(false);
+  const [typedRefCode, setTypedRefCode] = useState(() => searchParams.get('ref') || '');
+  const [usernameInput, setUsernameInput] = useState("");
+  const [usernameError, setUsernameError] = useState("");
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
+  const [username, setUsername] = useState('')
+  const [usernameResolved, setUsernameResolved] = useState(false)
+  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
+  const [isConnectEntering, setIsConnectEntering] = useState(false);
+  const backAudioRef = useRef<HTMLAudioElement>(null);
+
+  const handleWelcomeTransition = () => {
+    audio.currentTime = 0;
+    audio.play();
+    
+    setIsTransitioning(true);
+    setIsWelcomeExiting(true);
+    
+    setTimeout(() => {
+      setIsConnectEntering(true);
+    }, 200);
+    
+    setTimeout(() => {
+      setShowWelcomeScreen(false);
+      setIsTransitioning(false);
+      setIsWelcomeExiting(false);
+    }, 200);
+  };
+  
+  const isValidInput = (value: string) => {
+    const regex = /^[a-zA-Z0-9-]{0,20}$/;
+    return regex.test(value);
+  };
 
   const handleSetRef = async (used: string) => {
     let lookup
@@ -3858,7 +3925,7 @@ function App() {
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError(t('invalidRefCode'));
+        setError(t('setRefFailed'));
         setIsRefSigning(false);
         return false;
       }
@@ -3941,7 +4008,6 @@ function App() {
 
     setTimeout(() => {
       setpopup(14);
-      setJustEntered(true);
       setCurrentStep(0);
 
       setTimeout(() => {
@@ -3959,99 +4025,24 @@ function App() {
       localStorage.setItem('crystal_has_completed_onboarding', 'true');
       setpopup(0);
       setCurrentStep(0)
-    }, 300);
+      setExitingChallenge(false);
+    }, 250);
   };
 
-  const handleCreateUsername = async () => {
+  const handleEditUsername = async (_usernameInput: any) => {
     setUsernameError("");
 
-
-    if (usernameInput.length < 3) {
+    if (_usernameInput.length < 3) {
       setUsernameError(t("minUsernameLength"));
       return;
     }
 
-    if (usernameInput.length > 20) {
+    if (_usernameInput.length > 20) {
       setUsernameError(t("maxUsernameLength"));
       return;
     }
 
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
-      setUsernameError(t("usernameFilter"));
-      return;
-    }
-
-    setIsUsernameSigning(true);
-
-    try {
-      const read = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'usernameToAddress',
-            args: [usernameInput],
-          },
-        ]
-      })) as any[];
-
-      if (read[0].result !== '0x0000000000000000000000000000000000000000') {
-        setUsernameError(t("usernameAlreadyTaken"));
-        setIsUsernameSigning(false);
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: settings.chainConfig[activechain].referralManager,
-          data: encodeFunctionData({
-            abi: CrystalReferralAbi,
-            functionName: 'setUsername',
-            args: [
-              usernameInput
-            ],
-          }),
-          value: 0n,
-        },
-      });
-
-      await waitForTxReceipt(hash.hash);
-
-      audio.currentTime = 0;
-      audio.play();
-      setIsTransitioning(true);
-      setTransitionDirection('forward');
-      setTimeout(() => {
-        setpopup(17);
-        setCurrentStep(0);
-        setTimeout(() => {
-          setIsTransitioning(false);
-          setJustEntered(true);
-        });
-      });
-
-      return true;
-    } catch (error) {
-      return false;
-    } finally {
-      setIsUsernameSigning(false);
-    }
-  };
-  const handleEditUsername = async () => {
-    setUsernameError("");
-
-    if (usernameInput.length < 3) {
-      setUsernameError(t("minUsernameLength"));
-      return;
-    }
-
-    if (usernameInput.length > 20) {
-      setUsernameError(t("maxUsernameLength"));
-      return;
-    }
-
-    if (!/^[a-zA-Z0-9_]+$/.test(usernameInput)) {
+    if (!/^[a-zA-Z0-9_]+$/.test(_usernameInput)) {
       setUsernameError("Username can only contain letters, numbers, and underscores");
       return;
     }
@@ -4065,7 +4056,7 @@ function App() {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
             functionName: 'usernameToAddress',
-            args: [usernameInput],
+            args: [_usernameInput],
           },
         ]
       })) as any[];
@@ -4083,7 +4074,7 @@ function App() {
             abi: CrystalReferralAbi,
             functionName: 'setUsername',
             args: [
-              usernameInput
+              _usernameInput
             ],
           }),
           value: 0n,
@@ -4091,22 +4082,14 @@ function App() {
       });
 
       await waitForTxReceipt(hash.hash);
-
+      setUsername(_usernameInput);
       audio.currentTime = 0;
       audio.play();
       if (popup == 16) {
         setpopup(0)
       }
       else {
-        setIsTransitioning(true);
-        setTransitionDirection('forward');
-        setTimeout(() => {
-          setpopup(17);
-          setTimeout(() => {
-            setIsTransitioning(false);
-            setJustEntered(true);
-          });
-        });
+        setpopup(17);
       }
       return true;
     } catch (error) {
@@ -4115,21 +4098,7 @@ function App() {
       setIsUsernameSigning(false);
     }
   };
-  const handleSkipUsername = () => {
-    audio.currentTime = 0;
-    audio.play();
-
-    setIsTransitioning(true);
-    setTransitionDirection('forward');
-    setTimeout(() => {
-      setpopup(17);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      });
-    });
-  };
-
-  const backAudioRef = useRef<HTMLAudioElement>(null);
+  
   const handleBackClick = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
@@ -4137,6 +4106,7 @@ function App() {
     }
     handleBack();
   };
+
   const handleBackToUsernameWithAudio = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
@@ -4144,6 +4114,7 @@ function App() {
     }
     handleBackToUsername();
   };
+
   useEffect(() => {
     const fetchUsername = async () => {
       try {
@@ -4158,8 +4129,10 @@ function App() {
           ]
         });
 
-        if (read[0]?.result?.length) {
+        if (read[0]?.result?.length != null) {
           setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
               setpopup(15);
@@ -4168,7 +4141,6 @@ function App() {
               });
             });
           }
-          setOriginalUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
         }
       } catch (error) {
         console.error("Failed to fetch username:", error);
@@ -4196,7 +4168,7 @@ function App() {
 
   const [typedText, setTypedText] = useState("");
   const typedTextRef = useRef("");
-  
+
   useEffect(() => {
     if (popup === 14 && showWelcomeScreen) {
       const welcomeText = "Introducing Crystals: Season 0";
@@ -4221,21 +4193,6 @@ function App() {
     }
   }, [popup, showWelcomeScreen]);
 
-  useEffect(() => {
-    const sessionInitialized = sessionStorage.getItem('session_initialized');
-    if (!sessionInitialized) {
-      sessionStorage.setItem('session_initialized', 'true');
-      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-      const timer = setTimeout(() => {
-        if (!hasCompletedOnboarding && popup === 0) {
-          setpopup(14);
-        }
-      }, 1000);
-
-      return () => clearTimeout(timer);
-    }
-  }, []);
-  
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -4286,7 +4243,7 @@ function App() {
                   settokenString('');
                   setTokenIn(token.address);
                   setStateIsLoading(true);
-                  if (activeTab == 'swap' || activeTab == 'market') {
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
                     if (token.address !== tokenOut) {
                       if (
                         markets[
@@ -4299,20 +4256,29 @@ function App() {
                         newTokenOut = tokenOut;
                       } else {
                         const path = findShortestPath(token.address, tokenOut);
-                        if (path && path.length > 1 && (activeTab == 'swap' || activeTab == 'market')) {
+                        if (path && path.length > 1 && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
                           newTokenOut = tokenOut;
                         } else {
+                          let found = false;
                           for (const market in markets) {
                             if (
-                              markets[market].quoteAddress === token.address
-                            ) {
-                              setTokenOut(markets[market].baseAddress);
-                              newTokenOut = markets[market].baseAddress;
-                            } else if (
                               markets[market].baseAddress === token.address
                             ) {
                               setTokenOut(markets[market].quoteAddress);
                               newTokenOut = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                                markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenOut(markets[market].baseAddress);
+                                newTokenOut = markets[market].baseAddress;
+                                break;
+                              }
                             }
                           }
                         }
@@ -4487,7 +4453,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'limit') {
+                  } else if (location.pathname.slice(1) == 'limit') {
                     if (token.address != tokenOut) {
                       if (
                         markets[
@@ -4498,13 +4464,22 @@ function App() {
                         ]
                       ) {
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenOut(markets[market].baseAddress);
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
                           }
                         }
                       }
@@ -4609,7 +4584,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'send') {
+                  } else if (location.pathname.slice(1) == 'send') {
                     setlimitChase(true);
                     if (token.address == tokenOut && multihop == false) {
                       setTokenOut(tokenIn);
@@ -4624,14 +4599,9 @@ function App() {
                     ) {
                       pricefetchmarket = getMarket(token.address, tokenOut);
                     } else {
+                      let found = false;
                       for (const market in markets) {
-                        if (markets[market].quoteAddress === token.address) {
-                          setTokenOut(markets[market].baseAddress);
-                          pricefetchmarket = getMarket(
-                            token.address,
-                            markets[market].baseAddress,
-                          );
-                        } else if (
+                        if (
                           markets[market].baseAddress === token.address
                         ) {
                           setTokenOut(markets[market].quoteAddress);
@@ -4639,6 +4609,20 @@ function App() {
                             token.address,
                             markets[market].quoteAddress,
                           );
+                          found = true;
+                          break;
+                        }
+                      }
+                      if (!found) {
+                        for (const market in markets) {
+                          if (markets[market].quoteAddress === token.address) {
+                            setTokenOut(markets[market].baseAddress);
+                            pricefetchmarket = getMarket(
+                              token.address,
+                              markets[market].baseAddress,
+                            );
+                            break;
+                          }
                         }
                       }
                     }
@@ -4752,7 +4736,7 @@ function App() {
                           `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
                       }
                     }
-                  } else if (activeTab == 'scale') {
+                  } else if (location.pathname.slice(1) == 'scale') {
                     if (token.address != tokenOut) {
                       if (
                         markets[
@@ -4763,13 +4747,22 @@ function App() {
                         ]
                       ) {
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenOut(markets[market].baseAddress);
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenOut(markets[market].quoteAddress);
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenOut(markets[market].baseAddress);
+                              break;
+                            }
                           }
                         }
                       }
@@ -4975,7 +4968,7 @@ function App() {
                   settokenString('');
                   setTokenOut(token.address);
                   setStateIsLoading(true);
-                  if (activeTab == 'swap' || activeTab == 'market') {
+                  if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -4994,17 +4987,26 @@ function App() {
                         if (path && path.length > 1) {
                           newTokenIn = tokenIn;
                         } else {
+                          let found = false;
                           for (const market in markets) {
                             if (
-                              markets[market].quoteAddress === token.address
-                            ) {
-                              setTokenIn(markets[market].baseAddress);
-                              newTokenIn = markets[market].baseAddress;
-                            } else if (
                               markets[market].baseAddress === token.address
                             ) {
                               setTokenIn(markets[market].quoteAddress);
                               newTokenIn = markets[market].quoteAddress;
+                              found = true;
+                              break;
+                            }
+                          }
+                          if (!found) {
+                            for (const market in markets) {
+                              if (
+                                markets[market].quoteAddress === token.address
+                              ) {
+                                setTokenIn(markets[market].baseAddress);
+                                newTokenIn = markets[market].baseAddress;
+                                break;
+                              }
                             }
                           }
                         }
@@ -5156,7 +5158,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'limit') {
+                  } else if (location.pathname.slice(1) == 'limit') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -5168,15 +5170,24 @@ function App() {
                       ) {
                         newTokenIn = tokenIn;
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenIn(markets[market].baseAddress);
-                            newTokenIn = markets[market].baseAddress;
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenIn(markets[market].quoteAddress);
                             newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
                           }
                         }
                       }
@@ -5282,7 +5293,7 @@ function App() {
                         }
                       }
                     }
-                  } else if (activeTab == 'scale') {
+                  } else if (location.pathname.slice(1) == 'scale') {
                     if (token.address != tokenIn) {
                       if (
                         markets[
@@ -5294,15 +5305,24 @@ function App() {
                       ) {
                         newTokenIn = tokenIn;
                       } else {
+                        let found = false;
                         for (const market in markets) {
-                          if (markets[market].quoteAddress === token.address) {
-                            setTokenIn(markets[market].baseAddress);
-                            newTokenIn = markets[market].baseAddress;
-                          } else if (
+                          if (
                             markets[market].baseAddress === token.address
                           ) {
                             setTokenIn(markets[market].quoteAddress);
                             newTokenIn = markets[market].quoteAddress;
+                            found = true;
+                            break;
+                          }
+                        }
+                        if (!found) {
+                          for (const market in markets) {
+                            if (markets[market].quoteAddress === token.address) {
+                              setTokenIn(markets[market].baseAddress);
+                              newTokenIn = markets[market].baseAddress;
+                              break;
+                            }
                           }
                         }
                       }
@@ -5462,7 +5482,6 @@ function App() {
   //popup modals
   const Modals = (
     <>
-      {popup ? <div ref={blurref} className="popup-blur"></div> : <></>}
       <div className={`blur-background-popups ${popup != 0 ? 'active' : ''}`}>
         {popup === 1 ? ( // token select
           <div ref={popupref} className="tokenselectbg">
@@ -6058,12 +6077,12 @@ function App() {
               {portChartLoading ? (
                 <div
                   className="portfolio-popup-graph"
-                  style={{ marginTop: 15, marginBottom: 10, height: 195 }}
+                  style={{ marginTop: 15, marginBottom: 10, height: 215 }}
                 >
                   <LoadingOverlay
                     isVisible={true}
                     bgcolor={'#00000000'}
-                    height={40}
+                    height={30}
                   />
                 </div>
               ) : (
@@ -6098,6 +6117,7 @@ function App() {
                       portChartLoading={portChartLoading}
                       chartDays={chartDays}
                       setChartDays={setChartDays}
+                      isBlurred={isBlurred}
                     />
                   </div>
                 </>
@@ -6107,12 +6127,12 @@ function App() {
                 <PortfolioContent
                   trades={tradesByMarket}
                   tokenList={Object.values(tokendict)}
-                  setTokenIn={setTokenIn}
-                  setTokenOut={setTokenOut}
+                  onMarketSelect={onMarketSelect}
                   setSendTokenIn={setSendTokenIn}
                   setpopup={setpopup}
                   sortConfig={{ column: 'balance', direction: 'desc' }}
                   tokenBalances={tokenBalances}
+                  isBlurred={isBlurred}
                 />
               </div>
             </div>
@@ -6336,6 +6356,16 @@ function App() {
                       }}
                     />
                   </div>
+                  <div className="audio-toggle-row">
+                    <span className="audio-toggle-label">{t('hideScamWicks')}</span>
+                    <ToggleSwitch
+                      checked={isAudioEnabled}
+                      onChange={() => {
+                        setIsAudioEnabled(!isAudioEnabled);
+                        localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+                      }}
+                    />
+                  </div>
 
                   <button
                     className="revert-settings-button"
@@ -6351,6 +6381,12 @@ function App() {
 
                       setSimpleView(false);
                       localStorage.setItem('crystal_simple_view', 'false');
+
+                      setIsMarksVisible(true);
+                      localStorage.setItem('crystal_marks_visible', 'true');
+
+                      setIsOrdersVisible(true);
+                      localStorage.setItem('crystal_orders_visible', 'true');
 
                       setIsOrderbookVisible(true);
                       localStorage.setItem('crystal_orderbook_visible', 'true');
@@ -6614,12 +6650,11 @@ function App() {
                   <div
                     key={market.pair}
                     className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
-                    onClick={() =>
-                      handleMarketSelect(
-                        market.baseAddress,
-                        market.quoteAddress,
-                      )
-                    }
+                    onClick={() => {
+                      setSearchQuery('');
+                      setpopup(0);
+                      onMarketSelect(market)
+                    }}
                     onMouseEnter={() => setSelectedIndex(index)}
                     role="button"
                     tabIndex={-1}
@@ -7063,12 +7098,12 @@ function App() {
 
               <div className="high-impact-details">
                 <div className="high-impact-detail-row">
-                  <span>{t('priceImpact')}</span>
+                  <span className="high-impact-value-title">{t('priceImpact')}</span>
                   <span className="high-impact-value">{priceImpact}</span>
                 </div>
 
                 <div className="high-impact-detail-row">
-                  <span>{t('pay')}</span>
+                  <span className="high-impact-value-title">{t('pay')}</span>
                   <span className="high-impact-value">
                     {formatDisplayValue(
                       amountIn,
@@ -7078,7 +7113,7 @@ function App() {
                 </div>
 
                 <div className="high-impact-detail-row">
-                  <span>{t('receive')}</span>
+                  <span className="high-impact-value-title">{t('receive')}</span>
                   <span className="high-impact-value">
                     {formatDisplayValue(
                       amountOutSwap,
@@ -7112,472 +7147,561 @@ function App() {
             </div>
           </div>
         ) : null}
-        {(popup === 14 || popup === 15 || popup === 17 || isTransitioning) ? (
-          <div ref={popupref} className="onboarding-container">
+{(popup === 14 || popup === 15 || popup === 17 || popup === 18 || isTransitioning) ? (
+  <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
+    <div
+      className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || (popup === 15 && connected)
+        ? 'active'
+        : ''
+        }`}
+    />
+    <div className="onboarding-crystal-logo">
+      <img className="onboarding-crystal-logo-image" src={clearlogo} />
+      <span className="onboarding-crystal-text">CRYSTAL</span>
+    </div>
+    <CrystalObject />
+
+    {user && !connected && (
+      <div className="generating-address-popup">
+        <span className="loader"></span>
+        <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
+        <p className="generating-address-text">
+          Please wait while your smart wallet address is being loaded...
+        </p>
+      </div>
+    )}
+    {connected ? (
+      <>
+        <div className="step-indicators">
+          {[1, 2, 3, 4, 5].map((index) => (
             <div
-              className={`onboarding-background-blur ${(isTransitioning && transitionDirection === 'forward') || popup === 15
-                  ? 'active'
-                  : ''
-                }`}
+              key={index}
+              className={`step-indicator ${
+                popup === 14
+                  ? index === 1 ? 'active' : ''
+                  : popup === 17
+                  ? index === 2 ? 'active' : ''
+                  : popup === 18
+                  ? index === 3 ? 'active' : ''
+                  : (currentStep + 3) === index ? 'active' : ''
+                } ${
+                popup === 14
+                  ? index < 1 ? 'completed' : ''
+                  : popup === 17
+                  ? index < 2 ? 'completed' : ''
+                  : popup === 18
+                  ? index < 3 ? 'completed' : ''
+                  : (currentStep + 3) > index ? 'completed' : ''
+                } ${isTransitioning ? 'transitioning' : ''}`}
             />
-            <div className="onboarding-crystal-logo">
-              <img className="onboarding-crystal-logo-image" src={clearlogo} />
-              <span className="onboarding-crystal-text">CRYSTAL</span>
-            </div>
-            <CrystalObject />
+          ))}
+        </div>
 
-            {user && !connected && (
-              <div className="generating-address-popup">
-                <span className="loader"></span>
-                <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
-                <p className="generating-address-text">
-                  Please wait while your smart wallet address is being loaded...
-                </p>
-              </div>
-            )}
-            {connected ? (
-              <>
-                <div className="step-indicators">
-                  {[1, 2, 3, 4].map((index) => (
-                    <div
-                      key={index}
-                      className={`step-indicator ${popup === 14
-                          ? index === 1 ? 'active' : ''
-                          : (currentStep + 2) === index ? 'active' : ''
-                        } ${popup === 14
-                          ? index < 1 ? 'completed' : ''
-                          : (currentStep + 2) > index ? 'completed' : ''
-                        } ${isTransitioning ? 'transitioning' : ''}`}
-                    />
-                  ))}
-                </div>
-
-                <div
-                  className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
-                    }`}
-                >
-                              {popup == 17 && (    <div className="onboarding-section active">
-            <div className="onboarding-split-container">
-                      <div className="onboarding-left-side">
-                        <div className="onboarding-content">
-              <div className="onboarding-header">
-                <h2 className="use-ref-title">Add a referral code (optional)</h2>
-                <div className="form-group">
-                {error && <span className="error-message">{error}</span>}
-
-                  <input
-                    className="username-input"
-                    placeholder="Enter a code"
-                    value={typedRefCode}
-                    onChange={e => {setTypedRefCode(e.target.value.trim()); setError('')}}
-                  />
-                </div>
-
-                <div className="onboarding-actions">
-                  <button
-                    className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
-                    disabled={!typedRefCode || isRefSigning}
-                    onClick={async () => {
-                      const ok = await handleSetRef(typedRefCode);
-                      if (ok) setpopup(15);
-                    }}
-                  >
-                   {isRefSigning ? (
-                              <div className="button-content">
-                                <div className="loading-spinner" />
-                                {t('signTransaction')}
-                              </div>
-                            ) : t('setReferral')}
-                  </button>
-
-                  <button
-                    className="skip-button"
-                    onClick={() => setpopup(15)}
-                  >
-                    Skip
-                  </button>
-                </div>
-              </div>            </div>
-              </div>
-              </div>
-
-          </div>)}
-                  <div
-                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning && transitionDirection === 'backward')) && (!originalUsername || transitionDirection == 'backward')
-                        ? 'active'
-                        : ''
-                      } ${justEntered ? 'entering' : ''}`}
-                  >
-                    <div className="onboarding-split-container">
-                      <div className="onboarding-left-side">
-                        <div className="onboarding-content">
-                          <div className="onboarding-header">
-                            <h2 className="onboarding-title">
-                              {originalUsername ? 'Edit Name' : 'Enter a Name'}
-                            </h2>
-                            <p className="onboarding-subtitle">
-                              {originalUsername
-                                ? 'Update the name that appears on the leaderboard.'
-                                : 'This username will be visible on the leaderboard to all.'}
-                            </p>
-                          </div>
-
-                          <div className="onboarding-form">
-                            <div className="form-group">
-                              <label className="form-label">Your Wallet Address</label>
-                              <div className="wallet-address">{address || '0x1234...5678'}</div>
-                            </div>
-
-                            <div className="form-group">
-                              <label htmlFor="username" className="form-label">Username</label>
-                              <input
-                                type="text"
-                                id="username"
-                                className="username-input"
-                                placeholder={usernameInput ? usernameInput : 'Enter a username'}
-                                value={usernameInput || ''}
-                                onChange={(e) => setUsernameInput(e.target.value)}
-                              />
-                              {usernameError && <p className="username-error">{usernameError}</p>}
-                            </div>
-                          </div>
-
-                          <button
-                            className={`create-username-button ${isUsernameSigning ? 'signing' : ''
-                              } ${!usernameInput.trim() ? 'disabled' : ''}`}
-                            onClick={async () => {
-                              if (!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername) return;
-                              await (usernameInput ? handleEditUsername() : handleCreateUsername());
-                            }}
-                            disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === originalUsername}
-                          >
-                            {isUsernameSigning ? (
-                              <div className="button-content">
-                                <div className="loading-spinner" />
-                                {t('signTransaction')}
-                              </div>
-                            ) : originalUsername ? t('editUsername') : 'Create Username'}
-                          </button>
-                        </div>
-
-                        {(!usernameInput || originalUsername !== '') && (
-                          <>
-                            <div className="onboarding-actions">
-                              <button
-                                className="skip-button"
-                                type="button"
-                                onClick={handleSkipUsername}
-                              >
-                                {!usernameInput ? "Continue Without Username" : "Continue"}
-                              </button>
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`onboarding-section challenge-section ${popup === 15 ||
-                        (isTransitioning && transitionDirection === 'forward')
-                        ? 'active'
-                        : ''
-                      } ${exitingChallenge ? 'exiting' : ''}`}
-                    data-step={currentStep}
-                  >
-                    <div className="challenge-intro-split-container">
-                      <div className="floating-elements-container">
-                        <img src={circleleft} className="circle-bottom" />
-                        <img src={topright} className="top-right" />
-                        <img src={topleft} className="top-left" />
-                        <img src={circleleft} className="circle-left" />
-                        <img src={veryleft} className="very-left" />
-                        <img src={circleleft} className="circle-right" />
-                        <img src={veryright} className="very-right" />
-                        <img src={topmiddle} className="top-middle" />
-                        <img src={topleft} className="bottom-middle" />
-                        <img src={circleleft} className="bottom-right" />
-
-                        <div className="account-setup-header">
-                          <div className="account-setup-title-wrapper">
-                            <h2 className="account-setup-title">
-                              {t('challengeOverview')}
-                            </h2>
-                            <p className="account-setup-subtitle">
-                              {t('learnHowToCompete')}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="challenge-intro-content-wrapper">
-                          <div className="challenge-intro-content-side">
-                            <div className="challenge-intro-content-inner">
-                              <div className="intro-text">
-                                <h3 className="intro-title">
-                                  {currentStep === 0
-                                    ? t('precisionMatters')
-                                    : currentStep === 1
-                                      ? t('earnCrystals')
-                                      : t('claimRewards')}
-                                </h3>
-                                <p className="intro-description">
-                                  {currentStep === 0
-                                    ? t('placeYourBids')
-                                    : currentStep === 1
-                                      ? t('midsGiveYou')
-                                      : t('competeOnLeaderboards')}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div
-                            className={`challenge-intro-visual-side${animating ? ' is-animating' : ''
-                              }`}
-                          >
-                            {currentStep === 0 && (
-                              <div className="intro-image-container">
-                                <div
-                                  className={`zoom-container${animationStarted ? ' zoom-active' : ''
-                                    }`}
-                                >
-                                  <img
-                                    src={part1image}
-                                    className="intro-image"
-                                    alt="Tutorial illustration"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {currentStep === 1 && (
-                              <div className="xp-animation-container">
-                                <div className="user-profile">
-                                  <div className="self-pfp">
-                                    <img
-                                      src={defaultPfp}
-                                      className="profile-pic-second"
-                                      alt="User profile"
-                                    />
-                                    <div className="username-display">
-                                      @{usernameInput || 'player123'}
-                                    </div>
-                                    <div className="xp-counter">
-                                      <img
-                                        src={crystalxp}
-                                        className="xp-icon"
-                                        alt="Crystal XP"
-                                        style={{
-                                          width: '23px',
-                                          height: '23px',
-                                          verticalAlign: 'middle',
-                                        }}
-                                      />
-                                      <span className="self-pfp-xp">8732.23</span>
-                                    </div>
-                                  </div>
-
-                                  <div className="challenge-mini-leaderboard">
-                                    <div className="mini-leaderboard-header">
-                                      <span className="mini-leaderboard-title">
-                                        Season 0 Leaderboard
-                                      </span>
-                                      <span className="mini-leaderboard-time">
-                                        7d 22h 50m 54s
-                                      </span>
-                                    </div>
-
-                                    <div className="mini-progress-bar">
-                                      <div className="mini-progress-fill"></div>
-                                    </div>
-
-                                    <div className="mini-leaderboard-user">
-                                      <div className="mini-leaderboard-user-left">
-                                        <span className="mini-user-rank">#62</span>
-                                        <span className="mini-user-address">
-                                          0x16A6...Bb5d
-                                          <svg
-                                            className="mini-user-copy-icon"
-                                            viewBox="0 0 24 24"
-                                            fill="none"
-                                            stroke="#b8b7b7"
-                                            strokeWidth="2"
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                          >
-                                            <rect
-                                              x="9"
-                                              y="9"
-                                              width="13"
-                                              height="13"
-                                              rx="2"
-                                              ry="2"
-                                            />
-                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                          </svg>
-                                        </span>
-                                      </div>
-                                      <div className="mini-user-points">
-                                        14.448
-                                        <img
-                                          src={crystalxp}
-                                          width="14"
-                                          height="14"
-                                          alt="XP"
-                                        />
-                                      </div>
-                                    </div>
-
-                                    <div className="mini-top-users">
-                                      <div className="mini-top-user mini-top-user-1">
-                                        <span className="mini-top-rank mini-top-rank-1">
-                                          1
-                                        </span>
-                                        <img
-                                          className="mini-user-pfp"
-                                          src={firstPlacePfp}
-                                        />
-                                        <div className="mini-points-container">
-                                          <img
-                                            src={crystalxp}
-                                            className="mini-token-icon"
-                                            alt="Token"
-                                          />
-                                          <span className="mini-top-points">
-                                            234,236
-                                          </span>
-                                        </div>
-                                      </div>
-
-                                      <div className="mini-top-user mini-top-user-2">
-                                        <span className="mini-top-rank mini-top-rank-2">
-                                          2
-                                        </span>
-                                        <img
-                                          className="mini-user-pfp"
-                                          src={secondPlacePfp}
-                                        />
-                                        <div className="mini-points-container">
-                                          <img
-                                            src={crystalxp}
-                                            className="mini-token-icon"
-                                            alt="Token"
-                                          />
-                                          <span className="mini-top-points">91,585</span>
-                                        </div>
-                                      </div>
-
-                                      <div className="mini-top-user mini-top-user-3">
-                                        <span className="mini-top-rank mini-top-rank-3">
-                                          3
-                                        </span>
-                                        <img
-                                          className="mini-user-pfp"
-                                          src={thirdPlacePfp}
-                                        />
-                                        <div className="mini-points-container">
-                                          <img
-                                            src={crystalxp}
-                                            className="mini-token-icon"
-                                            alt="Token"
-                                          />
-                                          <span className="mini-top-points">52,181</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-
-                            {currentStep === 2 && (
-                              <div className="rewards-container">
-                                <div className="rewards-stage">
-                                  <img className="lbstand" src={lbstand} />
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+        <div
+          className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
+            }`}
+        >
+          {popup == 18 && (
+            <div className="onboarding-section active">
+              <div className="onboarding-split-container">
+                <div className="onboarding-left-side">
+                  <div className="onboarding-content">
+                    <div className="onboarding-header">
+                      <h2 className="onboarding-title">Join our growing community!</h2>
+                      <p className="onboarding-subtitle">
+                        Crystal Exchange is being released in phases. Stay updated with
+                        the latest news and features.
+                      </p>
                     </div>
 
-                    <div className="account-setup-footer">
-                      {currentStep > 0 ? (
-                        <button className="back-button" onClick={handleBackClick}>
-                          {t('back')}
-                        </button>
-                      ) : (
-                        <button
-                          className="back-to-username-button"
-                          onClick={handleBackToUsernameWithAudio}
-                        >
-                          {t('back')}
-                        </button>
-                      )}
+                    <div className="social-banner-wrapper">
+                      <img
+                        src={SocialBanner}
+                        className="social-banner-image"
+                      />
+                    </div>
 
-                      <button className="next-button" onClick={handleNextClick}>
-                        {currentStep < 2 ? t('next') : t('getStarted')}
+                    <div className="social-buttons">
+                      <button
+                        className="wallet-option"
+                        onClick={() =>
+                          window.open('https://discord.gg/CrystalExch', '_blank')
+                        }
+                      >
+                        <img
+                          className="connect-wallet-icon"
+                          src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg"
+                        />
+                        <span className="wallet-name">Join Crystal's Discord</span>
                       </button>
 
-                      <audio ref={backAudioRef} src={backaudio} preload="auto" />
+                      <button
+                        className="wallet-option"
+                        onClick={() =>
+                          window.open('https://x.com/CrystalExch', '_blank')
+                        }
+                      >
+                        <img
+                          className="connect-wallet-icon"
+                          src={Xicon}
+                        />
+                        <span className="wallet-name">Follow us on X (Twitter)</span>
+                      </button>
+                    </div>
+
+                    <div className="onboarding-actions">
+                      <button
+                        className="skip-button"
+                        onClick={() => {
+                          audio.currentTime = 0;
+                          audio.play();
+                          setpopup(15);
+                        }}
+                      >
+                        Continue
+                      </button>
                     </div>
                   </div>
                 </div>
-              </>
-            ) : (
-              !user && (
-                <div
-                  className="connect-wallet-username-onboarding-bg"
-                >
-                  {showWelcomeScreen ? (
-                    <div className="crystal-welcome-screen">
-                      <div className="onboarding-crystal-logo">
-                        <img
-                          className="onboarding-crystal-logo-image"
-                          src={clearlogo}
+              </div>
+            </div>
+          )}
+          
+          {popup == 17 && (
+            <div className="onboarding-section active">
+              <div className="onboarding-split-container">
+                <div className="onboarding-left-side">
+                  <div className="onboarding-content">
+                    <div className="onboarding-header">
+                      <h2 className="use-ref-title">Add a referral code (optional)</h2>
+                      <div className="form-group">
+                        {error && <span className="error-message">{error}</span>}
+
+                        <input
+                          className="username-input"
+                          placeholder="Enter a code"
+                          value={typedRefCode}
+                          onChange={e => {
+                            const value = e.target.value.trim();
+                            if (isValidInput(value) || value === "") {
+                              setTypedRefCode(value);
+                              setError('')
+                            }
+                          }}
                         />
-                        <span className="onboarding-crystal-text">CRYSTAL</span>
                       </div>
-                      <div className="welcome-screen-content">
-                        <div className="welcome-text-container">
-                          <p className="welcome-text">{typedText}</p>
-                        </div>
-                        {animationStarted && (
-                          <button
-                            className="welcome-enter-button"
-                            onClick={() => {
+
+                      <div className="onboarding-actions">
+                        <button
+                          className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
+                          disabled={!typedRefCode || isRefSigning}
+                          onClick={async () => {
+                            const ok = await handleSetRef(typedRefCode);
+                            if (ok) {
                               audio.currentTime = 0;
                               audio.play();
-                              setShowWelcomeScreen(false);
-                            }}
-                          >
-                            Explore Now
-                          </button>
-                        )}
+                              setpopup(18);
+                            }
+                          }}
+                        >
+                          {isRefSigning ? (
+                            <div className="button-content">
+                              <div className="loading-spinner" />
+                              {t('signTransaction')}
+                            </div>
+                          ) : t('setReferral')}
+                        </button>
+
+                        <button
+                          className="skip-button"
+                          onClick={() => {
+                            audio.currentTime = 0;
+                            audio.play();
+                            setpopup(18);
+                          }}
+                        >
+                          Skip
+                        </button>
                       </div>
                     </div>
-                  ) : (
-                    <div className="connect-wallet-username-wrapper">
-                      <CrystalObject />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div
+            className={`onboarding-section username-section ${(popup === 14 || (isTransitioning)) && ((!username && usernameResolved) || transitionDirection == 'backward')
+              ? 'active'
+              : ''
+              }`}
+          >
+            <div className="onboarding-split-container">
+              <div className="onboarding-left-side">
+                <div className="onboarding-content">
+                  <div className="onboarding-header">
+                    <h2 className="onboarding-title">
+                      {username ? 'Edit Name' : 'Enter a Name'}
+                    </h2>
+                    <p className="onboarding-subtitle">
+                      {username
+                        ? 'Update the name that appears on the leaderboard.'
+                        : 'This username will be visible on the leaderboard to all.'}
+                    </p>
+                  </div>
 
-                      <div className="onboarding-connect-wallet">
-                        <div className="smart-wallet-reminder">
-                        <img className="onboarding-info-icon" src={infoicon} />
-                        Use a Smart Wallet to receive a multiplier on all Crystals
+                  <div className="onboarding-form">
+                    <div className="form-group">
+                      <label className="form-label">Your Wallet Address</label>
+                      <div className="wallet-address">{address || '0x1234...5678'}</div>
+                    </div>
+
+                    <div className="form-group">
+                      <label htmlFor="username" className="form-label">Username</label>
+                      <input
+                        type="text"
+                        id="username"
+                        className="username-input"
+                        placeholder={usernameInput ? usernameInput : 'Enter a username'}
+                        value={usernameInput || ''}
+                        onChange={e => {
+                          const value = e.target.value.trim();
+                          if (isValidInput(value) || value === "") {
+                            setUsernameInput(value);
+                          }
+                        }}
+                      />
+                      {usernameError && <p className="username-error">{usernameError}</p>}
+                    </div>
+                  </div>
+
+                  <button
+                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''
+                      } ${!usernameInput.trim() ? 'disabled' : ''}`}
+                    onClick={async () => {
+                      if (!usernameInput.trim() || isUsernameSigning || usernameInput === username) return;
+                      await handleEditUsername(usernameInput)
+                    }}
+                    disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === username}
+                  >
+                    {isUsernameSigning ? (
+                      <div className="button-content">
+                        <div className="loading-spinner" />
+                        {t('signTransaction')}
                       </div>
-                        <div className="connect-wallet-content-container">
-                          <AuthCard {...alchemyconfig.ui.auth} />
+                    ) : username ? t('editUsername') : 'Create Username'}
+                  </button>
+                </div>
+
+                {(!usernameInput || username !== '') && (
+                  <>
+                    <div className="onboarding-actions">
+                      <button
+                        className="skip-button"
+                        type="button"
+                        onClick={() => {
+                          audio.currentTime = 0;
+                          audio.play();
+                          setpopup(17);
+                        }}
+                      >
+                        {!usernameInput ? "Continue Without Username" : "Continue"}
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={`onboarding-section challenge-section ${popup === 15 ||
+              (isTransitioning && transitionDirection === 'forward')
+              ? 'active'
+              : ''
+              } ${exitingChallenge ? 'exiting' : ''}`}
+            data-step={currentStep}
+          >
+            <div className="challenge-intro-split-container">
+              <div className="floating-elements-container">
+                <img src={circleleft} className="circle-bottom" />
+                <img src={topright} className="top-right" />
+                <img src={topleft} className="top-left" />
+                <img src={circleleft} className="circle-left" />
+                <img src={veryleft} className="very-left" />
+                <img src={circleleft} className="circle-right" />
+                <img src={veryright} className="very-right" />
+                <img src={topmiddle} className="top-middle" />
+                <img src={topleft} className="bottom-middle" />
+                <img src={circleleft} className="bottom-right" />
+
+                <div className="account-setup-header">
+                  <div className="account-setup-title-wrapper">
+                    <h2 className="account-setup-title">
+                      {t('challengeOverview')}
+                    </h2>
+                    <p className="account-setup-subtitle">
+                      {t('learnHowToCompete')}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="challenge-intro-content-wrapper">
+                  <div className="challenge-intro-content-side">
+                    <div className="challenge-intro-content-inner">
+                      <div className="intro-text">
+                        <h3 className="intro-title">
+                          {currentStep === 0
+                            ? t('precisionMatters')
+                            : currentStep === 1
+                              ? t('earnCrystals')
+                              : t('claimRewards')}
+                        </h3>
+                        <p className="intro-description">
+                          {currentStep === 0
+                            ? t('placeYourBids')
+                            : currentStep === 1
+                              ? t('midsGiveYou')
+                              : t('competeOnLeaderboards')}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className={`challenge-intro-visual-side${animating ? ' is-animating' : ''
+                      }`}
+                  >
+                    {currentStep === 0 && (
+                      <div className="intro-image-container">
+                        <div
+                          className={`zoom-container${animationStarted ? ' zoom-active' : ''
+                            }`}
+                        >
+                          <img
+                            src={part1image}
+                            className="intro-image"
+                            alt="Tutorial illustration"
+                          />
                         </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+
+                    {currentStep === 1 && (
+                      <div className="xp-animation-container">
+                        <div className="user-profile">
+                          <div className="self-pfp">
+                            <img
+                              src={defaultPfp}
+                              className="profile-pic-second"
+                              alt="User profile"
+                            />
+                            <div className="username-display">
+                              @{usernameInput || 'player123'}
+                            </div>
+                            <div className="xp-counter">
+                              <img
+                                src={crystalxp}
+                                className="xp-icon"
+                                alt="Crystal XP"
+                                style={{
+                                  width: '23px',
+                                  height: '23px',
+                                  verticalAlign: 'middle',
+                                }}
+                              />
+                              <span className="self-pfp-xp">8732.23</span>
+                            </div>
+                          </div>
+
+                          <div className="challenge-mini-leaderboard">
+                            <div className="mini-leaderboard-header">
+                              <span className="mini-leaderboard-title">
+                                Season 0 Leaderboard
+                              </span>
+                              <span className="mini-leaderboard-time">
+                                7d 22h 50m 54s
+                              </span>
+                            </div>
+
+                            <div className="mini-progress-bar">
+                              <div className="mini-progress-fill"></div>
+                            </div>
+
+                            <div className="mini-leaderboard-user">
+                              <div className="mini-leaderboard-user-left">
+                                <span className="mini-user-rank">#62</span>
+                                <span className="mini-user-address">
+                                  0xB080...c423
+                                  <svg
+                                    className="mini-user-copy-icon"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="#b8b7b7"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  >
+                                    <rect
+                                      x="9"
+                                      y="9"
+                                      width="13"
+                                      height="13"
+                                      rx="2"
+                                      ry="2"
+                                    />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                  </svg>
+                                </span>
+                              </div>
+                              <div className="mini-user-points">
+                                14.448
+                                <img
+                                  src={crystalxp}
+                                  width="14"
+                                  height="14"
+                                  alt="XP"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mini-top-users">
+                              <div className="mini-top-user mini-top-user-1">
+                                <span className="mini-top-rank mini-top-rank-1">
+                                  1
+                                </span>
+                                <img
+                                  className="mini-user-pfp"
+                                  src={firstPlacePfp}
+                                />
+                                <div className="mini-points-container">
+                                  <img
+                                    src={crystalxp}
+                                    className="mini-token-icon"
+                                    alt="Token"
+                                  />
+                                  <span className="mini-top-points">
+                                    234,236
+                                  </span>
+                                </div>
+                              </div>
+
+                              <div className="mini-top-user mini-top-user-2">
+                                <span className="mini-top-rank mini-top-rank-2">
+                                  2
+                                </span>
+                                <img
+                                  className="mini-user-pfp"
+                                  src={secondPlacePfp}
+                                />
+                                <div className="mini-points-container">
+                                  <img
+                                    src={crystalxp}
+                                    className="mini-token-icon"
+                                    alt="Token"
+                                  />
+                                  <span className="mini-top-points">91,585</span>
+                                </div>
+                              </div>
+
+                              <div className="mini-top-user mini-top-user-3">
+                                <span className="mini-top-rank mini-top-rank-3">
+                                  3
+                                </span>
+                                <img
+                                  className="mini-user-pfp"
+                                  src={thirdPlacePfp}
+                                />
+                                <div className="mini-points-container">
+                                  <img
+                                    src={crystalxp}
+                                    className="mini-token-icon"
+                                    alt="Token"
+                                  />
+                                  <span className="mini-top-points">52,181</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {currentStep === 2 && (
+                      <div className="rewards-container">
+                        <div className="rewards-stage">
+                          <img className="lbstand" src={lbstand} />
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )
-            )}
+              </div>
+            </div>
+
+            <div className="account-setup-footer">
+              {currentStep > 0 ? (
+                <button className="back-button" onClick={handleBackClick}>
+                  {t('back')}
+                </button>
+              ) : (
+                <button
+                  className="back-to-username-button"
+                  onClick={handleBackToUsernameWithAudio}
+                >
+                  {t('back')}
+                </button>
+              )}
+
+              <button className="next-button" onClick={handleNextClick}>
+                {currentStep < 2 ? t('next') : t('getStarted')}
+              </button>
+
+              <audio ref={backAudioRef} src={backaudio} preload="auto" />
+            </div>
           </div>
-        ) : null}
-         {popup === 16 ? (
+        </div>
+      </>
+    ) : (
+      !user && (
+        <div
+          className="connect-wallet-username-onboarding-bg"
+        >
+          {showWelcomeScreen || isTransitioning ? (
+            <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
+              <div className="welcome-screen-content">
+                <div className="welcome-text-container">
+                  <p className="welcome-text">{typedText}</p>
+                </div>
+                {animationStarted && (
+                  <button
+                    className="welcome-enter-button"
+                    onClick={handleWelcomeTransition}
+                  >
+                    EXPLORE NOW
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
+              <div className="onboarding-connect-wallet">
+                <div className="smart-wallet-reminder">
+                  <img className="onboarding-info-icon" src={infoicon} />
+                  Use a Smart Wallet to receive a multiplier on all Crystals
+                </div>
+                <div className="connect-wallet-content-container">
+                  <AuthCard {...alchemyconfig.ui.auth} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )
+    )}
+  </div>
+) : null}
+        {popup === 16 ? (
           <div className="edit-username-bg">
             <div ref={popupref} className="edit-username-container">
               <div className="onboarding-split-container">
@@ -7601,7 +7725,12 @@ function App() {
                         className="username-input"
                         placeholder="Enter a username"
                         value={usernameInput || ""}
-                        onChange={(e) => setUsernameInput(e.target.value)}
+                        onChange={e => {
+                          const value = e.target.value.trim();
+                          if (isValidInput(value) || value === "") {
+                            setUsernameInput(value);
+                          }
+                        }}
                       />
                       {usernameError && (
                         <p className="username-error">{usernameError}</p>
@@ -7612,7 +7741,7 @@ function App() {
                     className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
                     onClick={async () => {
                       if (!usernameInput.trim() || isUsernameSigning) return;
-                      await handleEditUsername();
+                      await handleEditUsername(usernameInput);
                     }}
                     disabled={!usernameInput.trim() || isUsernameSigning}
                   >
@@ -7638,11 +7767,11 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'market' || activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'market' || location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
             onClick={(e) => {
               if ((location.pathname === '/swap' && simpleView) ||
                 (location.pathname === '/market' && !simpleView)) {
@@ -7654,7 +7783,7 @@ function App() {
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -7662,13 +7791,13 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab === 'send' || activeTab === 'scale' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'send' || location.pathname.slice(1) === 'scale' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -7730,7 +7859,6 @@ function App() {
             </div>
           )}
         </div>
-
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -7762,6 +7890,13 @@ function App() {
                 ) => {
                   setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setInputString(e.currentTarget.value);
+                    if (
+                      (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
                     const inputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -7769,7 +7904,6 @@ function App() {
                       ),
                     );
                     setswitched(false);
-                    setInputString(e.currentTarget.value);
                     debouncedSetAmount(inputValue);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
@@ -7806,6 +7940,13 @@ function App() {
                     return;
                   }
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setInputString(e.target.value);
+                    if (
+                      (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                    ) {
+                      return;
+                    }
                     const inputValue = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
@@ -7813,7 +7954,6 @@ function App() {
                       ),
                     );
                     setswitched(false);
-                    setInputString(e.target.value);
                     debouncedSetAmount(inputValue);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
@@ -8066,6 +8206,13 @@ function App() {
                 ) => {
                   setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setoutputString(e.currentTarget.value);
+                    if (
+                      (outputString.endsWith('.') && e.currentTarget.value === outputString.slice(0, -1)) ||
+                      (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === outputString)
+                    ) {
+                      return;
+                    }
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -8073,7 +8220,6 @@ function App() {
                       ),
                     );
                     setswitched(true);
-                    setoutputString(e.currentTarget.value);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.currentTarget.value);
@@ -8087,6 +8233,13 @@ function App() {
                     return;
                   }
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setoutputString(e.target.value);
+                    if (
+                      (outputString.endsWith('.') && e.target.value === outputString.slice(0, -1)) ||
+                      (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === outputString)
+                    ) {
+                      return;
+                    }
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
@@ -8094,7 +8247,6 @@ function App() {
                       ),
                     );
                     setswitched(true);
-                    setoutputString(e.target.value);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.target.value);
@@ -8141,7 +8293,12 @@ function App() {
                   ? '$0.00'
                   : (() => {
                     const outputUSD = calculateUSDValue(
-                      amountOutSwap,
+                      BigInt(
+                        Math.round(
+                          (parseFloat(outputString || '0') || 0) *
+                          10 ** Number(tokendict[tokenOut].decimals),
+                        ),
+                      ),
                       tradesByMarket[
                       (({ baseAsset, quoteAsset }) =>
                         (baseAsset === wethticker ? ethticker : baseAsset) +
@@ -8178,7 +8335,7 @@ function App() {
                     return (
                       <div className="output-usd-container">
                         <span>{formatUSDDisplay(outputUSD)}</span>
-                        {inputUSD > 0 && (
+                        {inputUSD > 0 && !displayValuesLoading && !stateIsLoading && (
                           <span
                             className={`output-percentage ${percentageDiff >= 0 ? 'positive' : 'negative'}`}
                           >
@@ -8209,6 +8366,7 @@ function App() {
               max="100"
               step="1"
               value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -8284,31 +8442,21 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                    if (connected) {
+                      const newAmount =
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setswitched(false);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    if (isWrap) {
-                      setoutputString(
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setswitched(false);
+                      setInputString(
                         newAmount == BigInt(0)
                           ? ''
                           : customRound(
@@ -8317,18 +8465,30 @@ function App() {
                             3,
                           ).toString(),
                       );
-                      setamountOutSwap(newAmount);
-                    }
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
+                      debouncedSetAmount(newAmount);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >
@@ -8400,6 +8560,20 @@ function App() {
                     '',
                     ''
                   );
+                } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true){
+                  hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
+                  newTxPopup(
+                    (client
+                      ? hash.hash
+                      : await waitForTxReceipt(hash.hash)),
+                    'stake',
+                    eth,
+                    tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
                 } else {
                   if (switched == false) {
                     if (tokenIn == eth) {
@@ -8411,7 +8585,7 @@ function App() {
                             (amountOutSwap * slippage + 5000n) / 10000n,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8428,7 +8602,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8450,7 +8624,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8465,7 +8639,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8477,7 +8651,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8492,7 +8666,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8541,7 +8715,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8558,7 +8732,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8572,7 +8746,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8589,7 +8763,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8607,7 +8781,7 @@ function App() {
                             (amountIn * 10000n + slippage / 2n) / slippage,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8624,7 +8798,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8646,7 +8820,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8661,7 +8835,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8673,7 +8847,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8688,7 +8862,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8737,7 +8911,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8754,7 +8928,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8768,7 +8942,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8785,7 +8959,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -9024,7 +9198,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={`${t('fee')} (0.0${isWrap ? '0' : String(Number(BigInt(100000) - activeMarket.fee) / 10).replace(/\./g, "")})%`}
+              label={`${t('fee')} (0.${isWrap ? '00' : String(Number(BigInt(100000) - activeMarket.fee) / 100).replace(/\./g, "")}%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -9066,17 +9240,17 @@ function App() {
   // limit ui component
   const limit = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
             onClick={(e) => {
               if (location.pathname === '/limit') {
                 e.preventDefault();
@@ -9089,13 +9263,13 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -9148,7 +9322,6 @@ function App() {
             </div>
           )}
         </div>
-
         <div className="sliding-tab-indicator" />
       </div>
       <div className="swapmodal">
@@ -9191,6 +9364,12 @@ function App() {
                 setIsComposing(false);
                 if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
                   setInputString(e.currentTarget.value);
+                  if (
+                    (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                    (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -9268,6 +9447,12 @@ function App() {
 
                 if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
                   setInputString(e.target.value);
+                  if (
+                    (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                    (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.target.value || '0') || 0) *
@@ -10137,6 +10322,7 @@ function App() {
               max="100"
               step="1"
               value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -10231,71 +10417,73 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                    if (connected) {
+                      const newAmount =
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    setamountOutLimit(
-                      limitPrice != BigInt(0) && newAmount != BigInt(0)
-                        ? tokenIn === activeMarket?.baseAddress
-                          ? (newAmount * limitPrice) /
-                          (activeMarket.scaleFactor || BigInt(1))
-                          : (newAmount *
-                            (activeMarket.scaleFactor || BigInt(1))) /
-                          limitPrice
-                        : BigInt(0),
-                    );
-                    setlimitoutputString(
-                      (limitPrice != BigInt(0) && newAmount != BigInt(0)
-                        ? tokenIn === activeMarket?.baseAddress
-                          ? customRound(
-                            Number(
-                              (newAmount * limitPrice) /
-                              (activeMarket.scaleFactor || BigInt(1)),
-                            ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
-                            3,
-                          )
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
                           : customRound(
-                            Number(
-                              (newAmount *
-                                (activeMarket.scaleFactor || BigInt(1))) /
-                              limitPrice,
-                            ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
                             3,
-                          )
-                        : ''
-                      ).toString(),
-                    );
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      setamountOutLimit(
+                        limitPrice != BigInt(0) && newAmount != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) /
+                            (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount *
+                              (activeMarket.scaleFactor || BigInt(1))) /
+                            limitPrice
+                          : BigInt(0),
+                      );
+                      setlimitoutputString(
+                        (limitPrice != BigInt(0) && newAmount != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number(
+                                (newAmount * limitPrice) /
+                                (activeMarket.scaleFactor || BigInt(1)),
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number(
+                                (newAmount *
+                                  (activeMarket.scaleFactor || BigInt(1))) /
+                                limitPrice,
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >
@@ -10338,7 +10526,7 @@ function App() {
                         BigInt(2),
                         amountIn,
                         limitPrice,
-                        BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                        BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                         usedRefAddress as `0x${string}`,
                       )
                     })
@@ -10374,7 +10562,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         ))
                       }
@@ -10446,7 +10634,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 300),
+                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         )
                       })
@@ -10555,7 +10743,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={t('fee')}
+              label={`${t('fee')} (0.00%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -10601,17 +10789,17 @@ function App() {
   // send ui component
   const send = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -10619,13 +10807,13 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -11279,17 +11467,17 @@ function App() {
   // scale ui component
   const scale = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={activeTab}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
-            className={`navlink ${activeTab === 'swap' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'swap' ? 'active' : ''}`}
           >
             {simpleView ? t('swap') : t('market')}
           </Link>
           <Link
             to="/limit"
-            className={`navlink ${activeTab === 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) === 'limit' ? 'active' : ''}`}
           >
             {t('limit')}
           </Link>
@@ -11297,13 +11485,13 @@ function App() {
             ref={(el: HTMLSpanElement | null) => {
               sendButtonRef.current = el;
             }}
-            className={`navlink ${activeTab != 'swap' && activeTab != 'limit' ? 'active' : ''}`}
+            className={`navlink ${location.pathname.slice(1) != 'swap' && location.pathname.slice(1) != 'limit' ? 'active' : ''}`}
             onClick={(e: React.MouseEvent) => {
               e.preventDefault();
               setShowSendDropdown(!showSendDropdown);
             }}
           >
-            {t(currentProText)}
+            <span className="current-pro-text">{t(currentProText)}</span>
             <svg
               className={`dropdown-arrow ${showSendDropdown ? 'open' : ''}`}
               xmlns="http://www.w3.org/2000/svg"
@@ -11396,7 +11584,13 @@ function App() {
                 }
 
                 if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
-                  setInputString(e.currentTarget.value);
+                  setInputString(e.target.value);
+                  if (
+                    (inputString.endsWith('.') && e.target.value === inputString.slice(0, -1)) ||
+                    (e.target.value.endsWith('.') && e.target.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
                   setIsOutputBasedScaleOrder(false);
                   const inputValue = BigInt(
                     Math.round(
@@ -11757,9 +11951,9 @@ function App() {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -11780,9 +11974,9 @@ function App() {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleStart >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                     (scaleStart <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
+                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -11846,9 +12040,9 @@ function App() {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleEnd >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
+                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)) &&
+                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -11869,9 +12063,9 @@ function App() {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress) ||
+                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
                     (scaleEnd <= highestBid &&
-                      tokenIn == activeMarket.baseAddress)) &&
+                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -12039,6 +12233,7 @@ function App() {
               max="100"
               step="1"
               value={sliderPercent}
+              disabled={!connected}
               onChange={(e) => {
                 const percent = parseInt(e.target.value);
                 const newAmount =
@@ -12105,41 +12300,43 @@ function App() {
                   data-active={sliderPercent >= markPercent}
                   data-percentage={markPercent}
                   onClick={() => {
-                    const newAmount =
-                      (((tokenIn == eth && !client)
-                        ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount >
-                          BigInt(0)
+                    if (connected) {
+                      const newAmount =
+                        (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
-                          settings.chainConfig[activechain].gasamount
-                          : BigInt(0)
-                        : tokenBalances[tokenIn]) *
-                        BigInt(markPercent)) /
-                      100n;
-                    setSliderPercent(markPercent);
-                    setInputString(
-                      newAmount == BigInt(0)
-                        ? ''
-                        : customRound(
-                          Number(newAmount) /
-                          10 ** Number(tokendict[tokenIn].decimals),
-                          3,
-                        ).toString(),
-                    );
-                    debouncedSetAmount(newAmount);
-                    if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                      setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
-                    }
-                    const slider = document.querySelector(
-                      '.balance-amount-slider',
-                    );
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (slider && popup) {
-                      const rect = slider.getBoundingClientRect();
-                      popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                        }px`;
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(markPercent)) /
+                        100n;
+                      setSliderPercent(markPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                        setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                      }
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup: HTMLElement | null = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                          }px`;
+                      }
                     }
                   }}
                 >
@@ -12180,7 +12377,7 @@ function App() {
               let sum = BigInt(0)
               o.forEach((order) => {
                 sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
-                action[0].push(tokenIn == activeMarket.quoteAddress ? 1 : 2);
+                action[0].push(tokenIn == activeMarket.quoteAddress ? addliquidityonly ? 1 : 5 : addliquidityonly ? 6 : 2);
                 price[0].push(order[0]);
                 param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
                 param2[0].push(tokenIn == eth ? router : address);
@@ -12201,6 +12398,7 @@ function App() {
                       price,
                       param1,
                       param2,
+                      usedRefAddress
                     )
                   })
                 } else {
@@ -12223,6 +12421,7 @@ function App() {
                         price,
                         param1,
                         param2,
+                        usedRefAddress
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
@@ -12280,6 +12479,7 @@ function App() {
                         price,
                         param1,
                         param2,
+                        usedRefAddress
                       )
                     })
                   }
@@ -12388,15 +12588,21 @@ function App() {
             />
           </div>
           <ToggleSwitch
-            checked={true}
-            onChange={() => { }}
-            disabled={true}
+            checked={addliquidityonly}
+            onChange={() => {
+              const newValue = !addliquidityonly;
+              setAddLiquidityOnly(newValue);
+              localStorage.setItem(
+                'crystal_add_liquidity_only',
+                JSON.stringify(newValue),
+              );
+            }}
           />
         </div>
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={t('fee')}
+              label={`${t('fee')} (0.00%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -12428,7 +12634,6 @@ function App() {
 
   const renderChartComponent = useMemo(() => (
     <ChartComponent
-      onMarketSelect={onMarketSelect}
       tokendict={tokendict}
       trades={tradesByMarket[activeMarketKey]}
       universalTrades={tradesByMarket}
@@ -12456,9 +12661,9 @@ function App() {
       address={address}
       client={client}
       newTxPopup={newTxPopup}
+      usedRefAddress={usedRefAddress}
     />
   ), [
-    onMarketSelect,
     tokendict,
     tradesByMarket,
     activeMarket,
@@ -12483,7 +12688,8 @@ function App() {
     waitForTxReceipt,
     address,
     client,
-    newTxPopup
+    newTxPopup,
+    usedRefAddress
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (
@@ -12528,74 +12734,43 @@ function App() {
       >
         {simpleView ? (
           <>
-            <div className="right-column">{swap}</div>
+            <div className="right-column">{swapComponent}</div>
           </>
         ) : (
           <>
             <div className="chartandorderbookandordercenter">
               <div className="chartandorderbook">
-                {windowWidth <= 1020 ? (
-                  <div className="trade-mobile-view-container">
-                    {mobileView === 'chart' && renderChartComponent}
-                    {(mobileView === 'orderbook' ||
-                      mobileView === 'trades') && (
-                        <OrderBook
-                          trades={trades}
-                          orderdata={{
-                            roundedBuyOrders,
-                            roundedSellOrders,
-                            spreadData,
-                            priceFactor,
-                            symbolIn,
-                            symbolOut,
-                          }}
-                          layoutSettings={layoutSettings}
-                          orderbookPosition={orderbookPosition}
-                          hideHeader={true}
-                          interval={baseInterval}
-                          amountsQuote={amountsQuote}
-                          setAmountsQuote={setAmountsQuote}
-                          obInterval={obInterval}
-                          setOBInterval={setOBInterval}
-                          viewMode={viewMode}
-                          setViewMode={setViewMode}
-                          activeTab={obTab}
-                          setActiveTab={setOBTab}
-                          updateLimitAmount={updateLimitAmount}
-                        />
-                      )}
-                  </div>
-                ) : (
-                  <ChartOrderbookPanel
-                    layoutSettings={layoutSettings}
-                    orderbookPosition={orderbookPosition}
-                    orderdata={{
-                      roundedBuyOrders,
-                      roundedSellOrders,
-                      spreadData,
-                      priceFactor,
-                      symbolIn,
-                      symbolOut,
-                      liquidityBuyOrders,
-                      liquiditySellOrders,
-                    }}
-                    isOrderbookVisible={isOrderbookVisible}
-                    orderbookWidth={orderbookWidth}
-                    setOrderbookWidth={setOrderbookWidth}
-                    obInterval={obInterval}
-                    amountsQuote={amountsQuote}
-                    setAmountsQuote={setAmountsQuote}
-                    obtrades={trades}
-                    setOBInterval={setOBInterval}
-                    baseInterval={baseInterval}
-                    viewMode={viewMode}
-                    setViewMode={setViewMode}
-                    activeTab={obTab}
-                    setActiveTab={setOBTab}
-                    updateLimitAmount={updateLimitAmount}
-                    renderChartComponent={renderChartComponent}
-                  />
-                )}
+                <ChartOrderbookPanel
+                  layoutSettings={layoutSettings}
+                  orderbookPosition={orderbookPosition}
+                  orderdata={{
+                    roundedBuyOrders,
+                    roundedSellOrders,
+                    spreadData,
+                    priceFactor,
+                    symbolIn,
+                    symbolOut,
+                    liquidityBuyOrders,
+                    liquiditySellOrders,
+                  }}
+                  windowWidth={windowWidth}
+                  mobileView={mobileView}
+                  isOrderbookVisible={isOrderbookVisible}
+                  orderbookWidth={orderbookWidth}
+                  setOrderbookWidth={setOrderbookWidth}
+                  obInterval={obInterval}
+                  amountsQuote={amountsQuote}
+                  setAmountsQuote={setAmountsQuote}
+                  obtrades={trades}
+                  setOBInterval={setOBInterval}
+                  baseInterval={baseInterval}
+                  viewMode={viewMode}
+                  setViewMode={setViewMode}
+                  activeTab={obTab}
+                  setActiveTab={setOBTab}
+                  updateLimitAmount={updateLimitAmount}
+                  renderChartComponent={renderChartComponent}
+                />
               </div>
               <div
                 className={`oc-spacer ${!isOrderCenterVisible ? 'collapsed' : ''}`}
@@ -12624,8 +12799,7 @@ function App() {
                 orderCenterHeight={orderCenterHeight}
                 hideBalances={true}
                 tokenList={memoizedTokenList}
-                setTokenIn={setTokenIn}
-                setTokenOut={setTokenOut}
+                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 sortConfig={{ column: 'balance', direction: 'desc' }}
@@ -12661,7 +12835,7 @@ function App() {
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
       {windowWidth <= 1020 &&
         !simpleView &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(activeTab) && (
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
           <>
             <button
               className="mobile-trade-button"
@@ -12691,7 +12865,7 @@ function App() {
               <img src={mobiletradeswap} className="trade-mobile-switch" />
             </button>
             <div className={`right-column ${showTrade ? 'show' : ''}`}>
-              {activeTab == 'swap' || activeTab == 'market' ? swap : activeTab == 'limit' ? limit : activeTab == 'send' ? send : scale}
+              {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
             </div>
           </>
         )}
@@ -12781,6 +12955,9 @@ function App() {
                 setpopup={setpopup}
                 orders={orders}
                 address={address}
+                username={username}
+                setIsTransitioning={setIsTransitioning}
+                setTransitionDirection={setTransitionDirection}
               />
             }
           />
@@ -12804,8 +12981,7 @@ function App() {
                 address={address ?? ''}
                 isBlurred={isBlurred}
                 setIsBlurred={setIsBlurred}
-                setTokenIn={setTokenIn}
-                setTokenOut={setTokenOut}
+                onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
                 tokenBalances={tokenBalances}

@@ -10,11 +10,11 @@
       145px,
       1fr
     )
-    minmax(70px, 0.6fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
+    minmax(90px, 0.6fr) minmax(125px, 0.8fr) minmax(100px, 0.3fr);
   justify-content: flex-start;
   height: 32px;
   min-height: 32px;  
-  min-width: 795px;
+  min-width: 815px;
   padding: 1px 0 0 0;
   position: sticky;
   text-align: left;

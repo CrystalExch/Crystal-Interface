@@ -7,8 +7,8 @@
 }
 
 .orderbook-container {
-  max-width: 300px;
   overflow: hidden;
+  height: 100%;
 }
 
 .chart-container {

@@ -5,6 +5,7 @@ interface MetricItemProps {
   label: string;
   value: React.ReactNode;
   isLoading?: boolean;
+  isLiquidityMetric?: boolean;
 }
 
 function valueCheck(value: React.ReactNode): boolean {
@@ -23,14 +24,14 @@ function valueCheck(value: React.ReactNode): boolean {
   return false;
 }
 
-const MetricItem: React.FC<MetricItemProps> = ({ label, value, isLoading }) => {
+const MetricItem: React.FC<MetricItemProps> = ({ label, value, isLoading, isLiquidityMetric = false }) => {
   const shouldShowLoading = isLoading === true || valueCheck(value);
   
   return (
     <div className="metric-item">
       <span className="metric-label">{label}</span>
       {shouldShowLoading ? (
-        <div className="metric-skeleton" />
+        <div className={`metric-skeleton ${isLiquidityMetric ? 'liquidity-skeleton' : ''}`} />
       ) : (
         <span className="metric-value">{value}</span>
       )}

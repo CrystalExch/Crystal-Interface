@@ -27,10 +27,12 @@ interface PortfolioGraphProps {
   portChartLoading: any;
   chartDays: any;
   setChartDays: any;
+  isBlurred: boolean;
 }
 
 interface CustomTooltipProps extends TooltipProps<number, string> {
   chartDays: number;
+  isBlurred: boolean;
 }
 
 const CustomTooltip: React.FC<CustomTooltipProps> = ({
@@ -38,6 +40,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
   payload,
   label,
   chartDays,
+  isBlurred,
 }) => {
   if (!active || !payload || !payload.length) return null;
 
@@ -56,7 +59,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
         border: 'none',
       }}
     >
-      <p
+      {!isBlurred && <p
         style={{
           color: '#ffffff80',
           fontSize: '12px',
@@ -68,7 +71,7 @@ const CustomTooltip: React.FC<CustomTooltipProps> = ({
         {typeof payload[0]?.value === 'number'
           ? payload[0].value.toFixed(2)
           : '0'}
-      </p>
+      </p>}
       <p
         style={{
           color: '#ffffff80',
@@ -94,6 +97,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
     portChartLoading,
     chartDays,
     setChartDays,
+    isBlurred,
   }) => {
     const { setHigh, setLow, setDays, setTimeRange } = useSharedContext();
     const gradientId = `colorValue-${isPopup ? 'popup' : 'main'}`;
@@ -282,6 +286,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
                     payload={payload as Payload<number, string>[]}
                     label={label}
                     chartDays={chartDays}
+                    isBlurred={isBlurred}
                   />
                 )}
               />
@@ -309,6 +314,7 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
             </ComposedChart>
           </ResponsiveContainer>
         </div>
+        {isBlurred && !isPopup && <div className="graph-blurred"></div>}
       </div>
     );
   },

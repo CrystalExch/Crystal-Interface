@@ -4,8 +4,11 @@ import * as THREE from 'three'
 const CrystalObject = () => {
   const mountRef = useRef<HTMLDivElement>(null)
   const clock = useRef(new THREE.Clock())
+  let hasInitialized = false
 
   useEffect(() => {
+    if (hasInitialized) return;
+    hasInitialized = true;
     // Scene & camera
     const scene = new THREE.Scene()
     const camera = new THREE.PerspectiveCamera(65, window.innerWidth / window.innerHeight, 0.1, 1000)
@@ -33,7 +36,7 @@ const CrystalObject = () => {
       ctx.fillRect(0, 0, 256, 256)
       return canvas
     }
-    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(256)
+    const cubeRenderTarget = new THREE.WebGLCubeRenderTarget(128)
     const cubeCamera = new THREE.CubeCamera(0.1, 1000, cubeRenderTarget)
     scene.add(cubeCamera)
     const envScene = new THREE.Scene()
@@ -48,36 +51,46 @@ const CrystalObject = () => {
     function createSmallCrystalGeometry(scale: number, variation: number) {
       const geo = new THREE.BufferGeometry()
       const s = scale * 0.7
-      const v = (n: number) => n * s * (1 + (Math.random() - 0.5) * variation)
+      const rand = () => 1 + (Math.random() - 0.5) * variation
+    
       const vertices = [
-        0, v(-2), 0,
-        v(1.5), v(-0.8), v(1.2),
-        v(-1.2), v(-1.0), v(1.4),
-        v(-1.7), v(-0.7), v(-0.9),
-        v(0.9), v(-1.2), v(-1.5),
-        v(2.2), v(0.5), v(1.8),
-        v(-1.9), v(0.7), v(2.1),
-        v(-2.4), v(0.4), v(-1.3),
-        v(1.4), v(0.2), v(-2.1),
-        v(1.0), v(1.9), v(0.8),
-        v(-0.7), v(2.3), v(1.1),
-        v(-1.2), v(1.7), v(-0.6),
-        v(0.5), v(2.1), v(-0.9),
-        0, v(3.2), 0,
+        0, s * -2 * rand(), 0,
+        s * 1.5 * rand(), s * -0.8 * rand(), s * 1.2 * rand(),
+        s * -1.2 * rand(), s * -1.0 * rand(), s * 1.4 * rand(),
+        s * -1.7 * rand(), s * -0.7 * rand(), s * -0.9 * rand(),
+        s * 0.9 * rand(), s * -1.2 * rand(), s * -1.5 * rand(),
+        s * 2.2 * rand(), s * 0.5 * rand(), s * 1.8 * rand(),
+        s * -1.9 * rand(), s * 0.7 * rand(), s * 2.1 * rand(),
+        s * -2.4 * rand(), s * 0.4 * rand(), s * -1.3 * rand(),
+        s * 1.4 * rand(), s * 0.2 * rand(), s * -2.1 * rand(),
+        0, s * 3.2 * rand(), 0,
       ]
+    
       const idx = [
-        0,2,1, 0,3,2, 0,4,3, 0,1,4,
-        1,2,6, 1,6,5, 2,3,7, 2,7,6,
-        3,4,8, 3,8,7, 4,1,5, 4,5,8,
-        5,6,10,5,10,9,6,7,11,6,11,10,
-        7,8,12,7,12,11,8,5,9,8,9,12,
-        9,10,13,10,11,13,11,12,13,12,9,13
+        0, 2, 1,
+        0, 3, 2,
+        0, 4, 3,
+        0, 1, 4,
+        1, 2, 6,
+        1, 6, 5,
+        2, 3, 7,
+        2, 7, 6,
+        3, 4, 8,
+        3, 8, 7,
+        4, 1, 5,
+        4, 5, 8,
+        5, 6, 9,
+        6, 7, 9,
+        7, 8, 9,
+        8, 5, 9
       ]
+    
       geo.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3))
       geo.setIndex(idx)
       geo.computeVertexNormals()
       return geo
     }
+    
 
     // Create crystals
     const crystalGroup = new THREE.Group()
@@ -105,7 +118,7 @@ const CrystalObject = () => {
           envMapIntensity: 1.2 + Math.random() * 0.6,
           side: THREE.DoubleSide,
         })
-        const scaleBase = 0.15 + Math.random() * 0.25
+        const scaleBase = 0.2 + Math.random() * 0.25
         const geo = createSmallCrystalGeometry(scaleBase, 0.4)
         const mesh = new THREE.Mesh(geo, mat)
 
@@ -137,10 +150,9 @@ const CrystalObject = () => {
         mesh.userData = {
           startPosition: new THREE.Vector3(sx, sy, sz),
           finalPosition: new THREE.Vector3(fx, fy, fz),
-          originalPosition: new THREE.Vector3(fx, fy, fz),
           rotationSpeed: (Math.random() - 0.5) * 0.01,
           oscillationSpeed: 0.5 + Math.random() * 1.5,
-          oscillationAmplitude: 0.05 + Math.random() * 0.1,
+          oscillationAmplitude: 0.05 + Math.random() * 0.2,
           entranceSpeed: 0.5 + Math.random() * 0.3,
           entranceDelay: Math.random() * 1.5,
           entranceProgress: 0,
@@ -151,28 +163,38 @@ const CrystalObject = () => {
       }
       return meshes
     }
-
-    let delayOffset = 0
-    createSmallCrystals(Math.floor(5 + Math.random() * 5), 'random')
-    createSmallCrystals(10 + Math.floor(Math.random() * 5), 'left').forEach(c => {
-      c.userData.finalPosition.x -= 2
-      c.userData.originalPosition.x -= 2
-      c.userData.entranceDelay += delayOffset
-    })
-    delayOffset += 0.5
-    createSmallCrystals(5 + Math.floor(Math.random() * 11), 'right').forEach(c => {
-      c.userData.finalPosition.x += 2
-      c.userData.originalPosition.x += 2
-      c.userData.entranceDelay += delayOffset
-    })
-    delayOffset += 0.5
-    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'top').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.5
-    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.5
-    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
-    delayOffset += 0.5
-    createSmallCrystals(1 + Math.floor(Math.random() * 7), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    if (window.innerWidth < 1020) {
+      let delayOffset = 0
+      createSmallCrystals(3, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(3, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(0 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(1 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(1 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    }
+    else {
+      let delayOffset = 0
+      createSmallCrystals(5, 'right').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'top').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'left').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(5, 'bottom').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'random').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'front').forEach(c => c.userData.entranceDelay += delayOffset)
+      delayOffset += 0.25
+      createSmallCrystals(2 + Math.floor(Math.random() * 2), 'back').forEach(c => c.userData.entranceDelay += delayOffset)
+    }
 
     // Lighting
     scene.add(new THREE.AmbientLight(0x404040, 0.8))
@@ -208,29 +230,37 @@ const CrystalObject = () => {
       smallCrystalsGroup.children.forEach((c: any) => {
         const u = c.userData
         if (elapsed > u.entranceDelay) {
-          const p = Math.min(1, (elapsed - u.entranceDelay) * (u.entranceSpeed * 0.4))
+          const p = Math.min(1, (elapsed - u.entranceDelay) * (u.entranceSpeed * 0.2))
           u.entranceProgress = p
           const ep = 1 - Math.pow(1 - p, 5)
           if (p < 1) {
             c.position.lerpVectors(u.startPosition, u.finalPosition, ep)
           } else {
+            if (!u.hasStartedOscillating) {
+              u.oscillationStartTime = elapsed
+              u.hasStartedOscillating = true
+            }
+            
+            const t = elapsed - u.oscillationStartTime
             const tf = Math.min(1, (p - 1) * 5 + 1)
-            c.position.x = u.originalPosition.x + Math.sin(elapsed * u.oscillationSpeed) * u.oscillationAmplitude * tf
-            c.position.y = u.originalPosition.y + Math.cos(elapsed * u.oscillationSpeed * 0.8) * u.oscillationAmplitude * tf
-            c.position.z = u.originalPosition.z + Math.sin(elapsed * u.oscillationSpeed * 1.2) * u.oscillationAmplitude * tf
+            
+            c.position.x = u.finalPosition.x + Math.sin(t * u.oscillationSpeed) * u.oscillationAmplitude * tf
+            c.position.y = u.finalPosition.y + (Math.cos(t * u.oscillationSpeed * 0.8) - 1) * u.oscillationAmplitude * tf
+            c.position.z = u.finalPosition.z + Math.sin(t * u.oscillationSpeed * 1.2) * u.oscillationAmplitude * tf                        
           }
         }
-        const rm = u.entranceProgress > 0 ? Math.min(1, u.entranceProgress * 3) : 0
-        c.rotation.x += u.rotationSpeed * rm
-        c.rotation.y += u.rotationSpeed * 1.3 * rm
-        c.rotation.z += u.rotationSpeed * 0.7 * rm
+        c.rotation.x += u.rotationSpeed * 1
+        c.rotation.y += u.rotationSpeed * 1.3 * 1
+        c.rotation.z += u.rotationSpeed * 0.7 * 1
       })
 
       renderer.render(scene, camera)
     }
+    
     animate()
 
     return () => {
+      hasInitialized = false
       window.removeEventListener('resize', handleResize)
       if (mountRef.current) mountRef.current.removeChild(renderer.domElement)
     }

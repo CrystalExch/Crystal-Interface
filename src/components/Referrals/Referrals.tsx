@@ -13,7 +13,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from '../../settings.ts';
 import customRound from '../../utils/customRound';
 
-import ReferralMobileBackground from '../../assets/referral_mobile_background.png';
 import ReferralBackground from '../../assets/referrals_bg.png';
 import defaultPfp from '../../assets/leaderboard_default.png';
 
@@ -50,6 +49,7 @@ const Referrals: React.FC<ReferralProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
+  usedRefAddress,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -75,7 +75,8 @@ const Referrals: React.FC<ReferralProps> = ({
   const [error, setError] = useState('');
   const [username, setUsername] = useState('');
   const [commissionBonus, setCommissionBonus] = useState(0);
-  
+  const [isLoading, setIsLoading] = useState(true);
+
   const featureData = [
     {
       icon: <Users size={20} />,
@@ -101,7 +102,7 @@ const Referrals: React.FC<ReferralProps> = ({
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
-      `https://app.crystal.exchange/swap?ref=${refLink}`,
+      `https://app.crystal.exchange?ref=${refLink}`,
     );
     setCopySuccess(true);
     setTimeout(() => {
@@ -117,6 +118,7 @@ const Referrals: React.FC<ReferralProps> = ({
       setCommissionBonus(0);
       setUsername('');
       setReferredCount(0);
+      setIsLoading(false);
       return;
     }
     
@@ -132,60 +134,52 @@ const Referrals: React.FC<ReferralProps> = ({
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'referrerToReferredAddresses',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToReferrer',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
-        ],
-      })) as any[];
-      setRefLink(refs[0].result);
-      setReferredCount(Number(refs[1].result));
-      setUsedRefAddress(
-        refs[2].result || '0x0000000000000000000000000000000000000000',
-      );
-      const find = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
             functionName: 'addressToRef',
             args: [
-              refs[2].result ?? '0x0000000000000000000000000000000000000000',
+              usedRefAddress ?? '0x0000000000000000000000000000000000000000',
             ],
           },
         ],
       })) as any[];
-      setUsedRefLink(find[0].result);
-      
-      if (address) {
-        fetch('https://api.crystal.exchange/user_points')
-          .then(res => res.json())
-          .then((data) => {
-            const userInfo = data[address.toLowerCase()];
-            if (userInfo) {
-              const username = userInfo[0] || '';
-              const referral_points = userInfo[2] || 0;
-              
-              setUsername(username);
-              const formattedValue = customRound(parseFloat(referral_points.toString()), 4);
-              setCommissionBonus(parseFloat(formattedValue));
-            } else {
-              setUsername('');
-              setCommissionBonus(0);
-            }
-          })
-          .catch(err => {
-            console.error('Error fetching user points:', err);
-            setUsername('');
-            setCommissionBonus(0);
-          });
-      }
+      setRefLink(refs[0].result);
+      setUsedRefLink(refs[1].result);
     })();
+
+    if (!address) {
+      setUsername('')
+      setReferredCount(0)
+      setCommissionBonus(0)
+      setIsLoading(false)
+      return
+    }
+
+    setIsLoading(true);
+    
+    const fetchInfo = async () => {
+      try {
+        const res = await fetch(
+          `https://api.crystal.exchange/user_info/${address.toLowerCase()}`
+        )
+        const data = await res.json()
+        setUsername(data.username || '')
+        setReferredCount(data.referred_users || 0)
+        const pts = parseFloat(data.referral_points?.toString() || '0')
+        setCommissionBonus(parseFloat(customRound(pts, 4)))
+        setIsLoading(false)
+        setIsLoading(false)
+      } catch (err) {
+        console.error('user_info fetch failed', err)
+        setUsername('')
+        setReferredCount(0)
+        setCommissionBonus(0)
+        setIsLoading(false)
+        setIsLoading(false)
+      }
+    }
+
+    fetchInfo()
+    const iv = setInterval(fetchInfo, 3000)
+    return () => clearInterval(iv)
   }, [address]);
 
   const handleCreateRef = async () => {
@@ -240,7 +234,7 @@ const Referrals: React.FC<ReferralProps> = ({
       })) as any[];
 
       if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
-        setError(t('invalidRefCode'));
+        setError(t('setRefFailed'));
         return false;
       }
     }
@@ -321,41 +315,54 @@ const Referrals: React.FC<ReferralProps> = ({
       !account.connected ? setpopup(4) : setChain();
     }
   };
-
-  const displayName = username && username.trim() !== '' 
-    ? username 
-    : getDisplayAddress(address || '');
-
+const displayName = username && username.trim() !== '' 
+  ? (username.startsWith('0x') ? getDisplayAddress(username) : username)
+  : getDisplayAddress(address || '');
   return (
     <div className="referral-scroll-wrapper">
       <div className="referral-content">
         <div className="referral-header">
-        <div className="referred-count">
-         <img src={defaultPfp} className="referral-pfp" />
-         <div className="referral-user-right-side">
-          <span className="referral-username">@{displayName}</span>
-          <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x Point Multiplier</div>
-         </div>
-        </div>
-        <div className="total-referrals-container">
-         <span className="referral-count-number">{referredCount}</span> <span>{t('totalUsersReferred')}</span>
-         <Users className="referred-count-icon"size={30} />
-
-        </div>
-        <div className="total-crystals-earned-container">
-        <span className="referral-count-number">{commissionBonus}</span> <span className="referrals-bonus-content"> Crystals From Referrals </span>
-        <Gem className="referred-count-icon" size={30} />
-
-        </div>
+          <div className="referred-count">
+            <img src={defaultPfp} className="referral-pfp" />
+            <div className="referral-user-right-side">
+              {isLoading ? (
+                <>
+                  <div className="referrals-skeleton referrals-username-skeleton"></div>
+                  <div className="referrals-skeleton referrals-multiplier-skeleton"></div>
+                </>
+              ) : (
+                <>
+                  <span className="referral-username">{displayName}</span>
+                  <div className="user-points-subtitle">{client && usedRefLink ? 1.375 : client ? 1.25 : usedRefLink ? 1.1 : 1}x {t('pointMultiplier')}</div>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="total-referrals-container">
+            {isLoading ? (
+              <div className="referrals-skeleton referrals-count-skeleton"></div>
+            ) : (
+              <span className="referral-count-number">{referredCount}</span>
+            )}
+            <span>{t('totalUsersReferred')}</span>
+            <Users className="referred-count-icon" size={30} />
+          </div>
+          <div className="total-crystals-earned-container">
+            {isLoading ? (
+              <div className="referrals-skeleton referrals-count-skeleton"></div>
+            ) : (
+              <span className="referral-count-number">{commissionBonus}</span>
+            )}
+            <span className="referrals-bonus-content">{t('crystalsFromReferrals')}</span>
+            <Gem className="referred-count-icon" size={30} />
+          </div>
         </div>
         <div className="referral-body-section">
           <div className="referral-top-section">
             <div className="referral-background-wrapper">
-
               <div className="main-title-container">
                 <h1 className="main-title">{t('claimTitle')}</h1>
-                <h1 className="referrals-subtitle">{t('Earn up to 50% rebates on all fees with your referral code')}</h1>
-
+                <h1 className="referrals-subtitle">{t('refAd')}</h1>
               </div>
               <div className="referral-background-container">
                 <div className="referral-bg-placeholder">
@@ -368,38 +375,24 @@ const Referrals: React.FC<ReferralProps> = ({
                   {!bgLoaded && (
                     <div className="referral-bg-placeholder-content"></div>
                   )}
-                  <img
-                    src={ReferralMobileBackground}
-                    className="referral-mobile-background"
-                  />
-            
                 </div>
                 <span className="referral-loader"></span>
                 <div className="features-grid">
-                  <div
-                    className="feature-card-left"
-
-                  >
+                  <div className="feature-card-left">
                     <div className="feature-icon">
                       <Users size={20} />
                     </div>
                     <h3 className="feature-title">{t('communityRewards')}</h3>
                     <p className="feature-description">{t('communityRewardsText')}</p>
                   </div>
-                  <div
-                    className="feature-card-middle"
-
-                  >
+                  <div className="feature-card-middle">
                     <div className="feature-icon">
                       <Zap size={20} />
                     </div>
                     <h3 className="feature-title">{t('instantTracking')}</h3>
                     <p className="feature-description">{t('instantTrackingText')}</p>
                   </div>
-                  <div
-                    className="feature-card-right"
-
-                  >
+                  <div className="feature-card-right">
                     <div className="feature-icon">
                       <TrendingUp size={20} />
                     </div>
@@ -503,7 +496,7 @@ const Referrals: React.FC<ReferralProps> = ({
                     <>
                       <span className="link-text">
                         <span className="link-base">
-                          https://app.crystal.exchange/swap?ref=
+                          https://app.crystal.exchange?ref=
                         </span>
                         <span className="link-url">{refLink}</span>
                       </span>
@@ -539,7 +532,7 @@ const Referrals: React.FC<ReferralProps> = ({
                           onClick={() => {
                             const tweetText =
                               "Join me on @CrystalExch, the EVM's first fully on-chain orderbook exchange, now live on @monad_xyz.\n\nUse my referral link for a 25% discount on all fees:\n\n";
-                            const url = `https://app.crystal.exchange/swap?ref=${refLink}`;
+                            const url = `https://app.crystal.exchange?ref=${refLink}`;
                             window.open(
                               `https://twitter.com/intent/tweet?text=${encodeURIComponent(
                                 tweetText
@@ -556,10 +549,6 @@ const Referrals: React.FC<ReferralProps> = ({
                     <span className="link-text">{t('noLink')}</span>
                   )}
                 </div>
-
-
-
-
               </div>
               <div className="enter-code-container">
                 <EnterCode

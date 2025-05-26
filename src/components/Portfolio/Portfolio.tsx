@@ -42,8 +42,7 @@ interface PortfolioProps {
   address: string;
   isBlurred: any;
   setIsBlurred: any;
-  setTokenIn: (token: any) => void;
-  setTokenOut: (token: any) => void;
+  onMarketSelect: any;
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   tokenBalances: any;
@@ -80,8 +79,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   address,
   isBlurred,
   setIsBlurred,
-  setTokenIn,
-  setTokenOut,
+  onMarketSelect,
   setSendTokenIn,
   setpopup,
   tokenBalances,
@@ -255,7 +253,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     <div className="graph-outer-container">
       {portChartLoading ? (
         <div className="graph-container">
-          <Overlay isVisible={true} bgcolor={'#0f0f12'} height={20} />
+          <Overlay isVisible={true} bgcolor={'#0f0f12'} height={40} />
         </div>
       ) : (
         <div className="graph-container">
@@ -270,6 +268,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
             portChartLoading={portChartLoading}
             chartDays={chartDays}
             setChartDays={setChartDays}
+            isBlurred={isBlurred}
           />
         </div>
       )}
@@ -385,8 +384,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           currentMarket={''}
           orderCenterHeight={orderCenterHeight}
           tokenList={tokenList}
-          setTokenIn={setTokenIn}
-          setTokenOut={setTokenOut}
+          onMarketSelect={onMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}
           sortConfig={sortConfig}

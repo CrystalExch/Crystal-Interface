@@ -5,7 +5,7 @@ import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
 import ChartCanvas from './ChartCanvas/ChartCanvas';
 import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
-
+import normalizeTicker from '../../utils/normalizeTicker.ts';
 import { settings } from '../../settings.ts';
 import { formatCommas } from '../../utils/numberDisplayFormat.ts';
 import {
@@ -16,7 +16,6 @@ import {
 import './Chart.css';
 
 interface ChartComponentProps {
-  onMarketSelect: any;
   tokendict: any;
   trades: any[];
   universalTrades: any[];
@@ -37,6 +36,7 @@ interface ChartComponentProps {
   address: any;
   client: any;
   newTxPopup: any;
+  usedRefAddress: any;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -56,7 +56,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   waitForTxReceipt,
   address,
   client,
-  newTxPopup
+  newTxPopup,
+  usedRefAddress,
 }) => {
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -239,8 +240,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   };
 
   useEffect(() => {
-    updateCandlestickData(selectedInterval, trades, activeMarket.baseAsset);
-  }, [selectedInterval, activeMarket.baseAsset]);
+    updateCandlestickData(selectedInterval, trades, normalizeTicker(activeMarket.baseAsset, activechain));
+  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain)]);
 
   useEffect(() => {
     if (!marketsData || !activeMarket) return;
@@ -365,6 +366,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             address={address}
             client={client}
             newTxPopup={newTxPopup}
+            usedRefAddress={usedRefAddress}
           />
         ) : (
           <>
@@ -378,7 +380,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             <ChartCanvas data={data[0]} activeMarket={activeMarket} />
           </>
         )}
-        <Overlay isVisible={overlayVisible} bgcolor={'#0f0f12'} height={20} />
+        <Overlay isVisible={overlayVisible} bgcolor={'#0f0f12'} height={30} />
       </div>
     </div>
   );

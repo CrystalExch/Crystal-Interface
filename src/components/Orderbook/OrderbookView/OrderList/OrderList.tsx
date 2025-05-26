@@ -166,9 +166,7 @@ const OrderList: React.FC<OrderListProps> = ({
               isHighlighted={
                 selectedIndex === null || order.price === 0
                   ? false
-                  : isBuyOrderList
-                  ? index <= selectedIndex
-                  : index >= selectedIndex
+                  : index <= selectedIndex
               }
               isBoundary={selectedIndex === index}
               isPhantom={order.isPhantom}

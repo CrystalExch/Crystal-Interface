@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { tokenData, TokenSymbol } from '../TokenDescriptions.ts';
+import { useTokenData, TokenSymbol } from '../TokenDescriptions';
 
 import infoicon from '../../../../../assets/icon.png';
 
@@ -11,12 +11,9 @@ interface TokenInfoPopupProps {
   setpopup: (value: number) => void;
 }
 
-const TokenInfoPopup: React.FC<TokenInfoPopupProps> = ({
-  symbol,
-  setpopup,
-}) => {
+const TokenInfoPopup: React.FC<TokenInfoPopupProps> = ({ symbol, setpopup }) => {
+  const tokenData = useTokenData();
   const info = tokenData[symbol];
-
   if (!info) return null;
 
   return (

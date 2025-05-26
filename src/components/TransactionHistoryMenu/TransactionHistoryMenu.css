@@ -360,14 +360,11 @@
   margin-top: 20px;
 }
 
-/* Using the same styling as the original view-transaction link */
 .tx-detail-explorer-link {
-  display: block;
   text-align: center;
   color: #ffffffa0;
   font-size: 0.8rem;
   text-decoration: none;
-  margin-top: 10px;
   transition: color 0.2s;
 }
 
@@ -375,12 +372,10 @@
   color: #ffffff;
 }
 
-/* Make transaction items clickable */
 .tx-history-item {
   cursor: pointer;
 }
 
-/* Transaction History Item Styles */
 .txhistory-inner,
 .txhistory-main-content {
   display: flex;
@@ -651,11 +646,6 @@
 
 .txdetail-error-x-line2 {
   transform: translate(-50%, -50%) rotate(-45deg);
-}
-
-.tx-detail-explorer-link {
-  margin-top: 16px;
-  display: inline-block;
 }
 
 .tx-history-item:has(.txhistory-inner-failed) {

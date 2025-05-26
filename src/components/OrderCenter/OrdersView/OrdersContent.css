@@ -6,12 +6,12 @@
   display: grid;
   font-size: 0.85rem;
   grid-template-columns:
-    40px minmax(120px, 0.9fr) minmax(115px, 1fr) minmax(160px, 1fr)
+    40px minmax(120px, 0.9fr) minmax(115px, 1fr) minmax(100px, 1fr)
     minmax(145px, 1fr) minmax(145px, 0.8fr) minmax(100px, 0.3fr);
   justify-content: flex-start;
   height: 32px;
   min-height: 32px;  
-  min-width: 580px;
+  min-width: 765px;
   padding: 1px 0 0 0;
   position: sticky;
   text-align: left;
