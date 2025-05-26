@@ -3639,11 +3639,13 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   backdrop-filter: blur(10px);
   top: calc(100%);
   left: 83.5%;
-  background: #17171be0;
-  border-radius: 5px;
+  background: #141418;
+  border-radius: 8px;
+  padding: 2px 0;
   width: 34%;
   z-index: 5;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
 }
@@ -3662,18 +3664,18 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .dropdown-item {
   display: block;
-  padding: 3px 1px 4px 1px;
+  padding: 2px 1px;
   color: #ffffff90;
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 400;
   transition: background-color 0.2s, color 0.2s;
   text-align: center;
+  
 }
 
 .dropdown-item:hover {
-  background-color: rgba(170, 174, 207, 0.02);
-  color: #ffffffd0;
+  color: #ffffffe5;
 }
 
 .dropdown-item span {
@@ -3715,7 +3717,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .main-content-wrapper.simple-view .dropdown-item {
   font-size: 0.8rem;
-  background: #101012;
 }
 
 .main-content-wrapper.simple-view .dropdown-item span {
