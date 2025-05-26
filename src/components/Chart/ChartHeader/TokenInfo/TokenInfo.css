@@ -70,10 +70,16 @@
   padding: 4px 8px;
   margin-left: -4px;
 }
-
-@media(max-width: 560px){
+@media(max-width: 660px){
   .ctrlktooltip{
     margin-left: -12px;
+    display: none;
+  }
+}
+
+@media(max-width: 400px){
+  .token-details {
+    display: none !important;
   }
 }
 
@@ -610,11 +616,7 @@
   justify-self: flex-start;
 }
 
-@media (max-width: 560px) {
-  .token-details {
-    display: none;
-  }
-}
+
 
 
 .token-info-right-section{
