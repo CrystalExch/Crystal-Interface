@@ -229,7 +229,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
     const fetchOverview = () => {
       fetch(
-        `https://points-fix-production.up.railway.app/points/${address}?index=${currentPage}`
+        `https://api.crystal.exchange/points/${address}?index=${currentPage}`
       )
         .then((res) => {
           if (!res.ok) throw new Error(`status ${res.status}`);
@@ -398,7 +398,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     value={overview!.global_total_points}
                     decimals={2}
                     duration={800}
-                  /> / 1,000,000,000.00
+                  /> / 10,000,000,000.00
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -409,7 +409,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '0%'
-                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
+                    : `${(overview!.global_total_points / 10_000_000_000) * 100}%`,
                 }}
               />
             </div>
@@ -607,21 +607,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         </div>
                       </span>
                       <div className="user-self-tag">
-{isCurrent && orders.length > 0 && (
-  <div className="orders-indicator-container">
-    <div
-      className="orders-indicator"
-      onMouseEnter={() => setShowOrdersTooltip(true)}
-      onMouseLeave={() => setShowOrdersTooltip(false)}
-    >
-      {showOrdersTooltip && (
-        <div className="custom-tooltip">
-          You have {orders.length} open orders earning points
-        </div>
-      )}
-    </div>
-  </div>
-)}
+                        {isCurrent && orders.length > 0 && (
+                          <div className="orders-indicator-container">
+                            <div
+                              className="orders-indicator"
+                              onMouseEnter={() => setShowOrdersTooltip(true)}
+                              onMouseLeave={() => setShowOrdersTooltip(false)}
+                            >
+                              {showOrdersTooltip && (
+                                <div className="custom-tooltip">
+                                  You have {orders.length} open orders earning points
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                         {isCurrent && (
                           <span className="current-user-tag">You</span>
                         )}

@@ -1134,8 +1134,8 @@ function App() {
 
     (async () => {
       let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(10)).toString(16)
-      endBlockNumber = '0x' + firstBlockNumber.toString(16)
+      startBlockNumber = '0x' + (firstBlockNumber - BigInt(25)).toString(16)
+      endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
     })()
 
     const fetchData = async () => {
@@ -1193,7 +1193,7 @@ function App() {
         const result = await req.json();
         if (liveStreamCancelled) return;
         startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 25).toString(16);
-        endBlockNumber = '0x' + parseInt(result[0].result, 16).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs((prev) => {
