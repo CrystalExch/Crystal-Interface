@@ -443,11 +443,11 @@ function App() {
       }
     }
 
-    if (window.innerHeight > 1080) return 363.58;
-    if (window.innerHeight > 960) return 322.38;
-    if (window.innerHeight > 840) return 281.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
+    if (window.innerHeight > 1080) return 361.58;
+    if (window.innerHeight > 960) return 320.38;
+    if (window.innerHeight > 840) return 279.18;
+    if (window.innerHeight > 720) return 237.98;
+    return 196.78;
   });
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'false');
@@ -1341,9 +1341,6 @@ function App() {
                               }
                               temporders.splice(index, 1);
                             }
-                            else {
-                              console.log(buy, price, id, size, log, orderlogs, tradelogs, [...temporders])
-                            }
                             let quoteasset =
                               markets[marketKey].quoteAddress;
                             let baseasset =
@@ -2136,7 +2133,7 @@ function App() {
 
       const mouseDeltaY = e.clientY - initialMousePosRef.current;
       const newHeight = Math.max(
-        236,
+        234,
         Math.min(450, initialHeightRef.current - mouseDeltaY),
       );
 
@@ -2192,15 +2189,15 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
-        setOrderCenterHeight(363.58);
+        setOrderCenterHeight(361.58);
       } else if (window.innerHeight > 960) {
-        setOrderCenterHeight(322.38);
+        setOrderCenterHeight(320.38);
       } else if (window.innerHeight > 840) {
-        setOrderCenterHeight(281.18);
+        setOrderCenterHeight(279.18);
       } else if (window.innerHeight > 720) {
-        setOrderCenterHeight(239.98);
+        setOrderCenterHeight(237.98);
       } else {
-        setOrderCenterHeight(198.78);
+        setOrderCenterHeight(196.78);
       }
     };
 
@@ -6525,11 +6522,11 @@ function App() {
 
                       let defaultHeight: number;
 
-                      if (window.innerHeight > 1080) defaultHeight = 363.58;
-                      else if (window.innerHeight > 960) defaultHeight = 322.38;
-                      else if (window.innerHeight > 840) defaultHeight = 281.18;
-                      else if (window.innerHeight > 720) defaultHeight = 239.98;
-                      else defaultHeight = 198.78;
+                      if (window.innerHeight > 1080) defaultHeight = 361.58;
+                      else if (window.innerHeight > 960) defaultHeight = 320.38;
+                      else if (window.innerHeight > 840) defaultHeight = 279.18;
+                      else if (window.innerHeight > 720) defaultHeight = 237.98;
+                      else defaultHeight = 196.78;
 
                       setOrderCenterHeight(defaultHeight);
                       localStorage.setItem(
