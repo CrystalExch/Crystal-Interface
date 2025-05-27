@@ -29,6 +29,7 @@ interface ChartCanvasProps {
   client: any;
   newTxPopup: any;
   usedRefAddress: any;
+  realtimeCallbackRef: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -47,6 +48,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   setChain,
   waitForTxReceipt,
   usedRefAddress,
+  realtimeCallbackRef,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -55,25 +57,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const tradeHistoryRef = useRef(tradehistory);
   const ordersRef = useRef(orders);
   const marksRef = useRef<any>();
-  const realtimeCallbackRef = useRef<any>({});
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
   useEffect(() => {
     dataRef.current[data[1]] = data[0];
-    if (realtimeCallbackRef.current[data[1]] && data[0].length > 0) {
-      const latest = data[0].at(-1) as any;
-      const latestBar = {
-        time: new Date(latest.time as any).getTime(),
-        open: latest.open,
-        high: latest.high,
-        low: latest.low,
-        close: latest.close,
-        volume: latest.volume,
-      };
-      realtimeCallbackRef.current[data[1]](latestBar);
-    }
   }, [data]);
 
   useEffect(() => {
@@ -359,15 +348,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               const intervalCheck = setInterval(check, 50);
               check();
             });
-            
-            let bars = dataRef.current[key].map((point: any) => ({
-              time: new Date(point.time).getTime(),
-              open: point.open,
-              high: point.high,
-              low: point.low,
-              close: point.close,
-              volume: point.volume,
-            }));
+
+            let bars = dataRef.current[key]
 
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,

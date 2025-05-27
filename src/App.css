@@ -670,17 +670,6 @@ html {
   position: relative;
 }
 
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
 .wallet-popup-address-container {
   display: flex;
   gap: 8px;
@@ -2905,7 +2894,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   animation: fadeIn.2s ease-out;
   transform: translate(-50%, -50%);
   z-index: 12;
-  transition: opacity.2s ease-out;
   box-sizing: content-box;
   background: #0f0f10;
 }
@@ -3326,7 +3314,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .blur-background-popups {
   overflow: hidden;
   -webkit-overflow-scrolling: none;
-  transition: background-color .25s ease-out;
+  transition: background-color .2s;
 }
 
 .search-markets-dropdown-popup {
@@ -5326,7 +5314,7 @@ input[type="email"] {
   margin: 40px;
   margin-left: 0;
   border-radius: 30px;
-  animation: simpleFadeIn 0.4s ease-out forwards;
+  animation: fadeIn 0.4s ease-out forwards;
   overflow: hidden;
   border: 2px solid #111113;
 }
@@ -5633,7 +5621,7 @@ input[type="email"] {
   align-self: center;
   justify-content: center;
   overflow: hidden;
-  animation: simpleFadeIn 0.2s ease-out forwards;
+  animation: fadeIn 0.2s ease-out forwards;
 
 }
 
@@ -5939,18 +5927,6 @@ input[type="email"] {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-}
-
-
-
-@keyframes simpleFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
 }
 
 @keyframes fadeIn {
@@ -6594,16 +6570,6 @@ input[type="email"] {
 
 .enter-button:active {
   transform: translateY(0);
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
 }
 
 @keyframes slideUp {
