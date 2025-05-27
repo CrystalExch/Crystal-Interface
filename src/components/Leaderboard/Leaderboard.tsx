@@ -133,7 +133,7 @@ const NumberRoller: React.FC<NumberRollerProps> = ({
   });
   
   const characters = formattedValue.split('');
-  
+
   return (
     <div className="number-roller">
       {characters.map((char, index) => (
@@ -204,6 +204,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [manualPaging, setManualPaging] = useState(false);
   const rowsRef = useRef<HTMLDivElement>(null);
   const prevPageRef = useRef<number>(currentPage);
+    const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
+
 
   useEffect(() => {
     prevPageRef.current = currentPage;
@@ -216,7 +218,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         ? ITEMS_FIRST_PAGE
         : ITEMS_OTHER_PAGES)
     : 0;
-
   
   useEffect(() => {
     if (!address) return;
@@ -228,7 +229,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
     const fetchOverview = () => {
       fetch(
-        `https://api.crystal.exchange/points/${address}?index=${currentPage}`
+        `https://points-fix-production.up.railway.app/points/${address}?index=${currentPage}`
       )
         .then((res) => {
           if (!res.ok) throw new Error(`status ${res.status}`);
@@ -239,7 +240,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           setOverview(data);
           setPaginationLoading(false);
         })
-        .catch((err) => {
+       .catch((err) => {
           console.error('fetch overview error', err);
           setPaginationLoading(false);
         });
@@ -397,7 +398,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     value={overview!.global_total_points}
                     decimals={2}
                     duration={800}
-                  /> / 10,000,000,000.00
+                  /> / 1,000,000,000.00
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -408,7 +409,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '0%'
-                    : `${(overview!.global_total_points / 10_000_000_000) * 100}%`,
+                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
                 }}
               />
             </div>
@@ -606,14 +607,21 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                         </div>
                       </span>
                       <div className="user-self-tag">
-                        {isCurrent && orders.length > 0 && (
-                          <div className="orders-indicator-container">
-                            <div
-                              className="orders-indicator"
-                              title={`You have ${orders.length} open orders earning points`}
-                            />
-                          </div>
-                        )}
+{isCurrent && orders.length > 0 && (
+  <div className="orders-indicator-container">
+    <div
+      className="orders-indicator"
+      onMouseEnter={() => setShowOrdersTooltip(true)}
+      onMouseLeave={() => setShowOrdersTooltip(false)}
+    >
+      {showOrdersTooltip && (
+        <div className="custom-tooltip">
+          You have {orders.length} open orders earning points
+        </div>
+      )}
+    </div>
+  </div>
+)}
                         {isCurrent && (
                           <span className="current-user-tag">You</span>
                         )}

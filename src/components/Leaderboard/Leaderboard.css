@@ -973,23 +973,7 @@
   position:relative;
   z-index:2
 }
-.orders-indicator:hover::after{
-  backdrop-filter:blur(10px);
-  background:rgba(194,194,244,.2);
-  border:1px solid #aaaecf3c;
-  border-radius:4px;
-  color:#bcbcbc;
-  content:attr(title);
-  font-size:.75rem;
-  left:50%;
-  padding:5px 10px;
-  position:absolute;
-  top:-36px;
-  transform:translateX(-50%);
-  white-space:nowrap;
-  z-index:10;
-  letter-spacing:-.3px
-}
+
 .orders-indicator::before{
   content:'';
   position:absolute;
@@ -1199,4 +1183,21 @@
   font-size: inherit;
   font-weight: inherit;
   color: inherit;
+}
+.custom-tooltip {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(194, 194, 244, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(170, 174, 207, 0.24);
+  border-radius: 4px;
+  color: #bcbcbc;
+  font-size: 0.75rem;
+  padding: 5px 10px;
+  white-space: nowrap;
+  z-index: 10;
+  letter-spacing: -0.3px;
+  pointer-events: none;
 }

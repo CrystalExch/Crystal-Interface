@@ -2113,7 +2113,7 @@ body:has(.right-column.show) .blur-background-popups {
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
   display: flex;
   flex-direction: column;
-  height: min(525px, 90vh);
+  height: min(555px, 90vh);
   left: 50%;
   position: fixed;
   top: 50%;
@@ -3627,11 +3627,13 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   backdrop-filter: blur(10px);
   top: calc(100%);
   left: 83.5%;
-  background: #17171be0;
-  border-radius: 5px;
+  background: #141418;
+  border-radius: 8px;
+  padding: 2px 0;
   width: 34%;
   z-index: 5;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
 }
@@ -3650,18 +3652,18 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .dropdown-item {
   display: block;
-  padding: 3px 1px 4px 1px;
+  padding: 2px 1px;
   color: #ffffff90;
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 400;
   transition: background-color 0.2s, color 0.2s;
   text-align: center;
+  
 }
 
 .dropdown-item:hover {
-  background-color: rgba(170, 174, 207, 0.02);
-  color: #ffffffd0;
+  color: #ffffffe5;
 }
 
 .dropdown-item span {
@@ -3703,7 +3705,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .main-content-wrapper.simple-view .dropdown-item {
   font-size: 0.8rem;
-  background: #101012;
 }
 
 .main-content-wrapper.simple-view .dropdown-item span {
@@ -5011,7 +5012,7 @@ input[type="email"] {
 }
 
 .high-impact-content {
-  padding: 15px;
+  padding: 10px;
   padding-bottom: 8px;
   display: flex;
   flex-direction: column;
@@ -5041,12 +5042,13 @@ input[type="email"] {
   line-height: 1.2;
   letter-spacing: -0.3px;
   margin: 0;
-  color: #e4e4e7c2;
+  padding: 0 20px;
+  color: #9c9b9bc2;
   font-weight: 300;
 }
 
 .high-impact-details {
-  background-color: rgba(154, 151, 151, 0.05);
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
   border-radius: 8px;
   padding: 10px 16px;
   width: 100%;
@@ -5059,7 +5061,7 @@ input[type="email"] {
   align-items: center;
   margin-bottom: 8px;
   font-size: 0.8rem;
-  opacity: 0.8;
+  opacity: 0.7;
 
 }
 
@@ -5069,26 +5071,31 @@ input[type="email"] {
 
 .high-impact-value {
   font-weight: 300;
-  opacity: 0.7;
 }
 
+.high-impact-value-title{
+  opacity: 0.7;
+  font-weight: 300;
+}
 .high-impact-actions {
   display: flex;
   justify-content: center;
   gap: 8px;
-  padding: 0 20px 0px;
+  padding: 0 15px 0px;
 }
 
 .high-impact-cancel-button,
 .high-impact-confirm-button {
   padding: 10px 16px;
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
   border: none;
   min-width: 50%;
   letter-spacing: -0.3px;
+  text-transform: capitalize;
+  font-weight: 300;
 }
 
 .high-impact-cancel-button {
@@ -5101,12 +5108,12 @@ input[type="email"] {
 }
 
 .high-impact-confirm-button {
-  background-color: #e82f2f1f;
-  color: #ff5757d8;
+  background-color: #e82f2f1a;
+  color: #f76666d8;
 }
 
 .high-impact-confirm-button:hover {
-  background-color: #e82f2f2f;
+  background-color: rgba(232, 47, 47, 0.13);
 }
 
 @keyframes popup-scale {
@@ -5139,7 +5146,7 @@ input[type="email"] {
 
 
 .high-impact-confirmation-popup {
-  height: min(315px, 90vh);
+  height: min(305px, 90vh);
   border-radius: 8px;
   left: 50%;
   margin: 0 auto;
@@ -5147,7 +5154,7 @@ input[type="email"] {
   position: fixed;
   top: 50%;
   user-select: none;
-  width: min(350px, 90vw);
+  width: min(320px, 90vw);
 }
 
 .onboarding-container {
