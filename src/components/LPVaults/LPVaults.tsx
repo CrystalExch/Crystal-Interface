@@ -605,10 +605,10 @@ const LPVaults: React.FC = () => {
                                 <div className="lp-vaults-list-header">
                                     <div className="lp-col lp-asset-col">Asset</div>
                                     <div className="lp-col lp-supply-col">Total Supply</div>
-                                    <div className="lp-col lp-supply-apy-col">Supply APY</div>
                                     <div className="lp-col lp-borrowed-col">Total Borrowed</div>
+                                    <div className="lp-col lp-borrowed-col">Borrow LTV</div>
+                                    <div className="lp-col lp-supply-apy-col">Supply APY</div>
                                     <div className="lp-col lp-borrow-apy-col">Borrow APY</div>
-                                    <div className="lp-col lp-balance-col">Your Deposit</div>
                                 </div>
 
                                 {lpFilteredVaults.map((vault) => (
@@ -619,15 +619,20 @@ const LPVaults: React.FC = () => {
                                     >
                                         <div className="lp-summary">
                                             <div className="lp-col lp-asset-col">
-                                                  <Star
-                                                                                      size={20}
-                                                                                      className="vault-search-token-star"
-                                                                                      onClick={(e) => handleLpFavoriteToggle(token, e)}
-                                                                                      fill="none"
-                                                                                      color="#ffffff79"
-                                                                                    />
+                                                <Star
+                                                    size={20}
+                                                    className="vault-search-token-star"
+                                                    onClick={(e) => handleLpFavoriteToggle({
+                                                        symbol: vault.tokens.first.symbol,
+                                                        icon: vault.tokens.first.icon,
+                                                        name: vault.name,
+                                                        address: vault.id
+                                                    }, e)}
+                                                    fill="none"
+                                                    color="#ffffff79"
+                                                />
                                                 <div className="lp-token-pair-icons">
-                                                    
+
                                                     <img
                                                         src={vault.tokens.first.icon}
                                                         alt={vault.tokens.first.symbol}
@@ -691,45 +696,40 @@ const LPVaults: React.FC = () => {
                                                 </div>
                                             </div>
 
-                                            <div className="lp-col lp-supply-apy-col">
-                                                <div className="lp-col lp-action-col-button">
-                                                    <button
-                                                        className="lp-supply-button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            showLpVaultDetail(vault.id);
-                                                        }}
-                                                    >
-                                                        Supply
-                                                    </button>
-                                                </div>
-                                                <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
-
-                                            </div>
-
                                             <div className="lp-col lp-borrowed-col">
                                                 <div className="lp-borrowed-amount-display">{vault.totalSupply.replace('$', ' ')}</div>
                                                 <div className="lp-borrowed-value">{vault.totalBorrowed}</div>
-
                                             </div>
+                                            <div className="lp-col lp-borrowed-ltv">80%</div>
+                                            <div className="lp-col lp-supply-apy-col">
+                                                <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
+                                                        <img src={iconwbtc} alt="WBTC" className="lp-collateral-token-icon" />
+        <img src={iconshmonad} alt="shMON" className="lp-collateral-token-icon" />
+        <img src={iconsol} alt="SOL" className="lp-collateral-token-icon" />
+                                                    <button
+                                                    className="lp-supply-button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        showLpVaultDetail(vault.id);
+                                                    }}
+                                                >
+                                                    Supply
+                                                </button>
+                                            </div>
+
 
                                             <div className="lp-col lp-borrow-apy-col">
-                                                <div className="lp-col lp-action-col-button">
-                                                    <button
-                                                        className="lp-supply-button"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            showLpVaultDetail(vault.id);
-                                                        }}
-                                                    >
-                                                        Borrow
-                                                    </button>
-                                                </div>
                                                 <div className="lp-borrow-apy-value">{vault.borrowApy}%</div>
-                                            </div>
-
-                                            <div className="lp-col lp-balance-col">
-                                                <div className="lp-deposit-amount">${vault.userBalance}</div>
+                                                
+                                                <button
+                                                    className="lp-supply-button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        showLpVaultDetail(vault.id);
+                                                    }}
+                                                >
+                                                    Borrow
+                                                </button>
                                             </div>
 
 
