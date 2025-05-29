@@ -141,6 +141,7 @@ import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersC
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
 import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
+import LPVaults from './components/LPVaults/LPVaults.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -2152,6 +2153,8 @@ function App() {
         break;
       case '/mint':
         title = 'Mint | Crystal';
+      case '/lend':
+          title = 'Lend | Crystal';
       case '/vaults':
           title = 'Vaults | Crystal';
         break;
@@ -12966,7 +12969,9 @@ function App() {
               <NFTMintingPage />
             }>
           </Route>
-          <Route path="/vaults" element={<EarnVaults/>} >
+          <Route path="/lend" element={<EarnVaults/>} >
+          </Route>
+          <Route path="/vaults" element={<LPVaults/>} >
           </Route>
           <Route
             path="/portfolio"

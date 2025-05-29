@@ -380,7 +380,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             <ChartCanvas data={data[0]} activeMarket={activeMarket} />
           </>
         )}
-        <Overlay isVisible={overlayVisible} bgcolor={'#0f0f12'} height={30} />
+        <Overlay isVisible={overlayVisible} bgcolor={'#0a0c0e'} height={30} />
       </div>
     </div>
   );

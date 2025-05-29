@@ -177,6 +177,15 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <img src={vault} className="sidebar-icon" />
             <span className="sidebar-label">{t('Vaults')}</span>
           </Link>
+          <Link
+            to="/lend"
+            className={`page-mode-button ${path === '/lend' ? 'active' : ''}`}
+            onMouseEnter={(e) => handleTooltip(e, t('Lend'))}
+            onMouseLeave={handleTooltipHide}
+          >
+            <img src={vault} className="sidebar-icon" />
+            <span className="sidebar-label">{t('Lend')}</span>
+          </Link>
         </div>
 
         <div className="sidebar-bottom">
