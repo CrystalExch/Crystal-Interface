@@ -307,6 +307,10 @@ function App() {
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
   const [totalAccountValue, setTotalAccountValue] = useState<number>(0);
+  const [supplyBorrowTab, setSupplyBorrowTab] = useState<'supply' | 'borrow'>('supply');
+const [supplyMode, setSupplyMode] = useState<'supply' | 'withdraw'>('supply');
+const [supplyBorrowAmount, setSupplyBorrowAmount] = useState('');
+const [supplyBorrowToken, setSupplyBorrowToken] = useState<any>(null);
   const [totalVolume, setTotalVolume] = useState(0);
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -7763,6 +7767,90 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 19 ? (
+  <div ref={popupref} className="supply-borrow-popup">
+    <div className="supply-borrow-header">
+      <div className="supply-borrow-tabs">
+        <button
+          className={`supply-borrow-tab ${supplyBorrowTab === 'supply' ? 'active' : ''}`}
+          onClick={() => setSupplyBorrowTab('supply')}
+        >
+          Supply
+        </button>
+        <button
+          className={`supply-borrow-tab ${supplyBorrowTab === 'borrow' ? 'active' : ''}`}
+          onClick={() => setSupplyBorrowTab('borrow')}
+        >
+          Borrow
+        </button>
+      </div>
+      <button
+        className="supply-borrow-close"
+        onClick={() => setpopup(0)}
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M18 6L6 18M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <div className="supply-borrow-content">
+      <div className="supply-borrow-mode-tabs">
+        <button
+          className={`mode-tab ${supplyMode === 'supply' ? 'active' : ''}`}
+          onClick={() => setSupplyMode('supply')}
+        >
+          Supply
+        </button>
+        <button
+          className={`mode-tab ${supplyMode === 'withdraw' ? 'active' : ''}`}
+          onClick={() => setSupplyMode('withdraw')}
+        >
+          Withdraw
+        </button>
+      </div>
+
+      <div className="supply-borrow-amount-section">
+        <div className="amount-label">Amount</div>
+        <div className="amount-input-container">
+          <input
+            type="text"
+            className="supply-borrow-amount-input"
+            placeholder="0.00"
+            value={supplyBorrowAmount}
+            onChange={(e) => {
+              if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                setSupplyBorrowAmount(e.target.value);
+              }
+            }}
+          />
+        </div>
+        <div className="amount-usd">$0.00</div>
+      </div>
+
+      <div className="supply-borrow-info">
+        <div className="info-row">
+          <span className="info-label">Available to {supplyBorrowTab === 'supply' ? 'Supply' : 'Borrow'}</span>
+          <span className="info-value">0.00 {supplyBorrowToken?.symbol || 'MON'}</span>
+        </div>
+        <div className="info-row">
+          <span className="info-label">Currently {supplyBorrowTab === 'supply' ? 'Supplying' : 'Borrowing'}</span>
+          <span className="info-value">0.00 {supplyBorrowToken?.symbol || 'MON'}</span>
+        </div>
+        <div className="info-row">
+          <span className="info-label">{supplyBorrowTab === 'supply' ? 'Supplying' : 'Borrowing'} APR</span>
+          <span className="info-value">14.68%</span>
+        </div>
+      </div>
+
+      <button className="supply-borrow-action-button">
+        {supplyBorrowTab === 'supply' 
+          ? (supplyMode === 'supply' ? 'Supply' : 'Withdraw') 
+          : (supplyMode === 'supply' ? 'Borrow' : 'Repay')} {supplyBorrowToken?.symbol || 'MON'}
+      </button>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
@@ -12971,7 +13059,8 @@ function App() {
           </Route>
           <Route path="/lend" element={<EarnVaults/>} >
           </Route>
-          <Route path="/vaults" element={<LPVaults/>} >
+          <Route path="/vaults" element={<LPVaults setpopup={setpopup}
+/>} >
           </Route>
           <Route
             path="/portfolio"

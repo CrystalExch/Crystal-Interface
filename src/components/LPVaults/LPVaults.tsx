@@ -56,6 +56,12 @@ interface LPToken {
     address: string;
 }
 
+interface LPVaultsProps {
+    setpopup: (value: number) => void;
+    setSupplyBorrowInitialTab?: (tab: 'supply' | 'borrow') => void;
+    setSupplyBorrowVault?: (vault: any) => void;
+}
+
 const lpPerformanceData = [
     { name: 'Jan', value: 12.4 },
     { name: 'Feb', value: 14.8 },
@@ -89,7 +95,7 @@ const LP_TIME_RANGES = {
     all: lpTvlData.length,
 };
 
-const LPVaults: React.FC = () => {
+const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab, setSupplyBorrowVault }) => {
     const [lpActiveTab, setLpActiveTab] = useState<'all' | 'deposited'>('all');
     const [lpSelectedVault, setLpSelectedVault] = useState<string | null>(null);
     const [lpDepositAmount, setLpDepositAmount] = useState('0.00');
@@ -599,8 +605,6 @@ const LPVaults: React.FC = () => {
                 <div className="lp-rectangle">
                     {!lpSelectedVault ? (
                         <>
-
-
                             <div className="lp-vaults-grid">
                                 <div className="lp-vaults-list-header">
                                     <div className="lp-col lp-asset-col">Asset</div>
@@ -632,7 +636,6 @@ const LPVaults: React.FC = () => {
                                                     color="#ffffff79"
                                                 />
                                                 <div className="lp-token-pair-icons">
-
                                                     <img
                                                         src={vault.tokens.first.icon}
                                                         alt={vault.tokens.first.symbol}
@@ -703,14 +706,14 @@ const LPVaults: React.FC = () => {
                                             <div className="lp-col lp-borrowed-ltv">80%</div>
                                             <div className="lp-col lp-supply-apy-col">
                                                 <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
-                                                        <img src={iconwbtc} alt="WBTC" className="lp-collateral-token-icon" />
-        <img src={iconshmonad} alt="shMON" className="lp-collateral-token-icon" />
-        <img src={iconsol} alt="SOL" className="lp-collateral-token-icon" />
-                                                    <button
+                                                <img src={iconwbtc} alt="WBTC" className="lp-collateral-token-icon" />
+                                                <img src={iconshmonad} alt="shMON" className="lp-collateral-token-icon" />
+                                                <img src={iconsol} alt="SOL" className="lp-collateral-token-icon" />
+                                                <button
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        showLpVaultDetail(vault.id);
+                                                        setpopup(19);
                                                     }}
                                                 >
                                                     Supply
@@ -720,12 +723,13 @@ const LPVaults: React.FC = () => {
 
                                             <div className="lp-col lp-borrow-apy-col">
                                                 <div className="lp-borrow-apy-value">{vault.borrowApy}%</div>
-                                                
+
                                                 <button
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        showLpVaultDetail(vault.id);
+                                                        setpopup(19);
+
                                                     }}
                                                 >
                                                     Borrow
