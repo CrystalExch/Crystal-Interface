@@ -1192,8 +1192,8 @@ function App() {
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
-        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 20).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 20).toString(16);
+        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs((prev) => {
@@ -1241,10 +1241,10 @@ function App() {
                             let price = parseInt(chunk.slice(1, 20), 16);
                             let id = parseInt(chunk.slice(20, 32), 16);
                             let size = parseInt(chunk.slice(32, 64), 16);
-                            let alreadyExist = tempcanceledorders.findIndex(
-                              (o: any) => o[0] === price && o[1] === id && o[4] === marketKey
+                            let alreadyExist = tempcanceledorders.some(
+                              (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                             );
-                            if (alreadyExist == -1) {
+                            if (!alreadyExist) {
                               let order = [
                                 price,
                                 id,
