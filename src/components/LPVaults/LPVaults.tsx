@@ -40,7 +40,10 @@ interface LPVault {
     totalBorrowed: string;
     borrowApy: number;
 }
-
+export interface Token {
+    icon: string;
+    symbol: string;
+}
 interface LPTokenDeposit {
     symbol: string;
     icon: string;
@@ -60,6 +63,9 @@ interface LPVaultsProps {
     setpopup: (value: number) => void;
     setSupplyBorrowInitialTab?: (tab: 'supply' | 'borrow') => void;
     setSupplyBorrowVault?: (vault: any) => void;
+    onSelectToken: (token: Token) => void;
+    selectedToken: Token | null;
+
 }
 
 const lpPerformanceData = [
@@ -95,7 +101,7 @@ const LP_TIME_RANGES = {
     all: lpTvlData.length,
 };
 
-const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab, setSupplyBorrowVault }) => {
+const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab, setSupplyBorrowVault, onSelectToken, selectedToken, }) => {
     const [lpActiveTab, setLpActiveTab] = useState<'all' | 'deposited'>('all');
     const [lpSelectedVault, setLpSelectedVault] = useState<string | null>(null);
     const [lpDepositAmount, setLpDepositAmount] = useState('0.00');
@@ -713,8 +719,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+                                                        onSelectToken({
+                                                            icon: vault.tokens.first.icon,
+                                                            symbol: vault.tokens.first.symbol,
+                                                        });
                                                         setpopup(19);
                                                     }}
+
                                                 >
                                                     Supply
                                                 </button>
@@ -728,8 +739,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+                                                        onSelectToken({
+                                                            icon: vault.tokens.first.icon,
+                                                            symbol: vault.tokens.first.symbol,
+                                                        });
                                                         setpopup(19);
-
                                                     }}
                                                 >
                                                     Borrow

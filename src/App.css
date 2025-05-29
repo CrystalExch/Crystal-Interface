@@ -6824,7 +6824,7 @@ input[type="email"] {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 350px;
-  border-radius: 16px;
+  border-radius: 12px;
   z-index: 1000;
 }
 
@@ -6918,7 +6918,7 @@ input[type="email"] {
 }
 
 .mode-tab.active {
-  background: #141417;
+  background: #1f1f25;
   color: #fff;
 }
 
@@ -6935,7 +6935,7 @@ input[type="email"] {
 
 .amount-label {
   font-size: 0.8rem;
-  color: #888;
+  color: #9f9f9f;
   padding-left: 14px;
   margin-bottom: -8px;
   margin-top: 5px;
@@ -6998,7 +6998,7 @@ input[type="email"] {
 
 .amount-usd {
   font-size: 0.8rem;
-  color: #888;
+  color: #888888b8;
   padding-left: 16px;
   margin-bottom: 5px;
   margin-top: -8px;
@@ -7066,10 +7066,30 @@ input[type="email"] {
   transform: none;
 }
 
-/* Responsive */
-@media (max-width: 480px) {
-  .supply-borrow-popup {
-    width: calc(100vw - 32px);
-    max-width: 420px;
-  }
+
+.selected-token-display-top {
+  position: absolute;
+  right: 15px;
+  top: 30px;
+  display: flex;
+  align-items: center;
 }
+.selected-token-icon-top {
+  width: 25px; height: 25px;
+  margin-right: 0.25rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.05);
+}
+.selected-token-ticker-top {
+  font-weight: 400;
+  font-size: 1.1rem;
+}
+.amount-available-top {
+  display: flex;
+  position: absolute;
+  align-items: center;
+  top: 5px; right: 12px;
+  font-size: 0.75rem;
+  color: #888;
+}
+.supply-borrow-amount-section { position: relative; }
