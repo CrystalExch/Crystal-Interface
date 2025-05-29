@@ -128,10 +128,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     }
 
     allCandles.reverse();
-    let lastClose: number | null = null;
     return allCandles.map((candle: any) => {
       const priceFactor = Number(activeMarket.priceFactor);
-      const open = lastClose !== null ? lastClose : candle.open / priceFactor;
+      const open = candle.open / priceFactor;
       const close = candle.close / priceFactor;
 
       let high = candle.high / priceFactor;
@@ -139,8 +138,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     
       high = Math.min(high, Math.max(open, close) * 1.01);
       low = Math.max(low, Math.min(open, close) * 0.99);
-
-      lastClose = close;
 
       return {
         time: candle.time * 1000,

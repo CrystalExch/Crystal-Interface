@@ -1134,7 +1134,7 @@ function App() {
 
     (async () => {
       let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(25)).toString(16)
+      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
       endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
     })()
 
@@ -1192,8 +1192,8 @@ function App() {
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
-        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 25).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
+        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 20).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 20).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs((prev) => {
@@ -1201,16 +1201,16 @@ function App() {
           let tempqueue = [...queue];
           let tempset = new Set(set);
           setorders((orders) => {
-            let temporders = [...orders];
+            let temporders = orders;
             let ordersChanged = false;
             setcanceledorders((canceledorders) => {
-              let tempcanceledorders = [...canceledorders];
+              let tempcanceledorders = canceledorders;
               let canceledOrdersChanged = false;
               settradesByMarket((tradesByMarket: any) => {
-                let temptradesByMarket = { ...tradesByMarket };
+                let temptradesByMarket = tradesByMarket;
                 let tradesByMarketChanged = false;
                 settradehistory((tradehistory: any) => {
-                  let updatedTradeHistory = [...tradehistory];
+                  let updatedTradeHistory = tradehistory;
                   let tradeHistoryChanged = false;
                   if (Array.isArray(orderlogs)) {
                     for (const log of orderlogs) {
@@ -1241,68 +1241,73 @@ function App() {
                             let price = parseInt(chunk.slice(1, 20), 16);
                             let id = parseInt(chunk.slice(20, 32), 16);
                             let size = parseInt(chunk.slice(32, 64), 16);
-                            let order = [
-                              price,
-                              id,
-                              size /
-                              price,
-                              buy,
-                              marketKey,
-                              log['transactionHash'],
-                              _timestamp,
-                              0,
-                              size,
-                              2,
-                            ];
-                            temporders.push(order)
-                            tempcanceledorders.push([
-                              price,
-                              id,
-                              size /
-                              price,
-                              buy,
-                              marketKey,
-                              log['transactionHash'],
-                              _timestamp,
-                              0,
-                              size,
-                              2,
-                            ])
-                            let quoteasset =
-                              markets[marketKey].quoteAddress;
-                            let baseasset =
-                              markets[marketKey].baseAddress;
-                            let amountquote = (
-                              size /
-                              (Number(
-                                markets[marketKey].scaleFactor,
-                              ) *
+                            let alreadyExist = tempcanceledorders.findIndex(
+                              (o: any) => o[0] === price && o[1] === id && o[4] === marketKey
+                            );
+                            if (alreadyExist == -1) {
+                              let order = [
+                                price,
+                                id,
+                                size /
+                                price,
+                                buy,
+                                marketKey,
+                                log['transactionHash'],
+                                _timestamp,
+                                0,
+                                size,
+                                2,
+                              ];
+                              temporders.push(order)
+                              tempcanceledorders.push([
+                                price,
+                                id,
+                                size /
+                                price,
+                                buy,
+                                marketKey,
+                                log['transactionHash'],
+                                _timestamp,
+                                0,
+                                size,
+                                2,
+                              ])
+                              let quoteasset =
+                                markets[marketKey].quoteAddress;
+                              let baseasset =
+                                markets[marketKey].baseAddress;
+                              let amountquote = (
+                                size /
+                                (Number(
+                                  markets[marketKey].scaleFactor,
+                                ) *
+                                  10 **
+                                  Number(
+                                    markets[marketKey]
+                                      .quoteDecimals,
+                                  ))
+                              ).toFixed(2);
+                              let amountbase = customRound(
+                                size /
+                                price /
                                 10 **
                                 Number(
                                   markets[marketKey]
-                                    .quoteDecimals,
-                                ))
-                            ).toFixed(2);
-                            let amountbase = customRound(
-                              size /
-                              price /
-                              10 **
-                              Number(
-                                markets[marketKey]
-                                  .baseDecimals,
-                              ),
-                              3,
-                            );
-                            newTxPopup(
-                              log['transactionHash'],
-                              'limit',
-                              buy ? quoteasset : baseasset,
-                              buy ? baseasset : quoteasset,
-                              buy ? amountquote : amountbase,
-                              buy ? amountbase : amountquote,
-                              `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                              '',
-                            );
+                                    .baseDecimals,
+                                ),
+                                3,
+                              );
+                              newTxPopup(
+                                log['transactionHash'],
+                                'limit',
+                                buy ? quoteasset : baseasset,
+                                buy ? baseasset : quoteasset,
+                                buy ? amountquote : amountbase,
+                                buy ? amountbase : amountquote,
+                                `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                                '',
+                              );
+                            }
                           } else {
                             let buy = parseInt(chunk.slice(0, 1), 16) == 3;
                             let price = parseInt(chunk.slice(1, 20), 16);
@@ -1318,8 +1323,7 @@ function App() {
                                 canceledOrder[4] ==
                                 marketKey,
                             );
-                            if (canceledOrderIndex !== -1) {
-                              tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                            if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
                               tempcanceledorders[canceledOrderIndex][9] = 0;
                               tempcanceledorders[canceledOrderIndex][8] =
                                 tempcanceledorders[canceledOrderIndex][8] -
@@ -1328,54 +1332,53 @@ function App() {
                                 _timestamp;
                             }
                             let index = temporders.findIndex(
-                              (sublist: any) =>
-                                sublist[0] == price &&
-                                sublist[1] == id &&
-                                sublist[4] == marketKey,
+                              (o: any) =>
+                                o[0] == price &&
+                                o[1] == id &&
+                                o[4] == marketKey,
                             );
                             if (index != -1) {
                               if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                                temporders[index] = [...temporders[index]]
                                 temporders[index][10].remove();
                                 temporders[index].splice(10, 1)
                               }
                               temporders.splice(index, 1);
-                            }
-                            let quoteasset =
+                              let quoteasset =
                               markets[marketKey].quoteAddress;
-                            let baseasset =
-                              markets[marketKey].baseAddress;
-                            let amountquote = (
-                              size /
-                              (Number(
-                                markets[marketKey].scaleFactor,
-                              ) *
+                              let baseasset =
+                                markets[marketKey].baseAddress;
+                              let amountquote = (
+                                size /
+                                (Number(
+                                  markets[marketKey].scaleFactor,
+                                ) *
+                                  10 **
+                                  Number(
+                                    markets[marketKey]
+                                      .quoteDecimals,
+                                  ))
+                              ).toFixed(2);
+                              let amountbase = customRound(
+                                size /
+                                price /
                                 10 **
                                 Number(
                                   markets[marketKey]
-                                    .quoteDecimals,
-                                ))
-                            ).toFixed(2);
-                            let amountbase = customRound(
-                              size /
-                              price /
-                              10 **
-                              Number(
-                                markets[marketKey]
-                                  .baseDecimals,
-                              ),
-                              3,
-                            );
-                            newTxPopup(
-                              log['transactionHash'],
-                              'cancel',
-                              buy ? quoteasset : baseasset,
-                              buy ? baseasset : quoteasset,
-                              buy ? amountquote : amountbase,
-                              buy ? amountbase : amountquote,
-                              `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                              '',
-                            );
+                                    .baseDecimals,
+                                ),
+                                3,
+                              );
+                              newTxPopup(
+                                log['transactionHash'],
+                                'cancel',
+                                buy ? quoteasset : baseasset,
+                                buy ? baseasset : quoteasset,
+                                buy ? amountquote : amountbase,
+                                buy ? amountbase : amountquote,
+                                `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                                '',
+                              );
+                            }
                           }
                         }
                       }
@@ -1385,7 +1388,10 @@ function App() {
                     for (const log of tradelogs) {
                       const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
                       const marketKey = addresstoMarket[log['address']];
-                      if (!tempset.has(logIdentifier) && marketKey) {
+                      if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+                        trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
+                        trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
+                        trade[5] == log['transactionHash'])) {
                         if (tempqueue.length >= 10000) {
                           const removed = tempqueue.shift();
                           tempset.delete(removed!);
@@ -1424,8 +1430,6 @@ function App() {
                           if (orderIndex != -1 && canceledOrderIndex != -1) {
                             ordersChanged = true;
                             canceledOrdersChanged = true;
-                            temporders[orderIndex] = [...temporders[orderIndex]]
-                            tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                             let order = [...temporders[orderIndex]];
                             let buy = order[3];
                             let quoteasset =
@@ -1491,10 +1495,8 @@ function App() {
                               temporders.splice(orderIndex, 1);
                               tempcanceledorders[canceledOrderIndex][9] =
                                 1;
-                              tempcanceledorders[canceledOrderIndex][7] =
-                                order[2] - size / order[0];
-                              tempcanceledorders[canceledOrderIndex][8] =
-                                order[8] - size;
+                              tempcanceledorders[canceledOrderIndex][7] = order[2]
+                              tempcanceledorders[canceledOrderIndex][8] = order[8];
                             } else {
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
                                 temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
@@ -1506,28 +1508,47 @@ function App() {
                             }
                           }
                         }
+                        tradesByMarketChanged = true;
+                        if (!Array.isArray(temptradesByMarket[marketKey])) {
+                          temptradesByMarket[marketKey] = [];
+                        }
+                        let amountIn = parseInt(log['data'].slice(2, 34), 16);
+                        let amountOut = parseInt(log['data'].slice(34, 66), 16);
+                        let buy = parseInt(log['data'].slice(66, 67), 16);
+                        let price = parseInt(log['data'].slice(98, 130), 16);
+                        temptradesByMarket[marketKey] = [
+                          [
+                            amountIn,
+                            amountOut,
+                            buy,
+                            price,
+                            marketKey,
+                            log['transactionHash'],
+                            _timestamp,
+                          ],
+                          ...temptradesByMarket[marketKey],
+                        ];
                         if (
                           log['topics'][1].slice(26) ==
                           address?.slice(2).toLowerCase()
                         ) {
                           tradeHistoryChanged = true;
                           updatedTradeHistory.push([
-                            parseInt(log['data'].slice(2, 34), 16),
-                            parseInt(log['data'].slice(34, 66), 16),
-                            parseInt(log['data'].slice(66, 67), 16),
-                            parseInt(log['data'].slice(98, 130), 16),
+                            amountIn,
+                            amountOut,
+                            buy,
+                            price,
                             marketKey,
                             log['transactionHash'],
                             _timestamp,
                             1,
                           ])
-                          let buy = parseInt(log['data'].slice(66, 67), 16);
                           let quoteasset =
                             markets[marketKey].quoteAddress;
                           let baseasset =
                             markets[marketKey].baseAddress;
-                          let amountin = customRound(
-                            parseInt(log['data'].slice(2, 34), 16) /
+                          let popupAmountIn = customRound(
+                            amountIn /
                             10 **
                             Number(
                               buy
@@ -1538,8 +1559,8 @@ function App() {
                             ),
                             3,
                           );
-                          let amountout = customRound(
-                            parseInt(log['data'].slice(34, 66), 16) /
+                          let popupAmountOut = customRound(
+                            amountOut /
                             10 **
                             Number(
                               buy
@@ -1555,28 +1576,12 @@ function App() {
                             'swap',
                             buy ? quoteasset : baseasset,
                             buy ? baseasset : quoteasset,
-                            amountin,
-                            amountout,
+                            popupAmountIn,
+                            popupAmountOut,
                             '',
                             '',
                           );
                         }
-                        tradesByMarketChanged = true;
-                        if (!Array.isArray(temptradesByMarket[marketKey])) {
-                          temptradesByMarket[marketKey] = [];
-                        }
-                        temptradesByMarket[marketKey] = [
-                          [
-                            parseInt(log['data'].slice(2, 34), 16),
-                            parseInt(log['data'].slice(34, 66), 16),
-                            parseInt(log['data'].slice(66, 67), 16),
-                            parseInt(log['data'].slice(98, 130), 16),
-                            marketKey,
-                            log['transactionHash'],
-                            _timestamp,
-                          ],
-                          ...temptradesByMarket[marketKey],
-                        ];
                         setChartData(([existingBars, existingIntervalLabel]) => {
                           const updatedBars = [...existingBars];
                           const barSizeSec =
@@ -1690,28 +1695,28 @@ function App() {
                     }
                   }
                   if (tradeHistoryChanged) {
-                    return updatedTradeHistory
+                    return [...updatedTradeHistory]
                   }
                   else {
                     return tradehistory
                   }
                 });
                 if (tradesByMarketChanged) {
-                  return temptradesByMarket;
+                  return {...temptradesByMarket};
                 }
                 else {
                   return tradesByMarket
                 }
               });
               if (canceledOrdersChanged) {
-                return tempcanceledorders
+                return [...tempcanceledorders]
               }
               else {
                 return canceledorders
               }
             })
             if (ordersChanged) {
-              return temporders
+              return [...temporders]
             }
             else {
               return orders
@@ -1727,7 +1732,7 @@ function App() {
       const workerCode = `
         setInterval(() => {
           self.postMessage('fetch');
-        }, 700);
+        }, 800);
       `;
 
       const blob = new Blob([workerCode], { type: 'application/javascript' });
@@ -1738,8 +1743,10 @@ function App() {
       };
     };
 
-    initWorker();
-
+    setTimeout(() => {
+      initWorker();
+    }, 2000);
+    
     return () => {
       if (worker) {
         worker.terminate();
