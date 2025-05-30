@@ -2688,8 +2688,6 @@ function App() {
                           resolve();
                           txReceiptResolvers.delete(log['transactionHash']);
                         }
-                        ordersChanged = true;
-                        canceledOrdersChanged = true;
                         let _timestamp = parseInt(log['blockTimestamp'], 16);
                         let _orderdata = log['data'].slice(130);
                         for (let i = 0; i < _orderdata.length; i += 64) {
@@ -2704,6 +2702,8 @@ function App() {
                               (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                             );
                             if (!alreadyExist) {
+                              ordersChanged = true;
+                              canceledOrdersChanged = true;
                               let order = [
                                 price,
                                 id,
@@ -2779,6 +2779,8 @@ function App() {
                                 o[4] == marketKey,
                             );
                             if (index != -1) {
+                              ordersChanged = true;
+                              canceledOrdersChanged = true;
                               let canceledOrderIndex: number;
                               canceledOrderIndex = tempcanceledorders.findIndex(
                                 (canceledOrder) =>
