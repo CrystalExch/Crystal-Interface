@@ -2464,7 +2464,9 @@ function App() {
                         address?.slice(2).toLowerCase()) {
                         if (tempset.size >= 10000) {
                           const first = tempset.values().next().value;
-                          tempset.delete(first);
+                          if (first !== undefined) {
+                            tempset.delete(first);
+                          }
                         }
                         tempset.add(logIdentifier);
                         const resolve = txReceiptResolvers.get(log['transactionHash']);
@@ -2641,7 +2643,9 @@ function App() {
                         trade[5] == log['transactionHash'])) {
                         if (tempset.size >= 10000) {
                           const first = tempset.values().next().value;
-                          tempset.delete(first);
+                          if (first !== undefined) {
+                            tempset.delete(first);
+                          }
                         }
                         tempset.add(logIdentifier);
                         const resolve = txReceiptResolvers.get(log['transactionHash']);
