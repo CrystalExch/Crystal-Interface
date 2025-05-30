@@ -8046,7 +8046,7 @@ function App() {
               <img className="button1pic" src={tokendict[tokenIn].image} />
               <span>{tokendict[tokenIn].ticker || '?'}</span>
               <svg
-                className="button-arrow"
+                className={`button-arrow ${popup == 1 ? 'open' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -8307,7 +8307,7 @@ function App() {
               <img className="button2pic" src={tokendict[tokenOut].image} />
               <span>{tokendict[tokenOut].ticker || '?'}</span>
               <svg
-                className="button-arrow"
+                className={`button-arrow ${popup == 2 ? 'open' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -9586,7 +9586,7 @@ function App() {
               <img className="button1pic" src={tokendict[tokenIn].image} />
               <span>{tokendict[tokenIn].ticker || '?'}</span>
               <svg
-                className="button-arrow"
+                className={`button-arrow ${popup == 1 ? 'open' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -9970,7 +9970,7 @@ function App() {
                 <img className="button2pic" src={tokendict[tokenOut].image} />
                 <span>{tokendict[tokenOut].ticker || '?'}</span>
                 <svg
-                  className="button-arrow"
+                  className={`button-arrow ${popup == 2 ? 'open' : ''}`}
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   width="16"
@@ -11693,7 +11693,7 @@ function App() {
               <img className="button1pic" src={tokendict[tokenIn].image} />
               <span>{tokendict[tokenIn].ticker || '?'}</span>
               <svg
-                className="button-arrow"
+                className={`button-arrow ${popup == 1 ? 'open' : ''}`}
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
                 width="16"
@@ -11897,7 +11897,7 @@ function App() {
                 <img className="button2pic" src={tokendict[tokenOut].image} />
                 <span>{tokendict[tokenOut].ticker || "?"}</span>
                 <svg
-                  className="button-arrow"
+                  className={`button-arrow ${popup == 2 ? 'open' : ''}`}
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   width="16"
