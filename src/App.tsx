@@ -108,7 +108,6 @@ import firstPlacePfp from './assets/leaderboard_first.png';
 import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
-import SocialBanner from './assets/SocialBanner.png';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -666,10 +665,7 @@ function App() {
       ? (stored as string)
       : 'Quote';
   });
-  const [_processedLogs, setProcessedLogs] = useState<{ queue: string[]; set: Set<string> }>({
-    queue: [],
-    set: new Set(),
-  });
+  const [_processedLogs, setProcessedLogs] = useState<Set<string>>(new Set());
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const emptyFunction = useCallback(() => { }, []);
   const memoizedTokenList = useMemo(
@@ -2382,217 +2378,11 @@ function App() {
     let worker: any;
     let isAddressInfoFetching = false;
 
-    (async () => {
-      if (address) {
-        setTimeout(() => {
-          setTransactions([]);
-          settradehistory([]);
-          setorders([]);
-          setcanceledorders([]);
-          setrecipient('');
-        }, 10);
-        isAddressInfoFetching = true;
-        try {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-          let temptradehistory: any[] = [];
-          let temporders: any[] = [];
-          let tempcanceledorders: any[] = [];
-
-          const query = `
-            query {
-              marketFilledMaps(
-                where: {
-                  caller: "${address}"
-                }
-              ) {
-                id
-                orders(first: 1000) {
-                  id
-                  caller
-                  amountIn
-                  amountOut
-                  buySell
-                  price
-                  contractAddress
-                  transactionHash
-                  timeStamp
-                }
-              }
-              orders1: orderMaps(where:{caller: "${address}"}) {
-                id
-                batches(first: 200, orderDirection: desc, orderBy: id) {
-                  id
-                  orders(first: 1000, where:{status: 2}) {
-                    id
-                    caller
-                    originalSizeBase
-                    originalSizeQuote
-                    filledAmountBase
-                    filledSizeQuote
-                    price
-                    buySell
-                    contractAddress
-                    transactionHash
-                    timestamp
-                    status
-                  }
-                }
-              }
-              orders2: orderMaps(where:{caller: "${address}"}) {
-                id
-                batches(first: 10, orderDirection: desc, orderBy: id) {
-                  id
-                  orders(first: 1000, where: { status_not: 2 }) {
-                    id
-                    caller
-                    originalSizeBase
-                    originalSizeQuote
-                    filledAmountBase
-                    filledSizeQuote
-                    price
-                    buySell
-                    contractAddress
-                    transactionHash
-                    timestamp
-                    filledTimestamp
-                    status
-                  }
-                }
-              }
-              filledMaps(where:{caller: "${address}"}) {
-                id
-                orders(first: 1000) {
-                  id
-                  caller
-                  originalSizeBase
-                  originalSizeQuote
-                  filledAmountBase
-                  filledSizeQuote
-                  price
-                  buySell
-                  contractAddress
-                  transactionHash
-                  timestamp
-                  filledTimestamp
-                  status
-                }
-              }
-            }
-          `;
-
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ query }),
-          });
-
-          const result = await response.json();
-
-          if (!isAddressInfoFetching) return;
-          const map = result?.data?.marketFilledMaps || [];
-          for (const batch of map) {
-            for (const event of batch.orders) {
-              const marketKey = addresstoMarket[event.contractAddress];
-              if (marketKey) {
-                temptradehistory.push([
-                  event.amountIn,
-                  event.amountOut,
-                  event.buySell,
-                  event.price,
-                  marketKey,
-                  event.transactionHash,
-                  event.timeStamp,
-                  1,
-                ]);
-              }
-            }
-          }
-
-          const updatedMaps = (result?.data?.orders1 || []).concat(result?.data?.orders2 || []).concat(result?.data?.filledMaps || []);
-          for (const orderMap of updatedMaps) {
-            const batches = orderMap.batches || [];
-            for (const batch of batches) {
-              const orders = batch.orders || [];
-              for (const order of orders) {
-                const marketKey = addresstoMarket[order.contractAddress];
-                if (!marketKey) continue;
-                const row = [
-                  parseInt(order.id.split('-')[0], 10),
-                  parseInt(order.id.split('-')[2], 10),
-                  Number(order.originalSizeBase.toString()),
-                  order.buySell,
-                  marketKey,
-                  order.transactionHash,
-                  order.timestamp,
-                  Number(order.filledAmountBase.toString()),
-                  Number(order.originalSizeQuote.toString()),
-                  order.status,
-                ];
-
-                if (order.status === 2) {
-                  temporders.push(row);
-                  tempcanceledorders.push(row);
-                } else if (order.status === 1) {
-                  const tradeRow = [
-                    order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
-                    order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
-                    order.buySell,
-                    parseInt(order.id.split('-')[0], 10),
-                    marketKey,
-                    order.transactionHash,
-                    order?.filledTimestamp ? order.filledTimestamp : order.timestamp,
-                    0
-                  ];
-
-                  const row = [
-                    parseInt(order.id.split('-')[0], 10),
-                    parseInt(order.id.split('-')[2], 10),
-                    Number(order.originalSizeBase.toString()),
-                    order.buySell,
-                    marketKey,
-                    order.transactionHash,
-                    order.timestamp,
-                    Number(order.filledAmountBase.toString()),
-                    Number(order.originalSizeQuote.toString()),
-                    order.status,
-                  ];
-
-                  temptradehistory.push(tradeRow);
-                  tempcanceledorders.push(row);
-                } else {
-                  tempcanceledorders.push(row);
-                }
-              }
-            }
-          }
-
-          settradehistory([...temptradehistory]);
-          setorders([...temporders]);
-          setcanceledorders([...tempcanceledorders]);
-          setaddressinfoloading(false);
-          isAddressInfoFetching = false
-        } catch (error) {
-          console.error("Error fetching logs:", error);
-          setaddressinfoloading(false);
-        }
-      }
-      else if (!user) {
-        setSliderPercent(0)
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector('.slider-percentage-popup');
-        if (slider && popup) {
-          (popup as HTMLElement).style.left = `${15 / 2}px`;
-        }
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setaddressinfoloading(false);
-      }
-      let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
-      endBlockNumber = '0x' + (firstBlockNumber + BigInt(20)).toString(16)
-    })()
+    const workerCode = `
+      setInterval(() => {
+        self.postMessage('fetch');
+      }, 750);
+    `;
 
     const fetchData = async () => {
       try {
@@ -2649,13 +2439,11 @@ function App() {
         const result = await req.json();
         if (liveStreamCancelled) return;
         startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 20).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
-        setProcessedLogs((prev) => {
-          const { queue, set } = prev;
-          let tempqueue = [...queue];
-          let tempset = new Set(set);
+        setProcessedLogs(prev => {
+          let tempset = new Set(prev);
           setorders((orders) => {
             let temporders = [...orders];
             let ordersChanged = false;
@@ -2674,11 +2462,10 @@ function App() {
                       const marketKey = addresstoMarket[log['address']];
                       if (!tempset.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
                         address?.slice(2).toLowerCase()) {
-                        if (tempqueue.length >= 10000) {
-                          const removed = tempqueue.shift();
-                          tempset.delete(removed!);
+                        if (tempset.size >= 10000) {
+                          const first = tempset.values().next().value;
+                          tempset.delete(first);
                         }
-                        tempqueue.push(logIdentifier);
                         tempset.add(logIdentifier);
                         const resolve = txReceiptResolvers.get(log['transactionHash']);
                         if (resolve) {
@@ -2789,6 +2576,7 @@ function App() {
                                   marketKey,
                               );
                               if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+                                tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                                 tempcanceledorders[canceledOrderIndex][9] = 0;
                                 tempcanceledorders[canceledOrderIndex][8] =
                                   tempcanceledorders[canceledOrderIndex][8] -
@@ -2797,6 +2585,7 @@ function App() {
                                   _timestamp;
                               }
                               if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                                temporders[index] = [...temporders[index]]
                                 temporders[index][10].remove();
                                 temporders[index].splice(10, 1)
                               }
@@ -2850,11 +2639,10 @@ function App() {
                         trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
                         trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
                         trade[5] == log['transactionHash'])) {
-                        if (tempqueue.length >= 10000) {
-                          const removed = tempqueue.shift();
-                          tempset.delete(removed!);
+                        if (tempset.size >= 10000) {
+                          const first = tempset.values().next().value;
+                          tempset.delete(first);
                         }
-                        tempqueue.push(logIdentifier);
                         tempset.add(logIdentifier);
                         const resolve = txReceiptResolvers.get(log['transactionHash']);
                         if (resolve) {
@@ -2887,6 +2675,8 @@ function App() {
                           if (orderIndex != -1 && canceledOrderIndex != -1) {
                             ordersChanged = true;
                             canceledOrdersChanged = true;
+                            temporders[orderIndex] = [...temporders[orderIndex]]
+                            tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
                             let order = [...temporders[orderIndex]];
                             let buy = order[3];
                             let quoteasset =
@@ -3176,25 +2966,229 @@ function App() {
               return orders
             }
           });
-          return { queue: tempqueue, set: tempset };
+          return tempset;
         })
       } catch {
       }
     };
 
-    const workerCode = `
-      setInterval(() => {
-        self.postMessage('fetch');
-      }, 750);
-    `;
+    (async () => {
+      if (address) {
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+        setrecipient('');
+        isAddressInfoFetching = true;
+        try {
+          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+          let temptradehistory: any[] = [];
+          let temporders: any[] = [];
+          let tempcanceledorders: any[] = [];
 
-    const blob = new Blob([workerCode], { type: 'application/javascript' });
-    worker = new Worker(URL.createObjectURL(blob));
+          const query = `
+            query {
+              marketFilledMaps(
+                where: {
+                  caller: "${address}"
+                }
+              ) {
+                id
+                orders(first: 1000) {
+                  id
+                  caller
+                  amountIn
+                  amountOut
+                  buySell
+                  price
+                  contractAddress
+                  transactionHash
+                  timeStamp
+                }
+              }
+              orders1: orderMaps(where:{caller: "${address}"}) {
+                id
+                batches(first: 200, orderDirection: desc, orderBy: id) {
+                  id
+                  orders(first: 1000, where:{status: 2}) {
+                    id
+                    caller
+                    originalSizeBase
+                    originalSizeQuote
+                    filledAmountBase
+                    filledSizeQuote
+                    price
+                    buySell
+                    contractAddress
+                    transactionHash
+                    timestamp
+                    status
+                  }
+                }
+              }
+              orders2: orderMaps(where:{caller: "${address}"}) {
+                id
+                batches(first: 10, orderDirection: desc, orderBy: id) {
+                  id
+                  orders(first: 1000, where: { status_not: 2 }) {
+                    id
+                    caller
+                    originalSizeBase
+                    originalSizeQuote
+                    filledAmountBase
+                    filledSizeQuote
+                    price
+                    buySell
+                    contractAddress
+                    transactionHash
+                    timestamp
+                    filledTimestamp
+                    status
+                  }
+                }
+              }
+              filledMaps(where:{caller: "${address}"}) {
+                id
+                orders(first: 1000) {
+                  id
+                  caller
+                  originalSizeBase
+                  originalSizeQuote
+                  filledAmountBase
+                  filledSizeQuote
+                  price
+                  buySell
+                  contractAddress
+                  transactionHash
+                  timestamp
+                  filledTimestamp
+                  status
+                }
+              }
+            }
+          `;
 
-    worker.onmessage = () => {
-      fetchData();
-    };
-    
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ query }),
+          });
+
+          const result = await response.json();
+
+          if (!isAddressInfoFetching) return;
+          const map = result?.data?.marketFilledMaps || [];
+          for (const batch of map) {
+            for (const event of batch.orders) {
+              const marketKey = addresstoMarket[event.contractAddress];
+              if (marketKey) {
+                temptradehistory.push([
+                  event.amountIn,
+                  event.amountOut,
+                  event.buySell,
+                  event.price,
+                  marketKey,
+                  event.transactionHash,
+                  event.timeStamp,
+                  1,
+                ]);
+              }
+            }
+          }
+
+          const updatedMaps = (result?.data?.orders1 || []).concat(result?.data?.orders2 || []).concat(result?.data?.filledMaps || []);
+          for (const orderMap of updatedMaps) {
+            const batches = orderMap.batches || [];
+            for (const batch of batches) {
+              const orders = batch.orders || [];
+              for (const order of orders) {
+                const marketKey = addresstoMarket[order.contractAddress];
+                if (!marketKey) continue;
+                const row = [
+                  parseInt(order.id.split('-')[0], 10),
+                  parseInt(order.id.split('-')[2], 10),
+                  Number(order.originalSizeBase.toString()),
+                  order.buySell,
+                  marketKey,
+                  order.transactionHash,
+                  order.timestamp,
+                  Number(order.filledAmountBase.toString()),
+                  Number(order.originalSizeQuote.toString()),
+                  order.status,
+                ];
+
+                if (order.status === 2) {
+                  temporders.push(row);
+                  tempcanceledorders.push(row);
+                } else if (order.status === 1) {
+                  const tradeRow = [
+                    order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
+                    order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
+                    order.buySell,
+                    parseInt(order.id.split('-')[0], 10),
+                    marketKey,
+                    order.transactionHash,
+                    order?.filledTimestamp ? order.filledTimestamp : order.timestamp,
+                    0
+                  ];
+
+                  const row = [
+                    parseInt(order.id.split('-')[0], 10),
+                    parseInt(order.id.split('-')[2], 10),
+                    Number(order.originalSizeBase.toString()),
+                    order.buySell,
+                    marketKey,
+                    order.transactionHash,
+                    order.timestamp,
+                    Number(order.filledAmountBase.toString()),
+                    Number(order.originalSizeQuote.toString()),
+                    order.status,
+                  ];
+
+                  temptradehistory.push(tradeRow);
+                  tempcanceledorders.push(row);
+                } else {
+                  tempcanceledorders.push(row);
+                }
+              }
+            }
+          }
+
+          settradehistory([...temptradehistory]);
+          setorders([...temporders]);
+          setcanceledorders([...tempcanceledorders]);
+          setaddressinfoloading(false);
+          isAddressInfoFetching = false
+        } catch (error) {
+          console.error("Error fetching logs:", error);
+          setaddressinfoloading(false);
+        }
+      }
+      else if (!user) {
+        setSliderPercent(0)
+        const slider = document.querySelector('.balance-amount-slider');
+        const popup = document.querySelector('.slider-percentage-popup');
+        if (slider && popup) {
+          (popup as HTMLElement).style.left = `${15 / 2}px`;
+        }
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+        setaddressinfoloading(false);
+      }
+      let firstBlockNumber = await getBlockNumber(config);
+      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+      endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
+
+      const blob = new Blob([workerCode], { type: 'application/javascript' });
+      worker = new Worker(URL.createObjectURL(blob));
+
+      worker.onmessage = () => {
+        fetchData();
+      };
+    })()
+
     return () => {
       liveStreamCancelled = true;
       isAddressInfoFetching = false;
@@ -3935,7 +3929,7 @@ function App() {
     if (popup !== 14 && popup !== 15) {
       setShowWelcomeScreen(true);
     }
-    if (popup === 14 && showWelcomeScreen) {
+    if (!loading && showWelcomeScreen) {
       const welcomeText = "Introducing Crystals: Season 0";
 
       let index = 0;
@@ -3956,7 +3950,7 @@ function App() {
 
       return () => clearInterval(typingInterval);
     }
-  }, [popup, connected, user != null, loading, showWelcomeScreen]);
+  }, [popup, connected, user != null, loading]);
 
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
@@ -3969,15 +3963,20 @@ function App() {
   const [usernameError, setUsernameError] = useState("");
   const [isRefSigning, setIsRefSigning] = useState(false);
   const [error, setError] = useState('');
-  const [username, setUsername] = useState('')
-  const [usernameResolved, setUsernameResolved] = useState(false)
-  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
+  const [username, setUsername] = useState('');
   const [isConnectEntering, setIsConnectEntering] = useState(false);
-  const backAudioRef = useRef<HTMLAudioElement>(null);
+  const [usernameResolved, setUsernameResolved] = useState(false);
+  const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
   const [animating, setAnimating] = useState(false);
   const [typedText, setTypedText] = useState("");
   const typedTextRef = useRef("");
+  const backAudioRef = useRef<HTMLAudioElement>(null);
 
+  const isValidInput = (value: string) => {
+    const regex = /^[a-zA-Z0-9-]{0,20}$/;
+    return regex.test(value);
+  };
+  
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
@@ -3996,11 +3995,6 @@ function App() {
     }, 200);
   };
   
-  const isValidInput = (value: string) => {
-    const regex = /^[a-zA-Z0-9-]{0,20}$/;
-    return regex.test(value);
-  };
-
   const handleSetRef = async (used: string) => {
     let lookup
     setIsRefSigning(true);
@@ -4076,26 +4070,14 @@ function App() {
     handleCompleteChallenge();
   };
 
-  const handleBack = () => {
+  const handleBackClick = () => {
+    if (backAudioRef.current) {
+      backAudioRef.current.currentTime = 0;
+      backAudioRef.current.play().catch(console.error);
+    }
     if (currentStep > 0) {
       setCurrentStep(prevStep => prevStep - 1);
     }
-  };
-
-  const handleBackToUsername = () => {
-    setIsTransitioning(true);
-    setTransitionDirection('backward');
-    setExitingChallenge(true);
-
-    setTimeout(() => {
-      setpopup(14);
-      setCurrentStep(0);
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-        setExitingChallenge(false);
-      });
-    }, 10);
   };
 
   const handleCompleteChallenge = () => {
@@ -4179,21 +4161,25 @@ function App() {
       setIsUsernameSigning(false);
     }
   };
-  
-  const handleBackClick = () => {
-    if (backAudioRef.current) {
-      backAudioRef.current.currentTime = 0;
-      backAudioRef.current.play().catch(console.error);
-    }
-    handleBack();
-  };
 
   const handleBackToUsernameWithAudio = () => {
     if (backAudioRef.current) {
       backAudioRef.current.currentTime = 0;
       backAudioRef.current.play().catch(console.error);
     }
-    handleBackToUsername();
+    setIsTransitioning(true);
+    setTransitionDirection('backward');
+    setExitingChallenge(true);
+
+    setTimeout(() => {
+      setpopup(14);
+      setCurrentStep(0);
+
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setExitingChallenge(false);
+      });
+    }, 10);
   };
 
   useEffect(() => {
@@ -4216,7 +4202,7 @@ function App() {
           setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
-              setpopup(15);
+              setpopup(18);
               setTimeout(() => {
                 setIsTransitioning(false);
               });
@@ -6810,17 +6796,9 @@ function App() {
           <div ref={popupref} className="connect-wallet-background unconnected">
             <div className="social-content-container">
               <div className="social-content">
-                <div className="social-banner-wrapper">
-                  <img
-                    src={SocialBanner}
-                    className="social-banner-image"
-                  />
-                </div>
-
                 <h1 className="social-heading">Join our growing community!</h1>
                 <p className="social-description">
-                  Crystal Exchange is being released in phases. Stay updated with
-                  the latest news and features.
+                  Crystal Exchange is being released in phases. Be the first to know when new features arrive by joining our vibrant community!
                 </p>
 
                 <div className="social-buttons">
@@ -7236,7 +7214,7 @@ function App() {
     {connected ? (
       <>
         <div className="step-indicators">
-          {[1, 2, 3, 4, 5].map((index) => (
+          {[1, 2, 3, 4, 5, 6].map((index) => (
             <div
               key={index}
               className={`step-indicator ${
@@ -7246,7 +7224,7 @@ function App() {
                   ? index === 2 ? 'active' : ''
                   : popup === 18
                   ? index === 3 ? 'active' : ''
-                  : (currentStep + 3) === index ? 'active' : ''
+                  : (currentStep + 4) === index ? 'active' : ''
                 } ${
                 popup === 14
                   ? index < 1 ? 'completed' : ''
@@ -7254,7 +7232,7 @@ function App() {
                   ? index < 2 ? 'completed' : ''
                   : popup === 18
                   ? index < 3 ? 'completed' : ''
-                  : (currentStep + 3) > index ? 'completed' : ''
+                  : (currentStep + 4) > index ? 'completed' : ''
                 } ${isTransitioning ? 'transitioning' : ''}`}
             />
           ))}
@@ -7272,16 +7250,8 @@ function App() {
                     <div className="onboarding-header">
                       <h2 className="onboarding-title">Join our growing community!</h2>
                       <p className="onboarding-subtitle">
-                        Crystal Exchange is being released in phases. Stay updated with
-                        the latest news and features.
+                        Crystal is being released in phases. Join our community to be the first to know when new features arrive.
                       </p>
-                    </div>
-
-                    <div className="social-banner-wrapper">
-                      <img
-                        src={SocialBanner}
-                        className="social-banner-image"
-                      />
                     </div>
 
                     <div className="social-buttons">
@@ -7736,9 +7706,16 @@ function App() {
                 <div className="welcome-text-container">
                   <p className="welcome-text">{typedText}</p>
                 </div>
-                {animationStarted && (
+                {animationStarted && typedText ? (
                   <button
                     className="welcome-enter-button"
+                    onClick={handleWelcomeTransition}
+                  >
+                    EXPLORE NOW
+                  </button>
+                ) : (
+                  <button
+                    className="welcome-enter-button noshow"
                     onClick={handleWelcomeTransition}
                   >
                     EXPLORE NOW
@@ -8623,7 +8600,7 @@ function App() {
                     '',
                     ''
                   );
-                } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true){
+                } else if (tokenIn == '1' && tokendict[tokenOut]?.lst == true){
                   hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
                   newTxPopup(
                     (client
@@ -8648,7 +8625,7 @@ function App() {
                             (amountOutSwap * slippage + 5000n) / 10000n,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8665,7 +8642,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8687,7 +8664,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8702,7 +8679,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8714,7 +8691,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8729,7 +8706,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8778,7 +8755,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8795,7 +8772,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8809,7 +8786,7 @@ function App() {
                                 (amountOutSwap * slippage + 5000n) / 10000n,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8826,7 +8803,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8844,7 +8821,7 @@ function App() {
                             (amountIn * 10000n + slippage / 2n) / slippage,
                             activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                             address as `0x${string}`,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8861,7 +8838,7 @@ function App() {
                             tokenIn == activeMarket.quoteAddress
                               ? (lowestAsk * 10000n + slippage / 2n) / slippage
                               : (highestBid * slippage + 5000n) / 10000n,
-                            BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                            BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
                         })
@@ -8883,7 +8860,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8898,7 +8875,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8910,7 +8887,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             } else {
@@ -8925,7 +8902,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               ))
                             }
@@ -8974,7 +8951,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -8991,7 +8968,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -9005,7 +8982,7 @@ function App() {
                                 (amountIn * 10000n + slippage / 2n) / slippage,
                                 activeMarket.path[0] == tokenIn ? activeMarket.path : [...activeMarket.path].reverse(),
                                 address as `0x${string}`,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -9022,7 +8999,7 @@ function App() {
                                 tokenIn == activeMarket.quoteAddress
                                   ? (lowestAsk * 10000n + slippage / 2n) / slippage
                                   : (highestBid * slippage + 5000n) / 10000n,
-                                BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                                BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
                             })
@@ -10589,7 +10566,7 @@ function App() {
                         BigInt(2),
                         amountIn,
                         limitPrice,
-                        BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress as `0x${string}`,
                       )
                     })
@@ -10625,7 +10602,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                          BigInt(Math.floor(Date.now() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         ))
                       }
@@ -10697,7 +10674,7 @@ function App() {
                           BigInt(2),
                           amountIn,
                           limitPrice,
-                          BigInt(Math.floor(new Date().getTime() / 1000) + 900),
+                          BigInt(Math.floor(Date.now() / 1000) + 900),
                           usedRefAddress as `0x${string}`,
                         )
                       })

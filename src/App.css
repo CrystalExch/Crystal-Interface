@@ -1728,15 +1728,6 @@ body:has(.right-column.show) .blur-background-popups {
   padding: 5px 10px;
 }
 
-
-.welcome-screen-content{
-  padding: 15px;
-  padding-bottom: 10px;
-  border-radius: 50px;
-  transition: all.2s ease;
-}
-
-
 .onboarding-info-icon{
   height: 14px;
   margin-right: 5px;
@@ -6631,12 +6622,19 @@ input[type="email"] {
   z-index: 20;
 }
 
+.welcome-screen-content {
+  padding: 15px;
+  padding-bottom: 10px;
+  border-radius: 50px;
+  transition: all 0.2s ease;
+}
+
 .welcome-text-container {
   max-width: 1000px;
   text-align: left;
-  position: relative;
   margin-bottom: 15px;
 }
+
 .welcome-text {
   display: flex;
   text-align: center;
@@ -6651,7 +6649,6 @@ input[type="email"] {
   text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.5);
   line-height: 1.2;
 }
-
 
 .welcome-enter-button {
   padding: .5rem 1.5rem;
@@ -6678,12 +6675,15 @@ input[type="email"] {
   letter-spacing: -0.5px;
 }
 
-.welcome-enter-button:hover {
-  cursor:pointer;
-  filter:brightness(1.1);
-  transform:scale(1.03)
+.welcome-enter-button.noshow {
+  visibility: hidden;
 }
 
+.welcome-enter-button:hover {
+  cursor:pointer;
+  filter:brightness(1.15);
+  transform:scale(1.03);
+}
 
 @keyframes fadeInButton {
   0% {

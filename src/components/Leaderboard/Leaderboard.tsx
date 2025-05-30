@@ -398,7 +398,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     value={overview!.global_total_points}
                     decimals={2}
                     duration={800}
-                  /> / 10,000,000,000.00
+                  />  {'\u00A0/ 10,000,000,000.00'}
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
