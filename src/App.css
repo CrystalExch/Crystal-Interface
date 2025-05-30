@@ -7027,7 +7027,7 @@ input[type="email"] {
   font-size: 0.75rem;
   color: #fff;
   letter-spacing: -0.3px;
-
+  font-weight: 300;
 }
 
 .supply-borrow-action-button {

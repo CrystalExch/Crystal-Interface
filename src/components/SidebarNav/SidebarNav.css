@@ -12,6 +12,7 @@
   transition: width 0.3s ease;
   overflow: hidden;
   background-color: rgb(6,6,6);
+
 }
 
 .sidebar-nav-inner{
@@ -78,7 +79,6 @@
   width: 20px;
   height: 20px; 
   opacity: 0.5;
-  margin-left: 8px;
   position: static; 
   filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
   transition: all 0.3s ease;
@@ -103,6 +103,7 @@
   position: relative;
   display: flex;
   align-items: center;
+  justify-content: center;
   min-height: 35px;
   min-width: 35px;
   border-radius: 8px;
@@ -112,9 +113,7 @@
   cursor: pointer;
   transition: background-color 0.3s ease, color 0.3s ease;
   overflow: visible;
-  margin-left: 6px;
   margin-bottom: 5px;
-  align-self: flex-start;
   text-decoration: none;
 
 }
@@ -133,6 +132,9 @@
 .sidebar-nav .active {
   color: #aaaecf !important;
   background-color: rgba(121, 124, 177, 0.2) !important;
+  border: 1.5px solid rgba(200, 202, 233, 0.4) !important;
+  box-shadow:  0 0 0 1.5px rgba(170, 174, 207, 0.2);
+
 }
 
 .sidebar-nav .active .sidebar-icon,
@@ -144,7 +146,7 @@
 .sidebar-links {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   flex-grow: 1;
   width: 100%;
   padding-top: 14px;
