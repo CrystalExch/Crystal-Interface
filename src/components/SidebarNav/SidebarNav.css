@@ -132,8 +132,8 @@
 .sidebar-nav .active {
   color: #aaaecf !important;
   background-color: rgba(121, 124, 177, 0.2) !important;
-  border: 1.5px solid rgba(200, 202, 233, 0.4) !important;
-  box-shadow:  0 0 0 1.5px rgba(170, 174, 207, 0.2);
+  border: 1.5px solid rgba(200, 202, 233, 0.2) !important;
+  box-shadow:  0 0 0 1px rgba(170, 174, 207, 0.6);
 
 }
 

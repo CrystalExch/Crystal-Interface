@@ -2,6 +2,12 @@
   width: 100%;
 }
 
+.vaults-title{
+  font-size: 2rem;
+  letter-spacing: -1.5px;
+  font-weight: 300;
+}
+
 .lp-vaults-list-header {
   display: flex;
   padding: 0.5rem 1rem;
@@ -302,7 +308,7 @@ display: flex;
   flex-direction: column;
   justify-self: center;
   width: 100%;
-  background-color: #0c0c0e;
+  border: 1.5px solid #1a1a1f;
   border-radius: 12px;
 }
 
