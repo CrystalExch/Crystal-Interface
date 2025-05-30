@@ -78,11 +78,12 @@ import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
 import tradearrow from './assets/arrow.svg';
 import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
-import SocialBanner from './assets/SocialBanner.png';
 import walleticon from './assets/wallet_icon.png';
 import infoicon from './assets/icon.png';
-
+import mobiletradeswap from './assets/mobile_trade_swap.png';
+import refreshicon from './assets/circulararrow.png';
 import Xicon from './assets/Xicon.svg';
+
 import walletbackpack from './assets/walletbackpack.jpg'
 import walletcoinbase from './assets/walletcoinbase.png'
 import walletconnect from './assets/walletconnect.png'
@@ -94,8 +95,6 @@ import warningicon from './assets/warning_icon.png'
 import walletsafe from './assets/walletsafe.png'
 import wallettomo from './assets/wallettomo.jpg'
 import wallethaha from './assets/wallethaha.png'
-import mobiletradeswap from './assets/mobile_trade_swap.png';
-import refreshicon from './assets/circulararrow.png';
 import crystalxp from './assets/CrystalX.png';
 import part1image from './assets/part1intro.png';
 import topright from './assets/topright.png';
@@ -109,6 +108,7 @@ import firstPlacePfp from './assets/leaderboard_first.png';
 import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
+import SocialBanner from './assets/SocialBanner.png';
 
 //audio
 import stepaudio from './assets/step_audio.mp3';
@@ -2382,16 +2382,16 @@ function App() {
     let worker: any;
     let isAddressInfoFetching = false;
 
-    if (address) {
-      setTimeout(() => {
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setrecipient('');
-      }, 10);
-      isAddressInfoFetching = true;
-      (async () => {
+    (async () => {
+      if (address) {
+        setTimeout(() => {
+          setTransactions([]);
+          settradehistory([]);
+          setorders([]);
+          setcanceledorders([]);
+          setrecipient('');
+        }, 10);
+        isAddressInfoFetching = true;
         try {
           const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
           let temptradehistory: any[] = [];
@@ -2575,26 +2575,23 @@ function App() {
           console.error("Error fetching logs:", error);
           setaddressinfoloading(false);
         }
-      })();
-    }
-    else if (!user) {
-      setSliderPercent(0)
-      const slider = document.querySelector('.balance-amount-slider');
-      const popup = document.querySelector('.slider-percentage-popup');
-      if (slider && popup) {
-        (popup as HTMLElement).style.left = `${15 / 2}px`;
       }
-      setTransactions([]);
-      settradehistory([]);
-      setorders([]);
-      setcanceledorders([]);
-      setaddressinfoloading(false);
-    }
-
-    (async () => {
+      else if (!user) {
+        setSliderPercent(0)
+        const slider = document.querySelector('.balance-amount-slider');
+        const popup = document.querySelector('.slider-percentage-popup');
+        if (slider && popup) {
+          (popup as HTMLElement).style.left = `${15 / 2}px`;
+        }
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+        setaddressinfoloading(false);
+      }
       let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(50)).toString(16)
-      endBlockNumber = '0x' + (firstBlockNumber + BigInt(25)).toString(16)
+      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+      endBlockNumber = '0x' + (firstBlockNumber + BigInt(20)).toString(16)
     })()
 
     const fetchData = async () => {
@@ -2651,8 +2648,8 @@ function App() {
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
-        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 25).toString(16);
-        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 25).toString(16);
+        startBlockNumber = '0x' + (parseInt(result[0].result, 16) - 30).toString(16);
+        endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 20).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
         setProcessedLogs((prev) => {
