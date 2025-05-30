@@ -3,7 +3,7 @@
 }
 
 .vaults-title{
-  font-size: 2rem;
+  font-size: 2.5rem;
   letter-spacing: -1.5px;
   font-weight: 300;
 }
@@ -1299,4 +1299,18 @@ display: flex;
 .lp-supply-apy-col{
     flex: 1.5;
 
+}
+
+.tvl-title{
+    font-size: 1rem;
+    color: #ffffff79;
+    margin-top: 1rem;
+    letter-spacing: -0.5px;
+}
+
+.tvl-subtitle{
+    font-size: 1.75rem;
+    color: #ffffff;
+    font-weight: 300;
+    margin-bottom: 1rem;
 }

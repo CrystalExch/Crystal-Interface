@@ -518,6 +518,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
 
 
                 <span className="vaults-title">Vaults</span>
+                <span className="tvl-title">Total Value Locked</span>
+                <span className="tvl-subtitle">$28,230,857</span>
+
                 <div className="lp-rectangle">
                     {!lpSelectedVault ? (
                         <>
