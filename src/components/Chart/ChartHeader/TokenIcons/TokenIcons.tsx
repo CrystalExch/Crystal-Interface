@@ -16,7 +16,7 @@ const TokenIcons: React.FC<TokenIconsProps> = ({ inIcon, outIcon }) => {
       <div className={`token-wrapper ${!inLoaded ? 'loading' : ''}`}>
         <img
           src={inIcon}
-          className="token-icon"
+          className="token-icon1"
           onLoad={() => setInLoaded(true)}
           style={{ opacity: inLoaded ? 1 : 0 }}
         />

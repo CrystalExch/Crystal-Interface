@@ -11,6 +11,8 @@ import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import docs from '../../assets/docs.png';
 import vault from '../../assets/vault.png';
+import yeildvault from '../../assets/yeildvaults.png';
+
 
 import SidebarTooltip from './SidebarTooltip';
 
@@ -174,7 +176,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             onMouseEnter={(e) => handleTooltip(e, t('Vaults'))}
             onMouseLeave={handleTooltipHide}
           >
-            <img src={vault} className="sidebar-icon" />
+            <img src={yeildvault} className="sidebar-icon" />
             <span className="sidebar-label">{t('Vaults')}</span>
           </Link>
           <Link

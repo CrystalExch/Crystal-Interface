@@ -3,9 +3,6 @@
   padding-top: 2px;
 }
 
-.token-wrapper {
-  z-index: 1;
-}
 
 .token-wrapper,
 .token-skeleton {
@@ -46,14 +43,15 @@
   z-index: 0;
 }
 
-.token-icon,
+.token-icon1,
 .token-icon2 {
   border-radius: 50%;
-  height: 26px;
-  width: 26px;
+  height: 26px !important;
+  width: 26px !important;
   left: 0;
   margin-top: 1px;
   position: absolute;
   top: 0;
   transition: opacity 0.2s ease-in-out;
+  
 }
