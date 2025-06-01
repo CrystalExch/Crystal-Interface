@@ -6,6 +6,7 @@ interface CombinedHeaderFilterProps {
   pageSize: number;
   setPageSize: (size: number) => void;
   currentPage: number;
+  setCurrentPage: any;
   totalPages: number;
   onPrevPage: () => void;
   onNextPage: () => void;
@@ -17,6 +18,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   pageSize,
   setPageSize,
   currentPage,
+  setCurrentPage,
   totalPages,
   onPrevPage,
   onNextPage,
@@ -33,6 +35,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   };
 
   const handleSizeChange = (size: number) => {
+    setCurrentPage(1);
     setPageSize(size);
     localStorage.setItem('crystal_page_size', size.toString());
     setIsOpen(false);

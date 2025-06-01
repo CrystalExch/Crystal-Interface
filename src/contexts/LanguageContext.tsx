@@ -404,7 +404,7 @@ export const translations: any = {
     minted: "Minted",
     free: "Free",
     minting: "Minting...",
-    hideScamWicks: "Hide Scam Wicks",
+    showChartOutliers: "Show Chart Outliers",
   },
   CN: {
     trade: "交易",

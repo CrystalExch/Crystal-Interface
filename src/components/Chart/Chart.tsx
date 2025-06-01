@@ -23,6 +23,7 @@ interface ChartComponentProps {
   isMarksVisible: boolean;
   orders: any;
   isOrdersVisible: boolean;
+  showChartOutliers: boolean;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
@@ -45,6 +46,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   isMarksVisible,
   orders,
   isOrdersVisible,
+  showChartOutliers,
   router,
   refetch,
   sendUserOperationAsync,
@@ -73,7 +75,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
   async function fetchSubgraphCandles(
     interval: string,
-    contractAddress: string
+    contractAddress: string,
+    showChartOutliers: boolean,
   ): Promise<DataPoint[]> {
     const seriesId = `series-${interval}-${contractAddress}`.toLowerCase();
     const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
@@ -128,16 +131,20 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     }
 
     allCandles.reverse();
+    let lastClose: number | null = null;
     return allCandles.map((candle: any) => {
       const priceFactor = Number(activeMarket.priceFactor);
-      const open = candle.open / priceFactor;
-      const close = candle.close / priceFactor;
+      const open = lastClose !== null ? lastClose : candle.open / priceFactor;
+      const close = Math.abs(open - candle.close / priceFactor) / (candle.close / priceFactor) <= 0.5 || showChartOutliers ? candle.close / priceFactor : open
 
       let high = candle.high / priceFactor;
       let low = candle.low / priceFactor;
-    
-      high = Math.min(high, Math.max(open, close) * 1.01);
-      low = Math.max(low, Math.min(open, close) * 0.99);
+      if (!showChartOutliers) {
+        high = Math.min(high, Math.max(open, close) * 1.01);
+        low = Math.max(low, Math.min(open, close) * 0.99);
+      }
+      
+      lastClose = Math.abs(open - candle.close / priceFactor) / (candle.close / priceFactor) <= 0.5 || showChartOutliers ? close : null;
 
       return {
         time: candle.time * 1000,
@@ -152,7 +159,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
   const updateCandlestickData = async (
     interval: string,
-    token: string
+    token: string,
+    showChartOutliers: boolean,
   ) => {
     setLastPair((lastPair) => {
       if (token + interval !== lastPair && !settings.useAdv) {
@@ -162,7 +170,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     });
     setIsChartLoading(true);
     try {
-      const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address);
+      const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address, showChartOutliers);
       if (subgraphData && subgraphData.length) {
         setData([
           subgraphData,
@@ -173,7 +181,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               ? '240'
               : interval === '1h'
               ? '60'
-              : interval.slice(0, -1)),
+              : interval.slice(0, -1)), showChartOutliers
         ]);
       }
     } catch (err) {
@@ -183,8 +191,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   };
 
   useEffect(() => {
-    updateCandlestickData(selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain));
-  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain)]);
+    updateCandlestickData(selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain), showChartOutliers);
+  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain), showChartOutliers]);
 
   useEffect(() => {
     if (!marketsData || !activeMarket) return;
@@ -253,6 +261,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             isMarksVisible={isMarksVisible}
             orders={orders}
             isOrdersVisible={isOrdersVisible}
+            showChartOutliers={showChartOutliers}
             router={router}
             refetch={refetch}
             sendUserOperationAsync={sendUserOperationAsync}

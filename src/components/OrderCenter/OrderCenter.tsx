@@ -48,6 +48,7 @@ interface OrderCenterProps {
   waitForTxReceipt: any;
   isBlurred?: boolean;
   isVertDragging?: boolean;
+  isOrderCenterVisible?: boolean;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -82,6 +83,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     isBlurred,
     waitForTxReceipt,
     isVertDragging,
+    isOrderCenterVisible,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -186,7 +188,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     
     useEffect(() => {
       setCurrentPage(1);
-    }, [activeSection, pageSize]);
+    }, [activeSection, address, onlyThisMarket, filter]);
     
     const getTotalPages = (): number => {
       switch (activeSection) {
@@ -355,7 +357,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
         className="oc-rectangle"
         style={{
           position: 'relative',
-          height: orderCenterHeight === 0 ? '0px' : `${orderCenterHeight}px`,
+          height: orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`,
           transition: isVertDragging ? 'none' : 'height 0.1s ease',
           overflow: 'visible',
         }}
@@ -418,6 +420,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
                   pageSize={Number(pageSize)} 
                   setPageSize={setPageSize}
                   currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
                   totalPages={getTotalPages()}
                   onPrevPage={handlePrevPage}
                   onNextPage={handleNextPage}

@@ -448,6 +448,9 @@ function App() {
     if (window.innerHeight > 720) return 237.98;
     return 196.78;
   });
+  const [showChartOutliers, setShowChartOutliers] = useState(() => {
+    return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
+  });
   const [isAudioEnabled, setIsAudioEnabled] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_audio_notifications') || 'false');
   });
@@ -599,7 +602,7 @@ function App() {
   const [addressinfoloading, setaddressinfoloading] = useState(true);
   const [chartDays, setChartDays] = useState<number>(1);
   const [marketsData, setMarketsData] = useState<any[]>([]);
-  const [advChartData, setChartData] = useState<[DataPoint[], string]>([[], '']);
+  const [advChartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', showChartOutliers]);
   const { chartData, portChartLoading } = usePortfolioData(
     address,
     Object.values(tokendict),
@@ -2830,7 +2833,7 @@ function App() {
                             '',
                           );
                         }
-                        setChartData(([existingBars, existingIntervalLabel]) => {
+                        setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
                           const updatedBars = [...existingBars];
                           const barSizeSec =
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
@@ -2895,7 +2898,7 @@ function App() {
                             }
                           }
                       
-                          return [updatedBars, existingIntervalLabel];
+                          return [updatedBars, existingIntervalLabel, existingShowOutliers];
                         });
                       }
                     }
@@ -6365,165 +6368,166 @@ function App() {
                   }}
                 />
               </div>
+              <div className="orderbook-toggle-row">
+                <span className="orderbook-toggle-label">
+                  {t('showOB')}
+                </span>
+                <ToggleSwitch
+                  checked={isOrderbookVisible}
+                  onChange={() => {
+                    setIsOrderbookVisible(!isOrderbookVisible);
+                    localStorage.setItem(
+                      'crystal_orderbook_visible',
+                      JSON.stringify(!isOrderbookVisible),
+                    );
+                  }}
+                />
+              </div>
 
-              {!simpleView && (
-                <>
-                  <div className="orderbook-toggle-row">
-                    <span className="orderbook-toggle-label">
-                      {t('showOB')}
-                    </span>
-                    <ToggleSwitch
-                      checked={isOrderbookVisible}
-                      onChange={() => {
-                        setIsOrderbookVisible(!isOrderbookVisible);
-                        localStorage.setItem(
-                          'crystal_orderbook_visible',
-                          JSON.stringify(!isOrderbookVisible),
-                        );
-                      }}
-                    />
-                  </div>
+              <div className="ordercenter-toggle-row">
+                <span className="ordercenter-toggle-label">
+                  {t('showOC')}
+                </span>
+                <ToggleSwitch
+                  checked={isOrderCenterVisible}
+                  onChange={() => {
+                    setIsOrderCenterVisible(!isOrderCenterVisible);
+                    localStorage.setItem(
+                      'crystal_ordercenter_visible',
+                      JSON.stringify(!isOrderCenterVisible),
+                    );
+                  }}
+                />
+              </div>
+              <div className="audio-toggle-row">
+                <span className="audio-toggle-label">{t('showChartOutliers')}</span>
+                <ToggleSwitch
+                  checked={showChartOutliers}
+                  onChange={() => {
+                    setShowChartOutliers(!showChartOutliers);
+                    localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(!showChartOutliers));
+                  }}
+                />
+              </div>
+              <div className="audio-toggle-row">
+                <span className="audio-toggle-label">{t('audioNotifications')}</span>
+                <ToggleSwitch
+                  checked={isAudioEnabled}
+                  onChange={() => {
+                    setIsAudioEnabled(!isAudioEnabled);
+                    localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+                  }}
+                />
+              </div>
 
-                  <div className="ordercenter-toggle-row">
-                    <span className="ordercenter-toggle-label">
-                      {t('showOC')}
-                    </span>
-                    <ToggleSwitch
-                      checked={isOrderCenterVisible}
-                      onChange={() => {
-                        setIsOrderCenterVisible(!isOrderCenterVisible);
-                        localStorage.setItem(
-                          'crystal_ordercenter_visible',
-                          JSON.stringify(!isOrderCenterVisible),
-                        );
-                      }}
-                    />
-                  </div>
-                  <div className="audio-toggle-row">
-                    <span className="audio-toggle-label">{t('audioNotifications')}</span>
-                    <ToggleSwitch
-                      checked={isAudioEnabled}
-                      onChange={() => {
-                        setIsAudioEnabled(!isAudioEnabled);
-                        localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
-                      }}
-                    />
-                  </div>
-                  <div className="audio-toggle-row">
-                    <span className="audio-toggle-label">{t('hideScamWicks')}</span>
-                    <ToggleSwitch
-                      checked={isAudioEnabled}
-                      onChange={() => {
-                        setIsAudioEnabled(!isAudioEnabled);
-                        localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
-                      }}
-                    />
-                  </div>
+              <button
+                className="revert-settings-button"
+                onClick={() => {
+                  setLanguage('EN');
+                  localStorage.setItem('crystal_language', 'EN');
 
-                  <button
-                    className="revert-settings-button"
-                    onClick={() => {
-                      setLanguage('EN');
-                      localStorage.setItem('crystal_language', 'EN');
+                  setLayoutSettings('default');
+                  localStorage.setItem('crystal_layout', 'default');
 
-                      setLayoutSettings('default');
-                      localStorage.setItem('crystal_layout', 'default');
+                  setOrderbookPosition('right');
+                  localStorage.setItem('crystal_orderbook', 'right');
 
-                      setOrderbookPosition('right');
-                      localStorage.setItem('crystal_orderbook', 'right');
+                  setSimpleView(false);
+                  localStorage.setItem('crystal_simple_view', 'false');
 
-                      setSimpleView(false);
-                      localStorage.setItem('crystal_simple_view', 'false');
+                  setIsMarksVisible(true);
+                  localStorage.setItem('crystal_marks_visible', 'true');
 
-                      setIsMarksVisible(true);
-                      localStorage.setItem('crystal_marks_visible', 'true');
+                  setIsOrdersVisible(true);
+                  localStorage.setItem('crystal_orders_visible', 'true');
 
-                      setIsOrdersVisible(true);
-                      localStorage.setItem('crystal_orders_visible', 'true');
+                  setIsOrderbookVisible(true);
+                  localStorage.setItem('crystal_orderbook_visible', 'true');
 
-                      setIsOrderbookVisible(true);
-                      localStorage.setItem('crystal_orderbook_visible', 'true');
+                  setIsOrderCenterVisible(true);
+                  localStorage.setItem(
+                    'crystal_ordercenter_visible',
+                    'true',
+                  );
 
-                      setIsOrderCenterVisible(true);
-                      localStorage.setItem(
-                        'crystal_ordercenter_visible',
-                        'true',
-                      );
+                  setShowChartOutliers(false);
+                  localStorage.setItem('crystal_show_chart_outliers', 'false');
 
-                      setOrderbookWidth(300);
-                      localStorage.setItem('orderbookWidth', '300');
+                  setIsAudioEnabled(false);
+                  localStorage.setItem('crystal_audio_notifications', 'false');
 
-                      setAddLiquidityOnly(false);
-                      localStorage.setItem(
-                        'crystal_add_liquidity_only',
-                        'false',
-                      );
+                  setOrderbookWidth(300);
+                  localStorage.setItem('orderbookWidth', '300');
 
-                      setorderType(1);
-                      localStorage.setItem('crystal_order_type', '1');
+                  setAddLiquidityOnly(false);
+                  localStorage.setItem(
+                    'crystal_add_liquidity_only',
+                    'false',
+                  );
 
-                      setSlippageString('1');
-                      setSlippage(BigInt(9900));
-                      localStorage.setItem('crystal_slippage_string', '1');
-                      localStorage.setItem('crystal_slippage', '9900');
+                  setorderType(1);
+                  localStorage.setItem('crystal_order_type', '1');
 
-                      setActiveSection('orders');
-                      localStorage.setItem('crystal_oc_tab', 'orders');
+                  setSlippageString('1');
+                  setSlippage(BigInt(9900));
+                  localStorage.setItem('crystal_slippage_string', '1');
+                  localStorage.setItem('crystal_slippage', '9900');
 
-                      setFilter('all');
-                      localStorage.setItem('crystal_oc_filter', 'all');
+                  setActiveSection('orders');
+                  localStorage.setItem('crystal_oc_tab', 'orders');
 
-                      setOnlyThisMarket(false);
-                      localStorage.setItem('crystal_only_this_market', 'false');
+                  setFilter('all');
+                  localStorage.setItem('crystal_oc_filter', 'all');
 
-                      setOBInterval(baseInterval);
-                      localStorage.setItem(
-                        `${activeMarket.baseAsset}_ob_interval`,
-                        JSON.stringify(baseInterval),
-                      );
+                  setOnlyThisMarket(false);
+                  localStorage.setItem('crystal_only_this_market', 'false');
 
-                      const currentKey = `${activeMarket.baseAsset}_ob_interval`;
-                      for (let i = localStorage.length - 1; i >= 0; i--) {
-                        const key = localStorage.key(i);
-                        if (
-                          key &&
-                          key.endsWith('_ob_interval') &&
-                          key !== currentKey
-                        ) {
-                          localStorage.removeItem(key);
-                        }
-                      }
+                  setOBInterval(baseInterval);
+                  localStorage.setItem(
+                    `${activeMarket.baseAsset}_ob_interval`,
+                    JSON.stringify(baseInterval),
+                  );
 
-                      setViewMode('both');
-                      localStorage.setItem('ob_viewmode', 'both');
+                  const currentKey = `${activeMarket.baseAsset}_ob_interval`;
+                  for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const key = localStorage.key(i);
+                    if (
+                      key &&
+                      key.endsWith('_ob_interval') &&
+                      key !== currentKey
+                    ) {
+                      localStorage.removeItem(key);
+                    }
+                  }
 
-                      setOBTab('orderbook');
-                      localStorage.setItem('ob_active_tab', 'orderbook');
+                  setViewMode('both');
+                  localStorage.setItem('ob_viewmode', 'both');
 
-                      setMobileView('chart');
+                  setOBTab('orderbook');
+                  localStorage.setItem('ob_active_tab', 'orderbook');
 
-                      setAmountsQuote('Quote');
-                      localStorage.setItem('ob_amounts_quote', 'Quote');
+                  setMobileView('chart');
 
-                      let defaultHeight: number;
+                  setAmountsQuote('Quote');
+                  localStorage.setItem('ob_amounts_quote', 'Quote');
 
-                      if (window.innerHeight > 1080) defaultHeight = 361.58;
-                      else if (window.innerHeight > 960) defaultHeight = 320.38;
-                      else if (window.innerHeight > 840) defaultHeight = 279.18;
-                      else if (window.innerHeight > 720) defaultHeight = 237.98;
-                      else defaultHeight = 196.78;
+                  let defaultHeight: number;
 
-                      setOrderCenterHeight(defaultHeight);
-                      localStorage.setItem(
-                        'orderCenterHeight',
-                        defaultHeight.toString(),
-                      );
-                    }}
-                  >
-                    {t('revertToDefault')}
-                  </button>
-                </>
-              )}
+                  if (window.innerHeight > 1080) defaultHeight = 361.58;
+                  else if (window.innerHeight > 960) defaultHeight = 320.38;
+                  else if (window.innerHeight > 840) defaultHeight = 279.18;
+                  else if (window.innerHeight > 720) defaultHeight = 237.98;
+                  else defaultHeight = 196.78;
+
+                  setOrderCenterHeight(defaultHeight);
+                  localStorage.setItem(
+                    'orderCenterHeight',
+                    defaultHeight.toString(),
+                  );
+                }}
+              >
+                {t('revertToDefault')}
+              </button>
             </div>
           </div>
         ) : null}
@@ -12693,6 +12697,7 @@ function App() {
       isMarksVisible={isMarksVisible}
       orders={orders}
       isOrdersVisible={isOrdersVisible}
+      showChartOutliers={showChartOutliers}
       router={router}
       refetch={refetch}
       sendUserOperationAsync={sendUserOperationAsync}
@@ -12720,6 +12725,7 @@ function App() {
     isMarksVisible,
     orders,
     isOrdersVisible,
+    showChartOutliers,
     router,
     refetch,
     sendUserOperationAsync,
@@ -12858,6 +12864,7 @@ function App() {
                 setChain={handleSetChain}
                 waitForTxReceipt={waitForTxReceipt}
                 isVertDragging={isVertDragging}
+                isOrderCenterVisible={isOrderCenterVisible}
               />
             </div>
             {windowWidth > 1020 && (
