@@ -14,7 +14,9 @@ import icondak from '../../assets/icondak.png';
 import iconyaki from '../../assets/iconyaki.png';
 import iconusdt from '../../assets/iconusdt.png';
 import iconsmon from '../../assets/iconsmon.png';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import walleticon from '../../assets/wallet_icon.png';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+
 import { useSharedContext } from '../../contexts/SharedContext';
 
 interface LPVault {
@@ -65,43 +67,74 @@ interface LPVaultsProps {
     setSupplyBorrowVault?: (vault: any) => void;
     onSelectToken: (token: Token) => void;
     selectedToken: Token | null;
+    tokenBalances: { [address: string]: bigint };
+    tokendict: { [address: string]: any };
+    address?: string;
+    connected: boolean;
+    refetch: () => void;
 
 }
 
-const lpPerformanceData = [
-    { name: 'Jan', value: 12.4 },
-    { name: 'Feb', value: 14.8 },
-    { name: 'Mar', value: 18.2 },
-    { name: 'Apr', value: 16.9 },
-    { name: 'May', value: 21.3 },
-    { name: 'Jun', value: 22.7 },
-    { name: 'Jul', value: 24.5 },
+
+const chartData = [
+    { date: '3 Mar', value: 600 },
+    { date: '10 Mar', value: 580 },
+    { date: '17 Mar', value: 560 },
+    { date: '24 Mar', value: 540 },
+    { date: '31 Mar', value: 520 },
+    { date: '7 Apr', value: 480 },
+    { date: '14 Apr', value: 460 },
+    { date: '21 Apr', value: 380 },
+    { date: '28 Apr', value: 370 },
+    { date: '5 May', value: 365 },
+    { date: '12 May', value: 350 },
+    { date: '19 May', value: 330 },
+    { date: '26 May', value: 310 },
+    { date: '2 Jun', value: 275.51 }
 ];
-
-const lpTvlData = [
-    { date: 'Feb 1', tvl: 50 },
-    { date: 'Mar 1', tvl: 75 },
-    { date: 'Apr 1', tvl: 120 },
-    { date: 'May 1', tvl: 160 },
-    { date: 'Jun 1', tvl: 178 },
+const apyChartData = [
+    { date: '1 May', value: 18.2 },
+    { date: '2 May', value: 21.5 },
+    { date: '3 May', value: 19.8 },
+    { date: '4 May', value: 24.1 },
+    { date: '5 May', value: 27.3 },
+    { date: '6 May', value: 23.9 },
+    { date: '7 May', value: 26.7 },
+    { date: '8 May', value: 22.4 },
+    { date: '9 May', value: 29.1 },
+    { date: '10 May', value: 31.5 },
+    { date: '11 May', value: 28.8 },
+    { date: '12 May', value: 25.6 },
+    { date: '13 May', value: 22.3 },
+    { date: '14 May', value: 26.9 },
+    { date: '15 May', value: 30.2 },
+    { date: '16 May', value: 33.7 },
+    { date: '17 May', value: 29.4 },
+    { date: '18 May', value: 31.8 },
+    { date: '19 May', value: 27.5 },
+    { date: '20 May', value: 24.9 },
+    { date: '21 May', value: 28.3 },
+    { date: '22 May', value: 32.1 },
+    { date: '23 May', value: 35.4 },
+    { date: '24 May', value: 31.7 },
+    { date: '25 May', value: 28.9 },
+    { date: '26 May', value: 25.8 },
+    { date: '27 May', value: 23.6 },
+    { date: '28 May', value: 26.1 },
+    { date: '29 May', value: 24.8 },
+    { date: '30 May', value: 24.5 }
 ];
-
-const lpApyTrendData = [
-    { date: 'Feb 1', supplyApy: 8.5, borrowApy: 12.2 },
-    { date: 'Mar 1', supplyApy: 9.2, borrowApy: 13.0 },
-    { date: 'Apr 1', supplyApy: 10.8, borrowApy: 14.5 },
-    { date: 'May 1', supplyApy: 11.5, borrowApy: 15.1 },
-    { date: 'Jun 1', supplyApy: 12.0, borrowApy: 16.3 },
-];
-
-const LP_TIME_RANGES = {
-    "24h": 24,
-    "7d": 24 * 7,
-    "30d": 24 * 30,
-    all: lpTvlData.length,
-};
-
-const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab, setSupplyBorrowVault, onSelectToken, selectedToken, }) => {
+const LPVaults: React.FC<LPVaultsProps> = ({
+    setpopup,
+    setSupplyBorrowInitialTab,
+    setSupplyBorrowVault,
+    onSelectToken,
+    selectedToken,
+    tokenBalances,
+    tokendict,
+    address,
+    connected,
+    refetch }) => {
     const [lpActiveTab, setLpActiveTab] = useState<'all' | 'deposited'>('all');
     const [lpSelectedVault, setLpSelectedVault] = useState<string | null>(null);
     const [lpDepositAmount, setLpDepositAmount] = useState('0.00');
@@ -110,45 +143,114 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
     const [lpIsSearchOpen, setLpIsSearchOpen] = useState(false);
     const [lpSelectedTokens, setLpSelectedTokens] = useState<LPToken[]>([]);
     const lpSearchRef = useRef<HTMLDivElement>(null);
-    const lpSearchInputRef = useRef<HTMLInputElement>(null);
-    const [lpRange, setLpRange] = useState<keyof typeof LP_TIME_RANGES>("all");
-    const lpSliceCount = LP_TIME_RANGES[lpRange];
-    const lpSlicedTvl = lpTvlData.slice(-lpSliceCount);
-    const lpSlicedApy = lpApyTrendData.slice(-lpSliceCount);
+    const [chartPeriod, setChartPeriod] = useState('3 months');
+    const [chartCurrency, setChartCurrency] = useState('USDC');
     const { favorites, toggleFavorite } = useSharedContext();
+    const [lpDepositTokens, setLpDepositTokens] = useState<LPTokenDeposit[]>([]);
+    const [lpTokenAmounts, setLpTokenAmounts] = useState<{ [key: string]: string }>({});
 
-    const [lpDepositTokens, setLpDepositTokens] = useState<LPTokenDeposit[]>([
-        {
-            symbol: 'SUI',
-            icon: iconmonad,
-            amount: '0.00',
-            usdValue: '0.00',
-            selected: true
-        },
-    ]);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+    const dropdownRef = useRef<HTMLDivElement>(null);
 
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+                setIsDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
     const lpAvailableTokens: LPToken[] = [
-        { symbol: 'MON', icon: iconmonad, name: 'Monad', address: '0x1234...mon' },
-        { symbol: 'WMON', icon: iconwmonad, name: 'Wrapped Monad', address: '0x1234...mon' },
-        { symbol: 'USDC', icon: iconusdc, name: 'USD Coin', address: '0x1234...usdc' },
-        { symbol: 'WETH', icon: iconweth, name: 'Wrapped Ether', address: '0x1234...weth' },
-        { symbol: 'WBTC', icon: iconwbtc, name: 'Wrapped Bitcoin', address: '0x1234...wbtc' },
-        { symbol: 'shMON', icon: iconshmonad, name: 'Kintsu Staked Monad', address: '0x1234...shmon' },
-        { symbol: 'SOL', icon: iconsol, name: 'Wrapped Solana', address: '0x1234...sol' },
-        { symbol: 'APRMON', icon: iconaprmonad, name: 'aPriori Monad LST', address: '0x1234...aprmon' },
-        { symbol: 'DAK', icon: icondak, name: 'Molandak', address: '0x1234...dak' },
-        { symbol: 'YAKI', icon: iconyaki, name: 'Moyaki', address: '0x1234...yaki' },
-        { symbol: 'CHOG', icon: iconchog, name: 'Chog', address: '0x1234...chog' },
-        { symbol: 'sMON', icon: iconsmon, name: 'shMonad', address: '0x1234...smon' },
-        { symbol: 'USDT', icon: iconusdt, name: 'Tether USD', address: '0x1234...usdt' },
+        {
+            symbol: 'MON',
+            icon: iconmonad,
+            name: 'Monad',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'MON')?.address || '0x1234...mon'
+        },
+        {
+            symbol: 'WMON',
+            icon: iconwmonad,
+            name: 'Wrapped Monad',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'WMON')?.address || '0x1234...wmon'
+        },
+        {
+            symbol: 'USDC',
+            icon: iconusdc,
+            name: 'USD Coin',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.address || '0x1234...usdc'
+        },
+        {
+            symbol: 'WETH',
+            icon: iconweth,
+            name: 'Wrapped Ether',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'WETH')?.address || '0x1234...weth'
+        },
+        {
+            symbol: 'WBTC',
+            icon: iconwbtc,
+            name: 'Wrapped Bitcoin',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'WBTC')?.address || '0x1234...wbtc'
+        },
+        {
+            symbol: 'shMON',
+            icon: iconshmonad,
+            name: 'Kintsu Staked Monad',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'shMON')?.address || '0x1234...shmon'
+        },
+        {
+            symbol: 'SOL',
+            icon: iconsol,
+            name: 'Wrapped Solana',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'SOL')?.address || '0x1234...sol'
+        },
+        {
+            symbol: 'APRMON',
+            icon: iconaprmonad,
+            name: 'aPriori Monad LST',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'APRMON')?.address || '0x1234...aprmon'
+        },
+        {
+            symbol: 'DAK',
+            icon: icondak,
+            name: 'Molandak',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'DAK')?.address || '0x1234...dak'
+        },
+        {
+            symbol: 'YAKI',
+            icon: iconyaki,
+            name: 'Moyaki',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'YAKI')?.address || '0x1234...yaki'
+        },
+        {
+            symbol: 'CHOG',
+            icon: iconchog,
+            name: 'Chog',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'CHOG')?.address || '0x1234...chog'
+        },
+        {
+            symbol: 'sMON',
+            icon: iconsmon,
+            name: 'shMonad',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'sMON')?.address || '0x1234...smon'
+        },
+        {
+            symbol: 'USDT',
+            icon: iconusdt,
+            name: 'Tether USD',
+            address: Object.values(tokendict).find((t: any) => t.ticker === 'USDT')?.address || '0x1234...usdt'
+        },
     ];
-
     const lpDefaultTokens = ['MON', 'WMON', 'USDC'];
+    const [lpChartView, setLpChartView] = useState<'overview' | 'positions'>('overview');
 
     const lpVaults: LPVault[] = [
         {
             id: 'lp-mon-usdc-vault',
-            name: 'MON',
+            name: 'Monad',
             tokens: {
                 first: {
                     symbol: 'MON',
@@ -194,7 +296,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-wbtc-usdc-vault',
-            name: 'WBTC',
+            name: 'Wrapped Bitcoin',
             tokens: {
                 first: {
                     symbol: 'WBTC',
@@ -217,7 +319,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-shmon-mon-vault',
-            name: 'shMON',
+            name: 'shMonad',
             tokens: {
                 first: {
                     symbol: 'shMON',
@@ -240,7 +342,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-sol-usdc-vault',
-            name: 'WSOL',
+            name: 'Wrapped Solana',
             tokens: {
                 first: {
                     symbol: 'WSOL',
@@ -263,7 +365,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-aprmon-mon-vault',
-            name: 'APRMON',
+            name: 'aPriori Monad LST',
             tokens: {
                 first: {
                     symbol: 'APRMON',
@@ -286,7 +388,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-dak-monad-vault',
-            name: 'DAK',
+            name: 'Molandak',
             tokens: {
                 first: {
                     symbol: 'DAK',
@@ -309,7 +411,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-yaki-mon-vault',
-            name: 'YAKI',
+            name: 'Moyaki',
             tokens: {
                 first: {
                     symbol: 'YAKI',
@@ -332,7 +434,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-chog-usdc-vault',
-            name: 'CHOG',
+            name: 'Chog',
             tokens: {
                 first: {
                     symbol: 'CHOG',
@@ -355,7 +457,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-smon-mon-vault',
-            name: 'sMON',
+            name: 'Kintsu Staked Monad',
             tokens: {
                 first: {
                     symbol: 'sMON',
@@ -378,7 +480,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         },
         {
             id: 'lp-usdt-usdc-vault',
-            name: 'USDT',
+            name: 'Tether USD',
             tokens: {
                 first: {
                     symbol: 'USDT',
@@ -427,28 +529,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         };
     }, []);
 
-    const getLpFavoriteTokens = () => {
-        return lpAvailableTokens.filter(token =>
-            favorites.includes(token.address)
-        );
-    };
 
-    const lpFilteredTokens = lpSearchQuery.length > 0
-        ? lpAvailableTokens.filter(token => {
-            const isAlreadySelected = lpSelectedTokens.some(t => t.symbol === token.symbol);
-            if (isAlreadySelected) return false;
-            return token.symbol.toLowerCase().includes(lpSearchQuery.toLowerCase()) ||
-                token.name.toLowerCase().includes(lpSearchQuery.toLowerCase());
-        })
-        : [];
-
-    const getLpRemainingTokens = () => {
-        return lpAvailableTokens.filter(token =>
-            !lpSelectedTokens.some(t => t.symbol === token.symbol)
-        );
-    };
-
-    const [lpHoveredTvl, setLpHoveredTvl] = useState<number | null>(null);
 
     const lpFilteredVaults = lpVaults.filter(vault => {
         const tokenMatch =
@@ -464,29 +545,72 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         return tokenMatch && isDeposited;
     });
 
-    const handleLpTokenToggle = (token: LPToken) => {
-        setLpSelectedTokens(prev => {
-            if (prev.length >= 2) return prev;
-            if (prev.some(t => t.symbol === token.symbol)) return prev;
-            return [...prev, token];
-        });
-        setLpSearchQuery('');
-        lpSearchInputRef.current?.focus();
+
+    const formatDisplayValue = (
+        rawAmount: bigint,
+        decimals = 18,
+        precision = 3,
+    ) => {
+        const actualAmount = customRound(
+            Number(rawAmount) / 10 ** Number(decimals),
+            precision,
+        );
+
+        if (parseFloat(actualAmount) < 1) {
+            return actualAmount.toString();
+        }
+
+        if (parseFloat(actualAmount) >= 1e12) {
+            return `${(parseFloat(actualAmount) / 1e12).toFixed(2)}T`;
+        } else if (parseFloat(actualAmount) >= 1e9) {
+            return `${(parseFloat(actualAmount) / 1e9).toFixed(2)}B`;
+        } else if (parseFloat(actualAmount) >= 1e6) {
+            return `${(parseFloat(actualAmount) / 1e6).toFixed(2)}M`;
+        }
+
+        return actualAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     };
 
-    const removeLpSelectedToken = (tokenSymbol: string) => {
-        setLpSelectedTokens(prev => prev.filter(t => t.symbol !== tokenSymbol));
+    const customRound = (num: number, precision: number) => {
+        const factor = Math.pow(10, precision);
+        return (Math.round(num * factor) / factor).toString();
     };
 
+    const getTokenBalance = (tokenSymbol: string): bigint => {
+        const token = lpAvailableTokens.find(t => t.symbol === tokenSymbol);
+        if (!token || !tokendict[token.address]) return BigInt(0);
+        return tokenBalances[token.address] || BigInt(0);
+    };
+
+    const getFormattedBalance = (tokenSymbol: string): string => {
+        const token = lpAvailableTokens.find(t => t.symbol === tokenSymbol);
+        if (!token || !tokendict[token.address]) return '0';
+
+        const balance = getTokenBalance(tokenSymbol);
+        return formatDisplayValue(balance, Number(tokendict[token.address].decimals));
+    };
     const handleLpFavoriteToggle = (token: LPToken, e: React.MouseEvent) => {
         e.stopPropagation();
         if (lpDefaultTokens.includes(token.symbol)) return;
         toggleFavorite(token.address);
     };
+    const [apyChartPeriod, setApyChartPeriod] = useState('30 days');
+    const [isApyDropdownOpen, setIsApyDropdownOpen] = useState(false);
+    const apyDropdownRef = useRef<HTMLDivElement>(null);
 
-    const isLpTokenFavorited = (token: LPToken) => {
-        return favorites.includes(token.address);
-    };
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (apyDropdownRef.current && !apyDropdownRef.current.contains(event.target as Node)) {
+                setIsApyDropdownOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
+
 
     const showLpVaultDetail = (vaultId: string) => {
         setLpSelectedVault(vaultId);
@@ -496,32 +620,42 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
         setLpSelectedVault(null);
     };
 
-    const handleLpSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = parseInt(e.target.value);
-        setLpSliderValue(value);
-        setLpDepositAmount((value / 100 * 10).toFixed(2));
-    };
-
-    const toggleLpTokenSelection = (index: number) => {
-        const updatedTokens = lpDepositTokens.map((token, i) => ({
-            ...token,
-            selected: i === index
-        }));
-        setLpDepositTokens(updatedTokens);
-    };
-
     const lpSelectedVaultData = lpSelectedVault ? lpVaults.find(vault => vault.id === lpSelectedVault) : null;
-
+    useEffect(() => {
+        if (lpSelectedVaultData) {
+            const tokenSymbol = lpSelectedVaultData.tokens.first.symbol;
+            setLpDepositTokens([
+                {
+                    symbol: tokenSymbol,
+                    icon: lpSelectedVaultData.tokens.first.icon,
+                    amount: lpTokenAmounts[tokenSymbol] || '',
+                    usdValue: '0.00',
+                    selected: true
+                },
+            ]);
+        }
+    }, [lpSelectedVaultData, lpTokenAmounts]);
+    const handleLpTokenAmountChange = (tokenSymbol: string, value: string) => {
+        if (value === '' || /^\d*\.?\d*$/.test(value)) {
+            setLpTokenAmounts(prev => ({
+                ...prev,
+                [tokenSymbol]: value
+            }));
+        }
+    };
     return (
         <div className="lp-container">
             <div className="lp-content-wrapper">
 
 
-                <span className="vaults-title">Vaults</span>
-                <span className="tvl-title">Total Value Locked</span>
-                <span className="tvl-subtitle">$28,230,857</span>
-
-                <div className="lp-rectangle">
+                {!lpSelectedVault && (
+                    <>
+                        <span className="vaults-title">Vaults</span>
+                        <span className="tvl-title">Total Value Locked</span>
+                        <span className="tvl-subtitle">$28,230,857</span>
+                    </>
+                )}
+                <div className={`lp-rectangle ${lpSelectedVault ? 'lp-rectangle-no-border' : ''}`}>
                     {!lpSelectedVault ? (
                         <>
                             <div className="lp-vaults-grid">
@@ -562,7 +696,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                                                     />
                                                 </div>
                                                 <div className="lp-asset-info">
-                                                    <h3 className="lp-listname">{vault.name}</h3>
+                                                    <h2 className="lp-listname">{vault.name}<span className='lp-asset-ticker'>{vault.tokens.first.symbol}</span></h2>
+
                                                 </div>
                                             </div>
 
@@ -671,28 +806,44 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                         </>
                     ) : (
                         <div className="lp-detail-view">
+
                             <div className="lp-detail-header">
-                                <button className="lp-back-button" onClick={backToLpList}>
-                                    <ChevronLeft size={18} />
-                                    <span>Back to Vaults</span>
-                                </button>
+                                <div className="lp-breadcrumb">
+                                    <button className="lp-breadcrumb-back" onClick={backToLpList}>
+                                        <span>Vaults</span>
+                                    </button>
+                                    <ChevronLeft size={16} className="lp-breadcrumb-arrow" />
+                                    <span className="lp-breadcrumb-current">{lpSelectedVaultData?.name}</span>
+                                </div>
                             </div>
 
                             {lpSelectedVaultData && (
-                                <>
-                                    <div className="lp-detail-summary">
-                                        <div className="lp-detail-top">
-                                            <div className="lp-detail-asset">
-                                                <div className="lp-detail-token-pair">
-                                                    <img
-                                                        src={lpSelectedVaultData.tokens.first.icon}
-                                                        alt={lpSelectedVaultData.tokens.first.symbol}
-                                                        className="lp-detail-token-icon lp-first-token"
-                                                    />
-                                                </div>
-                                                <div>
-                                                    <h2 className="lp-detail-name">{lpSelectedVaultData.name}</h2>
-                                                </div>
+                                <>                                        <div className="lp-detail-top">
+                                    <div className="lp-detail-asset">
+                                        <div className="lp-detail-token-pair">
+                                            <img
+                                                src={lpSelectedVaultData.tokens.first.icon}
+                                                alt={lpSelectedVaultData.tokens.first.symbol}
+                                                className="lp-detail-token-icon lp-first-token"
+                                            />
+                                        </div>
+                                        <div>
+                                            <h2 className="lp-detail-name">{lpSelectedVaultData.tokens.first.symbol}</h2>
+
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                                    <div className="lp-detail-content">
+                                        <div className="lp-detail-summary">
+                                            <div className="lp-detail-description">
+                                                <h4>About {lpSelectedVaultData.name}</h4>
+                                                <p>{lpSelectedVaultData.description}
+                                                    <a href="#" className="lp-learn-more">
+                                                        Learn more
+                                                    </a></p>
+
                                             </div>
                                             <div className="lp-detail-stats">
                                                 <div className="lp-detail-stat">
@@ -700,7 +851,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                                                     <span className="lp-stat-value">{lpSelectedVaultData.apy}%</span>
                                                 </div>
                                                 <div className="lp-detail-stat">
-                                                    <span className="lp-stat-label">TVL</span>
+                                                    <span className="lp-stat-label">Liquidity</span>
                                                     <span className="lp-stat-value">{lpSelectedVaultData.tvl}</span>
                                                 </div>
                                                 <div className="lp-detail-stat">
@@ -716,113 +867,303 @@ const LPVaults: React.FC<LPVaultsProps> = ({ setpopup, setSupplyBorrowInitialTab
                                                     <span className="lp-stat-value">{lpSelectedVaultData.borrowApy}%</span>
                                                 </div>
                                             </div>
-                                        </div>
-
-                                        <div className="lp-performance-chart-container">
-                                            <h4 className="lp-performance-chart-header">
-                                                Performance <TrendingUp size={16} />
-                                            </h4>
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <LineChart data={lpPerformanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" stroke="#333" />
-                                                    <XAxis dataKey="name" stroke="#ffffff79" />
-                                                    <YAxis stroke="#ffffff79" />
-                                                    <Tooltip
-                                                        contentStyle={{ backgroundColor: "#1a1a1f", border: "none" }}
-                                                        labelStyle={{ color: "#fff" }}
-                                                    />
-                                                    <Line
-                                                        type="monotone"
-                                                        dataKey="value"
-                                                        stroke="#50f08dde"
-                                                        strokeWidth={2}
-                                                        dot={{ r: 4, fill: "#50f08dde" }}
-                                                        activeDot={{ r: 6 }}
-                                                    />
-                                                </LineChart>
-                                            </ResponsiveContainer>
-                                        </div>
-
-                                        <div className="lp-detail-description">
-                                            <h4>About {lpSelectedVaultData.name}</h4>
-                                            <p>{lpSelectedVaultData.description}</p>
-                                            <a href="#" className="lp-learn-more">
-                                                Learn more <ArrowUpRight size={14} />
-                                            </a>
-                                        </div>
-
-                                        <div className="lp-trade-info-rectangle">
-                                            <div className="lp-info-row">
-                                                <div className="lp-label-container">Protocol Fee</div>
-                                                <div className="lp-value-container">{lpSelectedVaultData.protocolFee}</div>
+                                            <div className="lp-chart-toggle-section">
+                                                <button
+                                                    className={`lp-chart-toggle-btn ${lpChartView === 'overview' ? 'active' : ''}`}
+                                                    onClick={() => setLpChartView('overview')}
+                                                >
+                                                    Overview
+                                                </button>
+                                                <button
+                                                    className={`lp-chart-toggle-btn ${lpChartView === 'positions' ? 'active' : ''}`}
+                                                    onClick={() => setLpChartView('positions')}
+                                                >
+                                                    Your Positions
+                                                </button>
                                             </div>
-                                            <div className="lp-info-row">
-                                                <div className="lp-label-container">Withdrawal Time</div>
-                                                <div className="lp-value-container">{lpSelectedVaultData.withdrawalTime}</div>
-                                            </div>
-                                            <div className="lp-info-row">
-                                                <div className="lp-label-container">Total Supply</div>
-                                                <div className="lp-value-container">{lpSelectedVaultData.totalSupply}</div>
-                                            </div>
-                                            <div className="lp-info-row">
-                                                <div className="lp-label-container">Total Borrowed</div>
-                                                <div className="lp-value-container">{lpSelectedVaultData.totalBorrowed}</div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                            {lpChartView === 'overview' ? (
+                                                <div className="lp-charts-wrapper">
 
-                                    <div className="lp-deposit-section">
-                                        <div className="lp-deposit-menu-container">
-                                            <h4 className="lp-deposit-menu-header">Deposit Amounts</h4>
-
-                                            {lpDepositTokens.map((token, index) => (
-                                                <div key={index} className="lp-token-deposit-item">
-                                                    <div className="lp-token-header">
-                                                        <span className="lp-token-label">{token.symbol} Deposit</span>
-                                                        <div className="lp-token-balance">0</div>
-                                                    </div>
-
-                                                    <div className="lp-token-amount-row">
-                                                        <div className="lp-token-amount">0.00</div>
-                                                        <div
-                                                            className="lp-token-badge"
-                                                            onClick={() => toggleLpTokenSelection(index)}
-                                                        >
-                                                            <img
-                                                                src={token.icon}
-                                                                alt={token.symbol}
-                                                                className="lp-token-icon"
-                                                            />
-                                                            <span className="lp-token-symbol">{token.symbol}</span>
-                                                            {token.selected && (
-                                                                <div className="lp-token-selector">
-                                                                    <div className="lp-token-selector-inner"></div>
+                                                    <div className="lp-chart-container">
+                                                        <div className="lp-chart-header">
+                                                            <div className="lp-chart-left">
+                                                                <h4 className="lp-chart-title">
+                                                                    Total Deposits ({chartCurrency})
+                                                                </h4>
+                                                                <div className="lp-chart-value">$275.51M</div>
+                                                            </div>
+                                                            <div className="lp-chart-right">
+                                                                <div className="lp-chart-controls">
+                                                                    <div className="lp-chart-toggle">
+                                                                        <button
+                                                                            className={`lp-chart-toggle-btn ${chartCurrency === lpSelectedVaultData.tokens.first.symbol ? 'active' : ''}`}
+                                                                            onClick={() => setChartCurrency(lpSelectedVaultData.tokens.first.symbol)}
+                                                                        >
+                                                                            {lpSelectedVaultData.tokens.first.symbol}
+                                                                        </button>
+                                                                        <button
+                                                                            className={`lp-chart-toggle-btn ${chartCurrency === 'USDC' ? 'active' : ''}`}
+                                                                            onClick={() => setChartCurrency('USDC')}
+                                                                        >
+                                                                            USDC
+                                                                        </button>
+                                                                    </div>
+                                                                    <div className="lp-chart-dropdown" ref={dropdownRef}>
+                                                                        <button
+                                                                            className="lp-chart-dropdown-trigger"
+                                                                            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                                                        >
+                                                                            {chartPeriod}
+                                                                            <ChevronDown size={16} className={`lp-dropdown-icon ${isDropdownOpen ? 'open' : ''}`} />
+                                                                        </button>
+                                                                        {isDropdownOpen && (
+                                                                            <div className="lp-chart-dropdown-menu">
+                                                                                {['3 months', '6 months', '1 year'].map((period) => (
+                                                                                    <button
+                                                                                        key={period}
+                                                                                        className={`lp-chart-dropdown-item ${chartPeriod === period ? 'active' : ''}`}
+                                                                                        onClick={() => {
+                                                                                            setChartPeriod(period);
+                                                                                            setIsDropdownOpen(false);
+                                                                                        }}
+                                                                                    >
+                                                                                        {period}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
                                                                 </div>
-                                                            )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="lp-chart-wrapper">
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <AreaChart data={chartData}>
+                                                                    <defs>
+                                                                        <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                                                                            <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
+                                                                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                                                                            <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
+                                                                        </linearGradient>
+                                                                    </defs>
+                                                                    <XAxis
+                                                                        dataKey="date"
+                                                                        axisLine={false}
+                                                                        tickLine={false}
+                                                                        tick={{ fill: '#ffffff79', fontSize: 12 }}
+                                                                    />
+                                                                    <Area
+                                                                        type="monotone"
+                                                                        dataKey="value"
+                                                                        stroke="#aaaecf"
+                                                                        strokeWidth={2}
+                                                                        fill="url(#chartGradient)"
+                                                                        dot={false}
+                                                                        activeDot={{ r: 4, fill: "#aaaecf", stroke: "#aaaecf", strokeWidth: 2 }}
+                                                                    />
+                                                                </AreaChart>
+                                                            </ResponsiveContainer>
                                                         </div>
                                                     </div>
-
-                                                    <div className="lp-token-usd-value">${token.usdValue}</div>
-                                                </div>
-                                            ))}
-
-                                            <div className="lp-deposit-total-row">
-                                                <div className="lp-deposit-total-label">Total Amount</div>
-                                                <div className="lp-deposit-total-value">$0</div>
-                                            </div>
-
-                                            <button className="lp-connect-button">Connect Account</button>
-
-                                            <div className="lp-deposit-ratio-row">
-                                                <div>Deposit Ratio</div>
-                                                <div className="lp-deposit-ratio-display">
-                                                    <span>{lpSelectedVaultData.depositRatio}</span>
-                                                    <div className="lp-token-indicators">
-                                                        <div className="lp-token-indicator lp-token-indicator-a">A</div>
-                                                        <div className="lp-token-indicator lp-token-indicator-b">B</div>
+                                                    <div className="lp-chart-container">
+                                                        <div className="lp-chart-header">
+                                                            <div className="lp-chart-left">
+                                                                <h4 className="lp-chart-title">
+                                                                    APY Performance
+                                                                </h4>
+                                                                <div className="lp-chart-value">{lpSelectedVaultData.apy}%</div>
+                                                            </div>
+                                                            <div className="lp-chart-right">
+                                                                <div className="lp-chart-controls">
+                                                                    <div className="lp-chart-dropdown" ref={apyDropdownRef}>
+                                                                        <button
+                                                                            className="lp-chart-dropdown-trigger"
+                                                                            onClick={() => setIsApyDropdownOpen(!isApyDropdownOpen)}
+                                                                        >
+                                                                            {apyChartPeriod}
+                                                                            <ChevronDown size={16} className={`lp-dropdown-icon ${isApyDropdownOpen ? 'open' : ''}`} />
+                                                                        </button>
+                                                                        {isApyDropdownOpen && (
+                                                                            <div className="lp-chart-dropdown-menu">
+                                                                                {['30 days', '7 days', '90 days'].map((period) => (
+                                                                                    <button
+                                                                                        key={period}
+                                                                                        className={`lp-chart-dropdown-item ${apyChartPeriod === period ? 'active' : ''}`}
+                                                                                        onClick={() => {
+                                                                                            setApyChartPeriod(period);
+                                                                                            setIsApyDropdownOpen(false);
+                                                                                        }}
+                                                                                    >
+                                                                                        {period}
+                                                                                    </button>
+                                                                                ))}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div className="lp-chart-wrapper">
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <AreaChart data={apyChartData}>
+                                                                    <defs>
+                                                                        <linearGradient id="apyChartGradient" x1="0" y1="0" x2="0" y2="1">
+                                                                            <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
+                                                                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                                                                            <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
+                                                                        </linearGradient>
+                                                                    </defs>
+                                                                    <XAxis
+                                                                        dataKey="date"
+                                                                        axisLine={false}
+                                                                        tickLine={false}
+                                                                        tick={{ fill: '#ffffff79', fontSize: 12 }}
+                                                                    />
+                                                                    <Area
+                                                                        type="monotone"
+                                                                        dataKey="value"
+                                                                        stroke="#aaaecf"
+                                                                        strokeWidth={2}
+                                                                        fill="url(#apyChartGradient)"
+                                                                        dot={false}
+                                                                        activeDot={{ r: 4, fill: "#aaaecf", stroke: "#aaaecf", strokeWidth: 2 }}
+                                                                    />
+                                                                </AreaChart>
+                                                            </ResponsiveContainer>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            ) : (
+                                                <div className="lp-charts-wrapper">
+                                                    <div className="lp-chart-container">
+                                                        <div className="lp-chart-header">
+                                                            <div className="lp-chart-left">
+                                                                <h4 className="lp-chart-title">Your Positions</h4>
+                                                                <div className="lp-chart-value">$12,345.67</div> {/* Replace with actual value */}
+                                                            </div>
+                                                        </div>
+                                                        <div className="lp-chart-wrapper">
+                                                            <ResponsiveContainer width="100%" height="100%">
+                                                                <AreaChart data={chartData /* Replace with user-specific data */}>
+                                                                    <defs>
+                                                                        <linearGradient id="userChartGradient" x1="0" y1="0" x2="0" y2="1">
+                                                                            <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
+                                                                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                                                                            <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
+                                                                        </linearGradient>
+                                                                    </defs>
+                                                                    <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#ffffff79', fontSize: 12 }} />
+                                                                    <Area
+                                                                        type="monotone"
+                                                                        dataKey="value"
+                                                                        stroke="#aaaecf"
+                                                                        strokeWidth={2}
+                                                                        fill="url(#userChartGradient)"
+                                                                        dot={false}
+                                                                        activeDot={{ r: 4, fill: "#aaaecf", stroke: "#aaaecf", strokeWidth: 2 }}
+                                                                    />
+                                                                </AreaChart>
+                                                            </ResponsiveContainer>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="lp-deposit-section">
+                                            <div className="lp-deposit-menu-container">
+
+                                                {lpDepositTokens.map((token, index) => (
+                                                    <div key={`${lpSelectedVault}-${index}`} className="lp-token-deposit-item">
+                                                        <div className="lp-token-header">
+                                                            <span className="lp-token-label">Deposit {token.symbol}</span>
+
+                                                            <div className="lp-token-balance">
+                                                                <img className="lp-wallet-icon" src={walleticon} />
+                                                                {connected && address ? getFormattedBalance(token.symbol) : '0'}
+                                                            </div>                                                        </div>
+
+                                                        <div className="lp-token-amount-row">
+                                                            <input
+                                                                type="text"
+                                                                className="lp-token-amount-input"
+                                                                value={lpTokenAmounts[token.symbol] || ''}
+                                                                onChange={(e) => handleLpTokenAmountChange(token.symbol, e.target.value)}
+                                                                placeholder="0.00"
+                                                            />
+                                                        </div>
+                                                        <div className="lp-token-input-bottom-row">
+                                                            <div className="lp-token-usd-value">${token.usdValue}</div>
+                                                            <button
+                                                                className="lp-max-button"
+                                                                onClick={() => {
+                                                                    if (connected && address) {
+                                                                        const balance = getTokenBalance(token.symbol);
+                                                                        const tokenData = lpAvailableTokens.find(t => t.symbol === token.symbol);
+                                                                        if (tokenData && tokendict[tokenData.address]) {
+                                                                            const decimals = Number(tokendict[tokenData.address].decimals);
+                                                                            const balanceAsNumber = Number(balance) / 10 ** decimals;
+                                                                            handleLpTokenAmountChange(token.symbol, balanceAsNumber.toString());
+                                                                        }
+                                                                    }
+                                                                }}                                                            >
+                                                                MAX
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                                <div className="lp-token-details-item">
+                                                    <div className="lp-deposit-total-row">
+                                                        <div className="lp-deposit-total-label">Total Amount</div>
+                                                        <div className="lp-deposit-total-value">
+                                                            ${lpDepositTokens.reduce((total, token) => {
+                                                                const amount = lpTokenAmounts[token.symbol];
+                                                                return total + (amount && amount !== '' ? parseFloat(amount) : 0);
+                                                            }, 0).toFixed(2)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="lp-deposit-total-row">
+                                                        <span className="lp-deposit-total-label">APY</span>
+                                                        <span className="lp-deposit-total-value">{lpSelectedVaultData.apy}%</span>
+                                                    </div>
+                                                    <div className="lp-deposit-total-row">
+                                                        <span className="lp-deposit-total-label">Projected Earnings / Month (USDC)</span>
+                                                        <span className="lp-deposit-total-value">
+                                                            ${(() => {
+                                                                const totalAmount = lpDepositTokens.reduce((total, token) => {
+                                                                    const amount = lpTokenAmounts[token.symbol];
+                                                                    return total + (amount && amount !== '' ? parseFloat(amount) : 0);
+                                                                }, 0);
+                                                                const monthlyEarnings = (totalAmount * (lpSelectedVaultData.apy / 100)) / 12;
+                                                                return monthlyEarnings.toFixed(2);
+                                                            })()}
+                                                        </span>
+                                                    </div>
+
+                                                    <div className="lp-deposit-total-row">
+                                                        <span className="lp-deposit-total-label">Projected Earnings / Year (USDC)</span>
+                                                        <span className="lp-deposit-total-value">
+                                                            ${(() => {
+                                                                const totalAmount = lpDepositTokens.reduce((total, token) => {
+                                                                    const amount = lpTokenAmounts[token.symbol];
+                                                                    return total + (amount && amount !== '' ? parseFloat(amount) : 0);
+                                                                }, 0);
+                                                                const yearlyEarnings = totalAmount * (lpSelectedVaultData.apy / 100);
+                                                                return yearlyEarnings.toFixed(2);
+                                                            })()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    className="lp-connect-button"
+                                                    onClick={() => {
+                                                        if (!connected) {
+                                                            setpopup(4);
+                                                        }
+                                                    }}
+                                                >
+                                                    {connected ? 'Deposit' : 'Connect Account'}
+                                                </button>                                            </div>
                                         </div>
                                     </div>
                                 </>

@@ -2465,7 +2465,7 @@ function App() {
               let tempcanceledorders = [...canceledorders];
               let canceledOrdersChanged = false;
               settradesByMarket((tradesByMarket: any) => {
-                let temptradesByMarket = {...tradesByMarket};
+                let temptradesByMarket = { ...tradesByMarket };
                 let tradesByMarketChanged = false;
                 settradehistory((tradehistory: any) => {
                   let updatedTradeHistory = [...tradehistory];
@@ -2607,7 +2607,7 @@ function App() {
                               }
                               temporders.splice(index, 1);
                               let quoteasset =
-                              markets[marketKey].quoteAddress;
+                                markets[marketKey].quoteAddress;
                               let baseasset =
                                 markets[marketKey].baseAddress;
                               let amountquote = (
@@ -2677,7 +2677,7 @@ function App() {
                           let orderIndex = temporders.findIndex(
                             (sublist: any) =>
                               sublist[0] ==
-                            price &&
+                              price &&
                               sublist[1] ==
                               id &&
                               sublist[4] == marketKey,
@@ -2848,24 +2848,24 @@ function App() {
                           const updatedBars = [...existingBars];
                           const barSizeSec =
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
-                            5 * 60;
-                      
+                              existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+                                existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+                                    existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+                                      existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+                                        existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+                                          5 * 60;
+
                           const lastBarIndex = updatedBars.length - 1;
                           const lastBar = updatedBars[lastBarIndex];
-                      
+
                           const priceFactor = Number(markets[marketKey].priceFactor || 1);
                           let openPrice = parseFloat((parseInt(log['data'].slice(67, 98), 16) / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                           let closePrice = parseFloat((parseInt(log['data'].slice(98, 130), 16) / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                           const rawVolume =
                             (parseInt(log['data'].slice(66, 67), 16) === 1 ? parseInt(log['data'].slice(2, 34), 16) : parseInt(log['data'].slice(34, 66), 16)) /
                             10 ** Number(markets[marketKey].quoteDecimals);
-                          
+
                           const tradeTimeSec = _timestamp;
                           const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
                           const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
@@ -2908,7 +2908,7 @@ function App() {
                               }
                             }
                           }
-                      
+
                           return [updatedBars, existingIntervalLabel];
                         });
                       }
@@ -3994,7 +3994,7 @@ function App() {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
   };
-  
+
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
@@ -4012,7 +4012,7 @@ function App() {
       setIsWelcomeExiting(false);
     }, 200);
   };
-  
+
   const handleSetRef = async (used: string) => {
     let lookup
     setIsRefSigning(true);
@@ -4240,7 +4240,7 @@ function App() {
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
     let animatingTimer: ReturnType<typeof setTimeout> | undefined;
-  
+
     if (currentStep === 0) {
       animationStartTimer = setTimeout(() => {
         setAnimationStarted(true);
@@ -4248,18 +4248,18 @@ function App() {
     } else {
       setAnimationStarted(false);
     }
-  
+
     setAnimating(true);
     animatingTimer = setTimeout(() => {
       setAnimating(false);
     }, 300);
-  
+
     return () => {
       if (animationStartTimer) clearTimeout(animationStartTimer);
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
-  
+
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -7220,57 +7220,55 @@ function App() {
             </div>
             <CrystalObject />
 
-    {user && !connected && (
-      <div className="generating-address-popup">
-        <span className="loader"></span>
-        <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
-        <p className="generating-address-text">
-          Please wait while your smart wallet address is being loaded...
-        </p>
-      </div>
-    )}
-    {connected ? (
-      <>
-        <div className="step-indicators">
-          {[1, 2, 3, 4, 5, 6].map((index) => (
-            <div
-              key={index}
-              className={`step-indicator ${
-                popup === 14
-                  ? index === 1 ? 'active' : ''
-                  : popup === 17
-                  ? index === 2 ? 'active' : ''
-                  : popup === 18
-                  ? index === 3 ? 'active' : ''
-                  : (currentStep + 4) === index ? 'active' : ''
-                } ${
-                popup === 14
-                  ? index < 1 ? 'completed' : ''
-                  : popup === 17
-                  ? index < 2 ? 'completed' : ''
-                  : popup === 18
-                  ? index < 3 ? 'completed' : ''
-                  : (currentStep + 4) > index ? 'completed' : ''
-                } ${isTransitioning ? 'transitioning' : ''}`}
-            />
-          ))}
-        </div>
+            {user && !connected && (
+              <div className="generating-address-popup">
+                <span className="loader"></span>
+                <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
+                <p className="generating-address-text">
+                  Please wait while your smart wallet address is being loaded...
+                </p>
+              </div>
+            )}
+            {connected ? (
+              <>
+                <div className="step-indicators">
+                  {[1, 2, 3, 4, 5, 6].map((index) => (
+                    <div
+                      key={index}
+                      className={`step-indicator ${popup === 14
+                          ? index === 1 ? 'active' : ''
+                          : popup === 17
+                            ? index === 2 ? 'active' : ''
+                            : popup === 18
+                              ? index === 3 ? 'active' : ''
+                              : (currentStep + 4) === index ? 'active' : ''
+                        } ${popup === 14
+                          ? index < 1 ? 'completed' : ''
+                          : popup === 17
+                            ? index < 2 ? 'completed' : ''
+                            : popup === 18
+                              ? index < 3 ? 'completed' : ''
+                              : (currentStep + 4) > index ? 'completed' : ''
+                        } ${isTransitioning ? 'transitioning' : ''}`}
+                    />
+                  ))}
+                </div>
 
-        <div
-          className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
-            }`}
-        >
-          {popup == 18 && (
-            <div className="onboarding-section active">
-              <div className="onboarding-split-container">
-                <div className="onboarding-left-side">
-                  <div className="onboarding-content">
-                    <div className="onboarding-header">
-                      <h2 className="onboarding-title">Join our growing community!</h2>
-                      <p className="onboarding-subtitle">
-                        Crystal is being released in phases. Join our community to be the first to know when new features arrive.
-                      </p>
-                    </div>
+                <div
+                  className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
+                    }`}
+                >
+                  {popup == 18 && (
+                    <div className="onboarding-section active">
+                      <div className="onboarding-split-container">
+                        <div className="onboarding-left-side">
+                          <div className="onboarding-content">
+                            <div className="onboarding-header">
+                              <h2 className="onboarding-title">Join our growing community!</h2>
+                              <p className="onboarding-subtitle">
+                                Crystal is being released in phases. Join our community to be the first to know when new features arrive.
+                              </p>
+                            </div>
 
                             <div className="social-buttons">
                               <button
@@ -7708,57 +7706,57 @@ function App() {
                         {currentStep < 2 ? t('next') : t('getStarted')}
                       </button>
 
-              <audio ref={backAudioRef} src={backaudio} preload="auto" />
-            </div>
+                      <audio ref={backAudioRef} src={backaudio} preload="auto" />
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              !user && (
+                <div
+                  className="connect-wallet-username-onboarding-bg"
+                >
+                  {showWelcomeScreen || isTransitioning ? (
+                    <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
+                      <div className="welcome-screen-content">
+                        <div className="welcome-text-container">
+                          <p className="welcome-text">{typedText}</p>
+                        </div>
+                        {animationStarted && typedText ? (
+                          <button
+                            className="welcome-enter-button"
+                            onClick={handleWelcomeTransition}
+                          >
+                            EXPLORE NOW
+                          </button>
+                        ) : (
+                          <button
+                            className="welcome-enter-button noshow"
+                            onClick={handleWelcomeTransition}
+                          >
+                            EXPLORE NOW
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
+                      <div className="onboarding-connect-wallet">
+                        <div className="smart-wallet-reminder">
+                          <img className="onboarding-info-icon" src={infoicon} />
+                          Use a Smart Wallet to receive a multiplier on all Crystals
+                        </div>
+                        <div className="connect-wallet-content-container">
+                          <AuthCard {...alchemyconfig.ui.auth} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            )}
           </div>
-        </div>
-      </>
-    ) : (
-      !user && (
-        <div
-          className="connect-wallet-username-onboarding-bg"
-        >
-          {showWelcomeScreen || isTransitioning ? (
-            <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
-              <div className="welcome-screen-content">
-                <div className="welcome-text-container">
-                  <p className="welcome-text">{typedText}</p>
-                </div>
-                {animationStarted && typedText ? (
-                  <button
-                    className="welcome-enter-button"
-                    onClick={handleWelcomeTransition}
-                  >
-                    EXPLORE NOW
-                  </button>
-                ) : (
-                  <button
-                    className="welcome-enter-button noshow"
-                    onClick={handleWelcomeTransition}
-                  >
-                    EXPLORE NOW
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
-              <div className="onboarding-connect-wallet">
-                <div className="smart-wallet-reminder">
-                  <img className="onboarding-info-icon" src={infoicon} />
-                  Use a Smart Wallet to receive a multiplier on all Crystals
-                </div>
-                <div className="connect-wallet-content-container">
-                  <AuthCard {...alchemyconfig.ui.auth} />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    )}
-  </div>
-) : null}
+        ) : null}
         {popup === 16 ? (
           <div className="edit-username-bg">
             <div ref={popupref} className="edit-username-container">
@@ -7942,12 +7940,12 @@ function App() {
                     <div className="info-row">
                       <span className="info-label">Available to Supply</span>
                       <span className="info-value">0.00 {selectedToken?.symbol || ''}
-</span>
+                      </span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Currently Supplying</span>
                       <span className="info-value">0.00{selectedToken?.symbol || ''}
-</span>
+                      </span>
                     </div>
                     <div className="info-row">
                       <span className="info-label">Supplying APR</span>
@@ -8765,7 +8763,7 @@ function App() {
                     '',
                     ''
                   );
-                } else if (tokenIn == '1' && tokendict[tokenOut]?.lst == true){
+                } else if (tokenIn == '1' && tokendict[tokenOut]?.lst == true) {
                   hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
                   newTxPopup(
                     (client
@@ -13176,8 +13174,13 @@ function App() {
               setpopup={setpopup}
               onSelectToken={setSelectedToken}
               selectedToken={selectedToken}
-            />} >
-          </Route>
+              tokenBalances={tokenBalances}
+              tokendict={tokendict}
+              address={address}
+              connected={connected}
+              refetch={refetch}
+            />}
+          />
           <Route
             path="/portfolio"
             element={
