@@ -1452,6 +1452,7 @@ display: flex;
     border: 1.5px solid #1a1a1f;
     border-radius: 12px;
     background-color: rgba(0, 0, 0, 0.2);
+    padding-bottom: 0.5rem;
 }
 
 .lp-chart-header {
