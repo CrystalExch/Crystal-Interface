@@ -13005,7 +13005,11 @@ function App() {
           />
           <Route path="/mint"
             element={
-              <NFTMintingPage />
+              <NFTMintingPage 
+                address={address ?? undefined}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={waitForTxReceipt}
+              />
             }>
           </Route>
           <Route

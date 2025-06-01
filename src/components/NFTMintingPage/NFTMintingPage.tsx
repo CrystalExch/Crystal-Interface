@@ -1,93 +1,146 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { readContracts } from '@wagmi/core';
+import { encodeFunctionData } from 'viem';
+import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 
+import { config } from '../../wagmi';
+import { CrystalNFTAbi } from '../../abis/CrystalNFTAbi';
+import treeJson from './tree.json';
 import LeaderboardBanner from '../../assets/MintTeaser.png';
-
 import './NFTMintingPage.css';
 
-const NFTMintingPage: React.FC = () => {
-  const [mintLoading, setMintLoading] = useState(false);
+interface NFTMintingPageProps {
+  address: `0x${string}` | undefined;
+  sendUserOperationAsync: any;
+  waitForTxReceipt: any;
+}
+
+const NFT_ADDRESS = '0x37ea8bdbCB3228BF7f4a39fD10c432c359BA7A10';
+
+function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
+  try {
+    return tree.getProof([addr.toLowerCase()]) as `0x${string}`[];
+  } catch {
+    return [];
+  }
+}
+
+const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
+  address,
+  sendUserOperationAsync,
+  waitForTxReceipt,
+}) => {
+  const tree = useMemo(() => StandardMerkleTree.load(treeJson as any), []);
+  const nftData = useMemo(
+    () => ({
+      name: 'crystal x blocknads',
+      description: t('mintDesc'),
+      imageUrl: LeaderboardBanner,
+      remainingSupply: 1000,
+      totalSupply: 1000,
+    }),
+    [],
+  );
   const [imageLoaded, setImageLoaded] = useState(false);
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0
-  });
-  
-  const nftData = {
-    name: "Crystal x ???",
-    description: t('mintDesc'),
-    imageUrl: LeaderboardBanner,
-    remainingSupply: 1000,
-    totalSupply: 1000,
-    mints24h: 0,
-    holders: 0,
-    eligible: 0
-  };
+  const [proof, setProof] = useState<`0x${string}`[]>([]);
+  const [isElig, setIsElig] = useState(false);
+  const [hasMinted, setHasMinted] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
 
   useEffect(() => {
-    const calculateTimeLeft = () => {
-      const targetDate = new Date("2025-06-01T04:00:00Z");
-      const now = new Date();
-      
-      const difference = targetDate.getTime() - now.getTime();
-      
-      if (difference <= 0) {
-        setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
-        return;
+    if (!address) {
+      setProof([]);
+      setIsElig(false);
+      setHasMinted(false);
+      return;
+    }
+
+    const newProof = proofForAddress(tree, address);
+    setProof(newProof);
+    if (newProof.length === 0) {
+      setIsElig(false);
+      setHasMinted(false);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = (await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalNFTAbi,
+              address: NFT_ADDRESS,
+              functionName: 'hasMinted',
+              args: [address],
+            },
+            {
+              abi: CrystalNFTAbi,
+              address: NFT_ADDRESS,
+              functionName: 'checkWhitelist',
+              args: [address, newProof],
+            },
+          ],
+        })) as any[];
+
+        setHasMinted(res[0].result as boolean);
+        setIsElig(res[1].result as boolean);
+      } catch (err) {
+        console.error('eligibility read failed', err);
+        setHasMinted(false);
+        setIsElig(false);
       }
-      
-      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
-      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
-      
-      
-      setTimeLeft({ days, hours, minutes, seconds });
-    };
-    
-    calculateTimeLeft();
-    
-    const timer = setInterval(() => {
-      calculateTimeLeft();
-    }, 1000);
-    
-    return () => {
-      clearInterval(timer);
-    };
-  }, []);
+    })();
+  }, [address, tree]);
 
-  const handleMint = () => {
-    setMintLoading(true);
-    
-    setTimeout(() => {
-      setMintLoading(false);
-    }, 2000);
-  };
+  const handleImageLoad = () => setImageLoaded(true);
 
-  const handleImageLoad = () => {
-    setImageLoaded(true);
-  };
+  const handleMint = useCallback(async () => {
+    if (!isElig || hasMinted || proof.length === 0) return;
 
+    setIsMinting(true);
+    try {
+      const uo = {
+        target: NFT_ADDRESS as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalNFTAbi,
+          functionName: 'mint',
+          args: [proof],
+        }),
+        value: 0n,
+      };
+      const op = await sendUserOperationAsync({ uo });
+      await waitForTxReceipt(op.hash);
+      setHasMinted(true);
+    } catch (err) {
+      console.error('mint failed:', err);
+    } finally {
+      setIsMinting(false);
+    }
+  }, [isElig, hasMinted, proof, sendUserOperationAsync, waitForTxReceipt]);
+
+  /* ---------------- derived ------------------------ */
   const supplySold = nftData.totalSupply - nftData.remainingSupply;
   const percentageSold = (supplySold / nftData.totalSupply) * 100;
 
+  const buttonDisabled = !isElig || hasMinted || isMinting;
+  const buttonLabel = isMinting ? t('minting') : hasMinted ? t('alreadyMinted') : !isElig ? t('notEligible') : t('mintNft');
+
+  /* ---------------- ui ----------------------------- */
   return (
     <div className="nft-scroll-wrapper">
       <div className="nft-main-content-wrapper">
         <div className="nft-image-container">
-          {!imageLoaded && <div className="nft-image-placeholder"></div>}
-          <img 
-            src={nftData.imageUrl} 
-            className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`} 
+          {!imageLoaded && <div className="nft-image-placeholder" />}
+          <img
+            src={nftData.imageUrl}
+            className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`}
             onLoad={handleImageLoad}
           />
-          <div className="nft-countdown-timer">
-            <div className="nft-countdown-content">
-              {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
-            </div>
+          <div className="nft-title-overlay">
+            <h1 className="nft-static-title">{nftData.name}</h1>
           </div>
         </div>
+
         <div className="nft-swapmodal">
           <div className="nft-header">
             <h1 className="nft-tokenselectheader1">{t('mintTitle')}</h1>
@@ -95,57 +148,34 @@ const NFTMintingPage: React.FC = () => {
           </div>
 
           <div className="nft-content">
-            <div className="nft-flex-container">
-              <div className="nft-details">
-                <h2 className="nft-name">{nftData.name}</h2>
-                <p className="nft-description">{nftData.description}</p>
-                
-                <div className="nft-stats-grid">
-                  <div className="nft-stat-item">
-                    <div className="nft-stat-value">{nftData.mints24h}</div>
-                    <div className="nft-stat-label">{t('day')} {t('mintCount')}</div>
-                  </div>
-                  <div className="nft-stat-item">
-                    <div className="nft-stat-value">{nftData.holders}</div>
-                    <div className="nft-stat-label">{t('holders')}</div>
-                  </div>
-                  <div className="nft-stat-item">
-                    <div className="nft-stat-value">{nftData.eligible}</div>
-                    <div className="nft-stat-label">{t('eligible')}</div>
-                  </div>
+            <div className="nft-details">
+              <h2 className="nft-name">{nftData.name}</h2>
+              <p className="nft-description">{nftData.description}</p>
+
+              <div className="nft-supply-container">
+                <div className="nft-supply-text">
+                  <span>{supplySold} / {nftData.totalSupply}</span>
+                  <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% {t('minted')}</span>
                 </div>
-                
-                <div className="nft-supply-container">
-                  <div className="nft-supply-text">
-                    <span>{supplySold} / {'???'}</span>
-                    <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% {t('minted')}</span>
-                  </div>
-                  <div className="nft-supply-bar">
-                    <div className="nft-supply-progress" style={{ width: `${percentageSold}%` }}></div>
-                  </div>
+                <div className="nft-supply-bar">
+                  <div className="nft-supply-progress" style={{ width: `${percentageSold}%` }} />
                 </div>
-                
-                <div className="nft-price-container">
-                  <div className="nft-label-container">{t('price')}</div>
-                  <div className="nft-value-container">{t('free')}</div>
-                </div>
-                
+              </div>
+
+              <div className="nft-price-container">
+                <div className="nft-label-container">{t('price')}</div>
+                <div className="nft-value-container">{t('free')}</div>
               </div>
             </div>
-            <button 
-                className={`nft-swap-button ${mintLoading ? 'nft-signing' : ''}`} 
-                onClick={handleMint}
-                disabled={true}
-              >
-                {mintLoading ? (
-                  <div className="nft-button-content">
-                    <div className="nft-loading-spinner"></div>
-                    <span>{t('minting')}</span>
-                  </div>
-                ) : (
-                  "Mint NFT"
-                )}
-              </button>
+
+            <button
+              className={`nft-swap-button ${isMinting ? 'nft-signing' : ''}`}
+              onClick={handleMint}
+              disabled={buttonDisabled}
+            >
+              {isMinting && <div className="nft-loading-spinner" />}
+              {buttonLabel}
+            </button>
           </div>
         </div>
       </div>
