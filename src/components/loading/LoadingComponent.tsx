@@ -22,7 +22,7 @@ const Overlay: React.FC<OverlayProps> = ({
   const uiLogo = '/CrystalLogo.png';
 
   const calculateLogoStyle = () => {
-    const heightPercentage = height === 0 ? '16%' : `${height}%`;
+    const heightPercentage = height == 0 ? '16%' : `${height}%`;
     
     return {
       height: heightPercentage,

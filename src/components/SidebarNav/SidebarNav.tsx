@@ -9,6 +9,7 @@ import referrals from '../../assets/referrals.png';
 import leaderboard from '../../assets/leaderboard.png';
 import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
+import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 import SidebarTooltip from './SidebarTooltip';
 
@@ -181,15 +182,26 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <span className="sidebar-label">{t('docs')}</span>
           </a>
           <a
+            href="https://discord.gg/CrystalExch"
+            target="_blank"
+            rel="noreferrer"
+            className="sidebar-bottom-link"
+            onMouseEnter={(e) => handleTooltip(e, t('discord'))}
+            onMouseLeave={handleTooltipHide}
+          >
+            <img src={discord} className="sidebar-icon" />
+            <span className="sidebar-label">{t('discord')}</span>
+          </a>
+          <a
             href="https://x.com/CrystalExch"
             target="_blank"
             rel="noreferrer"
             className="sidebar-bottom-link"
-            onMouseEnter={(e) => handleTooltip(e, t('twitter'))}
+            onMouseEnter={(e) => handleTooltip(e, 'X / ' + t('twitter'))}
             onMouseLeave={handleTooltipHide}
           >
             <img src={twitter} className="sidebar-icon" />
-            <span className="sidebar-label">{t('twitter')}</span>
+            <span className="sidebar-label">{'X / ' + t('twitter')}</span>
           </a>
           <button
             onClick={toggleSidebar}

@@ -24,7 +24,7 @@ body:has(.overlay) {
 .logo-pulse {
   animation: move 1.8s infinite;
   user-select: none;
-  width: 11vh;
+  width: 12vh;
   max-width: 100px;
   min-width: 60px;
 }
