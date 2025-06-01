@@ -12,7 +12,7 @@ export const generateEmptyChartData = (interval: string): DataPoint[] => {
     const intervalStart = startTime + i * intervalMs;
 
     dataPoints.push({
-      time: new Date(intervalStart).toISOString(),
+      time: intervalStart,
       open: 0,
       high: 0,
       low: 0,

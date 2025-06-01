@@ -167,11 +167,8 @@
   border-radius: 8px;
 }
 
-.sidebar-bottom a,
-.sidebar-toggle-button {
-  margin-bottom: 5px;
-  display: flex;
-  align-items: center;
+.sidebar-bottom a {
+  margin-bottom: 3px;
 }
 
 .view-mode-button:hover,
