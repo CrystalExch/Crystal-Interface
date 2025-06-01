@@ -20,6 +20,7 @@ interface ChartCanvasProps {
   isMarksVisible: boolean;
   orders: any;
   isOrdersVisible: boolean;
+  showChartOutliers: boolean;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
@@ -42,6 +43,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   isMarksVisible,
   orders,
   isOrdersVisible,
+  showChartOutliers,
   router,
   refetch,
   sendUserOperationAsync,
