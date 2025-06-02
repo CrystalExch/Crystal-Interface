@@ -336,8 +336,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     : resolution + 'm',
             );
 
-            const base = symbolInfo.name.split('/')[0];
-            const key = base + resolution;
+            const key = symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution;
 
             await new Promise<void>((resolve) => {
               const check = () => {
@@ -409,7 +408,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onRealtimeCallback: any,
         ) => {
           realtimeCallbackRef.current[
-            symbolInfo.name.split('/')[0] + resolution
+            symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution
           ] = onRealtimeCallback;
         },
 

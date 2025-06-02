@@ -33,11 +33,11 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   const tree = useMemo(() => StandardMerkleTree.load(treeJson as any), []);
   const nftData = useMemo(
     () => ({
-      name: 'crystal x blocknads',
+      name: 'Crystal x BlockNads',
       description: t('mintDesc'),
       imageUrl: LeaderboardBanner,
-      remainingSupply: 1000,
-      totalSupply: 1000,
+      remainingSupply: 10000,
+      totalSupply: 10000,
     }),
     [],
   );
@@ -123,7 +123,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   const percentageSold = (supplySold / nftData.totalSupply) * 100;
 
   const buttonDisabled = !isElig || hasMinted || isMinting;
-  const buttonLabel = isMinting ? t('minting') : hasMinted ? t('alreadyMinted') : !isElig ? t('notEligible') : t('mintNft');
+  const buttonLabel = isMinting ? t('minting') : hasMinted ? t('alreadyMinted') : !isElig ? t('notEligible') : t('mintTitle');
 
   /* ---------------- ui ----------------------------- */
   return (

@@ -156,6 +156,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       return token + interval;
     });
     try {
+      if (showChartOutliers != data[2]) {
+        setOverlayVisible(true);
+      }
       const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address, showChartOutliers);
       if (subgraphData && subgraphData.length) {
         setData([
