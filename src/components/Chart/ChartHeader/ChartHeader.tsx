@@ -29,7 +29,6 @@ interface ChartHeaderProps {
   onMarketSelect: any;
   setpopup: (value: number) => void;
   marketsData: any;
-  isChartLoading: boolean;
   simpleView: boolean;
   tradesByMarket: any;
 }
@@ -49,14 +48,13 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   onMarketSelect,
   setpopup,
   marketsData,
-  isChartLoading,
   simpleView,
   tradesByMarket,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
   const [prevMarketId, setPrevMarketId] = useState(activeMarket || '');
-  
+  const [isLoading, setIsLoading] = useState(true);
   const prevMetricsRef = useRef({
     price,
     priceChangeAmount,
@@ -71,7 +69,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const delayedLoadingClearRef = useRef<NodeJS.Timeout | null>(null);
   const location = useLocation();
-
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const shouldShowFullHeader = isTradeRoute && !simpleView;
 
@@ -144,14 +141,14 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   ]);
 
   useEffect(() => {
-    if (orderdata.liquidityBuyOrders || orderdata.liquiditySellOrders) {
+    if (orderdata.liquidityBuyOrders[0] || orderdata.liquiditySellOrders[0]) {
       const roundedBuys =
-        orderdata.liquidityBuyOrders.length !== 0
-          ? orderdata.liquidityBuyOrders
+        orderdata.liquidityBuyOrders[0].length !== 0
+          ? orderdata.liquidityBuyOrders[0]
           : [];
       const roundedSells =
-        orderdata.liquiditySellOrders.length !== 0
-          ? orderdata.liquiditySellOrders
+        orderdata.liquiditySellOrders[0].length !== 0
+          ? orderdata.liquiditySellOrders[0]
           : [];
       const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3]
           / Number(markets[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.priceFactor)
@@ -167,6 +164,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       } else {
         setSellLiquidity('n/a');
       }
+      setIsLoading(orderdata.liquidityBuyOrders[1] != activeMarket.address)
     }
   }, [orderdata]);
 
@@ -219,14 +217,14 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         tokendict={tokendict}
         setpopup={setpopup}
         marketsData={marketsData}
-        isLoading={isChartLoading}
+        isLoading={isLoading}
         isTradeRoute={isTradeRoute}
         simpleView={simpleView}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics 
           metrics={metrics} 
-          isLoading={isChartLoading}
+          isLoading={isLoading}
         />
       )}
     </div>

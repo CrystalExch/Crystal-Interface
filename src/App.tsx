@@ -484,15 +484,6 @@ function App() {
     const saved = localStorage.getItem('crystal_order_type');
     return saved !== null ? JSON.parse(saved) : 1;
   });
-  const [chartHeaderData, setChartHeaderData] = useState({
-    price: 'n/a',
-    priceChange: 'n/a',
-    change: 'n/a',
-    high24h: 'n/a',
-    low24h: 'n/a',
-    volume: 'n/a',
-    isChartLoading: false
-  });
   const [addliquidityonly, setAddLiquidityOnly] = useState(() => {
     const saved = localStorage.getItem('crystal_add_liquidity_only');
     return saved !== null ? JSON.parse(saved) : false;
@@ -594,8 +585,8 @@ function App() {
   const [isBlurred, setIsBlurred] = useState(false);
   const [roundedBuyOrders, setRoundedBuyOrders] = useState<Order[]>([]);
   const [roundedSellOrders, setRoundedSellOrders] = useState<Order[]>([]);
-  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<Order[]>([]);
-  const [liquiditySellOrders, setLiquiditySellOrders] = useState<Order[]>([]);
+  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<[Order[], string]>([[], '']);
+  const [liquiditySellOrders, setLiquiditySellOrders] = useState<[Order[], string]>([[], '']);
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
   const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
@@ -725,14 +716,7 @@ function App() {
     return a;
   }, []);
 
-  const sortedMarkets = (marketsData.filter((market) => {
-    const matchesSearch = market?.pair
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const notWeth =
-      market?.baseAddress !== settings.chainConfig[activechain].weth;
-    return matchesSearch && notWeth;
-  }).sort((a, b) => {
+  const sortedMarkets = (marketsData.sort((a, b) => {
     if (!sortField || !sortDirection) return 0;
 
     let aValue: number = 0;
@@ -1696,34 +1680,6 @@ function App() {
     }
   }, [refData, mids]);
 
-  // trades processing
-  useEffect(() => {
-    const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
-
-    let processed: [boolean, string, number, string, string][] = [];
-
-    if (temp) {
-      processed = temp.slice(0, 100).map((trade: Trade) => {
-        const isBuy = trade[2] === 1;
-        const { price, tradeValue } = getTradeValue(trade, activeMarket);
-        const time = formatTime(trade[6]);
-        const hash = trade[5];
-
-        return [
-          isBuy,
-          formatCommas(
-            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
-          ),
-          tradeValue,
-          time,
-          hash,
-        ];
-      });
-    }
-
-    setTrades(processed);
-  }, [tradesByMarket[activeMarketKey]]);
-
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -1985,8 +1941,8 @@ function App() {
             setSpreadData(spread);
             setRoundedBuyOrders(roundedBuy);
             setRoundedSellOrders(roundedSell);
-            setLiquidityBuyOrders(liquidityBuy);
-            setLiquiditySellOrders(liquiditySell);
+            setLiquidityBuyOrders([liquidityBuy, activeMarket.address]);
+            setLiquiditySellOrders([liquiditySell, activeMarket.address]);
 
             setBaseInterval(1 / Number(activeMarket.priceFactor));
             setOBInterval(
@@ -2373,6 +2329,33 @@ function App() {
     amountOutScale,
   ]);
 
+  useEffect(() => {
+    const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
+
+    let processed: [boolean, string, number, string, string][] = [];
+
+    if (temp) {
+      processed = temp.slice(0, 100).map((trade: Trade) => {
+        const isBuy = trade[2] === 1;
+        const { price, tradeValue } = getTradeValue(trade, activeMarket);
+        const time = formatTime(trade[6]);
+        const hash = trade[5];
+
+        return [
+          isBuy,
+          formatCommas(
+            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+          ),
+          tradeValue,
+          time,
+          hash,
+        ];
+      });
+    }
+
+    setTrades(processed);
+  }, [tradesByMarket?.[activeMarketKey]?.[0]])
+
   // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -2447,6 +2430,7 @@ function App() {
         const orderlogs = result?.[2]?.result;
         setProcessedLogs(prev => {
           let tempset = new Set(prev);
+          let temptrades: any = {};
           setorders((orders) => {
             let temporders = [...orders];
             let ordersChanged = false;
@@ -2779,6 +2763,19 @@ function App() {
                           log['transactionHash'],
                           _timestamp,
                         ]);
+                        if (!Array.isArray(temptrades[marketKey])) {
+                          temptrades[marketKey] = [];
+                        }
+                        temptrades[marketKey].unshift([
+                          amountIn,
+                          amountOut,
+                          buy,
+                          price,
+                          marketKey,
+                          log['transactionHash'],
+                          _timestamp,
+                          parseInt(log['data'].slice(67, 98), 16),
+                        ])
                         if (
                           log['topics'][1].slice(26) ==
                           address?.slice(2).toLowerCase()
@@ -2833,8 +2830,14 @@ function App() {
                             '',
                           );
                         }
-                        setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
-                          const updatedBars = [...existingBars];
+                      }
+                    }
+                    if (tradesByMarketChanged) {
+                      setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+                        const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+                        const updatedBars = [...existingBars];
+                        let rawVolume;
+                        if (marketKey && Array.isArray(temptrades?.[marketKey])) {
                           const barSizeSec =
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
@@ -2844,21 +2847,20 @@ function App() {
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
                             5 * 60;
-                      
-                          const lastBarIndex = updatedBars.length - 1;
-                          const lastBar = updatedBars[lastBarIndex];
-                      
-                          const priceFactor = Number(markets[marketKey].priceFactor || 1);
-                          let openPrice = parseFloat((parseInt(log['data'].slice(67, 98), 16) / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                          let closePrice = parseFloat((parseInt(log['data'].slice(98, 130), 16) / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
-                          const rawVolume =
-                            (parseInt(log['data'].slice(66, 67), 16) === 1 ? parseInt(log['data'].slice(2, 34), 16) : parseInt(log['data'].slice(34, 66), 16)) /
-                            10 ** Number(markets[marketKey].quoteDecimals);
-                          
-                          const tradeTimeSec = _timestamp;
-                          const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
-                          const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
-                          if (/^[^\d]+/.test(existingIntervalLabel) && marketKey.startsWith(existingIntervalLabel.match(/^[^\d]+/)![0])) {
+                          const priceFactor = Number(markets[marketKey].priceFactor);
+                          for (const lastTrade of temptrades[marketKey]) {
+                            const lastBarIndex = updatedBars.length - 1;
+                            const lastBar = updatedBars[lastBarIndex];
+
+                            let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                            let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                            rawVolume =
+                              (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
+                              10 ** Number(markets[marketKey].quoteDecimals);
+                            
+                            const tradeTimeSec = lastTrade[6];
+                            const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+                            const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
                             if (flooredTradeTimeSec === lastBarTimeSec) {
                               updatedBars[lastBarIndex] = {
                                 ...lastBar,
@@ -2897,52 +2899,43 @@ function App() {
                               }
                             }
                           }
-                      
-                          return [updatedBars, existingIntervalLabel, existingShowOutliers];
-                        });
-                      }
-                    }
-                    if (!Object.keys(tradesByMarket).every(key =>
-                      Array.isArray(tradesByMarket[key]) &&
-                      Array.isArray(temptradesByMarket[key]) &&
-                      tradesByMarket[key].length == temptradesByMarket[key].length
-                    )) {
-                      setMarketsData((marketsData) =>
-                        marketsData.map((market) => {
-                          if (!market) return;
-                          const marketKey = market?.marketKey.replace(
-                            new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
-                            ethticker
-                          );
-                          const trades = temptradesByMarket[marketKey] || [];
-                          const prevlength = tradesByMarket[marketKey]?.length || 0;
-                          const newTrades = trades.length > prevlength ? trades.slice(prevlength) : [];
-                          if (newTrades.length < 1) return market;
-                          const firstKlineOpen: number =
-                            market?.series && Array.isArray(market?.series) && market?.series.length > 0
-                              ? Number(market?.series[0].open)
-                              : 0;
-                          const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
-                          const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
-                          const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-                            / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                          const volume = newTrades.reduce((sum: number, trade: any) => {
-                            const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
-                            return sum + amount;
-                          }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-                          return {
-                            ...market,
-                            volume: formatCommas(
-                              (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
-                            ),
-                            currentPrice: formatSubscript(
-                              (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
-                            ),
-                            priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                            priceChangeAmount: currentPriceRaw - firstKlineOpen
-                          };
-                        })
-                      );
+                        }
+                        setMarketsData((marketsData) =>
+                          marketsData.map((market) => {
+                            if (!market) return;
+                            const marketKey = market?.marketKey.replace(
+                              new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                              ethticker
+                            );
+                            const newTrades = temptrades?.[marketKey]
+                            if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+                            const firstKlineOpen: number =
+                              market?.series && Array.isArray(market?.series) && market?.series.length > 0
+                                ? Number(market?.series[0].open)
+                                : 0;
+                            const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                            const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                            const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                              / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                            const volume = newTrades.reduce((sum: number, trade: any) => {
+                              const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                              return sum + amount;
+                            }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+                            return {
+                              ...market,
+                              volume: formatCommas(
+                                (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                              ),
+                              currentPrice: formatSubscript(
+                                (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                              ),
+                              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                              priceChangeAmount: currentPriceRaw - firstKlineOpen
+                            };
+                          })
+                        );
+                        return [updatedBars, existingIntervalLabel, existingShowOutliers];
+                      });
                     }
                   }
                   if (tradeHistoryChanged) {
@@ -3001,7 +2994,7 @@ function App() {
                 }
               ) {
                 id
-                orders(first: 1000) {
+                orders(first: 1000, orderDirection: desc, orderBy: timeStamp) {
                   id
                   caller
                   amountIn
@@ -3056,7 +3049,7 @@ function App() {
               }
               filledMaps(where:{caller: "${address}"}) {
                 id
-                orders(first: 1000) {
+                orders(first: 1000, orderDirection: desc, orderBy: timestamp) {
                   id
                   caller
                   originalSizeBase
@@ -6702,8 +6695,22 @@ function App() {
               className="search-markets-list"
               id="search-markets-list-container"
             >
-              {sortedMarkets.length > 0 ? (
-                sortedMarkets.map((market, index) => (
+              {sortedMarkets.filter((market) => {
+                const matchesSearch = market?.pair
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase());
+                const notWeth =
+                  market?.baseAddress !== settings.chainConfig[activechain].weth;
+                return matchesSearch && notWeth;
+              }).length > 0 ? (
+                sortedMarkets.filter((market) => {
+                  const matchesSearch = market?.pair
+                    .toLowerCase()
+                    .includes(searchQuery.toLowerCase());
+                  const notWeth =
+                    market?.baseAddress !== settings.chainConfig[activechain].weth;
+                  return matchesSearch && notWeth;
+                }).map((market, index) => (
                   <div
                     key={market.pair}
                     className={`search-market-item ${index === selectedIndex ? 'selected' : ''}`}
@@ -12683,16 +12690,6 @@ function App() {
   const renderChartComponent = useMemo(() => (
     <ChartComponent
       activeMarket={activeMarket}
-      orderdata={{
-        liquidityBuyOrders,
-        liquiditySellOrders,
-        spreadData,
-        priceFactor,
-        symbolIn,
-        symbolOut,
-      }}
-      marketsData={sortedMarkets}
-      updateChartData={setChartHeaderData}
       tradehistory={tradehistory}
       isMarksVisible={isMarksVisible}
       orders={orders}
@@ -12713,14 +12710,6 @@ function App() {
     />
   ), [
     activeMarket,
-    liquidityBuyOrders,
-    liquiditySellOrders,
-    spreadData,
-    priceFactor,
-    symbolIn,
-    symbolOut,
-    sortedMarkets,
-    setChartHeaderData,
     tradehistory,
     isMarksVisible,
     orders,
@@ -12798,8 +12787,6 @@ function App() {
                     priceFactor,
                     symbolIn,
                     symbolOut,
-                    liquidityBuyOrders,
-                    liquiditySellOrders,
                   }}
                   windowWidth={windowWidth}
                   mobileView={mobileView}
@@ -12943,19 +12930,12 @@ function App() {
             transactions={transactions}
             activeMarket={activeMarket}
             orderdata={{
-              ...chartHeaderData,
               liquidityBuyOrders,
               liquiditySellOrders,
-              spreadData,
-              priceFactor,
-              symbolIn,
-              symbolOut,
             }}
             onMarketSelect={onMarketSelect}
             marketsData={sortedMarkets}
-            trades={tradesByMarket[activeMarketKey]}
             tradesloading={tradesloading}
-            chartHeaderData={chartHeaderData}
             tradesByMarket={tradesByMarket}
           />
           <div className="headerfiller"></div>

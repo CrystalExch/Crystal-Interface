@@ -234,6 +234,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               currentPage={currentPage}
               setChain={setChain}
               waitForTxReceipt={waitForTxReceipt}
+              onMarketSelect={onMarketSelect}
             />
           );
         case 'tradeHistory':
@@ -243,6 +244,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               pageSize={pageSize}
               currentPage={currentPage}
               trades={trades}
+              onMarketSelect={onMarketSelect}
             />
           );
         case 'orderHistory':
@@ -254,6 +256,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               pageSize={pageSize}
               currentPage={currentPage}
               trades={trades}
+              onMarketSelect={onMarketSelect}
             />
           );
         default:

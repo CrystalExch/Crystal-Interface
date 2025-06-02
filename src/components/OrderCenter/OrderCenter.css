@@ -91,7 +91,6 @@
 .market-cell {
   align-items: center;
   display: flex;
-  gap: 8px;
   margin-left: -15px;
 }
 
@@ -99,12 +98,15 @@
   border-radius: 50%;
   height: 24px;
   width: 24px;
+  cursor: pointer;
 }
 
 .market-details {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-left: 8px;
+  cursor: pointer;
 }
 
 .order-favorite-cell {

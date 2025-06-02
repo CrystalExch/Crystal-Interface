@@ -18,12 +18,14 @@ interface TradeHistoryItemProps {
   trade: any;
   market: any;
   quotePrice: any;
+  onMarketSelect: any;
 }
 
 const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
   trade,
   market,
   quotePrice,
+  onMarketSelect,
 }) => {
   const { activechain, favorites, toggleFavorite } = useSharedContext();
 
@@ -65,9 +67,9 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
         </div>
       </div>
 
-      <div className="oc-cell market-cell">
-        <img className="ordercenter-token-icon" src={market.image} />
-        <div className="market-details">
+      <div className="oc-cell market-cell" >
+        <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)}/>
+        <div className="market-details" onClick={() => onMarketSelect(market)}>
           <div className="market-name">
             {market.baseAsset}-{market.quoteAsset}
           </div>

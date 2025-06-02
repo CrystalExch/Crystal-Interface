@@ -484,7 +484,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
       widgetRef.current.remove();
     };
-  }, []);
+  }, [showChartOutliers]);
 
   useEffect(() => {
     try {

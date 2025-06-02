@@ -7,7 +7,6 @@ import TimeFrameSelector from './TimeFrameSelector/TimeFrameSelector';
 import UTCClock from './UTCClock/UTCClock';
 import normalizeTicker from '../../utils/normalizeTicker.ts';
 import { settings } from '../../settings.ts';
-import { formatCommas } from '../../utils/numberDisplayFormat.ts';
 import {
   DataPoint,
 } from './utils/chartDataGenerator';
@@ -16,9 +15,6 @@ import './Chart.css';
 
 interface ChartComponentProps {
   activeMarket: any;
-  orderdata: any;
-  marketsData: any;
-  updateChartData?: any;
   tradehistory: any;
   isMarksVisible: boolean;
   orders: any;
@@ -40,8 +36,6 @@ interface ChartComponentProps {
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   activeMarket,
-  updateChartData,
-  marketsData,
   tradehistory, 
   isMarksVisible,
   orders,
@@ -62,14 +56,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
-  const [price, setPrice] = useState('n/a');
-  const [priceChange, setPriceChange] = useState('n/a');
-  const [change, setChange] = useState('n/a');
-  const [high24h, setHigh24h] = useState('n/a');
-  const [low24h, setLow24h] = useState('n/a');
-  const [volume, setVolume] = useState('n/a');
   const [selectedInterval, setSelectedInterval] = useState('5m');
-  const [isChartLoading, setIsChartLoading] = useState(false);
 
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -168,7 +155,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       }
       return token + interval;
     });
-    setIsChartLoading(true);
     try {
       const subgraphData = await fetchSubgraphCandles(interval, activeMarket.address, showChartOutliers);
       if (subgraphData && subgraphData.length) {
@@ -187,65 +173,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     } catch (err) {
       console.error('Error fetching subgraph candles:', err);
     }
-    setIsChartLoading(false);
   };
 
   useEffect(() => {
-    updateCandlestickData(selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain), showChartOutliers);
-  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain), showChartOutliers]);
-
-  useEffect(() => {
-    if (!marketsData || !activeMarket) return;
-    
-    const marketHeader = marketsData.find(
-      (market: any) => market.address === activeMarket.address
-    );
-
-    if (marketHeader) {
-      setPrice(marketHeader.currentPrice);
-      setPriceChange(
-        formatCommas(
-          (marketHeader.priceChangeAmount / Number(activeMarket.priceFactor)).toString()
-        )
-      );      
-      setChange(marketHeader.priceChange);
-      setHigh24h(
-        formatCommas((parseFloat(marketHeader.high24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString())
-      );
-      setLow24h(
-        formatCommas((parseFloat(marketHeader.low24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString())
-      );
-      setVolume(marketHeader.volume);
-    }
-  }, [marketsData, activeMarket]);
-
-  useEffect(() => {
-    if (updateChartData) {
-      updateChartData((prevData: any) => {
-        if (
-          prevData.price === price &&
-          prevData.priceChange === priceChange &&
-          prevData.change === change &&
-          prevData.high24h === high24h &&
-          prevData.low24h === low24h &&
-          prevData.volume === volume &&
-          prevData.isChartLoading === isChartLoading
-        ) {
-          return prevData;
-        }
-  
-        return {
-          price,
-          priceChange,
-          change,
-          high24h,
-          low24h,
-          volume,
-          isChartLoading
-        };
-      });
-    }
-  }, [price, priceChange, change, high24h, low24h, volume, isChartLoading]);
+    updateCandlestickData(selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain), showChartOutliers);
+  }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain), showChartOutliers]);
 
   return (
     <div className="chartwrapper" ref={chartRef}>
