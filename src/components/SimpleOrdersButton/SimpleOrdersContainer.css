@@ -38,6 +38,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 5px;
+    margin-right: 6px;
   }
   
   .orders-header-title {
@@ -55,14 +56,15 @@
     transition: opacity 0.2s ease;
     padding: 2px 8px;
     border-radius: 3px;
-    background-color: #ff6c6c1a;
     display: flex;
     align-items: center;
     justify-content: center;
+    width: 66.844px;
   }
   
   .orders-cancel-all:hover {
     opacity: 0.8;
+    background-color: #ff6c6c1a;
   }
   
   .sort-header {
@@ -101,11 +103,15 @@
   
   .order-row {
     display: grid;
-    grid-template-columns: 0.4fr 0.8fr 0.5fr 0.8fr 0.7fr 25px;
+    grid-template-columns: 0.4fr 0.8fr 0.5fr 0.8fr 0.7fr 30px;
     padding: 4px 0;
     align-items: center;
     transition: background-color 0.2s ease;
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  }
+  
+  .order-row > :last-child {
+    justify-self: end;
   }
   
   .order-row:last-child {
@@ -225,7 +231,7 @@
     border: 1px dashed rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     margin-top: 4px;
-    padding: 7px 12px;
+    padding: 7px 4px 7px 12px;
     animation: fadeInSlideUp 0.5s ease forwards;
     animation-delay: 0.7s;
     opacity: 0;

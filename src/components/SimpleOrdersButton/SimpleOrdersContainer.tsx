@@ -137,7 +137,12 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
 
       {orders && orders.length > 0 ? (
         <div className="orders-table-body">
-          {orders.map((order, index) => {
+          {orders.slice()
+            .sort((a, b) => {
+              const aFilled = a[7] && a[2] ? (a[7] / a[2]) : 0;
+              const bFilled = b[7] && b[2] ? (b[7] / b[2]) : 0;
+              return bFilled - aFilled;
+            }).map((order, index) => {
             if (!order || !order[4] || !markets[order[4]]) return null;
             
             const market = markets[order[4]];
@@ -173,7 +178,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
                       className="progress-fill"
                       style={{
                         width: `${filledPercent}%`,
-                        backgroundColor: isBuy ? '#50f08dde' : '#ff6c6c',
                       }}
                     ></div>
                   </div>

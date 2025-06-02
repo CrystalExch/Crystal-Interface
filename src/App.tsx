@@ -2329,6 +2329,7 @@ function App() {
     amountOutScale,
   ]);
 
+  // trades processing
   useEffect(() => {
     const temp: Trade[] | undefined = tradesByMarket[activeMarketKey];
 
@@ -3531,6 +3532,7 @@ function App() {
     })();
   }, [activechain]);
 
+  // mobile trade
   useEffect(() => {
     const handleEscapeKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && popup != 11) {
@@ -4435,6 +4437,12 @@ function App() {
                         }
                       }
                       setlimitChase(true);
+                      setAmountOutScale(BigInt(0))
+                      setScaleOutputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                     } else {
                       setTokenOut(tokenIn);
                       if (
@@ -4537,6 +4545,12 @@ function App() {
                         BigInt(10) ** tokendict[tokenIn].decimals,
                       );
                       setlimitChase(true);
+                      setAmountOutScale(BigInt(0))
+                      setScaleOutputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                       const percentage = !tokenBalances[token.address]
                         ? 0
                         : Math.min(
@@ -4635,6 +4649,12 @@ function App() {
                     }
                   } else if (location.pathname.slice(1) == 'send') {
                     setlimitChase(true);
+                    setAmountOutScale(BigInt(0))
+                    setScaleOutputString('')
+                    setScaleStart(BigInt(0))
+                    setScaleEnd(BigInt(0))
+                    setScaleStartString('')
+                    setScaleEndString('')
                     if (token.address == tokenOut && multihop == false) {
                       setTokenOut(tokenIn);
                       pricefetchmarket = getMarket(token.address, tokenIn);
@@ -5140,6 +5160,12 @@ function App() {
                         }
                       }
                       setlimitChase(true);
+                      setAmountOutScale(BigInt(0))
+                      setScaleOutputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                     } else {
                       setTokenIn(tokenOut);
                       if (
@@ -5246,6 +5272,12 @@ function App() {
                         BigInt(10) ** tokendict[tokenIn].decimals,
                       );
                       setlimitChase(true);
+                      setAmountOutScale(BigInt(0))
+                      setScaleOutputString('')
+                      setScaleStart(BigInt(0))
+                      setScaleEnd(BigInt(0))
+                      setScaleStartString('')
+                      setScaleEndString('')
                       const percentage = !tokenBalances[newTokenIn]
                         ? 0
                         : Math.min(
@@ -10814,7 +10846,7 @@ function App() {
           </div>
         </div>
 
-        {!addliquidityonly &&
+        {!addliquidityonly && !limitChase && 
           limitPrice != BigInt(0) &&
           ((limitPrice >= lowestAsk && tokenIn == activeMarket.quoteAddress) ||
             (limitPrice <= highestBid &&
