@@ -136,7 +136,7 @@ import TransactionPopupManager from './components/TransactionPopupManager/Transa
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
-import SimpleOrdersContainer from './components/SimpleOrdersButton/SimpleOrdersContainer';
+import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
 

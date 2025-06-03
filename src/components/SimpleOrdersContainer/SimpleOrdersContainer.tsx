@@ -4,7 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import cancelOrder from '../../scripts/cancelOrder'; 
 import multiBatchOrders from '../../scripts/multiBatchOrders';
 import './SimpleOrdersContainer.css';
-import chevron from '../../assets/chevron.png';
+import chevron from '../../assets/chevron_arrow.png';
 
 interface SimpleOrdersContainerProps {
   orders: any[];
