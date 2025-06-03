@@ -1039,12 +1039,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                                         <div className="lp-chart-header">
                                                             <div className="lp-chart-left">
                                                                 <h4 className="lp-chart-title">Your Positions</h4>
-                                                                <div className="lp-chart-value">$12,345.67</div> {/* Replace with actual value */}
+                                                                <div className="lp-chart-value">$12,345.67</div> 
                                                             </div>
                                                         </div>
                                                         <div className="lp-chart-wrapper">
                                                             <ResponsiveContainer width="100%" height="100%">
-                                                                <AreaChart data={chartData /* Replace with user-specific data */}>
+                                                                <AreaChart data={chartData}>
                                                                     <defs>
                                                                         <linearGradient id="userChartGradient" x1="0" y1="0" x2="0" y2="1">
                                                                             <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
