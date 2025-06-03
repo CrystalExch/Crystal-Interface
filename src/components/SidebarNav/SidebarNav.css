@@ -123,7 +123,7 @@
 .sidebar-nav.expanded .page-mode-button,
 .sidebar-nav.expanded .sidebar-bottom-link,
 .sidebar-nav.expanded .sidebar-toggle-button {
-  width: 185px;
+  width: 165px;
   justify-content: flex-start;
   transition: all 0.3s ease;
   padding-left: 8px;
