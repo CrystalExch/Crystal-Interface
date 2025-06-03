@@ -4,6 +4,7 @@ import { useLanguage } from '../../contexts/LanguageContext';
 import cancelOrder from '../../scripts/cancelOrder'; 
 import multiBatchOrders from '../../scripts/multiBatchOrders';
 import './SimpleOrdersContainer.css';
+import chevron from '../../assets/chevron.png';
 
 interface SimpleOrdersContainerProps {
   orders: any[];
@@ -29,6 +30,16 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
     {}
   );
   const [cancelAllLoading, setCancelAllLoading] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+
+  const toggleOrderExpansion = (orderId: string) => {
+    setExpandedOrders(prev => ({
+      ...prev,
+      [orderId]: !prev[orderId]
+    }));
+  };
 
   const handleCancelOrder = async (order: any) => {
     if (!order || !address) {
@@ -150,48 +161,76 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
               order[7] && order[2] ? (order[7] / order[2]) * 100 : 0;
             const isBuy = order[3] === 1;
             const value = order[2] / 10 ** Number(market.baseDecimals)
-            
             const orderKey = order[0].toString();
+            const isExpanded = expandedOrders[orderKey];
 
             return (
-              <div key={`order-${index}`} className="order-row">
-                <div className="order-market">
-                  <span
-                    className={`direction-indicator ${isBuy ? 'buy' : 'sell'}`}
-                  >
-                    {isBuy ? t('buy') : t('sell')}
-                  </span>
-                </div>
-                <div className="order-market">
-                  {market.baseAsset}
-                  {market.quoteAsset}
-                </div>
-                <div className="simple-order-value">
-                  {(order[0]/Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}
-                </div>
-                <div className="simple-order-value">
-                  {customRound(value, 3) + ' ' + market.baseAsset}
-                </div>
-                <div className="order-filled">
-                  <div className="simple-progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${filledPercent}%`,
-                      }}
-                    ></div>
+              <div key={`order-${index}`} className="order-card">
+                <div className="order-summary-row" onClick={() => toggleOrderExpansion(orderKey)}>
+                  <div className="order-summary-left">
+                    <span className={`direction-indicator ${isBuy ? 'buy' : 'sell'}`}>
+                      {isBuy ? t('buy') : t('sell')}
+                    </span>
+                    <span className="order-market-name">
+                      <img className="simple-market-image" src={market.image}/>{market.baseAsset}-{market.quoteAsset}
+                    </span>
+                  </div>
+                  <div className="order-summary-right">
+                    <div className="order-progress-container">
+                      <div className="simple-progress-bar">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${filledPercent}%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                    <div className="expand-arrow">
+                      <span className={`toggle-arrow ${isExpanded ? 'open' : ''}`}><img className="chevron" src={chevron}/></span>
+                    </div>
                   </div>
                 </div>
-                <div
-                  className={`simple-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
-                  onClick={loadingOrders[orderKey] ? () => {} : () => handleCancelOrder(order)}
-                >
-                  {loadingOrders[orderKey] ? (
-                    <div className="spinner"></div>
-                  ) : (
-                    '✕'
-                  )}
-                </div>
+
+                {isExpanded && (
+                  <div className="order-details-row">
+                    <div className="order-details-grid">
+                      <div className="order-detail-item">
+                        <span className="detail-label">{t('price') || 'Price'}</span>
+                        <span className="detail-value">
+                          {(order[0]/Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))}
+                        </span>
+                      </div>
+                      <div className="order-detail-item">
+                        <span className="detail-label">{t('size') || 'Size'}</span>
+                        <span className="detail-value">
+                          {customRound(value, 3)} {market.baseAsset}
+                        </span>
+                      </div>
+                      <div className="order-detail-item">
+                        <span className="detail-label">{t('filled') || 'Filled'}</span>
+                        <span className="detail-value">
+                          {filledPercent.toFixed(1)}%
+                        </span>
+                      </div>
+                      <div className="order-detail-item">
+                        <div
+                          className={`order-cancel-button ${loadingOrders[orderKey] ? 'signing' : ''}`}
+                          onClick={loadingOrders[orderKey] ? () => {} : (e) => {
+                            e.stopPropagation();
+                            handleCancelOrder(order);
+                          }}
+                        >
+                          {loadingOrders[orderKey] ? (
+                            <div className="spinner"></div>
+                          ) : (
+                            t('cancel') || 'Cancel'
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
