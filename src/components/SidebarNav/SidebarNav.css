@@ -30,24 +30,24 @@
   overflow: hidden;
 }
 
-
 @media (max-width: 1020px) {
   .sidebar-nav {
     display: none;
 
   }
 }
+
 .sidebar-nav.expanded {
-  width: 200px;
+  width: 180px;
 }
 
 .sidebar-nav.expanded ~ .app-container.sidebar-adjusted {
-  margin-left: 205px;
-  width: calc(100% - 205px);
+  margin-left: 185px;
+  width: calc(100% - 185px);
   transition: all 0.3s ease;
 }
 .sidebar-nav.expanded .sidebar-nav-inner {
-  width: 196px;
+  width: 176px;
   transition: all 0.3s ease;
 
 }
@@ -123,11 +123,10 @@
 .sidebar-nav.expanded .page-mode-button,
 .sidebar-nav.expanded .sidebar-bottom-link,
 .sidebar-nav.expanded .sidebar-toggle-button {
-  width: 185px;
+  width: 165px;
   padding-right: 12px;
   justify-content: flex-start;
   transition: all 0.3s ease;
-
 }
 
 .sidebar-nav .active {
@@ -148,7 +147,7 @@
   flex-grow: 1;
   width: 100%;
   padding-top: 14px;
-  max-height: calc(100% - 160px);
+  max-height: calc(100% - 170px);
   overflow-y: auto;
 }
 
@@ -195,29 +194,14 @@
   display: none;
 }
 
-
-
 .sidebar-nav.expanded .sidebar-label {
   display: block;
   opacity: 1;
 }
 
-
-
 .rotate-180 {
   transform: rotate(180deg);
 }
-
-@media (max-width: 768px) {
-  .sidebar-nav {
-    width: 50px;
-  }
-  
-  .sidebar-nav.expanded {
-    width: 200px;
-  }
-}
-
 
 .sidebar-toggle-button .sidebar-svg-icon {
   transition: transform 0.3s ease;

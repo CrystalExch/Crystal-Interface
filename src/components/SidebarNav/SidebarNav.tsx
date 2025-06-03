@@ -22,8 +22,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const location = useLocation();
   const path = location.pathname;
   const { t } = useLanguage();
-  const [expanded, setExpanded] = useState(false);
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [expanded, setExpanded] = useState(() => {
+    const saved = localStorage.getItem('crystal_sidebar_expanded');
+    return windowWidth <= 1020 ? false : saved !== null ? JSON.parse(saved) : windowWidth > 1920 ? true : false;
+  });
   const backgroundlesslogo = '/CrystalLogo.png';
 
   const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({

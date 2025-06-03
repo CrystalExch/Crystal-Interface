@@ -157,10 +157,14 @@ function App() {
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address } = useSmartAccountClient({});
-  const { sendUserOperationAsync } = useSendUserOperation({
+  const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
     client,
     waitForTxn: true,
   });
+  const sendUserOperationAsync = useCallback(
+    (params: any) => rawSendUserOperationAsync(params),
+    []
+  );  
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -666,6 +670,7 @@ function App() {
     () => Object.values(tokendict),
     [tokendict],
   );
+  const memoizedSortConfig = useMemo(() => ({ column: 'balance', direction: 'desc' }), []);
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -746,7 +751,7 @@ function App() {
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   }));
 
-  function newTxPopup(
+  const newTxPopup = useCallback((
     _transactionHash: any,
     _currentAction: any,
     _tokenIn: any,
@@ -755,7 +760,7 @@ function App() {
     _amountOut: any,
     _price: any = 0,
     _address: any = '',
-  ) {
+  ) => {
     setTransactions((prevTransactions) => {
       const newTransaction = {
         explorerLink: `${settings.chainConfig[activechain].explorer}/tx/${_transactionHash}`,
@@ -783,7 +788,7 @@ function App() {
       }
       return prev;
     });
-  };
+  }, [activechain, audio]);
 
   const handleSetChain = useCallback(async () => {
     return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
@@ -900,7 +905,7 @@ function App() {
   };
 
   // on market select
-  const onMarketSelect = (market: { quoteAddress: any; baseAddress: any; }) => {
+  const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
       if (simpleView) {
         navigate('/swap');
@@ -933,10 +938,10 @@ function App() {
     if (slider && popup) {
       (popup as HTMLElement).style.left = `${15 / 2}px`;
     }
-  };
+  }, [location.pathname, simpleView]);
 
   // update limit amount
-  const updateLimitAmount = (price: number, priceFactor: number) => {
+  const updateLimitAmount = useCallback((price: number, priceFactor: number) => {
     let newPrice = BigInt(Math.round(price * priceFactor));
     setlimitPrice(newPrice);
     setlimitPriceString(price.toFixed(Math.floor(Math.log10(priceFactor))));
@@ -968,7 +973,13 @@ function App() {
         : ''
       ).toString(),
     );
-  };
+  }, [activeMarket?.scaleFactor,
+    activeMarket?.baseAddress,
+    amountIn,
+    tokenIn,
+    tokenOut,
+    tokendict
+  ]);
 
   // set amount for a token
   const debouncedSetAmount = (amount: bigint) => {
@@ -6211,7 +6222,7 @@ function App() {
                   onMarketSelect={onMarketSelect}
                   setSendTokenIn={setSendTokenIn}
                   setpopup={setpopup}
-                  sortConfig={{ column: 'balance', direction: 'desc' }}
+                  sortConfig={memoizedSortConfig}
                   tokenBalances={tokenBalances}
                   isBlurred={isBlurred}
                 />
@@ -12749,7 +12760,6 @@ function App() {
     showChartOutliers,
     router,
     refetch,
-    sendUserOperationAsync,
     handleSetChain,
     waitForTxReceipt,
     address,
@@ -12757,7 +12767,6 @@ function App() {
     newTxPopup,
     usedRefAddress,
     advChartData,
-    setChartData,
     realtimeCallbackRef
   ]);
 
@@ -12869,7 +12878,7 @@ function App() {
                 onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
-                sortConfig={{ column: 'balance', direction: 'desc' }}
+                sortConfig={memoizedSortConfig}
                 onSort={emptyFunction}
                 tokenBalances={tokenBalances}
                 activeSection={activeSection}

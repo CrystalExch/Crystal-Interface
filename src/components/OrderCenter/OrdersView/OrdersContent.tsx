@@ -195,4 +195,4 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
   );
 };
 
-export default OrdersContent;
+export default React.memo(OrdersContent);

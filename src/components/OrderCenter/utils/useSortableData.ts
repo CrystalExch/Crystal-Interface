@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState, useCallback } from 'react';
 
 export function useSortableData(
   trades: any,
@@ -8,16 +8,15 @@ export function useSortableData(
   const [sortColumn, setSortColumn] = useState<string>('time');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  const handleSort = (column: string) => {
-    if (sortColumn === column) {
-      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
-    } else {
-      setSortColumn(column);
-      setSortOrder('asc');
-    }
-  };
+  const handleSort = useCallback((column: string) => {
+    setSortOrder(prev =>
+      column === sortColumn ? (prev === 'asc' ? 'desc' : 'asc') : 'asc'
+    );
+    setSortColumn(column);
+  }, [sortColumn]);
 
-  const sortedItems = (() => {
+
+  const sortedItems = useMemo(() => {
     const sorted = [...items].sort((a, b) => {
       let comparison = 0;
 
@@ -42,7 +41,7 @@ export function useSortableData(
     });
 
     return sorted;
-  })();
+  }, [items, sortColumn, sortOrder, trades]);
 
   return {
     sortedItems,

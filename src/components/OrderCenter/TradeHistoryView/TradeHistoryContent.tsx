@@ -109,4 +109,4 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   );
 };
 
-export default TradeHistoryContent;
+export default React.memo(TradeHistoryContent);

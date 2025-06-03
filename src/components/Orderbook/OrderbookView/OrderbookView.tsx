@@ -55,11 +55,13 @@ const OrderbookView: React.FC<OrderbookViewProps> = ({
 
   const updateContainerHeight = () => {
     if (!containerRef.current) return;
-    const rect = containerRef.current?.getBoundingClientRect();
-    const newHeight = rect?.height || 0;
-    setContainerHeight(prev =>
-      Math.abs(newHeight - prev) > 1 && newHeight !== 0 ? newHeight : prev
-    );
+    requestAnimationFrame(() => {
+      const rect = containerRef.current?.getBoundingClientRect();
+      const newHeight = rect?.height || 0;
+      setContainerHeight(prev =>
+        Math.abs(newHeight - prev) > 1 && newHeight !== 0 ? newHeight : prev
+      );
+    });
   }
 
   useLayoutEffect(() => {

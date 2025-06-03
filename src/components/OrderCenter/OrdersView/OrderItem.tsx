@@ -125,4 +125,4 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
   );
 }
 
-export default OrderItem;
+export default React.memo(OrderItem);

@@ -147,4 +147,4 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
   );
 };
 
-export default OrderHistoryContent;
+export default React.memo(OrderHistoryContent);

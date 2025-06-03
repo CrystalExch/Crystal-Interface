@@ -12,7 +12,7 @@ import './BalancesContent.css';
 
 interface SortConfig {
   column: string;
-  direction: 'asc' | 'desc';
+  direction: string;
 }
 
 interface PortfolioContentProps {

@@ -119,4 +119,4 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   );
 };
 
-export default OrderHistoryItem;
+export default React.memo(OrderHistoryItem);
