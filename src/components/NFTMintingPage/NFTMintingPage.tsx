@@ -15,8 +15,8 @@ interface NFTMintingPageProps {
   waitForTxReceipt: any;
 }
 
-const NFT_ADDRESS = '0xa15123E8b9C4BE639b380c48B75705475367b294';
-const MAX_SUPPLY = 38777;
+const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
+const MAX_SUPPLY = 10000; // 38777;
 
 function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
   try {
