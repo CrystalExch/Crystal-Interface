@@ -1,11 +1,15 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+} from 'react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 
 import { config } from '../../wagmi';
 import { CrystalNFTAbi } from '../../abis/CrystalNFTAbi';
-import treeJson from './tree.json';
 import LeaderboardBanner from '../../assets/nft.jpg';
 import './NFTMintingPage.css';
 
@@ -16,22 +20,38 @@ interface NFTMintingPageProps {
 }
 
 const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
-const MAX_SUPPLY = 10000; // 38777;
-
-function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
-  try {
-    return tree.getProof([addr.toLowerCase()]) as `0x${string}`[];
-  } catch {
-    return [];
-  }
-}
+const MAX_SUPPLY = 25000;
 
 const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,
   sendUserOperationAsync,
   waitForTxReceipt,
 }) => {
-  const tree = useMemo(() => StandardMerkleTree.load(treeJson as any), []);
+  const [tree, setTree] = useState<StandardMerkleTree<any[]> | null>(null);
+  const [treeLoading, setTreeLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/tree.json', { cache: 'force-cache' });
+        const json = await res.json();
+        const loadedTree = StandardMerkleTree.load(json);
+        setTree(loadedTree);
+      } catch (err) {
+        console.error('failed to load tree.json', err);
+      } finally {
+        setTreeLoading(false);
+      }
+    })();
+  }, []);
+
+  const [proof, setProof] = useState<`0x${string}`[]>([]);
+  const [isElig, setIsElig] = useState(false);
+  const [hasMinted, setHasMinted] = useState(false);
+  const [isMinting, setIsMinting] = useState(false);
+  const [currentSupply, setCurrentSupply] = useState<number>(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
+
   const nftData = useMemo(
     () => ({
       name: 'Crystal x BlockNads',
@@ -41,12 +61,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     }),
     [],
   );
-  const [currentSupply, setCurrentSupply] = useState<number>(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [proof, setProof] = useState<`0x${string}`[]>([]);
-  const [isElig, setIsElig] = useState(false);
-  const [hasMinted, setHasMinted] = useState(false);
-  const [isMinting, setIsMinting] = useState(false);
 
   useEffect(() => {
     async function fetchCurrentSupply() {
@@ -74,22 +88,25 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   }, [address, hasMinted]);
 
   useEffect(() => {
-    if (!address) {
+    if (!address || !tree) {
       setProof([]);
       setIsElig(false);
       setHasMinted(false);
       return;
     }
 
-    const newProof = proofForAddress(tree, address);
+    let newProof: `0x${string}`[] = [];
+    try {
+      newProof = tree.getProof([address.toLowerCase()]) as `0x${string}`[];
+    } catch {}
     setProof(newProof);
-    if (newProof.length === 0) {
-      setIsElig(false);
-      setHasMinted(false);
-      return;
-    }
 
     (async () => {
+      if (newProof.length === 0) {
+        setIsElig(false);
+        setHasMinted(false);
+        return;
+      }
       try {
         const [mintedFlag, eligFlag] = (await readContracts(config, {
           contracts: [
@@ -118,8 +135,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     })();
   }, [address, tree]);
 
-  const handleImageLoad = () => setImageLoaded(true);
-
   const handleMint = useCallback(async () => {
     if (!isElig || hasMinted || proof.length === 0) return;
 
@@ -145,18 +160,26 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   }, [isElig, hasMinted, proof, sendUserOperationAsync, waitForTxReceipt]);
 
   const supplySold = currentSupply;
-  const totalSupply = nftData.totalSupply;
-  const percentageSold = totalSupply > 0 ? (supplySold / totalSupply) * 100 : 0;
+  const percentageSold =
+    nftData.totalSupply > 0 ? (supplySold / nftData.totalSupply) * 100 : 0;
 
   const buttonDisabled =
-    !isElig || hasMinted || isMinting || supplySold >= totalSupply;
-  const buttonLabel = isMinting
+    treeLoading ||
+    !tree ||
+    !isElig ||
+    hasMinted ||
+    isMinting ||
+    supplySold >= nftData.totalSupply;
+
+  const buttonLabel = treeLoading
+    ? 'Loading...'
+    : isMinting
     ? t('minting')
     : hasMinted
     ? t('alreadyMinted')
     : !isElig
     ? t('notEligible')
-    : supplySold >= totalSupply
+    : supplySold >= nftData.totalSupply
     ? t('soldOut')
     : t('mintTitle');
 
@@ -167,10 +190,8 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
           {!imageLoaded && <div className="nft-image-placeholder" />}
           <img
             src={nftData.imageUrl}
-            className={`nft-image ${
-              imageLoaded ? 'nft-image-loaded' : ''
-            }`}
-            onLoad={handleImageLoad}
+            className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`}
+            onLoad={() => setImageLoaded(true)}
           />
           <div className="nft-title-overlay">
             <h1 className="nft-static-title">{nftData.name}</h1>
@@ -191,7 +212,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
               <div className="nft-supply-container">
                 <div className="nft-supply-text">
                   <span>
-                    {supplySold} / {totalSupply}
+                    {supplySold} / {nftData.totalSupply}
                   </span>
                   <span className="nft-supply-percentage">
                     {percentageSold.toFixed(1)}% {t('minted')}
