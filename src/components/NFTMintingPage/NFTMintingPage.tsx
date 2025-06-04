@@ -172,7 +172,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     supplySold >= nftData.totalSupply;
 
   const buttonLabel = treeLoading
-    ? 'Loading...'
+    ? t('loading')
     : isMinting
     ? t('minting')
     : hasMinted

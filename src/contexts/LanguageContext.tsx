@@ -407,6 +407,7 @@ export const translations: any = {
     showChartOutliers: "Show Chart Outliers",
     alreadyMinted: "Already Minted",
     notEligible: "Not Eligible",
+    loading: "Loading...",
   },
   CN: {
     trade: "交易",
@@ -814,6 +815,7 @@ export const translations: any = {
     hideScamWicks: "隐藏欺诈蜡烛",
     alreadyMinted: "已铸造",
     notEligible: "不符合资格",
+    loading: "加载中...",
   },
   JP: {
     trade: "取引",
@@ -1221,6 +1223,7 @@ export const translations: any = {
     hideScamWicks: "詐欺ウィックを非表示",
     alreadyMinted: "すでにミント済み",
     notEligible: "対象外",
+    loading: "読み込み中",
   },
   KR: {
     trade: '거래',
@@ -1628,6 +1631,7 @@ export const translations: any = {
     hideScamWicks: "사기 꼬리 숨기기",
     alreadyMinted: "이미 민팅됨",
     notEligible: "자격 없음",
+    loading: "로딩 중...",
   },
   ES: {
     trade: 'Comerciar',
@@ -2035,6 +2039,7 @@ export const translations: any = {
     hideScamWicks: "Ocultar mechas de estafa",
     alreadyMinted: "Ya acuñado",
     notEligible: "No elegible",
+    loading: "Cargando...",
   },
 };
 
