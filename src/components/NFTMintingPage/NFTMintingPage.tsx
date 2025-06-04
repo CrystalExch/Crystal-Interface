@@ -42,7 +42,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     [],
   );
   const [currentSupply, setCurrentSupply] = useState<number>(0);
-
   const [imageLoaded, setImageLoaded] = useState(false);
   const [proof, setProof] = useState<`0x${string}`[]>([]);
   const [isElig, setIsElig] = useState(false);
