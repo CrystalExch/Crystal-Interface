@@ -15,7 +15,7 @@ interface NFTMintingPageProps {
   waitForTxReceipt: any;
 }
 
-const NFT_ADDRESS = '0x651bf436C4fc88Bab3F694cD789bcbD670e5b305';
+const NFT_ADDRESS = '0xa15123E8b9C4BE639b380c48B75705475367b294';
 
 function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
   try {
@@ -37,7 +37,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
       description: t('mintDesc'),
       imageUrl: LeaderboardBanner,
       remainingSupply: 10000,
-      totalSupply: 10000,
+      totalSupply: 38777,
     }),
     [],
   );
