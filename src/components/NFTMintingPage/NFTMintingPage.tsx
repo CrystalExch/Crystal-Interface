@@ -16,6 +16,7 @@ interface NFTMintingPageProps {
 }
 
 const NFT_ADDRESS = '0xa15123E8b9C4BE639b380c48B75705475367b294';
+const MAX_SUPPLY = 38777;
 
 function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
   try {
@@ -36,16 +37,42 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
       name: 'Crystal x BlockNads',
       description: t('mintDesc'),
       imageUrl: LeaderboardBanner,
-      remainingSupply: 10000,
-      totalSupply: 38777,
+      totalSupply: MAX_SUPPLY,
     }),
     [],
   );
+  const [currentSupply, setCurrentSupply] = useState<number>(0);
+
   const [imageLoaded, setImageLoaded] = useState(false);
   const [proof, setProof] = useState<`0x${string}`[]>([]);
   const [isElig, setIsElig] = useState(false);
   const [hasMinted, setHasMinted] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
+
+  useEffect(() => {
+    async function fetchCurrentSupply() {
+      try {
+        const [totalMintedResult] = (await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalNFTAbi,
+              address: NFT_ADDRESS,
+              functionName: 'totalMinted',
+              args: [],
+            },
+          ],
+      })) as any[];
+
+        const mintedCount = (totalMintedResult.result as bigint) || 0n;
+        setCurrentSupply(Number(mintedCount));
+      } catch (err) {
+        console.error('failed to read totalMinted()', err);
+        setCurrentSupply(0);
+      }
+    }
+
+    fetchCurrentSupply();
+  }, [address, hasMinted]);
 
   useEffect(() => {
     if (!address) {
@@ -65,7 +92,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
 
     (async () => {
       try {
-        const res = (await readContracts(config, {
+        const [mintedFlag, eligFlag] = (await readContracts(config, {
           contracts: [
             {
               abi: CrystalNFTAbi,
@@ -82,8 +109,8 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
           ],
         })) as any[];
 
-        setHasMinted(res[0].result as boolean);
-        setIsElig(res[1].result as boolean);
+        setHasMinted(mintedFlag.result as boolean);
+        setIsElig(eligFlag.result as boolean);
       } catch (err) {
         console.error('eligibility read failed', err);
         setHasMinted(false);
@@ -118,11 +145,21 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     }
   }, [isElig, hasMinted, proof, sendUserOperationAsync, waitForTxReceipt]);
 
-  const supplySold = nftData.totalSupply - nftData.remainingSupply;
-  const percentageSold = (supplySold / nftData.totalSupply) * 100;
+  const supplySold = currentSupply;
+  const totalSupply = nftData.totalSupply;
+  const percentageSold = totalSupply > 0 ? (supplySold / totalSupply) * 100 : 0;
 
-  const buttonDisabled = !isElig || hasMinted || isMinting;
-  const buttonLabel = isMinting ? t('minting') : hasMinted ? t('alreadyMinted') : !isElig ? t('notEligible') : t('mintTitle');
+  const buttonDisabled =
+    !isElig || hasMinted || isMinting || supplySold >= totalSupply;
+  const buttonLabel = isMinting
+    ? t('minting')
+    : hasMinted
+    ? t('alreadyMinted')
+    : !isElig
+    ? t('notEligible')
+    : supplySold >= totalSupply
+    ? t('soldOut')
+    : t('mintTitle');
 
   return (
     <div className="nft-scroll-wrapper">
@@ -131,7 +168,9 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
           {!imageLoaded && <div className="nft-image-placeholder" />}
           <img
             src={nftData.imageUrl}
-            className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`}
+            className={`nft-image ${
+              imageLoaded ? 'nft-image-loaded' : ''
+            }`}
             onLoad={handleImageLoad}
           />
           <div className="nft-title-overlay">
@@ -152,11 +191,18 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
 
               <div className="nft-supply-container">
                 <div className="nft-supply-text">
-                  <span>{supplySold} / {nftData.totalSupply}</span>
-                  <span className="nft-supply-percentage">{percentageSold.toFixed(1)}% {t('minted')}</span>
+                  <span>
+                    {supplySold} / {totalSupply}
+                  </span>
+                  <span className="nft-supply-percentage">
+                    {percentageSold.toFixed(1)}% {t('minted')}
+                  </span>
                 </div>
                 <div className="nft-supply-bar">
-                  <div className="nft-supply-progress" style={{ width: `${percentageSold}%` }} />
+                  <div
+                    className="nft-supply-progress"
+                    style={{ width: `${percentageSold}%` }}
+                  />
                 </div>
               </div>
 
@@ -167,7 +213,9 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
             </div>
 
             <button
-              className={`nft-swap-button ${isMinting ? 'nft-signing' : ''}`}
+              className={`nft-swap-button ${
+                isMinting ? 'nft-signing' : ''
+              }`}
               onClick={handleMint}
               disabled={buttonDisabled}
             >
