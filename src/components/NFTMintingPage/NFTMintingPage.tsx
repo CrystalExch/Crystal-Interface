@@ -6,7 +6,7 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 import { config } from '../../wagmi';
 import { CrystalNFTAbi } from '../../abis/CrystalNFTAbi';
 import treeJson from './tree.json';
-import LeaderboardBanner from '../../assets/MintTeaser.png';
+import LeaderboardBanner from '../../assets/nft.jpg';
 import './NFTMintingPage.css';
 
 interface NFTMintingPageProps {
@@ -15,7 +15,7 @@ interface NFTMintingPageProps {
   waitForTxReceipt: any;
 }
 
-const NFT_ADDRESS = '0x37ea8bdbCB3228BF7f4a39fD10c432c359BA7A10';
+const NFT_ADDRESS = '0x651bf436C4fc88Bab3F694cD789bcbD670e5b305';
 
 function proofForAddress(tree: StandardMerkleTree<any[]>, addr: string) {
   try {
@@ -118,14 +118,12 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     }
   }, [isElig, hasMinted, proof, sendUserOperationAsync, waitForTxReceipt]);
 
-  /* ---------------- derived ------------------------ */
   const supplySold = nftData.totalSupply - nftData.remainingSupply;
   const percentageSold = (supplySold / nftData.totalSupply) * 100;
 
   const buttonDisabled = !isElig || hasMinted || isMinting;
   const buttonLabel = isMinting ? t('minting') : hasMinted ? t('alreadyMinted') : !isElig ? t('notEligible') : t('mintTitle');
 
-  /* ---------------- ui ----------------------------- */
   return (
     <div className="nft-scroll-wrapper">
       <div className="nft-main-content-wrapper">
