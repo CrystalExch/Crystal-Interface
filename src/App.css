@@ -5151,7 +5151,6 @@ input[type="email"] {
 }
 
 .onboarding-container {
-  position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
@@ -5729,15 +5728,7 @@ input[type="email"] {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
 }
 
-.account-setup-footer {
-  display: flex;
-  position: absolute;
-  justify-content: space-between;
-  width: 100%;
-  padding: 0 40px;
-  padding-top: 10px;
-  bottom: 40px;
-}
+
 
 .back-button,
 .back-to-username-button,
@@ -6744,35 +6735,13 @@ input[type="email"] {
 
 .account-setup-footer {
   display: flex;
-  position: fixed; 
+  position: relative;
   justify-content: space-between;
   width: 100%;
   padding: 0 40px;
-  padding-top: 10px;
-  bottom: 40px;
-  left: 0;
-  padding-bottom: env(safe-area-inset-bottom); 
+  bottom: 80px;
   z-index: 100; 
 }
 
-@supports (-webkit-touch-callout: none) {
-  .account-setup-footer {
-    bottom: max(40px, env(safe-area-inset-bottom));
-  }
-}
 
-.onboarding-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
 
-@media not all and (min-resolution:.001dpcm) { 
-  @supports (-webkit-appearance:none) {
-    .account-setup-footer {
-      position: fixed;
-      bottom: 240px !important;
-      z-index: 9999;
-    }
-  }
-}
