@@ -5203,7 +5203,6 @@ input[type="email"] {
   width: 100%;
   height: 100%;
   opacity: 0;
-  visibility: hidden;
   transition: opacity 0.4s ease, transform 0.5s ease;
 }
 
@@ -5592,7 +5591,7 @@ input[type="email"] {
   flex-direction: column;
   justify-content: center;
   width: 100%;
-  height: 100%;
+  height: calc(100% - 70px);
 
 }
 
@@ -6734,37 +6733,10 @@ input[type="email"] {
 
 .account-setup-footer {
   display: flex;
-  position: absolute;
-  bottom: max(40px, env(safe-area-inset-bottom, 40px));
   justify-content: space-between;
   width: 100%;
   height: 35px;
   padding: 0 40px;
   z-index: 100; 
   margin-top: auto;
-}
-
-@supports (-webkit-touch-callout: none) {
-  .account-setup-footer {
-    bottom: calc(40px + env(safe-area-inset-bottom, 0px));
-  }
-}
-
-@media (max-width: 768px) {
-  .account-setup-footer {
-    bottom: max(20px, env(safe-area-inset-bottom, 20px));
-    padding: 0 20px;
-  }
-  
-  @supports (-webkit-touch-callout: none) {
-    .account-setup-footer {
-      bottom: calc(20px + env(safe-area-inset-bottom, 0px));
-    }
-  }
-}
-
-@media screen and (max-width: 768px) and (-webkit-min-device-pixel-ratio: 2) {
-  .account-setup-footer {
-    bottom: calc(env(safe-area-inset-bottom, 0px) + 30px);
-  }
 }
