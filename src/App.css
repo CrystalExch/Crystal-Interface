@@ -1699,6 +1699,7 @@ body:has(.right-column.show) .blur-background-popups {
 .onboarding-connect-wallet {
   position: fixed !important;
   max-height: 90vh;
+  /* overflow-y: auto; */
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
   z-index: 12;
@@ -4783,7 +4784,7 @@ input[type="email"] {
   }
 
   .layout-settings-background {
-    height: min(250px, 90vh);
+    height: min(220px, 90vh);
   }
 
   .layout-settings-header {
@@ -5150,7 +5151,6 @@ input[type="email"] {
 }
 
 .onboarding-container {
-    position: fixed;
   top: 0;
   left: 0;
   width: 100vw;
@@ -5236,7 +5236,7 @@ input[type="email"] {
   align-items: center;
   justify-content: center;
   width: 100%;
-
+  height: 100%;
 }
 
 .edit-username-container {
@@ -5591,8 +5591,9 @@ input[type="email"] {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  width: 100%;
   height: 100%;
-  height: calc(100% - 70px);
+
 }
 
 .challenge-intro-content-side {
@@ -6731,12 +6732,16 @@ input[type="email"] {
 
 
 
+
 .account-setup-footer {
   display: flex;
+  position: relative;
   justify-content: space-between;
   width: 100%;
-  height: 35px;
   padding: 0 40px;
+  bottom: 80px;
   z-index: 100; 
-  margin-top: auto;
 }
+
+
+
