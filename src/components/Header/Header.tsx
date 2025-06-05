@@ -82,6 +82,7 @@ const Header: React.FC<HeaderProps> = ({
     { code: 'JP', name: '日本語' },
     { code: 'KR', name: '한국어' },
     { code: 'ES', name: 'Español' },
+    { code: 'ID', name: 'Bahasa Indonesia'}
   ];
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
