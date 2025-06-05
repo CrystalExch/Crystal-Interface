@@ -13,19 +13,11 @@
   gap: 4px;
   width: 100%;
   padding: 0px 5px;
-  max-height: 700px;
-  max-width: 1200px;
-  margin-top: 100px;
-  min-height: 700px;
-    padding-bottom: 50px;
-
+  height: 750px;
+  max-width: 1050px;
+  margin-top: max(0px, calc((100vh - 750px) / 3));
 }
 
-@media(max-width: 1450px) {
-  .nft-main-content-wrapper {
-    margin-top: 40px;
-  }
-}
 .nft-swapmodal {
   background-color: #0c0c0d;
   border-radius: 8px;

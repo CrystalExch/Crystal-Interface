@@ -194,7 +194,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
             onLoad={() => setImageLoaded(true)}
           />
           <div className="nft-title-overlay">
-            <h1 className="nft-static-title">{nftData.name}</h1>
           </div>
         </div>
 
