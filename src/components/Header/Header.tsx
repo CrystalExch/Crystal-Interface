@@ -78,11 +78,14 @@ const Header: React.FC<HeaderProps> = ({
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const languageOptions: Language[] = [
     { code: 'EN', name: 'English' },
+    { code: 'ES', name: 'Español' },
     { code: 'CN', name: '中文（简体）' },
     { code: 'JP', name: '日本語' },
     { code: 'KR', name: '한국어' },
-    { code: 'ES', name: 'Español' },
-    { code: 'ID', name: 'Bahasa Indonesia'}
+    { code: 'RU', name: 'русский' },
+    { code: 'ID', name: 'Bahasa Indonesia' },
+    { code: 'VN', name: 'Tiếng Việt'},
+    { code: 'PH', name: 'Filipino' },
   ];
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
