@@ -20,7 +20,7 @@ interface NFTMintingPageProps {
 }
 
 const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
-const MAX_SUPPLY = 25000;
+const MAX_SUPPLY = 10000;
 
 const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,

@@ -140,6 +140,7 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
             onClick={cancelAllOrders}
             type="button"
             disabled={cancelAllLoading}
+            style={{cursor: cancelAllLoading ? 'not-allowed' : ''}}
           >
             {cancelAllLoading ? <div className="orders-cancel-all-spinner"></div> : t('cancelAll')}
           </button>

@@ -2633,7 +2633,7 @@ body:has(.right-column.show) .blur-background-popups {
   height: auto;
   inset: 0;
   margin: auto;
-  margin-top: max(0px, calc((100vh - 680px) / 3));
+  margin-top: max(0px, calc((100vh - 750px) / 2.7));
   max-width: 420px;
   position: relative;
   width: 100%;
@@ -3632,7 +3632,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   background: #141418;
   border-radius: 8px;
   padding: 2px 0;
-  width: 34%;
+  width: 33%;
   z-index: 5;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -3655,7 +3655,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .dropdown-item {
   display: block;
   padding: 2px 1px;
-  color: #ffffff90;
+  color: #ffffffc4;
   text-decoration: none;
   font-size: 0.75rem;
   font-weight: 400;
@@ -3665,7 +3665,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .dropdown-item:hover {
-  color: #ffffffe5;
+  color: #ffffff90;
 }
 
 .dropdown-item span {
@@ -3702,7 +3702,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .main-content-wrapper.simple-view .navlink-dropdown {
   top: calc(100% + 5px);
   left: 200px;
-  width: 100px;
+  width: 80px;
 }
 
 .main-content-wrapper.simple-view .dropdown-item {
@@ -4828,7 +4828,7 @@ input[type="email"] {
   }
 
   .main-content-wrapper.simple-view .navlink-dropdown {
-    width: 100px;
+    width: 80px;
     right: 0;
   }
 

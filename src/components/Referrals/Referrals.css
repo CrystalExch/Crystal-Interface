@@ -5,7 +5,6 @@
   height: 100%;
   justify-content: center;
   width: 100%;
-  min-height: 600px;
 }
 
 .referral-content {
@@ -16,7 +15,8 @@
   overflow: hidden;
   width: 100%;
   padding-right: 5px;
-  margin-top: max(0px, calc((100vh - 680px) / 3));
+  min-height: 600px;
+  margin-top: max(0px, calc((100vh - 665px) / 3));
 }
 
 .referral-top-section{
@@ -650,7 +650,7 @@
   letter-spacing: -0.5px;
   font-size: 0.75rem;
   color: #bcc0ea;
-  width: 30%;
+  width: 45%;
   min-width: 130px;
   margin-top: -4px;
 }

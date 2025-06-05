@@ -5,7 +5,6 @@
   min-height: 100%;
   justify-content: center;
   min-width: 100%;
-
 }
 
 .nft-main-content-wrapper{
@@ -15,7 +14,7 @@
   padding: 0px 5px;
   height: 750px;
   max-width: 1050px;
-  margin-top: max(0px, calc((100vh - 750px) / 3));
+  margin-top: max(0px, calc((100vh - 815px) / 3));
 }
 
 .nft-swapmodal {

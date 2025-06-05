@@ -49,7 +49,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
     const adjustInputWidth = () => {
       if (inputRef.current) {
         const charWidth = 9; 
-        const contentWidth = `${Math.max(pageInput.length * charWidth, 8)}px`;
+        const contentWidth = `${Math.max(pageInput.length * charWidth, 8)+4}px`;
         inputRef.current.style.width = contentWidth;
       }
     };
