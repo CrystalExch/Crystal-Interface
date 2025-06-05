@@ -13041,6 +13041,7 @@ function App() {
                 address={address ?? undefined}
                 sendUserOperationAsync={sendUserOperationAsync}
                 waitForTxReceipt={waitForTxReceipt}
+                setChain={handleSetChain}
               />
             }>
           </Route>

@@ -17,6 +17,7 @@ interface NFTMintingPageProps {
   address: `0x${string}` | undefined;
   sendUserOperationAsync: any;
   waitForTxReceipt: any;
+  setChain: any;
 }
 
 const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
@@ -26,6 +27,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,
   sendUserOperationAsync,
   waitForTxReceipt,
+  setChain,
 }) => {
   const [tree, setTree] = useState<StandardMerkleTree<any[]> | null>(null);
   const [treeLoading, setTreeLoading] = useState(true);
@@ -137,7 +139,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
 
   const handleMint = useCallback(async () => {
     if (!isElig || hasMinted || proof.length === 0) return;
-
+    await setChain();
     setIsMinting(true);
     try {
       const uo = {
