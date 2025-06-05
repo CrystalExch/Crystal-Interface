@@ -5201,7 +5201,7 @@ input[type="email"] {
 .onboarding-section {
   position: absolute;
   width: 100%;
-  height: calc(100% - 80px);
+  height: 100%;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.4s ease, transform 0.5s ease;
@@ -6735,11 +6735,12 @@ input[type="email"] {
 
 .account-setup-footer {
   display: flex;
+  position: relative;
   justify-content: space-between;
   width: 100%;
+  height: 40px;
   padding: 0 40px;
-  padding-top: 10px;
-  left: 0;
+  bottom: 80px;
   z-index: 100; 
 }
 
