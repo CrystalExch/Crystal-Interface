@@ -83,7 +83,7 @@ const Header: React.FC<HeaderProps> = ({
     { code: 'JP', name: '日本語' },
     { code: 'KR', name: '한국어' },
     { code: 'RU', name: 'русский' },
-    { code: 'ID', name: 'Bahasa Indonesia' },
+    { code: 'ID', name: 'Indonesia' },
     { code: 'VN', name: 'Tiếng Việt'},
     { code: 'PH', name: 'Filipino' },
   ];

@@ -4784,7 +4784,7 @@ input[type="email"] {
   }
 
   .layout-settings-background {
-    height: min(220px, 90vh);
+    height: min(250px, 90vh);
   }
 
   .layout-settings-header {
