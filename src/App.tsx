@@ -53,7 +53,6 @@ import swapTokensForExactETH from './scripts/swapTokensForExactETH';
 import swapTokensForExactTokens from './scripts/swapTokensForExactTokens';
 import unwrapeth from './scripts/unwrapeth';
 import wrapeth from './scripts/wrapeth';
-import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
 
 // import utils
