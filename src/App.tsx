@@ -1082,7 +1082,7 @@ function App() {
           },
         ] : []) as any,
     ],
-    query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 700 : 5000, gcTime: 0 },
+    query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000, gcTime: 0 },
   }) as any;
 
   // fetch ref data
@@ -2383,7 +2383,7 @@ function App() {
     const workerCode = `
       setInterval(() => {
         self.postMessage('fetch');
-      }, 750);
+      }, 800);
     `;
 
     const fetchData = async () => {
@@ -8657,20 +8657,6 @@ function App() {
                     'unwrap',
                     weth,
                     eth,
-                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
-                    '',
-                    ''
-                  );
-                } else if (tokenIn == '1' && tokendict[tokenOut]?.lst == true){
-                  hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
-                  newTxPopup(
-                    (client
-                      ? hash.hash
-                      : await waitForTxReceipt(hash.hash)),
-                    'stake',
-                    eth,
-                    tokenOut,
                     customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
                     customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
                     '',

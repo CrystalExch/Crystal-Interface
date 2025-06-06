@@ -395,7 +395,7 @@ export const translations: any = {
     dakDesc: "Known for courage and tradition, Molandak is home to the brave-hearted who rip challenges head-on.",
     chogDesc: "Chog is the house for the wise and industrious who value intellect, strategy, and tireless work ethic.",
     yakiDesc: "Moyaki swims for those who rise from humble beginnings with an unyielding drive to succeed.",
-    mintDesc: "An exclusive commemorative NFT for our earliest testnet users. Missed it? Another drop is coming, with eligibility based on leaderboard ranking.",
+    mintDesc: "An exclusive commemorative NFT for our earliest testnet users. Art by BlockNads.",
     mintTitle: "Mint NFT",
     mintSubtitle: "Create your exclusive digital collectible",
     mintCount: "Mints",
@@ -408,6 +408,7 @@ export const translations: any = {
     alreadyMinted: "Already Minted",
     notEligible: "Not Eligible",
     loading: "Loading...",
+    stakeComplete: "Stake Complete",
   },
   CN: {
     trade: "交易",

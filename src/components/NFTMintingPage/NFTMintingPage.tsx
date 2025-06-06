@@ -21,7 +21,7 @@ interface NFTMintingPageProps {
 }
 
 const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
-const MAX_SUPPLY = 10000;
+const MAX_SUPPLY = 25000;
 
 const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,
@@ -35,8 +35,19 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/tree.json', { cache: 'force-cache' });
+        const cache = await caches.open('nft-tree-cache');
+        const cached = await cache.match('/tree.json');
+  
+        let res: Response;
+        if (cached) {
+          res = cached;
+        } else {
+          res = await fetch('/tree.json', { cache: 'no-cache' });
+          cache.put('/tree.json', res.clone());
+        }
+  
         const json = await res.json();
+        const { StandardMerkleTree } = await import('@openzeppelin/merkle-tree');
         const loadedTree = StandardMerkleTree.load(json);
         setTree(loadedTree);
       } catch (err) {
