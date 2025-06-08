@@ -53,6 +53,7 @@ import swapTokensForExactETH from './scripts/swapTokensForExactETH';
 import swapTokensForExactTokens from './scripts/swapTokensForExactTokens';
 import unwrapeth from './scripts/unwrapeth';
 import wrapeth from './scripts/wrapeth';
+import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
 
 // import utils
@@ -2590,7 +2591,10 @@ function App() {
                               }
                               if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
                                 temporders[index] = [...temporders[index]]
-                                temporders[index][10].remove();
+                                try {
+                                  temporders[index][10].remove();
+                                }
+                                catch {}
                                 temporders[index].splice(10, 1)
                               }
                               temporders.splice(index, 1);
@@ -2742,7 +2746,10 @@ function App() {
                                 0,
                               ]);
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                                temporders[orderIndex][10].remove();
+                                try {
+                                  temporders[orderIndex][10].remove();
+                                }
+                                catch {}
                                 temporders[orderIndex].splice(10, 1)
                               }
                               temporders.splice(orderIndex, 1);
@@ -2752,7 +2759,10 @@ function App() {
                               tempcanceledorders[canceledOrderIndex][8] = order[8];
                             } else {
                               if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                                temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                                try {
+                                  temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                                }
+                                catch {}
                               }
                               temporders[orderIndex][7] =
                                 order[2] - size / order[0];
@@ -6549,6 +6559,8 @@ function App() {
 
                   setAmountsQuote('Quote');
                   localStorage.setItem('ob_amounts_quote', 'Quote');
+
+                  localStorage.setItem('crystal_chart_timeframe', '5')
 
                   let defaultHeight: number;
 

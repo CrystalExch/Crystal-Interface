@@ -54,7 +54,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
-  const dataRef = useRef(data);
+  const dataRef = useRef<any>({});
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
   const ordersRef = useRef(orders);
@@ -64,8 +64,11 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
   useEffect(() => {
+    if (data[2] != showChartOutliers) {
+      return;
+    }
     dataRef.current[data[1]] = data[0];
-  }, [data]);
+  }, [data, showChartOutliers]);
 
   useEffect(() => {
     try {
@@ -204,7 +207,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   );
                   await waitForTxReceipt(hash.hash);
                   refetch()
-                  orderLine.remove()
+                  try {
+                    orderLine.remove()
+                  }
+                  catch {}
                 } catch (error) {
                   orderLine.setCancellable(true)
                 }
@@ -218,7 +224,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           ordersRef.current.forEach((order: any) => {
             try {
               if (order?.[10] && typeof order[10].remove === 'function') {
-                order[10].remove();
+                try {
+                  order[10].remove();
+                }
+                catch {}
                 order.splice(10, 1)
               }
             } catch (error) {
@@ -240,7 +249,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       library_path: '/charting_library/',
       autosize: true,
       symbol: `${normalizeTicker(activeMarket.baseAsset, activechain)}/${normalizeTicker(activeMarket.quoteAsset, activechain)}`,
-      interval: '5',
+      interval: localStorage.getItem('crystal_chart_timeframe') || '5',
       timezone: 'Etc/UTC',
       locale: 'en',
       debug: false,
@@ -470,7 +479,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         ordersRef.current.forEach((order: any) => {
           try {
             if (order?.[10] && typeof order[10].remove === 'function') {
-              order[10].remove();
+              try {
+                order[10].remove();
+              }
+              catch {}
               order.splice(10, 1)
             }
           } catch (error) {
@@ -480,7 +492,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
       catch(e) {
       }
-
+      setChartReady(false)
+      dataRef.current = {}
       widgetRef.current.remove();
     };
   }, [showChartOutliers]);
@@ -490,6 +503,13 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       activeMarketRef.current = activeMarket;
       if (chartReady) {
         setOverlayVisible(true);
+        localStorage.setItem('crystal_chart_timeframe', selectedInterval === '1d'
+        ? '1D'
+        : selectedInterval === '4h'
+          ? '240'
+          : selectedInterval === '1h'
+            ? '60'
+            : selectedInterval.slice(0, -1))
         widgetRef.current.setSymbol(
           `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
           selectedInterval === '1d'
@@ -566,7 +586,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       );
                       await waitForTxReceipt(hash.hash);
                       refetch()
-                      orderLine.remove()
+                      try {
+                        orderLine.remove()
+                      }
+                      catch {}
                     } catch (error) {
                       orderLine.setCancellable(true)
                     }
