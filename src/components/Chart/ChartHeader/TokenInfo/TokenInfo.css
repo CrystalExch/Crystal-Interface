@@ -698,3 +698,20 @@
   margin: 0 2px;
   flex-shrink: 0; 
 }
+
+
+
+.lst-multiplier {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  padding: 0px 3px;
+  background-color: #aaaecf22;
+  color: #aaaecf;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  border: 1px solid #aaaecf42;
+  white-space: nowrap;
+  height: 14px;
+  margin-bottom: 1px;
+}
