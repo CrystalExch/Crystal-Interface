@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 
 import PortfolioContent from '../Portfolio/BalancesContent/BalancesContent';
 import PortfolioHeader from '../Portfolio/BalancesHeader/PortfolioHeader';
@@ -48,6 +48,7 @@ interface OrderCenterProps {
   waitForTxReceipt: any;
   isBlurred?: boolean;
   isVertDragging?: boolean;
+  isOrderCenterVisible?: boolean;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -82,6 +83,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     isBlurred,
     waitForTxReceipt,
     isVertDragging,
+    isOrderCenterVisible,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     const [isMobileView, setIsMobileView] = useState<boolean>(
@@ -109,6 +111,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     
     const showMarketInDropdown = !showMarketOutside && !hideMarketFilter && onlyThisMarket !== undefined;
     const showTypeInDropdown = !showTypeOutside && filter !== undefined;
+    const availableTabs: { key: any; label: any; }[] = [];
 
     const handleTabChange = (
       section:  'balances' | 'orders' | 'tradeHistory' | 'orderHistory' ,
@@ -125,69 +128,34 @@ const OrderCenter: React.FC<OrderCenterProps> =
       }
     };
 
-    const matchesFilter = (sideValue: number) =>
-      filter === 'all' ||
-      (filter === 'buy' && sideValue === 1) ||
-      (filter === 'sell' && sideValue === 0);
-
-    const belongsToCurrentMarket = (marketKey: string) => {
-      if (!onlyThisMarket || !currentMarket) return true;
-      const marketData = markets[marketKey];
-      if (!marketData) return false;
-      const marketSymbol = `${marketData.baseAsset}${marketData.quoteAsset}`;
-      return marketSymbol === currentMarket;
-    };
-
-    const filteredOrders = orders.filter((order) => {
-      const sideMatch = matchesFilter(order[3]);
-      const marketMatch = belongsToCurrentMarket(order[4]);
-      return sideMatch && marketMatch;
-    });
-
-    const filteredTradeHistory = tradehistory.filter((trade) => {
-      const sideMatch = matchesFilter(trade[2]);
-      const marketMatch = belongsToCurrentMarket(trade[4]);
-      return sideMatch && marketMatch;
-    });
-
-    const filteredOrderHistory = canceledorders.filter((order) => {
-      const sideMatch = matchesFilter(order[3]);
-      const marketMatch = belongsToCurrentMarket(order[4]);
-      return sideMatch && marketMatch;
-    });
+    const matchesFilter = useCallback(
+      (sideValue: number) =>
+        filter === 'all' ||
+        (filter === 'buy' && sideValue === 1) ||
+        (filter === 'sell' && sideValue === 0),
+      [filter]
+    );
     
-    const availableTabs: { key: any; label: any; }[] = [];
-    if (!hideBalances) {
-      availableTabs.push({ key: 'balances', label: t('balances') });
-    }
-    availableTabs.push(
-      {
-        key: 'orders',
-        label: `${t('openOrders')} (${filteredOrders.length})`,
+    const belongsToCurrentMarket = useCallback(
+      (marketKey: string) => {
+        if (!onlyThisMarket || !currentMarket) return true;
+        const marketData = markets[marketKey];
+        if (!marketData) return false;
+        const marketSymbol = `${marketData.baseAsset}${marketData.quoteAsset}`;
+        return marketSymbol === currentMarket;
       },
-      { key: 'tradeHistory', label: t('tradeHistory') },
-      { key: 'orderHistory', label: t('orderHistory') }
+      [onlyThisMarket, currentMarket]
     );
 
     const handlePrevPage = () => {
       setCurrentPage((prev) => (prev > 1 ? prev - 1 : prev));
     };
-  
+
     const handleNextPage = () => {
       let maxPages = getTotalPages();
       setCurrentPage((prev) => (prev < maxPages ? prev + 1 : prev));
     };
-
-    useEffect(() => {
-      if (isPortfolio) {
-        setActiveSection('balances');
-      }
-    }, []); 
-    
-    useEffect(() => {
-      setCurrentPage(1);
-    }, [activeSection, pageSize]);
-    
+        
     const getTotalPages = (): number => {
       switch (activeSection) {
         case 'orders':
@@ -200,7 +168,124 @@ const OrderCenter: React.FC<OrderCenterProps> =
           return 1;
       }
     };
+
+    const filteredOrders = useMemo(() => {
+      return orders.filter(order => matchesFilter(order[3]) && belongsToCurrentMarket(order[4]));
+    }, [orders, matchesFilter, belongsToCurrentMarket]);
+
+    const filteredTradeHistory = useMemo(() => {
+      return tradehistory.filter(trade => matchesFilter(trade[2]) && belongsToCurrentMarket(trade[4]));
+    }, [tradehistory, matchesFilter, belongsToCurrentMarket]);
+
+    const filteredOrderHistory = useMemo(() => {
+      return canceledorders.filter(order => matchesFilter(order[3]) && belongsToCurrentMarket(order[4]));
+    }, [canceledorders, matchesFilter, belongsToCurrentMarket]);
+
+    if (!hideBalances) {
+      availableTabs.push({ key: 'balances', label: t('balances') });
+    }
+    availableTabs.push(
+      {
+        key: 'orders',
+        label: `${t('openOrders')} (${filteredOrders.length})`,
+      },
+      { key: 'tradeHistory', label: t('tradeHistory') },
+      { key: 'orderHistory', label: t('orderHistory') }
+    );
     
+    useEffect(() => {
+      setCurrentPage(1);
+    }, [activeSection, address, onlyThisMarket, filter]);
+
+    let noData = false;
+    let noDataMessage = '';
+
+    switch (activeSection) {
+      case 'balances':
+        const tokensEmpty = Object.values(tokenBalances).every(
+          (balance) => balance === 0n,
+        );
+        noData = tokensEmpty;
+        noDataMessage = t('noTokensDetected');
+        break;
+      case 'orders':
+        noData = filteredOrders.length === 0;
+        noDataMessage = t('noOpenOrders');
+        break;
+      case 'tradeHistory':
+        noData = filteredTradeHistory.length === 0;
+        noDataMessage = t('noTradeHistory');
+        break;
+      case 'orderHistory':
+        noData = filteredOrderHistory.length === 0;
+        noDataMessage = t('noOrderHistory');
+        break;
+    }
+    const handlePageChange = (page: number) => {
+      setCurrentPage(page);
+    };
+    
+    const updateIndicatorPosition = (mobile: boolean, section: string) => {
+      if (mobile || !indicatorRef.current || !tabsRef.current) {
+        if (indicatorRef.current) {
+          indicatorRef.current.style.width = '0px';
+          indicatorRef.current.style.left = '0px';
+        }
+        return;
+      }
+      
+      const activeTabIndex = availableTabs.findIndex(tab => tab.key === section);
+      if (activeTabIndex !== -1) {
+        const activeTab = tabsRef.current[activeTabIndex];
+        if (activeTab && activeTab.parentElement) {
+          const indicator = indicatorRef.current;
+          indicator.style.width = `${activeTab.offsetWidth}px`;
+          indicator.style.left = `${activeTab.offsetLeft}px`;
+        }
+      }
+    }
+
+    useEffect(() => {
+      if (!isPortfolio && activeSection === 'balances') {
+        setActiveSection(
+          localStorage.getItem('crystal_oc_tab') !== null
+            ? localStorage.getItem('crystal_oc_tab')
+            : 'orders',
+        );
+      }
+      else if (isPortfolio) {
+        setActiveSection('balances');
+      }
+      const handleResize = () => {
+        const width = window.innerWidth;
+        setIsMobileView(width <= 1020);
+        setWindowWidth(width);
+        updateIndicatorPosition(width <= 1020, activeSection);
+      };
+      window.addEventListener('resize', handleResize);
+      handleResize();
+      return () => {
+        window.removeEventListener('resize', handleResize);
+      };
+    }, [isPortfolio, activeSection]);
+
+    useEffect(() => {
+      updateIndicatorPosition(isMobileView, activeSection);
+      if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
+        const resizeObserver = new ResizeObserver(() => {
+          updateIndicatorPosition(isMobileView, activeSection);
+        });
+        tabsRef.current.forEach((tab) => {
+          if (tab) resizeObserver.observe(tab);
+        });
+        const container = containerRef.current;
+        if (container) resizeObserver.observe(container);
+        return () => {
+          resizeObserver.disconnect();
+        };
+      }
+    }, [isMobileView, activeSection]);
+
     const renderContent = () => {
       switch (activeSection) {
         case 'balances':
@@ -232,6 +317,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               currentPage={currentPage}
               setChain={setChain}
               waitForTxReceipt={waitForTxReceipt}
+              onMarketSelect={onMarketSelect}
             />
           );
         case 'tradeHistory':
@@ -241,6 +327,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               pageSize={pageSize}
               currentPage={currentPage}
               trades={trades}
+              onMarketSelect={onMarketSelect}
             />
           );
         case 'orderHistory':
@@ -252,6 +339,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               pageSize={pageSize}
               currentPage={currentPage}
               trades={trades}
+              onMarketSelect={onMarketSelect}
             />
           );
         default:
@@ -259,103 +347,13 @@ const OrderCenter: React.FC<OrderCenterProps> =
       }
     };
 
-    let noData = false;
-    let noDataMessage = '';
-
-    switch (activeSection) {
-      case 'balances':
-        const tokensEmpty = Object.values(tokenBalances).every(
-          (balance) => balance === 0n,
-        );
-        noData = tokensEmpty;
-        noDataMessage = t('noTokensDetected');
-        break;
-      case 'orders':
-        noData = filteredOrders.length === 0;
-        noDataMessage = t('noOpenOrders');
-        break;
-      case 'tradeHistory':
-        noData = filteredTradeHistory.length === 0;
-        noDataMessage = t('noTradeHistory');
-        break;
-      case 'orderHistory':
-        noData = filteredOrderHistory.length === 0;
-        noDataMessage = t('noOrderHistory');
-        break;
-    }
-    const handlePageChange = (page: number) => {
-      setCurrentPage(page);
-    };
-    
-    const updateIndicatorPosition = () => {
-      if (isMobileView || !indicatorRef.current || !tabsRef.current) {
-        if (indicatorRef.current) {
-          indicatorRef.current.style.width = '0px';
-          indicatorRef.current.style.left = '0px';
-        }
-        return;
-      }
-      
-      const activeTabIndex = availableTabs.findIndex(tab => tab.key === activeSection);
-      if (activeTabIndex !== -1) {
-        const activeTab = tabsRef.current[activeTabIndex];
-        if (activeTab && activeTab.parentElement) {
-          const indicator = indicatorRef.current;
-          indicator.style.width = `${activeTab.offsetWidth}px`;
-          indicator.style.left = `${activeTab.offsetLeft}px`;
-        }
-      }
-    }
-
-    useEffect(() => {
-      if (!isPortfolio && activeSection === 'balances') {
-        setActiveSection(
-          localStorage.getItem('crystal_oc_tab') !== null
-            ? localStorage.getItem('crystal_oc_tab')
-            : 'orders',
-        );
-      }
-    }, [isPortfolio, activeSection]);
-
-    useEffect(() => {
-      updateIndicatorPosition();
-      if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
-        const resizeObserver = new ResizeObserver(() => {
-          updateIndicatorPosition();
-        });
-        tabsRef.current.forEach((tab) => {
-          if (tab) resizeObserver.observe(tab);
-        });
-        const container = containerRef.current;
-        if (container) resizeObserver.observe(container);
-        updateIndicatorPosition();
-        return () => {
-          resizeObserver.disconnect();
-        };
-      }
-    }, [activeSection, isMobileView, filteredOrders.length, hideBalances]);
-
-    useEffect(() => {
-      const handleResize = () => {
-        const width = window.innerWidth;
-        setIsMobileView(width <= 1020);
-        setWindowWidth(width);
-        updateIndicatorPosition();
-      };
-      window.addEventListener('resize', handleResize);
-      handleResize();
-      return () => {
-        window.removeEventListener('resize', handleResize);
-      };
-    }, [activeSection]);
-
     return (
       <div
         ref={containerRef}
         className="oc-rectangle"
         style={{
           position: 'relative',
-          height: orderCenterHeight === 0 ? '0px' : `${orderCenterHeight}px`,
+          height: orderCenterHeight === 0 || isOrderCenterVisible == false ? '0px' : `${orderCenterHeight}px`,
           transition: isVertDragging ? 'none' : 'height 0.1s ease',
           overflow: 'visible',
         }}
@@ -418,6 +416,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
                   pageSize={Number(pageSize)} 
                   setPageSize={setPageSize}
                   currentPage={currentPage}
+                  setCurrentPage={setCurrentPage}
                   totalPages={getTotalPages()}
                   onPrevPage={handlePrevPage}
                   onNextPage={handleNextPage}

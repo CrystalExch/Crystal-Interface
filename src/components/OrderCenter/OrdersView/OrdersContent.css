@@ -51,6 +51,7 @@
   color: rgb(243 78 78);
   cursor: pointer;
 }
+
 .cancel-all-loading-spinner {
   animation: spin 1s linear infinite;
   border: 2px solid #aaaecf;

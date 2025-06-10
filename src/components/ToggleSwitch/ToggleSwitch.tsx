@@ -16,7 +16,7 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   return (
     <div className="market-toggle-switch-container">
       <label className="market-toggle-switch">
-        <input type="checkbox" checked={checked} onChange={onChange} />
+        <input type="checkbox" checked={checked} onChange={e => {e.stopPropagation(); onChange()}} />
         <div className={`market-toggle-switch-background ${disabled && 'disabled'}`}>
           <div className="market-toggle-switch-handle"></div>
         </div>

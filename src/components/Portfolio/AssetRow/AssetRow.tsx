@@ -2,6 +2,7 @@ import React from 'react';
 import CopyButton from '../../CopyButton/CopyButton';
 import SendIcon from '../SendIcon/SendIcon';
 import SwapIcon from '../SwapIcon/SwapIcon';
+import StakeIcon from '../StakeIcon/StakeIcon.tsx';
 
 import { settings } from '../../../settings.ts';
 import {
@@ -25,6 +26,7 @@ interface AssetRowProps {
   setpopup: any;
   priceChange: number;
   isBlurred?: boolean; 
+  isLST?: boolean;
 }
 
 const AssetRow: React.FC<AssetRowProps> = ({
@@ -39,7 +41,8 @@ const AssetRow: React.FC<AssetRowProps> = ({
   setSendTokenIn,
   setpopup,
   priceChange,
-  isBlurred = false, 
+  isBlurred = false,
+  isLST = false,
 }) => {
   const market =
     settings.chainConfig[activechain].markets[assetName + 'USDC'] ?? null;
@@ -85,11 +88,15 @@ const AssetRow: React.FC<AssetRowProps> = ({
       </div>
       <div className="oc-cell">
         <div className="action-icons">
-          <SwapIcon
+          {isLST ? <StakeIcon
             tokenaddress={tokenAddress}
             onMarketSelect={onMarketSelect}
             setpopup={setpopup}
-          />
+          /> : <SwapIcon
+          tokenaddress={tokenAddress}
+          onMarketSelect={onMarketSelect}
+          setpopup={setpopup}
+          />}
           <SendIcon
             tokenaddress={tokenAddress}
             setpopup={setpopup}

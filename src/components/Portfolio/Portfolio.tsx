@@ -253,7 +253,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     <div className="graph-outer-container">
       {portChartLoading ? (
         <div className="graph-container">
-          <Overlay isVisible={true} bgcolor={'#0f0f12'} height={20} />
+          <Overlay isVisible={true} bgcolor={'#0f0f12'} height={15} maxLogoHeight={100}/>
         </div>
       ) : (
         <div className="graph-container">

@@ -13,6 +13,7 @@ import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
 
 import './Header.css';
+import { formatCommas } from '../../utils/numberDisplayFormat';
 
 interface Language {
   code: string;
@@ -45,9 +46,7 @@ interface HeaderProps {
   onMarketSelect?: any;
   marketsData?: any;
   isChartLoading?: boolean;
-  trades?: any[];
   tradesloading?: boolean;
-  chartHeaderData?: any;
   tradesByMarket: any;
 }
 
@@ -71,7 +70,6 @@ const Header: React.FC<HeaderProps> = ({
   orderdata,
   onMarketSelect,
   marketsData,
-  chartHeaderData,
   tradesByMarket,
 }) => {
   const location = useLocation();
@@ -80,17 +78,21 @@ const Header: React.FC<HeaderProps> = ({
   const [pendingNotifs, setPendingNotifs] = useState(0);
   const languageOptions: Language[] = [
     { code: 'EN', name: 'English' },
+    { code: 'ES', name: 'Español' },
     { code: 'CN', name: '中文（简体）' },
     { code: 'JP', name: '日本語' },
     { code: 'KR', name: '한국어' },
-    { code: 'ES', name: 'Español' },
+    { code: 'RU', name: 'русский' },
+    { code: 'ID', name: 'Indonesia' },
+    { code: 'VN', name: 'Tiếng Việt'},
+    { code: 'PH', name: 'Filipino' },
   ];
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
   const [inPic, setInPic] = useState('');
   const [outPic, setOutPic] = useState('');
-  const backgroundlesslogo = '/logo_clear.png';
+  const backgroundlesslogo = '/CrystalLogo.png';
 
   useEffect(() => {
     if (activeMarket && tokendict) {
@@ -111,7 +113,9 @@ const Header: React.FC<HeaderProps> = ({
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const shouldShowSettings = isTradeRoute && !simpleView;
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
-
+  const marketHeader = marketsData.find(
+    (market: any) => market.address === activeMarket.address
+  );
 
   return (
     <>
@@ -134,19 +138,20 @@ const Header: React.FC<HeaderProps> = ({
           <ChartHeader
             in_icon={inPic}
             out_icon={outPic}
-            price={chartHeaderData?.price || 'n/a'}
-            priceChangeAmount={chartHeaderData?.priceChange || 'n/a'}
-            priceChangePercent={chartHeaderData?.change || 'n/a'}
+            price={marketHeader?.currentPrice || 'n/a'}
+            priceChangeAmount={formatCommas(
+              (marketHeader?.priceChangeAmount / Number(activeMarket.priceFactor)).toString()
+            ) || 'n/a'}
+            priceChangePercent={marketHeader?.priceChange || 'n/a'}
             activeMarket={activeMarket}
-            high24h={chartHeaderData?.high24h || 'n/a'}
-            low24h={chartHeaderData?.low24h || 'n/a'}
-            volume={chartHeaderData?.volume || 'n/a'}
+            high24h={formatCommas((parseFloat(marketHeader?.high24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString()) || 'n/a'}
+            low24h={formatCommas((parseFloat(marketHeader?.low24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString()) || 'n/a'}
+            volume={marketHeader?.volume || 'n/a'}
             orderdata={orderdata || {}}
             tokendict={tokendict}
             onMarketSelect={onMarketSelect}
             setpopup={setpopup}
             marketsData={marketsData}
-            isChartLoading={chartHeaderData.isChartLoading}
             simpleView={simpleView}
             tradesByMarket={tradesByMarket}
           />

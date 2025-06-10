@@ -13,13 +13,15 @@ interface TradeHistoryContentProps {
   trades: any;
   pageSize: number;
   currentPage: number;
+  onMarketSelect: any;
 }
 
 const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   tradehistory,
   trades,
   pageSize,
-  currentPage
+  currentPage,
+  onMarketSelect
 }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     trades,
@@ -97,6 +99,7 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
               market={markets[item[4]]}
               quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
               / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
+              onMarketSelect={onMarketSelect}
             />
           ))
         ) : (null
@@ -106,4 +109,4 @@ const TradeHistoryContent: React.FC<TradeHistoryContentProps> = ({
   );
 };
 
-export default TradeHistoryContent;
+export default React.memo(TradeHistoryContent);

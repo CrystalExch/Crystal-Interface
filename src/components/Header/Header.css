@@ -17,7 +17,7 @@
 }
 
 body.sidebar-expanded .app-header {
-  left: 205px;
+  left: 185px;
 }
 
 .nav-links {
@@ -52,7 +52,6 @@ body.sidebar-expanded .app-header {
   align-items: center;
   color: #fff;
   display: flex;
-  font-size: 1.1rem;
   font-weight: 500;
   margin-right: 6px;
   margin-left: 4px;
@@ -65,12 +64,16 @@ body.sidebar-expanded .app-header {
 }
 
 .crystal-logo {
-  height: 1.9rem;
+  height: 1.6rem;
+  max-width: 100%;
 }
 
 .crystal-name {
   font-family: Orbitron, sans-serif;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  margin-left: 3px;
+  margin-top: -3px;
+  margin-bottom: -3px;
 }
 
 .connect-button {
@@ -340,7 +343,8 @@ body.sidebar-expanded .app-header {
 }
 
 .extitle-logo{
-  height: 1.9rem;
+  height: 1.6rem;
+  max-width: 100%;
 }
 
 .mobile-left-header{

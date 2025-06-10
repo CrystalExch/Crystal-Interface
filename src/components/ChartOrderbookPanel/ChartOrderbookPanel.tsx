@@ -163,7 +163,7 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
       </div>
 
       <div
-        className={(windowWidth > 1020 || (mobileView === 'orderbook' || mobileView === 'trades')) ? (mobileView === 'orderbook' || mobileView === 'trades') ? 'orderbook-container-mobile' : `orderbook-container ${!isOrderbookVisible ? 'collapsed' : ''}` : 'hidden'}
+        className={(windowWidth > 1020 || (mobileView === 'orderbook' || mobileView === 'trades')) ? 'orderbook-container' : 'hidden'}
         style={windowWidth > 1020 ? orderBookStyle : {}}
       >
         <OrderBook

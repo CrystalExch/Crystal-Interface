@@ -16,6 +16,7 @@ interface OrderHistoryContentProps {
   pageSize: number;
   currentPage: number;
   trades: any;
+  onMarketSelect: any;
 }
 
 const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
@@ -25,6 +26,7 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
   pageSize,
   currentPage,
   trades,
+  onMarketSelect,
 }) => {
   const normalizedCurrentMarket = currentMarket.toUpperCase().replace('-', '/');
   const filteredCanceledOrders = canceledorders.filter((order) => {
@@ -135,6 +137,7 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
               market={markets[item[4]]}
               quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
               / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
+              onMarketSelect={onMarketSelect}
             />
           ))
         ) : (null
@@ -144,4 +147,4 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
   );
 };
 
-export default OrderHistoryContent;
+export default React.memo(OrderHistoryContent);

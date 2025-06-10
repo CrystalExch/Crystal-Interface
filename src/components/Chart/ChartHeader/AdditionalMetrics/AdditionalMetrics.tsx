@@ -96,7 +96,6 @@ const AdditionalMetrics: React.FC<AdditionalMetricsProps> = ({
             label={metric.label}
             value={metric.value}
             isLoading={isLoading}
-            isLiquidityMetric={metric.label === t('availableLiquidity')}
           />
         ))}
       </div>

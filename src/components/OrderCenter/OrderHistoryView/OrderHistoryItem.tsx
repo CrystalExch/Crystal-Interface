@@ -18,12 +18,14 @@ interface OrderHistoryItemProps {
   order: any;
   market: any;
   quotePrice: any;
+  onMarketSelect: any;
 }
 
 const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   order,
   market,
   quotePrice,
+  onMarketSelect,
 }) => {
   const { favorites, toggleFavorite } = useSharedContext();
 
@@ -66,8 +68,8 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
         </div>
       </div>
       <div className="oc-cell market-cell">
-        <img className="ordercenter-token-icon" src={market.image} />
-        <div className="market-details">
+        <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)}/>
+        <div className="market-details" onClick={() => onMarketSelect(market)}>
           <div className="market-name">
             {market.baseAsset}-{market.quoteAsset}
           </div>
@@ -117,4 +119,4 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   );
 };
 
-export default OrderHistoryItem;
+export default React.memo(OrderHistoryItem);

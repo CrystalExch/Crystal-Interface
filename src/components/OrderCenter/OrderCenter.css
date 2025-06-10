@@ -32,7 +32,6 @@
   flex: 1;
   font-size: 0.75rem;
   font-weight: 300;
-  margin-top: 2px;
   padding: 8px 20px 8px 20px;
   text-align: center;
   text-decoration: none;
@@ -92,7 +91,6 @@
 .market-cell {
   align-items: center;
   display: flex;
-  gap: 8px;
   margin-left: -15px;
 }
 
@@ -100,12 +98,15 @@
   border-radius: 50%;
   height: 24px;
   width: 24px;
+  cursor: pointer;
 }
 
 .market-details {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  padding-left: 8px;
+  cursor: pointer;
 }
 
 .order-favorite-cell {

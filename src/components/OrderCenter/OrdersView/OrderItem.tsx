@@ -24,9 +24,10 @@ interface OrderItemProps {
   setChain: any;
   quotePrice: any;
   waitForTxReceipt: any;
+  onMarketSelect: any;
 }
 
-const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt }) => {
+const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt, onMarketSelect }) => {
   const { favorites, toggleFavorite } = useSharedContext();
   
   const marketKey = order[4];
@@ -80,9 +81,9 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
           </svg>
         </div>
       </div>
-      <div className="oc-cell market-cell">
-        <img className="ordercenter-token-icon" src={market.image} />
-        <div className="market-details">
+      <div className="oc-cell market-cell" >
+        <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)}/>
+        <div className="market-details" onClick={() => onMarketSelect(market)}>
           <div className="market-name">
             {market.baseAsset}-{market.quoteAsset}
           </div>
@@ -124,4 +125,4 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
   );
 }
 
-export default OrderItem;
+export default React.memo(OrderItem);

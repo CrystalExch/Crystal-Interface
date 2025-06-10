@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import './SwapIcon.css';
 
 interface SwapIconProps {
@@ -12,12 +12,10 @@ const SwapIcon: React.FC<SwapIconProps> = ({
   setpopup,
   onMarketSelect,
 }) => {
-  const hoverRef = useRef<HTMLDivElement>(null);
   
   return (
     <div
       className="swap-icon"
-      ref={hoverRef}
       onClick={() => {
         setpopup(0);
         let found = false;

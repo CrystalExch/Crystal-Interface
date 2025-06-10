@@ -117,7 +117,11 @@
 .side-menu-title {
   color: rgb(255 255 255);
   font-family: Orbitron, sans-serif;
-  font-size: 1rem;
+  font-size: 1.2rem;
+  margin-left: 3px;
+  margin-top: -3px;
+  margin-bottom: -3px;
+  font-weight: 500;
 }
 
 .close-button {

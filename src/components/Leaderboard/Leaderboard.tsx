@@ -133,7 +133,7 @@ const NumberRoller: React.FC<NumberRollerProps> = ({
   });
   
   const characters = formattedValue.split('');
-  
+
   return (
     <div className="number-roller">
       {characters.map((char, index) => (
@@ -179,7 +179,6 @@ interface LeaderboardProps {
   username: any;
   setIsTransitioning: any;
   setTransitionDirection: any;
-  setJustEntered: any;
 }
 
 const ITEMS_FIRST_PAGE = 47;
@@ -192,7 +191,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   username,
   setIsTransitioning,
   setTransitionDirection,
-  setJustEntered,
 }) => {
   const [overview, setOverview] = useState<OverviewResponse | null>(null);
   const [currentPage, setCurrentPage] = useState(0);
@@ -206,6 +204,8 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [manualPaging, setManualPaging] = useState(false);
   const rowsRef = useRef<HTMLDivElement>(null);
   const prevPageRef = useRef<number>(currentPage);
+    const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
+
 
   useEffect(() => {
     prevPageRef.current = currentPage;
@@ -218,7 +218,6 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
         ? ITEMS_FIRST_PAGE
         : ITEMS_OTHER_PAGES)
     : 0;
-
   
   useEffect(() => {
     if (!address) return;
@@ -241,7 +240,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
           setOverview(data);
           setPaginationLoading(false);
         })
-        .catch((err) => {
+       .catch((err) => {
           console.error('fetch overview error', err);
           setPaginationLoading(false);
         });
@@ -257,7 +256,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
 
   useEffect(() => {
     const calculate = () => {
-      const target = new Date('2025-06-01T00:00:00-04:00').getTime();
+      const target = new Date('2025-07-01T00:00:00-04:00').getTime();
       const diff = target - Date.now();
       if (diff <= 0) {
         setTimeLeft({ days: 0, hours: 0, minutes: 0, seconds: 0 });
@@ -378,8 +377,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 setpopup(15);
                 setTimeout(() => {
                   setIsTransitioning(false);
-                  setJustEntered(true);
-                });
+                }, 500);
               });
             }}>
             {t('viewRules')}
@@ -400,7 +398,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                     value={overview!.global_total_points}
                     decimals={2}
                     duration={800}
-                  /> / 1,000,000,000.00
+                  />  {'\u00A0/ 10,000,000,000.00'}
                   <img src={crystalxp} className="xp-icon" />
                 </span>
               )}
@@ -411,7 +409,7 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 style={{
                   width: loading
                     ? '0%'
-                    : `${(overview!.global_total_points / 1_000_000_000) * 100}%`,
+                    : `${(overview!.global_total_points / 10_000_000_000) * 100}%`,
                 }}
               />
             </div>
@@ -613,8 +611,15 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                           <div className="orders-indicator-container">
                             <div
                               className="orders-indicator"
-                              title={`You have ${orders.length} open orders earning points`}
-                            />
+                              onMouseEnter={() => setShowOrdersTooltip(true)}
+                              onMouseLeave={() => setShowOrdersTooltip(false)}
+                            >
+                              {showOrdersTooltip && (
+                                <div className="custom-tooltip">
+                                  You have {orders.length} open orders earning points
+                                </div>
+                              )}
+                            </div>
                           </div>
                         )}
                         {isCurrent && (

@@ -20,6 +20,7 @@ interface ChartCanvasProps {
   isMarksVisible: boolean;
   orders: any;
   isOrdersVisible: boolean;
+  showChartOutliers: boolean;
   router: any;
   refetch: any;
   sendUserOperationAsync: any;
@@ -29,6 +30,7 @@ interface ChartCanvasProps {
   client: any;
   newTxPopup: any;
   usedRefAddress: any;
+  realtimeCallbackRef: any;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -41,40 +43,32 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   isMarksVisible,
   orders,
   isOrdersVisible,
+  showChartOutliers,
   router,
   refetch,
   sendUserOperationAsync,
   setChain,
   waitForTxReceipt,
   usedRefAddress,
+  realtimeCallbackRef,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
-  const dataRef = useRef(data);
+  const dataRef = useRef<any>({});
   const activeMarketRef = useRef(activeMarket);
   const tradeHistoryRef = useRef(tradehistory);
   const ordersRef = useRef(orders);
   const marksRef = useRef<any>();
-  const realtimeCallbackRef = useRef<any>({});
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
   useEffect(() => {
-    dataRef.current[data[1]] = data[0];
-    if (realtimeCallbackRef.current[data[1]] && data[0].length > 0) {
-      const latest = data[0].at(-1) as any;
-      const latestBar = {
-        time: new Date(latest.time as any).getTime(),
-        open: latest.open,
-        high: latest.high,
-        low: latest.low,
-        close: latest.close,
-        volume: latest.volume,
-      };
-      realtimeCallbackRef.current[data[1]](latestBar);
+    if (data[2] != showChartOutliers) {
+      return;
     }
-  }, [data]);
+    dataRef.current[data[1]] = data[0];
+  }, [data, showChartOutliers]);
 
   useEffect(() => {
     try {
@@ -178,8 +172,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   hash = await sendUserOperationAsync({uo: replaceOrder(
                     router,
                     BigInt(0),
-                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                    (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                    (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                     false,
                     BigInt(order[0]),
                     BigInt(order[1]),
@@ -213,7 +207,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   );
                   await waitForTxReceipt(hash.hash);
                   refetch()
-                  orderLine.remove()
+                  try {
+                    orderLine.remove()
+                  }
+                  catch {}
                 } catch (error) {
                   orderLine.setCancellable(true)
                 }
@@ -227,7 +224,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           ordersRef.current.forEach((order: any) => {
             try {
               if (order?.[10] && typeof order[10].remove === 'function') {
-                order[10].remove();
+                try {
+                  order[10].remove();
+                }
+                catch {}
                 order.splice(10, 1)
               }
             } catch (error) {
@@ -249,7 +249,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       library_path: '/charting_library/',
       autosize: true,
       symbol: `${normalizeTicker(activeMarket.baseAsset, activechain)}/${normalizeTicker(activeMarket.quoteAsset, activechain)}`,
-      interval: '5',
+      interval: localStorage.getItem('crystal_chart_timeframe') || '5',
       timezone: 'Etc/UTC',
       locale: 'en',
       debug: false,
@@ -345,8 +345,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     : resolution + 'm',
             );
 
-            const base = symbolInfo.name.split('/')[0];
-            const key = base + resolution;
+            const key = symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution;
 
             await new Promise<void>((resolve) => {
               const check = () => {
@@ -359,15 +358,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               const intervalCheck = setInterval(check, 50);
               check();
             });
-            
-            let bars = dataRef.current[key].map((point: any) => ({
-              time: new Date(point.time).getTime(),
-              open: point.open,
-              high: point.high,
-              low: point.low,
-              close: point.close,
-              volume: point.volume,
-            }));
+
+            let bars = dataRef.current[key]
 
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
@@ -425,7 +417,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
           onRealtimeCallback: any,
         ) => {
           realtimeCallbackRef.current[
-            symbolInfo.name.split('/')[0] + resolution
+            symbolInfo.name.split('/')[0] + symbolInfo.name.split('/')[1] + resolution
           ] = onRealtimeCallback;
         },
 
@@ -487,7 +479,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
         ordersRef.current.forEach((order: any) => {
           try {
             if (order?.[10] && typeof order[10].remove === 'function') {
-              order[10].remove();
+              try {
+                order[10].remove();
+              }
+              catch {}
               order.splice(10, 1)
             }
           } catch (error) {
@@ -497,16 +492,24 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       }
       catch(e) {
       }
-
+      setChartReady(false)
+      dataRef.current = {}
       widgetRef.current.remove();
     };
-  }, []);
+  }, [showChartOutliers]);
 
   useEffect(() => {
     try {
       activeMarketRef.current = activeMarket;
       if (chartReady) {
         setOverlayVisible(true);
+        localStorage.setItem('crystal_chart_timeframe', selectedInterval === '1d'
+        ? '1D'
+        : selectedInterval === '4h'
+          ? '240'
+          : selectedInterval === '1h'
+            ? '60'
+            : selectedInterval.slice(0, -1))
         widgetRef.current.setSymbol(
           `${normalizeTicker(activeMarketRef.current.baseAsset, activechain)}/${normalizeTicker(activeMarketRef.current.quoteAsset, activechain)}`,
           selectedInterval === '1d'
@@ -548,8 +551,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       hash = await sendUserOperationAsync({uo: replaceOrder(
                         router,
                         BigInt(0),
-                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
-                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].weth :order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
+                        (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
+                        (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                         false,
                         BigInt(order[0]),
                         BigInt(order[1]),
@@ -583,7 +586,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       );
                       await waitForTxReceipt(hash.hash);
                       refetch()
-                      orderLine.remove()
+                      try {
+                        orderLine.remove()
+                      }
+                      catch {}
                     } catch (error) {
                       orderLine.setCancellable(true)
                     }

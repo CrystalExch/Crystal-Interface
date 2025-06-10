@@ -9,20 +9,14 @@ import React, { useEffect, useRef } from 'react';
 
 import './ChartCanvas.css';
 
-interface DataPoint {
-  time: number | string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-}
-
 interface ChartCanvasProps {
-  data: DataPoint[];
+  data: any;
   activeMarket: any;
+  selectedInterval: any;
+  setOverlayVisible: any;
 }
 
-const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket }) => {
+const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket, selectedInterval, setOverlayVisible }) => {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -94,10 +88,16 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket }) => {
 
   useEffect(() => {
     const series = seriesRef.current;
-    if (series && data) {
-      const formattedData = data.map((item) => ({
+    if (series && data?.[0] && (selectedInterval === '1d'
+    ? '1D'
+    : selectedInterval === '4h'
+    ? '240'
+    : selectedInterval === '1h'
+    ? '60'
+    : selectedInterval.slice(0, -1)) == data?.[1]?.match(/\d.*/)?.[0]) {
+      const formattedData = data[0].map((item: any) => ({
         ...item,
-        time: (new Date(item.time).getTime() / 1000) as Time,
+        time: (item.time / 1000) as Time,
       }));
       chartRef.current?.applyOptions({
         rightPriceScale: {
@@ -118,6 +118,7 @@ const ChartCanvas: React.FC<ChartCanvasProps> = ({ data, activeMarket }) => {
           },
         });
       }, 1);
+      setOverlayVisible(false)
     }
   }, [data]);
 

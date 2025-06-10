@@ -21,9 +21,10 @@ interface OrdersContentProps {
   pageSize: number;
   currentPage: number;
   waitForTxReceipt: any;
+  onMarketSelect: any;
 }
 
-const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt }) => {
+const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt, onMarketSelect }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     trades,
     orders,
@@ -184,6 +185,7 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
               quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
               / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
               waitForTxReceipt={waitForTxReceipt}
+              onMarketSelect={onMarketSelect}
             />
           ))
         ) : (null
@@ -193,4 +195,4 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
   );
 };
 
-export default OrdersContent;
+export default React.memo(OrdersContent);

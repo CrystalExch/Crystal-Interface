@@ -28,8 +28,7 @@
   width: 70px;
 }
 
-.price-skeleton,
-.change-skeleton {
+.price-skeleton {
   background: #2d2d3b;
   border-radius: 4px;
   margin-top: 4px;
@@ -38,13 +37,7 @@
   position: relative;
 }
 
-.change-skeleton {
-  height: 12px;
-  width: 90px;
-}
-
-.price-skeleton::after,
-.change-skeleton::after {
+.price-skeleton::after {
   animation: shimmer 2s infinite;
   background-image: linear-gradient(
     90deg,

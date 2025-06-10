@@ -1,11 +1,10 @@
 .nft-scroll-wrapper {
-  align-items: center;
   background: rgb(6 6 6);
   box-sizing: border-box;
   display: flex;
-  height: 100%;
+  min-height: 100%;
   justify-content: center;
-  width: 100%;
+  min-width: 100%;
 }
 
 .nft-main-content-wrapper{
@@ -13,7 +12,9 @@
   gap: 4px;
   width: 100%;
   padding: 0px 5px;
-  max-height: 100%;
+  height: 750px;
+  max-width: 1050px;
+  margin-top: max(0px, calc((100vh - 815px) / 3));
 }
 
 .nft-swapmodal {
@@ -25,7 +26,9 @@
 }
 
 .nft-header {
-  padding: 15px 0 5px;
+
+  margin: 15px 15px 5px;
+  border-bottom: 1.5px solid #ffffff15;
 }
 
 .nft-tokenselectheader1 {
@@ -33,18 +36,15 @@
   font-weight: 300;
   color: #fff;
   margin: 0;
-  margin-left: 16px;
 }
 
 .nft-tokenselectheader2 {
   color: #ffffff78;
   font-size: 0.7rem;
   font-weight: 300;
-  margin-left: 17px;
   margin-top: 0;
   max-width: 230px;
   padding-bottom: 10px;
-  border-bottom: 1.5px solid #ffffff15;
 }
 
 .nft-content {
@@ -58,6 +58,7 @@
   flex-direction: row;
   gap: 20px;
   align-items: flex-start;
+
 }
 
 .nft-image-container {
@@ -68,7 +69,7 @@
   overflow: hidden;
   border-radius: 8px;
   animation: nft-fadeInSlideUp 0.5s ease forwards;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1/1;
   background-color: #0c0c0d;
 }
 
@@ -101,7 +102,7 @@
 }
 
 .nft-image:hover {
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .nft-details {
@@ -328,6 +329,7 @@
   border-top-color: #0f0f1230;
   height: 16px;
   width: 16px;
+  margin-right: 5px;
 }
 
 .nft-mint-success-container {
@@ -424,11 +426,13 @@
 }
 
 
-@media (max-width: 1100px) {
+@media (max-width: 1020px) {
     .nft-main-content-wrapper {
         flex-direction: column;
         gap: 10px;
         padding-bottom: 5px;
+        max-height: 100%;
+        margin-top: 0;
     }
     .nft-tokenselectheader2{
         max-width: calc(100% - 35px);
@@ -441,7 +445,9 @@
     }
     .nft-image-container{
         width: 100%;
-        height: 100%;
+        min-height: 100%;
+        min-height: 0;
+        aspect-ratio: 1/1;
     }
     
     .nft-stats-grid {

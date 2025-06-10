@@ -1,5 +1,5 @@
 export type DataPoint = {
-  time: string;
+  time: number;
   open: number;
   high: number;
   low: number;
@@ -83,7 +83,7 @@ export function generateChartDataFromTrades(
       previousClose = close!;
 
       dataPoints.push({
-        time: new Date(intervalStart).toISOString(),
+        time: intervalStart,
         open: open!,
         high: high!,
         low: low!,
@@ -92,7 +92,7 @@ export function generateChartDataFromTrades(
       });
     } else {
       dataPoints.push({
-        time: new Date(intervalStart).toISOString(),
+        time: intervalStart,
         open: previousClose,
         high: previousClose,
         low: previousClose,

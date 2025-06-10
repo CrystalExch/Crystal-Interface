@@ -1,18 +1,16 @@
 .sidebar-tooltip {
     position: fixed;
     transform: translateY(-50%);
-    background: rgba(32, 32, 39, 0.5);
-    padding: 6px 12px;
+    background: rgba(32, 32, 39, 1);
+    padding: 4px 8px;
     border-radius: 4px;
     margin-left: -5px;
     z-index: 101;
     pointer-events: none;
     transition: opacity 0.3s ease;
     color: #ccd0f1;
-    font-size: 12px;
+    font-size: 0.75rem;
     font-weight: 300;
     letter-spacing: -0.1px;
-    backdrop-filter: blur(10px);
-  
   }
   
