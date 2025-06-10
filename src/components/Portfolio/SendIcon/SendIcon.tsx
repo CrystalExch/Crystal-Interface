@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import './SendIcon.css';
 
 interface SendIconProps {
@@ -12,12 +12,10 @@ const SendIcon: React.FC<SendIconProps> = ({
   setSendTokenIn,
   setpopup,
 }) => {
-  const hoverRef = useRef<HTMLDivElement>(null);
   
   return (
     <div
       className="send-icon"
-      ref={hoverRef}
       onClick={() => {
         setSendTokenIn(tokenaddress);
         setpopup(3);

@@ -1,13 +1,13 @@
 import React from 'react';
-import './SwapIcon.css';
+import './StakeIcon.css';
 
-interface SwapIconProps {
+interface StakeIconProps {
   tokenaddress: string;
   setpopup: (value: number) => void;
   onMarketSelect: any;
 }
 
-const SwapIcon: React.FC<SwapIconProps> = ({
+const StakeIcon: React.FC<StakeIconProps> = ({
   tokenaddress,
   setpopup,
   onMarketSelect,
@@ -38,9 +38,9 @@ const SwapIcon: React.FC<SwapIconProps> = ({
         }
       }}
     >
-      {t('swap')}
+      {t('stake')}
     </div>
   );
 };
 
-export default SwapIcon;
+export default StakeIcon;

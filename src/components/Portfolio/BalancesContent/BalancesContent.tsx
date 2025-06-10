@@ -164,6 +164,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
             setpopup={setpopup}
             priceChange={token.priceChange.percentageChange}
             isBlurred={isBlurred}
+            isLST={token?.lst == true}
           />
         ))}
     </div>

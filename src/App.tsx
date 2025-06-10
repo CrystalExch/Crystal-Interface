@@ -488,6 +488,9 @@ function App() {
     const saved = localStorage.getItem('crystal_order_type');
     return saved !== null ? JSON.parse(saved) : 1;
   });
+  const [isStake, setIsStake] = useState(() => {
+    return true
+  })
   const [addliquidityonly, setAddLiquidityOnly] = useState(() => {
     const saved = localStorage.getItem('crystal_add_liquidity_only');
     return saved !== null ? JSON.parse(saved) : false;
@@ -1451,7 +1454,7 @@ function App() {
     const priceMap: { [key: string]: boolean } = {};
     if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
       const filteredUserOrders = userOrders.filter((order) => {
-        return isBuyOrderList == (Number(order[3]) === 1) && String(order[4]) === (activeMarket.baseAsset + activeMarket.quoteAsset);
+        return isBuyOrderList == (Number(order[3]) === 1) && String(order[4]) === ((activeMarket.baseAsset == wethticker ? ethticker : activeMarket.baseAsset) + (activeMarket.quoteAsset == wethticker ? ethticker : activeMarket.quoteAsset));
       });
 
       filteredUserOrders.forEach((order) => {
@@ -5890,7 +5893,6 @@ function App() {
                   </div>
                 </div>
               </div>
-              <div className="swap-container-divider" />
               <div className="sendaddressbg">
                 <div className="send-To">{t('to')}</div>
                 <div className="send-address-input-container">
@@ -7261,559 +7263,559 @@ function App() {
             </div>
           </div>
         ) : null}
-{(popup === 14 || popup === 15 || popup === 17 || popup === 18 || isTransitioning) ? (
-  <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
-    <div
-      className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || (popup === 15 && connected)
-        ? 'active'
-        : ''
-        }`}
-    />
-    <div className="onboarding-crystal-logo">
-      <img className="onboarding-crystal-logo-image" src={clearlogo} />
-      <span className="onboarding-crystal-text">CRYSTAL</span>
-    </div>
-    <CrystalObject />
-
-    {user && !connected && (
-      <div className="generating-address-popup">
-        <span className="loader"></span>
-        <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
-        <p className="generating-address-text">
-          Please wait while your smart wallet address is being loaded...
-        </p>
-      </div>
-    )}
-    {connected ? (
-      <>
-        <div className="step-indicators">
-          {[1, 2, 3, 4, 5, 6].map((index) => (
+        {(popup === 14 || popup === 15 || popup === 17 || popup === 18 || isTransitioning) ? (
+          <div ref={popupref} className={`onboarding-container ${exitingChallenge ? 'exiting' : ''}`}>
             <div
-              key={index}
-              className={`step-indicator ${
-                popup === 14
-                  ? index === 1 ? 'active' : ''
-                  : popup === 17
-                  ? index === 2 ? 'active' : ''
-                  : popup === 18
-                  ? index === 3 ? 'active' : ''
-                  : (currentStep + 4) === index ? 'active' : ''
-                } ${
-                popup === 14
-                  ? index < 1 ? 'completed' : ''
-                  : popup === 17
-                  ? index < 2 ? 'completed' : ''
-                  : popup === 18
-                  ? index < 3 ? 'completed' : ''
-                  : (currentStep + 4) > index ? 'completed' : ''
-                } ${isTransitioning ? 'transitioning' : ''}`}
+              className={`onboarding-background-blur ${exitingChallenge ? 'exiting' : ''} ${(isTransitioning && transitionDirection === 'forward') || (popup === 15 && connected)
+                ? 'active'
+                : ''
+                }`}
             />
-          ))}
-        </div>
-
-        <div
-          className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
-            }`}
-        >
-          {popup == 18 && (
-            <div className="onboarding-section active">
-              <div className="onboarding-split-container">
-                <div className="onboarding-left-side">
-                  <div className="onboarding-content">
-                    <div className="onboarding-header">
-                      <h2 className="onboarding-title">Join our growing community!</h2>
-                      <p className="onboarding-subtitle">
-                        Crystal is being released in phases. Join our community to be the first to know when new features arrive.
-                      </p>
-                    </div>
-
-                    <div className="social-buttons">
-                      <button
-                        className="wallet-option"
-                        onClick={() =>
-                          window.open('https://discord.gg/CrystalExch', '_blank')
-                        }
-                      >
-                        <img
-                          className="connect-wallet-icon"
-                          src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg"
-                        />
-                        <span className="wallet-name">Join Crystal's Discord</span>
-                      </button>
-
-                      <button
-                        className="wallet-option"
-                        onClick={() =>
-                          window.open('https://x.com/CrystalExch', '_blank')
-                        }
-                      >
-                        <img
-                          className="connect-wallet-icon"
-                          src={Xicon}
-                        />
-                        <span className="wallet-name">Follow us on X (Twitter)</span>
-                      </button>
-                    </div>
-
-                    <div className="onboarding-actions">
-                      <button
-                        className="skip-button"
-                        onClick={() => {
-                          audio.currentTime = 0;
-                          audio.play();
-                          setpopup(15);
-                        }}
-                      >
-                        Continue
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="onboarding-crystal-logo">
+              <img className="onboarding-crystal-logo-image" src={clearlogo} />
+              <span className="onboarding-crystal-text">CRYSTAL</span>
             </div>
-          )}
-          
-          {popup == 17 && (
-            <div className="onboarding-section active">
-              <div className="onboarding-split-container">
-                <div className="onboarding-left-side">
-                  <div className="onboarding-content">
-                    <div className="onboarding-header">
-                      <h2 className="use-ref-title">Add a referral code (optional)</h2>
-                      <div className="form-group">
-                        {error && <span className="error-message">{error}</span>}
+            <CrystalObject />
 
-                        <input
-                          className="username-input"
-                          placeholder="Enter a code"
-                          value={typedRefCode}
-                          onChange={e => {
-                            const value = e.target.value.trim();
-                            if (isValidInput(value) || value === "") {
-                              setTypedRefCode(value);
-                              setError('')
-                            }
-                          }}
-                        />
-                      </div>
+            {user && !connected && (
+              <div className="generating-address-popup">
+                <span className="loader"></span>
+                <h2 className="generating-address-title">Fetching Your Smart Wallet</h2>
+                <p className="generating-address-text">
+                  Please wait while your smart wallet address is being loaded...
+                </p>
+              </div>
+            )}
+            {connected ? (
+              <>
+                <div className="step-indicators">
+                  {[1, 2, 3, 4, 5, 6].map((index) => (
+                    <div
+                      key={index}
+                      className={`step-indicator ${
+                        popup === 14
+                          ? index === 1 ? 'active' : ''
+                          : popup === 17
+                          ? index === 2 ? 'active' : ''
+                          : popup === 18
+                          ? index === 3 ? 'active' : ''
+                          : (currentStep + 4) === index ? 'active' : ''
+                        } ${
+                        popup === 14
+                          ? index < 1 ? 'completed' : ''
+                          : popup === 17
+                          ? index < 2 ? 'completed' : ''
+                          : popup === 18
+                          ? index < 3 ? 'completed' : ''
+                          : (currentStep + 4) > index ? 'completed' : ''
+                        } ${isTransitioning ? 'transitioning' : ''}`}
+                    />
+                  ))}
+                </div>
 
-                      <div className="onboarding-actions">
-                        <button
-                          className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
-                          disabled={!typedRefCode || isRefSigning}
-                          onClick={async () => {
-                            const ok = await handleSetRef(typedRefCode);
-                            if (ok) {
-                              audio.currentTime = 0;
-                              audio.play();
-                              setpopup(18);
-                            }
-                          }}
-                        >
-                          {isRefSigning ? (
-                            <div className="button-content">
-                              <div className="loading-spinner" />
-                              {t('signTransaction')}
+                <div
+                  className={`onboarding-wrapper ${isTransitioning ? `transitioning ${transitionDirection}` : ''
+                    }`}
+                >
+                  {popup == 18 && (
+                    <div className="onboarding-section active">
+                      <div className="onboarding-split-container">
+                        <div className="onboarding-left-side">
+                          <div className="onboarding-content">
+                            <div className="onboarding-header">
+                              <h2 className="onboarding-title">Join our growing community!</h2>
+                              <p className="onboarding-subtitle">
+                                Crystal is being released in phases. Join our community to be the first to know when new features arrive.
+                              </p>
                             </div>
-                          ) : t('setReferral')}
-                        </button>
 
-                        <button
-                          className="skip-button"
-                          onClick={() => {
-                            audio.currentTime = 0;
-                            audio.play();
-                            setpopup(18);
-                          }}
-                        >
-                          Skip
-                        </button>
+                            <div className="social-buttons">
+                              <button
+                                className="wallet-option"
+                                onClick={() =>
+                                  window.open('https://discord.gg/CrystalExch', '_blank')
+                                }
+                              >
+                                <img
+                                  className="connect-wallet-icon"
+                                  src="https://assets-global.website-files.com/6257adef93867e50d84d30e2/636e0a69f118df70ad7828d4_icon_clyde_blurple_RGB.svg"
+                                />
+                                <span className="wallet-name">Join Crystal's Discord</span>
+                              </button>
+
+                              <button
+                                className="wallet-option"
+                                onClick={() =>
+                                  window.open('https://x.com/CrystalExch', '_blank')
+                                }
+                              >
+                                <img
+                                  className="connect-wallet-icon"
+                                  src={Xicon}
+                                />
+                                <span className="wallet-name">Follow us on X (Twitter)</span>
+                              </button>
+                            </div>
+
+                            <div className="onboarding-actions">
+                              <button
+                                className="skip-button"
+                                onClick={() => {
+                                  audio.currentTime = 0;
+                                  audio.play();
+                                  setpopup(15);
+                                }}
+                              >
+                                Continue
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          <div
-            className={`onboarding-section username-section ${(popup === 14 || (isTransitioning)) && ((!username && usernameResolved) || transitionDirection == 'backward')
-              ? 'active'
-              : ''
-              }`}
-          >
-            <div className="onboarding-split-container">
-              <div className="onboarding-left-side">
-                <div className="onboarding-content">
-                  <div className="onboarding-header">
-                    <h2 className="onboarding-title">
-                      {username ? 'Edit Name' : 'Enter a Name'}
-                    </h2>
-                    <p className="onboarding-subtitle">
-                      {username
-                        ? 'Update the name that appears on the leaderboard.'
-                        : 'This username will be visible on the leaderboard to all.'}
-                    </p>
-                  </div>
+                  )}
+                  
+                  {popup == 17 && (
+                    <div className="onboarding-section active">
+                      <div className="onboarding-split-container">
+                        <div className="onboarding-left-side">
+                          <div className="onboarding-content">
+                            <div className="onboarding-header">
+                              <h2 className="use-ref-title">Add a referral code (optional)</h2>
+                              <div className="form-group">
+                                {error && <span className="error-message">{error}</span>}
 
-                  <div className="onboarding-form">
-                    <div className="form-group">
-                      <label className="form-label">Your Wallet Address</label>
-                      <div className="wallet-address">{address || '0x1234...5678'}</div>
+                                <input
+                                  className="username-input"
+                                  placeholder="Enter a code"
+                                  value={typedRefCode}
+                                  onChange={e => {
+                                    const value = e.target.value.trim();
+                                    if (isValidInput(value) || value === "") {
+                                      setTypedRefCode(value);
+                                      setError('')
+                                    }
+                                  }}
+                                />
+                              </div>
+
+                              <div className="onboarding-actions">
+                                <button
+                                  className={`create-username-button ${isRefSigning ? 'signing' : !typedRefCode ? 'disabled' : ''}`}
+                                  disabled={!typedRefCode || isRefSigning}
+                                  onClick={async () => {
+                                    const ok = await handleSetRef(typedRefCode);
+                                    if (ok) {
+                                      audio.currentTime = 0;
+                                      audio.play();
+                                      setpopup(18);
+                                    }
+                                  }}
+                                >
+                                  {isRefSigning ? (
+                                    <div className="button-content">
+                                      <div className="loading-spinner" />
+                                      {t('signTransaction')}
+                                    </div>
+                                  ) : t('setReferral')}
+                                </button>
+
+                                <button
+                                  className="skip-button"
+                                  onClick={() => {
+                                    audio.currentTime = 0;
+                                    audio.play();
+                                    setpopup(18);
+                                  }}
+                                >
+                                  Skip
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-
-                    <div className="form-group">
-                      <label htmlFor="username" className="form-label">Username</label>
-                      <input
-                        type="text"
-                        id="username"
-                        className="username-input"
-                        placeholder={usernameInput ? usernameInput : 'Enter a username'}
-                        value={usernameInput || ''}
-                        onChange={e => {
-                          const value = e.target.value.trim();
-                          if (isValidInput(value) || value === "") {
-                            setUsernameInput(value);
-                          }
-                        }}
-                      />
-                      {usernameError && <p className="username-error">{usernameError}</p>}
-                    </div>
-                  </div>
-
-                  <button
-                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''
-                      } ${!usernameInput.trim() ? 'disabled' : ''}`}
-                    onClick={async () => {
-                      if (!usernameInput.trim() || isUsernameSigning || usernameInput === username) return;
-                      await handleEditUsername(usernameInput)
-                    }}
-                    disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === username}
+                  )}
+                  
+                  <div
+                    className={`onboarding-section username-section ${(popup === 14 || (isTransitioning)) && ((!username && usernameResolved) || transitionDirection == 'backward')
+                      ? 'active'
+                      : ''
+                      }`}
                   >
-                    {isUsernameSigning ? (
-                      <div className="button-content">
-                        <div className="loading-spinner" />
-                        {t('signTransaction')}
-                      </div>
-                    ) : username ? t('editUsername') : 'Create Username'}
-                  </button>
-                </div>
+                    <div className="onboarding-split-container">
+                      <div className="onboarding-left-side">
+                        <div className="onboarding-content">
+                          <div className="onboarding-header">
+                            <h2 className="onboarding-title">
+                              {username ? 'Edit Name' : 'Enter a Name'}
+                            </h2>
+                            <p className="onboarding-subtitle">
+                              {username
+                                ? 'Update the name that appears on the leaderboard.'
+                                : 'This username will be visible on the leaderboard to all.'}
+                            </p>
+                          </div>
 
-                {(!usernameInput || username !== '') && (
-                  <>
-                    <div className="onboarding-actions">
-                      <button
-                        className="skip-button"
-                        type="button"
-                        onClick={() => {
-                          audio.currentTime = 0;
-                          audio.play();
-                          setpopup(17);
-                        }}
-                      >
-                        {!usernameInput ? "Continue Without Username" : "Continue"}
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
+                          <div className="onboarding-form">
+                            <div className="form-group">
+                              <label className="form-label">Your Wallet Address</label>
+                              <div className="wallet-address">{address || '0x1234...5678'}</div>
+                            </div>
 
-          <div
-            className={`onboarding-section challenge-section ${popup === 15 ||
-              (isTransitioning && transitionDirection === 'forward')
-              ? 'active'
-              : ''
-              } ${exitingChallenge ? 'exiting' : ''}`}
-            data-step={currentStep}
-          >
-            <div className="challenge-intro-split-container">
-              <div className="floating-elements-container">
-                <img src={circleleft} className="circle-bottom" />
-                <img src={topright} className="top-right" />
-                <img src={topleft} className="top-left" />
-                <img src={circleleft} className="circle-left" />
-                <img src={veryleft} className="very-left" />
-                <img src={circleleft} className="circle-right" />
-                <img src={veryright} className="very-right" />
-                <img src={topmiddle} className="top-middle" />
-                <img src={topleft} className="bottom-middle" />
-                <img src={circleleft} className="bottom-right" />
+                            <div className="form-group">
+                              <label htmlFor="username" className="form-label">Username</label>
+                              <input
+                                type="text"
+                                id="username"
+                                className="username-input"
+                                placeholder={usernameInput ? usernameInput : 'Enter a username'}
+                                value={usernameInput || ''}
+                                onChange={e => {
+                                  const value = e.target.value.trim();
+                                  if (isValidInput(value) || value === "") {
+                                    setUsernameInput(value);
+                                  }
+                                }}
+                              />
+                              {usernameError && <p className="username-error">{usernameError}</p>}
+                            </div>
+                          </div>
 
-                <div className="account-setup-header">
-                  <div className="account-setup-title-wrapper">
-                    <h2 className="account-setup-title">
-                      {t('challengeOverview')}
-                    </h2>
-                    <p className="account-setup-subtitle">
-                      {t('learnHowToCompete')}
-                    </p>
-                  </div>
-                </div>
+                          <button
+                            className={`create-username-button ${isUsernameSigning ? 'signing' : ''
+                              } ${!usernameInput.trim() ? 'disabled' : ''}`}
+                            onClick={async () => {
+                              if (!usernameInput.trim() || isUsernameSigning || usernameInput === username) return;
+                              await handleEditUsername(usernameInput)
+                            }}
+                            disabled={!usernameInput.trim() || isUsernameSigning || usernameInput === username}
+                          >
+                            {isUsernameSigning ? (
+                              <div className="button-content">
+                                <div className="loading-spinner" />
+                                {t('signTransaction')}
+                              </div>
+                            ) : username ? t('editUsername') : 'Create Username'}
+                          </button>
+                        </div>
 
-                <div className="challenge-intro-content-wrapper">
-                  <div className="challenge-intro-content-side">
-                    <div className="challenge-intro-content-inner">
-                      <div className="intro-text">
-                        <h3 className="intro-title">
-                          {currentStep === 0
-                            ? t('precisionMatters')
-                            : currentStep === 1
-                              ? t('earnCrystals')
-                              : t('claimRewards')}
-                        </h3>
-                        <p className="intro-description">
-                          {currentStep === 0
-                            ? t('placeYourBids')
-                            : currentStep === 1
-                              ? t('midsGiveYou')
-                              : t('competeOnLeaderboards')}
-                        </p>
+                        {(!usernameInput || username !== '') && (
+                          <>
+                            <div className="onboarding-actions">
+                              <button
+                                className="skip-button"
+                                type="button"
+                                onClick={() => {
+                                  audio.currentTime = 0;
+                                  audio.play();
+                                  setpopup(17);
+                                }}
+                              >
+                                {!usernameInput ? "Continue Without Username" : "Continue"}
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div
-                    className={`challenge-intro-visual-side${animating ? ' is-animating' : ''
-                      }`}
+                    className={`onboarding-section challenge-section ${popup === 15 ||
+                      (isTransitioning && transitionDirection === 'forward')
+                      ? 'active'
+                      : ''
+                      } ${exitingChallenge ? 'exiting' : ''}`}
+                    data-step={currentStep}
                   >
-                    {currentStep === 0 && (
-                      <div className="intro-image-container">
-                        <div
-                          className={`zoom-container${animationStarted ? ' zoom-active' : ''
-                            }`}
-                        >
-                          <img
-                            src={part1image}
-                            className="intro-image"
-                            alt="Tutorial illustration"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <div className="challenge-intro-split-container">
+                      <div className="floating-elements-container">
+                        <img src={circleleft} className="circle-bottom" />
+                        <img src={topright} className="top-right" />
+                        <img src={topleft} className="top-left" />
+                        <img src={circleleft} className="circle-left" />
+                        <img src={veryleft} className="very-left" />
+                        <img src={circleleft} className="circle-right" />
+                        <img src={veryright} className="very-right" />
+                        <img src={topmiddle} className="top-middle" />
+                        <img src={topleft} className="bottom-middle" />
+                        <img src={circleleft} className="bottom-right" />
 
-                    {currentStep === 1 && (
-                      <div className="xp-animation-container">
-                        <div className="user-profile">
-                          <div className="self-pfp">
-                            <img
-                              src={defaultPfp}
-                              className="profile-pic-second"
-                              alt="User profile"
-                            />
-                            <div className="username-display">
-                              @{usernameInput || 'player123'}
-                            </div>
-                            <div className="xp-counter">
-                              <img
-                                src={crystalxp}
-                                className="xp-icon"
-                                alt="Crystal XP"
-                                style={{
-                                  width: '23px',
-                                  height: '23px',
-                                  verticalAlign: 'middle',
-                                }}
-                              />
-                              <span className="self-pfp-xp">8732.23</span>
+                        <div className="account-setup-header">
+                          <div className="account-setup-title-wrapper">
+                            <h2 className="account-setup-title">
+                              {t('challengeOverview')}
+                            </h2>
+                            <p className="account-setup-subtitle">
+                              {t('learnHowToCompete')}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="challenge-intro-content-wrapper">
+                          <div className="challenge-intro-content-side">
+                            <div className="challenge-intro-content-inner">
+                              <div className="intro-text">
+                                <h3 className="intro-title">
+                                  {currentStep === 0
+                                    ? t('precisionMatters')
+                                    : currentStep === 1
+                                      ? t('earnCrystals')
+                                      : t('claimRewards')}
+                                </h3>
+                                <p className="intro-description">
+                                  {currentStep === 0
+                                    ? t('placeYourBids')
+                                    : currentStep === 1
+                                      ? t('midsGiveYou')
+                                      : t('competeOnLeaderboards')}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
-                          <div className="challenge-mini-leaderboard">
-                            <div className="mini-leaderboard-header">
-                              <span className="mini-leaderboard-title">
-                                Season 0 Leaderboard
-                              </span>
-                              <span className="mini-leaderboard-time">
-                                7d 22h 50m 54s
-                              </span>
-                            </div>
+                          <div
+                            className={`challenge-intro-visual-side${animating ? ' is-animating' : ''
+                              }`}
+                          >
+                            {currentStep === 0 && (
+                              <div className="intro-image-container">
+                                <div
+                                  className={`zoom-container${animationStarted ? ' zoom-active' : ''
+                                    }`}
+                                >
+                                  <img
+                                    src={part1image}
+                                    className="intro-image"
+                                    alt="Tutorial illustration"
+                                  />
+                                </div>
+                              </div>
+                            )}
 
-                            <div className="mini-progress-bar">
-                              <div className="mini-progress-fill"></div>
-                            </div>
-
-                            <div className="mini-leaderboard-user">
-                              <div className="mini-leaderboard-user-left">
-                                <span className="mini-user-rank">#62</span>
-                                <span className="mini-user-address">
-                                  0xB080...c423
-                                  <svg
-                                    className="mini-user-copy-icon"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="#b8b7b7"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <rect
-                                      x="9"
-                                      y="9"
-                                      width="13"
-                                      height="13"
-                                      rx="2"
-                                      ry="2"
+                            {currentStep === 1 && (
+                              <div className="xp-animation-container">
+                                <div className="user-profile">
+                                  <div className="self-pfp">
+                                    <img
+                                      src={defaultPfp}
+                                      className="profile-pic-second"
+                                      alt="User profile"
                                     />
-                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                  </svg>
-                                </span>
-                              </div>
-                              <div className="mini-user-points">
-                                14.448
-                                <img
-                                  src={crystalxp}
-                                  width="14"
-                                  height="14"
-                                  alt="XP"
-                                />
-                              </div>
-                            </div>
+                                    <div className="username-display">
+                                      @{usernameInput || 'player123'}
+                                    </div>
+                                    <div className="xp-counter">
+                                      <img
+                                        src={crystalxp}
+                                        className="xp-icon"
+                                        alt="Crystal XP"
+                                        style={{
+                                          width: '23px',
+                                          height: '23px',
+                                          verticalAlign: 'middle',
+                                        }}
+                                      />
+                                      <span className="self-pfp-xp">8732.23</span>
+                                    </div>
+                                  </div>
 
-                            <div className="mini-top-users">
-                              <div className="mini-top-user mini-top-user-1">
-                                <span className="mini-top-rank mini-top-rank-1">
-                                  1
-                                </span>
-                                <img
-                                  className="mini-user-pfp"
-                                  src={firstPlacePfp}
-                                />
-                                <div className="mini-points-container">
-                                  <img
-                                    src={crystalxp}
-                                    className="mini-token-icon"
-                                    alt="Token"
-                                  />
-                                  <span className="mini-top-points">
-                                    234,236
-                                  </span>
+                                  <div className="challenge-mini-leaderboard">
+                                    <div className="mini-leaderboard-header">
+                                      <span className="mini-leaderboard-title">
+                                        Season 0 Leaderboard
+                                      </span>
+                                      <span className="mini-leaderboard-time">
+                                        7d 22h 50m 54s
+                                      </span>
+                                    </div>
+
+                                    <div className="mini-progress-bar">
+                                      <div className="mini-progress-fill"></div>
+                                    </div>
+
+                                    <div className="mini-leaderboard-user">
+                                      <div className="mini-leaderboard-user-left">
+                                        <span className="mini-user-rank">#62</span>
+                                        <span className="mini-user-address">
+                                          0xB080...c423
+                                          <svg
+                                            className="mini-user-copy-icon"
+                                            viewBox="0 0 24 24"
+                                            fill="none"
+                                            stroke="#b8b7b7"
+                                            strokeWidth="2"
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                          >
+                                            <rect
+                                              x="9"
+                                              y="9"
+                                              width="13"
+                                              height="13"
+                                              rx="2"
+                                              ry="2"
+                                            />
+                                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                          </svg>
+                                        </span>
+                                      </div>
+                                      <div className="mini-user-points">
+                                        14.448
+                                        <img
+                                          src={crystalxp}
+                                          width="14"
+                                          height="14"
+                                          alt="XP"
+                                        />
+                                      </div>
+                                    </div>
+
+                                    <div className="mini-top-users">
+                                      <div className="mini-top-user mini-top-user-1">
+                                        <span className="mini-top-rank mini-top-rank-1">
+                                          1
+                                        </span>
+                                        <img
+                                          className="mini-user-pfp"
+                                          src={firstPlacePfp}
+                                        />
+                                        <div className="mini-points-container">
+                                          <img
+                                            src={crystalxp}
+                                            className="mini-token-icon"
+                                            alt="Token"
+                                          />
+                                          <span className="mini-top-points">
+                                            234,236
+                                          </span>
+                                        </div>
+                                      </div>
+
+                                      <div className="mini-top-user mini-top-user-2">
+                                        <span className="mini-top-rank mini-top-rank-2">
+                                          2
+                                        </span>
+                                        <img
+                                          className="mini-user-pfp"
+                                          src={secondPlacePfp}
+                                        />
+                                        <div className="mini-points-container">
+                                          <img
+                                            src={crystalxp}
+                                            className="mini-token-icon"
+                                            alt="Token"
+                                          />
+                                          <span className="mini-top-points">91,585</span>
+                                        </div>
+                                      </div>
+
+                                      <div className="mini-top-user mini-top-user-3">
+                                        <span className="mini-top-rank mini-top-rank-3">
+                                          3
+                                        </span>
+                                        <img
+                                          className="mini-user-pfp"
+                                          src={thirdPlacePfp}
+                                        />
+                                        <div className="mini-points-container">
+                                          <img
+                                            src={crystalxp}
+                                            className="mini-token-icon"
+                                            alt="Token"
+                                          />
+                                          <span className="mini-top-points">52,181</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
+                            )}
 
-                              <div className="mini-top-user mini-top-user-2">
-                                <span className="mini-top-rank mini-top-rank-2">
-                                  2
-                                </span>
-                                <img
-                                  className="mini-user-pfp"
-                                  src={secondPlacePfp}
-                                />
-                                <div className="mini-points-container">
-                                  <img
-                                    src={crystalxp}
-                                    className="mini-token-icon"
-                                    alt="Token"
-                                  />
-                                  <span className="mini-top-points">91,585</span>
+                            {currentStep === 2 && (
+                              <div className="rewards-container">
+                                <div className="rewards-stage">
+                                  <img className="lbstand" src={lbstand} />
                                 </div>
                               </div>
-
-                              <div className="mini-top-user mini-top-user-3">
-                                <span className="mini-top-rank mini-top-rank-3">
-                                  3
-                                </span>
-                                <img
-                                  className="mini-user-pfp"
-                                  src={thirdPlacePfp}
-                                />
-                                <div className="mini-points-container">
-                                  <img
-                                    src={crystalxp}
-                                    className="mini-token-icon"
-                                    alt="Token"
-                                  />
-                                  <span className="mini-top-points">52,181</span>
-                                </div>
-                              </div>
-                            </div>
+                            )}
                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
 
-                    {currentStep === 2 && (
-                      <div className="rewards-container">
-                        <div className="rewards-stage">
-                          <img className="lbstand" src={lbstand} />
-                        </div>
-                      </div>
-                    )}
+                    <div className="account-setup-footer">
+                      {currentStep > 0 ? (
+                        <button className="back-button" onClick={handleBackClick}>
+                          {t('back')}
+                        </button>
+                      ) : (
+                        <button
+                          className="back-to-username-button"
+                          onClick={handleBackToUsernameWithAudio}
+                        >
+                          {t('back')}
+                        </button>
+                      )}
+
+                      <button className="next-button" onClick={handleNextClick}>
+                        {currentStep < 2 ? t('next') : t('getStarted')}
+                      </button>
+
+                      <audio ref={backAudioRef} src={backaudio} preload="auto" />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="account-setup-footer">
-              {currentStep > 0 ? (
-                <button className="back-button" onClick={handleBackClick}>
-                  {t('back')}
-                </button>
-              ) : (
-                <button
-                  className="back-to-username-button"
-                  onClick={handleBackToUsernameWithAudio}
+              </>
+            ) : (
+              !user && (
+                <div
+                  className="connect-wallet-username-onboarding-bg"
                 >
-                  {t('back')}
-                </button>
-              )}
-
-              <button className="next-button" onClick={handleNextClick}>
-                {currentStep < 2 ? t('next') : t('getStarted')}
-              </button>
-
-              <audio ref={backAudioRef} src={backaudio} preload="auto" />
-            </div>
+                  {showWelcomeScreen || isTransitioning ? (
+                    <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
+                      <div className="welcome-screen-content">
+                        <div className="welcome-text-container">
+                          <p className="welcome-text">{typedText}</p>
+                        </div>
+                        {animationStarted && typedText ? (
+                          <button
+                            className="welcome-enter-button"
+                            onClick={handleWelcomeTransition}
+                          >
+                            EXPLORE NOW
+                          </button>
+                        ) : (
+                          <button
+                            className="welcome-enter-button noshow"
+                            onClick={handleWelcomeTransition}
+                          >
+                            EXPLORE NOW
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
+                      <div className="onboarding-connect-wallet">
+                        <div className="smart-wallet-reminder">
+                          <img className="onboarding-info-icon" src={infoicon} />
+                          Use a Smart Wallet to receive a multiplier on all Crystals
+                        </div>
+                        <div className="connect-wallet-content-container">
+                          <AuthCard {...alchemyconfig.ui.auth} />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            )}
           </div>
-        </div>
-      </>
-    ) : (
-      !user && (
-        <div
-          className="connect-wallet-username-onboarding-bg"
-        >
-          {showWelcomeScreen || isTransitioning ? (
-            <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
-              <div className="welcome-screen-content">
-                <div className="welcome-text-container">
-                  <p className="welcome-text">{typedText}</p>
-                </div>
-                {animationStarted && typedText ? (
-                  <button
-                    className="welcome-enter-button"
-                    onClick={handleWelcomeTransition}
-                  >
-                    EXPLORE NOW
-                  </button>
-                ) : (
-                  <button
-                    className="welcome-enter-button noshow"
-                    onClick={handleWelcomeTransition}
-                  >
-                    EXPLORE NOW
-                  </button>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className={`connect-wallet-username-wrapper ${!showWelcomeScreen || isConnectEntering ? 'connect-wallet-enter' : 'connect-wallet-hidden'}`}>
-              <div className="onboarding-connect-wallet">
-                <div className="smart-wallet-reminder">
-                  <img className="onboarding-info-icon" src={infoicon} />
-                  Use a Smart Wallet to receive a multiplier on all Crystals
-                </div>
-                <div className="connect-wallet-content-container">
-                  <AuthCard {...alchemyconfig.ui.auth} />
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )
-    )}
-  </div>
-) : null}
+        ) : null}
         {popup === 16 ? (
           <div className="edit-username-bg">
             <div ref={popupref} className="edit-username-container">
@@ -8673,6 +8675,20 @@ function App() {
                     '',
                     ''
                   );
+                } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
+                  hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
+                  newTxPopup(
+                    (client
+                      ? hash.hash
+                      : await waitForTxReceipt(hash.hash)),
+                    'stake',
+                    eth,
+                    tokenOut,
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    customRound(Number(amountIn) / 10 ** Number(tokendict[eth].decimals), 3),
+                    '',
+                    ''
+                  );
                 } else {
                   if (switched == false) {
                     if (tokenIn == eth) {
@@ -9140,7 +9156,29 @@ function App() {
         </button>
       </div>
       <div className="trade-info-rectangle">
-        {!multihop && !isWrap && (
+        {(tokenIn == eth && tokendict[tokenOut]?.lst == true) && <div className="trade-fee">
+            <div className="label-container">
+              <TooltipLabel
+                label={t('stake')}
+                tooltipText={
+                  <div>
+                    <div className="tooltip-description">
+                      {t('stakeSubtitle')}
+                    </div>
+                  </div>
+                }
+                className="impact-label"
+              />
+            </div>
+            <ToggleSwitch
+              checked={isStake}
+              onChange={() => {
+                const newValue = isStake == true ? false : true;
+                setIsStake(newValue);
+              }}
+            />
+          </div>}
+        {!multihop && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="trade-fee">
             <div className="label-container">
               <TooltipLabel
@@ -9169,7 +9207,7 @@ function App() {
           </div>
         )}
 
-        {!isWrap && (
+        {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">
               <div className="slippage-group">
@@ -9284,7 +9322,7 @@ function App() {
           <div className="value-container">
             {displayValuesLoading ? (
               <div className="limit-fee-skeleton" style={{ width: 60 }} />
-            ) : isWrap ? (
+            ) : isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? (
               `0%`
             ) : priceImpact ? (
               formatCommas(priceImpact)
@@ -9297,7 +9335,7 @@ function App() {
         <div className="trade-fee">
           <div className="label-container">
             <TooltipLabel
-              label={`${t('fee')} (0.${isWrap ? '00' : String(Number(BigInt(100000) - activeMarket.fee) / 100).replace(/\./g, "")}%)`}
+              label={`${t('fee')} (0.${isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? '00' : String(Number(BigInt(100000) - activeMarket.fee) / 100).replace(/\./g, "")}%)`}
               tooltipText={
                 <div>
                   <div className="tooltip-description">
@@ -9311,7 +9349,7 @@ function App() {
           <div className="value-container">
             {displayValuesLoading ? (
               <div className="limit-fee-skeleton" style={{ width: 70 }} />
-            ) : isWrap ? (
+            ) : isWrap || ((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) ? (
               `0 ${tokendict[tokenIn].ticker}`
             ) : (
               formatCommas(tradeFee)
