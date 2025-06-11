@@ -2230,12 +2230,12 @@ function App() {
             amountIn > tokenBalances[tokenIn] ||
             (
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && addliquidityonly) || (scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)) || (scaleEnd >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && addliquidityonly)))) &&
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))))) &&
           connected &&
           userchain == activechain,
         );
@@ -2247,15 +2247,15 @@ function App() {
                 ? 1 : scaleEnd == BigInt(0) ? 2
                   : amountIn <= tokenBalances[tokenIn]
                     ? ((scaleStart >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                      tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                       (scaleStart <= highestBid &&
-                        tokenIn == activeMarket.baseAddress && addliquidityonly))
+                        tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
                       ? tokenIn == activeMarket.quoteAddress
                         ? 3
                         : 4 : ((scaleEnd >= lowestAsk &&
-                          tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                          tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                           (scaleEnd <= highestBid &&
-                            tokenIn == activeMarket.baseAddress && addliquidityonly))
+                            tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
                         ? tokenIn == activeMarket.quoteAddress
                           ? 5
                           : 6
@@ -12088,9 +12088,9 @@ function App() {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                 (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -12111,9 +12111,9 @@ function App() {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleStart >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                     (scaleStart <= highestBid &&
-                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleStart) / activeMarket.scaleFactor <
@@ -12177,9 +12177,9 @@ function App() {
               ) &&
               amountIn != BigInt(0) &&
               ((scaleEnd >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                 (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
+                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
               !(tokenIn == activeMarket.quoteAddress
                 ? amountIn < activeMarket.minSize
                 : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -12200,9 +12200,9 @@ function App() {
                   ) &&
                   amountIn != BigInt(0) &&
                   ((scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && addliquidityonly) ||
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
                     (scaleEnd <= highestBid &&
-                      tokenIn == activeMarket.baseAddress && addliquidityonly)) &&
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))) &&
                   !(tokenIn == activeMarket.quoteAddress
                     ? amountIn < activeMarket.minSize
                     : (amountIn * scaleEnd) / activeMarket.scaleFactor <
@@ -12514,7 +12514,7 @@ function App() {
               let sum = BigInt(0)
               o.forEach((order) => {
                 sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
-                action[0].push(tokenIn == activeMarket.quoteAddress ? (addliquidityonly ? 1 : 5) : (addliquidityonly ? 2 : 6));
+                action[0].push(tokenIn == activeMarket.quoteAddress ? ((addliquidityonly || tokenIn == eth) ? 1 : 5) : ((addliquidityonly || tokenIn == eth) ? 2 : 6));
                 price[0].push(order[0]);
                 param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
                 param2[0].push(tokenIn == eth ? router : address);
@@ -12725,7 +12725,7 @@ function App() {
             />
           </div>
           <ToggleSwitch
-            checked={addliquidityonly}
+            checked={(addliquidityonly || tokenIn == eth)}
             onChange={() => {
               const newValue = !addliquidityonly;
               setAddLiquidityOnly(newValue);
@@ -12734,6 +12734,7 @@ function App() {
                 JSON.stringify(newValue),
               );
             }}
+            disabled={tokenIn == eth}
           />
         </div>
         <div className="trade-fee">
