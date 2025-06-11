@@ -670,26 +670,17 @@
   flex-shrink: 0; 
 }
 
-@media(max-width:1020px){
-  .mobile-symbol-info{
-    display: none;
-  }
 
-  .token-info-container-simple{
-    display: none;
-  }
-
-  .ctrlktooltip{
-    display: none;
-  }
-}
-
-@media(max-width: 400px){
-  .token-details {
-    display: none !important;
-  }
-
-  .symbol-info {
-    padding-right: 3px;
-  }
+.lst-multiplier {
+  display: flex;
+  align-items: center;
+  margin-left: 4px;
+  padding: 0px 3px;
+  background-color: #aaaecf19;
+  color: #aaaecf;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  border: 1px solid #aaaecf5a;
+  white-space: nowrap;
+  height: 13px;
 }

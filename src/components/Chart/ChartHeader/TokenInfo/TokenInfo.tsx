@@ -55,6 +55,20 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
+  // Helper function to check if a token is an LST
+  const isLST = (pair: string | undefined) => {
+    if (!pair) return false;
+    return pair.includes('aprMON') || pair.includes('sMON') || pair.includes('shMON');
+  };
+
+  // Helper function to get LST multiplier (you can customize this logic)
+  const getLSTMultiplier = (pair: string | undefined) => {
+    if (isLST(pair)) {
+      return '1.25x'; // You can make this dynamic based on the specific LST type
+    }
+    return null;
+  };
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -319,7 +333,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
             {shouldShowFullHeader ? (
               <>
-                <span className="first-asset">{activeMarket.baseAsset} /</span><span className="second-asset">{activeMarket.quoteAsset}</span>
+                <span className="first-asset">{activeMarket.baseAsset} /</span>
+                <span className="second-asset">{activeMarket.quoteAsset}</span>
+                {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset) && (
+                  <span className="lst-multiplier">
+                    {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset)}
+                  </span>
+                )}
               </>
             ) : (
               <>
@@ -492,7 +512,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                         <div className="market-pair-section">
                           <img src={market.image} className="market-icon" />
                           <div className="market-info">
-                            <span className="market-pair">{market.pair}</span>
+                            <div className="market-pair-container">
+                              <span className="market-pair">{market.pair}</span>
+                            </div>
                             <span className="market-volume">
                               ${formatCommas(market.volume)}
                             </span>
