@@ -12514,7 +12514,7 @@ function App() {
               let sum = BigInt(0)
               o.forEach((order) => {
                 sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
-                action[0].push(tokenIn == activeMarket.quoteAddress ? addliquidityonly ? 1 : 5 : addliquidityonly ? 6 : 2);
+                action[0].push(tokenIn == activeMarket.quoteAddress ? (addliquidityonly ? 1 : 5) : (addliquidityonly ? 2 : 6));
                 price[0].push(order[0]);
                 param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
                 param2[0].push(tokenIn == eth ? router : address);
