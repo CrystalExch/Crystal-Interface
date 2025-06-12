@@ -4906,9 +4906,9 @@ function App() {
                 <div className="tokenlisttext">
                   <div className="tokenlistname">
                     {token.ticker}
-                    {favorites.includes(token.address) && (
+                    {/* {favorites.includes(token.address) && (
                       <span className="token-favorites-label">Favorite</span>
-                    )}
+                    )} */}
                   </div>
                   <div className="tokenlistticker">{token.name}</div>
                 </div>

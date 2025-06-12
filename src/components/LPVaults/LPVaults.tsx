@@ -15,6 +15,7 @@ import iconyaki from '../../assets/iconyaki.png';
 import iconusdt from '../../assets/iconusdt.png';
 import iconsmon from '../../assets/iconsmon.png';
 import walleticon from '../../assets/wallet_icon.png';
+import tvlbg from '../../assets/total_value_locked_bg.png';
 import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
 
 import { useSharedContext } from '../../contexts/SharedContext';
@@ -72,6 +73,8 @@ interface LPVaultsProps {
     address?: string;
     connected: boolean;
     refetch: () => void;
+
+    onCollateralSelect?: (token: Token) => void;
 
 }
 
@@ -134,7 +137,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     tokendict,
     address,
     connected,
-    refetch }) => {
+    refetch,
+    onCollateralSelect }) => {
     const [lpActiveTab, setLpActiveTab] = useState<'all' | 'deposited'>('all');
     const [lpSelectedVault, setLpSelectedVault] = useState<string | null>(null);
     const [lpDepositAmount, setLpDepositAmount] = useState('0.00');
@@ -148,10 +152,61 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const { favorites, toggleFavorite } = useSharedContext();
     const [lpDepositTokens, setLpDepositTokens] = useState<LPTokenDeposit[]>([]);
     const [lpTokenAmounts, setLpTokenAmounts] = useState<{ [key: string]: string }>({});
-
+    const [lpActiveMode, setLpActiveMode] = useState('supply');
+    const [lpLtvValue, setLpLtvValue] = useState(0);
+    const [lpCollateralAmount, setLpCollateralAmount] = useState('');
+    const [lpBorrowAmount, setLpBorrowAmount] = useState('');
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const [lpSelectedCollateral, setLpSelectedCollateral] = useState<LPToken | null>(null);
+    const getLpSliderColor = (value: number) => {
+        if (value <= 40) return '#50f08d';
+        if (value <= 60) return '#f4f1ca';
+        if (value <= 75) return '#ffa500';
+        return '#ff4757';
+    };
 
+    const getLpRiskLevel = (value: number) => {
+        if (value <= 40) return 'Conservative';
+        if (value <= 60) return 'Moderate';
+        if (value <= 75) return 'Aggressive';
+        return 'Liquidation Risk';
+    };
+
+    const handleLpLtvChange = (newLtv: number) => {
+        setLpLtvValue(newLtv);
+        if (lpCollateralAmount && newLtv > 0) {
+            const calculatedBorrow = (parseFloat(lpCollateralAmount) * newLtv) / 100;
+            setLpBorrowAmount(calculatedBorrow.toFixed(2));
+        }
+    };
+const handleCollateralSelection = (token: Token) => {
+    const lpToken: LPToken = {
+        symbol: token.symbol,
+        icon: token.icon,
+        name: token.symbol,
+        address: lpAvailableTokens.find(t => t.symbol === token.symbol)?.address || ''
+    };
+    
+    setLpSelectedCollateral(lpToken);
+    // Reset amounts when collateral changes
+    setLpCollateralAmount('');
+    setLpBorrowAmount('');
+    setLpLtvValue(0);
+};
+    const handleLpBorrowAmountChange = (value: number) => {
+        setLpBorrowAmount(value);
+        if (lpCollateralAmount && value) {
+            const newLTV = (parseFloat(value) / parseFloat(lpCollateralAmount)) * 100;
+            setLpLtvValue(Math.min(newLTV, 80));
+        }
+    };
+useEffect(() => {
+    if (selectedToken) {
+        handleCollateralSelection(selectedToken);
+
+    }
+}, [selectedToken]);
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -651,8 +706,27 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 {!lpSelectedVault && (
                     <>
                         <span className="vaults-title">Vaults</span>
-                        <span className="tvl-title">Total Value Locked</span>
-                        <span className="tvl-subtitle">$28,230,857</span>
+                        <div className="lp-apy-metrics-container">
+                            <div className="lp-apy-metric-card-important">
+                                <span className="lp-apy-metric-label-important">Total Market Size</span>
+                                <span className="lp-apy-metric-value-important"><span className="lp-dollar-sign">$</span>193.23M</span>
+                            </div>
+
+                            <div className="lp-apy-metric-card">
+                                <span className="lp-apy-metric-label">Total Value Locked</span>
+                                <span className="lp-apy-metric-value"><span className="lp-dollar-sign">$</span>92.32M</span>
+                            </div>
+
+                            <div className="lp-apy-metric-card">
+                                <span className="lp-apy-metric-label">Total Available</span>
+                                <span className="lp-apy-metric-value"><span className="lp-dollar-sign">$</span>92.32M</span>
+                            </div>
+
+                            <div className="lp-apy-metric-card">
+                                <span className="lp-apy-metric-label">Total Borrows</span>
+                                <span className="lp-apy-metric-value"><span className="lp-dollar-sign">$</span>42.98M</span>
+                            </div>
+                        </div>
                     </>
                 )}
                 <div className={`lp-rectangle ${lpSelectedVault ? 'lp-rectangle-no-border' : ''}`}>
@@ -666,6 +740,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                     <div className="lp-col lp-borrowed-col">Borrow LTV</div>
                                     <div className="lp-col lp-supply-apy-col">Supply APY</div>
                                     <div className="lp-col lp-borrow-apy-col">Borrow APY</div>
+                                    <div className="lp-col lp-borrow-apy-col"></div>
+
                                 </div>
 
                                 {lpFilteredVaults.map((vault) => (
@@ -760,10 +836,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                             <div className="lp-col lp-borrowed-ltv">80%</div>
                                             <div className="lp-col lp-supply-apy-col">
                                                 <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
-                                                <img src={iconwbtc} alt="WBTC" className="lp-collateral-token-icon" />
-                                                <img src={iconshmonad} alt="shMON" className="lp-collateral-token-icon" />
-                                                <img src={iconsol} alt="SOL" className="lp-collateral-token-icon" />
-                                                <button
+
+                                                {/* <button
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -776,14 +850,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                                                 >
                                                     Supply
-                                                </button>
+                                                </button> */}
                                             </div>
 
 
                                             <div className="lp-col lp-borrow-apy-col">
                                                 <div className="lp-borrow-apy-value">{vault.borrowApy}%</div>
 
-                                                <button
+                                                {/* <button
                                                     className="lp-supply-button"
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -795,9 +869,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                                     }}
                                                 >
                                                     Borrow
-                                                </button>
+                                                </button> */}
                                             </div>
-
+                                            <div className="lp-col lp-details-col">
+                                                <div className="lp-details-button">Details</div>
+                                            </div>
 
                                         </div>
                                     </div>
@@ -963,6 +1039,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                                                     />
                                                                 </AreaChart>
                                                             </ResponsiveContainer>
+
                                                         </div>
                                                     </div>
                                                     <div className="lp-chart-container">
@@ -1039,7 +1116,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                                                         <div className="lp-chart-header">
                                                             <div className="lp-chart-left">
                                                                 <h4 className="lp-chart-title">Your Positions</h4>
-                                                                <div className="lp-chart-value">$12,345.67</div> 
+                                                                <div className="lp-chart-value">$12,345.67</div>
                                                             </div>
                                                         </div>
                                                         <div className="lp-chart-wrapper">
@@ -1072,98 +1149,317 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                                         <div className="lp-deposit-section">
                                             <div className="lp-deposit-menu-container">
-
-                                                {lpDepositTokens.map((token, index) => (
-                                                    <div key={`${lpSelectedVault}-${index}`} className="lp-token-deposit-item">
-                                                        <div className="lp-token-header">
-                                                            <span className="lp-token-label">Deposit {token.symbol}</span>
-
-                                                            <div className="lp-token-balance">
-                                                                <img className="lp-wallet-icon" src={walleticon} />
-                                                                {connected && address ? getFormattedBalance(token.symbol) : '0'}
-                                                            </div>                                                        </div>
-
-                                                        <div className="lp-token-amount-row">
-                                                            <input
-                                                                type="text"
-                                                                className="lp-token-amount-input"
-                                                                value={lpTokenAmounts[token.symbol] || ''}
-                                                                onChange={(e) => handleLpTokenAmountChange(token.symbol, e.target.value)}
-                                                                placeholder="0.00"
-                                                            />
-                                                        </div>
-                                                        <div className="lp-token-input-bottom-row">
-                                                            <div className="lp-token-usd-value">${token.usdValue}</div>
-                                                            <button
-                                                                className="lp-max-button"
-                                                                onClick={() => {
-                                                                    if (connected && address) {
-                                                                        const balance = getTokenBalance(token.symbol);
-                                                                        const tokenData = lpAvailableTokens.find(t => t.symbol === token.symbol);
-                                                                        if (tokenData && tokendict[tokenData.address]) {
-                                                                            const decimals = Number(tokendict[tokenData.address].decimals);
-                                                                            const balanceAsNumber = Number(balance) / 10 ** decimals;
-                                                                            handleLpTokenAmountChange(token.symbol, balanceAsNumber.toString());
-                                                                        }
-                                                                    }
-                                                                }}                                                            >
-                                                                MAX
-                                                            </button>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                                <div className="lp-token-details-item">
-                                                    <div className="lp-deposit-total-row">
-                                                        <div className="lp-deposit-total-label">Total Amount</div>
-                                                        <div className="lp-deposit-total-value">
-                                                            ${lpDepositTokens.reduce((total, token) => {
-                                                                const amount = lpTokenAmounts[token.symbol];
-                                                                return total + (amount && amount !== '' ? parseFloat(amount) : 0);
-                                                            }, 0).toFixed(2)}
-                                                        </div>
-                                                    </div>
-                                                    <div className="lp-deposit-total-row">
-                                                        <span className="lp-deposit-total-label">APY</span>
-                                                        <span className="lp-deposit-total-value">{lpSelectedVaultData.apy}%</span>
-                                                    </div>
-                                                    <div className="lp-deposit-total-row">
-                                                        <span className="lp-deposit-total-label">Projected Earnings / Month (USDC)</span>
-                                                        <span className="lp-deposit-total-value">
-                                                            ${(() => {
-                                                                const totalAmount = lpDepositTokens.reduce((total, token) => {
-                                                                    const amount = lpTokenAmounts[token.symbol];
-                                                                    return total + (amount && amount !== '' ? parseFloat(amount) : 0);
-                                                                }, 0);
-                                                                const monthlyEarnings = (totalAmount * (lpSelectedVaultData.apy / 100)) / 12;
-                                                                return monthlyEarnings.toFixed(2);
-                                                            })()}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="lp-deposit-total-row">
-                                                        <span className="lp-deposit-total-label">Projected Earnings / Year (USDC)</span>
-                                                        <span className="lp-deposit-total-value">
-                                                            ${(() => {
-                                                                const totalAmount = lpDepositTokens.reduce((total, token) => {
-                                                                    const amount = lpTokenAmounts[token.symbol];
-                                                                    return total + (amount && amount !== '' ? parseFloat(amount) : 0);
-                                                                }, 0);
-                                                                const yearlyEarnings = totalAmount * (lpSelectedVaultData.apy / 100);
-                                                                return yearlyEarnings.toFixed(2);
-                                                            })()}
-                                                        </span>
-                                                    </div>
+                                                {/* Supply/Borrow Toggle */}
+                                                <div className="lp-mode-toggle">
+                                                    <button
+                                                        onClick={() => setLpActiveMode('supply')}
+                                                        className={`lp-mode-toggle-btn ${lpActiveMode === 'supply' ? 'active' : ''}`}
+                                                    >
+                                                        Supply
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setLpActiveMode('borrow')}
+                                                        className={`lp-mode-toggle-btn ${lpActiveMode === 'borrow' ? 'active' : ''}`}
+                                                    >
+                                                        Borrow
+                                                    </button>
                                                 </div>
-                                                <button
-                                                    className="lp-connect-button"
-                                                    onClick={() => {
-                                                        if (!connected) {
-                                                            setpopup(4);
-                                                        }
-                                                    }}
-                                                >
-                                                    {connected ? 'Deposit' : 'Connect Account'}
-                                                </button>                                            </div>
+
+                                                {/* Supply Mode - Simple Deposit */}
+{lpActiveMode === 'supply' && (
+    <div className="lp-collateral-input-card">
+        <div className="lp-collateral-header">
+            <span className="lp-collateral-label">Deposit {lpSelectedVaultData.tokens.first.symbol}</span>
+            <div className="lp-token-balance">
+                <img 
+                    src={walleticon} 
+                    alt="wallet"
+                    className="lp-wallet-icon"
+                />
+                <span className="lp-balance-text">
+                    {getFormattedBalance(lpSelectedVaultData.tokens.first.symbol)}
+                </span>
+            </div>
+        </div>
+
+        <div className="lp-token-amount-row">
+            <input
+                type="text"
+                className="lp-token-amount-input"
+                value={lpTokenAmounts[lpSelectedVaultData.tokens.first.symbol] || ''}
+                onChange={(e) => handleLpTokenAmountChange(lpSelectedVaultData.tokens.first.symbol, e.target.value)}
+                placeholder="0.00"
+            />
+        </div>
+        <div className="lp-token-input-bottom-row">
+            <div className="lp-token-usd-value">$0</div>
+            <button 
+                className="lp-max-button"
+                onClick={() => {
+                    if (connected && address) {
+                        const balance = getTokenBalance(lpSelectedVaultData.tokens.first.symbol);
+                        const tokenData = lpAvailableTokens.find(t => t.symbol === lpSelectedVaultData.tokens.first.symbol);
+                        if (tokenData && tokendict[tokenData.address]) {
+                            const decimals = Number(tokendict[tokenData.address].decimals);
+                            const balanceAsNumber = Number(balance) / 10 ** decimals;
+                            handleLpTokenAmountChange(lpSelectedVaultData.tokens.first.symbol, balanceAsNumber.toString());
+                        }
+                    }
+                }}
+            >
+                MAX
+            </button>
+        </div>
+    </div>
+)}
+{lpActiveMode === 'borrow' && (
+    <div className="lp-collateral-input-card">
+        <div className="lp-collateral-header">
+            <span className="lp-collateral-label">Supply Collateral</span>
+<button 
+    className="lp-collateral-selector-btn"
+    onClick={() => {
+        setpopup(1);
+    }}
+>
+    {lpSelectedCollateral ? (
+        <>
+            <img 
+                src={lpSelectedCollateral.icon} 
+                alt={lpSelectedCollateral.symbol}
+                className="lp-collateral-token-icon"
+                style={{ width: '24px', height: '24px', borderRadius: '50%' }}
+            />
+            <span className="lp-collateral-symbol">{lpSelectedCollateral.symbol}</span>
+            <ChevronDown size={16} className="lp-collateral-dropdown-icon" />
+        </>
+    ) : (
+        <>
+            <span className="lp-collateral-placeholder">Select Collateral</span>
+            <ChevronDown size={16} className="lp-collateral-dropdown-icon" />
+        </>
+    )}
+</button>
+        </div>
+
+        <div className="lp-token-amount-row">
+            <input
+                type="text"
+                className="lp-token-amount-input"
+                value={lpCollateralAmount}
+                onChange={(e) => {
+                    setLpCollateralAmount(e.target.value);
+                    if (lpBorrowAmount && e.target.value) {
+                        const newLTV = (parseFloat(lpBorrowAmount) / parseFloat(e.target.value)) * 100;
+                        setLpLtvValue(Math.min(newLTV, 80));
+                    }
+                }}
+                placeholder="0.00"
+                disabled={!lpSelectedCollateral}
+            />
+        </div>
+        <div className="lp-token-input-bottom-row">
+            <div className="lp-token-usd-value">$0</div>
+            <div className="lp-wallet-balance">
+                <img 
+                    src={walleticon} 
+                    alt="wallet"
+                    className="lp-wallet-icon"
+                    style={{ width: '16px', height: '16px' }}
+                />
+                <span className="lp-balance-text">
+                    {lpSelectedCollateral ? getFormattedBalance(lpSelectedCollateral.symbol) : '0'}
+                </span>
+            </div>
+            <button 
+                className="lp-max-button"
+                disabled={!lpSelectedCollateral}
+                onClick={() => {
+                    if (connected && address && lpSelectedCollateral) {
+                        const balance = getTokenBalance(lpSelectedCollateral.symbol);
+                        const tokenData = lpAvailableTokens.find(t => t.symbol === lpSelectedCollateral.symbol);
+                        if (tokenData && tokendict[tokenData.address]) {
+                            const decimals = Number(tokendict[tokenData.address].decimals);
+                            const balanceAsNumber = Number(balance) / 10 ** decimals;
+                            setLpCollateralAmount(balanceAsNumber.toString());
+                        }
+                    }
+                }}
+            >
+                MAX
+            </button>
+        </div>
+    </div>
+)}
+{/* Borrow Input - Only show in borrow mode */}
+{lpActiveMode === 'borrow' && (
+    <div className="lp-collateral-input-card">
+        <div className="lp-collateral-header">
+            <span className="lp-collateral-label">Borrow {lpSelectedVaultData.tokens.first.symbol}</span>
+            <div className="lp-token-balance">
+                <img 
+                    src={walleticon} 
+                    alt="wallet"
+                    className="lp-wallet-icon"
+                />
+                <span className="lp-balance-text">
+                    {getFormattedBalance(lpSelectedVaultData.tokens.first.symbol)}
+                </span>
+            </div>
+        </div>
+
+        <div className="lp-token-amount-row">
+            <input
+                type="text"
+                value={lpBorrowAmount}
+                onChange={(e) => handleLpBorrowAmountChange(e.target.value)}
+                placeholder="0.00"
+                className="lp-token-amount-input"
+                disabled={!lpSelectedCollateral}
+            />
+        </div>
+
+        <div className="lp-token-input-bottom-row">
+            <div className="lp-token-usd-value">$0</div>
+            <button 
+                className="lp-max-button"
+                disabled={!lpSelectedCollateral}
+            >
+                MAX
+            </button>
+        </div>
+    </div>
+)}
+                                                {/* LTV Slider - Only show in borrow mode AFTER borrow input */}
+                                               {lpActiveMode === 'borrow' && (
+        <div className="lp-ltv-container">
+            <div className="lp-ltv-header">
+                <span className="lp-ltv-title">Loan to Value (LTV)</span>
+                <div className="lp-ltv-values">
+                    <div className="lp-ltv-current">{lpLtvValue.toFixed(2)}%</div>
+                    <div className="lp-ltv-max">max. 80.00%</div>
+                </div>
+            </div>
+            
+            <div className="lp-ltv-description">
+                Ratio of the collateral value to the borrowed value
+            </div>
+
+            <div className="lp-slider-container">
+                <div className="lp-slider-track">
+                    <div 
+                        className="lp-slider-progress"
+                        style={{
+                            width: `${(lpLtvValue / 80) * 100}%`,
+                            backgroundColor: getLpSliderColor(lpLtvValue)
+                        }}
+                    />
+                    <div className="lp-liquidation-line" />
+                </div>
+
+                <input
+                    type="range"
+                    min="0"
+                    max="80"
+                    value={lpLtvValue}
+                    onChange={(e) => handleLpLtvChange(parseFloat(e.target.value))}
+                    className="lp-slider-input"
+                />
+
+                <div 
+                    className="lp-slider-handle"
+                    style={{
+                        left: `calc(${(lpLtvValue / 80) * 100}% - 8px)`,
+                        backgroundColor: getLpSliderColor(lpLtvValue)
+                    }}
+                />
+            </div>
+
+            <div className="lp-risk-labels">
+                <span>Conservative</span>
+                <span>Moderate</span>
+                <span>Aggressive</span>
+                <span className="lp-liquidation-label">Liquidation</span>
+            </div>
+
+            <div className="lp-risk-level-display">
+                <span className="lp-risk-level-label">Risk Level</span>
+                <span 
+                    className="lp-risk-level-value"
+                    style={{ color: getLpSliderColor(lpLtvValue) }}
+                >
+                    {getLpRiskLevel(lpLtvValue)}
+                </span>
+            </div>
+
+            {lpLtvValue > 70 && (
+                <div className="lp-warning-box">
+                    <div className="lp-warning-title">⚠️ High Risk Warning</div>
+                    <div className="lp-warning-text">
+                        Your position may be liquidated if the LTV exceeds 80%. Consider maintaining a lower ratio for safety.
+                    </div>
+                </div>
+            )}
+        </div>
+    )}
+
+    {/* Token Details - Only show in supply mode */}
+    {lpActiveMode === 'supply' && (
+        <div className="lp-token-details-item">
+            <div className="lp-deposit-total-row">
+                <div className="lp-deposit-total-label">Total Amount</div>
+                <div className="lp-deposit-total-value">
+                    ${(() => {
+                        const amount = lpTokenAmounts[lpSelectedVaultData.tokens.first.symbol];
+                        return amount && amount !== '' ? parseFloat(amount).toFixed(2) : '0.00';
+                    })()}
+                </div>
+            </div>
+            <div className="lp-deposit-total-row">
+                <span className="lp-deposit-total-label">APY</span>
+                <span className="lp-deposit-total-value">
+                    {lpSelectedVaultData.supplyApy}%
+                </span>
+            </div>
+            <div className="lp-deposit-total-row">
+                <span className="lp-deposit-total-label">Projected Earnings / Month (USDC)</span>
+                <span className="lp-deposit-total-value">
+                    ${(() => {
+                        const amount = lpTokenAmounts[lpSelectedVaultData.tokens.first.symbol];
+                        const totalAmount = amount && amount !== '' ? parseFloat(amount) : 0;
+                        const apy = lpSelectedVaultData.supplyApy;
+                        const monthlyEarnings = (totalAmount * (apy / 100)) / 12;
+                        return monthlyEarnings.toFixed(2);
+                    })()}
+                </span>
+            </div>
+
+            <div className="lp-deposit-total-row">
+                <span className="lp-deposit-total-label">Projected Earnings / Year (USDC)</span>
+                <span className="lp-deposit-total-value">
+                    ${(() => {
+                        const amount = lpTokenAmounts[lpSelectedVaultData.tokens.first.symbol];
+                        const totalAmount = amount && amount !== '' ? parseFloat(amount) : 0;
+                        const apy = lpSelectedVaultData.supplyApy;
+                        const yearlyEarnings = totalAmount * (apy / 100);
+                        return yearlyEarnings.toFixed(2);
+                    })()}
+                </span>
+            </div>
+        </div>
+    )}
+
+    <button
+        className="lp-connect-button"
+        onClick={() => {
+            if (!connected) {
+                setpopup(4);
+            }
+        }}
+    >
+        {connected ? (lpActiveMode === 'supply' ? 'Supply' : 'Borrow') : 'Connect Account'}
+    </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </>
