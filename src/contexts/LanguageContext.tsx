@@ -409,6 +409,8 @@ export const translations: any = {
     notEligible: "Not Eligible",
     loading: "Loading...",
     stakeComplete: "Stake Complete",
+    stake: "Stake",
+    stakeSubtitle: "Route through the LST's staking contract instead of swapping against the orderbook",
   },
   CN: {
     trade: "交易",
@@ -817,6 +819,8 @@ export const translations: any = {
     alreadyMinted: "已铸造",
     notEligible: "不符合资格",
     loading: "加载中...",
+    stake: "质押",
+    stakeSubtitle: "通过 LST 的质押合约进行兑换，而不是在订单簿上交易",
   },
   JP: {
     trade: "取引",
@@ -1225,6 +1229,8 @@ export const translations: any = {
     alreadyMinted: "すでにミント済み",
     notEligible: "対象外",
     loading: "読み込み中",
+    stake: "ステーキング",
+    stakeSubtitle: "オーダーブックでのスワップではなく、LST のステーキング契約を通じてルートします",
   },
   KR: {
     trade: '거래',
@@ -1633,6 +1639,8 @@ export const translations: any = {
     alreadyMinted: "이미 민팅됨",
     notEligible: "자격 없음",
     loading: "로딩 중...",
+    stake: "스테이킹",
+    stakeSubtitle: "오더북에서 교환하는 대신 LST 스테이킹 계약을 통해 라우팅합니다",
   },
   ES: {
     trade: 'Comerciar',
@@ -2041,6 +2049,8 @@ export const translations: any = {
     alreadyMinted: "Ya acuñado",
     notEligible: "No elegible",
     loading: "Cargando...",
+    stake: "Stake",
+    stakeSubtitle: "Usa el contrato de staking del LST en lugar de intercambiar en el libro de órdenes",
   },
   ID: {
     trade: "Perdagangan",
@@ -2448,7 +2458,9 @@ export const translations: any = {
     showChartOutliers: "Tampilkan Outlier Grafik",
     alreadyMinted: "Sudah di-mint",
     notEligible: "Tidak layak",
-    loading: "Memuat..."
+    loading: "Memuat...",
+    stake: "Stake",
+    stakeSubtitle: "Gunakan kontrak staking LST alih-alih menukar melalui orderbook",
   },
   RU: {
     trade: 'Торговля',
@@ -2856,7 +2868,9 @@ export const translations: any = {
     showChartOutliers: 'Показать выбросы графика',
     alreadyMinted: 'Уже заминчено',
     notEligible: 'Не подходит',
-    loading: 'Загрузка…'
+    loading: 'Загрузка…',
+    stake: "Стейкинг",
+    stakeSubtitle: "Использовать стейкинг-контракт LST вместо обмена через ордербук",
   },
   VN: {
     trade: 'Giao Dịch',
@@ -3264,7 +3278,9 @@ export const translations: any = {
     showChartOutliers: 'Hiện Giá Ngoại Lệ',
     alreadyMinted: 'Đã Mint',
     notEligible: 'Không đủ điều kiện',
-    loading: 'Đang Tải...'
+    loading: 'Đang Tải...',
+    stake: "Stake",
+    stakeSubtitle: "Chuyển qua hợp đồng staking của LST thay vì giao dịch qua sổ lệnh",
   },
   PH: {
     trade: "Trade",
@@ -3672,8 +3688,10 @@ export const translations: any = {
     showChartOutliers: "Ipakita Outliers sa Chart",
     alreadyMinted: "Na-mint na",
     notEligible: "Hindi kwalipikado",
-    loading: "Nag-lo-load..."
-  }
+    loading: "Nag-lo-load...",
+    stake: "Stake",
+    stakeSubtitle: "Gamitin ang staking contract ng LST imbes na makipagpalitan sa orderbook",
+  },
 };
 
 type LanguageContextType = {
