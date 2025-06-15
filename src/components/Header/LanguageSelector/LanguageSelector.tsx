@@ -21,7 +21,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
   setIsLanguageDropdownOpen,
   isHeader = false,
 }) => {
-  const { language, setLanguage, t } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const languageSelectorRef = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = (event: MouseEvent) => {

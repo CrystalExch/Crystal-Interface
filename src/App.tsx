@@ -1136,10 +1136,10 @@ function App() {
         ],
       },
       ...(isStake
-        ? tokenIn === eth && tokendict[tokenOut]?.lst
+        ? tokenIn === eth && tokendict[tokenOut]?.lst && tokenOut == '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5'
             ? [
                 {
-                  abi: shMonadAbi,
+                  abi: sMonAbi,
                   address: tokenOut,
                   functionName: switched
                     ? 'convertToAssets'
@@ -1147,14 +1147,14 @@ function App() {
                   args: [switched ? amountOutSwap : amountIn] as const,
                 },
               ]
-            : tokenIn === eth && tokendict[tokenIn]?.lst && tokenOut == '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5'
+            : tokenIn === eth && tokendict[tokenOut]?.lst
             ? [
                 {
-                  abi: sMonAbi,
-                  address: tokenIn,
+                  abi: shMonadAbi,
+                  address: tokenOut,
                   functionName: switched
-                    ? 'convertToShares'
-                    : 'convertToAssets',
+                    ? 'convertToAssets'
+                    : 'convertToShares',
                   args: [switched ? amountOutSwap : amountIn] as const,
                 },
               ]
@@ -1876,8 +1876,7 @@ function App() {
           setStateIsLoading(false); 
           setstateloading(false);
           const stakeResult = data?.[5]?.result as bigint | undefined;
-
-          if (stakeResult !== undefined) {
+          if (stakeResult !== undefined && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
             if (switched === false) {
               setamountOutSwap(stakeResult);
               setoutputString(
@@ -1900,6 +1899,22 @@ function App() {
                       3,
                     ).toString(),
               );
+              const percentage = !tempbalances[tokenIn]
+              ? 0
+              : Math.min(
+                100,
+                Math.floor(
+                  Number((stakeResult * BigInt(100)) / tempbalances[tokenIn]),
+                ),
+              );
+            setSliderPercent(percentage);
+            const slider = document.querySelector('.balance-amount-slider');
+            const popup = document.querySelector('.slider-percentage-popup');
+            if (slider && popup) {
+              const rect = slider.getBoundingClientRect();
+              (popup as HTMLElement).style.left =
+                `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+            }
             }
           }
         } else if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
@@ -2210,7 +2225,7 @@ function App() {
             (amountIn === BigInt(0) ||
               amountIn > tokenBalances[tokenIn] ||
               ((orderType == 1 || multihop) &&
-                !isWrap &&
+                !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
                 BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
             connected &&
             userchain == activechain,
@@ -2221,13 +2236,13 @@ function App() {
                 amountOutSwap != BigInt(0) &&
                 amountIn == BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
-                  !isWrap &&
+                  !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
                   BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)
                 ? 0
                 : amountIn === BigInt(0)
                   ? 1
                   : amountIn <= tokenBalances[tokenIn]
-                    ? allowance < amountIn && tokenIn != eth && !isWrap
+                    ? allowance < amountIn && tokenIn != eth && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake)
                       ? 6
                       : 2
                     : 3
@@ -2236,7 +2251,7 @@ function App() {
                 : 5,
           );
           setwarning(
-            !isWrap &&
+            !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && 
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
                   BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
@@ -2244,7 +2259,7 @@ function App() {
                 ? 3
                 : 2
               : parseFloat(temppriceimpact.slice(0, -1)) > 5 &&
-                !isWrap &&
+                !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
                 (orderType != 0 || (slippage < BigInt(9500))) &&
                 !isLoading &&
                 !stateIsLoading
@@ -9599,7 +9614,7 @@ function App() {
               ) : isWrap ? (
                 `1 ${tokendict[tokenOut].ticker}`
               ) : (
-                `${formatSubscript(multihop ? parseFloat(averagePrice).toString() : parseFloat(averagePrice).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))))} ${multihop ? tokendict[tokenIn].ticker : 'USDC'}`
+                `${formatSubscript(multihop ? parseFloat(averagePrice).toString() : parseFloat(averagePrice).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))))} ${multihop ? tokendict[tokenIn].ticker : activeMarket.quoteAsset}`
               )}
             </div>
           </div>

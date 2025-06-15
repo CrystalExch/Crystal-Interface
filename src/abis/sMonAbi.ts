@@ -126,13 +126,13 @@ export const sMonAbi = [{
     name: "convertToAssets",
     inputs: [{
         name: "shares",
-        type: "uint256",
-        internalType: "uint256"
+        type: "uint96",
+        internalType: "uint96"
     }],
     outputs: [{
         name: "assets",
-        type: "uint256",
-        internalType: "uint256"
+        type: "uint96",
+        internalType: "uint96"
     }],
     stateMutability: "view"
 }, {
@@ -140,13 +140,13 @@ export const sMonAbi = [{
     name: "convertToShares",
     inputs: [{
         name: "assets",
-        type: "uint256",
-        internalType: "uint256"
+        type: "uint96",
+        internalType: "uint96"
     }],
     outputs: [{
         name: "shares",
-        type: "uint256",
-        internalType: "uint256"
+        type: "uint96",
+        internalType: "uint96"
     }],
     stateMutability: "view"
 }, {
