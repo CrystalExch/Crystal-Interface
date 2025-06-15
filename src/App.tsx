@@ -148,6 +148,7 @@ import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
+import { sMonAbi } from './abis/sMonAbi.ts';
 
 function App() {
   useEffect(() => {
@@ -1134,23 +1135,31 @@ function App() {
           ),
         ],
       },
-      ...(tokenIn == eth && tokendict[tokenOut]?.lst == true
-        ? [
-            {
-              abi: shMonadAbi,
-              address: tokenOut,
-              functionName: 'convertToShares',
-              args: [amountIn],
-            },
-          ]
-        : tokenOut == eth && tokendict[tokenIn]?.lst == true ? [
-          {
-            abi: shMonadAbi,
-            address: tokenIn,
-            functionName: 'convertToAssets',
-            args: [amountIn],
-          },
-        ] : []) as any,
+      ...(isStake
+        ? tokenIn === eth && tokendict[tokenOut]?.lst
+            ? [
+                {
+                  abi: shMonadAbi,
+                  address: tokenOut,
+                  functionName: switched
+                    ? 'convertToAssets'
+                    : 'convertToShares',
+                  args: [switched ? amountOutSwap : amountIn] as const,
+                },
+              ]
+            : tokenIn === eth && tokendict[tokenIn]?.lst && tokenOut == '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5'
+            ? [
+                {
+                  abi: sMonAbi,
+                  address: tokenIn,
+                  functionName: switched
+                    ? 'convertToShares'
+                    : 'convertToAssets',
+                  args: [switched ? amountOutSwap : amountIn] as const,
+                },
+              ]
+            : []
+        : []) as any,
     ],
     query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000, gcTime: 0 },
   }) as any;
@@ -1862,7 +1871,38 @@ function App() {
           }
           setTokenBalances(tempbalances);
         }
-        if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
+
+        if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
+          setStateIsLoading(false); 
+          setstateloading(false);
+          const stakeResult = data?.[5]?.result as bigint | undefined;
+
+          if (stakeResult !== undefined) {
+            if (switched === false) {
+              setamountOutSwap(stakeResult);
+              setoutputString(
+                stakeResult === 0n
+                  ? ''
+                  : customRound(
+                      Number(stakeResult) /
+                        10 ** Number(tokendict[tokenOut].decimals),
+                      3,
+                    ).toString(),
+              );
+            } else {
+              setamountIn(stakeResult);
+              setInputString(
+                stakeResult === 0n
+                  ? ''
+                  : customRound(
+                      Number(stakeResult) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                      3,
+                    ).toString(),
+              );
+            }
+          }
+        } else if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
           setStateIsLoading(false);
           setstateloading(false);
           if (switched == false && !isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
