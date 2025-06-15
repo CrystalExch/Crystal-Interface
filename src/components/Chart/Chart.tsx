@@ -71,7 +71,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           setOverlayVisible(true);
         }
         const seriesId = `series-${selectedInterval}-${activeMarket.address}`.toLowerCase();
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+        const endpoint = `https://subgraph.satsuma-prod.com/${settings.graphKey}/crystal--309087/Crystal/api`;
         let allCandles: any[] = [];
         const query = `
           query {

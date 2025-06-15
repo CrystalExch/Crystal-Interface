@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { FixedSizeList as List } from 'react-window';
 import closebutton from '../../assets/close_button.png';
 import backarrow from '../../assets/arrow.svg';
 import './TransactionHistoryMenu.css';
@@ -735,15 +736,26 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
                     <div className="tx-history-empty-text">{t('noTransactionsYet')}</div>
                   </div>
                 ) : (
-                  sortedTransactions[0].map((tx: any) => (
-                    <div 
-                      key={tx.identifier} 
-                      className="tx-history-item" 
-                      onClick={() => handleTxClick(tx)}
-                    >
-                      {renderTransactionDetails(tx)}
-                    </div>
-                  ))
+                  <List
+                    height={Math.max(window.innerHeight-40, 0)}
+                    itemCount={sortedTransactions[0].length}
+                    itemSize={104.73}
+                    width="100%"
+                  >
+                    {({ index, style }) => {
+                      const tx = sortedTransactions[0][index];
+                      return (
+                        <div 
+                          key={tx.identifier} 
+                          className="tx-history-item" 
+                          style={style} 
+                          onClick={() => handleTxClick(tx)}
+                        >
+                          {renderTransactionDetails(tx)}
+                        </div>
+                      );
+                    }}
+                  </List>
                 )}
               </div>
             </>

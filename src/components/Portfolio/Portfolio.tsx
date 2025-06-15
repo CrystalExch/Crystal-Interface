@@ -46,7 +46,7 @@ interface PortfolioProps {
   setSendTokenIn: any;
   setpopup: (value: number) => void;
   tokenBalances: any;
-  totalAccountValue: number;
+  totalAccountValue: number | null;
   setTotalVolume: (volume: number) => void;
   totalVolume: number;
   chartData: any[];
@@ -56,8 +56,6 @@ interface PortfolioProps {
   totalClaimableFees: number;
   refLink: string;
   setShowRefModal: any;
-  activeSection: 'orders' | 'tradeHistory' | 'orderHistory' | 'balances';
-  setActiveSection: any;
   filter: 'all' | 'buy' | 'sell';
   setFilter: any;
   onlyThisMarket: boolean;
@@ -93,8 +91,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   totalClaimableFees,
   refLink,
   setShowRefModal,
-  activeSection,
-  setActiveSection,
   filter,
   setFilter,
   onlyThisMarket,
@@ -105,6 +101,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setChain,
   waitForTxReceipt,
 }) => {
+  const [activeSection, setActiveSection] = useState<
+  'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
+>('balances');
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: 'balance',
@@ -227,7 +226,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       <div className="account-header">{t('account')}</div>
       <div className="total-value-container">
         <span className={`total-value ${isBlurred ? 'blurred' : ''}`}>
-          ${formatCommas(address ? totalAccountValue.toFixed(2) : '0.00')}
+          ${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}
         </span>
         <div className="percentage-change-container">
           <span

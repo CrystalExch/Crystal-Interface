@@ -8,6 +8,7 @@ import React, {
   KeyboardEvent as ReactKeyboardEvent,
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -296,7 +297,6 @@ function App() {
   };
 
   // state vars
-  const sortConfig = undefined;
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
@@ -307,7 +307,7 @@ function App() {
   const [showTrade, setShowTrade] = useState(false);
   const [showWelcomeScreen, setShowWelcomeScreen] = useState(true);
   const [selectedConnector, setSelectedConnector] = useState<any>(null);
-  const [totalAccountValue, setTotalAccountValue] = useState<number>(0);
+  const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
   const [totalVolume, setTotalVolume] = useState(0);
   const [copyTooltipVisible, setCopyTooltipVisible] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -510,10 +510,13 @@ function App() {
         setswitched(true);
         return BigInt(amount);
       }
+      else if ((tokenIn == eth && tokenOut == weth) ||
+      (tokenIn == weth && tokenOut == eth)) {
+        return amountIn
+      }
     }
     return BigInt(0);
   });
-  const [amountOutLimit, setamountOutLimit] = useState(BigInt(0));
   const [inputString, setInputString] = useState(() => {
     const amount = searchParams.get('amountIn');
     if (amount && Number(amount) > 0) {
@@ -539,12 +542,15 @@ function App() {
           .replace(/(\.\d*?[1-9])0+$/g, '$1')
           .replace(/\.0+$/, '');
       }
+      else if ((tokenIn == eth && tokenOut == weth) ||
+      (tokenIn == weth && tokenOut == eth)) {
+        return inputString
+      }
     }
     return '';
   });
   const [isComposing, setIsComposing] = useState(false);
   const [sendInputString, setsendInputString] = useState('');
-  const [limitoutputString, setlimitoutputString] = useState('');
   const [limitPriceString, setlimitPriceString] = useState('');
   const [allowance, setallowance] = useState(BigInt(0));
   const [warning, setwarning] = useState(0);
@@ -577,8 +583,6 @@ function App() {
   const [sendButtonDisabled, setSendButtonDisabled] = useState(true);
   const [sendPopupButton, setSendPopupButton] = useState(5);
   const [sendPopupButtonDisabled, setSendPopupButtonDisabled] = useState(true);
-  const [amountOutScale, setAmountOutScale] = useState(BigInt(0));
-  const [scaleOutputString, setScaleOutputString] = useState('');
   const [scaleStart, setScaleStart] = useState(BigInt(0));
   const [scaleStartString, setScaleStartString] = useState('');
   const [scaleEnd, setScaleEnd] = useState(BigInt(0));
@@ -590,8 +594,8 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<Order[]>([]);
-  const [roundedSellOrders, setRoundedSellOrders] = useState<Order[]>([]);
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<[Order[], string]>([[], '']);
+  const [roundedSellOrders, setRoundedSellOrders] = useState<[Order[], string]>([[], '']);
   const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<[Order[], string]>([[], '']);
   const [liquiditySellOrders, setLiquiditySellOrders] = useState<[Order[], string]>([[], '']);
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
@@ -608,6 +612,7 @@ function App() {
     tokenBalances,
     setTotalAccountValue,
     marketsData,
+    stateIsLoading,
     (popup == 4 && connected) || location.pathname.slice(1) == 'portfolio'
   );
   const [isVertDragging, setIsVertDragging] = useState(false);
@@ -615,21 +620,13 @@ function App() {
     [boolean, string, number, string, string][]
   >([]);
   const [spreadData, setSpreadData] = useState({});
-  const [priceFactor, setPriceFactor] = useState(0);
-  const [symbolIn, setSymbolIn] = useState('');
-  const [symbolOut, setSymbolOut] = useState('');
   const [activeSection, setActiveSection] = useState<
     'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
   >(() => {
     const section = localStorage.getItem('crystal_oc_tab');
-    if (sortConfig) {
-      return ['orders', 'tradeHistory', 'orderHistory', 'balances'].includes(
-        String(section),
-      )
-        ? (section as 'orders' | 'tradeHistory' | 'orderHistory' | 'balances')
-        : 'orders';
-    }
-    return ['orders', 'tradeHistory', 'orderHistory'].includes(String(section))
+    return ['orders', 'tradeHistory', 'orderHistory', 'balances'].includes(
+      String(section),
+    )
       ? (section as 'orders' | 'tradeHistory' | 'orderHistory' | 'balances')
       : 'orders';
   });
@@ -713,7 +710,6 @@ function App() {
   const [isSigning, setIsSigning] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [isOutputBasedScaleOrder, setIsOutputBasedScaleOrder] = useState(false);
   const [sortField, setSortField] = useState<
     'volume' | 'price' | 'change' | 'favorites' | null
   >('volume');
@@ -929,13 +925,9 @@ function App() {
     setsendInputString('');
     setamountIn(BigInt(0));
     setSliderPercent(0);
-    setamountOutLimit(BigInt(0));
-    setlimitoutputString('');
-    setlimitChase(true);
-    setoutputString('');
     setamountOutSwap(BigInt(0));
-    setAmountOutScale(BigInt(0))
-    setScaleOutputString('')
+    setoutputString('');
+    setlimitChase(true);
     setScaleStart(BigInt(0))
     setScaleEnd(BigInt(0))
     setScaleStartString('')
@@ -953,39 +945,114 @@ function App() {
     setlimitPrice(newPrice);
     setlimitPriceString(price.toFixed(Math.floor(Math.log10(priceFactor))));
     setlimitChase(false);
-    setamountOutLimit(
-      newPrice != BigInt(0) && amountIn != BigInt(0)
-        ? tokenIn === activeMarket?.baseAddress
-          ? (amountIn * newPrice) / (activeMarket.scaleFactor || BigInt(1))
-          : (amountIn * (activeMarket.scaleFactor || BigInt(1))) / newPrice
-        : BigInt(0),
-    );
-    setlimitoutputString(
-      (newPrice != BigInt(0) && amountIn != BigInt(0)
-        ? tokenIn === activeMarket?.baseAddress
-          ? customRound(
-            Number(
-              (amountIn * newPrice) / (activeMarket.scaleFactor || BigInt(1)),
-            ) /
-            10 ** Number(tokendict[tokenOut].decimals),
-            3,
-          )
-          : customRound(
-            Number(
-              (amountIn * (activeMarket.scaleFactor || BigInt(1))) / newPrice,
-            ) /
-            10 ** Number(tokendict[tokenOut].decimals),
-            3,
-          )
-        : ''
-      ).toString(),
-    );
+    if (location.pathname.slice(1) == 'limit') {
+      if (switched) {
+        debouncedSetAmount(
+          newPrice !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountOutSwap *
+                (activeMarket.scaleFactor || BigInt(1))) /
+                newPrice
+              : (amountOutSwap * newPrice) /
+              (activeMarket.scaleFactor || BigInt(1))
+            : BigInt(0),
+        );
+        setInputString(
+          (newPrice !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountOutSwap *
+                    (activeMarket.scaleFactor || BigInt(1))) /
+                    newPrice,
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountOutSwap * newPrice) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+        const percentage =
+          tokenBalances[tokenIn] === BigInt(0)
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number(
+                  (newPrice !== BigInt(0) &&
+                  amountOutSwap !== BigInt(0)
+                    ? tokenIn === activeMarket?.baseAddress
+                      ? (amountOutSwap *
+                        (activeMarket.scaleFactor ||
+                          BigInt(1))) /
+                          newPrice
+                      : (amountOutSwap * newPrice) /
+                      (activeMarket.scaleFactor || BigInt(1))
+                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                )
+              ),
+            );
+        setSliderPercent(percentage);
+        const slider = document.querySelector(
+          '.balance-amount-slider',
+        );
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          const rect = slider.getBoundingClientRect();
+          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+            }px`;
+        }
+      }
+      else {
+        setamountOutSwap(
+          newPrice != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountIn * newPrice) / (activeMarket.scaleFactor || BigInt(1))
+              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) / newPrice
+            : BigInt(0),
+        );
+        setoutputString(
+          (newPrice != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountIn * newPrice) / (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) / newPrice,
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+      }
+    }
   }, [activeMarket?.scaleFactor,
     activeMarket?.baseAddress,
+    switched,
     amountIn,
+    amountOutSwap,
     tokenIn,
     tokenOut,
-    tokendict
+    tokenBalances[tokenIn],
+    tokendict,
+    location.pathname.slice(1),
   ]);
 
   // set amount for a token
@@ -1260,8 +1327,8 @@ function App() {
         orderUsdValues[orderUsdValues.length - 1] += (amountIn - totalUsdValue)
         totalUsdValue = amountIn
       }
-      setAmountOutScale(BigInt(totalTokenValue))
-      setScaleOutputString(
+      setamountOutSwap(BigInt(totalTokenValue))
+      setoutputString(
         totalTokenValue
           /
           10 ** Number(tokendict[tokenOut].decimals)
@@ -1278,8 +1345,8 @@ function App() {
         orderSizes[orderSizes.length - 1] += (amountIn - totalTokenValue)
         totalTokenValue = amountIn
       }
-      setAmountOutScale(BigInt(totalUsdValue))
-      setScaleOutputString(
+      setamountOutSwap(BigInt(totalUsdValue))
+      setoutputString(
         totalUsdValue
           /
           10 ** Number(tokendict[tokenOut].decimals)
@@ -1738,23 +1805,23 @@ function App() {
         );
 
         roundedBuy.forEach((order, index) => {
-          const match = roundedBuyOrders.find(
+          const match = roundedBuyOrders[0].find(
             (o) => o.price == order.price && o.size == order.size,
           );
-          if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+          if (!match || index == 0 && index != roundedBuyOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
             order.shouldFlash = true;
           }
         });
         roundedSell.forEach((order, index) => {
-          const match = roundedSellOrders.find(
+          const match = roundedSellOrders[0].find(
             (o) => o.price == order.price && o.size == order.size,
           );
-          if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+          if (!match || index == 0 && index != roundedSellOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
             order.shouldFlash = true;
           }
         });
-        setRoundedBuyOrders(roundedBuy);
-        setRoundedSellOrders(roundedSell);
+        setRoundedBuyOrders([roundedBuy, activeMarketKey]);
+        setRoundedSellOrders([roundedSell, activeMarketKey]);
       } catch (error) {
         console.error(error);
       }
@@ -1762,7 +1829,7 @@ function App() {
   }, [amountsQuote, orders]);
 
   // update state variables when data is loaded
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
         if (data?.[1]?.result != null) {
@@ -1798,7 +1865,7 @@ function App() {
         if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
           setStateIsLoading(false);
           setstateloading(false);
-          if (switched == false && !isWrap) {
+          if (switched == false && !isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
             const outputValue = BigInt(data[0].result?.at(-1) || BigInt(0));
             setamountOutSwap(outputValue);
             setoutputString(
@@ -1812,7 +1879,7 @@ function App() {
                   ),
                 ).toString(),
             );
-          } else if (!isWrap) {
+          } else if (!isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
             let inputValue;
             if (BigInt(data[0].result?.at(-1) || BigInt(0)) != amountOutSwap) {
               inputValue = BigInt(0);
@@ -1938,27 +2005,24 @@ function App() {
             };
 
             roundedBuy.forEach((order, index) => {
-              const match = roundedBuyOrders.find(
+              const match = roundedBuyOrders[0].find(
                 (o) => o.price == order.price && o.size == order.size,
               );
-              if (!match || index == 0 && index != roundedBuyOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+              if (!match || index == 0 && index != roundedBuyOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
                 order.shouldFlash = true;
               }
             });
             roundedSell.forEach((order, index) => {
-              const match = roundedSellOrders.find(
+              const match = roundedSellOrders[0].find(
                 (o) => o.price == order.price && o.size == order.size,
               );
-              if (!match || index == 0 && index != roundedSellOrders.findIndex((o) => o.price == order.price && o.size == order.size)) {
+              if (!match || index == 0 && index != roundedSellOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
                 order.shouldFlash = true;
               }
             });
-            setPriceFactor(Number(activeMarket.priceFactor));
-            setSymbolIn(activeMarket.quoteAsset);
-            setSymbolOut(activeMarket.baseAsset);
             setSpreadData(spread);
-            setRoundedBuyOrders(roundedBuy);
-            setRoundedSellOrders(roundedSell);
+            setRoundedBuyOrders([roundedBuy, activeMarketKey]);
+            setRoundedSellOrders([roundedSell, activeMarketKey]);
             setLiquidityBuyOrders([liquidityBuy, activeMarket.address]);
             setLiquiditySellOrders([liquiditySell, activeMarket.address]);
 
@@ -1980,338 +2044,340 @@ function App() {
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, location.pathname.slice(1), dataUpdatedAt]);
+  }, [data, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
 
   // update display values when loading is finished
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!isLoading && !stateIsLoading && Object.keys(mids).length > 0) {
       setDisplayValuesLoading(false);
-      let estPrice = multihop
-        ? (Number(amountIn) * 100000) /
-        Number(activeMarket.fee) /
-        10 ** Number(tokendict[tokenIn].decimals) /
-        (Number(amountOutSwap) /
-          10 ** Number(tokendict[tokenOut].decimals)) ||
-        (() => {
-          let price = 1;
-          let mid;
-          for (let i = 0; i < activeMarket.path.length - 1; i++) {
-            let market = getMarket(
-              activeMarket.path[i],
-              activeMarket.path[i + 1],
-            );
-            if (activeMarket.path[i] == market.quoteAddress) {
-              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
-                new RegExp(
-                  `^${wethticker}|${wethticker}$`,
-                  'g'
-                ),
-                ethticker
-              )][2]);
-              price *= mid / Number(market.priceFactor);
-            } else {
-              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
-                new RegExp(
-                  `^${wethticker}|${wethticker}$`,
-                  'g'
-                ),
-                ethticker
-              )][1]);
-              price /= mid / Number(market.priceFactor);
+      if (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market') {
+        let estPrice = multihop
+          ? (Number(amountIn) * 100000) /
+          Number(activeMarket.fee) /
+          10 ** Number(tokendict[tokenIn].decimals) /
+          (Number(amountOutSwap) /
+            10 ** Number(tokendict[tokenOut].decimals)) ||
+          (() => {
+            let price = 1;
+            let mid;
+            for (let i = 0; i < activeMarket.path.length - 1; i++) {
+              let market = getMarket(
+                activeMarket.path[i],
+                activeMarket.path[i + 1],
+              );
+              if (activeMarket.path[i] == market.quoteAddress) {
+                mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                  new RegExp(
+                    `^${wethticker}|${wethticker}$`,
+                    'g'
+                  ),
+                  ethticker
+                )][2]);
+                price *= mid / Number(market.priceFactor);
+              } else {
+                mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                  new RegExp(
+                    `^${wethticker}|${wethticker}$`,
+                    'g'
+                  ),
+                  ethticker
+                )][1]);
+                price /= mid / Number(market.priceFactor);
+              }
             }
-          }
-          return price;
-        })()
-        : amountIn != BigInt(0) && amountOutSwap != BigInt(0)
-          ? Number(
-            tokenIn == activeMarket.quoteAddress
-              ? amountIn
-              : (Number(amountOutSwap) * 100000) / Number(activeMarket.fee),
-          ) /
-          10 ** Number(tokendict[activeMarket.quoteAddress].decimals) /
-          (Number(
-            tokenIn == activeMarket.quoteAddress
-              ? (Number(amountOutSwap) * 100000) / Number(activeMarket.fee)
-              : amountIn,
-          ) /
-            10 ** Number(tokendict[activeMarket.baseAddress].decimals))
-          : (tokenIn == activeMarket.quoteAddress
-            ? Number(lowestAsk)
-            : Number(highestBid)) / Number(activeMarket.priceFactor);
-      setAveragePrice(
-        multihop
-          ? `${customRound(estPrice, 2)} ${tokendict[tokenOut].ticker}`
-          : `${estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))} USDC`,
-      );
-      setPriceImpact(() => {
-        let temppriceimpact;
-        if (multihop) {
-          let price = 1;
-          let mid;
-          for (let i = 0; i < activeMarket.path.length - 1; i++) {
-            let market = getMarket(
-              activeMarket.path[i],
-              activeMarket.path[i + 1],
-            );
-            mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
-              new RegExp(
-                `^${wethticker}|${wethticker}$`,
-                'g'
-              ),
-              ethticker
-            )][0]);
-            if (activeMarket.path[i] == market.quoteAddress) {
-              price *= mid / Number(market.priceFactor);
-            } else {
-              price /= mid / Number(market.priceFactor);
-            }
-          }
-          temppriceimpact = `${customRound(
-            0.001 > Math.abs(((estPrice - price) / price) * 100)
-              ? 0
-              : Math.abs(((estPrice - price) / price) * 100),
-            3,
-          )}%`;
-        } else {
-          temppriceimpact = `${customRound(
-            0.001 >
-              Math.abs(
-                ((estPrice -
-                  (tokenIn == activeMarket.quoteAddress
-                    ? Number(lowestAsk) / Number(activeMarket.priceFactor)
-                    : Number(highestBid) / Number(activeMarket.priceFactor))) /
-                  (tokenIn == activeMarket.quoteAddress
-                    ? Number(lowestAsk) / Number(activeMarket.priceFactor)
-                    : Number(highestBid) / Number(activeMarket.priceFactor))) *
-                100,
-              )
-              ? 0
-              : Math.abs(
-                ((estPrice -
-                  (tokenIn == activeMarket.quoteAddress
-                    ? Number(lowestAsk) / Number(activeMarket.priceFactor)
-                    : Number(highestBid) /
-                    Number(activeMarket.priceFactor))) /
-                  (tokenIn == activeMarket.quoteAddress
-                    ? Number(lowestAsk) / Number(activeMarket.priceFactor)
-                    : Number(highestBid) /
-                    Number(activeMarket.priceFactor))) *
-                100,
-              ),
-            3,
-          )}%`;
-        }
-        setSwapButtonDisabled(
-          (amountIn === BigInt(0) ||
-            amountIn > tokenBalances[tokenIn] ||
-            ((orderType == 1 || multihop) &&
-              !isWrap &&
-              BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
-          connected &&
-          userchain == activechain,
+            return price;
+          })()
+          : amountIn != BigInt(0) && amountOutSwap != BigInt(0)
+            ? Number(
+              tokenIn == activeMarket.quoteAddress
+                ? amountIn
+                : (Number(amountOutSwap) * 100000) / Number(activeMarket.fee),
+            ) /
+            10 ** Number(tokendict[activeMarket.quoteAddress].decimals) /
+            (Number(
+              tokenIn == activeMarket.quoteAddress
+                ? (Number(amountOutSwap) * 100000) / Number(activeMarket.fee)
+                : amountIn,
+            ) /
+              10 ** Number(tokendict[activeMarket.baseAddress].decimals))
+            : (tokenIn == activeMarket.quoteAddress
+              ? Number(lowestAsk)
+              : Number(highestBid)) / Number(activeMarket.priceFactor);
+        setAveragePrice(
+          multihop
+            ? `${customRound(estPrice, 2)} ${tokendict[tokenOut].ticker}`
+            : `${estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))} USDC`,
         );
-        setSwapButton(
-          connected && userchain == activechain
-            ? (switched &&
-              amountOutSwap != BigInt(0) &&
-              amountIn == BigInt(0)) ||
+        setPriceImpact(() => {
+          let temppriceimpact;
+          if (multihop) {
+            let price = 1;
+            let mid;
+            for (let i = 0; i < activeMarket.path.length - 1; i++) {
+              let market = getMarket(
+                activeMarket.path[i],
+                activeMarket.path[i + 1],
+              );
+              mid = Number(mids[(market.baseAsset + market.quoteAsset).replace(
+                new RegExp(
+                  `^${wethticker}|${wethticker}$`,
+                  'g'
+                ),
+                ethticker
+              )][0]);
+              if (activeMarket.path[i] == market.quoteAddress) {
+                price *= mid / Number(market.priceFactor);
+              } else {
+                price /= mid / Number(market.priceFactor);
+              }
+            }
+            temppriceimpact = `${customRound(
+              0.001 > Math.abs(((estPrice - price) / price) * 100)
+                ? 0
+                : Math.abs(((estPrice - price) / price) * 100),
+              3,
+            )}%`;
+          } else {
+            temppriceimpact = `${customRound(
+              0.001 >
+                Math.abs(
+                  ((estPrice -
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) / Number(activeMarket.priceFactor))) /
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) / Number(activeMarket.priceFactor))) *
+                  100,
+                )
+                ? 0
+                : Math.abs(
+                  ((estPrice -
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) /
+                      Number(activeMarket.priceFactor))) /
+                    (tokenIn == activeMarket.quoteAddress
+                      ? Number(lowestAsk) / Number(activeMarket.priceFactor)
+                      : Number(highestBid) /
+                      Number(activeMarket.priceFactor))) *
+                  100,
+                ),
+              3,
+            )}%`;
+          }
+          setSwapButtonDisabled(
+            (amountIn === BigInt(0) ||
+              amountIn > tokenBalances[tokenIn] ||
               ((orderType == 1 || multihop) &&
                 !isWrap &&
-                BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)
-              ? 0
-              : amountIn === BigInt(0)
-                ? 1
-                : amountIn <= tokenBalances[tokenIn]
-                  ? allowance < amountIn && tokenIn != eth && !isWrap
-                    ? 6
-                    : 2
-                  : 3
-            : connected
-              ? 4
-              : 5,
-        );
-        setLimitButtonDisabled(
-          (amountIn === BigInt(0) ||
-            limitPrice == BigInt(0) ||
-            (tokenIn == activeMarket.quoteAddress
-              ? amountIn < activeMarket.minSize
-              : (amountIn * limitPrice) / activeMarket.scaleFactor <
-              activeMarket.minSize) ||
-            amountIn > tokenBalances[tokenIn] ||
-            (addliquidityonly &&
-              ((limitPrice >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress) ||
-                (limitPrice <= highestBid &&
-                  tokenIn == activeMarket.baseAddress)))) &&
-          connected &&
-          userchain == activechain,
-        );
-        setLimitButton(
-          connected && userchain == activechain
-            ? amountIn === BigInt(0)
-              ? 0
-              : limitPrice == BigInt(0)
-                ? 1
-                : amountIn <= tokenBalances[tokenIn]
-                  ? addliquidityonly &&
-                    ((limitPrice >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress) ||
-                      (limitPrice <= highestBid &&
-                        tokenIn == activeMarket.baseAddress))
-                    ? tokenIn == activeMarket.quoteAddress
-                      ? 2
-                      : 3
-                    : (
-                      tokenIn == activeMarket.quoteAddress
-                        ? amountIn < activeMarket.minSize
-                        : (amountIn * limitPrice) /
-                        activeMarket.scaleFactor <
-                        activeMarket.minSize
-                    )
-                      ? 4
-                      : allowance < amountIn && tokenIn != eth
-                        ? 9
-                        : 5
-                  : 6
-            : connected
-              ? 7
-              : 8,
-        );
-        setSendButtonDisabled(
-          (amountIn === BigInt(0) ||
-            amountIn > tokenBalances[tokenIn] ||
-            !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-          connected &&
-          userchain == activechain,
-        );
-        setSendButton(
-          connected && userchain == activechain
-            ? amountIn === BigInt(0)
-              ? 0
-              : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
-                ? 1
-                : amountIn <= tokenBalances[tokenIn]
-                  ? 2
-                  : 3
-            : connected
-              ? 4
-              : 5,
-        );
-        setSendPopupButtonDisabled(
-          (sendAmountIn === BigInt(0) ||
-            sendAmountIn > tokenBalances[sendTokenIn] ||
-            !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
-          connected &&
-          userchain == activechain,
-        );
-        setSendPopupButton(
-          connected && userchain == activechain
-            ? sendAmountIn === BigInt(0)
-              ? 0
-              : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
-                ? 1
-                : sendAmountIn <= tokenBalances[sendTokenIn]
-                  ? 2
-                  : 3
-            : connected
-              ? 4
-              : 5,
-        );
-        setScaleButtonDisabled(
-          (amountIn === BigInt(0) ||
-            scaleStart == BigInt(0) || scaleEnd == BigInt(0) || scaleOrders == BigInt(0) || scaleOrders == BigInt(1) || scaleSkew == 0 ||
-            calculateScaleOutput(
-              amountIn,
-              Number(scaleStart),
-              Number(scaleEnd),
-              Number(scaleOrders || 2),
-              Number(scaleSkew)
-            ).some((order) => order[2] < activeMarket.minSize) ||
-            amountIn > tokenBalances[tokenIn] ||
-            (
-              ((scaleStart >= lowestAsk &&
-                tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
-                (scaleStart <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)) || (scaleEnd >= lowestAsk &&
-                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
-                (scaleEnd <= highestBid &&
-                  tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))))) &&
-          connected &&
-          userchain == activechain,
-        );
-        setScaleButton(
-          connected && userchain == activechain
-            ? amountIn === BigInt(0)
-              ? 0
-              : scaleStart == BigInt(0)
-                ? 1 : scaleEnd == BigInt(0) ? 2
+                BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
+            connected &&
+            userchain == activechain,
+          );
+          setSwapButton(
+            connected && userchain == activechain
+              ? (switched &&
+                amountOutSwap != BigInt(0) &&
+                amountIn == BigInt(0)) ||
+                ((orderType == 1 || multihop) &&
+                  !isWrap &&
+                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)
+                ? 0
+                : amountIn === BigInt(0)
+                  ? 1
                   : amountIn <= tokenBalances[tokenIn]
-                    ? ((scaleStart >= lowestAsk &&
-                      tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
-                      (scaleStart <= highestBid &&
-                        tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
-                      ? tokenIn == activeMarket.quoteAddress
-                        ? 3
-                        : 4 : ((scaleEnd >= lowestAsk &&
-                          tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
-                          (scaleEnd <= highestBid &&
-                            tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
-                        ? tokenIn == activeMarket.quoteAddress
-                          ? 5
-                          : 6
-                        : (
-                          calculateScaleOutput(
-                            amountIn,
-                            Number(scaleStart),
-                            Number(scaleEnd),
-                            Number(scaleOrders || 2),
-                            Number(scaleSkew)
-                          ).some((order) => order[2] < activeMarket.minSize)
-                        ) ? 7 : scaleOrders <= BigInt(1) ? 8 : scaleSkew == 0 ? 9
-                          : allowance < amountIn && tokenIn != eth
-                            ? 13
-                            : 14
-                    : 10
-            : connected
-              ? 11
-              : 12,
+                    ? allowance < amountIn && tokenIn != eth && !isWrap
+                      ? 6
+                      : 2
+                    : 3
+              : connected
+                ? 4
+                : 5,
+          );
+          setwarning(
+            !isWrap &&
+              ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
+                ((orderType == 1 || multihop) &&
+                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
+              ? multihop
+                ? 3
+                : 2
+              : parseFloat(temppriceimpact.slice(0, -1)) > 5 &&
+                !isWrap &&
+                (orderType != 0 || (slippage < BigInt(9500))) &&
+                !isLoading &&
+                !stateIsLoading
+                ? 1
+                : 0,
+          );
+          return temppriceimpact == 'NaN%' ? '0%' : temppriceimpact;
+        });
+        setTradeFee(
+          `${(Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+            100000 /
+            10 ** Number(tokendict[tokenIn].decimals) >
+            0.0001
+            ? customRound(
+              (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+              100000 /
+              10 ** Number(tokendict[tokenIn].decimals),
+              2,
+            )
+            : (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
+              100000 /
+              10 ** Number(tokendict[tokenIn].decimals) ==
+              0
+              ? '0'
+              : '<0.0001'
+          } ${tokendict[tokenIn].ticker}`,
         );
-        setwarning(
-          !isWrap &&
-            ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
-              ((orderType == 1 || multihop) &&
-                BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
-            ? multihop
-              ? 3
-              : 2
-            : parseFloat(temppriceimpact.slice(0, -1)) > 5 &&
-              !isWrap &&
-              (orderType != 0 || (slippage < BigInt(9500))) &&
-              !isLoading &&
-              !stateIsLoading
+      }
+      setLimitButtonDisabled(
+        (amountIn === BigInt(0) ||
+          limitPrice == BigInt(0) ||
+          (tokenIn == activeMarket.quoteAddress
+            ? amountIn < activeMarket.minSize
+            : (amountIn * limitPrice) / activeMarket.scaleFactor <
+            activeMarket.minSize) ||
+          amountIn > tokenBalances[tokenIn] ||
+          (addliquidityonly &&
+            ((limitPrice >= lowestAsk &&
+              tokenIn == activeMarket.quoteAddress) ||
+              (limitPrice <= highestBid &&
+                tokenIn == activeMarket.baseAddress)))) &&
+        connected &&
+        userchain == activechain,
+      );
+      setLimitButton(
+        connected && userchain == activechain
+          ? amountIn === BigInt(0)
+            ? 0
+            : limitPrice == BigInt(0)
               ? 1
-              : 0,
-        );
-        return temppriceimpact == 'NaN%' ? '0%' : temppriceimpact;
-      });
-      setTradeFee(
-        `${(Number(amountIn) * (100000 - Number(activeMarket.fee))) /
-          100000 /
-          10 ** Number(tokendict[tokenIn].decimals) >
-          0.0001
-          ? customRound(
-            (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
-            100000 /
-            10 ** Number(tokendict[tokenIn].decimals),
-            2,
-          )
-          : (Number(amountIn) * (100000 - Number(activeMarket.fee))) /
-            100000 /
-            10 ** Number(tokendict[tokenIn].decimals) ==
-            0
-            ? '0'
-            : '<0.0001'
-        } ${tokendict[tokenIn].ticker}`,
+              : amountIn <= tokenBalances[tokenIn]
+                ? addliquidityonly &&
+                  ((limitPrice >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress) ||
+                    (limitPrice <= highestBid &&
+                      tokenIn == activeMarket.baseAddress))
+                  ? tokenIn == activeMarket.quoteAddress
+                    ? 2
+                    : 3
+                  : (
+                    tokenIn == activeMarket.quoteAddress
+                      ? amountIn < activeMarket.minSize
+                      : (amountIn * limitPrice) /
+                      activeMarket.scaleFactor <
+                      activeMarket.minSize
+                  )
+                    ? 4
+                    : allowance < amountIn && tokenIn != eth
+                      ? 9
+                      : 5
+                : 6
+          : connected
+            ? 7
+            : 8,
+      );
+      setSendButtonDisabled(
+        (amountIn === BigInt(0) ||
+          amountIn > tokenBalances[tokenIn] ||
+          !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
+        connected &&
+        userchain == activechain,
+      );
+      setSendButton(
+        connected && userchain == activechain
+          ? amountIn === BigInt(0)
+            ? 0
+            : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
+              ? 1
+              : amountIn <= tokenBalances[tokenIn]
+                ? 2
+                : 3
+          : connected
+            ? 4
+            : 5,
+      );
+      setSendPopupButtonDisabled(
+        (sendAmountIn === BigInt(0) ||
+          sendAmountIn > tokenBalances[sendTokenIn] ||
+          !/^(0x[0-9a-fA-F]{40})$/.test(recipient)) &&
+        connected &&
+        userchain == activechain,
+      );
+      setSendPopupButton(
+        connected && userchain == activechain
+          ? sendAmountIn === BigInt(0)
+            ? 0
+            : !/^(0x[0-9a-fA-F]{40})$/.test(recipient)
+              ? 1
+              : sendAmountIn <= tokenBalances[sendTokenIn]
+                ? 2
+                : 3
+          : connected
+            ? 4
+            : 5,
+      );
+      setScaleButtonDisabled(
+        (amountIn === BigInt(0) ||
+          scaleStart == BigInt(0) || scaleEnd == BigInt(0) || scaleOrders == BigInt(0) || scaleOrders == BigInt(1) || scaleSkew == 0 ||
+          calculateScaleOutput(
+            amountIn,
+            Number(scaleStart),
+            Number(scaleEnd),
+            Number(scaleOrders || 2),
+            Number(scaleSkew)
+          ).some((order) => order[2] < activeMarket.minSize) ||
+          amountIn > tokenBalances[tokenIn] ||
+          (
+            ((scaleStart >= lowestAsk &&
+              tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+              (scaleStart <= highestBid &&
+                tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)) || (scaleEnd >= lowestAsk &&
+                  tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+              (scaleEnd <= highestBid &&
+                tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth))))) &&
+        connected &&
+        userchain == activechain,
+      );
+      setScaleButton(
+        connected && userchain == activechain
+          ? amountIn === BigInt(0)
+            ? 0
+            : scaleStart == BigInt(0)
+              ? 1 : scaleEnd == BigInt(0) ? 2
+                : amountIn <= tokenBalances[tokenIn]
+                  ? ((scaleStart >= lowestAsk &&
+                    tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                    (scaleStart <= highestBid &&
+                      tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
+                    ? tokenIn == activeMarket.quoteAddress
+                      ? 3
+                      : 4 : ((scaleEnd >= lowestAsk &&
+                        tokenIn == activeMarket.quoteAddress && (addliquidityonly || tokenIn == eth)) ||
+                        (scaleEnd <= highestBid &&
+                          tokenIn == activeMarket.baseAddress && (addliquidityonly || tokenIn == eth)))
+                      ? tokenIn == activeMarket.quoteAddress
+                        ? 5
+                        : 6
+                      : (
+                        calculateScaleOutput(
+                          amountIn,
+                          Number(scaleStart),
+                          Number(scaleEnd),
+                          Number(scaleOrders || 2),
+                          Number(scaleSkew)
+                        ).some((order) => order[2] < activeMarket.minSize)
+                      ) ? 7 : scaleOrders <= BigInt(1) ? 8 : scaleSkew == 0 ? 9
+                        : allowance < amountIn && tokenIn != eth
+                          ? 13
+                          : 14
+                  : 10
+          : connected
+            ? 11
+            : 12,
       );
     } else if (stateIsLoading && !isWrap) {
       setDisplayValuesLoading(true);
@@ -2344,7 +2410,6 @@ function App() {
     scaleEnd,
     scaleOrders,
     scaleSkew,
-    amountOutScale,
   ]);
 
   // trades processing
@@ -3009,7 +3074,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+          const endpoint = `https://subgraph.satsuma-prod.com/${settings.graphKey}/crystal--309087/Crystal/api`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -3236,7 +3301,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+        const endpoint = `https://subgraph.satsuma-prod.com/${settings.graphKey}/crystal--309087/Crystal/api`;
         let allLogs: any[] = [];
 
         const query = `
@@ -3637,7 +3702,7 @@ function App() {
   }, [tokenIn, tokenOut, location.pathname.slice(1), amountIn, amountOutSwap, switched]);
 
   // update active tab
-  useEffect(() => {
+  useLayoutEffect(() => {
     const path = location.pathname.slice(1);
     if (path === 'swap') {
       setSimpleView(true);
@@ -3661,7 +3726,6 @@ function App() {
           `${(rect.width - 15) * (sliderPercent / 100) + 15 / 2}px`;
       }
       if (path == 'send') {
-        setswitched(false);
         setsendInputString(
           amountIn != BigInt(0)
             ? `$${calculateUSDValue(
@@ -3678,8 +3742,6 @@ function App() {
             : '',
         );
       } else if (path == 'limit') {
-        setCurrentProText('pro');
-        setswitched(false);
         if (multihop || isWrap) {
           let token;
           let pricefetchmarket;
@@ -3709,6 +3771,7 @@ function App() {
               }
             }
           }
+          setswitched(true);
           setamountIn(
             limitPrice != BigInt(0) && amountOutSwap != BigInt(0)
               ? token.address === pricefetchmarket?.baseAddress
@@ -3742,8 +3805,6 @@ function App() {
               : ''
             ).toString(),
           );
-          setamountOutLimit(amountOutSwap);
-          setlimitoutputString(outputString);
           const percentage = !tokenBalances[token.address]
             ? 0
             : Math.min(
@@ -3772,45 +3833,112 @@ function App() {
               `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
           }
         } else {
-          setamountOutLimit(
-            limitPrice != BigInt(0) && amountIn != BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? (amountIn * limitPrice) /
-                (activeMarket.scaleFactor || BigInt(1))
-                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                limitPrice
-              : BigInt(0),
-          );
-          setlimitoutputString(
-            (limitPrice != BigInt(0) && amountIn != BigInt(0)
-              ? tokenIn === activeMarket?.baseAddress
-                ? customRound(
-                  Number(
-                    (amountIn * limitPrice) /
-                    (activeMarket.scaleFactor || BigInt(1)),
-                  ) /
-                  10 ** Number(tokendict[tokenOut].decimals),
-                  3,
-                )
-                : customRound(
-                  Number(
-                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                    limitPrice,
-                  ) /
-                  10 ** Number(tokendict[tokenOut].decimals),
-                  3,
-                )
-              : ''
-            )
-              .toString()
-              .replace(/(\.\d*?[1-9])0+$/g, '$1')
-              .replace(/\.0+$/, ''),
-          );
+          if (switched) {
+            setamountIn(
+              limitPrice !== BigInt(0) && amountOutSwap !== BigInt(0)
+                ? tokenIn === activeMarket?.baseAddress
+                  ? (amountOutSwap *
+                    (activeMarket.scaleFactor || BigInt(1))) /
+                    limitPrice
+                  : (amountOutSwap * limitPrice) /
+                  (activeMarket.scaleFactor || BigInt(1))
+                : BigInt(0),
+            );
+            setInputString(
+              (limitPrice !== BigInt(0) && amountOutSwap !== BigInt(0)
+                ? tokenIn === activeMarket?.baseAddress
+                  ? customRound(
+                    Number(
+                      (amountOutSwap *
+                        (activeMarket.scaleFactor || BigInt(1))) /
+                        limitPrice,
+                    ) /
+                    10 ** Number(tokendict[tokenIn].decimals),
+                    3,
+                  )
+                  : customRound(
+                    Number(
+                      (amountOutSwap * limitPrice) /
+                      (activeMarket.scaleFactor || BigInt(1)),
+                    ) /
+                    10 ** Number(tokendict[tokenIn].decimals),
+                    3,
+                  )
+                : ''
+              ).toString(),
+            );
+            const percentage =
+              tokenBalances[tokenIn] === BigInt(0)
+                ? 0
+                : Math.min(
+                  100,
+                  Math.floor(
+                    Number(
+                      (limitPrice !== BigInt(0) &&
+                      amountOutSwap !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (amountOutSwap *
+                            (activeMarket.scaleFactor ||
+                              BigInt(1))) /
+                              limitPrice
+                          : (amountOutSwap * limitPrice) /
+                          (activeMarket.scaleFactor || BigInt(1))
+                        : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                    )
+                  ),
+                );
+            setSliderPercent(percentage);
+            const slider = document.querySelector(
+              '.balance-amount-slider',
+            );
+            const popup = document.querySelector(
+              '.slider-percentage-popup',
+            );
+            if (slider && popup) {
+              const rect = slider.getBoundingClientRect();
+              (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                }px`;
+            }
+          }
+          else {
+            setamountOutSwap(
+              limitPrice != BigInt(0) && amountIn != BigInt(0)
+                ? tokenIn === activeMarket?.baseAddress
+                  ? (amountIn * limitPrice) /
+                  (activeMarket.scaleFactor || BigInt(1))
+                  : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                  limitPrice
+                : BigInt(0),
+            );
+            setoutputString(
+              (limitPrice != BigInt(0) && amountIn != BigInt(0)
+                ? tokenIn === activeMarket?.baseAddress
+                  ? customRound(
+                    Number(
+                      (amountIn * limitPrice) /
+                      (activeMarket.scaleFactor || BigInt(1)),
+                    ) /
+                    10 ** Number(tokendict[tokenOut].decimals),
+                    3,
+                  )
+                  : customRound(
+                    Number(
+                      (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                      limitPrice,
+                    ) /
+                    10 ** Number(tokendict[tokenOut].decimals),
+                    3,
+                  )
+                : ''
+              )
+                .toString()
+                .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                .replace(/\.0+$/, ''),
+            );
+          }
         }
       } else if (path == 'swap' || path == 'market') {
-        setCurrentProText('pro');
       } else if (path == 'scale') {
-        setswitched(false);
         if (multihop || isWrap) {
           let token;
           let found = false;
@@ -3835,8 +3963,6 @@ function App() {
             BigInt(0)
           );
           setInputString('')
-          setAmountOutScale(BigInt(0))
-          setScaleOutputString('')
           setScaleStart(BigInt(0))
           setScaleEnd(BigInt(0))
           setScaleStartString('')
@@ -3864,15 +3990,90 @@ function App() {
         }
         else {
           if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-            setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+            if (switched) {
+              const requiredInput = calculateScaleInput(
+                amountOutSwap,
+                Number(scaleStart),
+                Number(scaleEnd),
+                Number(scaleOrders),
+                Number(scaleSkew)
+              );
+              setamountIn(requiredInput);
+              setInputString(
+                customRound(
+                  Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
+                  3
+                ).toString()
+              );
+              const percentage =
+                tokenBalances[tokenIn] === BigInt(0)
+                  ? 0
+                  : Math.min(
+                    100,
+                    Math.floor(
+                      Number(
+                        (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                    ),
+                  );
+              setSliderPercent(percentage);
+              const slider = document.querySelector(
+                '.balance-amount-slider',
+              );
+              const popup = document.querySelector(
+                '.slider-percentage-popup',
+              );
+              if (slider && popup) {
+                const rect = slider.getBoundingClientRect();
+                (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                  }px`;
+              }
+            }
+            else {
+              setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+            }
+          }
+          else {
+            if (switched) {
+              const requiredInput = calculateScaleInput(
+                amountOutSwap,
+                Number(scaleStart),
+                Number(scaleEnd),
+                Number(0),
+                Number(scaleSkew)
+              );
+              setamountIn(requiredInput);
+              setInputString('');
+              const percentage =
+                tokenBalances[tokenIn] === BigInt(0)
+                  ? 0
+                  : Math.min(
+                    100,
+                    Math.floor(
+                      Number(
+                        (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                    ),
+                  );
+              setSliderPercent(percentage);
+              const slider = document.querySelector(
+                '.balance-amount-slider',
+              );
+              const popup = document.querySelector(
+                '.slider-percentage-popup',
+              );
+              if (slider && popup) {
+                const rect = slider.getBoundingClientRect();
+                (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                  }px`;
+              }
+            }
+            else {
+              setScaleOutput(Number(amountIn), Number(scaleStart), Number(scaleEnd), Number(0), Number(scaleSkew))
+            }
           }
         }
       }
     }
-
-    return () => {
-    };
-  }, [location.pathname]);
+  }, [location.pathname.slice(1)]);
 
   // limit chase
   useEffect(() => {
@@ -3884,39 +4085,108 @@ function App() {
           Number(price) / Number(activeMarket.priceFactor)
         ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
       );
-      setamountOutLimit(
-        price != BigInt(0) && amountIn != BigInt(0)
-          ? tokenIn === activeMarket?.baseAddress
-            ? (amountIn * price) /
-            (activeMarket.scaleFactor || BigInt(1))
-            : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-            price
-          : BigInt(0),
-      );
-      setlimitoutputString(
-        (price != BigInt(0) && amountIn != BigInt(0)
-          ? tokenIn === activeMarket?.baseAddress
-            ? customRound(
-              Number(
-                (amountIn * price) /
-                (activeMarket.scaleFactor || BigInt(1)),
-              ) /
-              10 ** Number(tokendict[tokenOut].decimals),
-              3,
-            )
-            : customRound(
-              Number(
-                (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                price,
-              ) /
-              10 ** Number(tokendict[tokenOut].decimals),
-              3,
-            )
-          : ''
-        ).toString(),
-      );
+      if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+        setamountIn(
+          price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountOutSwap *
+                (activeMarket.scaleFactor || BigInt(1))) /
+                price
+              : (amountOutSwap * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+            : BigInt(0),
+        );
+        setInputString(
+          (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountOutSwap *
+                    (activeMarket.scaleFactor || BigInt(1))) /
+                    price,
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountOutSwap * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenIn].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+        const percentage =
+          tokenBalances[tokenIn] === BigInt(0)
+            ? 0
+            : Math.min(
+              100,
+              Math.floor(
+                Number(
+                  (price !== BigInt(0) &&
+                  amountOutSwap !== BigInt(0)
+                    ? tokenIn === activeMarket?.baseAddress
+                      ? (amountOutSwap *
+                        (activeMarket.scaleFactor ||
+                          BigInt(1))) /
+                          price
+                      : (amountOutSwap * price) /
+                      (activeMarket.scaleFactor || BigInt(1))
+                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                )
+              ),
+            );
+        setSliderPercent(percentage);
+        const slider = document.querySelector(
+          '.balance-amount-slider',
+        );
+        const popup = document.querySelector(
+          '.slider-percentage-popup',
+        );
+        if (slider && popup) {
+          const rect = slider.getBoundingClientRect();
+          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+            }px`;
+        }
+      }
+      else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+        setamountOutSwap(
+          price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? (amountIn * price) /
+              (activeMarket.scaleFactor || BigInt(1))
+              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+              price
+            : BigInt(0),
+        );
+        setoutputString(
+          (price != BigInt(0) && amountIn != BigInt(0)
+            ? tokenIn === activeMarket?.baseAddress
+              ? customRound(
+                Number(
+                  (amountIn * price) /
+                  (activeMarket.scaleFactor || BigInt(1)),
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+              : customRound(
+                Number(
+                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                  price,
+                ) /
+                10 ** Number(tokendict[tokenOut].decimals),
+                3,
+              )
+            : ''
+          ).toString(),
+        );
+      }
     }
-  }, [location.pathname, limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn]);
+  }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1)]);
 
   // tx popup time
   useEffect(() => {
@@ -4464,8 +4734,6 @@ function App() {
                         }
                       }
                       setlimitChase(true);
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -4572,8 +4840,6 @@ function App() {
                         BigInt(10) ** tokendict[tokenIn].decimals,
                       );
                       setlimitChase(true);
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -4604,6 +4870,7 @@ function App() {
                       }
                     } else {
                       setTokenOut(tokenIn);
+                      setswitched((switched) => {return !switched});
                       if (amountIn != BigInt(0)) {
                         if (limitChase && mids?.[activeMarketKey]?.[0]) {
                           const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -4613,7 +4880,7 @@ function App() {
                               Number(price) / Number(activeMarket.priceFactor)
                             ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
                           );
-                          setamountOutLimit(
+                          setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
                               ? tokenOut === activeMarket?.baseAddress
                                 ? (amountIn * price) /
@@ -4622,7 +4889,7 @@ function App() {
                                 price
                               : BigInt(0),
                           );
-                          setlimitoutputString(
+                          setoutputString(
                             (price != BigInt(0) && amountIn != BigInt(0)
                               ? tokenOut === activeMarket?.baseAddress
                                 ? customRound(
@@ -4645,17 +4912,17 @@ function App() {
                             ).toString(),
                           );
                         }
-                        setInputString(limitoutputString);
-                        setlimitoutputString(inputString);
-                        setamountIn(amountOutLimit);
-                        setamountOutLimit(amountIn);
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
                         const percentage = !tokenBalances[tokenOut]
                           ? 0
                           : Math.min(
                             100,
                             Math.floor(
                               Number(
-                                (amountOutLimit * BigInt(100)) /
+                                (amountOutSwap * BigInt(100)) /
                                 tokenBalances[tokenOut],
                               ),
                             ),
@@ -4676,8 +4943,6 @@ function App() {
                     }
                   } else if (location.pathname.slice(1) == 'send') {
                     setlimitChase(true);
-                    setAmountOutScale(BigInt(0))
-                    setScaleOutputString('')
                     setScaleStart(BigInt(0))
                     setScaleEnd(BigInt(0))
                     setScaleStartString('')
@@ -4866,8 +5131,6 @@ function App() {
                         BigInt(0)
                       );
                       setInputString('')
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -4898,18 +5161,19 @@ function App() {
                       }
                     } else {
                       setTokenOut(tokenIn);
+                      setswitched((switched) => {return !switched});
                       if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                        setInputString(scaleOutputString);
-                        setScaleOutputString(inputString);
-                        setamountIn(amountOutScale);
-                        setAmountOutScale(amountIn);
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
                         const percentage = !tokenBalances[tokenOut]
                           ? 0
                           : Math.min(
                             100,
                             Math.floor(
                               Number(
-                                (amountOutScale * BigInt(100)) /
+                                (amountOutSwap * BigInt(100)) /
                                 tokenBalances[tokenOut],
                               ),
                             ),
@@ -5187,8 +5451,6 @@ function App() {
                         }
                       }
                       setlimitChase(true);
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -5299,8 +5561,6 @@ function App() {
                         BigInt(10) ** tokendict[tokenIn].decimals,
                       );
                       setlimitChase(true);
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -5331,6 +5591,7 @@ function App() {
                       }
                     } else {
                       setTokenIn(tokenOut);
+                      setswitched((switched) => {return !switched});
                       if (amountIn != BigInt(0)) {
                         if (limitChase && mids?.[activeMarketKey]?.[0]) {
                           const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -5340,7 +5601,7 @@ function App() {
                               Number(price) / Number(activeMarket.priceFactor)
                             ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
                           );
-                          setamountOutLimit(
+                          setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
                               ? tokenOut === activeMarket?.baseAddress
                                 ? (amountIn * price) /
@@ -5349,7 +5610,7 @@ function App() {
                                 price
                               : BigInt(0),
                           );
-                          setlimitoutputString(
+                          setoutputString(
                             (price != BigInt(0) && amountIn != BigInt(0)
                               ? tokenOut === activeMarket?.baseAddress
                                 ? customRound(
@@ -5372,17 +5633,17 @@ function App() {
                             ).toString(),
                           );
                         }
-                        setInputString(limitoutputString);
-                        setlimitoutputString(inputString);
-                        setamountIn(amountOutLimit);
-                        setamountOutLimit(amountIn);
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
                         const percentage = !tokenBalances[tokenOut]
                           ? 0
                           : Math.min(
                             100,
                             Math.floor(
                               Number(
-                                (amountOutLimit * BigInt(100)) /
+                                (amountOutSwap * BigInt(100)) /
                                 tokenBalances[tokenOut],
                               ),
                             ),
@@ -5438,8 +5699,6 @@ function App() {
                         BigInt(0)
                       );
                       setInputString('')
-                      setAmountOutScale(BigInt(0))
-                      setScaleOutputString('')
                       setScaleStart(BigInt(0))
                       setScaleEnd(BigInt(0))
                       setScaleStartString('')
@@ -5470,18 +5729,19 @@ function App() {
                       }
                     } else {
                       setTokenIn(tokenOut);
+                      setswitched((switched) => {return !switched});
                       if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                        setInputString(scaleOutputString);
-                        setScaleOutputString(inputString);
-                        setamountIn(amountOutScale);
-                        setAmountOutScale(amountIn);
+                        setInputString(outputString);
+                        setoutputString(inputString);
+                        setamountIn(amountOutSwap);
+                        setamountOutSwap(amountIn);
                         const percentage = !tokenBalances[tokenOut]
                           ? 0
                           : Math.min(
                             100,
                             Math.floor(
                               Number(
-                                (amountOutScale * BigInt(100)) /
+                                (amountOutSwap * BigInt(100)) /
                                 tokenBalances[tokenOut],
                               ),
                             ),
@@ -6198,7 +6458,7 @@ function App() {
                     <div
                       className={`total-value ${isBlurred ? 'blurred' : ''}`}
                     >
-                      ${formatCommas(totalAccountValue.toFixed(2))}
+                      ${typeof totalAccountValue === 'number' ? formatCommas(totalAccountValue.toFixed(2)) : '0.00'}
                     </div>
                     <div
                       className={`percentage-change ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'}`}
@@ -7978,7 +8238,10 @@ function App() {
       </div>
       <div className="swapmodal">
         <div
-          className={`inputbg ${connected && amountIn > tokenBalances[tokenIn]
+          className={`inputbg ${connected && Math.round(
+            (parseFloat(inputString || '0') || 0) *
+            10 ** Number(tokendict[tokenIn].decimals),
+          ) > tokenBalances[tokenIn]
             ? 'exceed-balance'
             : ''
             }`}
@@ -7993,7 +8256,10 @@ function App() {
               <input
                 inputMode="decimal"
                 className={`input ${connected &&
-                  amountIn > tokenBalances[tokenIn]
+                  Math.round(
+                    (parseFloat(inputString || '0') || 0) *
+                    10 ** Number(tokendict[tokenIn].decimals),
+                  ) > tokenBalances[tokenIn]
                   ? 'exceed-balance'
                   : ''
                   }`}
@@ -8018,8 +8284,8 @@ function App() {
                         10 ** Number(tokendict[tokenIn].decimals),
                       ),
                     );
-                    setswitched(false);
                     debouncedSetAmount(inputValue);
+                    setswitched(false);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
                       setoutputString(e.currentTarget.value);
@@ -8068,8 +8334,8 @@ function App() {
                         10 ** Number(tokendict[tokenIn].decimals),
                       ),
                     );
-                    setswitched(false);
                     debouncedSetAmount(inputValue);
+                    setswitched(false);
                     if (isWrap) {
                       setamountOutSwap(inputValue);
                       setoutputString(e.target.value);
@@ -8110,7 +8376,10 @@ function App() {
             )}
             <button
               className={`button1 ${connected &&
-                amountIn > tokenBalances[tokenIn]
+                Math.round(
+                  (parseFloat(inputString || '0') || 0) *
+                  10 ** Number(tokendict[tokenIn].decimals),
+                ) > tokenBalances[tokenIn]
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -8182,7 +8451,6 @@ function App() {
               className="max-button"
               onClick={() => {
                 if (tokenBalances[tokenIn] != BigInt(0)) {
-                  setswitched(false);
                   let amount =
                     (tokenIn == eth && !client)
                       ? tokenBalances[tokenIn] -
@@ -8193,6 +8461,7 @@ function App() {
                         : BigInt(0)
                       : tokenBalances[tokenIn];
                   debouncedSetAmount(BigInt(amount));
+                  setswitched(false);
                   setInputString(
                     customRound(
                       Number(amount) /
@@ -8334,12 +8603,12 @@ function App() {
                         10 ** Number(tokendict[tokenOut].decimals),
                       ),
                     );
-                    setswitched(true);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.currentTarget.value);
                     }
                     debouncedSetAmountOut(outputValue);
+                    setswitched(true);
                   }
                 }}
                 onChange={(e) => {
@@ -8361,12 +8630,12 @@ function App() {
                         10 ** Number(tokendict[tokenOut].decimals),
                       ),
                     );
-                    setswitched(true);
                     if (isWrap) {
                       setamountIn(outputValue);
                       setInputString(e.target.value);
                     }
                     debouncedSetAmountOut(outputValue);
+                    setswitched(true);
                   }
                 }}
                 value={outputString}
@@ -8496,7 +8765,6 @@ function App() {
                     BigInt(percent)) /
                   100n;
                 setSliderPercent(percent);
-                setswitched(false);
                 setInputString(
                   newAmount == BigInt(0)
                     ? ''
@@ -8507,6 +8775,7 @@ function App() {
                     ).toString(),
                 );
                 debouncedSetAmount(newAmount);
+                setswitched(false);
                 if (isWrap) {
                   setoutputString(
                     newAmount == BigInt(0)
@@ -8570,7 +8839,6 @@ function App() {
                           BigInt(markPercent)) /
                         100n;
                       setSliderPercent(markPercent);
-                      setswitched(false);
                       setInputString(
                         newAmount == BigInt(0)
                           ? ''
@@ -8581,6 +8849,7 @@ function App() {
                           ).toString(),
                       );
                       debouncedSetAmount(newAmount);
+                      setswitched(false);
                       if (isWrap) {
                         setoutputString(
                           newAmount == BigInt(0)
@@ -9464,9 +9733,10 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${connected &&
-            ((amountIn > tokenBalances[tokenIn] &&
-              !isLoading &&
-              !stateIsLoading) ||
+            ((Math.round(
+              (parseFloat(inputString || '0') || 0) *
+              10 ** Number(tokendict[tokenIn].decimals),
+            ) > tokenBalances[tokenIn]) ||
               (amountIn != BigInt(0) &&
                 (tokenIn == activeMarket.quoteAddress
                   ? amountIn < activeMarket.minSize
@@ -9481,9 +9751,10 @@ function App() {
             <input
               inputMode="decimal"
               className={`input ${connected &&
-                ((amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading) ||
+                ((Math.round(
+                  (parseFloat(inputString || '0') || 0) *
+                  10 ** Number(tokendict[tokenIn].decimals),
+                ) > tokenBalances[tokenIn]) ||
                   (amountIn !== BigInt(0) &&
                     (tokenIn === activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
@@ -9514,7 +9785,7 @@ function App() {
                     ),
                   );
 
-                  setamountOutLimit(
+                  setamountOutSwap(
                     limitPrice !== BigInt(0) && inputValue !== BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? (inputValue * limitPrice) /
@@ -9525,7 +9796,7 @@ function App() {
                       : BigInt(0),
                   );
 
-                  setlimitoutputString(
+                  setoutputString(
                     (limitPrice !== BigInt(0) && inputValue !== BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? customRound(
@@ -9550,6 +9821,7 @@ function App() {
                   );
 
                   debouncedSetAmount(inputValue);
+                  setswitched(false);
 
                   const percentage = !tokenBalances[tokenIn]
                     ? 0
@@ -9597,7 +9869,7 @@ function App() {
                     ),
                   );
 
-                  setamountOutLimit(
+                  setamountOutSwap(
                     limitPrice !== BigInt(0) && inputValue !== BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? (inputValue * limitPrice) /
@@ -9608,7 +9880,7 @@ function App() {
                       : BigInt(0),
                   );
 
-                  setlimitoutputString(
+                  setoutputString(
                     (limitPrice !== BigInt(0) && inputValue !== BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? customRound(
@@ -9633,6 +9905,7 @@ function App() {
                   );
 
                   debouncedSetAmount(inputValue);
+                  setswitched(false);
 
                   const percentage = !tokenBalances[tokenIn]
                     ? 0
@@ -9665,9 +9938,10 @@ function App() {
             />
             <button
               className={`button1 ${connected &&
-                ((amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading) ||
+                ((Math.round(
+                  (parseFloat(inputString || '0') || 0) *
+                  10 ** Number(tokendict[tokenIn].decimals),
+                ) > tokenBalances[tokenIn]) ||
                   (amountIn != BigInt(0) &&
                     (tokenIn == activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
@@ -9747,7 +10021,8 @@ function App() {
                         settings.chainConfig[activechain].gasamount
                         : BigInt(0)
                       : tokenBalances[tokenIn];
-                  debouncedSetAmount(BigInt(amount));
+                  setamountIn(BigInt(amount));
+                  setswitched(false);
                   setInputString(
                     customRound(
                       Number(amount) /
@@ -9755,7 +10030,7 @@ function App() {
                       3,
                     ).toString(),
                   );
-                  setamountOutLimit(
+                  setamountOutSwap(
                     limitPrice != BigInt(0) && amount != BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? (amount * limitPrice) /
@@ -9765,7 +10040,7 @@ function App() {
                         limitPrice
                       : BigInt(0),
                   );
-                  setlimitoutputString(
+                  setoutputString(
                     (limitPrice != BigInt(0) && amount != BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
                         ? customRound(
@@ -9813,6 +10088,7 @@ function App() {
           onClick={() => {
             setTokenIn(tokenOut);
             setTokenOut(tokenIn);
+            setswitched((switched) => {return !switched});
             if (amountIn != BigInt(0)) {
               if (limitChase && mids?.[activeMarketKey]?.[0]) {
                 const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -9822,7 +10098,7 @@ function App() {
                     Number(price) / Number(activeMarket.priceFactor)
                   ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
                 );
-                setamountOutLimit(
+                setamountOutSwap(
                   price != BigInt(0) && amountIn != BigInt(0)
                     ? tokenOut === activeMarket?.baseAddress
                       ? (amountIn * price) /
@@ -9831,7 +10107,7 @@ function App() {
                       price
                     : BigInt(0),
                 );
-                setlimitoutputString(
+                setoutputString(
                   (price != BigInt(0) && amountIn != BigInt(0)
                     ? tokenOut === activeMarket?.baseAddress
                       ? customRound(
@@ -9854,17 +10130,17 @@ function App() {
                   ).toString(),
                 );
               }
-              setInputString(limitoutputString);
-              setlimitoutputString(inputString);
-              setamountIn(amountOutLimit);
-              setamountOutLimit(amountIn);
+              setInputString(outputString);
+              setoutputString(inputString);
+              setamountIn(amountOutSwap);
+              setamountOutSwap(amountIn);
               const percentage = !tokenBalances[tokenOut]
                 ? 0
                 : Math.min(
                   100,
                   Math.floor(
                     Number(
-                      (amountOutLimit * BigInt(100)) /
+                      (amountOutSwap * BigInt(100)) /
                       tokenBalances[tokenOut],
                     ),
                   ),
@@ -9883,7 +10159,6 @@ function App() {
           <img src={tradearrow} className="switch-arrow" />
         </div>
         <div className="swap-container-divider" />
-
         <div className="outputbg">
           <div className="Recieve">{t('receive')}</div>
           <div className="outputbutton2container">
@@ -9899,15 +10174,16 @@ function App() {
                 ) => {
                   setIsComposing(false);
                   if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
-                    setlimitoutputString(e.currentTarget.value);
+                    setoutputString(e.currentTarget.value);
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
                         10 ** Number(tokendict[tokenOut].decimals),
                       ),
                     );
-                    setamountOutLimit(outputValue);
-                    debouncedSetAmount(
+                    setamountOutSwap(outputValue);
+                    setswitched(true);
+                    setamountIn(
                       limitPrice !== BigInt(0) && outputValue !== BigInt(0)
                         ? tokenIn === activeMarket?.baseAddress
                           ? (outputValue *
@@ -9976,19 +10252,20 @@ function App() {
                 }}
                 onChange={(e) => {
                   if (isComposing) {
-                    setlimitoutputString(e.target.value);
+                    setoutputString(e.target.value);
                     return;
                   }
                   if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
-                    setlimitoutputString(e.target.value);
+                    setoutputString(e.target.value);
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.target.value || '0') || 0) *
                         10 ** Number(tokendict[tokenOut].decimals),
                       ),
                     );
-                    setamountOutLimit(outputValue);
-                    debouncedSetAmount(
+                    setamountOutSwap(outputValue);
+                    setswitched(true);
+                    setamountIn(
                       limitPrice !== BigInt(0) && outputValue !== BigInt(0)
                         ? tokenIn === activeMarket?.baseAddress
                           ? (outputValue *
@@ -10055,7 +10332,7 @@ function App() {
                     }
                   }
                 }}
-                value={limitoutputString}
+                value={outputString}
                 placeholder="0.00"
               />
               <button
@@ -10085,11 +10362,11 @@ function App() {
           </div>
           <div className="balance1maxcontainer">
             <div className="output-usd-value">
-              {amountOutLimit === BigInt(0)
+              {amountOutSwap === BigInt(0)
                 ? '$0.00'
                 : (() => {
                   const outputUSD = calculateUSDValue(
-                    amountOutLimit,
+                    amountOutSwap,
                     tradesByMarket[
                     (({ baseAsset, quoteAsset }) =>
                       (baseAsset === wethticker ? ethticker : baseAsset) +
@@ -10104,12 +10381,12 @@ function App() {
                   );
 
                   const inputUSD = calculateUSDValue(
-                    limitPrice != BigInt(0) && amountOutLimit != BigInt(0)
+                    limitPrice != BigInt(0) && amountOutSwap != BigInt(0)
                       ? tokenIn === activeMarket?.baseAddress
-                        ? (amountOutLimit *
+                        ? (amountOutSwap *
                           (activeMarket.scaleFactor || BigInt(1))) /
                         limitPrice
-                        : (amountOutLimit * limitPrice) /
+                        : (amountOutSwap * limitPrice) /
                         (activeMarket.scaleFactor || BigInt(1))
                       : BigInt(0),
                     tradesByMarket[
@@ -10154,16 +10431,14 @@ function App() {
             </div>
           </div>
         </div>
-
         <div className="swap-container-divider" />
-
         <div
           className={`limitbg ${connected &&
             !(
-              amountIn > tokenBalances[tokenIn] &&
-              !isLoading &&
-              !stateIsLoading
-            ) &&
+              Math.round(
+                (parseFloat(inputString || '0') || 0) *
+                10 ** Number(tokendict[tokenIn].decimals),
+              ) > tokenBalances[tokenIn]) &&
             addliquidityonly &&
             amountIn != BigInt(0) &&
             ((limitPrice >= lowestAsk &&
@@ -10209,10 +10484,10 @@ function App() {
               inputMode="decimal"
               className={`limit-order ${connected &&
                 !(
-                  amountIn > tokenBalances[tokenIn] &&
-                  !isLoading &&
-                  !stateIsLoading
-                ) &&
+                  Math.round(
+                    (parseFloat(inputString || '0') || 0) *
+                    10 ** Number(tokendict[tokenIn].decimals),
+                  ) > tokenBalances[tokenIn]) &&
                 addliquidityonly &&
                 amountIn != BigInt(0) &&
                 ((limitPrice >= lowestAsk &&
@@ -10226,7 +10501,136 @@ function App() {
                 ? 'exceed-balance'
                 : ''
                 }`}
+              onCompositionStart={() => {
+                setIsComposing(true);
+              }}
+              onCompositionEnd={(
+                e: React.CompositionEvent<HTMLInputElement>,
+              ) => {
+                setIsComposing(false);
+                if (
+                  new RegExp(
+                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
+                  ).test(e.currentTarget.value)
+                ) {
+                  setlimitChase(false);
+                  setlimitPriceString(e.currentTarget.value);
+                  let price = BigInt(
+                    Math.round(
+                      (parseFloat(e.currentTarget.value || '0') || 0) *
+                      Number(activeMarket.priceFactor)
+                    )
+                  );
+                  setlimitPrice(price);
+                  if (switched) {
+                    setamountIn(
+                      price !== BigInt(0) && amountOutSwap !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (amountOutSwap *
+                            (activeMarket.scaleFactor || BigInt(1))) /
+                            price
+                          : (amountOutSwap * price) /
+                          (activeMarket.scaleFactor || BigInt(1))
+                        : BigInt(0),
+                    );
+                    setInputString(
+                      (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number(
+                              (amountOutSwap *
+                                (activeMarket.scaleFactor || BigInt(1))) /
+                                price,
+                            ) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          )
+                          : customRound(
+                            Number(
+                              (amountOutSwap * price) /
+                              (activeMarket.scaleFactor || BigInt(1)),
+                            ) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          )
+                        : ''
+                      ).toString(),
+                    );
+                    const percentage =
+                      tokenBalances[tokenIn] === BigInt(0)
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              (price !== BigInt(0) &&
+                              amountOutSwap !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (amountOutSwap *
+                                    (activeMarket.scaleFactor ||
+                                      BigInt(1))) /
+                                      price
+                                  : (amountOutSwap * price) /
+                                  (activeMarket.scaleFactor || BigInt(1))
+                                : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                            )
+                          ),
+                        );
+                    setSliderPercent(percentage);
+                    const slider = document.querySelector(
+                      '.balance-amount-slider',
+                    );
+                    const popup = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                        }px`;
+                    }
+                  }
+                  else {
+                    setamountOutSwap(
+                      price != BigInt(0) && amountIn != BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (amountIn * price) /
+                          (activeMarket.scaleFactor || BigInt(1))
+                          : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                          price
+                        : BigInt(0)
+                    );
+                    setoutputString(
+                      (
+                        price != BigInt(0) && amountIn != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number(
+                                (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3
+                            )
+                            : customRound(
+                              Number(
+                                (amountIn *
+                                  (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3
+                            )
+                          : ''
+                      ).toString()
+                    );
+                  }
+                }
+              }}
               onChange={(e) => {
+                if (isComposing) {
+                  setlimitPriceString(e.target.value);
+                  return;
+                }
                 if (
                   new RegExp(
                     `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
@@ -10241,39 +10645,108 @@ function App() {
                     )
                   );
                   setlimitPrice(price);
-                  setamountOutLimit(
-                    price != BigInt(0) && amountIn != BigInt(0)
-                      ? tokenIn === activeMarket?.baseAddress
-                        ? (amountIn * price) /
-                        (activeMarket.scaleFactor || BigInt(1))
-                        : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                        price
-                      : BigInt(0)
-                  );
-                  setlimitoutputString(
-                    (
-                      price != BigInt(0) && amountIn != BigInt(0)
+                  if (switched) {
+                    setamountIn(
+                      price !== BigInt(0) && amountOutSwap !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (amountOutSwap *
+                            (activeMarket.scaleFactor || BigInt(1))) /
+                            price
+                          : (amountOutSwap * price) /
+                          (activeMarket.scaleFactor || BigInt(1))
+                        : BigInt(0),
+                    );
+                    setInputString(
+                      (price !== BigInt(0) && amountOutSwap !== BigInt(0)
                         ? tokenIn === activeMarket?.baseAddress
                           ? customRound(
                             Number(
-                              (amountIn * price) /
-                              (activeMarket.scaleFactor || BigInt(1))
+                              (amountOutSwap *
+                                (activeMarket.scaleFactor || BigInt(1))) /
+                                price,
                             ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
-                            3
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
                           )
                           : customRound(
                             Number(
-                              (amountIn *
-                                (activeMarket.scaleFactor || BigInt(1))) /
-                              price
+                              (amountOutSwap * price) /
+                              (activeMarket.scaleFactor || BigInt(1)),
                             ) /
-                            10 ** Number(tokendict[tokenOut].decimals),
-                            3
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
                           )
                         : ''
-                    ).toString()
-                  );
+                      ).toString(),
+                    );
+                    const percentage =
+                      tokenBalances[tokenIn] === BigInt(0)
+                        ? 0
+                        : Math.min(
+                          100,
+                          Math.floor(
+                            Number(
+                              (price !== BigInt(0) &&
+                              amountOutSwap !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (amountOutSwap *
+                                    (activeMarket.scaleFactor ||
+                                      BigInt(1))) /
+                                      price
+                                  : (amountOutSwap * price) /
+                                  (activeMarket.scaleFactor || BigInt(1))
+                                : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                            )
+                          ),
+                        );
+                    setSliderPercent(percentage);
+                    const slider = document.querySelector(
+                      '.balance-amount-slider',
+                    );
+                    const popup = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                        }px`;
+                    }
+                  }
+                  else {
+                    setamountOutSwap(
+                      price != BigInt(0) && amountIn != BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (amountIn * price) /
+                          (activeMarket.scaleFactor || BigInt(1))
+                          : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                          price
+                        : BigInt(0)
+                    );
+                    setoutputString(
+                      (
+                        price != BigInt(0) && amountIn != BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number(
+                                (amountIn * price) /
+                                (activeMarket.scaleFactor || BigInt(1))
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3
+                            )
+                            : customRound(
+                              Number(
+                                (amountIn *
+                                  (activeMarket.scaleFactor || BigInt(1))) /
+                                price
+                              ) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3
+                            )
+                          : ''
+                      ).toString()
+                    );
+                  }
                 }
               }}
               placeholder="0.00"
@@ -10357,6 +10830,15 @@ function App() {
                     e.target.value = value;
                   }}
                   onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      const input = e.target as HTMLInputElement;
+                      input.blur();
+                    } else if (e.key === 'Escape') {
+                      const customButton = document.querySelector('.limit-custom-button');
+                      if (customButton) {
+                        customButton.classList.remove('editing');
+                      }
+                    }
                     if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
                       (e.keyCode === 65 && e.ctrlKey === true) ||
                       (e.keyCode === 67 && e.ctrlKey === true) ||
@@ -10369,16 +10851,6 @@ function App() {
                     if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) &&
                       (e.keyCode < 96 || e.keyCode > 105)) {
                       e.preventDefault();
-                    }
-
-                    if (e.key === 'Enter') {
-                      const input = e.target as HTMLInputElement;
-                      input.blur();
-                    } else if (e.key === 'Escape') {
-                      const customButton = document.querySelector('.limit-custom-button');
-                      if (customButton) {
-                        customButton.classList.remove('editing');
-                      }
                     }
                   }}
                   onChange={(e) => {
@@ -10484,7 +10956,8 @@ function App() {
                     ).toString(),
                 );
                 debouncedSetAmount(newAmount);
-                setamountOutLimit(
+                setswitched(false);
+                setamountOutSwap(
                   limitPrice != BigInt(0) && newAmount != BigInt(0)
                     ? tokenIn === activeMarket?.baseAddress
                       ? (newAmount * limitPrice) /
@@ -10493,7 +10966,7 @@ function App() {
                       limitPrice
                     : BigInt(0),
                 );
-                setlimitoutputString(
+                setoutputString(
                   (limitPrice != BigInt(0) && newAmount != BigInt(0)
                     ? tokenIn === activeMarket?.baseAddress
                       ? customRound(
@@ -10577,7 +11050,8 @@ function App() {
                           ).toString(),
                       );
                       debouncedSetAmount(newAmount);
-                      setamountOutLimit(
+                      setswitched(false);
+                      setamountOutSwap(
                         limitPrice != BigInt(0) && newAmount != BigInt(0)
                           ? tokenIn === activeMarket?.baseAddress
                             ? (newAmount * limitPrice) /
@@ -10587,7 +11061,7 @@ function App() {
                             limitPrice
                           : BigInt(0),
                       );
-                      setlimitoutputString(
+                      setoutputString(
                         (limitPrice != BigInt(0) && newAmount != BigInt(0)
                           ? tokenIn === activeMarket?.baseAddress
                             ? customRound(
@@ -10786,8 +11260,8 @@ function App() {
                 txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
-                setamountOutLimit(BigInt(0));
-                setlimitoutputString('');
+                setamountOutSwap(BigInt(0));
+                setoutputString('');
                 setLimitButtonDisabled(true);
                 setLimitButton(0);
                 setSliderPercent(0);
@@ -10804,7 +11278,7 @@ function App() {
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
                     customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-                    customRound(Number(amountOutLimit) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
                     `${limitPrice / activeMarket.priceFactor} ${activeMarket.quoteAsset}`,
                     "",
                   );
@@ -10835,7 +11309,7 @@ function App() {
           ) : limitButton == 4 ? (
             t('lessThanMinSize')
           ) : limitButton == 5 ? (
-            t('placeOrder')
+            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset
           ) : limitButton == 6 ? (
             t('insufficient') +
             (tokendict[tokenIn].ticker || '?') +
@@ -10846,7 +11320,7 @@ function App() {
           ) : limitButton == 8 ? (
             t('connectWallet')
           ) : (
-            client ? t('placeOrder') : t('approve')
+            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset : t('approve')
           )}
         </button>
       </div>
@@ -11007,7 +11481,10 @@ function App() {
       </div>
       <div className="swapmodal">
         <div
-          className={`sendbg ${connected && amountIn > tokenBalances[tokenIn]
+          className={`sendbg ${connected && Math.round(
+            (parseFloat(inputString || '0') || 0) *
+            10 ** Number(tokendict[tokenIn].decimals),
+          ) > tokenBalances[tokenIn]
             ? 'exceed-balance'
             : ''
             }`}
@@ -11028,7 +11505,10 @@ function App() {
             <input
               inputMode="decimal"
               className={`send-input ${connected &&
-                amountIn > tokenBalances[tokenIn]
+                Math.round(
+                  (parseFloat(inputString || '0') || 0) *
+                  10 ** Number(tokendict[tokenIn].decimals),
+                ) > tokenBalances[tokenIn]
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -11086,6 +11566,7 @@ function App() {
                       );
 
                       debouncedSetAmount(tokenBigInt);
+                      setswitched(false);
 
                       const percentage = !tokenBalances[tokenIn]
                         ? 0
@@ -11122,6 +11603,7 @@ function App() {
                       ),
                     );
                     debouncedSetAmount(tokenBigInt);
+                    setswitched(false);
 
                     const usd = calculateUSDValue(
                       tokenBigInt,
@@ -11221,6 +11703,7 @@ function App() {
                         ).toString(),
                       );
                       debouncedSetAmount(tokenBigInt);
+                      setswitched(false);
 
                       const percentage = !tokenBalances[tokenIn]
                         ? 0
@@ -11256,6 +11739,7 @@ function App() {
                       ),
                     );
                     debouncedSetAmount(tokenBigInt);
+                    setswitched(false);
 
                     const usd = calculateUSDValue(
                       tokenBigInt,
@@ -11327,7 +11811,8 @@ function App() {
                           settings.chainConfig[activechain].gasamount
                           : BigInt(0)
                         : tokenBalances[tokenIn];
-                    setamountIn(BigInt(amount));
+                    debouncedSetAmount(BigInt(amount));
+                    setswitched(false);
                     setInputString(
                       customRound(
                         Number(amount) /
@@ -11714,6 +12199,62 @@ function App() {
                 ? 'exceed-balance'
                 : ''
                 }`}
+              onCompositionStart={() => {
+                setIsComposing(true);
+              }}
+              onCompositionEnd={(
+                e: React.CompositionEvent<HTMLInputElement>,
+              ) => {
+                setIsComposing(false);
+                if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                  setInputString(e.currentTarget.value);
+                  if (
+                    (inputString.endsWith('.') && e.currentTarget.value === inputString.slice(0, -1)) ||
+                    (e.currentTarget.value.endsWith('.') && e.currentTarget.value.slice(0, -1) === inputString)
+                  ) {
+                    return;
+                  }
+                  const inputValue = BigInt(
+                    Math.round(
+                      (parseFloat(e.currentTarget.value || '0') || 0) *
+                      10 ** Number(tokendict[tokenIn].decimals),
+                    ),
+                  );
+                  if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                    setScaleOutput(Number(inputValue), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                  }
+                  else {
+                    setScaleOutput(Number(inputValue), Number(scaleStart), Number(scaleEnd), Number(0), Number(scaleSkew))
+                  }
+
+                  debouncedSetAmount(inputValue);
+                  setswitched(false);
+
+                  const percentage = !tokenBalances[tokenIn]
+                    ? 0
+                    : Math.min(
+                      100,
+                      Math.floor(
+                        Number(
+                          (inputValue * BigInt(100)) / tokenBalances[tokenIn],
+                        ),
+                      ),
+                    );
+                  setSliderPercent(percentage);
+
+                  const slider = document.querySelector(
+                    '.balance-amount-slider',
+                  );
+                  const popup = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (slider && popup) {
+                    const rect = slider.getBoundingClientRect();
+                    (popup as HTMLElement).style.left =
+                      `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+                  }
+                }
+              }}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                 if (isComposing) {
                   setInputString(e.target.value);
@@ -11728,7 +12269,6 @@ function App() {
                   ) {
                     return;
                   }
-                  setIsOutputBasedScaleOrder(false);
                   const inputValue = BigInt(
                     Math.round(
                       (parseFloat(e.currentTarget.value || '0') || 0) *
@@ -11738,8 +12278,12 @@ function App() {
                   if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                     setScaleOutput(Number(inputValue), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
                   }
+                  else {
+                    setScaleOutput(Number(inputValue), Number(scaleStart), Number(scaleEnd), Number(0), Number(scaleSkew))
+                  }
 
                   debouncedSetAmount(inputValue);
+                  setswitched(false);
 
                   const percentage = !tokenBalances[tokenIn]
                     ? 0
@@ -11855,6 +12399,7 @@ function App() {
                         : BigInt(0)
                       : tokenBalances[tokenIn];
                   debouncedSetAmount(BigInt(amount));
+                  setswitched(false);
                   setInputString(
                     customRound(
                       Number(amount) /
@@ -11864,6 +12409,9 @@ function App() {
                   );
                   if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                     setScaleOutput(Number(amount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                  }
+                  else {
+                    setScaleOutput(Number(amount), Number(scaleStart), Number(scaleEnd), Number(0), Number(scaleSkew))
                   }
                   setSliderPercent(100);
                   const slider = document.querySelector(
@@ -11890,18 +12438,19 @@ function App() {
           onClick={() => {
             setTokenIn(tokenOut);
             setTokenOut(tokenIn);
+            setswitched((switched) => {return !switched});
             if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-              setInputString(scaleOutputString);
-              setScaleOutputString(inputString);
-              setamountIn(amountOutScale);
-              setAmountOutScale(amountIn);
+              setInputString(outputString);
+              setoutputString(inputString);
+              setamountIn(amountOutSwap);
+              setamountOutSwap(amountIn);
               const percentage = !tokenBalances[tokenOut]
                 ? 0
                 : Math.min(
                   100,
                   Math.floor(
                     Number(
-                      (amountOutScale * BigInt(100)) /
+                      (amountOutSwap * BigInt(100)) /
                       tokenBalances[tokenOut],
                     ),
                   ),
@@ -11931,17 +12480,23 @@ function App() {
               <input
                 inputMode="decimal"
                 className="output"
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
-                    setScaleOutputString(e.currentTarget.value);
-                    setIsOutputBasedScaleOrder(true);
+                onCompositionStart={() => {
+                  setIsComposing(true);
+                }}
+                onCompositionEnd={(
+                  e: React.CompositionEvent<HTMLInputElement>,
+                ) => {
+                  setIsComposing(false);
+                  if (/^\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                    setoutputString(e.currentTarget.value);
                     const outputValue = BigInt(
                       Math.round(
                         (parseFloat(e.currentTarget.value || '0') || 0) *
                         10 ** Number(tokendict[tokenOut].decimals),
                       ),
                     )
-                    setAmountOutScale(outputValue);
+                    setamountOutSwap(outputValue);
+                    setswitched(true);
                     if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                       const requiredInput = calculateScaleInput(
                         outputValue,
@@ -11980,10 +12535,131 @@ function App() {
                           }px`;
                       }
                     }
+                    else {
+                      const requiredInput = calculateScaleInput(
+                        outputValue,
+                        Number(scaleStart),
+                        Number(scaleEnd),
+                        Number(0),
+                        Number(scaleSkew)
+                      );
+                      setamountIn(requiredInput);
+                      setInputString('');
+                      const percentage =
+                        tokenBalances[tokenIn] === BigInt(0)
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                            ),
+                          );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                          }px`;
+                      }
+                    }
+                  }
+                }}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  if (isComposing) {
+                    setoutputString(e.target.value);
+                    return;
+                  }
+                  if (/^\d*\.?\d{0,18}$/.test(e.target.value)) {
+                    setoutputString(e.target.value);
+                    const outputValue = BigInt(
+                      Math.round(
+                        (parseFloat(e.target.value || '0') || 0) *
+                        10 ** Number(tokendict[tokenOut].decimals),
+                      ),
+                    )
+                    setamountOutSwap(outputValue);
+                    setswitched(true);
+                    if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
+                      const requiredInput = calculateScaleInput(
+                        outputValue,
+                        Number(scaleStart),
+                        Number(scaleEnd),
+                        Number(scaleOrders),
+                        Number(scaleSkew)
+                      );
+                      setamountIn(requiredInput);
+                      setInputString(
+                        customRound(
+                          Number(requiredInput) / 10 ** Number(tokendict[tokenIn].decimals),
+                          3
+                        ).toString()
+                      );
+                      const percentage =
+                        tokenBalances[tokenIn] === BigInt(0)
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                            ),
+                          );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                          }px`;
+                      }
+                    }
+                    else {
+                      const requiredInput = calculateScaleInput(
+                        outputValue,
+                        Number(scaleStart),
+                        Number(scaleEnd),
+                        Number(0),
+                        Number(scaleSkew)
+                      );
+                      setamountIn(requiredInput);
+                      setInputString('');
+                      const percentage =
+                        tokenBalances[tokenIn] === BigInt(0)
+                          ? 0
+                          : Math.min(
+                            100,
+                            Math.floor(
+                              Number(
+                                (requiredInput) * BigInt(100) / tokenBalances[tokenIn])
+                            ),
+                          );
+                      setSliderPercent(percentage);
+                      const slider = document.querySelector(
+                        '.balance-amount-slider',
+                      );
+                      const popup = document.querySelector(
+                        '.slider-percentage-popup',
+                      );
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+                          }px`;
+                      }
+                    }
                   }
                 }}
                 placeholder="0.00"
-                value={scaleOutputString}
+                value={outputString}
               />
               <button
                 className="button2"
@@ -12012,11 +12688,11 @@ function App() {
           </div>
           <div className="balance1maxcontainer">
             <div className="output-usd-value">
-              {amountOutScale === BigInt(0)
+              {amountOutSwap === BigInt(0)
                 ? "$0.00"
                 : (() => {
                   const outputUSD = calculateUSDValue(
-                    amountOutScale,
+                    amountOutSwap,
                     tradesByMarket[
                     (({ baseAsset, quoteAsset }) =>
                       (baseAsset === wethticker ? ethticker : baseAsset) +
@@ -12136,7 +12812,7 @@ function App() {
                     );
                     setScaleStart(price);
                     if (price && scaleEnd && scaleOrders && scaleSkew) {
-                      if (!isOutputBasedScaleOrder) {
+                      if (!switched) {
                         setScaleOutput(
                           Number(amountIn),
                           Number(price),
@@ -12146,7 +12822,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
+                          BigInt(Number(outputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(price),
                           Number(scaleEnd),
                           Number(scaleOrders),
@@ -12225,7 +12901,7 @@ function App() {
                     );
                     setScaleEnd(price);
                     if (price && scaleStart && scaleOrders && scaleSkew) {
-                      if (!isOutputBasedScaleOrder) {
+                      if (!switched) {
                         setScaleOutput(
                           Number(amountIn),
                           Number(scaleStart),
@@ -12235,7 +12911,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
+                          BigInt(Number(outputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(price),
                           Number(scaleOrders),
@@ -12279,7 +12955,7 @@ function App() {
                     let temporders = BigInt(e.target.value == "1" ? 0 : e.target.value)
                     setScaleOrders(temporders)
                     if (temporders && scaleStart && scaleSkew && scaleEnd) {
-                      if (!isOutputBasedScaleOrder) {
+                      if (!switched) {
                         setScaleOutput(
                           Number(amountIn),
                           Number(scaleStart),
@@ -12289,7 +12965,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
+                          BigInt(Number(outputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(scaleEnd),
                           Number(temporders),
@@ -12328,7 +13004,7 @@ function App() {
                     let skew = Number(e.target.value)
                     setScaleSkew(skew)
                     if (skew && scaleStart && scaleOrders && scaleEnd) {
-                      if (!isOutputBasedScaleOrder) {
+                      if (!switched) {
                         setScaleOutput(
                           Number(amountIn),
                           Number(scaleStart),
@@ -12338,7 +13014,7 @@ function App() {
                         );
                       } else {
                         const requiredInput = calculateScaleInput(
-                          BigInt(Number(scaleOutputString) * 10 ** Number(tokendict[tokenOut].decimals)),
+                          BigInt(Number(outputString) * 10 ** Number(tokendict[tokenOut].decimals)),
                           Number(scaleStart),
                           Number(scaleEnd),
                           Number(scaleOrders),
@@ -12395,6 +13071,7 @@ function App() {
                     ).toString(),
                 );
                 debouncedSetAmount(newAmount);
+                setswitched(false);
 
                 if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                   setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
@@ -12460,6 +13137,7 @@ function App() {
                           ).toString(),
                       );
                       debouncedSetAmount(newAmount);
+                      setswitched(false);
                       if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                         setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
                       }
@@ -12488,9 +13166,9 @@ function App() {
           onClick={async () => {
             if (connected && userchain === activechain) {
               let finalAmountIn = amountIn;
-              if (isOutputBasedScaleOrder) {
+              if (switched) {
                 const desiredOutput =
-                  Number(scaleOutputString) *
+                  Number(outputString) *
                   10 ** Number(tokendict[tokenOut].decimals);
                 finalAmountIn = calculateScaleInput(
                   BigInt(desiredOutput),
@@ -12629,8 +13307,8 @@ function App() {
                 txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
-                setAmountOutScale(BigInt(0));
-                setScaleOutputString('');
+                setamountOutSwap(BigInt(0));
+                setoutputString('');
                 setScaleButtonDisabled(true);
                 setScaleButton(0);
                 setScaleStart(BigInt(0));
@@ -12656,7 +13334,7 @@ function App() {
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
                     customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn == eth ? eth : tokenIn].decimals), 3),
-                    customRound(Number(amountOutScale) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
+                    customRound(Number(amountOutSwap) / 10 ** Number(tokendict[tokenOut == eth ? eth : tokenOut].decimals), 3),
                     "",
                     "",
                   );
@@ -12703,9 +13381,9 @@ function App() {
           ) : scaleButton == 12 ? (
             t('connectWallet')
           ) : scaleButton == 13 ? (
-            client ? t('placeOrder') : t('approve')
+            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset : t('approve')
           ) : (
-            t('placeOrder')
+            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset
           )}
         </button>
       </div>
@@ -12862,12 +13540,12 @@ function App() {
                   layoutSettings={layoutSettings}
                   orderbookPosition={orderbookPosition}
                   orderdata={{
-                    roundedBuyOrders,
-                    roundedSellOrders,
+                    roundedBuyOrders: roundedBuyOrders[0],
+                    roundedSellOrders: roundedSellOrders[0],
                     spreadData,
-                    priceFactor,
-                    symbolIn,
-                    symbolOut,
+                    priceFactor: Number(markets[roundedBuyOrders[1]]?.priceFactor),
+                    symbolIn: markets[roundedBuyOrders[1]]?.quoteAsset,
+                    symbolOut: markets[roundedBuyOrders[1]]?.baseAsset,
                   }}
                   windowWidth={windowWidth}
                   mobileView={mobileView}
@@ -13114,8 +13792,6 @@ function App() {
                 totalClaimableFees={totalClaimableFees}
                 refLink={refLink}
                 setShowRefModal={setShowReferralsModal}
-                activeSection={activeSection}
-                setActiveSection={setActiveSection}
                 filter={filter}
                 setFilter={setFilter}
                 onlyThisMarket={onlyThisMarket}

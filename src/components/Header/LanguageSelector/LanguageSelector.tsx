@@ -61,7 +61,7 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
     return (
       <div
         className="language-dropdown header-dropdown"
-        style={{ maxHeight: '245px' }}
+        style={{ maxHeight: '216.2px' }}
         ref={languageSelectorRef}
         onClick={(e) => e.stopPropagation()}
       >
@@ -91,23 +91,24 @@ const LanguageSelector: React.FC<LanguageSelectorProps> = ({
       </button>
 
       {isLanguageDropdownOpen && (
-        <div 
-          className="language-dropdown"
-          style={{ maxHeight: '230px' }}
-        >
-          <span className="language-dropdown-label">{t('languages')}</span>
-          <div className="language-options">
-            {languages.map((lang) => (
-              <div
-                key={lang.code}
-                className={`language-option ${language === lang.code ? 'selected' : ''}`}
-                onClick={() => selectLanguageOption(lang.code)}
-              >
-                {lang.name}
-              </div>
-            ))}
-          </div>
+        <div
+        className="language-dropdown header-dropdown"
+        style={{ maxHeight: '216.2px' }}
+        ref={languageSelectorRef}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="language-options">
+          {languages.map((lang) => (
+            <div
+              key={lang.code}
+              className={`language-option ${language === lang.code ? 'selected' : ''}`}
+              onClick={() => selectLanguageOption(lang.code)}
+            >
+              {lang.name}
+            </div>
+          ))}
         </div>
+      </div>
       )}
     </div>
   );

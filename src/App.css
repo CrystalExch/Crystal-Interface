@@ -88,7 +88,6 @@ html {
 
 .limit-info-rectangle,
 .trade-info-rectangle {
-  margin: 0 0 5px;
   padding: 10px 12px;
   padding-top: 5px;
 }
@@ -813,7 +812,7 @@ html {
 .navlink {
   background: 0 0;
   border-radius: 5px;
-  color: #ffffff50;
+  color: #ffffff96;
   cursor: pointer;
   flex: 1;
   font-size: 0.75rem;
@@ -821,13 +820,9 @@ html {
   position: relative;
   text-align: center;
   text-decoration: none;
-  transition: opacity.2s, color.3s;
-  transition: color.3s ease;
-  z-index: 3;
   z-index: 2;
 }
 
-.navlink:focus,
 .navlink.active {
   color: #ffffffc4;
   opacity: 1;
@@ -1897,7 +1892,7 @@ body:has(.right-column.show) .blur-background-popups {
 
 .trade-sliding-indicator {
   background: #aaaecf09;
-  border: 1px solid #aaaecf14;
+  border: 1px solid #aaaecf20;
   border-radius: 5px;
   bottom: 0;
   box-shadow:
@@ -1908,7 +1903,7 @@ body:has(.right-column.show) .blur-background-popups {
   position: absolute;
   top: 0;
   transform: perspective(1000px) translateZ(0);
-  transition: transform.3s ease;
+  transition: transform.2s ease;
   z-index: 2;
 
 }
@@ -1978,14 +1973,14 @@ body:has(.right-column.show) .blur-background-popups {
 
 .mobile-sliding-indicator {
   background: #aaaecf03;
-  border: 1px solid #aaaecf14;
+  border: 1px solid #aaaecf20;
   border-radius: 5px;
   box-shadow:
     inset 0 0.5px rgb(255 255 255/5.3%),
     0 5px 15px rgb(0 0 0/20%);
   height: 30px;
   position: absolute;
-  transition: transform.3s ease;
+  transition: transform.2s ease;
   width: 33.33333%;
   z-index: 1;
 }
@@ -2651,6 +2646,10 @@ body:has(.right-column.show) .blur-background-popups {
   opacity: 0;
 }
 
+.main-content-wrapper.simple-view .limit-info-rectangle {
+  animation-delay: 0s;
+}
+
 .main-content-wrapper.simple-view .inputbg,
 .main-content-wrapper.simple-view .limitbg,
 .main-content-wrapper.simple-view .outputbg,
@@ -2921,14 +2920,14 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .sliding-tab-indicator {
   background: #aaaecf03;
-  border: 1px solid #aaaecf14;
+  border: 1px solid #aaaecf20;
   border-radius: 5px;
   box-shadow:
     inset 0 0.5px rgba(230, 227, 250, 0.053),
     0 5px 15px rgb(0 0 0/20%);
   height: 24px;
   position: absolute;
-  transition: transform .3s ease;
+  transition: transform .2s ease;
   width: 33.33333%;
   z-index: 1;
 }
@@ -3506,7 +3505,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .keyboard-shortcut {
   align-items: center;
-  backdrop-filter: blur(5px);
   background: #1a1a1d9e;
   border: 1px solid #2a2a2e91;
   border-radius: 6px;
@@ -3626,7 +3624,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .navlink-dropdown {
   position: absolute;
-  backdrop-filter: blur(10px);
   top: calc(100%);
   left: 83.5%;
   background: #141418;

@@ -3,7 +3,7 @@ import { CacheEntry, ScaledDataPoint } from './types';
 export class PortfolioCache {
   private static instance: PortfolioCache;
   private cache: Map<string, CacheEntry>;
-  private readonly CACHE_DURATION = 5 * 60 * 1000;
+  private readonly CACHE_DURATION = 15 * 60 * 1000;
 
   private constructor() {
     this.cache = new Map();

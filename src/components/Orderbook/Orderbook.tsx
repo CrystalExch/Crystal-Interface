@@ -56,7 +56,7 @@ const OrderBook: React.FC<OrderBookProps> = ({
     indicatorRef.current.style.width = `${indicatorWidth}px`;
     indicatorRef.current.style.left = `${leftPosition}px`;
   };
-
+  
   const handleTabClick = (tab: 'orderbook' | 'trades') => {
     setActiveTab(tab);
     updateIndicator();

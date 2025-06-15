@@ -156,6 +156,10 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         setHigh(Math.max(...chartData.map((d) => d.value)) || 0);
         setLow(Math.min(...chartData.map((d) => d.value)) || 0);
       }
+      else {
+        onPercentageChange?.(0)
+        setColorValue?.('#00b894');
+      }
     }, [chartData]);
 
     if (!address) {

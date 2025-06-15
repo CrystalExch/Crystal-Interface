@@ -17,6 +17,7 @@ export const usePortfolioData = (
   tokenBalances: any,
   setTotalAccountValue: any,
   marketsData: any,
+  stateIsLoading: boolean,
   shouldFetchGraph: boolean,
 ): PortfolioData => {
   const [state, setState] = useState<PortfolioData>({
@@ -99,34 +100,38 @@ export const usePortfolioData = (
   );
 
   useEffect(() => {
-    let totalValue = 0;
-    const ethTicker = settings.chainConfig[activechain].ethticker;
-    const ethMarket = marketDataMap[`${ethTicker}USDC`];
-
-    tokenList.forEach((token) => {
-      const bal = Number(tokenBalances[token.address]) / 10 ** Number(token.decimals) || 0;
-      const normalized = normalizeTicker(token.ticker, activechain);
-      let price = 0;
-      const usdcMkt = marketDataMap[`${normalized}USDC`];
-
-      if (usdcMkt?.series?.length) {
-        price = usdcMkt.series[usdcMkt.series.length - 1].close / Number(usdcMkt.priceFactor);
-      } else if (normalized === 'USDC') {
-        price = 1;
-      } else {
-        const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
-        if (
-          tokenEth?.series?.length &&
-          ethMarket?.series?.length
-        ) {
-          price = tokenEth.series[tokenEth.series.length - 1].close / Number(tokenEth.priceFactor) * ethMarket.series[ethMarket.series.length - 1].close / Number(ethMarket.priceFactor);
+    if (address && !stateIsLoading) {
+      let totalValue = 0;
+      const ethTicker = settings.chainConfig[activechain].ethticker;
+      const ethMarket = marketDataMap[`${ethTicker}USDC`];
+  
+      tokenList.forEach((token) => {
+        const bal = Number(tokenBalances[token.address]) / 10 ** Number(token.decimals) || 0;
+        const normalized = normalizeTicker(token.ticker, activechain);
+        let price = 0;
+        const usdcMkt = marketDataMap[`${normalized}USDC`];
+  
+        if (usdcMkt?.series?.length) {
+          price = usdcMkt.series[usdcMkt.series.length - 1].close / Number(usdcMkt.priceFactor);
+        } else if (normalized === 'USDC') {
+          price = 1;
+        } else {
+          const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
+          if (
+            tokenEth?.series?.length &&
+            ethMarket?.series?.length
+          ) {
+            price = tokenEth.series[tokenEth.series.length - 1].close / Number(tokenEth.priceFactor) * ethMarket.series[ethMarket.series.length - 1].close / Number(ethMarket.priceFactor);
+          }
         }
-      }
-
-      totalValue += bal * price;
-    });
-
-    setTotalAccountValue(totalValue);
+  
+        totalValue += bal * price;
+      });
+      setTotalAccountValue(totalValue);
+    }
+    else {
+      setTotalAccountValue(null);
+    }
   }, [tokenList, tokenBalances, marketsData]);
 
   useEffect(() => {
@@ -147,7 +152,7 @@ export const usePortfolioData = (
 
       const cacheKey = cache.getCacheKey(activechain, address, chartDays);
       const cachedData = cache.get(cacheKey);
-      if (cachedData && Date.now() - cachedData.timestamp < 1000) {
+      if (cachedData) {
         setState({
           chartData: cachedData.chartData,
           balanceResults: cachedData.balanceResults,
@@ -173,7 +178,7 @@ export const usePortfolioData = (
                 decimals: token.decimals,
               }));
         
-              const batchSize = 3;
+              const batchSize = 5;
               for (let i = 0; i < dateRange.length; i += batchSize) {
                 if (!isFetching) return;
                 const batch = dateRange.slice(i, i + batchSize);
@@ -228,10 +233,6 @@ export const usePortfolioData = (
                     results[response.date] = response;
                   }
                 });
-        
-                if (i + batchSize < dateRange.length) {
-                  await new Promise((resolve) => setTimeout(resolve, 600));
-                }
               }
         
               return results;
@@ -240,7 +241,7 @@ export const usePortfolioData = (
             }
           })()
           isFetching = false
-          if (balanceResults) {
+          if (balanceResults && Object.keys(balanceResults).length > 0) {
             const chartData = calculateChartData(balanceResults);
             cache.set(cacheKey, chartData, balanceResults, chartDays);
   

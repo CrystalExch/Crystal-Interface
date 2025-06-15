@@ -21,13 +21,10 @@ const PriceIntervals: React.FC<PriceIntervalsProps> = ({
   const selectWrapperRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLUListElement>(null);
 
-  const intervals = [
-    baseInterval,
-    baseInterval * 5,
-    baseInterval * 10,
-    baseInterval * 100,
-    baseInterval * 1000,
-  ];
+  const intervals = [1, 5, 10, 100, 1000].map(mult => 
+    Number((baseInterval * mult).toPrecision(12))
+  );
+  
 
   const formatDisplay = (value: string) => {
     const num = Number(value);

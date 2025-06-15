@@ -55,6 +55,10 @@
   white-space: nowrap;
 }
 
+.ob-tab:hover {
+  opacity: 0.7;
+}
+
 .ob-tab.ob-active {
   color: #b7bad8;
   opacity: 1;
@@ -67,10 +71,6 @@
     text-shadow 0.3s;
 }
 
-.ob-tab:hover {
-  opacity: 0.7;
-}
-
 .ob-sliding-indicator {
   animation: glowPulse 2s infinite ease-in-out;
   background-color: #aaaecf;
@@ -78,5 +78,5 @@
   bottom: 0px;
   height: 1.5px;
   position: absolute;
-  transition: left 0.3s ease;
+  transition: left 0.2s ease;
 }

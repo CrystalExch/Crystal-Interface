@@ -26,7 +26,7 @@ interface TokenInfoProps {
   activeMarket: any;
   onMarketSelect: any;
   tokendict: any;
-  setpopup: (value: number) => void;
+  setpopup: any;
   marketsData: any[];
   isLoading?: boolean;
   isTradeRoute?: boolean;
@@ -55,20 +55,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
-  // Helper function to check if a token is an LST
-  const isLST = (pair: string | undefined) => {
-    if (!pair) return false;
-    return pair.includes('aprMON') || pair.includes('sMON') || pair.includes('shMON');
-  };
-
-  // Helper function to get LST multiplier (you can customize this logic)
-  const getLSTMultiplier = (pair: string | undefined) => {
-    if (isLST(pair)) {
-      return '1.25x'; // You can make this dynamic based on the specific LST type
-    }
-    return null;
-  };
-
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -77,7 +63,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         if (isAdvancedView) {
           toggleDropdown();
         } else {
-          setpopup(8);
+          setpopup((popup: number) => {return popup == 0 ? 8 : 0});
+        }
+      }
+      else if (e.key == 'Escape') {
+        if (isAdvancedView && isDropdownOpen) {
+          e.preventDefault();
+          toggleDropdown();
         }
       }
     };
@@ -335,9 +327,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <>
                 <span className="first-asset">{activeMarket.baseAsset} /</span>
                 <span className="second-asset">{activeMarket.quoteAsset}</span>
-                {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset) && (
+                {tokendict[activeMarket?.baseAddress]?.lst && (
                   <span className="lst-multiplier">
-                    {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset)}
+                    1.25x
                   </span>
                 )}
               </>

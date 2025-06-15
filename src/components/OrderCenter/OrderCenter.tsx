@@ -86,9 +86,6 @@ const OrderCenter: React.FC<OrderCenterProps> =
     isOrderCenterVisible,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
-    const [isMobileView, setIsMobileView] = useState<boolean>(
-      typeof window !== 'undefined' ? window.innerWidth <= 1020 : false,
-    );
     
     const [windowWidth, setWindowWidth] = useState<number>(
       typeof window !== 'undefined' ? window.innerWidth : 1200
@@ -246,33 +243,18 @@ const OrderCenter: React.FC<OrderCenterProps> =
     }
 
     useEffect(() => {
-      if (!isPortfolio && activeSection === 'balances') {
-        setActiveSection(
-          localStorage.getItem('crystal_oc_tab') !== null
-            ? localStorage.getItem('crystal_oc_tab')
-            : 'orders',
-        );
-      }
-      else if (isPortfolio) {
-        setActiveSection('balances');
-      }
+      const isMobileView = window.innerWidth <= 1020;
+      updateIndicatorPosition(isMobileView, activeSection);
       const handleResize = () => {
         const width = window.innerWidth;
-        setIsMobileView(width <= 1020);
         setWindowWidth(width);
         updateIndicatorPosition(width <= 1020, activeSection);
       };
       window.addEventListener('resize', handleResize);
       handleResize();
-      return () => {
-        window.removeEventListener('resize', handleResize);
-      };
-    }, [isPortfolio, activeSection]);
-
-    useEffect(() => {
-      updateIndicatorPosition(isMobileView, activeSection);
+      let resizeObserver: any = null;
       if (!isMobileView && indicatorRef.current && tabsRef.current.length > 0) {
-        const resizeObserver = new ResizeObserver(() => {
+        resizeObserver = new ResizeObserver(() => {
           updateIndicatorPosition(isMobileView, activeSection);
         });
         tabsRef.current.forEach((tab) => {
@@ -280,11 +262,12 @@ const OrderCenter: React.FC<OrderCenterProps> =
         });
         const container = containerRef.current;
         if (container) resizeObserver.observe(container);
-        return () => {
-          resizeObserver.disconnect();
-        };
       }
-    }, [isMobileView, activeSection]);
+      return () => {
+        window.removeEventListener('resize', handleResize);
+        if (resizeObserver) resizeObserver.disconnect();
+      };
+    }, [activeSection]);
 
     const renderContent = () => {
       switch (activeSection) {
@@ -360,7 +343,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
       >
         <div className="oc-top-bar">
           <div className="oc-types">
-            {!isMobileView ? (
+            {window.innerWidth > 1020 ? (
               <>
                 <div className="oc-types-rectangle">
                   {availableTabs.map(({ key, label }, index) => (
