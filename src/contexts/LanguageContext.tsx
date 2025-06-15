@@ -187,7 +187,7 @@ export const translations: any = {
     cancel: 'Cancel',
     switchto: 'Switch to',
     insufficientLiquidity: 'Insufficient Liquidity',
-    insufficientLiquidityWarning: 'Warning: Insufficient liquidity. Try splitting this trade into multiple smaller orders or enabling partial fill',
+    insufficientLiquidityWarning: 'Warning: Insufficient liquidity. Try splitting this trade into multiple smaller orders or enable partial fills',
     insufficientLiquidityWarningMultihop: 'Warning: Insufficient liquidity. Try splitting this trade into multiple smaller orders',
     priceOutOfRangeBuy: 'Post only price too high',
     priceOutOfRangeSell: 'Post only price too low',

@@ -8278,10 +8278,7 @@ function App() {
       </div>
       <div className="swapmodal">
         <div
-          className={`inputbg ${connected && Math.round(
-            (parseFloat(inputString || '0') || 0) *
-            10 ** Number(tokendict[tokenIn].decimals),
-          ) > tokenBalances[tokenIn]
+          className={`inputbg ${connected && amountIn > tokenBalances[tokenIn]
             ? 'exceed-balance'
             : ''
             }`}
@@ -8296,10 +8293,7 @@ function App() {
               <input
                 inputMode="decimal"
                 className={`input ${connected &&
-                  Math.round(
-                    (parseFloat(inputString || '0') || 0) *
-                    10 ** Number(tokendict[tokenIn].decimals),
-                  ) > tokenBalances[tokenIn]
+                  amountIn > tokenBalances[tokenIn]
                   ? 'exceed-balance'
                   : ''
                   }`}
@@ -8416,10 +8410,7 @@ function App() {
             )}
             <button
               className={`button1 ${connected &&
-                Math.round(
-                  (parseFloat(inputString || '0') || 0) *
-                  10 ** Number(tokendict[tokenIn].decimals),
-                ) > tokenBalances[tokenIn]
+                amountIn > tokenBalances[tokenIn]
                 ? 'exceed-balance'
                 : ''
                 }`}
@@ -9773,10 +9764,7 @@ function App() {
       <div className="swapmodal">
         <div
           className={`inputbg ${connected &&
-            ((Math.round(
-              (parseFloat(inputString || '0') || 0) *
-              10 ** Number(tokendict[tokenIn].decimals),
-            ) > tokenBalances[tokenIn]) ||
+            ((amountIn > tokenBalances[tokenIn]) ||
               (amountIn != BigInt(0) &&
                 (tokenIn == activeMarket.quoteAddress
                   ? amountIn < activeMarket.minSize
@@ -9791,10 +9779,7 @@ function App() {
             <input
               inputMode="decimal"
               className={`input ${connected &&
-                ((Math.round(
-                  (parseFloat(inputString || '0') || 0) *
-                  10 ** Number(tokendict[tokenIn].decimals),
-                ) > tokenBalances[tokenIn]) ||
+                ((amountIn > tokenBalances[tokenIn]) ||
                   (amountIn !== BigInt(0) &&
                     (tokenIn === activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
@@ -9978,10 +9963,7 @@ function App() {
             />
             <button
               className={`button1 ${connected &&
-                ((Math.round(
-                  (parseFloat(inputString || '0') || 0) *
-                  10 ** Number(tokendict[tokenIn].decimals),
-                ) > tokenBalances[tokenIn]) ||
+                ((amountIn > tokenBalances[tokenIn]) ||
                   (amountIn != BigInt(0) &&
                     (tokenIn == activeMarket.quoteAddress
                       ? amountIn < activeMarket.minSize
@@ -10475,10 +10457,7 @@ function App() {
         <div
           className={`limitbg ${connected &&
             !(
-              Math.round(
-                (parseFloat(inputString || '0') || 0) *
-                10 ** Number(tokendict[tokenIn].decimals),
-              ) > tokenBalances[tokenIn]) &&
+              amountIn > tokenBalances[tokenIn]) &&
             addliquidityonly &&
             amountIn != BigInt(0) &&
             ((limitPrice >= lowestAsk &&
@@ -10524,10 +10503,7 @@ function App() {
               inputMode="decimal"
               className={`limit-order ${connected &&
                 !(
-                  Math.round(
-                    (parseFloat(inputString || '0') || 0) *
-                    10 ** Number(tokendict[tokenIn].decimals),
-                  ) > tokenBalances[tokenIn]) &&
+                  amountIn > tokenBalances[tokenIn]) &&
                 addliquidityonly &&
                 amountIn != BigInt(0) &&
                 ((limitPrice >= lowestAsk &&
@@ -11521,10 +11497,7 @@ function App() {
       </div>
       <div className="swapmodal">
         <div
-          className={`sendbg ${connected && Math.round(
-            (parseFloat(inputString || '0') || 0) *
-            10 ** Number(tokendict[tokenIn].decimals),
-          ) > tokenBalances[tokenIn]
+          className={`sendbg ${connected && amountIn > tokenBalances[tokenIn]
             ? 'exceed-balance'
             : ''
             }`}
@@ -11545,10 +11518,7 @@ function App() {
             <input
               inputMode="decimal"
               className={`send-input ${connected &&
-                Math.round(
-                  (parseFloat(inputString || '0') || 0) *
-                  10 ** Number(tokendict[tokenIn].decimals),
-                ) > tokenBalances[tokenIn]
+                amountIn > tokenBalances[tokenIn]
                 ? 'exceed-balance'
                 : ''
                 }`}
