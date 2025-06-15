@@ -23,7 +23,7 @@
   left: 0;
   right: 0;
   height: 20px;
-  background: linear-gradient(to bottom, rgba(15, 15, 18, 0.2), rgb(10, 10, 12));
+  background: linear-gradient(to bottom, rgba(6, 6, 6, 0.2), rgb(6, 6, 6));
   pointer-events: none;
   z-index: 4;
   border-radius: 0 0 10px 10px; 

@@ -276,7 +276,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible}/>
           </>
         )}
-        <Overlay isVisible={overlayVisible} bgcolor={'#0f0f12'} height={15} maxLogoHeight={100}/>
+        <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
       </div>
     </div>
   );

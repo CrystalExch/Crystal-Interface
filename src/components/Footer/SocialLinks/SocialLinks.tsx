@@ -2,6 +2,8 @@ import React from 'react';
 
 import './SocialLinks.css';
 
+import twitter from '../../assets/twitter.svg'
+
 const SocialLinks: React.FC = () => {
   return (
     <div className="social-links">

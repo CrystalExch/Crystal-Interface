@@ -55,11 +55,23 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const isAdvancedView = isTradeRoute && !simpleView;
 
+  const isLST = (pair: string | undefined) => {
+    if (!pair) return false;
+    return pair.includes('aprMON') || pair.includes('sMON') || pair.includes('shMON');
+  };
+
+  const getLSTMultiplier = (pair: string | undefined) => {
+    if (isLST(pair)) {
+      return '1.25x';
+    }
+    return null;
+  };
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
-        
+
         if (isAdvancedView) {
           toggleDropdown();
         } else {
@@ -75,18 +87,18 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   useEffect(() => {
     const handleFilterScroll = () => {
       const filterTabsElement = filterTabsRef.current;
-      
+
       if (filterTabsElement) {
         const scrollLeft = filterTabsElement.scrollLeft;
         const scrollWidth = filterTabsElement.scrollWidth;
         const clientWidth = filterTabsElement.clientWidth;
-        
+
         if (scrollLeft > 0) {
           filterTabsElement.classList.add('show-left-gradient');
         } else {
           filterTabsElement.classList.remove('show-left-gradient');
         }
-        
+
         if (scrollLeft + clientWidth < scrollWidth - 2) {
           filterTabsElement.classList.add('show-right-gradient');
         } else {
@@ -94,13 +106,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         }
       }
     };
-    
+
     const filterTabsElement = filterTabsRef.current;
     if (filterTabsElement && isDropdownVisible) {
       filterTabsElement.addEventListener('scroll', handleFilterScroll);
       handleFilterScroll();
     }
-    
+
     return () => {
       if (filterTabsElement) {
         filterTabsElement.removeEventListener('scroll', handleFilterScroll);
@@ -286,31 +298,31 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       >
         {isAdvancedView ? (
           <div className="markets-favorite-section">
-            <button
-              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleFavorite(tokenAddress);
-              }}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </button>
+        <button
+          className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleFavorite(tokenAddress);
+          }}
+        >
+          <svg
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+          </svg>
+        </button>
           </div>
         ) : (
           <Search className="token-info-search-icon" size={18} />
         )}
-        
+
         {shouldShowFullHeader && (
           <TokenIcons inIcon={in_icon} outIcon={out_icon} />
         )}
@@ -319,7 +331,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
             {shouldShowFullHeader ? (
               <>
-                <span className="first-asset">{activeMarket.baseAsset} /</span><span className="second-asset">{activeMarket.quoteAsset}</span>
+                <span className="first-asset">{activeMarket.baseAsset} /</span>
+                <span className="second-asset">{activeMarket.quoteAsset}</span>
+                {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset) && (
+                  <span className="lst-multiplier">
+                    {getLSTMultiplier(activeMarket?.pair || activeMarket?.baseAsset)}
+                  </span>
+                )}
               </>
             ) : (
               <>
@@ -334,16 +352,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className={isLoading && shouldShowFullHeader ? 'pair-skeleton' : 'token-name'}>
               <span className="full-token-name">
                 {tokendict[activeMarket.baseAddress].name}
+                        <CopyButton textToCopy={marketAddress} />
+
               </span>
               <div
                 className="token-actions"
                 onClick={(e) => e.stopPropagation()}
               >
-                <CopyButton textToCopy={marketAddress} />
-                <TokenInfoPopup
-                  symbol={activeMarket.baseAsset}
-                  setpopup={setpopup}
-                />
+
               </div>
             </div>
           )}
@@ -387,7 +403,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   </div>
                 </div>
               </div>
-              
+
               <div className="market-filter-tabs" ref={filterTabsRef}>
                 {['all', 'favorites', 'lsts', 'stablecoins', 'memes'].map((filter) => (
                   <button
@@ -492,7 +508,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                         <div className="market-pair-section">
                           <img src={market.image} className="market-icon" />
                           <div className="market-info">
-                            <span className="market-pair">{market.pair}</span>
+                            <div className="market-pair-container">
+                              <span className="market-pair">{market.pair}</span>
+                            </div>
                             <span className="market-volume">
                               ${formatCommas(market.volume)}
                             </span>
@@ -513,7 +531,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                           <div
                             className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}
                           >
-                            {market.priceChange+'%'}
+                            {market.priceChange + '%'}
                           </div>
                         </div>
                       </div>
@@ -529,6 +547,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         <div className="ctrlktooltip">
           Ctrl+K
         </div>
+
+        {/* <TokenInfoPopup
+          symbol={activeMarket.baseAsset}
+          setpopup={setpopup}
+        /> */}
       </div>
 
       {shouldShowFullHeader && (

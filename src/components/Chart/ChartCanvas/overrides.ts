@@ -1,6 +1,6 @@
 export const overrides = {
   'paneProperties.backgroundType': 'solid',
-  'paneProperties.background': '#0f0f12',
+  'paneProperties.background': 'rgb(6,6,6)',
 
   'mainSeriesProperties.candleStyle.upColor': '#50f08d',
   'mainSeriesProperties.candleStyle.downColor': 'rgb(239, 81, 81)',
@@ -50,20 +50,20 @@ export const overrides = {
   'mainSeriesProperties.baselineStyle.topLineWidth': 2,
   'mainSeriesProperties.baselineStyle.bottomLineWidth': 2,
 
-  'charts_dialogs_background_color': '#0f0f12',
+  'charts_dialogs_background_color': 'rgb(6,6,6)',
   'charts_dialogs_text_color': '#aaaecf',
   'charts_toggles_button_text_color': '#aaaecf',
-  'popup.background.color': '#0f0f12',
+  'popup.background.color': 'rgb(6,6,6)',
   'popup.text.color': '#aaaecf',
-  'calendar.background.color': '#0f0f12',
+  'calendar.background.color': 'rgb(6,6,6)',
   'calendar.text.color': '#aaaecf',
-  'calendar.header.background.color': '#0f0f12',
+  'calendar.header.background.color': 'rgb(6,6,6)',
   'calendar.header.text.color': '#aaaecf',
-  'dialog.background.color': '#0f0f12',
+  'dialog.background.color': 'rgb(6,6,6)',
   'dialog.text.color': '#aaaecf',
-  'dialog.button.background.color': '#0f0f12',
+  'dialog.button.background.color': 'rgb(6,6,6)',
   'dialog.button.text.color': '#aaaecf',
-  'dialog.input.background.color': '#0f0f12',
+  'dialog.input.background.color': 'rgb(6,6,6)',
   'dialog.input.text.color': '#aaaecf',
 
 };
