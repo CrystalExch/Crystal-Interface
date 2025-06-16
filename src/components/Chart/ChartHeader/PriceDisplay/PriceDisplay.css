@@ -8,7 +8,7 @@
 .price-label {
   color: #a0a0a0;
   display: block;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 300;
   margin-bottom: -2px;
   overflow: hidden;
@@ -60,11 +60,11 @@
 
 .token-price {
   color: #fff;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .price-change {
-  font-size: 0.85rem;
+  font-size: 0.80rem;
 }
 
 .price-change.negative {

@@ -54,19 +54,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const filterTabsRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
-
-  const isLST = (pair: string | undefined) => {
-    if (!pair) return false;
-    return pair.includes('aprMON') || pair.includes('sMON') || pair.includes('shMON');
-  };
-
-  const getLSTMultiplier = (pair: string | undefined) => {
-    if (isLST(pair)) {
-      return '1.25x';
-    }
-    return null;
-  };
-
+  
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -358,14 +346,17 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className={isLoading && shouldShowFullHeader ? 'pair-skeleton' : 'token-name'}>
               <span className="full-token-name">
                 {tokendict[activeMarket.baseAddress].name}
-                        <CopyButton textToCopy={marketAddress} />
 
               </span>
               <div
                 className="token-actions"
                 onClick={(e) => e.stopPropagation()}
               >
-
+                <CopyButton textToCopy={marketAddress} />
+                <TokenInfoPopup
+                  symbol={activeMarket.baseAsset}
+                  setpopup={setpopup}
+                />
               </div>
             </div>
           )}
@@ -553,11 +544,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         <div className="ctrlktooltip">
           Ctrl+K
         </div>
-
-        {/* <TokenInfoPopup
-          symbol={activeMarket.baseAsset}
-          setpopup={setpopup}
-        /> */}
       </div>
 
       {shouldShowFullHeader && (

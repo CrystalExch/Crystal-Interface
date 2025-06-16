@@ -13,7 +13,6 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-  letter-spacing: -0.3px;
 }
 
 .metric-label,
@@ -53,14 +52,12 @@
 }
 
 .metric-value {
-  font-size: 0.85rem;
+  font-size: 0.80rem;
   font-weight: 350;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   width: 100%;
-  letter-spacing: -0.3px;
-  line-height: 1.6;
 }
 
 .output-loading {

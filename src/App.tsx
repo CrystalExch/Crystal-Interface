@@ -149,7 +149,6 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
-import Footer from './components/Footer/Footer.tsx';
 
 function App() {
   useEffect(() => {
@@ -1682,8 +1681,10 @@ function App() {
         break;
       case '/mint':
         title = 'Mint | Crystal';
+        break;
       case '/lend':
         title = 'Lend | Crystal';
+        break;
       case '/swap':
       case '/market':
       case '/limit':
@@ -5256,9 +5257,6 @@ function App() {
                 <div className="tokenlisttext">
                   <div className="tokenlistname">
                     {token.ticker}
-                    {/* {favorites.includes(token.address) && (
-                      <span className="token-favorites-label">Favorite</span>
-                    )} */}
                   </div>
                   <div className="tokenlistticker">{token.name}</div>
                 </div>
@@ -5824,9 +5822,6 @@ function App() {
                 <div className="tokenlisttext">
                   <div className="tokenlistname">
                     {token.ticker}
-                    {/* {favorites.includes(token.address) && (
-                      <span className="token-favorites-label">Favorite</span>
-                    )} */}
                   </div>
                   <div className="tokenlistticker">{token.name}</div>
                 </div>
@@ -8416,7 +8411,7 @@ function App() {
                     }
                   }
                 }}
-                placeholder="0"
+                placeholder="0.00"
                 value={inputString}
                 autoFocus={
                   outputString === '' &&
@@ -8687,7 +8682,7 @@ function App() {
                   }
                 }}
                 value={outputString}
-                placeholder="0"
+                placeholder="0.00"
               />
             )}
             <button
@@ -9974,7 +9969,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0"
+              placeholder="0.00"
               value={inputString}
               autoFocus={!(windowWidth <= 1020)}
             />
@@ -10372,7 +10367,7 @@ function App() {
                   }
                 }}
                 value={outputString}
-                placeholder="0"
+                placeholder="0.00"
               />
               <button
                 className="button2"
@@ -10782,7 +10777,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0"
+              placeholder="0.00"
               value={limitPriceString}
               step={1 / Math.pow(10, Math.floor(Math.log10(Number(activeMarket.priceFactor))))}
             />
@@ -12337,7 +12332,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0"
+              placeholder="0.00"
               value={inputString}
               autoFocus={!(windowWidth <= 1020)}
             />
@@ -12685,7 +12680,7 @@ function App() {
                     }
                   }
                 }}
-                placeholder="0"
+                placeholder="0.00"
                 value={outputString}
               />
               <button
@@ -13847,7 +13842,6 @@ function App() {
           setTransactions={setTransactions}
           tokendict={tokendict}
         />
-        <Footer/>
       </div>
     </div>
   );
