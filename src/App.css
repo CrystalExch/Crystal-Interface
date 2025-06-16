@@ -1671,7 +1671,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   flex-direction: column;
   min-height: 480px;
-  border-left: 1px solid rgba(179, 184, 249, 0.1);
+  background-color: rgb(6,6,6);
 }
 
 .connect-wallet-background.unconnected {
@@ -1995,7 +1995,8 @@ body:has(.right-column.show) .blur-background-popups {
   display: flex;
   flex: 1;
   min-height: 530px;
-  padding-right: 5px;
+  gap: 1px;
+  background-color: rgba(179, 184, 249, 0.1);
 }
 
 .tokenlistcontainer {
