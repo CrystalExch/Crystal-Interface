@@ -1,5 +1,4 @@
 .chart-header {
-  border-radius: 8px;
   display: flex;
   height: 47px;
   justify-content: flex-start;
@@ -12,6 +11,7 @@
 @media (max-width: 1020px) {
   .chart-header {
     max-width: calc(100vw - 5px);
-    padding: 0px 5px 0px 0px;
+    padding: 7px 5px 0px 0px;
   }
+
 }

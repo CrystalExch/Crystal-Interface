@@ -14,6 +14,7 @@
   z-index: 10;
   transition: left 0.3s ease;
   padding-bottom: 4px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 body.sidebar-expanded .app-header {
@@ -289,7 +290,6 @@ body.sidebar-expanded .app-header {
   gap: 6px;
   max-height: 47px;
   min-height: 47px;
-  background-color: #0f0f12;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 10px;

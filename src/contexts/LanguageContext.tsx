@@ -164,7 +164,7 @@ export const translations: any = {
     yourLink: 'Your referral link:',
     createCode: 'Create referral code',
     signTxn: 'Sign Transaction',
-    getHelp: 'Get Help',
+    getHelp: 'Help & Support',
     totalVol: 'Total Volume',
     activeOrders: 'Active Orders',
     details: 'Details',

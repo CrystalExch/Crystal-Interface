@@ -2,14 +2,15 @@
   background: rgb(6, 6, 6);
   bottom: 0;
   display: flex;
-  height: 45px;
+  height: 35px;
   justify-content: space-between;
   left: 55px;
-  padding-right: 5px;
+  padding: 0 5px;
   position: fixed;
   right: 0;
   z-index: 10;
   transition: left 0.3s ease; 
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .footer-content-left {
@@ -21,19 +22,15 @@
 
 .footer-content-left,
 .footer-content-right {
-  background-color: #0f0f12;
+  background-color: rgb(6,6,6);
   display: flex;
   font-size: 0.8rem;
   justify-content: space-between;
-  margin-bottom: 8px;
-  margin-top: 5px;
-  padding: 0 5px;
   z-index: 1;
 }
 
 .footer-content-right {
   align-items: center;
-  border-radius: 6px;
   border-bottom-left-radius: 0;
   border-top-left-radius: 0;
 }

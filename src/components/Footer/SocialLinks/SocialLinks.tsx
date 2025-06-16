@@ -2,6 +2,9 @@ import React from 'react';
 
 import './SocialLinks.css';
 
+import twitter from '../../../assets/twitter.png'
+import discord from '../../../assets/discord.png'
+
 const SocialLinks: React.FC = () => {
   return (
     <div className="social-links">
@@ -11,7 +14,7 @@ const SocialLinks: React.FC = () => {
         rel="noopener noreferrer"
         className="social-link-twitter"
       >
-        X / {t('twitter')}
+        <img src={twitter} className="discord-footer-icon" />
       </a>
       <a
         href="https://docs.crystal.exchange"
@@ -19,7 +22,7 @@ const SocialLinks: React.FC = () => {
         rel="noopener noreferrer"
         className="social-link-docs"
       >
-        {t('docs')}
+        <img src={discord} className="discord-footer-icon" />
       </a>
       <a
         href="https://discord.gg/CrystalExch"

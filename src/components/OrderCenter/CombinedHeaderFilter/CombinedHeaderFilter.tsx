@@ -42,8 +42,13 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
   };
 
   useEffect(() => {
-    setPageInput(currentPage.toString());
-  }, [currentPage]);
+    if (currentPage > totalPages && totalPages > 0) {
+      onPageChange(1);
+      setPageInput('1');
+    } else {
+      setPageInput(currentPage.toString());
+    }
+  }, [currentPage, totalPages, onPageChange]);
 
   useEffect(() => {
     const adjustInputWidth = () => {

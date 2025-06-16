@@ -36,9 +36,8 @@
   scroll-behavior: smooth;
   scrollbar-width: none;
   position: relative;
-  background-color: #0f0f12;
-  max-height: 47px;
-  min-height: 47px;
+  max-height: 55px;
+  min-height: 55px;
   padding-left: 10px;
   padding-right: 15px;
   width: 100vw;
@@ -65,8 +64,7 @@
   left: 0;
   height: 100%;
   width: 40px;
-  border-radius: 8px;
-  background: linear-gradient(to right, #0f0f12, transparent);
+  background: linear-gradient(to right, rgb(6,6,6), transparent);
   pointer-events: none;
   z-index: 2;
 }
@@ -78,8 +76,7 @@
   right: 0;
   height: 100%;
   width: 40px;
-  border-radius: 8px;
-  background: linear-gradient(to left, #0f0f12, transparent);
+  background: linear-gradient(to left, rgb(6,6,6), transparent);
   pointer-events: none;
   z-index: 2;
 }

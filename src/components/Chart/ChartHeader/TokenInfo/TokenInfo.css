@@ -4,10 +4,9 @@
   gap: 4px;
   padding: 7px 10px 7px 10px;
   position: relative;
-  background-color: #0f0f12;
-  border-radius: 8px;
-  max-height: 47px;
-  min-height: 47px;
+  max-height: 55px;
+  min-height: 55px;
+  border-right:1px solid rgba(179, 184, 249, 0.1);
 }
 
 .mobile-symbol-info {
@@ -16,7 +15,6 @@
   gap: 6px;
   padding: 7px 12px;
   position: relative;
-  background-color: #0f0f12;
   border-radius: 8px;
   max-height: 47px;
   min-height: 47px;
@@ -49,7 +47,8 @@
 
 .ctrlktooltip{
   letter-spacing: 0.5px;
-  background-color: #1b1b23;
+  background-color: #1b1b230b;
+  border: 1px solid rgba(218, 216, 249, 0.087);
   border-radius: 8px;
   color: #aaa8b8;
   font-size: 0.75rem;
@@ -72,9 +71,11 @@
   display: flex;
   align-items: center;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 1.05rem;
   font-weight: 500;
   margin-bottom: -5px;
+  letter-spacing: -0.4px;
+  line-height: 1.4;
 }
 
 .token-name {
@@ -84,8 +85,12 @@
 }
 
 .full-token-name {
+  display: flex;
+  align-items: center;
+  gap: 3px;
   color: #b8b7b7;
-  font-size: 0.65rem;
+  font-size: 0.75rem;
+  letter-spacing: -0.3px;
 }
 
 .token-actions {
@@ -210,7 +215,7 @@
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
   overflow-y: auto;
   padding: 2px 4px 6px 4px;
-  max-height: calc(100vh - 155px);
+  max-height: calc(100vh - 175px);
 }
 
 @media(max-width: 800px) {
@@ -403,13 +408,12 @@
 
 .markets-dropdown-content {
   backdrop-filter: blur(20px);
-  background-color: #0f0f128f;
-  border-radius: 12px;
-  box-shadow: 0 4px 10px rgb(0 0 0 / 100%);
+  background-color: #0000008f;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   left: 0;
   opacity: 0;
   position: absolute;
-  top: calc(100% + 6px);
+  top: calc(100%);
   transform: translateY(-20px);
   transition:
     opacity 0.2s ease,
@@ -421,7 +425,6 @@
 }
 
 .markets-dropdown-content.visible {
-  border-radius: 12px;
   opacity: 1;
   transform: translateY(0);
   visibility: visible;
@@ -591,7 +594,6 @@
 .token-info-right-section{
   display: flex;
   align-items: center;
-  background-color: #0f0f12;
   border-top-left-radius: 8px;
   border-bottom-left-radius: 8px;
   max-height: 47px;
@@ -610,17 +612,17 @@
 
 .chart-header.simplified .search-market-text {
   color: #a8a9b9;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   font-weight: 300;
 }
 
 
 .chart-header.simplified .second-asset {
   color: #a8a9b973;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 300; 
   margin: 0;
-  margin-top: -6px;
+  margin-top: -4px;
 }
 
 
@@ -638,7 +640,7 @@
 
 .filter-tab.active {
   color: #cad2e2;
-  background-color: #2a2a378f;
+  background-color: #2a2a375e;
 }
 
 
@@ -665,7 +667,7 @@
   padding: 3px 10px;
   border-radius: 4px;
   transition: all 0.2s ease;
-  background-color: #1c1c238f;
+  background-color: #1c1c2355;
   margin: 0 2px;
   flex-shrink: 0; 
 }

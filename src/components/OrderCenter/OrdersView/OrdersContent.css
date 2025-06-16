@@ -1,6 +1,7 @@
 .orders-oc-header {
+    background: rgb(6,6,6);
+
   align-items: center;
-  background: #0f0f12;
   color: #ffffff70;
   cursor: pointer;
   display: grid;

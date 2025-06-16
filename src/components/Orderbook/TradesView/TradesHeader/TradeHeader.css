@@ -1,6 +1,6 @@
 .trades-header {
   align-items: center;
-  box-shadow: 0 4px 4px #0f0f12;
+  box-shadow: 0 4px 4px rgb(6,6,6);
   color: #ffffff62;
   display: flex;
   font-size: 0.75rem;

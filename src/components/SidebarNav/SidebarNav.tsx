@@ -11,6 +11,9 @@ import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
+
+
+
 import SidebarTooltip from './SidebarTooltip';
 
 interface SidebarNavProps {

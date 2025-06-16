@@ -149,6 +149,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
+import Footer from './components/Footer/Footer.tsx';
 
 function App() {
   useEffect(() => {
@@ -1520,12 +1521,12 @@ function App() {
     isBuyOrderList: boolean
   ) => {
     const priceDecimals = Math.max(
-          0,
-          Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
-          Math.floor(
-            Math.log10(Number(latestPrice))
-          ) + (Math.log10(Number(latestPrice)) < -1 ? Math.log10(Number(latestPrice)) + 1 : 0)
-        )
+      0,
+      Math.floor(Math.log10(Number(activeMarket.priceFactor))) +
+      Math.floor(
+        Math.log10(Number(latestPrice))
+      ) + (Math.log10(Number(latestPrice)) < -1 ? Math.log10(Number(latestPrice)) + 1 : 0)
+    )
 
     const priceMap: { [key: string]: boolean } = {};
     if (userOrders && userOrders.length > 0 && orders && orders.length > 0) {
@@ -1681,7 +1682,8 @@ function App() {
         break;
       case '/mint':
         title = 'Mint | Crystal';
-        break;
+      case '/lend':
+        title = 'Lend | Crystal';
       case '/swap':
       case '/market':
       case '/limit':
@@ -2577,7 +2579,7 @@ function App() {
               let tempcanceledorders = [...canceledorders];
               let canceledOrdersChanged = false;
               settradesByMarket((tradesByMarket: any) => {
-                let temptradesByMarket = {...tradesByMarket};
+                let temptradesByMarket = { ...tradesByMarket };
                 let tradesByMarketChanged = false;
                 settradehistory((tradehistory: any) => {
                   let updatedTradeHistory = [...tradehistory];
@@ -2722,7 +2724,7 @@ function App() {
                               }
                               temporders.splice(index, 1);
                               let quoteasset =
-                              markets[marketKey].quoteAddress;
+                                markets[marketKey].quoteAddress;
                               let baseasset =
                                 markets[marketKey].baseAddress;
                               let amountquote = (
@@ -2792,7 +2794,7 @@ function App() {
                           let orderIndex = temporders.findIndex(
                             (sublist: any) =>
                               sublist[0] ==
-                            price &&
+                              price &&
                               sublist[1] ==
                               id &&
                               sublist[4] == marketKey,
@@ -4330,25 +4332,25 @@ function App() {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
   };
-  
+
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
-    
+
     setIsTransitioning(true);
     setIsWelcomeExiting(true);
-    
+
     setTimeout(() => {
       setIsConnectEntering(true);
     }, 200);
-    
+
     setTimeout(() => {
       setShowWelcomeScreen(false);
       setIsTransitioning(false);
       setIsWelcomeExiting(false);
     }, 200);
   };
-  
+
   const handleSetRef = async (used: string) => {
     let lookup
     setIsRefSigning(true);
@@ -4576,7 +4578,7 @@ function App() {
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
     let animatingTimer: ReturnType<typeof setTimeout> | undefined;
-  
+
     if (currentStep === 0) {
       animationStartTimer = setTimeout(() => {
         setAnimationStarted(true);
@@ -4584,18 +4586,18 @@ function App() {
     } else {
       setAnimationStarted(false);
     }
-  
+
     setAnimating(true);
     animatingTimer = setTimeout(() => {
       setAnimating(false);
     }, 300);
-  
+
     return () => {
       if (animationStartTimer) clearTimeout(animationStartTimer);
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
-  
+
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -5254,9 +5256,9 @@ function App() {
                 <div className="tokenlisttext">
                   <div className="tokenlistname">
                     {token.ticker}
-                    {favorites.includes(token.address) && (
+                    {/* {favorites.includes(token.address) && (
                       <span className="token-favorites-label">Favorite</span>
-                    )}
+                    )} */}
                   </div>
                   <div className="tokenlistticker">{token.name}</div>
                 </div>
@@ -5822,9 +5824,9 @@ function App() {
                 <div className="tokenlisttext">
                   <div className="tokenlistname">
                     {token.ticker}
-                    {favorites.includes(token.address) && (
+                    {/* {favorites.includes(token.address) && (
                       <span className="token-favorites-label">Favorite</span>
-                    )}
+                    )} */}
                   </div>
                   <div className="tokenlistticker">{token.name}</div>
                 </div>
@@ -6125,7 +6127,7 @@ function App() {
                         }
                       }
                     }}
-                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0'}
                     value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
                     autoFocus={!(windowWidth <= 1020)}
                   />
@@ -8414,7 +8416,7 @@ function App() {
                     }
                   }
                 }}
-                placeholder="0.00"
+                placeholder="0"
                 value={inputString}
                 autoFocus={
                   outputString === '' &&
@@ -8685,7 +8687,7 @@ function App() {
                   }
                 }}
                 value={outputString}
-                placeholder="0.00"
+                placeholder="0"
               />
             )}
             <button
@@ -9972,7 +9974,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0.00"
+              placeholder="0"
               value={inputString}
               autoFocus={!(windowWidth <= 1020)}
             />
@@ -10370,7 +10372,7 @@ function App() {
                   }
                 }}
                 value={outputString}
-                placeholder="0.00"
+                placeholder="0"
               />
               <button
                 className="button2"
@@ -10780,7 +10782,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0.00"
+              placeholder="0"
               value={limitPriceString}
               step={1 / Math.pow(10, Math.floor(Math.log10(Number(activeMarket.priceFactor))))}
             />
@@ -12335,7 +12337,7 @@ function App() {
                   }
                 }
               }}
-              placeholder="0.00"
+              placeholder="0"
               value={inputString}
               autoFocus={!(windowWidth <= 1020)}
             />
@@ -12683,7 +12685,7 @@ function App() {
                     }
                   }
                 }}
-                placeholder="0.00"
+                placeholder="0"
                 value={outputString}
               />
               <button
@@ -13845,6 +13847,7 @@ function App() {
           setTransactions={setTransactions}
           tokendict={tokendict}
         />
+        <Footer/>
       </div>
     </div>
   );
