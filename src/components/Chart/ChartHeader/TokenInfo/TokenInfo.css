@@ -203,7 +203,6 @@
 }
 
 .markets-list {
-  border-radius: 8px;
   display: flex;
   flex-direction: column;
   grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -220,7 +219,6 @@
 
 .markets-list::after {
   background: linear-gradient(180deg, rgba(21, 21, 23, 0) 0, #0f0f125a 100%);
-  border-radius: 8px;
   bottom: 0;
   content: '';
   height: 40px;
@@ -416,6 +414,7 @@
   visibility: hidden;
   width: 340px;
   z-index: 10;
+  border-bottom-right-radius: 8px;
 }
 
 .markets-dropdown-content.visible {
@@ -473,9 +472,7 @@
   transition: background-color.2s;
 }
 
-.market-item:hover {
-  background-color: #1e1e229d;
-}
+
 
 .market-pair-section {
   align-items: center;
