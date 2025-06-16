@@ -447,11 +447,13 @@ function App() {
       }
     }
 
-    if (window.innerHeight > 1080) return 361.58;
-    if (window.innerHeight > 960) return 320.38;
-    if (window.innerHeight > 840) return 279.18;
-    if (window.innerHeight > 720) return 237.98;
-    return 196.78;
+    if (window.innerHeight > 1080) return 367.58;
+    if (window.innerHeight > 960) return 324.38;
+    if (window.innerHeight > 840) return 282.18;
+    if (window.innerHeight > 720) return 239.98;
+    return 198.78;
+
+    
   });
   const [showChartOutliers, setShowChartOutliers] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
@@ -1643,15 +1645,15 @@ function App() {
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
-        setOrderCenterHeight(361.58);
+        setOrderCenterHeight(367.58);
       } else if (window.innerHeight > 960) {
-        setOrderCenterHeight(320.38);
+        setOrderCenterHeight(324.38);
       } else if (window.innerHeight > 840) {
-        setOrderCenterHeight(279.18);
+        setOrderCenterHeight(282.18);
       } else if (window.innerHeight > 720) {
-        setOrderCenterHeight(237.98);
+        setOrderCenterHeight(239.98);
       } else {
-        setOrderCenterHeight(196.78);
+        setOrderCenterHeight(198.78);
       }
     };
 
@@ -6878,11 +6880,11 @@ function App() {
 
                   let defaultHeight: number;
 
-                  if (window.innerHeight > 1080) defaultHeight = 361.58;
-                  else if (window.innerHeight > 960) defaultHeight = 320.38;
-                  else if (window.innerHeight > 840) defaultHeight = 279.18;
-                  else if (window.innerHeight > 720) defaultHeight = 237.98;
-                  else defaultHeight = 196.78;
+                  if (window.innerHeight > 1080) defaultHeight = 367.58;
+                  else if (window.innerHeight > 960) defaultHeight = 324.38;
+                  else if (window.innerHeight > 840) defaultHeight = 282.18;
+                  else if (window.innerHeight > 720) defaultHeight = 239.98;
+                  else defaultHeight = 198.78;
 
                   setOrderCenterHeight(defaultHeight);
                   localStorage.setItem(
