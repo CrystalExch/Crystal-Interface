@@ -510,7 +510,6 @@
     height: auto;
     margin: 0 0 5px 0;
     overflow: visible;
-    padding:0 5px;
   }
 
   .portfolio-content-container {
@@ -543,6 +542,11 @@
   .graph-container {
     height: 300px;
     margin: 0;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  }
+  .referral-stats-container{
+    border-top: none;
+    border-left: 1px solid rgba(179, 184, 249, 0.1);
   }
 
   .portfolio-graph-container {
@@ -555,6 +559,7 @@
     margin: 0;
     margin-bottom: 0;
     width: 100%;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
   }
 }
 

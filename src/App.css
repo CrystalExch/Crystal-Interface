@@ -1004,7 +1004,7 @@ body {
   content: '';
   inset: 0;
   position: absolute;
-  z-index: 11 !important;
+  z-index: 12 !important;
 }
 
 .connect-wallet-background.connected {
@@ -2906,7 +2906,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 @media(max-width:1020px){
   .sliding-tab-indicator{
-    height: 35px;
+    height: 30px;
   }
 }
 

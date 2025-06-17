@@ -48,6 +48,12 @@
   gap:4px;
 }
 
+@media(max-width: 1020px){
+  .token-info-container-simple{
+    display: none;
+  }
+}
+
 .symbol-info:hover {
   cursor: pointer;
 }
