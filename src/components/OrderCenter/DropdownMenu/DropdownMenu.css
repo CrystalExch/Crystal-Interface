@@ -29,10 +29,10 @@
 }
 
 .oc-dropdown-menu {
-  backdrop-filter: blur(10px);
-  background-color: #1a1a1f8f;
-  border-radius: 8px;
+  background-color: rgb(9, 9, 9);
+  border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   color: #ffffffbc;
   left: 0;
   margin: 0;

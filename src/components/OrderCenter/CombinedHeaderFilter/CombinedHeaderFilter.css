@@ -75,9 +75,10 @@
   position: absolute;
   top: calc(100% + 5px);
   left: 0;
-  background-color: #1a1a1f8f;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  background-color: rgb(9, 9, 9);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   overflow: hidden;
   z-index: 4;
   min-width: 100%;
@@ -85,7 +86,7 @@
 }
 
 .page-size-option {
-  padding: 3px 12px;
+  padding: 3px 9px;
   color: #ffffff6e;
   font-size: 0.75rem;
   cursor: pointer;
@@ -165,4 +166,10 @@
   width: 13px;
   transform: rotate(270deg);
   opacity: 0.70;
+}
+
+.page-size-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }

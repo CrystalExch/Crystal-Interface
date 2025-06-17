@@ -41,18 +41,15 @@
 
 .side-menu {
   backdrop-filter: blur(5px);
-  background: rgb(17 17 19 / 87.9%);
+  background: rgb(6,6,6);
   border: 1px solid rgb(255 255 255 / 3.4%);
-  border-bottom-right-radius: 10px;
-  border-top-right-radius: 10px;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 13px);
+  height: 100vh;
   left: -300px;
   opacity: 0;
   padding: 20px;
   position: fixed;
-  top: 5px;
   transition: left .3s, opacity .3s;
   visibility: hidden;
   width: 300px;

@@ -135,9 +135,10 @@ const ChartOrderbookPanel: React.FC<ChartOrderbookPanelProps> = ({
   };
 
   const orderBookStyle = {
-    width: !isOrderbookVisible ? '0' : `${orderbookWidth}px`,
-    minWidth: !isOrderbookVisible ? '0' : `${orderbookWidth}px`,
-    transition: isDragging ? 'none' : 'width 0.1s ease',
+    width: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
+    minWidth: isOrderbookVisible ? `${orderbookWidth}px` : '0px',
+    transition: isDragging ? 'none' : 'width 0.3s ease, min-width 0.3s ease',
+    overflow: 'hidden', 
   };
 
   return (

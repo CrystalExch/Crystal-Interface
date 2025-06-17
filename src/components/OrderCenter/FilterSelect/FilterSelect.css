@@ -21,9 +21,9 @@
 }
 
 .oc-filter-dropdown-arrow {
-  margin-left: 5px;
+  margin-left: 3px;
   transition: transform 0.3s ease;
-  width: 13px;
+  width: 20px;
 }
 
 .oc-filter-dropdown-arrow.open {
@@ -32,10 +32,10 @@
 
 .oc-filter-dropdown-list {
   animation: dropdownSlide 0.2s cubic-bezier(0.2, 0, 0.1, 1);
-  backdrop-filter: blur(10px);
-  background-color: #1a1a1f8f;
   border-radius: 5px;
   box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  background: rgb(9, 9, 9);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   color: rgb(255 255 255 / 75%);
   font-size: 0.8rem;
   font-weight: 300;

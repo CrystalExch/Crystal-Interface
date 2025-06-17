@@ -13,7 +13,6 @@
   top: 0;
   z-index: 10;
   transition: left 0.3s ease;
-  padding-bottom: 4px;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
@@ -115,7 +114,7 @@ body.sidebar-expanded .app-header {
 .transparent-button {
   background: none;
   border: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   color: #fff;
   cursor: pointer;
@@ -161,7 +160,7 @@ body.sidebar-expanded .app-header {
 .app-settings-button {
   align-items: center;
   background: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   cursor: pointer;
   display: flex;
@@ -179,7 +178,7 @@ body.sidebar-expanded .app-header {
 .history-button {
   align-items: center;
   background: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   cursor: pointer;
   display: flex;
@@ -278,8 +277,8 @@ body.sidebar-expanded .app-header {
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
-  max-height: 47px;
-  min-height: 47px;
+  max-height: 55px;
+  min-height: 55px;
   padding-right: 10px;
 }
 
@@ -288,8 +287,8 @@ body.sidebar-expanded .app-header {
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
-  max-height: 47px;
-  min-height: 47px;
+  max-height: 55px;
+  min-height: 55px;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 10px;
@@ -358,7 +357,7 @@ body.sidebar-expanded .app-header {
   }
   .mobile-left-header{
     display: flex;
-    margin-left: 5px;
+    margin-left: 10px;
   }
   .left-header{
     position: absolute;
@@ -366,7 +365,7 @@ body.sidebar-expanded .app-header {
   }
   .app-header{
     align-items: center;
-    left: 5px;
+    left: 0;
     padding: 0px;
   }
 }

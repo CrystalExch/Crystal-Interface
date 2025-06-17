@@ -1660,7 +1660,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   flex-direction: column;
   min-height: 480px;
-  background-color: rgb(6,6,6);
+  background: rgb(6,6,6);
 }
 
 .connect-wallet-background.unconnected {
@@ -1929,13 +1929,11 @@ body:has(.right-column.show) .blur-background-popups {
 
 .mobile-nav {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   box-sizing: border-box;
   display: flex;
   height: 30px;
   position: relative;
-  margin: 50px 5px 0px 5px;
-  margin-bottom: 4px;
+  margin-top: 50px;
 }
 
 .mobile-nav-link {
@@ -1952,16 +1950,11 @@ body:has(.right-column.show) .blur-background-popups {
 
 .mobile-nav-link.active {
   background: 0 0;
-  color: #fff;
+  color: #b7bad8;
 }
 
 .mobile-sliding-indicator {
-  background: #aaaecf03;
-  border: 1px solid #aaaecf20;
-  border-radius: 5px;
-  box-shadow:
-    inset 0 0.5px rgb(255 255 255/5.3%),
-    0 5px 15px rgb(0 0 0/20%);
+  border-bottom: 1.5px solid #aaaecf;
   height: 30px;
   position: absolute;
   transition: transform.2s ease;
@@ -1975,7 +1968,7 @@ body:has(.right-column.show) .blur-background-popups {
   flex: 1;
   min-height: 530px;
   gap: 1px;
-  background-color: rgba(179, 184, 249, 0.1);
+  background: rgba(179, 184, 249, 0.1);
 }
 
 .tokenlistcontainer {
@@ -2824,7 +2817,6 @@ body:has(.right-column.show) .blur-background-popups {
 
 .ordercenter-drag-handle {
   height: 2px;
-  background-color: transparent;
   cursor: row-resize;
   position: absolute;
   width: 100%;
@@ -3616,15 +3608,16 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .navlink-dropdown {
   position: absolute;
-  top: calc(100%);
+  top: calc(100% - 4px);
   left: 83.5%;
-  background: #0c0c0e;
   border-radius: 8px;
   padding: 2px 0;
   width: 33%;
   z-index: 5;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgb(9, 9, 9);
+  border-radius: 5px;
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   overflow: hidden;
   animation: dropdown-fade-in 0.2s ease-out forwards;
 }
@@ -3689,7 +3682,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 
 .main-content-wrapper.simple-view .navlink-dropdown {
-  top: calc(100% + 5px);
+  top: 100%;
   left: 200px;
   width: 80px;
 }
@@ -4638,7 +4631,6 @@ input[type="email"] {
     box-sizing: border-box;
     min-height: 550px;
     height: calc(100vh - 150px);
-    margin: 0px 0px 0px 5px;
     width: 100%;
   }
 
@@ -4736,11 +4728,8 @@ input[type="email"] {
   }
 
   .right-column {
-    background: #16171c;
-    border-top-left-radius: 15px;
-    border-top-right-radius: 15px;
+    background:rgb(6,6,6);
     bottom: 0;
-    box-shadow: #0000009d 0 -4px 20px;
     height: 500px;
     left: 0;
     min-width: unset;
@@ -4749,12 +4738,14 @@ input[type="email"] {
     right: 0;
     transform: translateY(100%);
     z-index: 8;
+    width: 100%;
   }
 
   .right-column .navlinkwrapper {
-    background: #ffffff05;
+    background: #ffffff04;
     flex-shrink: 0;
-    margin-bottom: 0;
+    margin-bottom: 10px;
+    margin-top: 10px;
     padding: 0;
     top: 0;
     z-index: 2;
@@ -4773,7 +4764,7 @@ input[type="email"] {
   }
 
   .layout-settings-background {
-    height: min(220px, 90vh);
+    height: min(250px, 90vh);
   }
 
   .layout-settings-header {
@@ -6727,3 +6718,20 @@ input[type="email"] {
 
 
 
+@media (max-width: 1020px) {
+  .right-column.mobile-peek {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    transform: translateY(calc(100% - 45px));
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+  }
+  .trade-container{
+    padding-bottom: 44px
+  }
+
+}

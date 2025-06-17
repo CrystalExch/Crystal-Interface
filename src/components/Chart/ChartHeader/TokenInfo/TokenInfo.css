@@ -4,9 +4,16 @@
   gap: 3px;
   padding: 7px 10px 7px 10px;
   position: relative;
-  max-height: 47px;
-  min-height: 47px;
+  max-height: 55px;
+  min-height: 55px;
   border-right:1px solid rgba(179, 184, 249, 0.1);
+}
+
+@media(max-width: 1020px){
+  .symbol-info{
+    min-height: 0;
+  }
+
 }
 
 .mobile-symbol-info {
@@ -55,6 +62,11 @@
   padding: 4px 8px;
   margin-left: -4px;
 }
+@media(max-width:1020px){
+  .ctrlktooltip{
+    display: none;
+  }
+}
 
 .price-display-section {
   cursor: default;
@@ -71,7 +83,7 @@
   display: flex;
   align-items: center;
   color: #fff;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   margin-bottom: -5px;
 }

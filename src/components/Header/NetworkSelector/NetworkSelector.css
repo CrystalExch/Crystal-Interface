@@ -7,7 +7,7 @@
 .network-selector-button {
   align-items: center;
   background: none;
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   cursor: pointer;
   display: flex;
@@ -31,11 +31,10 @@
 
 .network-dropdown {
   animation: dropdownSlide 0.2s cubic-bezier(0.2, 0, 0.1, 1);
-  backdrop-filter: blur(10px);
-  background: linear-gradient(180deg, #12121578 0%, #17171b79 100%);
-  border: 1px solid rgb(170 174 207 / 4%);
+  background-color: rgb(9, 9, 9);
   border-radius: 5px;
-  box-shadow: 0 4px 8px rgb(0 0 0/20%);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 20%);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   height: auto;
   left: 0;
   min-width: 160px;
@@ -89,16 +88,16 @@
   font-weight: 400;
 }
 
-.network-option.selected::after {
-  animation: pulseDot 2s infinite ease-in-out;
-  background-color: #aaaecf;
-  border-radius: 50%;
-  box-shadow: 0 0 4px rgb(170 174 207 / 40%);
+
+.network-option.selected::before {
+  background: #aaaecf;
+  bottom: 0;
   content: '';
-  height: 6px;
+  left: 0;
+  opacity: 0.8;
   position: absolute;
-  right: 16px;
-  width: 6px;
+  top: 0;
+  width: 2px;
 }
 
 @keyframes pulseDot {

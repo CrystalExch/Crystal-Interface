@@ -674,7 +674,42 @@ function App() {
     [tokendict],
   );
   const memoizedSortConfig = useMemo(() => ({ column: 'balance', direction: 'desc' }), []);
+const [isMobileDragging, setIsMobileDragging] = useState(false);
+const [mobileDragY, setMobileDragY] = useState(0);
+const [mobileStartY, setMobileStartY] = useState(0);
 
+const handleTouchStart = (e: React.TouchEvent) => {
+  if (windowWidth <= 1020 && showTrade) {
+    setMobileStartY(e.touches[0].clientY);
+    setIsMobileDragging(true);
+  }
+};
+
+const handleTouchMove = (e: React.TouchEvent) => {
+  if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
+  
+  const currentY = e.touches[0].clientY;
+  const deltaY = currentY - mobileStartY;
+  
+  if (deltaY > 0) {
+    setMobileDragY(deltaY);
+  }
+};
+
+const handleTouchEnd = () => {
+  if (!isMobileDragging || windowWidth > 1020) return;
+  
+  setIsMobileDragging(false);
+  
+  if (mobileDragY > 100) {
+    setShowTrade(false);
+    document.body.style.overflow = 'auto';
+    document.querySelector('.right-column')?.classList.add('hide');
+    document.querySelector('.right-column')?.classList.remove('show');
+    document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+  }
+  setMobileDragY(0);
+};
   // refs
   const popupref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -8196,7 +8231,12 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper"  onClick={() => {
+    if (windowWidth <= 1020 && !simpleView && !showTrade) {
+      setShowTrade(true);
+      document.querySelector('.trade-mobile-switch')?.classList.add('open');
+    }
+  }} data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -9691,7 +9731,12 @@ function App() {
   // limit ui component
   const limit = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}  onClick={() => {
+    if (windowWidth <= 1020 && !simpleView && !showTrade) {
+      setShowTrade(true);
+      document.querySelector('.trade-mobile-switch')?.classList.add('open');
+    }
+  }}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -11430,7 +11475,12 @@ function App() {
   // send ui component
   const send = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper"   onClick={() => {
+    if (windowWidth <= 1020 && !simpleView && !showTrade) {
+      setShowTrade(true);
+      document.querySelector('.trade-mobile-switch')?.classList.add('open');
+    }
+  }}data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -12113,7 +12163,12 @@ function App() {
   // scale ui component
   const scale = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper"  onClick={() => {
+    if (windowWidth <= 1020 && !simpleView && !showTrade) {
+      setShowTrade(true);
+      document.querySelector('.trade-mobile-switch')?.classList.add('open');
+    }
+  }} data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -13652,42 +13707,32 @@ function App() {
       <FullScreenOverlay isVisible={loading} />
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
-      {windowWidth <= 1020 &&
-        !simpleView &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
-          <>
-            <button
-              className="mobile-trade-button"
-              onClick={() => {
-                if (showTrade && !simpleView) {
-                  document.body.style.overflow = 'hidden'
-                  document
-                    .querySelector('.right-column')
-                    ?.classList.add('hide');
-                  document
-                    .querySelector('.right-column')
-                    ?.classList.remove('show');
-                  document
-                    .querySelector('.trade-mobile-switch')
-                    ?.classList.remove('open');
-                  setTimeout(() => {
-                    setShowTrade(false);
-                  }, 300);
-                } else {
-                  setShowTrade(true);
-                  document
-                    .querySelector('.trade-mobile-switch')
-                    ?.classList.add('open');
-                }
-              }}
-            >
-              <img src={mobiletradeswap} className="trade-mobile-switch" />
-            </button>
-            <div className={`right-column ${showTrade ? 'show' : ''}`}>
-              {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
-            </div>
-          </>
-        )}
+     
+{windowWidth <= 1020 &&
+  !simpleView &&
+  ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
+    <>
+      <div 
+        className={`right-column mobile-peek ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
+        style={{
+          transform: showTrade && isMobileDragging 
+            ? `translateY(${mobileDragY}px)` 
+            : showTrade 
+            ? 'translateY(0)' 
+            : 'translateY(calc(100% - 45px))'
+        }}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="mobile-drag-handle">
+          <div className="drag-indicator"></div>
+        </div>
+        
+        {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
+      </div>
+    </>
+  )}
       {
         <>
           <Header

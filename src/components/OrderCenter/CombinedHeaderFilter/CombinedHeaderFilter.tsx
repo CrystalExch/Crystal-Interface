@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import './CombinedHeaderFilter.css';
 import arrow from '../../../assets/arrow.svg';
+import { Check } from 'lucide-react';
 
 interface CombinedHeaderFilterProps {
   pageSize: number;
@@ -142,13 +143,16 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
             {isOpen && (
               <div className="page-size-dropdown">
                 {[10, 25, 50, 100].map(size => (
-                  <div
-                    key={size}
-                    className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
-                    onClick={() => handleSizeChange(size)}
-                  >
-                    {size}
-                  </div>
+<div
+  key={size}
+  className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
+  onClick={() => handleSizeChange(size)}
+>
+  <span>{size}</span>
+  {pageSize === size && (
+    <Check size={11} style={{ display: 'inline', marginLeft: '4px' }} />
+  )}
+</div>
                 ))}
               </div>
             )}

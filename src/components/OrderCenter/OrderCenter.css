@@ -17,6 +17,11 @@
   background-color: rgb(6,6,6);
 }
 
+@media(max-width: 1020px){
+  .oc-rectangle{
+    border-top: none;
+  }
+}
 .oc-top-bar {
   align-items: center;
   border-bottom: 1px solid rgb(58 58 63 / 40%);
