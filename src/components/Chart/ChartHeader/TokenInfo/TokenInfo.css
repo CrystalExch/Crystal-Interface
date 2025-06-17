@@ -79,6 +79,11 @@
   flex-direction: column;
 }
 
+@media(max-width: 400px){
+  .token-details{
+    display:none;
+  }
+}
 .trading-pair {
   display: flex;
   align-items: center;
@@ -414,10 +419,11 @@
   backdrop-filter: blur(20px);
   background-color: #0000008f;
   border: 1px solid rgba(179, 184, 249, 0.1);
+  border-left: none;
   left: 0;
   opacity: 0;
   position: absolute;
-  top: calc(100% + 4px);
+  top: 100%;
   transform: translateY(-20px);
   transition:
     opacity 0.2s ease,

@@ -153,10 +153,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
               .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
               .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setQuantityTextColor('#0f0f12')
+              .setQuantityTextColor('rgb(6,6,6)')
               .setCancelButtonIconColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-              .setCancelButtonBackgroundColor('#0f0f12')
-              .setBodyBackgroundColor('#0f0f12')
+              .setCancelButtonBackgroundColor('rgb(6,6,6)')
+              .setBodyBackgroundColor('rgb(6,6,6)')
               .setBodyTextColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
               .setBodyBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
               .setQuantityBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
@@ -271,7 +271,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       custom_css_url: '/AdvancedTradingChart.css',
       custom_font_family: 'Funnel Display',
       loading_screen: {
-        backgroundColor: '#0f0f12',
+        backgroundColor: 'rgb(6,6,6)',
         foregroundColor: '#aaaecf',
       },
       favorites: {
@@ -532,10 +532,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   .setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
                   .setLineColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                   .setQuantityBackgroundColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setQuantityTextColor('#0f0f12')
+                  .setQuantityTextColor('rgb(6,6,6)')
                   .setCancelButtonIconColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
-                  .setCancelButtonBackgroundColor('#0f0f12')
-                  .setBodyBackgroundColor('#0f0f12')
+                  .setCancelButtonBackgroundColor('rgb(6,6,6)')
+                  .setBodyBackgroundColor('rgb(6,6,6)')
                   .setBodyTextColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                   .setBodyBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')
                   .setQuantityBorderColor(order[3] == 1 ? '#50f08d' : 'rgb(239, 81, 81)')

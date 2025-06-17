@@ -139,6 +139,16 @@ body.sidebar-expanded .app-header {
   justify-content: center;
 }
 
+@media(max-width: 310px){
+  .header-wallet-address{
+    display: none;
+  }
+  .wallet-icon{
+      height: 18px !important;
+      width: 18px !important;
+      margin: 0 !important;
+  }
+}
 .connect-content {
   gap: 2px;
 }

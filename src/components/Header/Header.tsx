@@ -236,7 +236,7 @@ const Header: React.FC<HeaderProps> = ({
               ) : (
                 <span className="transparent-button-container">
                   <img src={walleticon} className="wallet-icon" />
-                  {`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}
+                  <span className="header-wallet-address">{`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}</span>
                 </span>
               )}
             </div>

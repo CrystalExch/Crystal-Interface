@@ -17,6 +17,12 @@
   width: 34px;
 }
 
+@media(max-width: 360px){
+  .network-selector-button{
+    display: none;
+  }
+}
+
 .network-selector-button:active,
 .network-selector-button:hover {
   opacity: 0.8;

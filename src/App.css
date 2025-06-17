@@ -975,13 +975,6 @@ body {
   color: #ffffff93;
 }
 
-body:has(.right-column.show) .blur-background-popups {
-  background-color: rgb(0 0 0/65%);
-  content: '';
-  inset: 0;
-  position: absolute;
-  z-index: 7;
-}
 
 .tokenselectbg {
   height: min(483px, 90vh);
@@ -2873,7 +2866,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .supply-borrow-popup {
   animation: fadeIn.2s ease-out;
   transform: translate(-50%, -50%);
-  z-index: 12;
+  z-index: 100;
   transition: opacity.2s ease-out;
   box-sizing: content-box;
   background-color: rgb(6,6,6);
@@ -2911,6 +2904,12 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transition: transform .2s ease;
   width: 33.33333%;
   z-index: 1;
+}
+
+@media(max-width:1020px){
+  .sliding-tab-indicator{
+    height: 35px;
+  }
 }
 
 .txpopup-container {
@@ -3701,7 +3700,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 
 
-body:has(.right-column.show),
+
 body:has(.tx-history-overlay.open),
 body:has(.modal-overlay),
 body:has(.blur-background-popups.active),
@@ -3732,29 +3731,9 @@ body:has(.popup-blur) {
 }
 
 
-.right-column.show {
-  position: fixed !important;
-  bottom: 0;
-  inset-inline: 0;
-  left: 0;
-  right: 0;
-  z-index: 8;
-  height: auto;
-  max-height: 100vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  transform: translateY(0) !important;
-}
 
-.right-column.show .swapmodal {
-  height: auto;
-  max-height: 90vh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  -webkit-overflow-scrolling: touch;
-  width: 100% !important;
-}
+
+
 
 .bg-bg-surface-default {
   background: transparent !important;
@@ -4638,17 +4617,7 @@ input[type="email"] {
     justify-content: center;
   }
 
-  .app-wrapper,
-  .right-column.show {
-    display: flex;
-    flex-direction: column;
-  }
 
-  .right-column.show {
-    animation: slideUpPanel.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    max-height: calc(100vh);
-    width: 100%;
-  }
 
   .trade-mobile-switch {
     max-height: 23px;
@@ -4704,12 +4673,7 @@ input[type="email"] {
     font-size: 0.7rem;
   }
 
-  .right-column.hide {
-    animation: slideDownPanel.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
-    display: block;
-    pointer-events: none;
-    width: 100%;
-  }
+
 
   .trade-mobile-view-container>div:first-child,
   .trade-mobile-view-container>div:nth-child(2) {
@@ -4730,22 +4694,22 @@ input[type="email"] {
   .right-column {
     background:rgb(6,6,6);
     bottom: 0;
-    height: 500px;
     left: 0;
     min-width: unset;
     overflow-y: auto;
     position: fixed;
     right: 0;
     transform: translateY(100%);
-    z-index: 8;
+    z-index: 11;
     width: 100%;
   }
 
   .right-column .navlinkwrapper {
-    background: #ffffff04;
+    background: #ffffff00;
     flex-shrink: 0;
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     margin-top: 10px;
+    height: 35px;
     padding: 0;
     top: 0;
     z-index: 2;
@@ -6724,14 +6688,15 @@ input[type="email"] {
     bottom: 0;
     left: 0;
     right: 0;
-    z-index: 1000;
-    transform: translateY(calc(100% - 45px));
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.3);
     border-top: 1px solid rgba(179, 184, 249, 0.1);
+    height: auto;
   }
-  .trade-container{
-    padding-bottom: 44px
+  
+  .right-column.mobile-peek:not(.dragging) {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
-
+  
+  .trade-container {
+    padding-bottom: 54px;
+  }
 }
