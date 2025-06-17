@@ -1681,7 +1681,6 @@ body {
   flex-direction: column;
   max-width: 90vw;
   padding: 0;
-  background: #0f0f12c0;
   backdrop-filter: blur(10px);
   border: 1.5px solid rgba(255, 255, 255, 0.05);
 }
@@ -1698,7 +1697,6 @@ body {
   line-height: 1.2;
   z-index: 12;
   border: 1.5px solid rgba(255, 255, 255, 0.07);
-  background-color: #0f0f12f0;
   border-radius: 12px;
   overflow: hidden;
   padding: 5px 10px;

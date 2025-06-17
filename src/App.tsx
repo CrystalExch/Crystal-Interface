@@ -81,7 +81,6 @@ import closebutton from './assets/close_button.png';
 import sendSwitch from './assets/send_arrow.svg';
 import walleticon from './assets/wallet_icon.png';
 import infoicon from './assets/icon.png';
-import mobiletradeswap from './assets/mobile_trade_swap.png';
 import refreshicon from './assets/circulararrow.png';
 import Xicon from './assets/Xicon.svg';
 
