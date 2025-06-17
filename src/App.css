@@ -4705,8 +4705,8 @@ input[type="email"] {
   .right-column .navlinkwrapper {
     background: #ffffff00;
     flex-shrink: 0;
-    margin-bottom: 5px;
-    margin-top: 10px;
+    margin-bottom: 0px;
+    margin-top: 5px;
     height: 35px;
     padding: 0;
     top: 0;
@@ -6695,6 +6695,6 @@ input[type="email"] {
   }
   
   .trade-container {
-    padding-bottom: 54px;
+    padding-bottom: 45px;
   }
 }

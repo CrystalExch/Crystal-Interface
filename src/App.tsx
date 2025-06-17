@@ -13718,7 +13718,7 @@ const handleTouchEnd = () => {
             ? `translateY(${mobileDragY}px)` 
             : showTrade 
             ? 'translateY(0)' 
-            : 'translateY(calc(100% - 55px))'
+            : 'translateY(calc(100% - 45px))'
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
