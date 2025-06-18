@@ -24,10 +24,16 @@
 }
 .oc-top-bar {
   align-items: center;
-  border-bottom: 1px solid rgb(58 58 63 / 40%);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   justify-content: space-between;
   padding-right: 5px;
+}
+
+@media(max-width: 1020px){
+  .oc-top-bar{
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+  }
 }
 
 .oc-type {

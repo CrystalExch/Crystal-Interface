@@ -567,4 +567,7 @@
   .mobile-stats-container {
     flex-direction: column;
   }
+  .referral-stats-container{
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+  }
 }
