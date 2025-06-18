@@ -132,7 +132,7 @@
   .leaderboard-user-info{
       display:grid;
       gap:10px;
-      grid-template-columns:1fr 1fr;
+      grid-template-columns:1.5fr 1fr;
       grid-template-rows:auto auto;
       padding:15px 20px
   }
@@ -149,6 +149,8 @@
 .info-column{
   flex:1
 }
+
+
 .column-header{
   display: flex;
   justify-content: space-between;
