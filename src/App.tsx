@@ -703,6 +703,7 @@ const handleTouchEnd = () => {
   if (mobileDragY > 100) {
     setShowTrade(false);
     document.body.style.overflow = 'auto';
+    document.body.style.overflow = 'auto';
     document.querySelector('.right-column')?.classList.add('hide');
     document.querySelector('.right-column')?.classList.remove('show');
     document.querySelector('.trade-mobile-switch')?.classList.remove('open');
@@ -8233,6 +8234,7 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
+        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }} data-active={location.pathname.slice(1)}>
@@ -9733,6 +9735,7 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper" data-active={location.pathname.slice(1)}  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
+        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }}>
@@ -11477,6 +11480,7 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"   onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
+        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }}data-active={location.pathname.slice(1)}>
@@ -12165,6 +12169,7 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
+        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }} data-active={location.pathname.slice(1)}>
