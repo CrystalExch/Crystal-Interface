@@ -4546,7 +4546,6 @@ const handleTouchEnd = () => {
         setpopup(0)
       }
       else {
-        setpopup(17);
       }
       return true;
     } catch (error) {
@@ -4596,7 +4595,6 @@ const handleTouchEnd = () => {
           setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
-              setpopup(18);
               setTimeout(() => {
                 setIsTransitioning(false);
               });
