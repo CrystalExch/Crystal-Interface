@@ -476,7 +476,7 @@ function App() {
   });
   const [popup, setpopup] = useState(() => {
     const done = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    return done ? 0 : 14;
+    return done ? 0 : 0;
   });
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
@@ -3068,18 +3068,18 @@ const handleTouchEnd = () => {
                             } else {
                               updatedBars.push({
                                 time: flooredTradeTimeSec * 1000,
-                                open: openPrice,
-                                high: Math.max(openPrice, closePrice),
-                                low: Math.min(openPrice, closePrice),
+                                open: lastBar.close ?? openPrice,
+                                high: Math.max(lastBar.close ?? openPrice, closePrice),
+                                low: Math.min(lastBar.close ?? openPrice, closePrice),
                                 close: closePrice,
                                 volume: rawVolume,
                               });
                               if (realtimeCallbackRef.current[existingIntervalLabel]) {
                                 realtimeCallbackRef.current[existingIntervalLabel]({
                                   time: flooredTradeTimeSec * 1000,
-                                  open: openPrice,
-                                  high: Math.max(openPrice, closePrice),
-                                  low: Math.min(openPrice, closePrice),
+                                  open: lastBar.close ?? openPrice,
+                                  high: Math.max(lastBar.close ?? openPrice, closePrice),
+                                  low: Math.min(lastBar.close ?? openPrice, closePrice),
                                   close: closePrice,
                                   volume: rawVolume,
                                 });
@@ -4545,7 +4545,6 @@ const handleTouchEnd = () => {
         setpopup(0)
       }
       else {
-        setpopup(17);
       }
       return true;
     } catch (error) {
@@ -4595,7 +4594,6 @@ const handleTouchEnd = () => {
           setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
-              setpopup(18);
               setTimeout(() => {
                 setIsTransitioning(false);
               });
@@ -13028,7 +13026,7 @@ const handleTouchEnd = () => {
                   : ''
                   }`}
                 onChange={(e) => {
-                  if (/^\d*$/.test(e.target.value) && Number(e.target.value) <= 100) {
+                  if (/^\d*$/.test(e.target.value) && Number(e.target.value) <= 1000) {
                     setScaleOrdersString(e.target.value);
                     let temporders = BigInt(e.target.value == "1" ? 0 : e.target.value)
                     setScaleOrders(temporders)
