@@ -476,7 +476,7 @@ function App() {
   });
   const [popup, setpopup] = useState(() => {
     const done = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    return done ? 0 : 14;
+    return done ? 0 : 0;
   });
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
@@ -3068,18 +3068,18 @@ const handleTouchEnd = () => {
                             } else {
                               updatedBars.push({
                                 time: flooredTradeTimeSec * 1000,
-                                open: openPrice,
-                                high: Math.max(openPrice, closePrice),
-                                low: Math.min(openPrice, closePrice),
+                                open: lastBar.close ?? openPrice,
+                                high: Math.max(lastBar.close ?? openPrice, closePrice),
+                                low: Math.min(lastBar.close ?? openPrice, closePrice),
                                 close: closePrice,
                                 volume: rawVolume,
                               });
                               if (realtimeCallbackRef.current[existingIntervalLabel]) {
                                 realtimeCallbackRef.current[existingIntervalLabel]({
                                   time: flooredTradeTimeSec * 1000,
-                                  open: openPrice,
-                                  high: Math.max(openPrice, closePrice),
-                                  low: Math.min(openPrice, closePrice),
+                                  open: lastBar.close ?? openPrice,
+                                  high: Math.max(lastBar.close ?? openPrice, closePrice),
+                                  low: Math.min(lastBar.close ?? openPrice, closePrice),
                                   close: closePrice,
                                   volume: rawVolume,
                                 });
