@@ -35,13 +35,13 @@ body.sidebar-expanded .app-header {
 
 .hamburger {
   background: none;
-  border: 1.5px solid rgba(255, 255, 255, .07);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 5px;
   cursor: pointer;
   display: none;
   flex-direction: column;
-  height: 34px;
-  min-width: 34px;
+  height: 30px;
+  min-width: 30px;
   justify-content: center;
   align-items: center;
   position: relative;

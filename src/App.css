@@ -1920,6 +1920,8 @@ body {
 
 .mobile-nav {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+
   box-sizing: border-box;
   display: flex;
   height: 30px;
@@ -1960,6 +1962,12 @@ body {
   min-height: 530px;
   gap: 1px;
   background: rgba(179, 184, 249, 0.1);
+}
+
+@media(max-width:1020px){
+  .main-content-wrapper{
+    background: none;
+  }
 }
 
 .tokenlistcontainer {
@@ -2783,7 +2791,6 @@ body {
   height: 100%;
   justify-content: center;
   width: 100%;
-  min-height: 700px;
 }
 
 .main-content-wrapper.simple-view .right-column {
@@ -3948,8 +3955,8 @@ input[type="email"] {
   display: flex;
   flex-direction: column;
   border: 1.5px solid #1a1a1d7d;
+  backdrop-filter: blur(10px);
   box-sizing: content-box;
-  background: #0f0f10;
   border-radius: 8px;
   padding: 20px 0px;
   text-align: center;
@@ -4055,7 +4062,7 @@ input[type="email"] {
   padding: 15px;
   gap: 8px;
   box-sizing: content-box;
-  background: #0f0f10;
+  background: rgb(6,6,6);
   display: flex;
   flex-direction: column;
   border: 1.5px solid #1a1a1d7d;
@@ -5971,7 +5978,7 @@ input[type="email"] {
 
   .step-indicator.active,
   .step-indicator {
-    width: 50px;
+    width: 40px;
   }
 
   .account-setup-header {
@@ -6014,7 +6021,7 @@ input[type="email"] {
   }
 }
 
-@media(max-width: 500px){
+@media(max-width: 750px){
   .onboarding-crystal-text{
     display: none !important;
   }
