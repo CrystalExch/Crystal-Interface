@@ -13031,7 +13031,7 @@ const handleTouchEnd = () => {
                   : ''
                   }`}
                 onChange={(e) => {
-                  if (/^\d*$/.test(e.target.value) && Number(e.target.value) <= 100) {
+                  if (/^\d*$/.test(e.target.value) && Number(e.target.value) <= 1000) {
                     setScaleOrdersString(e.target.value);
                     let temporders = BigInt(e.target.value == "1" ? 0 : e.target.value)
                     setScaleOrders(temporders)

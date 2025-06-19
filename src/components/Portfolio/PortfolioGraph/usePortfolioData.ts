@@ -178,7 +178,7 @@ export const usePortfolioData = (
                 decimals: token.decimals,
               }));
         
-              const batchSize = 5;
+              const batchSize = 13;
               for (let i = 0; i < dateRange.length; i += batchSize) {
                 if (!isFetching) return;
                 const batch = dateRange.slice(i, i + batchSize);
