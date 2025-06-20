@@ -8896,7 +8896,8 @@ const handleTouchEnd = () => {
                 if (popup) popup.classList.remove('visible');
               }}
               style={{
-                background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 25) ${sliderPercent}%)`,
+                background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
+                
               }}
             />
             <div className="slider-percentage-popup">{sliderPercent}%</div>

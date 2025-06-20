@@ -544,7 +544,7 @@ html {
 .scalebgtop.exceed-balance,
 .scalebottombg.exceed-balance {
   background-color: #ff575709;
-  border: 1.5px solid #ff57576f !important;
+  border: 1px solid #ff57576f !important;
   box-shadow: 0 0 5px rgb(255 87 87/20%);
 }
 
@@ -572,7 +572,7 @@ html {
 .main-content-wrapper.simple-view .scalebgtop.exceed-balance,
 .main-content-wrapper.simple-view .scalebottombg.exceed-balance {
   background-color: #ff57570f;
-  border: 1.5px solid #ff57578a !important;
+  border: 1px solid #ff57578a !important;
 }
 
 @keyframes slideUp {
@@ -1344,7 +1344,7 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1.5px solid #0f0f12;
+  border: 1px solid #0f0f12;
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -1359,7 +1359,7 @@ body {
 }
 
 .scalebgtop {
-  border: 1.5px solid #4b4b5822;
+  border: 1px solid #4b4b5822;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1370,7 +1370,7 @@ body {
 }
 
 .scalebottombg {
-  border: 1.5px solid #4b4b5822;
+  border: 1px solid #4b4b5822;
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1581,7 +1581,7 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 2px solid #0f0f12;
+  border: 1.5px solid #0f0f12;
   background-color: rgb(6,6,6);
   border-radius: 8px;
   cursor: pointer;
@@ -1843,7 +1843,7 @@ body {
 }
 
 .inputbg.active {
-  border: 1.5px solid #4b4b58;
+  border: 1px solid #4b4b58;
   box-shadow: 0 0 5px rgb(170 174 207/20%);
 }
 
@@ -1851,7 +1851,7 @@ body {
 .inputbg.exceed-balance,
 .sendbg.exceed-balance {
   background-color: #ff575709;
-  border: 1.5px solid #ff57576f !important;
+  border: 1px solid #ff57576f !important;
   box-shadow: 0 0 5px rgb(255 87 87/20%);
 }
 
@@ -3115,8 +3115,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .slider-percentage-popup {
   align-items: center;
-  backdrop-filter: blur(10px);
-  background-color: #c8ccf111;
+  background-color: rgb(9,9,9);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 4px;
   box-shadow: 0 2px 8px rgb(0 0 0/20%);
   color: #ffffffcf;
@@ -4505,7 +4505,7 @@ input[type="email"] {
 }
 
 .scale-info-box {
-  border: 1.5px solid #161618;
+  border: 1px solid #161618;
   border-radius: 6px;
   padding: 5px 10px;
   margin: 5px 12px;
