@@ -257,6 +257,7 @@
   transform: translateY(1px);
   transition: opacity.2s ease;
   width: 45px;
+  border-radius: 4px;
 }
 
 .port-loading::after {

@@ -1921,7 +1921,6 @@ body {
 .mobile-nav {
   border-top: 1px solid rgba(179, 184, 249, 0.1);
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-
   box-sizing: border-box;
   display: flex;
   height: 30px;
