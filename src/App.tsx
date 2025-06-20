@@ -476,7 +476,7 @@ function App() {
   });
   const [popup, setpopup] = useState(() => {
     const done = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    return done ? 0 : 0;
+    return done ? 0 : 14;
   });
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
@@ -702,7 +702,6 @@ const handleTouchEnd = () => {
   
   if (mobileDragY > 100) {
     setShowTrade(false);
-    document.body.style.overflow = 'auto';
     document.body.style.overflow = 'auto';
     document.querySelector('.right-column')?.classList.add('hide');
     document.querySelector('.right-column')?.classList.remove('show');
@@ -4546,6 +4545,7 @@ const handleTouchEnd = () => {
         setpopup(0)
       }
       else {
+        setpopup(17);
       }
       return true;
     } catch (error) {
@@ -4595,6 +4595,7 @@ const handleTouchEnd = () => {
           setUsernameResolved(true)
           if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
             setTimeout(() => {
+              setpopup(18);
               setTimeout(() => {
                 setIsTransitioning(false);
               });
@@ -8232,7 +8233,6 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
-        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }} data-active={location.pathname.slice(1)}>
@@ -9733,7 +9733,6 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper" data-active={location.pathname.slice(1)}  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
-        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }}>
@@ -11478,7 +11477,6 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"   onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
-        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }}data-active={location.pathname.slice(1)}>
@@ -12167,7 +12165,6 @@ const handleTouchEnd = () => {
       <div className="navlinkwrapper"  onClick={() => {
     if (windowWidth <= 1020 && !simpleView && !showTrade) {
       setShowTrade(true);
-        document.body.style.overflow = 'hidden';
       document.querySelector('.trade-mobile-switch')?.classList.add('open');
     }
   }} data-active={location.pathname.slice(1)}>
