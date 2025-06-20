@@ -1,5 +1,5 @@
 import React from 'react';
-import './StakeIcon.css';
+import '../SwapIcon/SwapIcon.css';
 
 interface StakeIconProps {
   tokenaddress: string;
