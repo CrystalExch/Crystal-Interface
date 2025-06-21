@@ -253,7 +253,6 @@
   border-bottom:1px solid #18181b83;
   display:flex;
   padding:7px 10px 7px 20px;
-  overflow: hidden;
 }
 .leaderboard-inner-row{
   display: flex;

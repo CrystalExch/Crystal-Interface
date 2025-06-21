@@ -411,6 +411,10 @@ export const translations: any = {
     stakeComplete: "Stake Complete",
     stake: "Stake",
     stakeSubtitle: "Route through the LST's staking contract instead of swapping against the orderbook",
+    expand: "Expand",
+    collapse: "Collapse",
+    show: "Show",
+    perPage: "Per Page",
   },
   CN: {
     trade: "交易",
@@ -822,6 +826,10 @@ export const translations: any = {
     stakeComplete: "质押完成", 
     stake: "质押",
     stakeSubtitle: "通过 LST 的质押合约进行兑换，而不是在订单簿上交易",
+    expand: "展开",
+    collapse: "收起",
+    show: "显示",
+    perPage: "每页",
   },
   JP: {
     trade: "取引",
@@ -1233,6 +1241,10 @@ export const translations: any = {
     stakeComplete: "ステーキング完了",
     stake: "ステーキング",
     stakeSubtitle: "オーダーブックでのスワップではなく、LST のステーキング契約を通じてルートします",
+    expand: "展開",
+    collapse: "折りたたむ",
+    show: "表示",
+    perPage: "ページあたり",
   },
   KR: {
     trade: '거래',
@@ -1644,6 +1656,10 @@ export const translations: any = {
     stakeComplete: "스테이킹 완료",
     stake: "스테이킹",
     stakeSubtitle: "오더북에서 교환하는 대신 LST 스테이킹 계약을 통해 라우팅합니다",
+    expand: "펼치기",
+    collapse: "접기",
+    show: "표시",
+    perPage: "페이지당",
   },
   ES: {
     trade: 'Comerciar',
@@ -2055,6 +2071,10 @@ export const translations: any = {
     stakeComplete: "Depósito completado",
     stake: "Stake",
     stakeSubtitle: "Usa el contrato de staking del LST en lugar de intercambiar en el libro de órdenes",
+    expand: "Expandir",
+    collapse: "Contraer",
+    show: "Mostrar",
+    perPage: "Por Página",
   },
   ID: {
     trade: "Perdagangan",
@@ -2466,6 +2486,10 @@ export const translations: any = {
     stakeComplete: "Staking Selesai",
     stake: "Stake",
     stakeSubtitle: "Gunakan kontrak staking LST alih-alih menukar melalui orderbook",
+    expand: "Perluas",
+    collapse: "Ciutkan",
+    show: "Tampilkan",
+    perPage: "Per Halaman",
   },
   RU: {
     trade: 'Торговля',
@@ -2877,6 +2901,10 @@ export const translations: any = {
     stakeComplete: "Стекинг завершен",
     stake: "Стейкинг",
     stakeSubtitle: "Использовать стейкинг-контракт LST вместо обмена через ордербук",
+    expand: "Развернуть",
+    collapse: "Свернуть",
+    show: "Показать",
+    perPage: "На Странице",
   },
   VN: {
     trade: 'Giao Dịch',
@@ -3288,6 +3316,10 @@ export const translations: any = {
     stakeComplete: "Đặt cược hoàn tất",
     stake: "Stake",
     stakeSubtitle: "Chuyển qua hợp đồng staking của LST thay vì giao dịch qua sổ lệnh",
+    expand: "Mở rộng",
+    collapse: "Thu gọn",
+    show: "Hiển thị",
+    perPage: "Mỗi Trang",
   },
   PH: {
     trade: "Trade",
@@ -3699,6 +3731,10 @@ export const translations: any = {
     stakeComplete: "Tapos na ang stake",
     stake: "Stake",
     stakeSubtitle: "Gamitin ang staking contract ng LST imbes na makipagpalitan sa orderbook",
+    expand: "Palawakin",
+    collapse: "Tiklupin",
+    show: "Ipakita",
+    perPage: "Bawat Pahina",
   },
 };
 

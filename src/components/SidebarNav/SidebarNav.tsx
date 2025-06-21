@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
-import mint from '../../assets/mintanvil.png';
 import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/wallet_icon.png';
 import referrals from '../../assets/referrals.png';
@@ -163,15 +162,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           >
             <img src={leaderboard} className="sidebar-icon" />
             <span className="sidebar-label">{t('leaderboard')}</span>
-          </Link>
-          <Link
-            to="/mint"
-            className={`page-mode-button ${path === '/mint' ? 'active' : ''}`}
-            onMouseEnter={(e) => handleTooltip(e, t('mint'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={mint} className="sidebar-icon" />
-            <span className="sidebar-label">{t('mint')}</span>
           </Link>
         </div>
 

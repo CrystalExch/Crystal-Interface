@@ -135,7 +135,6 @@ import TooltipLabel from './components/TooltipLabel/TooltipLabel.tsx';
 import TransactionPopupManager from './components/TransactionPopupManager/TransactionPopupManager';
 import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniChart.tsx';
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
-import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
@@ -1682,9 +1681,6 @@ function App() {
         break;
       case '/leaderboard':
         title = 'Leaderboard | Crystal';
-        break;
-      case '/mint':
-        title = 'Mint | Crystal';
         break;
       case '/lend':
         title = 'Lend | Crystal';
@@ -13808,16 +13804,6 @@ function App() {
               />
             }
           />
-          <Route path="/mint"
-            element={
-              <NFTMintingPage 
-                address={address ?? undefined}
-                sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
-                setChain={handleSetChain}
-              />
-            }>
-          </Route>
           <Route
             path="/portfolio"
             element={
