@@ -212,7 +212,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           <button
             onClick={toggleSidebar}
             className="sidebar-toggle-button"
-            onMouseEnter={(e) => handleTooltip(e, expanded ? 'Collapse' : 'Expand')}
+            onMouseEnter={(e) => handleTooltip(e, expanded ? t('collapse') : t('expand'))}
             onMouseLeave={handleTooltipHide}
           >
             <svg
@@ -226,7 +226,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             >
               <polyline points="9 18 15 12 9 6"></polyline>
             </svg>
-            <span className="sidebar-label">{expanded ? 'Collapse' : 'Expand'}</span>
+            <span className="sidebar-label">{expanded ? t('collapse') : t('expand')}</span>
           </button>
         </div>
         </div>

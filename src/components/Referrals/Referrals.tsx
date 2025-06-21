@@ -343,21 +343,25 @@ const displayName = username && username.trim() !== ''
             </div>
           </div>
           <div className="total-referrals-container">
-            {isLoading ? (
-              <div className="referrals-skeleton referrals-count-skeleton"></div>
-            ) : (
-              <span className="referral-count-number">{referredCount}</span>
-            )}
-            <span>{t('totalUsersReferred')}</span>
+            <div className="ref-inner-container">
+              {isLoading ? (
+                <div className="referrals-skeleton referrals-count-skeleton"></div>
+              ) : (
+                <span className="referral-count-number">{referredCount}</span>
+              )}
+              <span>{t('totalUsersReferred')}</span>
+            </div>
             <Users className="referred-count-icon" size={30} />
           </div>
           <div className="total-crystals-earned-container">
-            {isLoading ? (
-              <div className="referrals-skeleton referrals-count-skeleton"></div>
-            ) : (
-              <span className="referral-count-number">{commissionBonus}</span>
-            )}
-            <span className="referrals-bonus-content">{t('crystalsFromReferrals')}</span>
+            <div className="ref-inner-container">
+              {isLoading ? (
+                <div className="referrals-skeleton referrals-count-skeleton"></div>
+              ) : (
+                <span className="referral-count-number">{commissionBonus}</span>
+              )}
+              <span className="referrals-bonus-content">{t('crystalsFromReferrals')}</span>
+            </div>
             <Gem className="referred-count-icon" size={30} />
           </div>
         </div>

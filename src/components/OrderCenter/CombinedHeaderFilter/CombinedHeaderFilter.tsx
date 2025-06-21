@@ -120,7 +120,7 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
     <div className="combined-header-filter">
       {showPageSize && (
         <div className="page-size-container">
-          <span className="show-text">Show</span>
+          <span className="show-text">{t('show')}</span>
           <div className="page-size-section" ref={dropdownRef}>
             <div className="page-size-button" onClick={toggleDropdown}>
               <span className="page-size-display">{pageSize}</span>
@@ -143,21 +143,21 @@ const CombinedHeaderFilter: React.FC<CombinedHeaderFilterProps> = ({
             {isOpen && (
               <div className="page-size-dropdown">
                 {[10, 25, 50, 100].map(size => (
-<div
-  key={size}
-  className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
-  onClick={() => handleSizeChange(size)}
->
-  <span>{size}</span>
-  {pageSize === size && (
-    <Check size={11} style={{ display: 'inline', marginLeft: '4px' }} />
-  )}
-</div>
+                  <div
+                    key={size}
+                    className={`page-size-option ${pageSize === size ? 'selected' : ''}`}
+                    onClick={() => handleSizeChange(size)}
+                  >
+                    <span>{size}</span>
+                    {pageSize === size && (
+                      <Check size={11} style={{ display: 'inline', marginLeft: '4px' }} />
+                    )}
+                  </div>
                 ))}
               </div>
             )}
           </div>
-          <span className="per-page-text">per page</span>
+          <span className="per-page-text">{t('perPage')}</span>
         </div>
       )}
       

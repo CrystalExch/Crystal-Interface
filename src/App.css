@@ -3302,6 +3302,17 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transition: background-color .25s ease-out;
 }
 
+body:has(.right-column.show) .blur-background-popups {
+    background-color: #000000a6;
+    content: "";
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    position: absolute;
+    z-index: 7;
+}
+
 .search-markets-dropdown-popup {
   border-radius: 16px;
   background: transparent;
@@ -3704,7 +3715,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 
 
-
+body:has(.right-column.show),
 body:has(.tx-history-overlay.open),
 body:has(.modal-overlay),
 body:has(.blur-background-popups.active),
@@ -4706,6 +4717,16 @@ input[type="email"] {
     transform: translateY(100%);
     z-index: 11;
     width: 100%;
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    height: auto;
+  }
+  
+  .right-column:not(.dragging) {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .trade-container {
+    padding-bottom: 45px;
   }
 
   .right-column .navlinkwrapper {
@@ -6681,25 +6702,4 @@ input[type="email"] {
   padding: 0 40px;
   bottom: 80px;
   z-index: 100; 
-}
-
-
-
-@media (max-width: 1020px) {
-  .right-column.mobile-peek {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
-    height: auto;
-  }
-  
-  .right-column.mobile-peek:not(.dragging) {
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-  
-  .trade-container {
-    padding-bottom: 45px;
-  }
 }
