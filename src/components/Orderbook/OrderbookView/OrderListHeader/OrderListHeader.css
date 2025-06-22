@@ -34,9 +34,11 @@
 
 .ol-header .interval-select-wrapper {
   height: 20px;
-  padding: 2px 6px;
+  padding: 0px 6px;
+  margin-top: 2px;
 }
 
 .total-name {
   margin-right: -3px;
 }
+
