@@ -621,6 +621,7 @@ function App() {
     try {
       setIsEditingSigning(true);
       await handleSetChain();
+      const scaledPrice = Math.round(currentLimitPrice * Number(markets[editingOrder[4]].priceFactor));
 
       const hash = await sendUserOperationAsync({
         uo: replaceOrder(
@@ -631,7 +632,7 @@ function App() {
           false,
           BigInt(editingOrder[0]),
           BigInt(editingOrder[1]),
-          BigInt(currentLimitPrice * Number(markets[editingOrder[4]].priceFactor)),
+          BigInt(scaledPrice),
           BigInt(0),
           usedRefAddress
         )
