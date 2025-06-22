@@ -2084,6 +2084,10 @@ body {
   width: min(340px, 90vw);
 }
 
+
+
+
+
 .layout-settings-background.simple {
   height: 90px;
   min-height: unset;
@@ -2867,7 +2871,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .connecting-popup,
 .tokenselectbg,
 .high-impact-confirmation-popup,
-.supply-borrow-popup {
+.supply-borrow-popup,
+.edit-limit-price-popup-bg {
   animation: fadeIn.2s ease-out;
   transform: translate(-50%, -50%);
   z-index: 100;
@@ -6703,3 +6708,145 @@ input[type="email"] {
   bottom: 80px;
   z-index: 100; 
 }
+
+
+
+
+.edit-limit-price-popup-bg{
+    border-radius: 8px;
+  box-shadow: 0 4px 24px rgb(0 0 0/10%);
+  display: flex;
+  flex-direction: column;
+  min-height: min(170px, 90vh);
+  left: 50%;
+  position: fixed;
+  top: 50%;
+  width: min(340px, 90vw);
+  padding-bottom: 15px;
+}
+
+.edit-limit-price-title{
+  font-size: 1.1rem;
+  font-weight: 300;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.edit-limit-price-subtitle{
+  font-size: 0.75rem;
+  font-weight: 300;
+  letter-spacing: -0.3px;
+  opacity: 0.5;
+}
+
+.edit-limit-price-header{
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  height: 50px;
+  width: 100%;
+  padding-left: 16px;
+}
+
+
+.edit-limit-price-content{
+  width: calc(100% - 30px);
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  padding-top: 10px;
+  gap: 4px;
+}
+
+.edit-limit-price-input{
+  background: none;
+  width: 100%;
+  height: 35px;
+  border-radius: 8px;
+  border: 1.5px solid #0f0f12;
+  padding-left: 10px;
+  font-size: 0.9rem;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+
+.edit-limit-price-input:focus{
+  outline: none;
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
+}
+
+
+.edit-limit-price-button-container{
+  display: flex;
+  width: 100%;
+  height: 30px;
+  gap: 4px;
+}
+
+.edit-limit-price-level-button{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 25%;
+  height: 100%;
+  border-radius: 8px;
+  border: 1.5px dashed #0f0f12;
+  font-size: 0.8rem;
+  color: grey;
+}
+
+.edit-limit-price-confirm-button{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+  color: #0f0f12;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  height: 32px;
+  letter-spacing: -0.3px;
+  min-height: 32px;
+  overflow: hidden;
+  transition:
+    filter.3s ease,
+    box-shadow.3s ease,
+    color.3s ease,
+    opacity.3s ease;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.signing-indicator{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
+.edit-limit-price-warning {
+  color: #f8564d;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+}
+

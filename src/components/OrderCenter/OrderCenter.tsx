@@ -49,6 +49,8 @@ interface OrderCenterProps {
   isBlurred?: boolean;
   isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
+  onLimitPriceUpdate?: (price: number) => void;
+  openEditOrderPopup: (order: any) => void;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -84,6 +86,8 @@ const OrderCenter: React.FC<OrderCenterProps> =
     waitForTxReceipt,
     isVertDragging,
     isOrderCenterVisible,
+    onLimitPriceUpdate,
+    openEditOrderPopup,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     
@@ -301,6 +305,9 @@ const OrderCenter: React.FC<OrderCenterProps> =
               setChain={setChain}
               waitForTxReceipt={waitForTxReceipt}
               onMarketSelect={onMarketSelect}
+              setpopup={setpopup}
+              onLimitPriceUpdate={onLimitPriceUpdate}
+              openEditOrderPopup={openEditOrderPopup}
             />
           );
         case 'tradeHistory':

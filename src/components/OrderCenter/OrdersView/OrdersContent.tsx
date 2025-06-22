@@ -22,16 +22,18 @@ interface OrdersContentProps {
   currentPage: number;
   waitForTxReceipt: any;
   onMarketSelect: any;
+  setpopup: (value: number) => void;
+  onLimitPriceUpdate?: (price: number) => void;
+  openEditOrderPopup: (order:any) => void;
 }
 
-const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt, onMarketSelect }) => {
+const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt, onMarketSelect,setpopup, onLimitPriceUpdate, openEditOrderPopup }) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     trades,
     orders,
     (order: any, column: string) => getOrderValue(order, column, markets, trades),
   );
   const [isSigning, setIsSigning] = useState(false);
-  
   const currentItems = sortedItems.length > 0 ? 
   sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
   [];
@@ -186,6 +188,9 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
               / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
               waitForTxReceipt={waitForTxReceipt}
               onMarketSelect={onMarketSelect}
+              setpopup={setpopup}
+              onLimitPriceUpdate={onLimitPriceUpdate}
+              openEditOrderPopup={openEditOrderPopup}
             />
           ))
         ) : (null

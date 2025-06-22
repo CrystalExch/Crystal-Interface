@@ -3,7 +3,7 @@ import React from 'react';
 import CopyButton from '../../CopyButton/CopyButton';
 import CancelButton from '../CancelButton/CancelButton';
 import SegmentedProgressBar from '../SegmentedProgressBar/SegmentedProgressBar.tsx';
-
+import editicon from '../../../assets/edit.png';
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
 import { fetchLatestPrice } from '../../../utils/getPrice';
@@ -25,11 +25,14 @@ interface OrderItemProps {
   quotePrice: any;
   waitForTxReceipt: any;
   onMarketSelect: any;
+  setpopup: (value: number) => void;
+  onLimitPriceUpdate?: (price: number) => void;
+  openEditOrderPopup: (order:any) => void;
 }
 
-const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt, onMarketSelect }) => {
+const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt, onMarketSelect, openEditOrderPopup }) => {
   const { favorites, toggleFavorite } = useSharedContext();
-  
+
   const marketKey = order[4];
   const market = markets[marketKey];
   const priceFactor = Number(market.priceFactor);
@@ -82,7 +85,7 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
         </div>
       </div>
       <div className="oc-cell market-cell" >
-        <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)}/>
+        <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)} />
         <div className="market-details" onClick={() => onMarketSelect(market)}>
           <div className="market-name">
             {market.baseAsset}-{market.quoteAsset}
@@ -103,7 +106,15 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
         </div>
       </div>
       <div className="oc-cell limit-price">
-        {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
+        <div className="open-order-price-level">
+          {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
+          <button className="edit-limit-price-button" 
+            onClick={() => {
+              openEditOrderPopup(order);
+            }}>
+              <img src={editicon} className="edit-icon"/>
+          </button>
+        </div>
         <div className="price-gap" style={{ color: gapColor }}>
           {formattedGap}
         </div>

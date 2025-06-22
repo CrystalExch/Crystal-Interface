@@ -56,7 +56,7 @@ import unwrapeth from './scripts/unwrapeth';
 import wrapeth from './scripts/wrapeth';
 import stake from './scripts/stake.ts';
 import { fetchLatestPrice } from './utils/getPrice.ts';
-
+import replaceOrder from './scripts/replaceOrder';
 // import utils
 import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
@@ -164,7 +164,7 @@ function App() {
   const sendUserOperationAsync = useCallback(
     (params: any) => rawSendUserOperationAsync(params),
     []
-  );  
+  );
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -451,7 +451,7 @@ function App() {
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
 
-    
+
   });
   const [showChartOutliers, setShowChartOutliers] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
@@ -512,7 +512,7 @@ function App() {
         return BigInt(amount);
       }
       else if ((tokenIn == eth && tokenOut == weth) ||
-      (tokenIn == weth && tokenOut == eth)) {
+        (tokenIn == weth && tokenOut == eth)) {
         return amountIn
       }
     }
@@ -544,7 +544,7 @@ function App() {
           .replace(/\.0+$/, '');
       }
       else if ((tokenIn == eth && tokenOut == weth) ||
-      (tokenIn == weth && tokenOut == eth)) {
+        (tokenIn == weth && tokenOut == eth)) {
         return inputString
       }
     }
@@ -606,6 +606,50 @@ function App() {
   const [chartDays, setChartDays] = useState<number>(1);
   const [marketsData, setMarketsData] = useState<any[]>([]);
   const [advChartData, setChartData] = useState<[DataPoint[], string, boolean]>([[], '', showChartOutliers]);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
+  const [isEditingSigning, setIsEditingSigning] = useState(false);
+  const openEditOrderPopup = (order: any) => {
+    setEditingOrder(order);
+    const currentPrice = order[0] / Number(markets[order[4]].priceFactor);
+    setCurrentLimitPrice(currentPrice);
+    setpopup(19);
+  };
+
+  const handleEditLimitPriceConfirm = async () => {
+    if (isEditingSigning || !editingOrder) return;
+
+    try {
+      setIsEditingSigning(true);
+      await handleSetChain();
+
+      const hash = await sendUserOperationAsync({
+        uo: replaceOrder(
+          router,
+          BigInt(0),
+          (editingOrder[3] == 1 ? markets[editingOrder[4]].quoteAsset : markets[editingOrder[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrder[3] == 1 ? markets[editingOrder[4]].quoteAddress : markets[editingOrder[4]].baseAddress,
+          (editingOrder[3] == 1 ? markets[editingOrder[4]].baseAsset : markets[editingOrder[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrder[3] == 1 ? markets[editingOrder[4]].baseAddress : markets[editingOrder[4]].quoteAddress,
+          false,
+          BigInt(editingOrder[0]),
+          BigInt(editingOrder[1]),
+          BigInt(currentLimitPrice * Number(markets[editingOrder[4]].priceFactor)),
+          BigInt(0),
+          usedRefAddress
+        )
+      });
+
+      await waitForTxReceipt(hash.hash);
+      refetch();
+      setpopup(0);
+      setEditingOrder(null);
+    } catch (error) {
+      console.error('Error editing order:', error);
+      const originalPrice = editingOrder[0] / Number(markets[editingOrder[4]].priceFactor);
+      setCurrentLimitPrice(originalPrice);
+    } finally {
+      setIsEditingSigning(false);
+    }
+  };
+
   const { chartData, portChartLoading } = usePortfolioData(
     address,
     Object.values(tokendict),
@@ -675,6 +719,14 @@ function App() {
   const [isMobileDragging, setIsMobileDragging] = useState(false);
   const [mobileDragY, setMobileDragY] = useState(0);
   const [mobileStartY, setMobileStartY] = useState(0);
+  const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
+  const handleLimitPriceUpdate = (price: number) => {
+    setCurrentLimitPrice(price);
+  };
+  const [hasEditedPrice, setHasEditedPrice] = useState(false);
+
+
+
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -694,7 +746,7 @@ function App() {
     { code: 'KR', name: '한국어' },
     { code: 'RU', name: 'русский' },
     { code: 'ID', name: 'Indonesia' },
-    { code: 'VN', name: 'Tiếng Việt'},
+    { code: 'VN', name: 'Tiếng Việt' },
     { code: 'PH', name: 'Filipino' },
   ];
 
@@ -956,7 +1008,7 @@ function App() {
             ? tokenIn === activeMarket?.baseAddress
               ? (amountOutSwap *
                 (activeMarket.scaleFactor || BigInt(1))) /
-                newPrice
+              newPrice
               : (amountOutSwap * newPrice) /
               (activeMarket.scaleFactor || BigInt(1))
             : BigInt(0),
@@ -968,7 +1020,7 @@ function App() {
                 Number(
                   (amountOutSwap *
                     (activeMarket.scaleFactor || BigInt(1))) /
-                    newPrice,
+                  newPrice,
                 ) /
                 10 ** Number(tokendict[tokenIn].decimals),
                 3,
@@ -992,12 +1044,12 @@ function App() {
               Math.floor(
                 Number(
                   (newPrice !== BigInt(0) &&
-                  amountOutSwap !== BigInt(0)
+                    amountOutSwap !== BigInt(0)
                     ? tokenIn === activeMarket?.baseAddress
                       ? (amountOutSwap *
                         (activeMarket.scaleFactor ||
                           BigInt(1))) /
-                          newPrice
+                      newPrice
                       : (amountOutSwap * newPrice) /
                       (activeMarket.scaleFactor || BigInt(1))
                     : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
@@ -1048,15 +1100,15 @@ function App() {
       }
     }
   }, [activeMarket?.scaleFactor,
-    activeMarket?.baseAddress,
+  activeMarket?.baseAddress,
     switched,
     amountIn,
     amountOutSwap,
     tokenIn,
     tokenOut,
-    tokenBalances[tokenIn],
+  tokenBalances[tokenIn],
     tokendict,
-    location.pathname.slice(1),
+  location.pathname.slice(1),
   ]);
 
   // set amount for a token
@@ -1140,27 +1192,27 @@ function App() {
       },
       ...(isStake
         ? tokenIn === eth && tokendict[tokenOut]?.lst && tokenOut == '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5'
+          ? [
+            {
+              abi: sMonAbi,
+              address: tokenOut,
+              functionName: switched
+                ? 'convertToAssets'
+                : 'convertToShares',
+              args: [switched ? amountOutSwap : amountIn] as const,
+            },
+          ]
+          : tokenIn === eth && tokendict[tokenOut]?.lst
             ? [
-                {
-                  abi: sMonAbi,
-                  address: tokenOut,
-                  functionName: switched
-                    ? 'convertToAssets'
-                    : 'convertToShares',
-                  args: [switched ? amountOutSwap : amountIn] as const,
-                },
-              ]
-            : tokenIn === eth && tokendict[tokenOut]?.lst
-            ? [
-                {
-                  abi: shMonadAbi,
-                  address: tokenOut,
-                  functionName: switched
-                    ? 'convertToAssets'
-                    : 'convertToShares',
-                  args: [switched ? amountOutSwap : amountIn] as const,
-                },
-              ]
+              {
+                abi: shMonadAbi,
+                address: tokenOut,
+                functionName: switched
+                  ? 'convertToAssets'
+                  : 'convertToShares',
+                args: [switched ? amountOutSwap : amountIn] as const,
+              },
+            ]
             : []
         : []) as any,
     ],
@@ -1876,7 +1928,7 @@ function App() {
         }
 
         if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
-          setStateIsLoading(false); 
+          setStateIsLoading(false);
           setstateloading(false);
           const stakeResult = data?.[5]?.result as bigint | undefined;
           if (stakeResult !== undefined && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
@@ -1886,10 +1938,10 @@ function App() {
                 stakeResult === 0n
                   ? ''
                   : customRound(
-                      Number(stakeResult) /
-                        10 ** Number(tokendict[tokenOut].decimals),
-                      3,
-                    ).toString(),
+                    Number(stakeResult) /
+                    10 ** Number(tokendict[tokenOut].decimals),
+                    3,
+                  ).toString(),
               );
             } else {
               setamountIn(stakeResult);
@@ -1897,27 +1949,27 @@ function App() {
                 stakeResult === 0n
                   ? ''
                   : customRound(
-                      Number(stakeResult) /
-                        10 ** Number(tokendict[tokenIn].decimals),
-                      3,
-                    ).toString(),
+                    Number(stakeResult) /
+                    10 ** Number(tokendict[tokenIn].decimals),
+                    3,
+                  ).toString(),
               );
               const percentage = !tempbalances[tokenIn]
-              ? 0
-              : Math.min(
-                100,
-                Math.floor(
-                  Number((stakeResult * BigInt(100)) / tempbalances[tokenIn]),
-                ),
-              );
-            setSliderPercent(percentage);
-            const slider = document.querySelector('.balance-amount-slider');
-            const popup = document.querySelector('.slider-percentage-popup');
-            if (slider && popup) {
-              const rect = slider.getBoundingClientRect();
-              (popup as HTMLElement).style.left =
-                `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
-            }
+                ? 0
+                : Math.min(
+                  100,
+                  Math.floor(
+                    Number((stakeResult * BigInt(100)) / tempbalances[tokenIn]),
+                  ),
+                );
+              setSliderPercent(percentage);
+              const slider = document.querySelector('.balance-amount-slider');
+              const popup = document.querySelector('.slider-percentage-popup');
+              if (slider && popup) {
+                const rect = slider.getBoundingClientRect();
+                (popup as HTMLElement).style.left =
+                  `${(rect.width - 15) * (percentage / 100) + 15 / 2}px`;
+              }
             }
           }
         } else if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
@@ -2254,7 +2306,7 @@ function App() {
                 : 5,
           );
           setwarning(
-            !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && 
+            !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
                   BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
@@ -2720,7 +2772,7 @@ function App() {
                                 try {
                                   temporders[index][10].remove();
                                 }
-                                catch {}
+                                catch { }
                                 temporders[index].splice(10, 1)
                               }
                               temporders.splice(index, 1);
@@ -2875,7 +2927,7 @@ function App() {
                                 try {
                                   temporders[orderIndex][10].remove();
                                 }
-                                catch {}
+                                catch { }
                                 temporders[orderIndex].splice(10, 1)
                               }
                               temporders.splice(orderIndex, 1);
@@ -2888,7 +2940,7 @@ function App() {
                                 try {
                                   temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                                 }
-                                catch {}
+                                catch { }
                               }
                               temporders[orderIndex][7] =
                                 order[2] - size / order[0];
@@ -2991,13 +3043,13 @@ function App() {
                         if (marketKey && Array.isArray(temptrades?.[marketKey])) {
                           const barSizeSec =
                             existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
-                            existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
-                            5 * 60;
+                              existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+                                existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+                                    existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+                                      existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+                                        existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+                                          5 * 60;
                           const priceFactor = Number(markets[marketKey].priceFactor);
                           for (const lastTrade of temptrades[marketKey]) {
                             const lastBarIndex = updatedBars.length - 1;
@@ -3008,7 +3060,7 @@ function App() {
                             rawVolume =
                               (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
                               10 ** Number(markets[marketKey].quoteDecimals);
-                            
+
                             const tradeTimeSec = lastTrade[6];
                             const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
                             const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
@@ -3893,7 +3945,7 @@ function App() {
                 ? tokenIn === activeMarket?.baseAddress
                   ? (amountOutSwap *
                     (activeMarket.scaleFactor || BigInt(1))) /
-                    limitPrice
+                  limitPrice
                   : (amountOutSwap * limitPrice) /
                   (activeMarket.scaleFactor || BigInt(1))
                 : BigInt(0),
@@ -3905,7 +3957,7 @@ function App() {
                     Number(
                       (amountOutSwap *
                         (activeMarket.scaleFactor || BigInt(1))) /
-                        limitPrice,
+                      limitPrice,
                     ) /
                     10 ** Number(tokendict[tokenIn].decimals),
                     3,
@@ -3929,12 +3981,12 @@ function App() {
                   Math.floor(
                     Number(
                       (limitPrice !== BigInt(0) &&
-                      amountOutSwap !== BigInt(0)
+                        amountOutSwap !== BigInt(0)
                         ? tokenIn === activeMarket?.baseAddress
                           ? (amountOutSwap *
                             (activeMarket.scaleFactor ||
                               BigInt(1))) /
-                              limitPrice
+                          limitPrice
                           : (amountOutSwap * limitPrice) /
                           (activeMarket.scaleFactor || BigInt(1))
                         : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
@@ -4145,7 +4197,7 @@ function App() {
             ? tokenIn === activeMarket?.baseAddress
               ? (amountOutSwap *
                 (activeMarket.scaleFactor || BigInt(1))) /
-                price
+              price
               : (amountOutSwap * price) /
               (activeMarket.scaleFactor || BigInt(1))
             : BigInt(0),
@@ -4157,7 +4209,7 @@ function App() {
                 Number(
                   (amountOutSwap *
                     (activeMarket.scaleFactor || BigInt(1))) /
-                    price,
+                  price,
                 ) /
                 10 ** Number(tokendict[tokenIn].decimals),
                 3,
@@ -4181,12 +4233,12 @@ function App() {
               Math.floor(
                 Number(
                   (price !== BigInt(0) &&
-                  amountOutSwap !== BigInt(0)
+                    amountOutSwap !== BigInt(0)
                     ? tokenIn === activeMarket?.baseAddress
                       ? (amountOutSwap *
                         (activeMarket.scaleFactor ||
                           BigInt(1))) /
-                          price
+                      price
                       : (amountOutSwap * price) /
                       (activeMarket.scaleFactor || BigInt(1))
                     : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
@@ -4924,7 +4976,7 @@ function App() {
                       }
                     } else {
                       setTokenOut(tokenIn);
-                      setswitched((switched) => {return !switched});
+                      setswitched((switched) => { return !switched });
                       if (amountIn != BigInt(0)) {
                         if (limitChase && mids?.[activeMarketKey]?.[0]) {
                           const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -5215,7 +5267,7 @@ function App() {
                       }
                     } else {
                       setTokenOut(tokenIn);
-                      setswitched((switched) => {return !switched});
+                      setswitched((switched) => { return !switched });
                       if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                         setInputString(outputString);
                         setoutputString(inputString);
@@ -5642,7 +5694,7 @@ function App() {
                       }
                     } else {
                       setTokenIn(tokenOut);
-                      setswitched((switched) => {return !switched});
+                      setswitched((switched) => { return !switched });
                       if (amountIn != BigInt(0)) {
                         if (limitChase && mids?.[activeMarketKey]?.[0]) {
                           const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -5780,7 +5832,7 @@ function App() {
                       }
                     } else {
                       setTokenIn(tokenOut);
-                      setswitched((switched) => {return !switched});
+                      setswitched((switched) => { return !switched });
                       if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
                         setInputString(outputString);
                         setoutputString(inputString);
@@ -7600,22 +7652,20 @@ function App() {
                   {[1, 2, 3, 4, 5, 6].map((index) => (
                     <div
                       key={index}
-                      className={`step-indicator ${
-                        popup === 14
-                          ? index === 1 ? 'active' : ''
-                          : popup === 17
+                      className={`step-indicator ${popup === 14
+                        ? index === 1 ? 'active' : ''
+                        : popup === 17
                           ? index === 2 ? 'active' : ''
                           : popup === 18
-                          ? index === 3 ? 'active' : ''
-                          : (currentStep + 4) === index ? 'active' : ''
-                        } ${
-                        popup === 14
+                            ? index === 3 ? 'active' : ''
+                            : (currentStep + 4) === index ? 'active' : ''
+                        } ${popup === 14
                           ? index < 1 ? 'completed' : ''
                           : popup === 17
-                          ? index < 2 ? 'completed' : ''
-                          : popup === 18
-                          ? index < 3 ? 'completed' : ''
-                          : (currentStep + 4) > index ? 'completed' : ''
+                            ? index < 2 ? 'completed' : ''
+                            : popup === 18
+                              ? index < 3 ? 'completed' : ''
+                              : (currentStep + 4) > index ? 'completed' : ''
                         } ${isTransitioning ? 'transitioning' : ''}`}
                     />
                   ))}
@@ -7682,7 +7732,7 @@ function App() {
                       </div>
                     </div>
                   )}
-                  
+
                   {popup == 17 && (
                     <div className="onboarding-section active">
                       <div className="onboarding-split-container">
@@ -7745,7 +7795,7 @@ function App() {
                       </div>
                     </div>
                   )}
-                  
+
                   <div
                     className={`onboarding-section username-section ${(popup === 14 || (isTransitioning)) && ((!username && usernameResolved) || transitionDirection == 'backward')
                       ? 'active'
@@ -8183,6 +8233,146 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 19 ? (
+          <div className="edit-limit-price-popup-bg" ref={popupref}>
+            <div className="edit-limit-price-header">
+              <span className="edit-limit-price-title">Edit Limit Price</span>
+              <span className="edit-limit-price-subtitle">Adjust the price at which your limit order will trigger</span>
+            </div>
+            <div className="edit-limit-price-content">
+
+              <input
+                className="edit-limit-price-input"
+                type="number"
+                value={currentLimitPrice === 0 ? '' : currentLimitPrice.toString()}
+                onChange={(e) => {
+                  const inputValue = e.target.value;
+                  if (inputValue === '') {
+                    setCurrentLimitPrice(0);
+                  } else {
+                    const newValue = parseFloat(inputValue);
+                    if (!isNaN(newValue)) {
+                      setCurrentLimitPrice(newValue);
+                    }
+                  }
+                  setHasEditedPrice(true);
+                }}
+                step="any"
+                min="0"
+                placeholder="0.00"
+              />
+
+              {(() => {
+                const isBuyOrder = editingOrder[3] === 1;
+                const marketKey = editingOrder[4];
+                const market = markets[marketKey];
+
+                let midPriceRaw = 0;
+                if (mids?.[marketKey]?.[0]) {
+                  midPriceRaw = isBuyOrder
+                    ? (mids[marketKey][0] == mids[marketKey][1] ? mids[marketKey][2] : mids[marketKey][0])
+                    : (mids[marketKey][0] == mids[marketKey][2] ? mids[marketKey][1] : mids[marketKey][0]);
+                }
+
+                const midPrice = market?.priceFactor ? Number(midPriceRaw) / Number(market.priceFactor) : 0;
+
+                const showWarning = midPrice > 0 && (
+                  (isBuyOrder && currentLimitPrice > midPrice) ||
+                  (!isBuyOrder && currentLimitPrice < midPrice)
+                );
+
+                return showWarning ? (
+                  <div className="edit-limit-price-warning">
+                    <span> {isBuyOrder
+                      ? t('priceOutOfRangeWarningBuy')
+                      : t('priceOutOfRangeWarningSell')}
+                    </span>
+                  </div>
+                ) : null;
+              })()}
+
+              <div className="edit-limit-price-button-container">
+                <button
+                  className="edit-limit-price-level-button"
+                  onClick={() => {
+                    const isBuyOrder = editingOrder[3] === 1;
+                    const newPrice = isBuyOrder
+                      ? Math.max(0, currentLimitPrice * 0.995)
+                      : currentLimitPrice * 1.005;
+                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
+                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
+                    setHasEditedPrice(true);
+                  }}
+                >
+                  {editingOrder && editingOrder[3] === 1 ? "-0.5%" : "+0.5%"}
+                </button>
+                <button
+                  className="edit-limit-price-level-button"
+                  onClick={() => {
+                    const isBuyOrder = editingOrder[3] === 1;
+                    const newPrice = isBuyOrder
+                      ? Math.max(0, currentLimitPrice * 0.99)
+                      : currentLimitPrice * 1.01;
+                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
+                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
+                    setHasEditedPrice(true);
+                  }}
+                >
+                  {editingOrder && editingOrder[3] === 1 ? "-1%" : "+1%"}
+                </button>
+                <button
+                  className="edit-limit-price-level-button"
+                  onClick={() => {
+                    const isBuyOrder = editingOrder[3] === 1;
+                    const newPrice = isBuyOrder
+                      ? Math.max(0, currentLimitPrice * 0.975)
+                      : currentLimitPrice * 1.025;
+                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
+                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
+                    setHasEditedPrice(true);
+                  }}
+                >
+                  {editingOrder && editingOrder[3] === 1 ? "-2.5%" : "+2.5%"}
+                </button>
+                <button
+                  className="edit-limit-price-level-button"
+                  onClick={() => {
+                    const isBuyOrder = editingOrder[3] === 1;
+                    const newPrice = isBuyOrder
+                      ? Math.max(0, currentLimitPrice * 0.95)
+                      : currentLimitPrice * 1.05;
+                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
+                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
+                    setHasEditedPrice(true);
+                  }}
+                >
+                  {editingOrder && editingOrder[3] === 1 ? "-5%" : "+5%"}
+                </button>
+              </div>
+
+              <div className="edit-limit-price-actions">
+                <button
+                  className="edit-limit-price-confirm-button"
+                  onClick={handleEditLimitPriceConfirm}
+                  disabled={isEditingSigning || !hasEditedPrice}
+                  style={{
+                    opacity: (isEditingSigning || !hasEditedPrice) ? 0.5 : 1,
+                    cursor: (isEditingSigning || !hasEditedPrice) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isEditingSigning ? (
+                    <div className="signing-indicator">
+                      <div className="loading-spinner"></div>
+                      <span>{t('signTransaction')}</span>
+                    </div>
+                  ) : (
+                    'Confirm'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -8190,12 +8380,12 @@ function App() {
   // trade ui component
   const swap = (
     <div className="rectangle">
-      <div className="navlinkwrapper"  onClick={() => {
-    if (windowWidth <= 1020 && !simpleView && !showTrade) {
-      setShowTrade(true);
-      document.querySelector('.trade-mobile-switch')?.classList.add('open');
-    }
-  }} data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper" onClick={() => {
+        if (windowWidth <= 1020 && !simpleView && !showTrade) {
+          setShowTrade(true);
+          document.querySelector('.trade-mobile-switch')?.classList.add('open');
+        }
+      }} data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -8859,7 +9049,7 @@ function App() {
               }}
               style={{
                 background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
-                
+
               }}
             />
             <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -9471,27 +9661,27 @@ function App() {
       </div>
       <div className="trade-info-rectangle">
         {(tokenIn == eth && tokendict[tokenOut]?.lst == true) && <div className="trade-fee">
-            <div className="label-container">
-              <TooltipLabel
-                label={t('stake')}
-                tooltipText={
-                  <div>
-                    <div className="tooltip-description">
-                      {t('stakeSubtitle')}
-                    </div>
+          <div className="label-container">
+            <TooltipLabel
+              label={t('stake')}
+              tooltipText={
+                <div>
+                  <div className="tooltip-description">
+                    {t('stakeSubtitle')}
                   </div>
-                }
-                className="impact-label"
-              />
-            </div>
-            <ToggleSwitch
-              checked={isStake}
-              onChange={() => {
-                const newValue = isStake == true ? false : true;
-                setIsStake(newValue);
-              }}
+                </div>
+              }
+              className="impact-label"
             />
-          </div>}
+          </div>
+          <ToggleSwitch
+            checked={isStake}
+            onChange={() => {
+              const newValue = isStake == true ? false : true;
+              setIsStake(newValue);
+            }}
+          />
+        </div>}
         {!multihop && !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="trade-fee">
             <div className="label-container">
@@ -9691,12 +9881,12 @@ function App() {
   // limit ui component
   const limit = (
     <div className="rectangle">
-      <div className="navlinkwrapper" data-active={location.pathname.slice(1)}  onClick={() => {
-    if (windowWidth <= 1020 && !simpleView && !showTrade) {
-      setShowTrade(true);
-      document.querySelector('.trade-mobile-switch')?.classList.add('open');
-    }
-  }}>
+      <div className="navlinkwrapper" data-active={location.pathname.slice(1)} onClick={() => {
+        if (windowWidth <= 1020 && !simpleView && !showTrade) {
+          setShowTrade(true);
+          document.querySelector('.trade-mobile-switch')?.classList.add('open');
+        }
+      }}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -10129,7 +10319,7 @@ function App() {
           onClick={() => {
             setTokenIn(tokenOut);
             setTokenOut(tokenIn);
-            setswitched((switched) => {return !switched});
+            setswitched((switched) => { return !switched });
             if (amountIn != BigInt(0)) {
               if (limitChase && mids?.[activeMarketKey]?.[0]) {
                 const price = tokenOut === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
@@ -10563,7 +10753,7 @@ function App() {
                         ? tokenIn === activeMarket?.baseAddress
                           ? (amountOutSwap *
                             (activeMarket.scaleFactor || BigInt(1))) /
-                            price
+                          price
                           : (amountOutSwap * price) /
                           (activeMarket.scaleFactor || BigInt(1))
                         : BigInt(0),
@@ -10575,7 +10765,7 @@ function App() {
                             Number(
                               (amountOutSwap *
                                 (activeMarket.scaleFactor || BigInt(1))) /
-                                price,
+                              price,
                             ) /
                             10 ** Number(tokendict[tokenIn].decimals),
                             3,
@@ -10599,12 +10789,12 @@ function App() {
                           Math.floor(
                             Number(
                               (price !== BigInt(0) &&
-                              amountOutSwap !== BigInt(0)
+                                amountOutSwap !== BigInt(0)
                                 ? tokenIn === activeMarket?.baseAddress
                                   ? (amountOutSwap *
                                     (activeMarket.scaleFactor ||
                                       BigInt(1))) /
-                                      price
+                                  price
                                   : (amountOutSwap * price) /
                                   (activeMarket.scaleFactor || BigInt(1))
                                 : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
@@ -10686,7 +10876,7 @@ function App() {
                         ? tokenIn === activeMarket?.baseAddress
                           ? (amountOutSwap *
                             (activeMarket.scaleFactor || BigInt(1))) /
-                            price
+                          price
                           : (amountOutSwap * price) /
                           (activeMarket.scaleFactor || BigInt(1))
                         : BigInt(0),
@@ -10698,7 +10888,7 @@ function App() {
                             Number(
                               (amountOutSwap *
                                 (activeMarket.scaleFactor || BigInt(1))) /
-                                price,
+                              price,
                             ) /
                             10 ** Number(tokendict[tokenIn].decimals),
                             3,
@@ -10722,12 +10912,12 @@ function App() {
                           Math.floor(
                             Number(
                               (price !== BigInt(0) &&
-                              amountOutSwap !== BigInt(0)
+                                amountOutSwap !== BigInt(0)
                                 ? tokenIn === activeMarket?.baseAddress
                                   ? (amountOutSwap *
                                     (activeMarket.scaleFactor ||
                                       BigInt(1))) /
-                                      price
+                                  price
                                   : (amountOutSwap * price) /
                                   (activeMarket.scaleFactor || BigInt(1))
                                 : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
@@ -11344,7 +11534,7 @@ function App() {
           ) : limitButton == 4 ? (
             t('lessThanMinSize')
           ) : limitButton == 5 ? (
-            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset
+            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell')) + ' ' + activeMarket.baseAsset
           ) : limitButton == 6 ? (
             t('insufficient') +
             (tokendict[tokenIn].ticker || '?') +
@@ -11355,7 +11545,7 @@ function App() {
           ) : limitButton == 8 ? (
             t('connectWallet')
           ) : (
-            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset : t('approve')
+            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell')) + ' ' + activeMarket.baseAsset : t('approve')
           )}
         </button>
       </div>
@@ -11405,7 +11595,7 @@ function App() {
           </div>
         </div>
 
-        {!addliquidityonly && !limitChase && 
+        {!addliquidityonly && !limitChase &&
           limitPrice != BigInt(0) &&
           ((limitPrice >= lowestAsk && tokenIn == activeMarket.quoteAddress) ||
             (limitPrice <= highestBid &&
@@ -11435,12 +11625,12 @@ function App() {
   // send ui component
   const send = (
     <div className="rectangle">
-      <div className="navlinkwrapper"   onClick={() => {
-    if (windowWidth <= 1020 && !simpleView && !showTrade) {
-      setShowTrade(true);
-      document.querySelector('.trade-mobile-switch')?.classList.add('open');
-    }
-  }}data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper" onClick={() => {
+        if (windowWidth <= 1020 && !simpleView && !showTrade) {
+          setShowTrade(true);
+          document.querySelector('.trade-mobile-switch')?.classList.add('open');
+        }
+      }} data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -12123,12 +12313,12 @@ function App() {
   // scale ui component
   const scale = (
     <div className="rectangle">
-      <div className="navlinkwrapper"  onClick={() => {
-    if (windowWidth <= 1020 && !simpleView && !showTrade) {
-      setShowTrade(true);
-      document.querySelector('.trade-mobile-switch')?.classList.add('open');
-    }
-  }} data-active={location.pathname.slice(1)}>
+      <div className="navlinkwrapper" onClick={() => {
+        if (windowWidth <= 1020 && !simpleView && !showTrade) {
+          setShowTrade(true);
+          document.querySelector('.trade-mobile-switch')?.classList.add('open');
+        }
+      }} data-active={location.pathname.slice(1)}>
         <div className="innernavlinkwrapper">
           <Link
             to={simpleView ? "/swap" : "/market"}
@@ -12477,7 +12667,7 @@ function App() {
           onClick={() => {
             setTokenIn(tokenOut);
             setTokenOut(tokenIn);
-            setswitched((switched) => {return !switched});
+            setswitched((switched) => { return !switched });
             if (amountIn != BigInt(0) && scaleStart && scaleEnd && scaleOrders && scaleSkew) {
               setInputString(outputString);
               setoutputString(inputString);
@@ -13420,9 +13610,9 @@ function App() {
           ) : scaleButton == 12 ? (
             t('connectWallet')
           ) : scaleButton == 13 ? (
-            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset : t('approve')
+            client ? (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell')) + ' ' + activeMarket.baseAsset : t('approve')
           ) : (
-            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell') ) + ' ' + activeMarket.baseAsset
+            (tokenIn == activeMarket.quoteAddress ? t('buy') : t('sell')) + ' ' + activeMarket.baseAsset
           )}
         </button>
       </div>
@@ -13650,6 +13840,8 @@ function App() {
                 waitForTxReceipt={waitForTxReceipt}
                 isVertDragging={isVertDragging}
                 isOrderCenterVisible={isOrderCenterVisible}
+                onLimitPriceUpdate={handleLimitPriceUpdate}
+                openEditOrderPopup={openEditOrderPopup}
               />
             </div>
             {windowWidth > 1020 && (
@@ -13671,14 +13863,14 @@ function App() {
         !simpleView &&
         ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
           <>
-            <div 
+            <div
               className={`right-column ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
               style={{
-                transform: showTrade && isMobileDragging 
-                  ? `translateY(${mobileDragY}px)` 
-                  : showTrade 
-                  ? 'translateY(0)' 
-                  : 'translateY(calc(100% - 45px))'
+                transform: showTrade && isMobileDragging
+                  ? `translateY(${mobileDragY}px)`
+                  : showTrade
+                    ? 'translateY(0)'
+                    : 'translateY(calc(100% - 45px))'
               }}
               onTouchStart={(e: React.TouchEvent) => {
                 if (windowWidth <= 1020 && showTrade) {
@@ -13688,19 +13880,19 @@ function App() {
               }}
               onTouchMove={(e: React.TouchEvent) => {
                 if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
-                
+
                 const currentY = e.touches[0].clientY;
                 const deltaY = currentY - mobileStartY;
-                
+
                 if (deltaY > 0) {
                   setMobileDragY(deltaY);
                 }
               }}
               onTouchEnd={() => {
                 if (!isMobileDragging || windowWidth > 1020) return;
-                
+
                 setIsMobileDragging(false);
-                
+
                 if (mobileDragY > 100) {
                   setShowTrade(false);
                   document.body.style.overflow = 'auto';
@@ -13714,7 +13906,7 @@ function App() {
               <div className="mobile-drag-handle">
                 <div className="drag-indicator"></div>
               </div>
-              
+
               {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
             </div>
           </>

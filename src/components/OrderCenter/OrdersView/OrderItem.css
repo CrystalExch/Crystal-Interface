@@ -29,3 +29,23 @@
   justify-self: center;
   padding: 0;
 }
+
+
+.edit-limit-price-button{
+  width: 15px;
+  height: 15px;
+  padding: 1px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.open-order-price-level{
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.edit-icon{
+    filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+}
+
