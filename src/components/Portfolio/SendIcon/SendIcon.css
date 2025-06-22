@@ -4,11 +4,11 @@
   color: #dadee49c;
   letter-spacing: -0.3px;
   padding: 3px 15px;
-  border-radius: 4px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid  #c3c6e340;
+  border: 1.5px solid  #c3c6e31f;
 }
 
 .send-icon:hover {
