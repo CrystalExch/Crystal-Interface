@@ -8,6 +8,8 @@
   visibility: hidden;
   width: 100%;
   z-index: 100;
+  background-color: rgba(0, 0, 0, .67);
+
 }
 
 .tx-history-overlay.open {
@@ -51,7 +53,6 @@
   visibility: hidden;
   width: 270px;
   z-index: 1000000004;
-  box-shadow: -10px 0 20px rgba(0, 0, 0, 0.7);
 
 }
 
