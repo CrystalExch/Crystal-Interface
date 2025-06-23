@@ -273,7 +273,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
       )}
     </div>
   );
-
+  const handleEditOrder = (_order: any) => {
+  };
   const tradingStats = (
     <div className="trading-stats-container">
       <div className="trading-stats-header">
@@ -402,6 +403,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           setChain={setChain}
           isBlurred={isBlurred}
           waitForTxReceipt={waitForTxReceipt}
+          openEditOrderPopup={handleEditOrder}
         />
       </div>
     </div>
