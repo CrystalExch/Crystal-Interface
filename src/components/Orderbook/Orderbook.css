@@ -59,26 +59,20 @@
 }
 
 .ob-tab.ob-active {
-  color: #bfc3de;
+  color: #b7bad8;
   opacity: 1;
-  text-shadow: 0 0 8px rgba(209, 214, 244, 0.7);
   transition:
-    color 0.3s,
+    color 0.2s,
     opacity 0.2s,
-    text-shadow 0.3s;
 }
 
 .ob-sliding-indicator {
   animation: glowPulse 2s infinite ease-in-out;
   background-color: #aaaecf;
-    box-shadow: 
-    0 0 4px #aaaecf,
-    0 0 8px rgba(170, 174, 207, 0.6),
-    0 0 16px rgba(170, 174, 207, 0.5),
-    0 0 32px rgba(170, 174, 207, 0.2);
-  border-radius: 1px;
+  border-top-left-radius: 1px;
+  border-top-right-radius: 1px;
   bottom: 0px;
   height: 1.5px;
   position: absolute;
-  transition: left 0.2s ease;
+  transition: left 0.2s ease, width 0.2s ease;
 }

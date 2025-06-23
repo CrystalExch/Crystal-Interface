@@ -53,7 +53,7 @@ export const translations: any = {
     orderHistory: 'Order History',
     no: 'No',
     yes: 'Yes',
-    total: 'TOTAL',
+    total: 'Total',
     Spread: 'Spread',
     orderbook: 'Order Book',
     trades: 'Trades',

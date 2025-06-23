@@ -99,7 +99,15 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
         </div>
       </div>
       <div className="oc-cell value-cell">
-        <span className="order-value">{formatBalance(usdValue, 'usd')}</span>
+        <div className="order-value">
+          {formatBalance(usdValue, 'usd')}
+          <div className="edit-limit-price-button" 
+            onClick={() => {
+              openEditOrderPopup(order);
+            }}>
+              <img src={editicon} className="edit-icon"/>
+          </div>
+        </div>
         <div className="amount">
           {formatDisplay(customRound(amount, 3))}
           <span className="oc-market-ticker"> {market.baseAsset}</span>
@@ -108,12 +116,12 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
       <div className="oc-cell limit-price">
         <div className="open-order-price-level">
           {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
-          <button className="edit-limit-price-button" 
+          <div className="edit-limit-price-button" 
             onClick={() => {
               openEditOrderPopup(order);
             }}>
               <img src={editicon} className="edit-icon"/>
-          </button>
+          </div>
         </div>
         <div className="price-gap" style={{ color: gapColor }}>
           {formattedGap}

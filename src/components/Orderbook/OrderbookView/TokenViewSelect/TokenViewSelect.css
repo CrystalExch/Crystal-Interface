@@ -4,6 +4,7 @@
 }
 
 .interval-select-wrapper {
+  align-items: center;
   cursor: pointer;
   display: flex;
   gap: 4px;

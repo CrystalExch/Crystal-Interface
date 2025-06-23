@@ -30,19 +30,15 @@
   padding: 0;
 }
 
-
 .edit-limit-price-button{
-  width: 15px;
-  height: 15px;
-  padding: 1px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
+  width: 17px;
+  cursor: pointer;
 }
 
 .open-order-price-level{
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 1px;
 }
 
 .edit-icon{
