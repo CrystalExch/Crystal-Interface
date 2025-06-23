@@ -1,6 +1,6 @@
 .txpopup {
-  background: #0b0b0ba4;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgb(8, 8, 8);
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
   height: auto;
@@ -10,8 +10,6 @@
   position: relative;
   transition: all 0.3s ease;
   width: 270px;
-  backdrop-filter: blur(5px);
-  
 }
 
 .txpopup-inner,

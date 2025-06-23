@@ -4327,7 +4327,7 @@ input[type="email"] {
   top: calc(100% + 4px);
   left: 0;
   right: 0;
-  background-color: #121214;
+  background-color: rgb(6,6,6);
   border: 1px solid #1a1a1d;
   border-radius: 6px;
   overflow: scroll;
@@ -4335,7 +4335,7 @@ input[type="email"] {
   max-height: 205px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   scrollbar-width: thin;
-  scrollbar-color: #1a1a1d #131317;
+  scrollbar-color:  rgb(22, 23, 23) rgb(6,6,6);
   animation: dropdownAppear 0.25s ease-out forwards;
   transform-origin: top center;
   transition: background-color 0.2s;
