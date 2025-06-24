@@ -156,12 +156,6 @@ const Header: React.FC<HeaderProps> = ({
             tradesByMarket={tradesByMarket}
           />
         </div>
-
-        <div className="chart-header-container">
-
-        </div>
-
-
         <div className={rightHeaderClass}>
           <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
