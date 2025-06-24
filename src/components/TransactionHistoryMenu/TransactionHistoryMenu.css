@@ -170,10 +170,12 @@
   font-size:.9rem
 }
 .tx-history-item{
+  display: flex;
+  align-items: center;
   border-top:1px solid rgba(255,255,255,.05);
   border-bottom:1px solid rgba(255,255,255,.05);
   overflow:hidden;
-  transition:background-color .2s ease
+  transition:background-color .2s ease;
 }
 .tx-history-item:hover{
   background-color:rgba(64,64,71,.1)
@@ -387,6 +389,7 @@
 
 .txhistory-inner {
   padding: 10px;
+  min-width: 100%;
 }
 
 .txhistory-title {
@@ -526,7 +529,6 @@
   margin-bottom: 4px;
 }
 
-/* Error X Styling */
 .txhistory-error-x-container {
   position: absolute;
   left: 0;
