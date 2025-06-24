@@ -4,7 +4,7 @@
   color: #fff;
   display: flex;
   flex: none;
-  height: 57px;
+  height: 53px;
   justify-content: space-between;
   left: 55px; 
   padding-right: 5px;
@@ -286,8 +286,8 @@ body.sidebar-expanded .app-header {
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
-  max-height: 55px;
-  min-height: 55px;
+  max-height: 53px;
+  min-height: 53px;
   padding-right: 10px;
 }
 
@@ -296,8 +296,8 @@ body.sidebar-expanded .app-header {
   align-items: center;
   flex-shrink: 0;
   gap: 6px;
-  max-height: 55px;
-  min-height: 55px;
+  max-height: 53px;
+  min-height: 53px;
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 10px;
@@ -370,7 +370,7 @@ body.sidebar-expanded .app-header {
   }
   .left-header{
     position: absolute;
-    top: 55px;
+    top: 53px;
   }
   .app-header{
     align-items: center;

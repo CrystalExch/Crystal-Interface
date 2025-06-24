@@ -36,8 +36,6 @@
   scroll-behavior: smooth;
   scrollbar-width: none;
   position: relative;
-  max-height: 55px;
-  min-height: 55px;
   padding-left: 10px;
   padding-right: 15px;
   width: 100vw;
