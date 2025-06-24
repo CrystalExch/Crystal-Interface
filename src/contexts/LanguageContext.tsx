@@ -79,7 +79,7 @@ export const translations: any = {
     status: 'Status',
     mid: 'Mid',
     placeOrder: 'Place Order',
-    avgPrice: 'AVG. PRICE',
+    avgPrice: 'Avg. Price',
     connectWalletSubtitle: 'Connect your wallet to start trading.',
     success: 'Success',
     viewOnExplorer: 'View on Explorer',
