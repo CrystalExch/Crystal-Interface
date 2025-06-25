@@ -2899,7 +2899,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   z-index: 100;
   transition: opacity.2s ease-out;
   box-sizing: content-box;
-  background-color: rgb(6, 6, 6);
+  background-color: rgb(15, 15, 15);
   border: 1.5px solid #1a1a1d7d;
 }
 
