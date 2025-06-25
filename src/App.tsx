@@ -4383,6 +4383,89 @@ function App() {
     return regex.test(value);
   };
 
+useEffect(() => {
+  const handleKeyDown = (event: KeyboardEvent) => {
+    if (event.key !== 'Enter') return;
+      const activeElement = document.activeElement;
+        if (popup === 19) {
+      event.preventDefault();
+      if (!isEditingSigning && editingOrder && hasEditedPrice) {
+        const confirmButton = document.querySelector('.edit-limit-price-confirm-button') as HTMLButtonElement;
+        if (confirmButton && !confirmButton.disabled) {
+          confirmButton.click();
+        }
+      }
+      return;
+    }
+    if (
+      popup !== 0 
+    ) {
+      return;
+    }
+    event.preventDefault();
+    const currentPath = location.pathname.slice(1);
+    if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
+      return;
+    }
+    switch (currentPath) {
+      case 'swap':
+      case 'market':
+        if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
+          const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
+          if (swapButton && !swapButton.disabled) {
+            swapButton.click();
+          }
+        }
+        break;
+      case 'limit':
+        if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+          if (limitButton && !limitButton.disabled) {
+            limitButton.click();
+          }
+        }
+        break;
+      case 'send':
+        if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
+          if (sendButton && !sendButton.disabled) {
+            sendButton.click();
+          }
+        }
+        break;
+      case 'scale':
+        if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+          if (scaleButton && !scaleButton.disabled) {
+            scaleButton.click();
+          }
+        }
+        break;
+      default:
+        break;
+    }
+  };
+  document.addEventListener('keydown', handleKeyDown);
+  return () => {
+    document.removeEventListener('keydown', handleKeyDown);
+  };
+}, [
+  location.pathname,
+  popup,
+  swapButtonDisabled,
+  limitButtonDisabled,
+  sendButtonDisabled,
+  scaleButtonDisabled,
+  displayValuesLoading,
+  isSigning,
+  connected,
+  userchain,
+  activechain,
+  isEditingSigning,
+  editingOrder,
+  hasEditedPrice
+]);
+  
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
