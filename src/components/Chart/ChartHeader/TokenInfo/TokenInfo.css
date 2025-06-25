@@ -6,7 +6,7 @@
   position: relative;
   max-height: 53px;
   min-height: 53px;
-  border-right:1px solid rgba(179, 184, 249, 0.1);
+  border-right:1px solid rgba(179, 184, 249, 0.12);
 }
 
 @media(max-width: 1020px){
@@ -424,7 +424,7 @@
 .markets-dropdown-content {
   backdrop-filter: blur(20px);
   background-color: #0000008f;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-left: none;
   left: 0;
   opacity: 0;

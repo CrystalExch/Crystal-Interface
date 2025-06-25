@@ -74,5 +74,5 @@
   bottom: 0px;
   height: 1.5px;
   position: absolute;
-  transition: left 0.2s ease, width 0.2s ease;
+  transition: left 0.2s ease;
 }

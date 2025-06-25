@@ -14,7 +14,7 @@
   width: 100%;
   margin: 5px;
   margin-top: max(5px, calc((100vh - 665px) / 3));
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 8px;
 }
 
@@ -308,7 +308,7 @@
 .earnings-section {
   padding: 0.25rem 1rem 0.25rem 1rem;
   max-width:  350px;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-right:none;
   border-top: none;
 
@@ -513,7 +513,7 @@
   width: 50%;
   padding: 0 1rem;
   gap: 4px;
-  border-right: 1px solid rgba(179, 184, 249, 0.1);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .refer-header-content{
@@ -578,8 +578,8 @@
   left: 50px;
   flex: 1;
   height: 78px;
-  border-right: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 
 }
 
@@ -604,8 +604,8 @@
   flex: 1;
   height: 78px;
   color: rgba(128, 128, 128, 0.7);
-  border-right: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .ref-inner-container {
@@ -624,7 +624,7 @@
   flex: 1;
   height: 78px;
   color: rgba(128, 128, 128, 0.7);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .referral-count-number{
@@ -740,8 +740,8 @@
   }
   .enter-code-container{
     width: 100%;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
-    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 
   }
 
@@ -812,7 +812,7 @@
 @media (width <=520px) {
   .enter-code-container {
     flex-direction: column;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);  }
+    border-top: 1px solid rgba(179, 184, 249, 0.12);  }
 
   .enter-code-box-left,
   .enter-code-box-right {

@@ -6,7 +6,7 @@
 .page-size-container {
   display: flex;
   align-items: center;
-  margin-right: 12px;
+  margin-right: 8px;
 }
 
 .page-size-container::after{
@@ -14,7 +14,7 @@
   height: 34px;
   margin-left: 12px;
   width: 1px;
-  border-left: 1px solid rgba(179, 184, 249, 0.1);
+  border-left: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .show-text {
@@ -106,6 +106,7 @@
 .header-navigation {
   display: flex;
   align-items: center;
+  margin-right: 8px;
 }
 
 .header-nav-button {
