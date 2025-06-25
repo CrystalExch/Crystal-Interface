@@ -3099,7 +3099,6 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transform: translate(0%, -50%);
   transition: all 0.2s ease;
   width: 10px;
-  z-index: 5;
 }
 
 .balance-slider-marks {
