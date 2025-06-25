@@ -1344,7 +1344,7 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid #0f0f12;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -1355,11 +1355,11 @@ body {
 }
 
 .inputbg {
-  margin: 5px 12px 0px;
+  margin: 4px 12px 0px;
 }
 
 .scalebgtop {
-  border: 1px solid #4b4b5822;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1370,7 +1370,7 @@ body {
 }
 
 .scalebottombg {
-  border: 1px solid #4b4b5822;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1581,13 +1581,13 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 1.5px solid #0f0f12;
+  border: 1.5px solid rgba(179, 184, 249, 0.075);
   background-color: rgb(6,6,6);
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin: -12px 0;
+  margin: -11px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
@@ -2902,9 +2902,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sliding-tab-indicator {
-  background: #aaaecf03;
   border: 1px solid #aaaecf20;
-  border-radius: 5px;
+  border-radius: 8px;
   box-shadow:
     inset 0 0.5px rgba(230, 227, 250, 0.053),
     0 5px 15px rgb(0 0 0/20%);
@@ -4521,7 +4520,7 @@ input[type="email"] {
 }
 
 .scale-info-box {
-  border: 1px solid #161618;
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   padding: 5px 10px;
   margin: 5px 12px;
