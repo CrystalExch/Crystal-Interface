@@ -1604,7 +1604,6 @@ body {
   user-select: none;
   width: 25px;
   height: 25px;
-  z-index: 3;
 }
 
 .switch-button:active {
