@@ -1347,28 +1347,18 @@ body {
 .sendaddressbg,
 .sendbg {
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
 }
 
 .outputbg {
   margin: 1px 12px 10px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  border-top: none;
 }
-
-
-
-
 
 .inputbg {
   margin: 4px 12px 0px;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0
 }
-
 
 .scalebgtop {
   border: 1px solid rgba(179, 184, 249, 0.1);
@@ -1601,19 +1591,19 @@ body {
 .switch-button {
   align-items: center;
   align-self: center;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
   background-color: rgb(6,6,6);
   border-radius: 8px;
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin: -13px 0;
+  margin: -11px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
   user-select: none;
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
 }
 
 .switch-button:active {
@@ -2924,7 +2914,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 
 .sliding-tab-indicator {
   border: 1px solid #aaaecf20;
-  border-radius: 8px;
+  border-radius: 4px;
   box-shadow:
     inset 0 0.5px rgba(230, 227, 250, 0.053),
     0 5px 15px rgb(0 0 0/20%);

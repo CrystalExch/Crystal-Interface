@@ -4386,7 +4386,6 @@ function App() {
 useEffect(() => {
   const handleKeyDown = (event: KeyboardEvent) => {
     if (event.key !== 'Enter') return;
-      const activeElement = document.activeElement;
         if (popup === 19) {
       event.preventDefault();
       if (!isEditingSigning && editingOrder && hasEditedPrice) {
