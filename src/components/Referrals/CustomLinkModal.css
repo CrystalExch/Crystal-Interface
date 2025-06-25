@@ -13,16 +13,14 @@
     background-color: rgb(0 0 0 / 0%);
   }
   to {
-    background-color: rgb(0 0 0 / 70%);
+    background-color: rgb(0 0 0 / 65%);
   }
 }
 
 .modal-container {
   animation: fadeIn.2s ease-out forwards;
-  -webkit-backdrop-filter: blur(10px);
-          backdrop-filter: blur(10px);
   background: transparent;
-  background-color: #19191c80;
+  background-color: rgb(6,6,6);
   border: 1.5px solid #1a1a1d7d;
   border-radius: 8px;
   max-width: 90vw;

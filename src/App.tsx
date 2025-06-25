@@ -8176,62 +8176,55 @@ function App() {
           </div>
         ) : null}
         {popup === 16 ? (
-          <div className="edit-username-bg">
-            <div ref={popupref} className="edit-username-container">
-              <div className="onboarding-split-container">
-                <div className="onboarding-content">
-                  <div className="onboarding-header">
-                    <h2 className="onboarding-title">{t("editUsername")}</h2>
-                    <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
-                  </div>
+          <div ref={popupref} className="onboarding-content">
+            <div className="onboarding-header">
+              <h2 className="onboarding-title">{t("editUsername")}</h2>
+              <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
+            </div>
 
-                  <div className="onboarding-form">
-                    <div className="form-group">
-                      <label className="form-label">{t("yourWalletAddress")}</label>
-                      <div className="wallet-address">{address || "0x1234...5678"}</div>
-                    </div>
+            <div className="onboarding-form">
+              <div className="form-group">
+                <label className="form-label">{t("yourWalletAddress")}</label>
+                <div className="wallet-address">{address || "0x1234...5678"}</div>
+              </div>
 
-                    <div className="form-group">
-                      <label htmlFor="username" className="form-label">{t('username')}</label>
-                      <input
-                        type="text"
-                        id="username"
-                        className="username-input"
-                        placeholder="Enter a username"
-                        value={usernameInput || ""}
-                        onChange={e => {
-                          const value = e.target.value.trim();
-                          if (isValidInput(value) || value === "") {
-                            setUsernameInput(value);
-                          }
-                        }}
-                      />
-                      {usernameError && (
-                        <p className="username-error">{usernameError}</p>
-                      )}
-                    </div>
-                  </div>
-                  <button
-                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
-                    onClick={async () => {
-                      if (!usernameInput.trim() || isUsernameSigning) return;
-                      await handleEditUsername(usernameInput);
-                    }}
-                    disabled={!usernameInput.trim() || isUsernameSigning}
-                  >
-                    {isUsernameSigning ? (
-                      <div className="button-content">
-                        <div className="loading-spinner" />
-                        {t('signTransaction')}
-                      </div>
-                    ) : (
-                      t("editUsername")
-                    )}
-                  </button>
-                </div>
-
+              <div className="form-group">
+                <label htmlFor="username" className="form-label">{t('username')}</label>
+                <input
+                  type="text"
+                  id="username"
+                  className="username-input"
+                  placeholder="Enter a username"
+                  value={usernameInput || ""}
+                  onChange={e => {
+                    const value = e.target.value.trim();
+                    if (isValidInput(value) || value === "") {
+                      setUsernameInput(value);
+                    }
+                  }}
+                />
+                {usernameError && (
+                  <p className="username-error">{usernameError}</p>
+                )}
               </div>
             </div>
+            <button
+              className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+              onClick={async () => {
+                if (!usernameInput.trim() || isUsernameSigning) return;
+                await handleEditUsername(usernameInput);
+              }}
+              disabled={!usernameInput.trim() || isUsernameSigning}
+            >
+              {isUsernameSigning ? (
+                <div className="button-content">
+                  <div className="loading-spinner" />
+                  {t('signTransaction')}
+                </div>
+              ) : (
+                t("editUsername")
+              )}
+            </button>
           </div>
         ) : null}
         {popup === 19 ? (
