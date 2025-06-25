@@ -2887,8 +2887,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   z-index: 100;
   transition: opacity.2s ease-out;
   box-sizing: content-box;
-  background-color: rgb(6,6,6);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background-color: rgb(15,15,15);
 }
 
 
