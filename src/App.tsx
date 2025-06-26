@@ -9790,19 +9790,17 @@ function App() {
         {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">
-              <div className="slippage-group">
-                <TooltipLabel
-                  label={t('slippage')}
-                  tooltipText={
-                    <div>
-                      <div className="tooltip-description">
-                        {t('slippageHelp')}
-                      </div>
+              <TooltipLabel
+                label={t('slippage')}
+                tooltipText={
+                  <div>
+                    <div className="tooltip-description">
+                      {t('slippageHelp')}
                     </div>
-                  }
-                  className="slippage-label"
-                />
-              </div>
+                  </div>
+                }
+                className="slippage-label"
+              />
             </div>
             <div className="slippage-input-container">
               <input

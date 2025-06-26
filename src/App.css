@@ -54,20 +54,6 @@ html {
   height: 53px;
 }
 
-.average-price::before,
-.price-impact::before,
-.trade-fee::before {
-  color: #a0a0a0;
-  content: attr(data-label);
-}
-
-.average-price::after,
-.price-impact::after,
-.trade-fee::after {
-  color: #ffffffcf;
-  content: attr(data-value);
-}
-
 .limit-impact-warning,
 .price-impact-warning {
   align-items: center;
@@ -105,6 +91,7 @@ html {
   width: 0;
   transform: scaleX(1.03);
   transform-origin: left;
+  margin-bottom: -2px;
 }
 
 .tokenselectheader1 {
@@ -484,9 +471,9 @@ html {
 }
 
 .limit-label {
-  color: #ffffff8b;
+  color: #ffffff7b;
   margin-bottom: 0;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-top: 10px;
   text-align: left;
 }
@@ -1089,7 +1076,7 @@ body {
 }
 
 .send-usd-value {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.8rem;
   pointer-events: none;
   text-align: center;
@@ -1265,9 +1252,9 @@ body {
 .Recieve {
   background: 0 0;
   border: none;
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.75rem;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-top: 5px;
   pointer-events: none;
   text-align: left;
@@ -1284,7 +1271,7 @@ body {
 .balance1,
 .balance2 {
   align-items: center;
-  color: #ffffff8b;
+  color: #ffffff7b;
   display: flex;
   margin-bottom: 2px;
 }
@@ -1324,9 +1311,9 @@ body {
 
 .output-usd-value,
 .usd-value {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.75rem;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-right: auto;
   margin-top: -1px;
 }
@@ -1387,7 +1374,7 @@ body {
   align-items: center;
   text-align: left;
   font-size: 0.7rem;
-  color: #ffffff8b;
+  color: #ffffff7b;
   width: 50px
 }
 
@@ -1401,7 +1388,7 @@ body {
   align-items: center;
   text-align: left;
   font-size: 0.7rem;
-  color: #ffffff8b;
+  color: #ffffff7b;
   width: 50px;
 }
 
@@ -1475,7 +1462,7 @@ body {
 .scale-order-end-label {
   display: flex;
   align-items: center;
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.7rem;
   text-align: left;
   width: 50px;
@@ -1487,7 +1474,7 @@ body {
 }
 
 .limitbg {
-  margin: -6px 12px 13px;
+  margin: -6px 12px 12px;
 }
 
 .limit-order {
@@ -1497,7 +1484,7 @@ body {
   flex-grow: 1;
   font-size: 0.95rem;
   font-weight: 400;
-  padding-left: 13px;
+  padding-left: 12px;
   outline: 0;
   padding-bottom: 10px;
   width: 0;
@@ -1543,7 +1530,7 @@ body {
 .send-To {
   background: 0 0;
   border: none;
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.8rem;
   margin-left: 24px;
   pointer-events: none;
@@ -1580,7 +1567,7 @@ body {
 .limit-order-usd-label,
 .send-balance1 {
   align-items: center;
-  color: #ffffff8b;
+  color: #ffffff7b;
   display: flex;
 }
 
@@ -1791,7 +1778,7 @@ body {
 }
 
 .wallet-footer-text {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.75rem;
   font-weight: 300;
   justify-self: center;
@@ -1829,6 +1816,7 @@ body {
   width: 15px;
 }
 
+.slippage-row,
 .average-price,
 .price-impact,
 .trade-fee {
@@ -1841,7 +1829,7 @@ body {
 }
 
 .label-container {
-  color: #ffffff8b;
+  color: #ffffff7b;
   flex: 1;
   text-align: left;
 }
@@ -1917,7 +1905,7 @@ body {
 .use-market-button {
   background: 0 0;
   border: none;
-  color: #ffffff8b;
+  color: #ffffff7b;
   cursor: pointer;
   font-size: 0.65rem;
   margin-left: auto;
@@ -2295,23 +2283,6 @@ body {
   margin-top: 4px;
 }
 
-.slippage-group {
-  width: 30px;
-}
-
-.slippage-group,
-.slippage-row {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.slippage-row {
-  font-size: 0.7rem;
-  margin-bottom: 5px;
-  width: 100%;
-}
-
 .slippage-value {
   align-items: center;
   color: #ffffffcf;
@@ -2507,7 +2478,8 @@ body {
   color: #ffffffcf;
   font-size: 0.75rem;
   outline: 0;
-  padding: 0px 16px 0.5px 4px;
+  padding: 0px 16px 0px 4px;
+  margin: -1px 0px;
   text-align: right;
   transition: all.2s ease;
   width: 45px;
@@ -3043,7 +3015,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .limit-warning-message {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.65rem;
   padding-left: 13px;
   padding-top: 4px;
@@ -3105,7 +3077,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .balance-slider-marks {
-  color: #ffffff8b;
+  color: #ffffff7b;
   display: flex;
   font-size: 0.75rem;
   justify-content: space-between;
@@ -4858,7 +4830,7 @@ input[type="email"] {
 .limit-price-button {
   border: 1px dotted rgb(102 107 150/25%);
   border-radius: 4px;
-  color: #ffffff8b;
+  color: #ffffff7b;
   cursor: pointer;
   flex: 1;
   font-size: 0.7rem;
