@@ -595,10 +595,10 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<[Order[], string]>([[], '']);
-  const [roundedSellOrders, setRoundedSellOrders] = useState<[Order[], string]>([[], '']);
-  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<[Order[], string]>([[], '']);
-  const [liquiditySellOrders, setLiquiditySellOrders] = useState<[Order[], string]>([[], '']);
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{orders: any[], key: string}>({orders: [], key: ''});
+  const [roundedSellOrders, setRoundedSellOrders] = useState<{orders: any[], key: string}>({orders: [], key: ''});
+  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{orders: any[], market: string}>({orders: [], market: ''});
+  const [liquiditySellOrders, setLiquiditySellOrders] = useState<{orders: any[], market: string}>({orders: [], market: ''});
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
   const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
@@ -1870,23 +1870,23 @@ function App() {
         );
 
         roundedBuy.forEach((order, index) => {
-          const match = roundedBuyOrders[0].find(
+          const match = roundedBuyOrders?.orders?.find(
             (o) => o.price == order.price && o.size == order.size,
           );
-          if (!match || index == 0 && index != roundedBuyOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
+          if (!match || index == 0 && index != roundedBuyOrders?.orders?.findIndex((o) => o.price == order.price && o.size == order.size)) {
             order.shouldFlash = true;
           }
         });
         roundedSell.forEach((order, index) => {
-          const match = roundedSellOrders[0].find(
+          const match = roundedSellOrders?.orders?.find(
             (o) => o.price == order.price && o.size == order.size,
           );
-          if (!match || index == 0 && index != roundedSellOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
+          if (!match || index == 0 && index != roundedSellOrders?.orders?.findIndex((o) => o.price == order.price && o.size == order.size)) {
             order.shouldFlash = true;
           }
         });
-        setRoundedBuyOrders([roundedBuy, activeMarketKey]);
-        setRoundedSellOrders([roundedSell, activeMarketKey]);
+        setRoundedBuyOrders({orders: roundedBuy, key: activeMarketKey});
+        setRoundedSellOrders({orders: roundedSell, key: activeMarketKey});
       } catch (error) {
         console.error(error);
       }
@@ -2116,26 +2116,26 @@ function App() {
             };
 
             roundedBuy.forEach((order, index) => {
-              const match = roundedBuyOrders[0].find(
+              const match = roundedBuyOrders?.orders?.find(
                 (o) => o.price == order.price && o.size == order.size,
               );
-              if (!match || index == 0 && index != roundedBuyOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
+              if (!match || index == 0 && index != roundedBuyOrders?.orders?.findIndex((o) => o.price == order.price && o.size == order.size)) {
                 order.shouldFlash = true;
               }
             });
             roundedSell.forEach((order, index) => {
-              const match = roundedSellOrders[0].find(
+              const match = roundedSellOrders?.orders?.find(
                 (o) => o.price == order.price && o.size == order.size,
               );
-              if (!match || index == 0 && index != roundedSellOrders[0].findIndex((o) => o.price == order.price && o.size == order.size)) {
+              if (!match || index == 0 && index != roundedSellOrders?.orders?.findIndex((o) => o.price == order.price && o.size == order.size)) {
                 order.shouldFlash = true;
               }
             });
             setSpreadData(spread);
-            setRoundedBuyOrders([roundedBuy, activeMarketKey]);
-            setRoundedSellOrders([roundedSell, activeMarketKey]);
-            setLiquidityBuyOrders([liquidityBuy, activeMarket.address]);
-            setLiquiditySellOrders([liquiditySell, activeMarket.address]);
+            setRoundedBuyOrders({orders: roundedBuy, key: activeMarketKey});
+            setRoundedSellOrders({orders: roundedSell, key: activeMarketKey});
+            setLiquidityBuyOrders({orders: liquidityBuy, market: activeMarket.address});
+            setLiquiditySellOrders({orders: liquiditySell, market: activeMarket.address});
 
             setBaseInterval(1 / Number(activeMarket.priceFactor));
             setOBInterval(
@@ -3185,7 +3185,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://subgraph.satsuma-prod.com/${settings.graphKey}/crystal--309087/Crystal/api`;
+          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -3412,7 +3412,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://subgraph.satsuma-prod.com/${settings.graphKey}/crystal--309087/Crystal/api`;
+        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
         let allLogs: any[] = [];
 
         const query = `
@@ -13843,12 +13843,12 @@ function App() {
                   layoutSettings={layoutSettings}
                   orderbookPosition={orderbookPosition}
                   orderdata={{
-                    roundedBuyOrders: roundedBuyOrders[0],
-                    roundedSellOrders: roundedSellOrders[0],
+                    roundedBuyOrders: roundedBuyOrders?.orders,
+                    roundedSellOrders: roundedSellOrders?.orders,
                     spreadData,
-                    priceFactor: Number(markets[roundedBuyOrders[1]]?.priceFactor),
-                    symbolIn: markets[roundedBuyOrders[1]]?.quoteAsset,
-                    symbolOut: markets[roundedBuyOrders[1]]?.baseAsset,
+                    priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
+                    symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
                   }}
                   windowWidth={windowWidth}
                   mobileView={mobileView}

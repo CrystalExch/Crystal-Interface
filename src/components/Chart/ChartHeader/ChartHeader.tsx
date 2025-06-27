@@ -141,14 +141,14 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   ]);
 
   useEffect(() => {
-    if (orderdata.liquidityBuyOrders[0] || orderdata.liquiditySellOrders[0]) {
+    if (orderdata.liquidityBuyOrders?.orders || orderdata.liquiditySellOrders?.orders) {
       const roundedBuys =
-        orderdata.liquidityBuyOrders[0].length !== 0
-          ? orderdata.liquidityBuyOrders[0]
+        orderdata.liquidityBuyOrders?.orders.length !== 0
+          ? orderdata.liquidityBuyOrders?.orders
           : [];
       const roundedSells =
-        orderdata.liquiditySellOrders[0].length !== 0
-          ? orderdata.liquiditySellOrders[0]
+        orderdata.liquiditySellOrders?.orders.length !== 0
+          ? orderdata.liquiditySellOrders?.orders
           : [];
       const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3]
           / Number(markets[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.priceFactor)
@@ -164,7 +164,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       } else {
         setSellLiquidity('n/a');
       }
-      setIsLoading(orderdata.liquidityBuyOrders[1] != activeMarket.address)
+      setIsLoading(orderdata.liquidityBuyOrders?.market != activeMarket.address)
     }
   }, [orderdata]);
 
