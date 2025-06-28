@@ -134,7 +134,6 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
               transform: transformValue,
               filter: isExpanded ? '' : ` brightness(${1 - stackIndex * 0.05}) `,
               padding: isExpanded && stackIndex !== 0 ? '0px 0px 10px 0px' : '',
-              backdropFilter: isExpanded ? 'none' : 'blur(5px)'
             } as React.CSSProperties}
             data-index={stackIndex}
           >
