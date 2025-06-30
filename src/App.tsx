@@ -870,7 +870,6 @@ function App() {
   };
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
 
-<<<<<<< HEAD
 
   type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
 
@@ -925,8 +924,6 @@ function App() {
     return currentAudioGroups[group];
   };
 
-=======
->>>>>>> 84d1fee65fdf314c88d181f6a75e983e7942917e
   // refs
   const popupref = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -4572,92 +4569,7 @@ function App() {
     return regex.test(value);
   };
 
-<<<<<<< HEAD
 
-=======
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Enter') return;
-          if (popup === 19) {
-        event.preventDefault();
-        if (!isEditingSigning && editingOrder && hasEditedPrice) {
-          const confirmButton = document.querySelector('.edit-limit-price-confirm-button') as HTMLButtonElement;
-          if (confirmButton && !confirmButton.disabled) {
-            confirmButton.click();
-          }
-        }
-        return;
-      }
-      if (
-        popup !== 0 
-      ) {
-        return;
-      }
-      event.preventDefault();
-      const currentPath = location.pathname.slice(1);
-      if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
-        return;
-      }
-      switch (currentPath) {
-        case 'swap':
-        case 'market':
-          if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
-            const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
-            if (swapButton && !swapButton.disabled) {
-              swapButton.click();
-            }
-          }
-          break;
-        case 'limit':
-          if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
-            const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-            if (limitButton && !limitButton.disabled) {
-              limitButton.click();
-            }
-          }
-          break;
-        case 'send':
-          if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
-            const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
-            if (sendButton && !sendButton.disabled) {
-              sendButton.click();
-            }
-          }
-          break;
-        case 'scale':
-          if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
-            const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-            if (scaleButton && !scaleButton.disabled) {
-              scaleButton.click();
-            }
-          }
-          break;
-        default:
-          break;
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    location.pathname,
-    popup,
-    swapButtonDisabled,
-    limitButtonDisabled,
-    sendButtonDisabled,
-    scaleButtonDisabled,
-    displayValuesLoading,
-    isSigning,
-    connected,
-    userchain,
-    activechain,
-    isEditingSigning,
-    editingOrder,
-    hasEditedPrice
-  ]);
-  
->>>>>>> 84d1fee65fdf314c88d181f6a75e983e7942917e
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
@@ -10236,55 +10148,62 @@ const handleCancelAllOrders = useCallback(async () => {
           </div>
         ) : null}
         {popup === 16 ? (
-          <div ref={popupref} className="onboarding-content">
-            <div className="onboarding-header">
-              <h2 className="onboarding-title">{t("editUsername")}</h2>
-              <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
-            </div>
+          <div className="edit-username-bg">
+            <div ref={popupref} className="edit-username-container">
+              <div className="onboarding-split-container">
+                <div className="onboarding-content">
+                  <div className="onboarding-header">
+                    <h2 className="onboarding-title">{t("editUsername")}</h2>
+                    <p className="onboarding-subtitle">{t("editUsernameSubtitle")}</p>
+                  </div>
 
-            <div className="onboarding-form">
-              <div className="form-group">
-                <label className="form-label">{t("yourWalletAddress")}</label>
-                <div className="wallet-address">{address || "0x1234...5678"}</div>
-              </div>
+                  <div className="onboarding-form">
+                    <div className="form-group">
+                      <label className="form-label">{t("yourWalletAddress")}</label>
+                      <div className="wallet-address">{address || "0x1234...5678"}</div>
+                    </div>
 
-              <div className="form-group">
-                <label htmlFor="username" className="form-label">{t('username')}</label>
-                <input
-                  type="text"
-                  id="username"
-                  className="username-input"
-                  placeholder="Enter a username"
-                  value={usernameInput || ""}
-                  onChange={e => {
-                    const value = e.target.value.trim();
-                    if (isValidInput(value) || value === "") {
-                      setUsernameInput(value);
-                    }
-                  }}
-                />
-                {usernameError && (
-                  <p className="username-error">{usernameError}</p>
-                )}
-              </div>
-            </div>
-            <button
-              className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
-              onClick={async () => {
-                if (!usernameInput.trim() || isUsernameSigning) return;
-                await handleEditUsername(usernameInput);
-              }}
-              disabled={!usernameInput.trim() || isUsernameSigning}
-            >
-              {isUsernameSigning ? (
-                <div className="button-content">
-                  <div className="loading-spinner" />
-                  {t('signTransaction')}
+                    <div className="form-group">
+                      <label htmlFor="username" className="form-label">{t('username')}</label>
+                      <input
+                        type="text"
+                        id="username"
+                        className="username-input"
+                        placeholder="Enter a username"
+                        value={usernameInput || ""}
+                        onChange={e => {
+                          const value = e.target.value.trim();
+                          if (isValidInput(value) || value === "") {
+                            setUsernameInput(value);
+                          }
+                        }}
+                      />
+                      {usernameError && (
+                        <p className="username-error">{usernameError}</p>
+                      )}
+                    </div>
+                  </div>
+                  <button
+                    className={`create-username-button ${isUsernameSigning ? 'signing' : ''} ${!usernameInput.trim() ? 'disabled' : ''}`}
+                    onClick={async () => {
+                      if (!usernameInput.trim() || isUsernameSigning) return;
+                      await handleEditUsername(usernameInput);
+                    }}
+                    disabled={!usernameInput.trim() || isUsernameSigning}
+                  >
+                    {isUsernameSigning ? (
+                      <div className="button-content">
+                        <div className="loading-spinner" />
+                        {t('signTransaction')}
+                      </div>
+                    ) : (
+                      t("editUsername")
+                    )}
+                  </button>
                 </div>
-              ) : (
-                t("editUsername")
-              )}
-            </button>
+
+              </div>
+            </div>
           </div>
         ) : null}
         {popup === 19 ? (
@@ -12212,17 +12131,19 @@ const handleCancelAllOrders = useCallback(async () => {
         {!isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) && (
           <div className="slippage-row">
             <div className="label-container">
-              <TooltipLabel
-                label={t('slippage')}
-                tooltipText={
-                  <div>
-                    <div className="tooltip-description">
-                      {t('slippageHelp')}
+              <div className="slippage-group">
+                <TooltipLabel
+                  label={t('slippage')}
+                  tooltipText={
+                    <div>
+                      <div className="tooltip-description">
+                        {t('slippageHelp')}
+                      </div>
                     </div>
-                  </div>
-                }
-                className="slippage-label"
-              />
+                  }
+                  className="slippage-label"
+                />
+              </div>
             </div>
             <div className="slippage-input-container">
               <input
