@@ -48,25 +48,10 @@ html {
   overflow: auto;
   -ms-overflow-style: none;
   background: rgb(6, 6, 6);
-
 }
 
 .headerfiller {
   height: 53px;
-}
-
-.average-price::before,
-.price-impact::before,
-.trade-fee::before {
-  color: #a0a0a0;
-  content: attr(data-label);
-}
-
-.average-price::after,
-.price-impact::after,
-.trade-fee::after {
-  color: #ffffffcf;
-  content: attr(data-value);
 }
 
 .limit-impact-warning,
@@ -97,7 +82,7 @@ html {
 .output {
   background: 0 0;
   border: none;
-  color: #ededf5be;
+  color: #ffffffcf;
   flex-grow: 1;
   font-size: 1.1rem;
   font-weight: 400;
@@ -106,6 +91,7 @@ html {
   width: 0;
   transform: scaleX(1.03);
   transform-origin: left;
+  margin-bottom: -2px;
 }
 
 .tokenselectheader1 {
@@ -350,18 +336,21 @@ html {
   opacity: 1;
 }
 
-.deposit-icon,
-.disconnect-icon,
 .disconnected-wallet-close-button:hover,
 .eye-button.h .eye-slash,
-.eye-icon,
 .limit-token-button:hover,
 .navlink:hover,
 .send-button1:hover,
 .send-usd-switch-wrapper:hover,
-.use-market-button:hover,
-.wallet-popup-address {
+.use-market-button:hover {
   opacity: 0.7;
+}
+
+.deposit-icon,
+.disconnect-icon,
+.eye-icon,
+.wallet-popup-address {
+  opacity: 0.9;
 }
 
 .deposit-icon {
@@ -482,9 +471,9 @@ html {
 }
 
 .limit-label {
-  color: #ffffff8b;
+  color: #ffffff7b;
   margin-bottom: 0;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-top: 10px;
   text-align: left;
 }
@@ -999,7 +988,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgb(0 0 0/70%);
+  background-color: rgb(0 0 0/65%);
   content: '';
   inset: 0;
   position: absolute;
@@ -1086,7 +1075,7 @@ body {
 }
 
 .send-usd-value {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.8rem;
   pointer-events: none;
   text-align: center;
@@ -1262,12 +1251,13 @@ body {
 .Recieve {
   background: 0 0;
   border: none;
-  color: #ffffff79;
+  color: #ffffff7b;
   font-size: 0.75rem;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-top: 5px;
   pointer-events: none;
   text-align: left;
+  margin-bottom: -2px;
 }
 
 .balance1maxcontainer {
@@ -1280,7 +1270,7 @@ body {
 .balance1,
 .balance2 {
   align-items: center;
-  color: #ffffff79;
+  color: #ffffff7b;
   display: flex;
   margin-bottom: 2px;
 }
@@ -1320,9 +1310,9 @@ body {
 
 .output-usd-value,
 .usd-value {
-  color: #ffffff4b;
+  color: #ffffff7b;
   font-size: 0.75rem;
-  margin-left: 13px;
+  margin-left: 12px;
   margin-right: auto;
   margin-top: -1px;
 }
@@ -1343,32 +1333,22 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 12px;
+  border: 1px solid rgba(179, 184, 249, 0.12);
+  border-radius: 8px;
   display: flex;
   flex-direction: column;
 }
 
 .outputbg {
   margin: 1px 12px 10px;
-  border-top-left-radius: 0;
-  border-top-right-radius: 0;
-  border-top: none;
 }
-
-
-
-
 
 .inputbg {
   margin: 4px 12px 0px;
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: 0
 }
 
-
 .scalebgtop {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1379,7 +1359,7 @@ body {
 }
 
 .scalebottombg {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1393,7 +1373,7 @@ body {
   align-items: center;
   text-align: left;
   font-size: 0.7rem;
-  color: #ffffff79;
+  color: #ffffff7b;
   width: 50px
 }
 
@@ -1407,7 +1387,7 @@ body {
   align-items: center;
   text-align: left;
   font-size: 0.7rem;
-  color: #ffffff79;
+  color: #ffffff7b;
   width: 50px;
 }
 
@@ -1416,7 +1396,7 @@ body {
   outline: none;
   background: none;
   border: none;
-  color: #ededf5be;
+  color: #ffffffcf;
   text-align: right;
   direction: ltr;
   width: 100%;
@@ -1431,7 +1411,7 @@ body {
   outline: none;
   background: none;
   border: none;
-  color: #ededf5be;
+  color: #ffffffcf;
   text-align: right;
   direction: ltr;
   width: 100%;
@@ -1481,7 +1461,7 @@ body {
 .scale-order-end-label {
   display: flex;
   align-items: center;
-  color: #ffffff79;
+  color: #ffffff7b;
   font-size: 0.7rem;
   text-align: left;
   width: 50px;
@@ -1489,7 +1469,6 @@ body {
 
 .main-content-wrapper.simple-view .scale-order-start-label,
 .main-content-wrapper.simple-view .scale-order-end-label {
-
   font-size: 0.85rem;
 }
 
@@ -1500,11 +1479,11 @@ body {
 .limit-order {
   background: 0 0;
   border: none;
-  color: #ededf5be;
+  color: #ffffffcf;
   flex-grow: 1;
   font-size: 0.95rem;
   font-weight: 400;
-  padding-left: 13px;
+  padding-left: 12px;
   outline: 0;
   padding-bottom: 10px;
   width: 0;
@@ -1531,15 +1510,15 @@ body {
 .send-output {
   background: 0 0;
   border: none;
-  color: #ededf5be;
+  color: #ffffffcf;
   font-weight: 400;
   outline: 0;
 }
 
 .send-output {
   font-size: 0.8rem;
-  margin-bottom: 10px;
-  padding-left: 25px;
+  margin-bottom: 8px;
+  padding-left: 13px;
   padding-right: 12px;
   padding-top: 3px;
   width: 100%;
@@ -1549,11 +1528,12 @@ body {
 .send-To {
   background: 0 0;
   border: none;
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.8rem;
   margin-left: 24px;
   pointer-events: none;
   text-align: left;
+  margin-bottom: -2px;
 }
 
 .send-Send {
@@ -1562,6 +1542,14 @@ body {
 
 .send-To {
   margin-top: 8px;
+  margin-left: 12px;
+}
+
+.main-content-wrapper.simple-view .send-To {
+  margin-left: 23px;
+}
+.main-content-wrapper.simple-view .send-output {
+  padding-left: 24px;
 }
 
 .limit-order-usd-label {
@@ -1577,7 +1565,7 @@ body {
 .limit-order-usd-label,
 .send-balance1 {
   align-items: center;
-  color: #ffffff8b;
+  color: #ffffff7b;
   display: flex;
 }
 
@@ -1595,13 +1583,13 @@ body {
   cursor: pointer;
   display: flex;
   justify-content: center;
-  margin: -13px 0;
+  margin: -11px 0;
   overflow: hidden;
   padding: 0;
   position: relative;
   user-select: none;
-  width: 25px;
-  height: 25px;
+  width: 24px;
+  height: 24px;
 }
 
 .switch-button:active {
@@ -1687,8 +1675,8 @@ body {
   flex-direction: column;
   max-width: 90vw;
   padding: 0;
-  backdrop-filter: blur(50px);
-  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  background-color: rgb(6, 6, 6);
+  border: 1.5px solid #1a1a1d7d;
 }
 
 .smart-wallet-reminder {
@@ -1702,8 +1690,8 @@ body {
   top: -40px;
   line-height: 1.2;
   z-index: 12;
-  border: 1.5px solid rgba(255, 255, 255, 0.07);
-  background-color: #000000a0;
+  background-color: rgb(6, 6, 6);
+  border: 1.5px solid #1a1a1d7d;
   border-radius: 12px;
   overflow: hidden;
   padding: 5px 10px;
@@ -1788,7 +1776,7 @@ body {
 }
 
 .wallet-footer-text {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.75rem;
   font-weight: 300;
   justify-self: center;
@@ -1826,6 +1814,7 @@ body {
   width: 15px;
 }
 
+.slippage-row,
 .average-price,
 .price-impact,
 .trade-fee {
@@ -1838,7 +1827,7 @@ body {
 }
 
 .label-container {
-  color: #ffffff70;
+  color: #ffffff7b;
   flex: 1;
   text-align: left;
 }
@@ -1914,7 +1903,7 @@ body {
 .use-market-button {
   background: 0 0;
   border: none;
-  color: #ffffff8b;
+  color: #ffffff7b;
   cursor: pointer;
   font-size: 0.65rem;
   margin-left: auto;
@@ -1926,8 +1915,8 @@ body {
 }
 
 .mobile-nav {
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   box-sizing: border-box;
   display: flex;
   height: 30px;
@@ -2336,23 +2325,6 @@ body {
   margin-top: 4px;
 }
 
-.slippage-group {
-  width: 30px;
-}
-
-.slippage-group,
-.slippage-row {
-  align-items: center;
-  display: flex;
-  justify-content: space-between;
-}
-
-.slippage-row {
-  font-size: 0.7rem;
-  margin-bottom: 5px;
-  width: 100%;
-}
-
 .slippage-value {
   align-items: center;
   color: #ffffffcf;
@@ -2564,7 +2536,8 @@ body {
   color: #ffffffcf;
   font-size: 0.75rem;
   outline: 0;
-  padding: 0px 16px 0.5px 4px;
+  padding: 0px 16px 0px 4px;
+  margin: -1px 0px;
   text-align: right;
   transition: all.2s ease;
   width: 45px;
@@ -2931,6 +2904,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   }
 }
 
+.generating-address-popup,
+.deposit-page-container,
 .connect-wallet-background,
 .layout-settings-background,
 .sendselectbg,
@@ -2956,7 +2931,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   background-color: #cfcfff03;
   border-radius: 5px;
   height: 24px;
-  margin: 8px 12px 0;
+  margin: 6px 12px 1px;
 }
 
 .navlinkwrapper,
@@ -2970,8 +2945,8 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .sliding-tab-indicator {
-  border: 1px solid #aaaecf20;
-  border-radius: 8px;
+  border: 1px solid #aaaecf30;
+  border-radius: 4px;
   box-shadow:
     inset 0 0.5px rgba(230, 227, 250, 0.053),
     0 5px 15px rgb(0 0 0/20%);
@@ -3099,7 +3074,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .limit-warning-message {
-  color: #ffffff8b;
+  color: #ffffff7b;
   font-size: 0.65rem;
   padding-left: 13px;
   padding-top: 4px;
@@ -3162,7 +3137,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 .balance-slider-marks {
-  color: #ffffff70;
+  color: #ffffff7b;
   display: flex;
   font-size: 0.75rem;
   justify-content: space-between;
@@ -3387,15 +3362,11 @@ body:has(.right-column.show) .blur-background-popups {
 
 .search-markets-dropdown-popup {
   border-radius: 16px;
-  background: transparent;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.05);
   left: 50%;
   overflow: hidden;
-  position: fixed;
   top: 50%;
   width: 400px;
-  backdrop-filter: blur(15px);
 }
 
 .search-wrapper {
@@ -3574,7 +3545,6 @@ body:has(.right-column.show) .blur-background-popups {
 
 .keyboard-shortcut {
   align-items: center;
-  backdrop-filter: blur(5px);
   background: #1a1a1d33;
   border: 1px solid #2a2a2e91;
   border-radius: 6px;
@@ -3831,7 +3801,6 @@ body:has(.popup-blur) {
   border-radius: 12px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
   background-color: #0f0f10 !important;
-  backdrop-filter: blur(10px);
   max-width: 300px !important;
 }
 
@@ -4031,18 +4000,11 @@ input[type="email"] {
 .generating-address-popup {
   display: flex;
   flex-direction: column;
-  border: 1.5px solid #1a1a1d7d;
-  backdrop-filter: blur(10px);
-  box-sizing: content-box;
   border-radius: 8px;
   padding: 20px 0px;
   text-align: center;
   width: 90%;
   max-width: 320px;
-  animation: fadeIn .2s ease-out;
-  transform: translate(-50%, -50%);
-  z-index: 12;
-  transition: opacity .2s ease-out;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -4142,12 +4104,7 @@ input[type="email"] {
   background: rgb(6, 6, 6);
   display: flex;
   flex-direction: column;
-  border: 1.5px solid #1a1a1d7d;
   text-align: center;
-  animation: fadeIn.2s ease-out;
-  transform: translate(-50%, -50%);
-  z-index: 12;
-  transition: opacity.2s ease-out;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;
@@ -4199,22 +4156,19 @@ input[type="email"] {
   display: flex;
   align-items: center;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
-  border-radius: 6px;
-  padding: 0px 6px 0px 12px;
-  height: 35px;
+  border-radius: 4px;
+  padding: 1px 6px 0px 12px;
+  height: 33px;
   position: relative;
 }
 
 .deposit-address {
-  color: rgba(255, 255, 255, 0.5);
-  font-size: 0.78rem;
-  letter-spacing: 0.8px;
-  font-weight: 100 !important;
+  color: #fff;
+  font-size: 0.8rem;
   white-space: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  width: calc(100% - 30px);
 }
 
 .deposit-address::-webkit-scrollbar {
@@ -4583,7 +4537,7 @@ input[type="email"] {
 }
 
 .scale-info-box {
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
   padding: 5px 10px;
   margin: 5px 12px;
@@ -4930,7 +4884,7 @@ input[type="email"] {
 .limit-price-button {
   border: 1px dotted rgb(102 107 150/25%);
   border-radius: 4px;
-  color: #ffffff70;
+  color: #ffffff7b;
   cursor: pointer;
   flex: 1;
   font-size: 0.7rem;
@@ -5307,16 +5261,13 @@ input[type="email"] {
   justify-content: center;
   max-width: 400px;
   width: 100%;
-  backdrop-filter: blur(50px);
   padding: 10px;
   padding-top: 15px;
   border-radius: 12px;
-  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  background-color: rgb(6, 6, 6);
+  border: 1.5px solid #1a1a1d7d;
   margin-bottom: 8px;
-  background-color: rgba(0, 0, 0, 0.3)
 }
-
-
 
 .use-ref-content {
   display: flex;
@@ -5578,15 +5529,15 @@ input[type="email"] {
   color: #ffffffd1;
   font-size: 0.9rem;
   padding: 10px;
-  border: 1.5px solid #1c1c1cb7;
+  background-color: rgb(6, 6, 6);
+  border: 1.5px solid #1a1a1d7d;
   border-radius: 10px;
   cursor: pointer;
-  transition: border-color 0.2s;
-  backdrop-filter: blur(5px);
+  transition: border-color 0.2s, transform 0.2s;
 }
 
 .skip-button:hover {
-  background-color: #1c1c1c31;
+  transform: scale(1.01);
 }
 
 .challenge-section {

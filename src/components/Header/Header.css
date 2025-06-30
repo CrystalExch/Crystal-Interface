@@ -12,7 +12,7 @@
   right: 0;
   top: 0;
   transition: left 0.3s ease;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 body.sidebar-expanded .app-header {
@@ -34,7 +34,7 @@ body.sidebar-expanded .app-header {
 
 .hamburger {
   background: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   cursor: pointer;
   display: none;
@@ -113,6 +113,7 @@ body.sidebar-expanded .app-header {
 .transparent-button {
   background: none;
   border: none;
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   color: #fff;
   cursor: pointer;
@@ -169,7 +170,8 @@ body.sidebar-expanded .app-header {
 .app-settings-button {
   align-items: center;
   background: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
+  border-radius: 5px;
   cursor: pointer;
   display: flex;
   justify-content: center;
@@ -188,6 +190,8 @@ body.sidebar-expanded .app-header {
 .history-button {
   align-items: center;
   background: none;
+  border: 1px solid rgba(179, 184, 249, 0.12);
+  border-radius: 5px;
   cursor: pointer;
   display: flex;
   justify-content: center;

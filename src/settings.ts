@@ -15,7 +15,7 @@ import MonadLogo from './assets/monad.svg';
 
 export const settings: any = {
   useAdv: true,
-  graphKey: 'e6b2b1328308',
+  graphKey: 'b9cc5f58f8ad5399b2c4dd27fa52d881',
   chains: [
     {
       id: 10143,

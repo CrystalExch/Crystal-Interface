@@ -166,6 +166,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               .setLineStyle(2)
               .onMove(async () => {
                 orderLine.setCancellable(false)
+                orderLine.setText(`Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
+                if (order[3] == 1) {
+                  orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                }
                 try {
                   await setChain();
                   let hash;
@@ -186,6 +190,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                 } catch (error) {
                   orderLine.setCancellable(true)
                   orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                  orderLine.setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
+                  if (order[3] == 1) {
+                    orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                  }
                 }
               })
               .onCancel(async () => {
@@ -545,6 +553,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   .setLineStyle(2)
                   .onMove(async () => {
                     orderLine.setCancellable(false)
+                    orderLine.setText(`Limit: ${orderLine.getPrice().toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
+                    if (order[3] == 1) {
+                      orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                    }
                     try {
                       await setChain();
                       let hash;
@@ -565,6 +577,10 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     } catch (error) {
                       orderLine.setCancellable(true)
                       orderLine.setPrice(order[0] / Number(markets[order[4]].priceFactor))
+                      orderLine.setText(`Limit: ${(order[0] / Number(markets[order[4]].priceFactor)).toFixed(Math.floor(Math.log10(Number(markets[order[4]].priceFactor))))}`)
+                      if (order[3] == 1) {
+                        orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                      }
                     }
                   })
                   .onCancel(async () => {

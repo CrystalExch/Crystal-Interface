@@ -20,7 +20,7 @@
 }
 
 .txpopup-inner{
-  padding:10px
+  padding: 8px 6px 12px 15px;
 }
 
 .txpopup-title{
@@ -113,7 +113,7 @@
 .txpopup-progress-container {
   background-color: rgb(64 64 71 / 0%);
   bottom: 0;
-  height: 1px;
+  height: 2px;
   left: 0;
   overflow: hidden;
   position: absolute;

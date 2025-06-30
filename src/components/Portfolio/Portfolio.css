@@ -425,7 +425,7 @@
   flex-direction: column;
   min-height: 0;
   min-width: 0;
-  border-right: 1px solid rgba(179, 184, 249, 0.1);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .portfolio-graph-container {
@@ -453,7 +453,7 @@
   flex: 1;
   min-height: 130px;
   padding: 15px 20px;
-  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-top: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .create-code-text {
@@ -543,11 +543,11 @@
   .graph-container {
     height: 300px;
     margin: 0;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   }
   .referral-stats-container{
     border-top: none;
-    border-left: 1px solid rgba(179, 184, 249, 0.1);
+    border-left: 1px solid rgba(179, 184, 249, 0.12);
   }
 
   .portfolio-graph-container {
@@ -568,7 +568,7 @@
     flex-direction: column;
   }
   .referral-stats-container{
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
   }
   .referral-stats-container{
     border-left: none;
