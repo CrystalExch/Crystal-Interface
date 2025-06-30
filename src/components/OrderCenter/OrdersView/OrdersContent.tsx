@@ -24,10 +24,27 @@ interface OrdersContentProps {
   onMarketSelect: any;
   setpopup: (value: number) => void;
   onLimitPriceUpdate?: (price: number) => void;
-  openEditOrderPopup: (order:any) => void;
+  openEditOrderPopup: (order: any) => void;
+  openEditOrderSizePopup: (order: any) => void;
 }
 
-const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, trades, refetch, sendUserOperationAsync, setChain, pageSize, currentPage, waitForTxReceipt, onMarketSelect,setpopup, onLimitPriceUpdate, openEditOrderPopup }) => {
+const OrdersContent: React.FC<OrdersContentProps> = ({ 
+  orders, 
+  router, 
+  address, 
+  trades, 
+  refetch, 
+  sendUserOperationAsync, 
+  setChain, 
+  pageSize, 
+  currentPage, 
+  waitForTxReceipt, 
+  onMarketSelect,
+  setpopup, 
+  onLimitPriceUpdate, 
+  openEditOrderPopup,
+  openEditOrderSizePopup
+}) => {
   const { sortedItems, sortColumn, sortOrder, handleSort } = useSortableData(
     trades,
     orders,
@@ -35,8 +52,8 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
   );
   const [isSigning, setIsSigning] = useState(false);
   const currentItems = sortedItems.length > 0 ? 
-  sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
-  [];
+    sortedItems.slice((currentPage-1) * pageSize, currentPage * pageSize) : 
+    [];
 
   return (
     <div className="orders-content-wrapper">
@@ -191,6 +208,7 @@ const OrdersContent: React.FC<OrdersContentProps> = ({ orders, router, address, 
               setpopup={setpopup}
               onLimitPriceUpdate={onLimitPriceUpdate}
               openEditOrderPopup={openEditOrderPopup}
+              openEditOrderSizePopup={openEditOrderSizePopup}
             />
           ))
         ) : (null

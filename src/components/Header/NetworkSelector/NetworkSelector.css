@@ -8,13 +8,14 @@
   align-items: center;
   background: none;
   border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
   cursor: pointer;
   display: flex;
-  height: 34px;
   justify-content: center;
   overflow: hidden;
-  width: 34px;
+  width: 53px;
+  height: 53px;
+  border-top: none;
+  border-bottom: none;
 }
 
 @media(max-width: 360px){
@@ -29,10 +30,10 @@
 }
 
 .network-active-logo {
-  height: 16px;
+  height: 20px;
   opacity: 1;
   transition: opacity 0.2s ease;
-  width: 16px;
+  width: 20px;
 }
 
 .network-dropdown {
@@ -125,7 +126,7 @@
 
 .network-option-logo {
   border-radius: 50%;
-  height: 17px;
+  height: 22px;
   margin-right: 7px;
-  width: 17px;
+  width: 22px;
 }

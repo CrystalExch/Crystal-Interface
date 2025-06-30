@@ -351,7 +351,7 @@ export const translations: any = {
     done: 'Done',
     deposit: 'Deposit',
     depositWarning: "Your deposit must be sent on the Monad network. Your wallet is self-custodial; Crystal cannot access your funds.",
-    audioNotifications: "Enable Audio Notifications",
+    audioNotifications: "Audio Notifications",
     connectYourWallet: "Connect Your Wallet",
     connectYourWalletSubtitle: "Connect your wallet to view the leaderboard",
     searchAMarket: "Search for a market",
@@ -415,6 +415,7 @@ export const translations: any = {
     collapse: "Collapse",
     show: "Show",
     perPage: "Per Page",
+    notificationPosition: "Notification Position"
   },
   CN: {
     trade: "交易",
@@ -3764,6 +3765,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({
   const t = (key: string): string => {
     return translations[language][key] || key;
   };
+  
 
   return (
     <LanguageContext.Provider

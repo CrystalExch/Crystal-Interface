@@ -51,6 +51,7 @@ interface OrderCenterProps {
   isOrderCenterVisible?: boolean;
   onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
+  openEditOrderSizePopup: (order: any) => void; // Add this new prop
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -88,6 +89,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
     isOrderCenterVisible,
     onLimitPriceUpdate,
     openEditOrderPopup,
+    openEditOrderSizePopup, // Add this to destructuring
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     
@@ -308,6 +310,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               setpopup={setpopup}
               onLimitPriceUpdate={onLimitPriceUpdate}
               openEditOrderPopup={openEditOrderPopup}
+              openEditOrderSizePopup={openEditOrderSizePopup} // Add this line
             />
           );
         case 'tradeHistory':

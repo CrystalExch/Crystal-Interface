@@ -1,6 +1,6 @@
 .txpopup {
   background: rgb(8, 8, 8);
-  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
   height: auto;
@@ -30,7 +30,6 @@
   font-weight:300;
   letter-spacing:-.2px
 }
-
 
 .txpopup-swap-details {
   align-items: left;
@@ -141,27 +140,127 @@
   );
   box-shadow: 0 0 8px rgba(255, 107, 107, 0.3);
 }
-@keyframes slideUp {
+
+.txpopup.new-desktop-right {
+  animation: slideUpFromRight 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+.txpopup.new-desktop-left {
+  animation: slideUpFromLeft 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+.txpopup.new-mobile-bottom {
+  animation: slideUpFromBottom 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+.txpopup.new-mobile-top {
+  animation: slideDownFromTop 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+.txpopup.exit-desktop-right {
+  animation: slideOutToRight 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+
+.txpopup.exit-desktop-left {
+  animation: slideOutToLeft 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+
+.txpopup.exit-mobile-bottom {
+  animation: slideOutToBottom 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+
+.txpopup.exit-mobile-top {
+  animation: slideOutToTop 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+@keyframes slideUpFromRight {
+  from {
+    opacity: 0;
+    transform: translateX(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUpFromLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideUpFromBottom {
   from {
     opacity: 0;
     transform: translateY(100px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
   }
 }
 
-@keyframes slideDown {
+@keyframes slideDownFromTop {
   from {
     opacity: 0;
     transform: translateY(-100px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideOutToRight {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slideOutToLeft {
+  0% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideOutToBottom {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+}
+
+@keyframes slideOutToTop {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-100%);
   }
 }
 
@@ -170,11 +269,9 @@
     opacity: 1;
     width: 0;
   }
-
   90% {
     opacity: 1;
   }
-
   100% {
     opacity: 0;
     width: 100%;
@@ -222,37 +319,6 @@
   font-weight: 400;
 }
 
-.txpopup.exit {
-  animation: slideOut 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
-  pointer-events: none;
-}
-
-@keyframes slideOut {
-  0% {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateX(100%);
-  }
-}
-
-@media (max-width: 1020px) {
-  .txpopup.new {
-    animation: slideDown 0.3s cubic-bezier(0.2, 0, 0.1, 1);
-  }
-}
-
-.txpopup.new {
-  animation: slideUp 0.3s cubic-bezier(0.2, 0, 0.1, 1);
-}
-
-
-
-
-
-
 .txpopup-failed-content{
   padding-left: 50px;
 }
@@ -265,6 +331,7 @@
   letter-spacing:-.2px;
   margin-bottom: -4px;
 }
+
 .txpopup-inner-failed{
   padding: 5px;
 }
@@ -351,8 +418,6 @@
   box-shadow: 0 0 4px rgba(255, 107, 107, 0.6);
   opacity: 0;
 }
-
-
 
 @keyframes gradientShift {
   0% { background-position: 0% 50%; }

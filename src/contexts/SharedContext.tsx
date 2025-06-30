@@ -54,6 +54,7 @@ export const SharedContextProvider: React.FC<{ children: ReactNode }> = ({
       }
     })(),
   );
+  
   const [high, setHigh] = useState<number>(0);
   const [low, setLow] = useState<number>(0);
   const [days, setDays] = useState<number>(1);

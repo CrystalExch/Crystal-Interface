@@ -30,7 +30,8 @@
   padding: 0;
 }
 
-.edit-limit-price-button{
+.edit-limit-price-button,
+.edit-order-size-button{
   width: 17px;
   cursor: pointer;
 }

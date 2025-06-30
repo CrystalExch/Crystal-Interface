@@ -122,7 +122,6 @@ import ChartComponent from './components/Chart/Chart.tsx';
 import TokenInfoPopupContent from './components/Chart/ChartHeader/TokenInfo/TokenInfoPopup/TokenInfoPopupContent.tsx';
 import ChartOrderbookPanel from './components/ChartOrderbookPanel/ChartOrderbookPanel.tsx';
 import Header from './components/Header/Header.tsx';
-import LanguageSelector from './components/Header/LanguageSelector/LanguageSelector';
 import LoadingOverlay from './components/loading/LoadingComponent.tsx';
 import FullScreenOverlay from './components/loading/LoadingScreen.tsx';
 import NavigationProgress from './components/NavigationProgress.tsx';
@@ -315,6 +314,27 @@ function App() {
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
+
+
+  type SliderMode = 'slider' | 'presets' | 'increment';
+
+
+  const [sliderMode, setSliderMode] = useState<SliderMode>(() => {
+    const saved = localStorage.getItem('crystal_slider_mode');
+    return (saved as SliderMode) || 'slider';
+  });
+
+  const [sliderPresets, setSliderPresets] = useState<number[]>(() => {
+    const saved = localStorage.getItem('crystal_slider_presets');
+    return saved ? JSON.parse(saved) : [25, 50, 75];
+  });
+
+  const [sliderIncrement, setSliderIncrement] = useState<number>(() => {
+    const saved = localStorage.getItem('crystal_slider_increment');
+    return saved ? parseFloat(saved) : 10;
+  });
+
+
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
     {},
   );
@@ -416,6 +436,59 @@ function App() {
     const savedSimpleView = localStorage.getItem('crystal_simple_view');
     return savedSimpleView ? JSON.parse(savedSimpleView) : false;
   });
+  const [hideNotificationPopups, setHideNotificationPopups] = useState(() => {
+    return JSON.parse(localStorage.getItem('crystal_hide_notification_popups') || 'false');
+  });
+  const [rpcUrl, setRpcUrl] = useState(() => localStorage.getItem('crystal_rpc_url') || '')
+  const [graphUrl, setGraphUrl] = useState(() => localStorage.getItem('crystal_graph_url') || '')
+  const [graphKey, setGraphKey] = useState(() => localStorage.getItem('crystal_graph_key') || '')
+  const [notificationPosition, setNotificationPosition] = useState(() => {
+    const saved = localStorage.getItem('crystal_notification_position');
+    return saved || 'bottom-right';
+  });
+
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewPosition, setPreviewPosition] = useState<string | null>(null);
+
+  const updateNotificationPosition = (position: string) => {
+    setPreviewPosition(position);
+    setShowPreview(true);
+
+    setNotificationPosition(position);
+    localStorage.setItem('crystal_notification_position', position);
+
+    setTimeout(() => {
+      setShowPreview(false);
+      setPreviewPosition(null);
+    }, 8000);
+  };
+
+  const [hiddenPopupTypes, setHiddenPopupTypes] = useState(() => {
+    return JSON.parse(localStorage.getItem('crystal_hidden_popup_types') || '{}');
+  });
+
+  const updateHiddenPopupType = (actionType: string, hide: boolean) => {
+    const newHiddenTypes = { ...hiddenPopupTypes, [actionType]: hide };
+    setHiddenPopupTypes(newHiddenTypes);
+    localStorage.setItem('crystal_hidden_popup_types', JSON.stringify(newHiddenTypes));
+  };
+  const updateMultipleHiddenPopupTypes = (types: string[], hide: boolean) => {
+    const newHiddenTypes = { ...hiddenPopupTypes };
+    types.forEach(type => {
+      newHiddenTypes[type] = hide;
+    });
+    setHiddenPopupTypes(newHiddenTypes);
+    localStorage.setItem('crystal_hidden_popup_types', JSON.stringify(newHiddenTypes));
+  };
+  const [activeSettingsSection, setActiveSettingsSection] = useState(() => {
+    const saved = localStorage.getItem('crystal_active_settings_section');
+    return saved || 'general';
+  });
+
+  const updateActiveSettingsSection = (section: string) => {
+    setActiveSettingsSection(section);
+    localStorage.setItem('crystal_active_settings_section', section);
+  };
   const [isMarksVisible, setIsMarksVisible] = useState(() => {
     const saved = localStorage.getItem('crystal_marks_visible');
     return saved !== null ? JSON.parse(saved) : true;
@@ -614,7 +687,33 @@ function App() {
     setCurrentLimitPrice(currentPrice);
     setpopup(19);
   };
+  const openEditOrderSizePopup = (order: any) => {
+    setEditingOrderSize(order);
+    const tokenAddress = order[3] === 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress;
+    const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
 
+    const originalSizeBigInt = BigInt(order[1]);
+    const divisor = BigInt(10 ** tokenDecimals);
+    const wholePart = originalSizeBigInt / divisor;
+    const fractionalPart = originalSizeBigInt % divisor;
+
+    let originalSizeStr;
+    if (fractionalPart === BigInt(0)) {
+      originalSizeStr = wholePart.toString();
+    } else {
+      const fractionalStr = fractionalPart.toString().padStart(tokenDecimals, '0');
+      const trimmedFractional = fractionalStr.replace(/0+$/, '');
+      originalSizeStr = trimmedFractional.length > 0
+        ? wholePart.toString() + '.' + trimmedFractional
+        : wholePart.toString();
+    }
+
+    const originalSize = parseFloat(originalSizeStr);
+
+    setCurrentOrderSize(originalSize);
+    setHasEditedSize(false);
+    setpopup(20);
+  };
   const handleEditLimitPriceConfirm = async () => {
     if (isEditingSigning || !editingOrder) return;
 
@@ -650,6 +749,51 @@ function App() {
       setIsEditingSigning(false);
     }
   };
+
+  const [editingOrderSize, setEditingOrderSize] = useState<any>(null);
+  const [currentOrderSize, setCurrentOrderSize] = useState<number>(0);
+  const [hasEditedSize, setHasEditedSize] = useState(false);
+  const [isEditingSizeSigning, setIsEditingSizeSigning] = useState(false);
+
+
+  const handleEditOrderSizeConfirm = async () => {
+    if (isEditingSizeSigning || !editingOrderSize) return;
+
+    try {
+      setIsEditingSizeSigning(true);
+      await handleSetChain();
+
+      const tokenDecimals = Number(tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress].decimals);
+      const scaledSizeStr = (currentOrderSize * (10 ** tokenDecimals)).toFixed(0);
+      const scaledSize = BigInt(scaledSizeStr);
+      const hash = await sendUserOperationAsync({
+        uo: replaceOrder(
+          router,
+          BigInt(0),
+          (editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].quoteAsset : markets[editingOrderSize[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress,
+          (editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].baseAsset : markets[editingOrderSize[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].baseAddress : markets[editingOrderSize[4]].quoteAddress,
+          false,
+          BigInt(editingOrderSize[0]),
+          BigInt(editingOrderSize[1]),
+          BigInt(editingOrderSize[0]),
+          scaledSize,
+          usedRefAddress
+        )
+      });
+
+      await waitForTxReceipt(hash.hash);
+      refetch();
+      setpopup(0);
+      setEditingOrderSize(null);
+    } catch (error) {
+      console.error('Error editing order size:', error);
+      const originalSize = Number(editingOrderSize[1]) / (10 ** Number(tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress].decimals));
+      setCurrentOrderSize(originalSize);
+    } finally {
+      setIsEditingSizeSigning(false);
+    }
+  };
+
 
   const { chartData, portChartLoading } = usePortfolioData(
     address,
@@ -727,7 +871,58 @@ function App() {
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
 
 
+  type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
 
+  interface AudioGroupSettings {
+    swap: boolean;
+    order: boolean;
+    transfer: boolean;
+    approve: boolean;
+  }
+
+  const defaultGroups: AudioGroupSettings = {
+    swap: true,
+    order: true,
+    transfer: true,
+    approve: true,
+  };
+
+  const [audioGroups, setAudioGroups] = useState<AudioGroupSettings>(() => {
+    const saved = localStorage.getItem('crystal_audio_groups');
+    return saved ? JSON.parse(saved) : defaultGroups;
+  });
+
+
+  const audioGroupsRef = useRef(audioGroups);
+
+  useEffect(() => {
+    audioGroupsRef.current = audioGroups;
+  }, [audioGroups]);
+
+  const toggleAudioGroup = (group: AudioGroups) => {
+    setAudioGroups(prev => {
+      const next = { ...prev, [group]: !prev[group] };
+      audioGroupsRef.current = next;
+      localStorage.setItem('crystal_audio_groups', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  function getGroupForAction(action: string): AudioGroups {
+    if (action === 'swap' || action === 'swapFailed') return 'swap';
+    if (['limit', 'fill', 'cancel', 'limitFailed'].includes(action)) return 'order';
+    if (['send', 'sendFailed', 'wrap', 'unwrap', 'stake'].includes(action)) return 'transfer';
+    if (action === 'approve') return 'approve';
+    return 'swap';
+  }
+  const shouldPlayAudio = (action: string): boolean => {
+    const currentAudioGroups = audioGroupsRef.current;
+    if (!isAudioEnabled) {
+      return false;
+    }
+    const group = getGroupForAction(action);
+    return currentAudioGroups[group];
+  };
 
   // refs
   const popupref = useRef<HTMLDivElement>(null);
@@ -742,7 +937,7 @@ function App() {
   const languageOptions = [
     { code: 'EN', name: 'English' },
     { code: 'ES', name: 'Español' },
-    { code: 'CN', name: '中文（简体）' },
+    { code: 'CN', name: '中文' },
     { code: 'JP', name: '日本語' },
     { code: 'KR', name: '한국어' },
     { code: 'RU', name: 'русский' },
@@ -811,6 +1006,11 @@ function App() {
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   }));
 
+
+
+
+
+
   const newTxPopup = useCallback((
     _transactionHash: any,
     _currentAction: any,
@@ -821,6 +1021,11 @@ function App() {
     _price: any = 0,
     _address: any = '',
   ) => {
+    const shouldPlay = shouldPlayAudio(_currentAction);
+    if (shouldPlay) {
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+    }
     setTransactions((prevTransactions) => {
       const newTransaction = {
         explorerLink: `${settings.chainConfig[activechain].explorer}/tx/${_transactionHash}`,
@@ -837,18 +1042,10 @@ function App() {
         identifier: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       };
 
-      let updatedTransactions = [...prevTransactions, newTransaction];
+      return [...prevTransactions, newTransaction];
+    });
+  }, [activechain, audio, isAudioEnabled]);
 
-      return updatedTransactions;
-    });
-    setIsAudioEnabled((prev: any) => {
-      if (prev) {
-        audio.currentTime = 0;
-        audio.play();
-      }
-      return prev;
-    });
-  }, [activechain, audio]);
 
   const handleSetChain = useCallback(async () => {
     return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
@@ -1335,15 +1532,6 @@ function App() {
       setSortField(field);
       setSortDirection('asc');
     }
-  };
-
-  const handleRefreshQuote = async (e: any) => {
-    e.preventDefault();
-    if (isRefreshing) return;
-    setIsRefreshing(true);
-    setStateIsLoading(true);
-    await refetch()
-    setIsRefreshing(false);
   };
 
   const setScaleOutput = (
@@ -4383,89 +4571,7 @@ function App() {
     return regex.test(value);
   };
 
-useEffect(() => {
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key !== 'Enter') return;
-      const activeElement = document.activeElement;
-        if (popup === 19) {
-      event.preventDefault();
-      if (!isEditingSigning && editingOrder && hasEditedPrice) {
-        const confirmButton = document.querySelector('.edit-limit-price-confirm-button') as HTMLButtonElement;
-        if (confirmButton && !confirmButton.disabled) {
-          confirmButton.click();
-        }
-      }
-      return;
-    }
-    if (
-      popup !== 0 
-    ) {
-      return;
-    }
-    event.preventDefault();
-    const currentPath = location.pathname.slice(1);
-    if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
-      return;
-    }
-    switch (currentPath) {
-      case 'swap':
-      case 'market':
-        if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
-          const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
-          if (swapButton && !swapButton.disabled) {
-            swapButton.click();
-          }
-        }
-        break;
-      case 'limit':
-        if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
-          const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-          if (limitButton && !limitButton.disabled) {
-            limitButton.click();
-          }
-        }
-        break;
-      case 'send':
-        if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
-          const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
-          if (sendButton && !sendButton.disabled) {
-            sendButton.click();
-          }
-        }
-        break;
-      case 'scale':
-        if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
-          const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-          if (scaleButton && !scaleButton.disabled) {
-            scaleButton.click();
-          }
-        }
-        break;
-      default:
-        break;
-    }
-  };
-  document.addEventListener('keydown', handleKeyDown);
-  return () => {
-    document.removeEventListener('keydown', handleKeyDown);
-  };
-}, [
-  location.pathname,
-  popup,
-  swapButtonDisabled,
-  limitButtonDisabled,
-  sendButtonDisabled,
-  scaleButtonDisabled,
-  displayValuesLoading,
-  isSigning,
-  connected,
-  userchain,
-  activechain,
-  isEditingSigning,
-  editingOrder,
-  hasEditedPrice
-]);
-  
+
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
     audio.play();
@@ -4730,6 +4836,743 @@ useEffect(() => {
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
+
+  const [keybinds, setKeybinds] = useState(() => {
+    const saved = localStorage.getItem('crystal_keybinds');
+    return saved ? JSON.parse(saved) : {
+      submitTransaction: 'Enter',
+      switchTokens: 'KeyX',
+      maxAmount: 'KeyM',
+      focusInput: 'Slash',
+      openSettings: 'KeyS',
+      openWallet: 'KeyW',
+      openTokenInSelect: 'KeyQ',
+      openTokenOutSelect: 'KeyE',
+      cancelAllOrders: 'KeyC',
+      cancelTopOrder: 'Escape',
+      openPortfolio: 'KeyP',
+      openLeaderboard: 'KeyL',
+      openReferrals: 'KeyR',
+      openMarketSearch: 'KeyF',
+      toggleFavorite: 'KeyT',
+      toggleSimpleView: 'KeyV',
+      refreshQuote: 'F5',
+      switchToOrders: 'Digit1',
+      switchToTrades: 'Digit2',
+      switchToHistory: 'Digit3',
+      switchToBalances: 'Digit4',
+    };
+  });
+
+  const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
+  const [isListeningForKey, setIsListeningForKey] = useState(false);
+
+
+  const formatKeyDisplay = (key: string) => {
+    if (!key) return '';
+    const keyMap: { [key: string]: string } = {
+      'Enter': 'Enter',
+      'Escape': 'Esc',
+      'Space': 'Space',
+      'Slash': '/',
+      'Backslash': '\\',
+      'Comma': ',',
+      'Period': '.',
+      'Semicolon': ';',
+      'Quote': "'",
+      'BracketLeft': '[',
+      'BracketRight': ']',
+      'Backquote': '`',
+      'Minus': '-',
+      'Equal': '=',
+      'Tab': 'Tab',
+      'CapsLock': 'Caps Lock',
+      'ShiftLeft': 'Shift',
+      'ShiftRight': 'Shift',
+      'ControlLeft': 'Ctrl',
+      'ControlRight': 'Ctrl',
+      'AltLeft': 'Alt',
+      'AltRight': 'Alt',
+      'MetaLeft': 'Cmd',
+      'MetaRight': 'Cmd',
+      'ArrowUp': '↑',
+      'ArrowDown': '↓',
+      'ArrowLeft': '←',
+      'ArrowRight': '→',
+      'Delete': 'Del',
+      'Backspace': '⌫',
+    };
+
+    if (keyMap[key]) return keyMap[key];
+    if (key.startsWith('Key')) return key.slice(3).toUpperCase();
+    if (key.startsWith('Digit')) return key.slice(5);
+    if (key.startsWith('F') && key.length <= 3) return key.toUpperCase();
+    return key;
+  };
+
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isListeningForKey && editingKeybind) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
+        if (forbiddenKeys.includes(event.code)) {
+          return;
+        }
+
+        const newKeybinds = { ...keybinds, [editingKeybind]: event.code };
+        setKeybinds(newKeybinds);
+        localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+
+      if (event.code === 'Escape' && isListeningForKey) {
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+
+      if (isListeningForKey) return;
+
+      if (event.code === keybinds.submitTransaction && popup !== 19) {
+        if (popup !== 0) return;
+        event.preventDefault();
+        const currentPath = location.pathname.slice(1);
+        if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
+          return;
+        }
+        switch (currentPath) {
+          case 'swap':
+          case 'market':
+            if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
+              const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
+              if (swapButton && !swapButton.disabled) {
+                swapButton.click();
+              }
+            }
+            break;
+          case 'limit':
+            if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+              if (limitButton && !limitButton.disabled) {
+                limitButton.click();
+              }
+            }
+            break;
+          case 'send':
+            if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
+              if (sendButton && !sendButton.disabled) {
+                sendButton.click();
+              }
+            }
+            break;
+          case 'scale':
+            if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+              if (scaleButton && !scaleButton.disabled) {
+                scaleButton.click();
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
+      if (event.code === keybinds.openSettings && popup === 0) {
+        event.preventDefault();
+        setpopup(5);
+      }
+
+      if (event.code === keybinds.openWallet && popup === 0) {
+        event.preventDefault();
+        setpopup(4);
+      }
+
+      if (event.code === keybinds.switchTokens && popup === 0 &&
+        ['swap', 'limit', 'market', 'scale'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const switchButton = document.querySelector('.switch-button') as HTMLElement;
+        if (switchButton) switchButton.click();
+      }
+
+      if (event.code === keybinds.maxAmount && popup === 0 &&
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const maxButton = document.querySelector('.max-button') as HTMLElement;
+        if (maxButton) maxButton.click();
+      }
+
+      if (event.code === keybinds.focusInput && popup === 0 &&
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const mainInput = document.querySelector('.input') as HTMLInputElement;
+        if (mainInput) mainInput.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    keybinds,
+    isListeningForKey,
+    editingKeybind,
+    popup,
+    location.pathname,
+    swapButtonDisabled,
+    limitButtonDisabled,
+    sendButtonDisabled,
+    scaleButtonDisabled,
+    displayValuesLoading,
+    isSigning,
+    connected,
+    userchain,
+    activechain,
+    isEditingSigning,
+    editingOrder,
+    hasEditedPrice
+  ]);
+
+
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isListeningForKey && editingKeybind) {
+        event.preventDefault();
+        event.stopPropagation();
+        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
+        if (forbiddenKeys.includes(event.code)) {
+          return;
+        }
+
+        const newKeybinds = { ...keybinds, [editingKeybind]: event.code };
+        setKeybinds(newKeybinds);
+        localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+
+      if (event.code === 'Escape' && isListeningForKey) {
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+
+      if (isListeningForKey) return;
+
+      if (event.code === keybinds.submitTransaction && popup !== 19) {
+        if (popup !== 0) return;
+        event.preventDefault();
+        const currentPath = location.pathname.slice(1);
+        if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
+          return;
+        }
+        switch (currentPath) {
+          case 'swap':
+          case 'market':
+            if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
+              const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
+              if (swapButton && !swapButton.disabled) {
+                swapButton.click();
+              }
+            }
+            break;
+          case 'limit':
+            if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+              if (limitButton && !limitButton.disabled) {
+                limitButton.click();
+              }
+            }
+            break;
+          case 'send':
+            if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
+              if (sendButton && !sendButton.disabled) {
+                sendButton.click();
+              }
+            }
+            break;
+          case 'scale':
+            if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
+              const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+              if (scaleButton && !scaleButton.disabled) {
+                scaleButton.click();
+              }
+            }
+            break;
+          default:
+            break;
+        }
+      }
+
+      if (event.code === keybinds.openSettings && popup === 0) {
+        event.preventDefault();
+        setpopup(5);
+      }
+
+      if (event.code === keybinds.openWallet && popup === 0) {
+        event.preventDefault();
+        setpopup(4);
+      }
+
+      if (event.code === keybinds.switchTokens && popup === 0 &&
+        ['swap', 'limit', 'market', 'scale'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const switchButton = document.querySelector('.switch-button') as HTMLElement;
+        if (switchButton) switchButton.click();
+      }
+
+      if (event.code === keybinds.maxAmount && popup === 0 &&
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const maxButton = document.querySelector('.max-button') as HTMLElement;
+        if (maxButton) maxButton.click();
+      }
+
+      if (event.code === keybinds.focusInput && popup === 0 &&
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const mainInput = document.querySelector('.input') as HTMLInputElement;
+        if (mainInput) mainInput.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    keybinds,
+    isListeningForKey,
+    editingKeybind,
+    popup,
+    location.pathname,
+    swapButtonDisabled,
+    limitButtonDisabled,
+    sendButtonDisabled,
+    scaleButtonDisabled,
+    displayValuesLoading,
+    isSigning,
+    connected,
+    userchain,
+    activechain,
+    isEditingSigning,
+    editingOrder,
+    hasEditedPrice
+  ]);
+
+
+  const handleRefreshQuote = useCallback(async (e: any) => {
+    e.preventDefault();
+    if (isRefreshing) return;
+    setIsRefreshing(true);
+    setStateIsLoading(true);
+    await refetch()
+    setIsRefreshing(false);
+  }, [isRefreshing, refetch]);
+const handleCancelTopOrder = useCallback(async () => {
+  if (!connected || userchain !== activechain || orders.length === 0) {
+    return;
+  }
+
+  try {
+    setIsSigning(true);
+
+    const topOrder = orders[0];
+    const market = markets[topOrder[4]];
+
+    if (!market) {
+      console.error('Market not found for order');
+      return;
+    }
+
+    const hash = await sendUserOperationAsync({
+      uo: {
+        target: market.address,
+        data: encodeFunctionData({
+          abi: CrystalMarketAbi,
+          functionName: 'cancelOrder',
+          args: [
+            BigInt(topOrder[0]), 
+            BigInt(topOrder[1]),
+            market.baseAddress,    // Add the missing hex address
+            market.quoteAddress    // Add the missing hex address
+          ],
+        }),
+        value: 0n,
+      },
+    });
+
+    if (!client) {
+      await waitForTxReceipt(hash.hash);
+    }
+
+    await refetch();
+
+    const quoteasset = market.quoteAddress;
+    const baseasset = market.baseAddress;
+    const amountquote = (
+      topOrder[8] /
+      (Number(market.scaleFactor) * 10 ** Number(market.quoteDecimals))
+    ).toFixed(2);
+    const amountbase = customRound(
+      (topOrder[2] - topOrder[7]) / 10 ** Number(market.baseDecimals),
+      3,
+    );
+
+    newTxPopup(
+      client ? hash.hash : hash.hash,
+      'cancel',
+      topOrder[3] == 1 ? quoteasset : baseasset,
+      topOrder[3] == 1 ? baseasset : quoteasset,
+      topOrder[3] == 1 ? amountquote : amountbase,
+      topOrder[3] == 1 ? amountbase : amountquote,
+      `${topOrder[0] / Number(market.priceFactor)} ${market.quoteAsset}`,
+      '',
+    );
+
+  } catch (error) {
+    console.error('Error canceling top order:', error);
+  } finally {
+    setIsSigning(false);
+  }
+}, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup, customRound]);
+
+const handleCancelAllOrders = useCallback(async () => {
+  if (!connected || userchain !== activechain || orders.length === 0) {
+    return;
+  }
+
+  try {
+    setIsSigning(true);
+
+    const ordersByMarket = orders.reduce((acc: any, order: any) => {
+      const marketKey = order[4];
+      if (!acc[marketKey]) acc[marketKey] = [];
+      acc[marketKey].push(order);
+      return acc;
+    }, {});
+
+    for (const [marketKey, marketOrders] of Object.entries(ordersByMarket) as [string, any[]][]) {
+      const market = markets[marketKey];
+      if (!market) continue;
+
+      const cancelPromises = marketOrders.map(async (order: any) => {
+        try {
+          const hash = await sendUserOperationAsync({
+            uo: {
+              target: market.address,
+              data: encodeFunctionData({
+                abi: CrystalMarketAbi,
+                functionName: 'cancelOrder',
+                args: [
+                  BigInt(order[0]), 
+                  BigInt(order[1]),
+                  market.baseAddress,    // Add the missing hex address
+                  market.quoteAddress    // Add the missing hex address
+                ],
+              }),
+              value: 0n,
+            },
+          });
+
+          if (!client) {
+            await waitForTxReceipt(hash.hash);
+          }
+
+          return hash;
+        } catch (error) {
+          console.error('Failed to cancel order:', error);
+          return null;
+        }
+      });
+
+      await Promise.allSettled(cancelPromises);
+    }
+
+    await refetch();
+
+    newTxPopup(
+      'batch-cancel',
+      'cancel',
+      '',
+      '',
+      `${orders.length}`,
+      0,
+      '',
+      ''
+    );
+
+  } catch (error) {
+    console.error('Error canceling all orders:', error);
+  } finally {
+    setIsSigning(false);
+  }
+}, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup]);
+  const handleSubmitTransaction = useCallback(() => {
+    if (popup !== 0) return;
+
+    const currentPath = location.pathname.slice(1);
+    if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
+      return;
+    }
+
+    switch (currentPath) {
+      case 'swap':
+      case 'market':
+        if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
+          const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
+          if (swapButton && !swapButton.disabled) {
+            swapButton.click();
+          }
+        }
+        break;
+      case 'limit':
+        if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+          if (limitButton && !limitButton.disabled) {
+            limitButton.click();
+          }
+        }
+        break;
+      case 'send':
+        if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
+          if (sendButton && !sendButton.disabled) {
+            sendButton.click();
+          }
+        }
+        break;
+      case 'scale':
+        if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
+          const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
+          if (scaleButton && !scaleButton.disabled) {
+            scaleButton.click();
+          }
+        }
+        break;
+    }
+  }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]);
+
+
+
+
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (isListeningForKey && editingKeybind) {
+        event.preventDefault();
+        event.stopPropagation();
+        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
+        if (forbiddenKeys.includes(event.code)) {
+          return;
+        }
+
+        const newKeybinds = { ...keybinds, [editingKeybind]: event.code };
+        setKeybinds(newKeybinds);
+        localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+      if (event.code === 'Escape' && isListeningForKey) {
+        setEditingKeybind(null);
+        setIsListeningForKey(false);
+        return;
+      }
+
+      if (isListeningForKey || (popup !== 0 && event.code !== keybinds.cancelTopOrder)) {
+        return;
+      }
+
+      const activeElement = document.activeElement;
+      if (activeElement && (
+        activeElement.tagName === 'INPUT' ||
+        activeElement.tagName === 'TEXTAREA' ||
+        activeElement.hasAttribute('contenteditable')
+      )) {
+        if (event.code !== keybinds.submitTransaction && event.code !== 'Escape') {
+          return;
+        }
+      }
+
+      if (event.code === keybinds.submitTransaction) {
+        event.preventDefault();
+        handleSubmitTransaction();
+        return;
+      }
+
+      if (event.code === keybinds.switchTokens && ['swap', 'limit', 'market', 'scale'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const switchButton = document.querySelector('.switch-button') as HTMLElement;
+        if (switchButton) switchButton.click();
+        return;
+      }
+
+      if (event.code === keybinds.maxAmount && ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const maxButton = document.querySelector('.max-button') as HTMLElement;
+        if (maxButton) maxButton.click();
+        return;
+      }
+
+      if (event.code === keybinds.focusInput && ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        const mainInput = document.querySelector('.input') as HTMLInputElement;
+        if (mainInput) mainInput.focus();
+        return;
+      }
+
+      if (event.code === keybinds.openSettings) {
+        event.preventDefault();
+        setpopup(5);
+        return;
+      }
+
+      if (event.code === keybinds.openWallet) {
+        event.preventDefault();
+        setpopup(4);
+        return;
+      }
+
+      if (event.code === keybinds.openTokenInSelect && ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        setpopup(1);
+        return;
+      }
+
+      if (event.code === keybinds.openTokenOutSelect && ['swap', 'limit', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        setpopup(2);
+        return;
+      }
+
+      if (event.code === keybinds.cancelAllOrders) {
+        event.preventDefault();
+        handleCancelAllOrders();
+        return;
+      }
+
+      if (event.code === keybinds.cancelTopOrder) {
+        event.preventDefault();
+        handleCancelTopOrder();
+        return;
+      }
+
+      if (event.code === keybinds.openPortfolio) {
+        event.preventDefault();
+        navigate('/portfolio');
+        return;
+      }
+
+      if (event.code === keybinds.openLeaderboard) {
+        event.preventDefault();
+        navigate('/leaderboard');
+        return;
+      }
+
+      if (event.code === keybinds.openReferrals) {
+        event.preventDefault();
+        navigate('/referrals');
+        return;
+      }
+
+      if (event.code === keybinds.openMarketSearch) {
+        event.preventDefault();
+        setpopup(8);
+        return;
+      }
+
+      if (event.code === keybinds.toggleFavorite && activeMarket) {
+        event.preventDefault();
+        toggleFavorite(activeMarket.baseAddress?.toLowerCase() ?? '');
+        return;
+      }
+
+      if (event.code === keybinds.toggleSimpleView) {
+        event.preventDefault();
+        const newSimpleView = !simpleView;
+        setSimpleView(newSimpleView);
+        localStorage.setItem('crystal_simple_view', JSON.stringify(newSimpleView));
+
+        if (newSimpleView) {
+          navigate('/swap');
+        } else {
+          navigate('/market');
+        }
+        return;
+      }
+
+      if (event.code === keybinds.refreshQuote && ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
+        event.preventDefault();
+        handleRefreshQuote(event as any);
+        return;
+      }
+
+      if (isOrderCenterVisible && !simpleView) {
+        if (event.code === keybinds.switchToOrders) {
+          event.preventDefault();
+          setActiveSection('orders');
+          localStorage.setItem('crystal_oc_tab', 'orders');
+          return;
+        }
+
+        if (event.code === keybinds.switchToTrades) {
+          event.preventDefault();
+          setActiveSection('tradeHistory');
+          localStorage.setItem('crystal_oc_tab', 'tradeHistory');
+          return;
+        }
+
+        if (event.code === keybinds.switchToHistory) {
+          event.preventDefault();
+          setActiveSection('orderHistory');
+          localStorage.setItem('crystal_oc_tab', 'orderHistory');
+          return;
+        }
+
+        if (event.code === keybinds.switchToBalances) {
+          event.preventDefault();
+          setActiveSection('balances');
+          localStorage.setItem('crystal_oc_tab', 'balances');
+          return;
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    keybinds,
+    isListeningForKey,
+    editingKeybind,
+    popup,
+    location.pathname,
+    simpleView,
+    isOrderCenterVisible,
+    activeMarket,
+    navigate,
+    toggleFavorite,
+    setSimpleView,
+    setActiveSection,
+    handleRefreshQuote,
+    handleSubmitTransaction,
+    handleCancelAllOrders,
+    handleCancelTopOrder,
+    setpopup
+  ]);
 
   // input tokenlist
   const TokenList1 = (
@@ -6701,331 +7544,1379 @@ useEffect(() => {
               >
                 <img src={closebutton} className="close-button-icon" />
               </button>
-
               <div className="layout-settings-title">{t('settings')}</div>
             </div>
-            <div className="layout-settings-content">
-              {!simpleView && (
-                <div className="layout-options">
-                  <div>
-                    <div className="layout-section-title">
-                      {t('tradePanelPosition')}
-                    </div>
-                    <div className="layout-section">
-                      <button
-                        className={`layout-option ${layoutSettings === 'alternative' ? 'active' : ''}`}
-                        onClick={() => {
-                          setLayoutSettings('alternative');
-                          localStorage.setItem('crystal_layout', 'alternative');
-                        }}
-                      >
-                        <div className="layout-preview-container">
-                          <div className="preview-trade"></div>
-                          <div className="layout-preview-wrapper">
-                            <div className="layout-preview alternative-layout">
-                              <div className="preview-chart"></div>
-                              <div className="preview-orderbook"></div>
+
+            <div className="settings-main-container">
+              <div className="settings-sidebar">
+                <button
+                  className={`settings-section-button ${activeSettingsSection === 'general' ? 'active' : ''}`}
+                  onClick={() => updateActiveSettingsSection('general')}
+                >
+                  <span>{t('General')}</span>
+                </button>
+
+                {!simpleView && (
+                  <button
+                    className={`settings-section-button ${activeSettingsSection === 'layout' ? 'active' : ''}`}
+                    onClick={() => updateActiveSettingsSection('layout')}
+                  >
+                    <span>{t('Trading Layout')}</span>
+                  </button>
+                )}
+
+                <button
+                  className={`settings-section-button ${activeSettingsSection === 'display' ? 'active' : ''}`}
+                  onClick={() => updateActiveSettingsSection('display')}
+                >
+                  <span>{t('Trading Settings')}</span>
+                </button>
+
+                <button
+                  className={`settings-section-button ${activeSettingsSection === 'audio' ? 'active' : ''}`}
+                  onClick={() => updateActiveSettingsSection('audio')}
+                >
+                  <span>{t('Notifications')}</span>
+                </button>
+
+                <button
+                  className={`settings-section-button ${activeSettingsSection === 'keybinds' ? 'active' : ''}`}
+                  onClick={() => updateActiveSettingsSection('keybinds')}
+                >
+                  <span>{t('Keybinds')}</span>
+                </button>
+              </div>
+              <div className="right-side-settings-panel">
+                <div className="settings-content-panel">
+                  {activeSettingsSection === 'general' && (
+                    <div className="settings-section-content">
+                      <div className="layout-language-row">
+                        <span className="layout-language-label">{t('language')}</span>
+                        <div className="settings-section-subtitle">
+                          Select your preferred interface language                        </div>
+                        <div className="language-selector-app-container">
+                          <div className="language-grid">
+                            {languageOptions.map((lang) => (
+                              <button
+                                key={lang.code}
+                                className={`language-grid-item ${language === lang.code ? 'active' : ''}`}
+                                onClick={() => {
+                                  setLanguage(lang.code);
+                                  localStorage.setItem('crystal_language', lang.code);
+                                }}
+                              >
+                                {lang.name}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="slider-settings-section">
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">{t('Balance Slider Mode')}</div>
+                          <div className="settings-section-subtitle">
+                            Choose how you want to select balance percentages
+                          </div>
+
+                          <div className="slider-mode-options">
+                            <button
+                              className={`control-layout-option ${sliderMode === 'slider' ? 'active' : ''}`}
+                              onClick={() => {
+                                setSliderMode('slider');
+                                localStorage.setItem('crystal_slider_mode', 'slider');
+                              }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">Slider</span>
+                              </div>
+                            </button>
+
+                            <button
+                              className={`control-layout-option ${sliderMode === 'presets' ? 'active' : ''}`}
+                              onClick={() => {
+                                setSliderMode('presets');
+                                localStorage.setItem('crystal_slider_mode', 'presets');
+                              }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">Presets</span>
+                              </div>
+                            </button>
+
+                            <button
+                              className={`control-layout-option ${sliderMode === 'increment' ? 'active' : ''}`}
+                              onClick={() => {
+                                setSliderMode('increment');
+                                localStorage.setItem('crystal_slider_mode', 'increment');
+                              }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">Increment</span>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                        {sliderMode === 'presets' && (
+                          <div className="settings-subsection">
+                            <div className="layout-section-title">Preset Percentages</div>
+                            <div className="settings-section-subtitle">
+                              Set your three favorite percentage values
                             </div>
-                            <div className="layout-preview-bottom">
-                              <div className="preview-ordercenter"></div>
+                            <div className="preset-inputs">
+                              {sliderPresets.map((preset: number, index: number) => (
+                                <div key={index} className="preset-input-group">
+                                  <label className="preset-label">Preset {index + 1}</label>
+                                  <div className="preset-input-container">
+                                    <input
+                                      type="text"
+                                      value={preset === 0 ? '' : preset.toString()}
+                                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                        const inputValue = e.target.value;
+                                        if (inputValue === '') {
+                                          const newPresets = [...sliderPresets];
+                                          newPresets[index] = 0;
+                                          setSliderPresets(newPresets);
+                                          localStorage.setItem('crystal_slider_presets', JSON.stringify(newPresets));
+                                        } else if (/^\d*\.?\d*$/.test(inputValue)) {
+                                          const numValue = parseFloat(inputValue);
+                                          if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
+                                            const newPresets = [...sliderPresets];
+                                            newPresets[index] = numValue;
+                                            setSliderPresets(newPresets);
+                                            localStorage.setItem('crystal_slider_presets', JSON.stringify(newPresets));
+                                          }
+                                        }
+                                      }}
+                                      placeholder="0"
+                                      className="preset-input"
+                                    />
+                                    <span className="preset-unit">%</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {sliderMode === 'increment' && (
+                          <div className="settings-subsection">
+                            <div className="layout-section-title">Increment Amount</div>
+                            <div className="settings-section-subtitle">
+                              Set how much each +/− button changes the percentage
+                            </div>
+                            <div className="increment-input-group">
+                              <div className="increment-input-container">
+                                <div className="percentage-input-wrapper">
+                                  <input
+                                    type="text"
+                                    value={sliderIncrement === 0 ? '' : sliderIncrement.toString()}
+                                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                                      const inputValue = e.target.value;
+                                      if (inputValue === '') {
+                                        setSliderIncrement(0);
+                                        localStorage.setItem('crystal_slider_increment', '0');
+                                      } else if (/^\d*\.?\d{0,2}$/.test(inputValue)) {
+                                        const numValue = parseFloat(inputValue || '0') || 0;
+                                        if (numValue <= 50) {
+                                          setSliderIncrement(numValue);
+                                          localStorage.setItem('crystal_slider_increment', numValue.toString());
+                                        }
+                                      }
+                                    }}
+                                    placeholder="10"
+                                    className="percentage-input"
+                                  />
+                                  <span className="percentage-input-suffix">%</span>
+                                </div>
+                              </div>
+
+                            </div>
+                          </div>
+                        )}
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">
+                            {t('Custom RPC & Graph API')}
+                          </div>
+                          <div className="settings-section-subtitle">
+                            Specify your own JSON-RPC endpoint and GraphQL API URL for blockchain data access.
+                          </div>
+
+                          <div className="custom-rpc-settings">
+                            <div className="input-group">
+                              <label className="input-label">{t('RPC URL')}</label>
+                              <input
+                                type="text"
+                                className="input-field"
+                                value={rpcUrl}
+                                placeholder="https://mainnet.infura.io/v3/…"
+                                onChange={e => {
+                                  setRpcUrl(e.target.value)
+                                  localStorage.setItem('crystal_rpc_url', e.target.value)
+                                }}
+                              />
+                            </div>
+
+                            <div className="input-group">
+                              <label className="input-label">{t('Graph API URL')}</label>
+                              <input
+                                type="text"
+                                className="input-field"
+                                value={graphUrl}
+                                placeholder="https://api.thegraph.com/subgraphs/name/…"
+                                onChange={e => {
+                                  setGraphUrl(e.target.value)
+                                  localStorage.setItem('crystal_graph_url', e.target.value)
+                                }}
+                              />
+                            </div>
+
+                            <div className="input-group">
+                              <label className="input-label">{t('Graph API Key')} <small>(optional)</small></label>
+                              <input
+                                type="text"
+                                className="input-field"
+                                value={graphKey}
+                                placeholder="YOUR_API_KEY"
+                                onChange={e => {
+                                  setGraphKey(e.target.value)
+                                  localStorage.setItem('crystal_graph_key', e.target.value)
+                                }}
+                              />
                             </div>
                           </div>
                         </div>
-                        <div className="layout-label">
-                          <span className="layout-name">
-                            {t('left')} {t('panel')}
-                          </span>
-                        </div>
-                      </button>
 
-                      <button
-                        className={`layout-option ${layoutSettings === 'default' ? 'active' : ''}`}
-                        onClick={() => {
-                          setLayoutSettings('default');
-                          localStorage.setItem('crystal_layout', 'default');
-                        }}
-                      >
-                        <div className="layout-preview-container">
-                          <div className="layout-preview-wrapper">
-                            <div className="layout-preview alternative-layout">
-                              <div className="preview-chart" />
-                              <div className="preview-orderbook" />
-                            </div>
-                            <div className="layout-preview-bottom">
-                              <div className="preview-ordercenter" />
-                            </div>
-                          </div>
-                          <div className="preview-trade" />
-                        </div>
 
-                        <div className="layout-label">
-                          <span className="layout-name">
-                            {t('right')} {t('panel')}
-                          </span>
-                        </div>
-                      </button>
+                      </div>
+
                     </div>
-                  </div>
+                  )}
 
-                  <div>
-                    <div className="layout-section-title">
-                      {t('orderbookPosition')}
-                    </div>
-                    <div className="layout-section">
-                      <button
-                        className={`layout-option ${orderbookPosition === 'left' ? 'active' : ''}`}
-                        onClick={() => {
-                          setOrderbookPosition('left');
-                          localStorage.setItem('crystal_orderbook', 'left');
-                        }}
-                      >
-                        <div className="ob-layout-preview-container">
-                          <div className="ob-layout-preview alternative-layout">
-                            <div className="ob-preview-orderbook">
-                              <div className="ob-preview-sell"></div>
-                              <div className="ob-preview-buy"></div>
-                            </div>
-                            <div className="ob-preview-chart"></div>
+                  {activeSettingsSection === 'layout' && !simpleView && (
+                    <div className="settings-section-content">
+                      <div className="layout-options">
+                        <div>
+                          <div className="layout-section-title">
+                            {t('tradePanelPosition')}
                           </div>
-                        </div>
-                        <div className="layout-label">
-                          <span className="layout-name">
-                            {t('left')} {t('side')}
-                          </span>
-                        </div>
-                      </button>
+                          <div className="settings-section-subtitle">
+                            Choose where the trading panel appears on your screen
+                          </div>
+                          <div className="layout-section">
+                            <button
+                              className={`layout-option ${layoutSettings === 'alternative' ? 'active' : ''}`}
+                              onClick={() => {
+                                setLayoutSettings('alternative');
+                                localStorage.setItem('crystal_layout', 'alternative');
+                              }}
+                            >
+                              <div className="layout-preview-container">
+                                <div className="preview-trade"></div>
+                                <div className="layout-preview-wrapper">
+                                  <div className="layout-preview alternative-layout">
+                                    <div className="preview-chart"></div>
+                                    <div className="preview-orderbook"></div>
+                                  </div>
+                                  <div className="layout-preview-bottom">
+                                    <div className="preview-ordercenter"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="layout-label">
+                                <span className="layout-name">
+                                  {t('left')} {t('panel')}
+                                </span>
+                              </div>
+                            </button>
 
-                      <button
-                        className={`layout-option ${orderbookPosition === 'right' ? 'active' : ''}`}
-                        onClick={() => {
-                          setOrderbookPosition('right');
-                          localStorage.setItem('crystal_orderbook', 'right');
-                        }}
-                      >
-                        <div className="ob-layout-preview-container">
-                          <div className="ob-layout-preview alternative-layout">
-                            <div className="ob-preview-chart"></div>
+                            <button
+                              className={`layout-option ${layoutSettings === 'default' ? 'active' : ''}`}
+                              onClick={() => {
+                                setLayoutSettings('default');
+                                localStorage.setItem('crystal_layout', 'default');
+                              }}
+                            >
+                              <div className="layout-preview-container">
+                                <div className="layout-preview-wrapper">
+                                  <div className="layout-preview alternative-layout">
+                                    <div className="preview-chart" />
+                                    <div className="preview-orderbook" />
+                                  </div>
+                                  <div className="layout-preview-bottom">
+                                    <div className="preview-ordercenter" />
+                                  </div>
+                                </div>
+                                <div className="preview-trade" />
+                              </div>
 
-                            <div className="ob-preview-orderbook">
-                              <div className="ob-preview-sell"></div>
-                              <div className="ob-preview-buy"></div>
-                            </div>
+                              <div className="layout-label">
+                                <span className="layout-name">
+                                  {t('right')} {t('panel')}
+                                </span>
+                              </div>
+                            </button>
                           </div>
                         </div>
-                        <div className="layout-label">
-                          <span className="layout-name">
-                            {t('right')} {t('side')}
+
+                        <div>
+                          <div className="layout-section-title">
+                            {t('orderbookPosition')}
+                          </div>
+                          <div className="settings-section-subtitle">
+                            Position the orderbook on the left or right side of the chart
+                          </div>
+                          <div className="layout-section">
+                            <button
+                              className={`layout-option ${orderbookPosition === 'left' ? 'active' : ''}`}
+                              onClick={() => {
+                                setOrderbookPosition('left');
+                                localStorage.setItem('crystal_orderbook', 'left');
+                              }}
+                            >
+                              <div className="ob-layout-preview-container">
+                                <div className="ob-layout-preview alternative-layout">
+                                  <div className="ob-preview-orderbook">
+                                    <div className="ob-preview-sell"></div>
+                                    <div className="ob-preview-buy"></div>
+                                  </div>
+                                  <div className="ob-preview-chart"></div>
+                                </div>
+                              </div>
+                              <div className="layout-label">
+                                <span className="layout-name">
+                                  {t('left')} {t('side')}
+                                </span>
+                              </div>
+                            </button>
+
+                            <button
+                              className={`layout-option ${orderbookPosition === 'right' ? 'active' : ''}`}
+                              onClick={() => {
+                                setOrderbookPosition('right');
+                                localStorage.setItem('crystal_orderbook', 'right');
+                              }}
+                            >
+                              <div className="ob-layout-preview-container">
+                                <div className="ob-layout-preview alternative-layout">
+                                  <div className="ob-preview-chart"></div>
+                                  <div className="ob-preview-orderbook">
+                                    <div className="ob-preview-sell"></div>
+                                    <div className="ob-preview-buy"></div>
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="layout-label">
+                                <span className="layout-name">
+                                  {t('right')} {t('side')}
+                                </span>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+
+                      </div>
+                      <div>
+                        <div className="layout-section-title">
+                          {t('notificationPosition')}
+                        </div>
+                        <div className="settings-section-subtitle">
+                          Choose where notification popups appear on your screen
+                        </div>
+                        <div className="notification-position-grid">
+                          <button
+                            className={`notification-position-option ${notificationPosition === 'top-left' ? 'active' : ''}`}
+                            onClick={() => updateNotificationPosition('top-left')}
+                          >
+                            <div className="position-preview-container">
+                                <div className="preview-popup top-left"></div>
+                            </div>
+                          </button>
+
+                          <button
+                            className={`notification-position-option ${notificationPosition === 'top-right' ? 'active' : ''}`}
+                            onClick={() => updateNotificationPosition('top-right')}
+                          >
+                            <div className="position-preview-container">
+                                <div className="preview-popup top-right"></div>
+                            </div>
+                          </button>
+
+                          <button
+                            className={`notification-position-option ${notificationPosition === 'bottom-left' ? 'active' : ''}`}
+                            onClick={() => updateNotificationPosition('bottom-left')}
+                          >
+                            <div className="position-preview-container">
+                                <div className="preview-popup bottom-left"></div>
+                            </div>
+                          </button>
+
+                          <button
+                            className={`notification-position-option ${notificationPosition === 'bottom-right' ? 'active' : ''}`}
+                            onClick={() => updateNotificationPosition('bottom-right')}
+                          >
+                            <div className="position-preview-container">
+                                <div className="preview-popup bottom-right"></div>
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSettingsSection === 'display' && (
+                    <div className="settings-section-content">
+                      <div className="trade-markers-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="trade-markers-toggle-label">
+                            {t('showTradeMarkers')}
+                          </span>
+                          <span className="settings-option-subtitle">
+                            Display trade execution markers on the chart
                           </span>
                         </div>
+                        <ToggleSwitch
+                          checked={isMarksVisible}
+                          onChange={() => {
+                            setIsMarksVisible(!isMarksVisible);
+                            localStorage.setItem(
+                              'crystal_marks_visible',
+                              JSON.stringify(!isMarksVisible),
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="trade-markers-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="trade-markers-toggle-label">
+                            {t('showChartOrders')}
+                          </span>
+                          <span className="settings-option-subtitle">
+                            Show your active orders on the chart
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={isOrdersVisible}
+                          onChange={() => {
+                            setIsOrdersVisible(!isOrdersVisible);
+                            localStorage.setItem(
+                              'crystal_orders_visible',
+                              JSON.stringify(!isOrdersVisible),
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="orderbook-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="orderbook-toggle-label">
+                            {t('showOB')}
+                          </span>
+                          <span className="settings-option-subtitle">
+                            Display the orderbook panel
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={isOrderbookVisible}
+                          onChange={() => {
+                            setIsOrderbookVisible(!isOrderbookVisible);
+                            localStorage.setItem(
+                              'crystal_orderbook_visible',
+                              JSON.stringify(!isOrderbookVisible),
+                            );
+                          }}
+                        />
+                      </div>
+
+                      <div className="ordercenter-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="ordercenter-toggle-label">
+                            {t('showOC')}
+                          </span>
+                          <span className="settings-option-subtitle">
+                            Show the order center at the bottom
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={isOrderCenterVisible}
+                          onChange={() => {
+                            setIsOrderCenterVisible(!isOrderCenterVisible);
+                            localStorage.setItem(
+                              'crystal_ordercenter_visible',
+                              JSON.stringify(!isOrderCenterVisible),
+                            );
+                          }}
+                        />
+                      </div>
+                      <div className="audio-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="audio-toggle-label">{t('showChartOutliers')}</span>
+                          <span className="settings-option-subtitle">
+                            Include outlier data points in chart display
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={showChartOutliers}
+                          onChange={() => {
+                            setShowChartOutliers(!showChartOutliers);
+                            localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(!showChartOutliers));
+                          }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {activeSettingsSection === 'audio' && (
+                    <div className="settings-section-content">
+                      <div className="audio-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="audio-toggle-label">{t('audioNotifications')}</span>
+                          <span className="settings-option-subtitle">
+                            Play sounds for trade executions and order fills
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={isAudioEnabled}
+                          onChange={() => {
+                            setIsAudioEnabled(!isAudioEnabled);
+                            localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
+                          }}
+                        />
+                      </div>
+                      {isAudioEnabled && (
+                        <div className="popup-type-settings">
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Play Swap Sounds</span>
+                              <span className="settings-option-subtitle">
+                                Play sounds for successful and failed swaps
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={audioGroups.swap}
+                              onChange={() => toggleAudioGroup('swap')}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Play Order Sounds</span>
+                              <span className="settings-option-subtitle">
+                                Play sounds for limit orders, fills, and cancellations
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={audioGroups.order}
+                              onChange={() => toggleAudioGroup('order')}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Play Transfer Sounds</span>
+                              <span className="settings-option-subtitle">
+                                Play sounds for sends, wrap/unwrap, and staking
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={audioGroups.transfer}
+                              onChange={() => toggleAudioGroup('transfer')}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Play Approval Sounds</span>
+                              <span className="settings-option-subtitle">
+                                Play sounds for token approvals
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={audioGroups.approve}
+                              onChange={() => toggleAudioGroup('approve')}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="audio-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="audio-toggle-label">Notification Controls</span>
+                          <span className="settings-option-subtitle">
+                            Show advanced options to selectively hide notification popups
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={hideNotificationPopups}
+                          onChange={() => {
+                            const newValue = !hideNotificationPopups;
+                            setHideNotificationPopups(newValue);
+                            localStorage.setItem('crystal_hide_notification_popups', JSON.stringify(newValue));
+                          }}
+                        />
+                      </div>
+
+
+                      {hideNotificationPopups && (
+                        <div className="popup-type-settings">
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Hide Swap Notifications</span>
+                              <span className="settings-option-subtitle">
+                                Hide popups for successful swaps and failed swaps
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={hiddenPopupTypes.swap === true && hiddenPopupTypes.swapFailed === true}
+                              onChange={() => {
+                                const shouldHide = !(hiddenPopupTypes.swap === true && hiddenPopupTypes.swapFailed === true);
+                                updateMultipleHiddenPopupTypes(['swap', 'swapFailed'], shouldHide);
+                              }}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Hide Order Notifications</span>
+                              <span className="settings-option-subtitle">
+                                Hide popups for limit orders, fills, and cancellations
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={hiddenPopupTypes.limit === true && hiddenPopupTypes.fill === true && hiddenPopupTypes.cancel === true && hiddenPopupTypes.limitFailed === true}
+                              onChange={() => {
+                                const shouldHide = !(hiddenPopupTypes.limit === true && hiddenPopupTypes.fill === true && hiddenPopupTypes.cancel === true && hiddenPopupTypes.limitFailed === true);
+                                updateMultipleHiddenPopupTypes(['limit', 'fill', 'cancel', 'limitFailed'], shouldHide);
+                              }}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Hide Transfer Notifications</span>
+                              <span className="settings-option-subtitle">
+                                Hide popups for sends, wrap/unwrap, and staking
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={hiddenPopupTypes.send === true && hiddenPopupTypes.sendFailed === true && hiddenPopupTypes.wrap === true && hiddenPopupTypes.unwrap === true && hiddenPopupTypes.stake === true}
+                              onChange={() => {
+                                const shouldHide = !(hiddenPopupTypes.send === true && hiddenPopupTypes.sendFailed === true && hiddenPopupTypes.wrap === true && hiddenPopupTypes.unwrap === true && hiddenPopupTypes.stake === true);
+                                updateMultipleHiddenPopupTypes(['send', 'sendFailed', 'wrap', 'unwrap', 'stake'], shouldHide);
+                              }}
+                            />
+                          </div>
+
+                          <div className="popup-type-toggle-row">
+                            <div className="settings-option-info">
+                              <span className="popup-type-label">Hide Approval Notifications</span>
+                              <span className="settings-option-subtitle">
+                                Hide popups for token approvals
+                              </span>
+                            </div>
+                            <ToggleSwitch
+                              checked={hiddenPopupTypes.approve === true}
+                              onChange={() => {
+                                updateHiddenPopupType('approve', !hiddenPopupTypes.approve);
+                              }}
+                            />
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
+                  )}
+                  {activeSettingsSection === 'keybinds' && (
+                    <div className="settings-section-content">
+                      <div className="keybinds-section">
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Trading Shortcuts</div>
+                          <div className="settings-section-subtitle">
+                            Keyboard shortcuts for faster trading operations
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Submit Transaction</span>
+                              <span className="keybind-description">Execute trades, place orders, or confirm actions</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'submitTransaction' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'submitTransaction' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('submitTransaction');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'submitTransaction' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.submitTransaction)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Switch Tokens</span>
+                              <span className="keybind-description">Swap the input and output tokens</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'switchTokens' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'switchTokens' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('switchTokens');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'switchTokens' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.switchTokens)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Max Amount</span>
+                              <span className="keybind-description">Set input to maximum available balance</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'maxAmount' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'maxAmount' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('maxAmount');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'maxAmount' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.maxAmount)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Focus Input</span>
+                              <span className="keybind-description">Focus the main amount input field</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'focusInput' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'focusInput' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('focusInput');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'focusInput' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.focusInput)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Token Selection</div>
+                          <div className="settings-section-subtitle">
+                            Quick access to token selection dialogs
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Select Input Token</span>
+                              <span className="keybind-description">Open token selection for input token</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openTokenInSelect' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openTokenInSelect' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openTokenInSelect');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openTokenInSelect' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openTokenInSelect)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Select Output Token</span>
+                              <span className="keybind-description">Open token selection for output token</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openTokenOutSelect' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openTokenOutSelect' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openTokenOutSelect');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openTokenOutSelect' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openTokenOutSelect)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Order Management</div>
+                          <div className="settings-section-subtitle">
+                            Manage your active orders quickly
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Cancel All Orders</span>
+                              <span className="keybind-description">Cancel all active orders at once</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'cancelAllOrders' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'cancelAllOrders' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('cancelAllOrders');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'cancelAllOrders' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.cancelAllOrders)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Cancel Top Order</span>
+                              <span className="keybind-description">Cancel your most recent order</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'cancelTopOrder' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'cancelTopOrder' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('cancelTopOrder');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'cancelTopOrder' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.cancelTopOrder)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Interface Shortcuts</div>
+                          <div className="settings-section-subtitle">
+                            Navigate the interface quickly
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Settings</span>
+                              <span className="keybind-description">Open the settings panel</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openSettings' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openSettings' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openSettings');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openSettings' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openSettings)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Wallet</span>
+                              <span className="keybind-description">Open wallet connection and portfolio</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openWallet' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openWallet' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openWallet');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openWallet' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openWallet)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Market Search</span>
+                              <span className="keybind-description">Open the market search dialog</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openMarketSearch' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openMarketSearch' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openMarketSearch');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openMarketSearch' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openMarketSearch)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Toggle Simple View</span>
+                              <span className="keybind-description">Switch between simple and advanced view</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'toggleSimpleView' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'toggleSimpleView' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('toggleSimpleView');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'toggleSimpleView' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.toggleSimpleView)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Refresh Quote</span>
+                              <span className="keybind-description">Refresh the current price quote</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'refreshQuote' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'refreshQuote' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('refreshQuote');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'refreshQuote' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.refreshQuote)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Navigation Shortcuts</div>
+                          <div className="settings-section-subtitle">
+                            Jump to different pages quickly
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Portfolio</span>
+                              <span className="keybind-description">Navigate to portfolio page</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openPortfolio' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openPortfolio' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openPortfolio');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openPortfolio' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openPortfolio)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Leaderboard</span>
+                              <span className="keybind-description">Navigate to leaderboard page</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openLeaderboard' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openLeaderboard' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openLeaderboard');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openLeaderboard' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openLeaderboard)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Open Referrals</span>
+                              <span className="keybind-description">Navigate to referrals page</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'openReferrals' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'openReferrals' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('openReferrals');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'openReferrals' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.openReferrals)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Market Shortcuts</div>
+                          <div className="settings-section-subtitle">
+                            Interact with market data quickly
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Toggle Favorite</span>
+                              <span className="keybind-description">Add/remove current market from favorites</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'toggleFavorite' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'toggleFavorite' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('toggleFavorite');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'toggleFavorite' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.toggleFavorite)}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="settings-subsection">
+                          <div className="layout-section-title">Order Center Shortcuts</div>
+                          <div className="settings-section-subtitle">
+                            Navigate order center tabs quickly
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Switch to Orders</span>
+                              <span className="keybind-description">View active orders tab</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'switchToOrders' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'switchToOrders' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('switchToOrders');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'switchToOrders' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.switchToOrders)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Switch to Trade History</span>
+                              <span className="keybind-description">View trade history tab</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'switchToTrades' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'switchToTrades' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('switchToTrades');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'switchToTrades' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.switchToTrades)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Switch to Order History</span>
+                              <span className="keybind-description">View order history tab</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'switchToHistory' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'switchToHistory' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('switchToHistory');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'switchToHistory' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.switchToHistory)}
+                            </button>
+                          </div>
+                          <div className="keybind-setting-row">
+                            <div className="keybind-info">
+                              <span className="keybind-label">Switch to Balances</span>
+                              <span className="keybind-description">View balances tab</span>
+                            </div>
+                            <button
+                              className={`keybind-button ${editingKeybind === 'switchToBalances' && isListeningForKey ? 'listening' : ''
+                                }`}
+                              onClick={() => {
+                                if (editingKeybind === 'switchToBalances' && isListeningForKey) {
+                                  setEditingKeybind(null);
+                                  setIsListeningForKey(false);
+                                } else {
+                                  setEditingKeybind('switchToBalances');
+                                  setIsListeningForKey(true);
+                                }
+                              }}
+                            >
+                              {editingKeybind === 'switchToBalances' && isListeningForKey
+                                ? 'Press a key...'
+                                : formatKeyDisplay(keybinds.switchToBalances)}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        className="reset-keybinds-button"
+                        onClick={() => {
+                          const defaultKeybinds = {
+                            submitTransaction: 'Enter',
+                            switchTokens: 'KeyX',
+                            maxAmount: 'KeyM',
+                            focusInput: 'Slash',
+                            openSettings: 'KeyS',
+                            openWallet: 'KeyW',
+                            openTokenInSelect: 'KeyQ',
+                            openTokenOutSelect: 'KeyE',
+                            cancelAllOrders: 'KeyC',
+                            cancelTopOrder: 'Escape',
+                            openPortfolio: 'KeyP',
+                            openLeaderboard: 'KeyL',
+                            openReferrals: 'KeyR',
+                            openMarketSearch: 'KeyF',
+                            toggleFavorite: 'KeyT',
+                            toggleSimpleView: 'KeyV',
+                            refreshQuote: 'F5',
+                            switchToOrders: 'Digit1',
+                            switchToTrades: 'Digit2',
+                            switchToHistory: 'Digit3',
+                            switchToBalances: 'Digit4',
+                          };
+                          setKeybinds(defaultKeybinds);
+                          localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
+                          setEditingKeybind(null);
+                          setIsListeningForKey(false);
+                        }}
+                      >
+                        Reset Keybinds
                       </button>
                     </div>
-                  </div>
+                  )}
+
                 </div>
-              )}
+                <button
+                  className="revert-settings-button"
+                  onClick={() => {
+                    setLanguage('EN');
+                    localStorage.setItem('crystal_language', 'EN');
 
-              <div className="layout-language-row">
-                <span className="layout-language-label">{t('language')}</span>
-                <div className="language-selector-app-container">
-                  <LanguageSelector
-                    languages={languageOptions}
-                    isLanguageDropdownOpen={isLanguageDropdownOpen}
-                    setIsLanguageDropdownOpen={setIsLanguageDropdownOpen}
-                  />
-                </div>
-              </div>
-              <div className="trade-markers-toggle-row">
-                <span className="trade-markers-toggle-label">
-                  {t('showTradeMarkers')}
-                </span>
-                <ToggleSwitch
-                  checked={isMarksVisible}
-                  onChange={() => {
-                    setIsMarksVisible(!isMarksVisible);
-                    localStorage.setItem(
-                      'crystal_marks_visible',
-                      JSON.stringify(!isMarksVisible),
-                    );
-                  }}
-                />
-              </div>
-              <div className="trade-markers-toggle-row">
-                <span className="trade-markers-toggle-label">
-                  {t('showChartOrders')}
-                </span>
-                <ToggleSwitch
-                  checked={isOrdersVisible}
-                  onChange={() => {
-                    setIsOrdersVisible(!isOrdersVisible);
-                    localStorage.setItem(
-                      'crystal_orders_visible',
-                      JSON.stringify(!isOrdersVisible),
-                    );
-                  }}
-                />
-              </div>
-              <div className="orderbook-toggle-row">
-                <span className="orderbook-toggle-label">
-                  {t('showOB')}
-                </span>
-                <ToggleSwitch
-                  checked={isOrderbookVisible}
-                  onChange={() => {
-                    setIsOrderbookVisible(!isOrderbookVisible);
-                    localStorage.setItem(
-                      'crystal_orderbook_visible',
-                      JSON.stringify(!isOrderbookVisible),
-                    );
-                  }}
-                />
-              </div>
+                    setHideNotificationPopups(false); t
+                    localStorage.setItem('crystal_hide_notification_popups', 'false');
 
-              <div className="ordercenter-toggle-row">
-                <span className="ordercenter-toggle-label">
-                  {t('showOC')}
-                </span>
-                <ToggleSwitch
-                  checked={isOrderCenterVisible}
-                  onChange={() => {
-                    setIsOrderCenterVisible(!isOrderCenterVisible);
+                    setNotificationPosition('bottom-right');
+                    localStorage.setItem('crystal_notification_position', 'bottom-right');
+
+                    setHiddenPopupTypes({});
+                    localStorage.setItem('crystal_hidden_popup_types', JSON.stringify({}));
+
+                    setLayoutSettings('default');
+                    localStorage.setItem('crystal_layout', 'default');
+
+                    setOrderbookPosition('right');
+                    localStorage.setItem('crystal_orderbook', 'right');
+
+                    setSimpleView(false);
+                    localStorage.setItem('crystal_simple_view', 'false');
+
+                    setIsMarksVisible(true);
+                    localStorage.setItem('crystal_marks_visible', 'true');
+
+                    setIsOrdersVisible(true);
+                    localStorage.setItem('crystal_orders_visible', 'true');
+
+                    setHideNotificationPopups(false);
+                    localStorage.setItem('crystal_hide_notification_popups', 'false');
+                    t
+                    setIsOrderbookVisible(true);
+                    localStorage.setItem('crystal_orderbook_visible', 'true');
+
+                    setIsOrderCenterVisible(true);
                     localStorage.setItem(
                       'crystal_ordercenter_visible',
-                      JSON.stringify(!isOrderCenterVisible),
+                      'true',
+                    );
+
+                    setShowChartOutliers(false);
+                    localStorage.setItem('crystal_show_chart_outliers', 'false');
+
+                    setIsAudioEnabled(false);
+                    localStorage.setItem('crystal_audio_notifications', 'false');
+
+                    setOrderbookWidth(300);
+                    localStorage.setItem('orderbookWidth', '300');
+
+                    setAddLiquidityOnly(false);
+                    localStorage.setItem(
+                      'crystal_add_liquidity_only',
+                      'false',
+                    );
+
+                    setorderType(1);
+                    localStorage.setItem('crystal_order_type', '1');
+
+                    setSlippageString('1');
+                    setSlippage(BigInt(9900));
+                    localStorage.setItem('crystal_slippage_string', '1');
+                    localStorage.setItem('crystal_slippage', '9900');
+
+                    setActiveSection('orders');
+                    localStorage.setItem('crystal_oc_tab', 'orders');
+
+                    setFilter('all');
+                    localStorage.setItem('crystal_oc_filter', 'all');
+
+                    setOnlyThisMarket(false);
+                    localStorage.setItem('crystal_only_this_market', 'false');
+
+                    setOBInterval(baseInterval);
+                    localStorage.setItem(
+                      `${activeMarket.baseAsset}_ob_interval`,
+                      JSON.stringify(baseInterval),
+                    );
+
+                    const currentKey = `${activeMarket.baseAsset}_ob_interval`;
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                      const key = localStorage.key(i);
+                      if (
+                        key &&
+                        key.endsWith('_ob_interval') &&
+                        key !== currentKey
+                      ) {
+                        localStorage.removeItem(key);
+                      }
+                    }
+
+                    setViewMode('both');
+                    localStorage.setItem('ob_viewmode', 'both');
+
+                    setOBTab('orderbook');
+                    localStorage.setItem('ob_active_tab', 'orderbook');
+
+                    setMobileView('chart');
+
+                    setAmountsQuote('Quote');
+                    localStorage.setItem('ob_amounts_quote', 'Quote');
+
+                    localStorage.setItem('crystal_chart_timeframe', '5')
+
+                    let defaultHeight: number;
+
+                    if (window.innerHeight > 1080) defaultHeight = 367.58;
+                    else if (window.innerHeight > 960) defaultHeight = 324.38;
+                    else if (window.innerHeight > 840) defaultHeight = 282.18;
+                    else if (window.innerHeight > 720) defaultHeight = 239.98;
+                    else defaultHeight = 198.78;
+
+                    setOrderCenterHeight(defaultHeight);
+                    localStorage.setItem(
+                      'orderCenterHeight',
+                      defaultHeight.toString(),
                     );
                   }}
-                />
+                >
+                  {t('revertToDefault')}
+                </button>
               </div>
-              <div className="audio-toggle-row">
-                <span className="audio-toggle-label">{t('showChartOutliers')}</span>
-                <ToggleSwitch
-                  checked={showChartOutliers}
-                  onChange={() => {
-                    setShowChartOutliers(!showChartOutliers);
-                    localStorage.setItem('crystal_show_chart_outliers', JSON.stringify(!showChartOutliers));
-                  }}
-                />
-              </div>
-              <div className="audio-toggle-row">
-                <span className="audio-toggle-label">{t('audioNotifications')}</span>
-                <ToggleSwitch
-                  checked={isAudioEnabled}
-                  onChange={() => {
-                    setIsAudioEnabled(!isAudioEnabled);
-                    localStorage.setItem('crystal_audio_notifications', JSON.stringify(!isAudioEnabled));
-                  }}
-                />
-              </div>
-
-              <button
-                className="revert-settings-button"
-                onClick={() => {
-                  setLanguage('EN');
-                  localStorage.setItem('crystal_language', 'EN');
-
-                  setLayoutSettings('default');
-                  localStorage.setItem('crystal_layout', 'default');
-
-                  setOrderbookPosition('right');
-                  localStorage.setItem('crystal_orderbook', 'right');
-
-                  setSimpleView(false);
-                  localStorage.setItem('crystal_simple_view', 'false');
-
-                  setIsMarksVisible(true);
-                  localStorage.setItem('crystal_marks_visible', 'true');
-
-                  setIsOrdersVisible(true);
-                  localStorage.setItem('crystal_orders_visible', 'true');
-
-                  setIsOrderbookVisible(true);
-                  localStorage.setItem('crystal_orderbook_visible', 'true');
-
-                  setIsOrderCenterVisible(true);
-                  localStorage.setItem(
-                    'crystal_ordercenter_visible',
-                    'true',
-                  );
-
-                  setShowChartOutliers(false);
-                  localStorage.setItem('crystal_show_chart_outliers', 'false');
-
-                  setIsAudioEnabled(false);
-                  localStorage.setItem('crystal_audio_notifications', 'false');
-
-                  setOrderbookWidth(300);
-                  localStorage.setItem('orderbookWidth', '300');
-
-                  setAddLiquidityOnly(false);
-                  localStorage.setItem(
-                    'crystal_add_liquidity_only',
-                    'false',
-                  );
-
-                  setorderType(1);
-                  localStorage.setItem('crystal_order_type', '1');
-
-                  setSlippageString('1');
-                  setSlippage(BigInt(9900));
-                  localStorage.setItem('crystal_slippage_string', '1');
-                  localStorage.setItem('crystal_slippage', '9900');
-
-                  setActiveSection('orders');
-                  localStorage.setItem('crystal_oc_tab', 'orders');
-
-                  setFilter('all');
-                  localStorage.setItem('crystal_oc_filter', 'all');
-
-                  setOnlyThisMarket(false);
-                  localStorage.setItem('crystal_only_this_market', 'false');
-
-                  setOBInterval(baseInterval);
-                  localStorage.setItem(
-                    `${activeMarket.baseAsset}_ob_interval`,
-                    JSON.stringify(baseInterval),
-                  );
-
-                  const currentKey = `${activeMarket.baseAsset}_ob_interval`;
-                  for (let i = localStorage.length - 1; i >= 0; i--) {
-                    const key = localStorage.key(i);
-                    if (
-                      key &&
-                      key.endsWith('_ob_interval') &&
-                      key !== currentKey
-                    ) {
-                      localStorage.removeItem(key);
-                    }
-                  }
-
-                  setViewMode('both');
-                  localStorage.setItem('ob_viewmode', 'both');
-
-                  setOBTab('orderbook');
-                  localStorage.setItem('ob_active_tab', 'orderbook');
-
-                  setMobileView('chart');
-
-                  setAmountsQuote('Quote');
-                  localStorage.setItem('ob_amounts_quote', 'Quote');
-
-                  localStorage.setItem('crystal_chart_timeframe', '5')
-
-                  let defaultHeight: number;
-
-                  if (window.innerHeight > 1080) defaultHeight = 367.58;
-                  else if (window.innerHeight > 960) defaultHeight = 324.38;
-                  else if (window.innerHeight > 840) defaultHeight = 282.18;
-                  else if (window.innerHeight > 720) defaultHeight = 239.98;
-                  else defaultHeight = 198.78;
-
-                  setOrderCenterHeight(defaultHeight);
-                  localStorage.setItem(
-                    'orderCenterHeight',
-                    defaultHeight.toString(),
-                  );
-                }}
-              >
-                {t('revertToDefault')}
-              </button>
             </div>
+
           </div>
         ) : null}
         {popup === 6 && selectedConnector ? (
@@ -7983,7 +9874,7 @@ useEffect(() => {
                         <img src={veryright} className="very-right" />
                         <img src={topmiddle} className="top-middle" />
                         <img src={topleft} className="bottom-middle" />
-                        <img src={circleleft} className="bottom-right" />
+                        <img src={circleleft} className="challenge-bottom-right" />
 
                         <div className="account-setup-header">
                           <div className="account-setup-title-wrapper">
@@ -8445,6 +10336,153 @@ useEffect(() => {
                   }}
                 >
                   {isEditingSigning ? (
+                    <div className="signing-indicator">
+                      <div className="loading-spinner"></div>
+                      <span>{t('signTransaction')}</span>
+                    </div>
+                  ) : (
+                    'Confirm'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 20 ? (
+          <div className="edit-order-size-popup-bg" ref={popupref}>
+            <div className="edit-order-size-header">
+              <span className="edit-order-size-title">Edit Order Size</span>
+              <span className="edit-order-size-subtitle">Adjust the size of your limit order</span>
+            </div>
+            <div className="edit-order-size-content">
+              {(() => {
+                if (!editingOrderSize) return null;
+
+                const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+                const ticker = tokendict[tokenAddress]?.ticker;
+
+                return (
+                  <div className="edit-order-size-balance-display">
+                    <img src={walleticon} className="balance-wallet-icon" />{' '}
+                    <span className="balance-value">{availableBalance.toFixed(2)}</span>
+                  </div>
+                );
+              })()}
+
+              <div className="edit-order-size-input-container">
+                <input
+                  className="edit-order-size-input"
+                  type="number"
+                  value={currentOrderSize === 0 ? '' : currentOrderSize.toString()}
+                  onChange={(e) => {
+                    const inputValue = e.target.value;
+                    if (inputValue === '') {
+                      setCurrentOrderSize(0);
+                    } else {
+                      const newValue = parseFloat(inputValue);
+                      if (!isNaN(newValue) && newValue >= 0) {
+                        setCurrentOrderSize(newValue);
+                      }
+                    }
+                    setHasEditedSize(true);
+                  }}
+                  step="any"
+                  min="0"
+                  placeholder="0.00"
+                />
+                <span className="edit-order-size-token-label">
+                  {editingOrderSize && tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress]?.ticker}
+                </span>
+              </div>
+
+              {(() => {
+                if (!editingOrderSize) return null;
+
+                const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+
+                const showWarning = currentOrderSize > availableBalance;
+
+                return showWarning ? (
+                  <div className="edit-order-size-warning">
+                    <span>Insufficient balance. Available: {availableBalance.toFixed(6)} {tokendict[tokenAddress]?.ticker}</span>
+                  </div>
+                ) : null;
+              })()}
+
+              <div className="edit-order-size-button-container">
+                <button
+                  className="edit-order-size-level-button decrease"
+                  onClick={() => {
+                    const newSize = currentOrderSize * 0.75; // -25%
+                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                    setHasEditedSize(true);
+                  }}
+                >
+                  -25%
+                </button>
+                <button
+                  className="edit-order-size-level-button decrease"
+                  onClick={() => {
+                    const newSize = currentOrderSize * 0.5; // -50%
+                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                    setHasEditedSize(true);
+                  }}
+                >
+                  -50%
+                </button>
+                <button
+                  className="edit-order-size-level-button increase"
+                  onClick={() => {
+                    const newSize = currentOrderSize * 1.25; // +25%
+                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                    setHasEditedSize(true);
+                  }}
+                >
+                  +25%
+                </button>
+                <button
+                  className="edit-order-size-level-button increase"
+                  onClick={() => {
+                    const newSize = currentOrderSize * 1.5; // +50%
+                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                    setHasEditedSize(true);
+                  }}
+                >
+                  +50%
+                </button>
+                <button
+                  className="edit-order-size-level-button"
+                  onClick={() => {
+                    if (!editingOrderSize) return;
+                    const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                    const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                    const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                    const maxSize = Number(tokenBalance) / (10 ** tokenDecimals);
+                    setCurrentOrderSize(parseFloat(maxSize.toFixed(8)));
+                    setHasEditedSize(true);
+                  }}
+                >
+                  Max
+                </button>
+              </div>
+
+              <div className="edit-order-size-actions">
+                <button
+                  className="edit-order-size-confirm-button"
+                  onClick={handleEditOrderSizeConfirm}
+                  disabled={isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0}
+                  style={{
+                    opacity: (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0) ? 0.5 : 1,
+                    cursor: (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0) ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  {isEditingSizeSigning ? (
                     <div className="signing-indicator">
                       <div className="loading-spinner"></div>
                       <span>{t('signTransaction')}</span>
@@ -9060,92 +11098,99 @@ useEffect(() => {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          <div className="slider-container">
-            <input
-              type="range"
-              className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-              min="0"
-              max="100"
-              step="1"
-              value={sliderPercent}
-              disabled={!connected}
-              onChange={(e) => {
-                const percent = parseInt(e.target.value);
-                const newAmount =
-                  (((tokenIn == eth && !client)
-                    ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount >
-                      BigInt(0)
-                      ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount
-                      : BigInt(0)
-                    : tokenBalances[tokenIn]) *
-                    BigInt(percent)) /
-                  100n;
-                setSliderPercent(percent);
-                setInputString(
-                  newAmount == BigInt(0)
-                    ? ''
-                    : customRound(
-                      Number(newAmount) /
-                      10 ** Number(tokendict[tokenIn].decimals),
-                      3,
-                    ).toString(),
-                );
-                debouncedSetAmount(newAmount);
-                setswitched(false);
-                if (isWrap) {
-                  setoutputString(
-                    newAmount == BigInt(0)
-                      ? ''
-                      : customRound(
-                        Number(newAmount) /
-                        10 ** Number(tokendict[tokenIn].decimals),
-                        3,
-                      ).toString(),
-                  );
-                  setamountOutSwap(newAmount);
-                }
-                const slider = e.target;
-                const rect = slider.getBoundingClientRect();
-                const trackWidth = rect.width - 15;
-                const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) {
-                  popup.style.left = `${thumbPosition}px`;
-                }
-              }}
-              onMouseDown={() => {
-                setIsDragging(true);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.add('visible');
-              }}
-              onMouseUp={() => {
-                setIsDragging(false);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.remove('visible');
-              }}
-              style={{
-                background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
 
-              }}
-            />
-            <div className="slider-percentage-popup">{sliderPercent}%</div>
-            <div className="balance-slider-marks">
-              {[0, 25, 50, 75, 100].map((markPercent) => (
-                <span
-                  key={markPercent}
-                  className="balance-slider-mark"
-                  data-active={sliderPercent >= markPercent}
-                  data-percentage={markPercent}
+          <div className="balance-slider-wrapper">
+            {sliderMode === 'presets' ? (
+              <div className="slider-container presets-mode">
+                <div className="preset-buttons">
+                  {sliderPresets.map((preset: number, index: number) => (
+                    <button
+                      key={index}
+                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(preset)) /
+                            100n;
+                          setSliderPercent(preset);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector('.balance-amount-slider');
+                          const popup = document.querySelector('.slider-percentage-popup');
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                          }
+                        }
+                      }}
+                      disabled={!connected}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : sliderMode === 'increment' ? (
+              <div className="slider-container increment-mode">
+                <button
+                  className="increment-button minus"
                   onClick={() => {
-                    if (connected) {
+                    if (connected && sliderPercent > 0) {
+                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                       const newAmount =
                         (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
@@ -9155,9 +11200,9 @@ useEffect(() => {
                             settings.chainConfig[activechain].gasamount
                             : BigInt(0)
                           : tokenBalances[tokenIn]) *
-                          BigInt(markPercent)) /
+                          BigInt(newPercent)) /
                         100n;
-                      setSliderPercent(markPercent);
+                      setSliderPercent(newPercent);
                       setInputString(
                         newAmount == BigInt(0)
                           ? ''
@@ -9181,26 +11226,316 @@ useEffect(() => {
                         );
                         setamountOutSwap(newAmount);
                       }
-                      const slider = document.querySelector(
-                        '.balance-amount-slider',
-                      );
-                      const popup: HTMLElement | null = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
                       if (slider && popup) {
                         const rect = slider.getBoundingClientRect();
-                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                          }px`;
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
                       }
                     }
                   }}
+                  disabled={!connected || sliderPercent === 0}
                 >
-                  {markPercent}%
-                </span>
-              ))}
-            </div>
-          </div>
-        </div>
+                  −
+                </button>
+                <div className="increment-display">
+                  <div className="increment-amount">{sliderIncrement}%</div>
+                </div>
+                <button
+                  className="increment-button plus"
+                  onClick={() => {
+                    if (connected && sliderPercent < 100) {
+                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                      const newAmount =
+                        (((tokenIn == eth && !client)
+                          ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(newPercent)) /
+                        100n;
+                      setSliderPercent(newPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      setswitched(false);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                      }
+                    }
+                  }}
+                  disabled={!connected || sliderPercent === 100}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div className="slider-container slider-mode">
+                <input
+                  type="range"
+                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sliderPercent}
+                  disabled={!connected}
+                  onChange={(e) => {
+                    const percent = parseInt(e.target.value);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(percent)) /
+                      100n;
+                    setSliderPercent(percent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = e.target;
+                    const rect = slider.getBoundingClientRect();
+                    const trackWidth = rect.width - 15;
+                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) {
+                      popup.style.left = `${thumbPosition}px`;
+                    }
+                  }}
+                  onMouseDown={() => {
+                    setIsDragging(true);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.add('visible');
+                  }}
+                  onMouseUp={() => {
+                    setIsDragging(false);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.remove('visible');
+                  }}
+                  style={{
+                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
+                  }}
+                />
+                <div className="slider-percentage-popup">{sliderPercent}%</div>
+                <div className="balance-slider-marks">
+                  {[0, 25, 50, 75, 100].map((markPercent) => (
+                    <span
+                      key={markPercent}
+                      className="balance-slider-mark"
+                      data-active={sliderPercent >= markPercent}
+                      data-percentage={markPercent}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(markPercent)) /
+                            100n;
+                          setSliderPercent(markPercent);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup: HTMLElement | null = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                              }px`;
+                          }
+                        }
+                      }}
+                    >
+                      {markPercent}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>        </div>
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
@@ -11232,111 +13567,99 @@ useEffect(() => {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          <div className="slider-container">
-            <input
-              type="range"
-              className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-              min="0"
-              max="100"
-              step="1"
-              value={sliderPercent}
-              disabled={!connected}
-              onChange={(e) => {
-                const percent = parseInt(e.target.value);
-                const newAmount =
-                  (((tokenIn == eth && !client)
-                    ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount >
-                      BigInt(0)
-                      ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount
-                      : BigInt(0)
-                    : tokenBalances[tokenIn]) *
-                    BigInt(percent)) /
-                  100n;
-                setSliderPercent(percent);
-                setInputString(
-                  newAmount == BigInt(0)
-                    ? ''
-                    : customRound(
-                      Number(newAmount) /
-                      10 ** Number(tokendict[tokenIn].decimals),
-                      3,
-                    ).toString(),
-                );
-                debouncedSetAmount(newAmount);
-                setswitched(false);
-                setamountOutSwap(
-                  limitPrice != BigInt(0) && newAmount != BigInt(0)
-                    ? tokenIn === activeMarket?.baseAddress
-                      ? (newAmount * limitPrice) /
-                      (activeMarket.scaleFactor || BigInt(1))
-                      : (newAmount * (activeMarket.scaleFactor || BigInt(1))) /
-                      limitPrice
-                    : BigInt(0),
-                );
-                setoutputString(
-                  (limitPrice != BigInt(0) && newAmount != BigInt(0)
-                    ? tokenIn === activeMarket?.baseAddress
-                      ? customRound(
-                        Number(
-                          (newAmount * limitPrice) /
-                          (activeMarket.scaleFactor || BigInt(1)),
-                        ) /
-                        10 ** Number(tokendict[tokenOut].decimals),
-                        3,
-                      )
-                      : customRound(
-                        Number(
-                          (newAmount *
-                            (activeMarket.scaleFactor || BigInt(1))) /
-                          limitPrice,
-                        ) /
-                        10 ** Number(tokendict[tokenOut].decimals),
-                        3,
-                      )
-                    : ''
-                  ).toString(),
-                );
-                const slider = e.target;
-                const rect = slider.getBoundingClientRect();
-                const trackWidth = rect.width - 15;
-                const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) {
-                  popup.style.left = `${thumbPosition}px`;
-                }
-              }}
-              onMouseDown={() => {
-                setIsDragging(true);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.add('visible');
-              }}
-              onMouseUp={() => {
-                setIsDragging(false);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.remove('visible');
-              }}
-              style={{
-                background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 25) ${sliderPercent}%)`,
-              }}
-            />
-            <div className="slider-percentage-popup">{sliderPercent}%</div>
-            <div className="balance-slider-marks">
-              {[0, 25, 50, 75, 100].map((markPercent) => (
-                <div
-                  key={markPercent}
-                  className="balance-slider-mark"
-                  data-active={sliderPercent >= markPercent}
-                  data-percentage={markPercent}
+
+          <div className="balance-slider-wrapper">
+            {sliderMode === 'presets' ? (
+              <div className="slider-container presets-mode">
+                <div className="preset-buttons">
+                  {sliderPresets.map((preset: number, index: number) => (
+                    <button
+                      key={index}
+                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(preset)) /
+                            100n;
+                          setSliderPercent(preset);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector('.balance-amount-slider');
+                          const popup = document.querySelector('.slider-percentage-popup');
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                          }
+                        }
+                      }}
+                      disabled={!connected}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : sliderMode === 'increment' ? (
+              <div className="slider-container increment-mode">
+                <button
+                  className="increment-button minus"
                   onClick={() => {
-                    if (connected) {
+                    if (connected && sliderPercent > 0) {
+                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                       const newAmount =
                         (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
@@ -11346,9 +13669,9 @@ useEffect(() => {
                             settings.chainConfig[activechain].gasamount
                             : BigInt(0)
                           : tokenBalances[tokenIn]) *
-                          BigInt(markPercent)) /
+                          BigInt(newPercent)) /
                         100n;
-                      setSliderPercent(markPercent);
+                      setSliderPercent(newPercent);
                       setInputString(
                         newAmount == BigInt(0)
                           ? ''
@@ -11360,59 +13683,328 @@ useEffect(() => {
                       );
                       debouncedSetAmount(newAmount);
                       setswitched(false);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                      }
+                    }
+                  }}
+                  disabled={!connected || sliderPercent === 0}
+                >
+                  −
+                </button>
+                <div className="increment-display">
+                  <div className="increment-amount">{sliderIncrement}%</div>
+                </div>
+                <button
+                  className="increment-button plus"
+                  onClick={() => {
+                    if (connected && sliderPercent < 100) {
+                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                      const newAmount =
+                        (((tokenIn == eth && !client)
+                          ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(newPercent)) /
+                        100n;
+                      setSliderPercent(newPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      setswitched(false);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                      }
+                    }
+                  }}
+                  disabled={!connected || sliderPercent === 100}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div className="slider-container slider-mode">
+                <input
+                  type="range"
+                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sliderPercent}
+                  disabled={!connected}
+                  onChange={(e) => {
+                    const percent = parseInt(e.target.value);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(percent)) /
+                      100n;
+                    setSliderPercent(percent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
                       setamountOutSwap(
-                        limitPrice != BigInt(0) && newAmount != BigInt(0)
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
                           ? tokenIn === activeMarket?.baseAddress
-                            ? (newAmount * limitPrice) /
-                            (activeMarket.scaleFactor || BigInt(1))
-                            : (newAmount *
-                              (activeMarket.scaleFactor || BigInt(1))) /
-                            limitPrice
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
                           : BigInt(0),
                       );
                       setoutputString(
-                        (limitPrice != BigInt(0) && newAmount != BigInt(0)
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
                           ? tokenIn === activeMarket?.baseAddress
                             ? customRound(
-                              Number(
-                                (newAmount * limitPrice) /
-                                (activeMarket.scaleFactor || BigInt(1)),
-                              ) /
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
                               10 ** Number(tokendict[tokenOut].decimals),
                               3,
                             )
                             : customRound(
-                              Number(
-                                (newAmount *
-                                  (activeMarket.scaleFactor || BigInt(1))) /
-                                limitPrice,
-                              ) /
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
                               10 ** Number(tokendict[tokenOut].decimals),
                               3,
                             )
                           : ''
                         ).toString(),
                       );
-                      const slider = document.querySelector(
-                        '.balance-amount-slider',
-                      );
-                      const popup: HTMLElement | null = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                          }px`;
-                      }
+                    }
+                    const slider = e.target;
+                    const rect = slider.getBoundingClientRect();
+                    const trackWidth = rect.width - 15;
+                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) {
+                      popup.style.left = `${thumbPosition}px`;
                     }
                   }}
-                >
-                  {markPercent}%
+                  onMouseDown={() => {
+                    setIsDragging(true);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.add('visible');
+                  }}
+                  onMouseUp={() => {
+                    setIsDragging(false);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.remove('visible');
+                  }}
+                  style={{
+                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
+                  }}
+                />
+                <div className="slider-percentage-popup">{sliderPercent}%</div>
+                <div className="balance-slider-marks">
+                  {[0, 25, 50, 75, 100].map((markPercent) => (
+                    <span
+                      key={markPercent}
+                      className="balance-slider-mark"
+                      data-active={sliderPercent >= markPercent}
+                      data-percentage={markPercent}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(markPercent)) /
+                            100n;
+                          setSliderPercent(markPercent);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup: HTMLElement | null = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                              }px`;
+                          }
+                        }
+                      }}
+                    >
+                      {markPercent}%
+                    </span>
+                  ))}
                 </div>
-              ))}
-            </div>
-          </div>
-        </div>
+              </div>
+            )}
+          </div>        </div>
         <button
           className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
@@ -13351,83 +15943,98 @@ useEffect(() => {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          <div className="slider-container">
-            <input
-              type="range"
-              className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-              min="0"
-              max="100"
-              step="1"
-              value={sliderPercent}
-              disabled={!connected}
-              onChange={(e) => {
-                const percent = parseInt(e.target.value);
-                const newAmount =
-                  (((tokenIn == eth && !client)
-                    ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount >
-                      BigInt(0)
-                      ? tokenBalances[tokenIn] -
-                      settings.chainConfig[activechain].gasamount
-                      : BigInt(0)
-                    : tokenBalances[tokenIn]) *
-                    BigInt(percent)) /
-                  100n;
-                setSliderPercent(percent);
-                setInputString(
-                  newAmount == BigInt(0)
-                    ? ''
-                    : customRound(
-                      Number(newAmount) /
-                      10 ** Number(tokendict[tokenIn].decimals),
-                      3,
-                    ).toString(),
-                );
-                debouncedSetAmount(newAmount);
-                setswitched(false);
-
-                if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                  setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
-                }
-                const slider = e.target;
-                const rect = slider.getBoundingClientRect();
-                const trackWidth = rect.width - 15;
-                const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) {
-                  popup.style.left = `${thumbPosition}px`;
-                }
-              }}
-              onMouseDown={() => {
-                setIsDragging(true);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.add('visible');
-              }}
-              onMouseUp={() => {
-                setIsDragging(false);
-                const popup: HTMLElement | null = document.querySelector(
-                  '.slider-percentage-popup',
-                );
-                if (popup) popup.classList.remove('visible');
-              }}
-              style={{
-                background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(21, 21, 25) ${sliderPercent}%)`,
-              }}
-            />
-            <div className="slider-percentage-popup">{sliderPercent}%</div>
-            <div className="balance-slider-marks">
-              {[0, 25, 50, 75, 100].map((markPercent) => (
-                <div
-                  key={markPercent}
-                  className="balance-slider-mark"
-                  data-active={sliderPercent >= markPercent}
-                  data-percentage={markPercent}
+          <div className="balance-slider-wrapper">
+            {sliderMode === 'presets' ? (
+              <div className="slider-container presets-mode">
+                <div className="preset-buttons">
+                  {sliderPresets.map((preset: number, index: number) => (
+                    <button
+                      key={index}
+                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(preset)) /
+                            100n;
+                          setSliderPercent(preset);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector('.balance-amount-slider');
+                          const popup = document.querySelector('.slider-percentage-popup');
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                          }
+                        }
+                      }}
+                      disabled={!connected}
+                    >
+                      {preset}%
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : sliderMode === 'increment' ? (
+              <div className="slider-container increment-mode">
+                <button
+                  className="increment-button minus"
                   onClick={() => {
-                    if (connected) {
+                    if (connected && sliderPercent > 0) {
+                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                       const newAmount =
                         (((tokenIn == eth && !client)
                           ? tokenBalances[tokenIn] -
@@ -13437,9 +16044,9 @@ useEffect(() => {
                             settings.chainConfig[activechain].gasamount
                             : BigInt(0)
                           : tokenBalances[tokenIn]) *
-                          BigInt(markPercent)) /
+                          BigInt(newPercent)) /
                         100n;
-                      setSliderPercent(markPercent);
+                      setSliderPercent(newPercent);
                       setInputString(
                         newAmount == BigInt(0)
                           ? ''
@@ -13451,27 +16058,327 @@ useEffect(() => {
                       );
                       debouncedSetAmount(newAmount);
                       setswitched(false);
-                      if (scaleStart && scaleEnd && scaleOrders && scaleSkew) {
-                        setScaleOutput(Number(newAmount), Number(scaleStart), Number(scaleEnd), Number(scaleOrders), Number(scaleSkew))
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
                       }
-                      const slider = document.querySelector(
-                        '.balance-amount-slider',
-                      );
-                      const popup: HTMLElement | null = document.querySelector(
-                        '.slider-percentage-popup',
-                      );
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
                       if (slider && popup) {
                         const rect = slider.getBoundingClientRect();
-                        popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                          }px`;
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
                       }
                     }
                   }}
+                  disabled={!connected || sliderPercent === 0}
                 >
-                  {markPercent}%
+                  −
+                </button>
+                <div className="increment-display">
+                  <div className="increment-amount">{sliderIncrement}%</div>
                 </div>
-              ))}
-            </div>
+                <button
+                  className="increment-button plus"
+                  onClick={() => {
+                    if (connected && sliderPercent < 100) {
+                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                      const newAmount =
+                        (((tokenIn == eth && !client)
+                          ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount >
+                            BigInt(0)
+                            ? tokenBalances[tokenIn] -
+                            settings.chainConfig[activechain].gasamount
+                            : BigInt(0)
+                          : tokenBalances[tokenIn]) *
+                          BigInt(newPercent)) /
+                        100n;
+                      setSliderPercent(newPercent);
+                      setInputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      debouncedSetAmount(newAmount);
+                      setswitched(false);
+                      if (isWrap) {
+                        setoutputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        setamountOutSwap(newAmount);
+                      }
+                      if (location.pathname.slice(1) === 'limit') {
+                        setamountOutSwap(
+                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                            : BigInt(0),
+                        );
+                        setoutputString(
+                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                            ? tokenIn === activeMarket?.baseAddress
+                              ? customRound(
+                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                              : customRound(
+                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                10 ** Number(tokendict[tokenOut].decimals),
+                                3,
+                              )
+                            : ''
+                          ).toString(),
+                        );
+                      }
+                      const slider = document.querySelector('.balance-amount-slider');
+                      const popup = document.querySelector('.slider-percentage-popup');
+                      if (slider && popup) {
+                        const rect = slider.getBoundingClientRect();
+                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                      }
+                    }
+                  }}
+                  disabled={!connected || sliderPercent === 100}
+                >
+                  +
+                </button>
+              </div>
+            ) : (
+              <div className="slider-container slider-mode">
+                <input
+                  type="range"
+                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sliderPercent}
+                  disabled={!connected}
+                  onChange={(e) => {
+                    const percent = parseInt(e.target.value);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(percent)) /
+                      100n;
+                    setSliderPercent(percent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
+                    );
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = e.target;
+                    const rect = slider.getBoundingClientRect();
+                    const trackWidth = rect.width - 15;
+                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) {
+                      popup.style.left = `${thumbPosition}px`;
+                    }
+                  }}
+                  onMouseDown={() => {
+                    setIsDragging(true);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.add('visible');
+                  }}
+                  onMouseUp={() => {
+                    setIsDragging(false);
+                    const popup: HTMLElement | null = document.querySelector(
+                      '.slider-percentage-popup',
+                    );
+                    if (popup) popup.classList.remove('visible');
+                  }}
+                  style={{
+                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
+                  }}
+                />
+                <div className="slider-percentage-popup">{sliderPercent}%</div>
+                <div className="balance-slider-marks">
+                  {[0, 25, 50, 75, 100].map((markPercent) => (
+                    <span
+                      key={markPercent}
+                      className="balance-slider-mark"
+                      data-active={sliderPercent >= markPercent}
+                      data-percentage={markPercent}
+                      onClick={() => {
+                        if (connected) {
+                          const newAmount =
+                            (((tokenIn == eth && !client)
+                              ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount >
+                                BigInt(0)
+                                ? tokenBalances[tokenIn] -
+                                settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : tokenBalances[tokenIn]) *
+                              BigInt(markPercent)) /
+                            100n;
+                          setSliderPercent(markPercent);
+                          setInputString(
+                            newAmount == BigInt(0)
+                              ? ''
+                              : customRound(
+                                Number(newAmount) /
+                                10 ** Number(tokendict[tokenIn].decimals),
+                                3,
+                              ).toString(),
+                          );
+                          debouncedSetAmount(newAmount);
+                          setswitched(false);
+                          if (isWrap) {
+                            setoutputString(
+                              newAmount == BigInt(0)
+                                ? ''
+                                : customRound(
+                                  Number(newAmount) /
+                                  10 ** Number(tokendict[tokenIn].decimals),
+                                  3,
+                                ).toString(),
+                            );
+                            setamountOutSwap(newAmount);
+                          }
+                          if (location.pathname.slice(1) === 'limit') {
+                            setamountOutSwap(
+                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                                : BigInt(0),
+                            );
+                            setoutputString(
+                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                                ? tokenIn === activeMarket?.baseAddress
+                                  ? customRound(
+                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                  : customRound(
+                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                    10 ** Number(tokendict[tokenOut].decimals),
+                                    3,
+                                  )
+                                : ''
+                              ).toString(),
+                            );
+                          }
+                          const slider = document.querySelector(
+                            '.balance-amount-slider',
+                          );
+                          const popup: HTMLElement | null = document.querySelector(
+                            '.slider-percentage-popup',
+                          );
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                              }px`;
+                          }
+                        }
+                      }}
+                    >
+                      {markPercent}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
         <button
@@ -13926,6 +16833,7 @@ useEffect(() => {
                 isOrderCenterVisible={isOrderCenterVisible}
                 onLimitPriceUpdate={handleLimitPriceUpdate}
                 openEditOrderPopup={openEditOrderPopup}
+                openEditOrderSizePopup={openEditOrderSizePopup}
               />
             </div>
             {windowWidth > 1020 && (
@@ -14141,6 +17049,15 @@ useEffect(() => {
           setTransactions={setTransactions}
           tokendict={tokendict}
         />
+        {showPreview && (
+          <TransactionPopupManager
+            transactions={[]}
+            setTransactions={() => { }}
+            tokendict={tokendict}
+            showPreview={true}
+            previewPosition={previewPosition}
+          />
+        )}
       </div>
     </div>
   );

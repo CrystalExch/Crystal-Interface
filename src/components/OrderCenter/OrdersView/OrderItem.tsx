@@ -1,5 +1,4 @@
 import React from 'react';
-
 import CopyButton from '../../CopyButton/CopyButton';
 import CancelButton from '../CancelButton/CancelButton';
 import SegmentedProgressBar from '../SegmentedProgressBar/SegmentedProgressBar.tsx';
@@ -27,10 +26,23 @@ interface OrderItemProps {
   onMarketSelect: any;
   setpopup: (value: number) => void;
   onLimitPriceUpdate?: (price: number) => void;
-  openEditOrderPopup: (order:any) => void;
+  openEditOrderPopup: (order: any) => void;
+  openEditOrderSizePopup: (order: any) => void; // Add this new prop
 }
 
-const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, sendUserOperationAsync, setChain, quotePrice, waitForTxReceipt, onMarketSelect, openEditOrderPopup }) => {
+const OrderItem: React.FC<OrderItemProps> = ({ 
+  order, 
+  trades, 
+  router, 
+  refetch, 
+  sendUserOperationAsync, 
+  setChain, 
+  quotePrice, 
+  waitForTxReceipt, 
+  onMarketSelect, 
+  openEditOrderPopup,
+  openEditOrderSizePopup // Add this to destructuring
+}) => {
   const { favorites, toggleFavorite } = useSharedContext();
 
   const marketKey = order[4];
@@ -84,7 +96,7 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
           </svg>
         </div>
       </div>
-      <div className="oc-cell market-cell" >
+      <div className="oc-cell market-cell">
         <img className="ordercenter-token-icon" src={market.image} onClick={() => onMarketSelect(market)} />
         <div className="market-details" onClick={() => onMarketSelect(market)}>
           <div className="market-name">
@@ -101,11 +113,13 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
       <div className="oc-cell value-cell">
         <div className="order-value">
           {formatBalance(usdValue, 'usd')}
-          <div className="edit-limit-price-button" 
-            onClick={() => {
-              openEditOrderPopup(order);
-            }}>
-              <img src={editicon} className="edit-icon"/>
+          <div className="edit-order-size-button"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 openEditOrderSizePopup(order);
+               }}
+               title="Edit order size">
+            <img src={editicon} className="edit-icon"/>
           </div>
         </div>
         <div className="amount">
@@ -116,11 +130,13 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
       <div className="oc-cell limit-price">
         <div className="open-order-price-level">
           {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
-          <div className="edit-limit-price-button" 
-            onClick={() => {
-              openEditOrderPopup(order);
-            }}>
-              <img src={editicon} className="edit-icon"/>
+          <div className="edit-limit-price-button"
+               onClick={(e) => {
+                 e.stopPropagation();
+                 openEditOrderPopup(order);
+               }}
+               title="Edit limit price">
+            <img src={editicon} className="edit-icon"/>
           </div>
         </div>
         <div className="price-gap" style={{ color: gapColor }}>
@@ -138,7 +154,14 @@ const OrderItem: React.FC<OrderItemProps> = ({ order, trades, router, refetch, s
       </div>
       <span className="oc-cell oc-time">{formatDateAndTime(order[6])}</span>
       <span className="oc-cell cancel-cell">
-        <CancelButton order={order} router={router} refetch={refetch} sendUserOperationAsync={sendUserOperationAsync} setChain={setChain} waitForTxReceipt={waitForTxReceipt} />
+        <CancelButton 
+          order={order} 
+          router={router} 
+          refetch={refetch} 
+          sendUserOperationAsync={sendUserOperationAsync} 
+          setChain={setChain} 
+          waitForTxReceipt={waitForTxReceipt} 
+        />
       </span>
     </div>
   );

@@ -16,6 +16,8 @@ interface TransactionPopupProps {
   isNew: boolean;
   isExiting: boolean;
   delay: number;
+  slideDirection?: 'left' | 'right';
+  isTopPosition?: boolean;
 }
 
 const subscriptMap: { [digit: string]: string } = {
@@ -102,6 +104,8 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
   isNew,
   isExiting,
   delay,
+  slideDirection = 'right',
+  isTopPosition = false,
 }) => {
   const memoizedDelay = useMemo(() => delay || 0, []);
   
@@ -117,6 +121,17 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
   );
   
   const renderTransactionDetails = () => {
+    if (currentAction === 'preview') {
+      return (
+        <div className="txpopup-inner">
+          <div className="txpopup-main-content">
+            <div className="txpopup-title">Your notifications will appear here</div>
+            <div className="txpopup-subtitle">Transaction confirmations and updates will be displayed in this location</div>
+          </div>
+        </div>
+      );
+    }
+
     if (currentAction === 'swap') {
       return (
         <div className="txpopup-inner">
@@ -542,23 +557,54 @@ const TransactionPopup: React.FC<TransactionPopupProps> = ({
 
     return null;
   };
+
+const getAnimationClasses = () => {
+    let classes = 'txpopup';
+  
+    
+    if (isNew) {
+      if (window.innerWidth <= 1020) {
+        classes += isTopPosition ? ' new-mobile-top' : ' new-mobile-bottom';
+      } else {
+        classes += slideDirection === 'left' ? ' new-desktop-left' : ' new-desktop-right';
+      }
+    }
+    
+    if (isExiting) {
+      if (window.innerWidth <= 1020) {
+        classes += isTopPosition ? ' exit-mobile-top' : ' exit-mobile-bottom';
+      } else {
+        classes += slideDirection === 'left' ? ' exit-desktop-left' : ' exit-desktop-right';
+      }
+    }
+    
+    if (currentAction.includes('Failed')) {
+      classes += ' failed';
+    }
+    
+    return classes;
+  };
+
   return (
-    <div className={`txpopup ${isNew ? 'new' : ''} ${isExiting ? 'exit' : ''} ${currentAction.includes('Failed') ? 'failed' : ''}`}>
-      <div className="txpopup-progress-container">
-        <div 
-          className="txpopup-progress-bar" 
-          style={{animation: `progressBar 10s linear forwards -${memoizedDelay}s`}}
-        ></div>
-      </div>
-      <button
-        className="txpopup-close-button"
-        onClick={hideCallback}
-      >
-        <img src={popupclose} className="txpopup-close-button-icon" />
-      </button>
+    <div className={getAnimationClasses()}>
+      {currentAction !== 'preview' && (
+        <>
+          <div className="txpopup-progress-container">
+            <div 
+              className="txpopup-progress-bar" 
+              style={{animation: `progressBar 10s linear forwards -${memoizedDelay}s`}}
+            ></div>
+          </div>
+          <button
+            className="txpopup-close-button"
+            onClick={hideCallback}
+          >
+            <img src={popupclose} className="txpopup-close-button-icon" />
+          </button>
+        </>
+      )}
       {renderTransactionDetails()}
     </div>
   );
 };
-
 export default TransactionPopup;

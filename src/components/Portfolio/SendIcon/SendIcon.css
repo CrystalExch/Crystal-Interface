@@ -8,7 +8,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid  #c3c6e31f;
+  border: 1px solid  rgba(179, 184, 249, 0.1);
 }
 
 .send-icon:hover {

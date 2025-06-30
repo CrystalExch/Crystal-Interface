@@ -1,42 +1,101 @@
 .popup-stack-container {
-    bottom: 10px;
-    display: flex;
-    gap: 10px;
-    pointer-events: none;
-    position: fixed;
-    right: 7px;
-    z-index: 5;
-    border-radius: 8px;
-    z-index: 100;
+  display: flex;
+  gap: 10px;
+  pointer-events: none;
+  position: fixed;
+  z-index: 5;
+  border-radius: 8px;
+  z-index: 100;
+}
 
+.popup-stack-container.bottom-right {
+  bottom: 10px;
+  right: 10px;
+}
+
+.popup-stack-container.bottom-left {
+  bottom: 10px;
+  left: 10px;
+}
+
+.popup-stack-container.top-right {
+  top: 10px;
+  right: 10px;
+}
+
+.popup-stack-container.top-left {
+  top: 10px;
+  left: 10px;
+}
+
+.popup-stack-container.preview-mode {
+  z-index: 10001;
+  pointer-events: auto;
 }
 
 @media(max-width: 1020px) {
-    .popup-stack-container {
-        top: calc(-100vh + 140px);
-        width: 100%;
-        height: 100vh;
-    }
+  .popup-stack-container {
+    width: 100%;
+    height: 100vh;
+  }
+  
+  .popup-stack-container.bottom-right,
+  .popup-stack-container.bottom-left {
+    top: calc(-100vh + 140px);
+  }
+  
+  .popup-stack-container.top-right,
+  .popup-stack-container.top-left {
+    top: 140px;
+  }
 }
 
 .popup-stack-item {
-    position: absolute;
-    bottom: 0;
-    right: 0;
-    transition: transform 0.3s ease, filter 0.3s ease;
-    pointer-events: auto;
-    width: 270px;
-    --expanded-y: 0px;
+  position: absolute;
+  transition: transform 0.3s ease, filter 0.3s ease;
+  pointer-events: auto;
+  width: 270px;
+  --expanded-y: 0px;
+}
+
+.popup-stack-container.bottom-right .popup-stack-item,
+.popup-stack-container.bottom-left .popup-stack-item {
+  bottom: 0;
+}
+
+.popup-stack-container.top-right .popup-stack-item,
+.popup-stack-container.top-left .popup-stack-item {
+  top: 0;
+}
+
+.popup-stack-container.bottom-right .popup-stack-item,
+.popup-stack-container.top-right .popup-stack-item {
+  right: 0;
+}
+
+.popup-stack-container.bottom-left .popup-stack-item,
+.popup-stack-container.top-left .popup-stack-item {
+  left: 0;
 }
 
 .popup-stack-container .popup-hover-trigger:hover .popup-stack-item {
-    filter: brightness(1);
-    transform: translateY(var(--expanded-y));
+  filter: brightness(1);
+  transform: translateY(var(--expanded-y));
 }
+
 .popup-stack-container.mobile .popup-stack-item {
-    transform-origin: top center;
-  }
+  transform-origin: top center;
+}
 
 .popup-stack-container.mobile.expanded .popup-stack-item[data-index="0"] {
-    margin-bottom: 20px;
-  }
+  margin-bottom: 20px;
+}
+
+
+
+.txpopup-subtitle{
+  font-size: 0.7rem;
+  color: rgb(255,255,255,0.4);
+  line-height: 1.2;
+  margin-top: -3px;
+}

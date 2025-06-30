@@ -136,6 +136,10 @@
   box-shadow:  0 0 0 1px rgba(170, 174, 207, 0.6);
 }
 
+.sidebar-nav .active .sidebar-label{
+  color: #d2d4e8;
+}
+
 .sidebar-nav .active .sidebar-icon,
 .sidebar-nav .active .sidebar-svg-icon {
   opacity: 0.9;
@@ -186,14 +190,14 @@
 }
 
 .sidebar-label {
-  font-size: 12px;
-  letter-spacing: 0.5px;
-  margin-left: 10px;
+  font-size: 0.85rem;
+  margin-left: 7px;
   white-space: nowrap;
   transition: opacity 0.3s ease;
-  color: #d8dbf5a0;
+  color: #d8dbf58a;
   opacity: 0;
   display: none;
+  letter-spacing: 0;
 }
 
 .sidebar-nav.expanded .sidebar-label {
