@@ -298,7 +298,6 @@ function App() {
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
   const sendButtonRef = useRef<HTMLSpanElement | null>(null);
-  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [selectedDepositToken, setSelectedDepositToken] = useState(() => Object.keys(tokendict)[0]);
   const [mobileView, setMobileView] = useState('chart');
@@ -3929,7 +3928,6 @@ function App() {
         setSendUsdValue('');
         setSendInputAmount('');
         setSendAmountIn(BigInt(0));
-        setIsLanguageDropdownOpen(false);
         settokenString('');
         setSelectedConnector(null);
 
@@ -3959,7 +3957,6 @@ function App() {
         }
 
         if (!popupref.current?.contains(e.target as Node) && popup != 11) {
-          setIsLanguageDropdownOpen(false);
           setSendUsdValue('');
           setSendInputAmount('');
           setSendAmountIn(BigInt(0));
@@ -10360,7 +10357,6 @@ const handleCancelAllOrders = useCallback(async () => {
                 const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
                 const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
                 const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-                const ticker = tokendict[tokenAddress]?.ticker;
 
                 return (
                   <div className="edit-order-size-balance-display">

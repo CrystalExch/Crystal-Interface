@@ -404,6 +404,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           isBlurred={isBlurred}
           waitForTxReceipt={waitForTxReceipt}
           openEditOrderPopup={handleEditOrder}
+          openEditOrderSizePopup={handleEditOrder}
         />
       </div>
     </div>

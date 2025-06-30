@@ -51,7 +51,7 @@ interface OrderCenterProps {
   isOrderCenterVisible?: boolean;
   onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
-  openEditOrderSizePopup: (order: any) => void; // Add this new prop
+  openEditOrderSizePopup: (order: any) => void;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
