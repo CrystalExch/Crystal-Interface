@@ -37,7 +37,6 @@ html {
   display: flex;
   scrollbar-width: none;
   transition: all 0.3s ease;
-
 }
 
 .app-container {
@@ -7683,4 +7682,18 @@ input::-webkit-inner-spin-button {
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.75rem;
   font-weight: 400;
+}
+
+
+.keybind-button.error {
+  border-color: #ff4444;
+  background-color: rgba(255, 68, 68, 0.1);
+}
+
+.keybind-error-message {
+  color: #ff4444;
+  font-size: 12px;
+  margin-top: 4px;
+  margin-bottom: 8px;
+  font-weight: 500;
 }

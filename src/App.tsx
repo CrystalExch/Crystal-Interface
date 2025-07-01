@@ -4855,7 +4855,6 @@ function App() {
       switchToOrders: 'Digit1',
       switchToTrades: 'Digit2',
       switchToHistory: 'Digit3',
-      switchToBalances: 'Digit4',
     };
   });
 
@@ -4912,136 +4911,6 @@ function App() {
         event.preventDefault();
         event.stopPropagation();
 
-        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
-        if (forbiddenKeys.includes(event.code)) {
-          return;
-        }
-
-        const newKeybinds = { ...keybinds, [editingKeybind]: event.code };
-        setKeybinds(newKeybinds);
-        localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
-        setEditingKeybind(null);
-        setIsListeningForKey(false);
-        return;
-      }
-
-      if (event.code === 'Escape' && isListeningForKey) {
-        setEditingKeybind(null);
-        setIsListeningForKey(false);
-        return;
-      }
-
-      if (isListeningForKey) return;
-
-      if (event.code === keybinds.submitTransaction && popup !== 19) {
-        if (popup !== 0) return;
-        event.preventDefault();
-        const currentPath = location.pathname.slice(1);
-        if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
-          return;
-        }
-        switch (currentPath) {
-          case 'swap':
-          case 'market':
-            if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
-              const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
-              if (swapButton && !swapButton.disabled) {
-                swapButton.click();
-              }
-            }
-            break;
-          case 'limit':
-            if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-              if (limitButton && !limitButton.disabled) {
-                limitButton.click();
-              }
-            }
-            break;
-          case 'send':
-            if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
-              if (sendButton && !sendButton.disabled) {
-                sendButton.click();
-              }
-            }
-            break;
-          case 'scale':
-            if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-              if (scaleButton && !scaleButton.disabled) {
-                scaleButton.click();
-              }
-            }
-            break;
-          default:
-            break;
-        }
-      }
-
-      if (event.code === keybinds.openSettings && popup === 0) {
-        event.preventDefault();
-        setpopup(5);
-      }
-
-      if (event.code === keybinds.openWallet && popup === 0) {
-        event.preventDefault();
-        setpopup(4);
-      }
-
-      if (event.code === keybinds.switchTokens && popup === 0 &&
-        ['swap', 'limit', 'market', 'scale'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const switchButton = document.querySelector('.switch-button') as HTMLElement;
-        if (switchButton) switchButton.click();
-      }
-
-      if (event.code === keybinds.maxAmount && popup === 0 &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const maxButton = document.querySelector('.max-button') as HTMLElement;
-        if (maxButton) maxButton.click();
-      }
-
-      if (event.code === keybinds.focusInput && popup === 0 &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const mainInput = document.querySelector('.input') as HTMLInputElement;
-        if (mainInput) mainInput.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    keybinds,
-    isListeningForKey,
-    editingKeybind,
-    popup,
-    location.pathname,
-    swapButtonDisabled,
-    limitButtonDisabled,
-    sendButtonDisabled,
-    scaleButtonDisabled,
-    displayValuesLoading,
-    isSigning,
-    connected,
-    userchain,
-    activechain,
-    isEditingSigning,
-    editingOrder,
-    hasEditedPrice
-  ]);
-
-
-
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isListeningForKey && editingKeybind) {
-        event.preventDefault();
-        event.stopPropagation();
         const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
         if (forbiddenKeys.includes(event.code)) {
           return;
@@ -5532,13 +5401,6 @@ const handleCancelAllOrders = useCallback(async () => {
           event.preventDefault();
           setActiveSection('orderHistory');
           localStorage.setItem('crystal_oc_tab', 'orderHistory');
-          return;
-        }
-
-        if (event.code === keybinds.switchToBalances) {
-          event.preventDefault();
-          setActiveSection('balances');
-          localStorage.setItem('crystal_oc_tab', 'balances');
           return;
         }
       }
@@ -8723,29 +8585,6 @@ const handleCancelAllOrders = useCallback(async () => {
                                 : formatKeyDisplay(keybinds.switchToHistory)}
                             </button>
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">Switch to Balances</span>
-                              <span className="keybind-description">View balances tab</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'switchToBalances' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'switchToBalances' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('switchToBalances');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'switchToBalances' && isListeningForKey
-                                ? 'Press a key...'
-                                : formatKeyDisplay(keybinds.switchToBalances)}
-                            </button>
-                          </div>
                         </div>
                       </div>
 
@@ -8773,7 +8612,6 @@ const handleCancelAllOrders = useCallback(async () => {
                             switchToOrders: 'Digit1',
                             switchToTrades: 'Digit2',
                             switchToHistory: 'Digit3',
-                            switchToBalances: 'Digit4',
                           };
                           setKeybinds(defaultKeybinds);
                           localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
