@@ -1333,7 +1333,7 @@ body {
 .outputbg,
 .sendaddressbg,
 .sendbg {
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 12px;
   display: flex;
   flex-direction: column;
@@ -1353,7 +1353,7 @@ body {
 }
 
 .scalebgtop {
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1364,7 +1364,7 @@ body {
 }
 
 .scalebottombg {
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   display: flex;
   flex-direction: column;
@@ -1920,8 +1920,8 @@ body {
 }
 
 .mobile-nav {
-  border-top: 1px solid rgba(179, 184, 249, 0.12);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
   box-sizing: border-box;
   display: flex;
   height: 30px;
@@ -4542,7 +4542,7 @@ input[type="email"] {
 }
 
 .scale-info-box {
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   border-radius: 6px;
   padding: 5px 10px;
   margin: 5px 12px;
@@ -6150,7 +6150,17 @@ input[type="email"] {
   animation: floatAnimation 4.5s ease-in-out infinite;
   z-index: 0;
 }
-
+.very-right {
+  position: absolute;
+  right: -80px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 120px;
+  height: 120px;
+  display: flex;
+  animation: floatAnimation 4.2s ease-in-out infinite;
+  z-index: 2;
+}
 .top-middle {
   position: absolute;
   top: -20px;
