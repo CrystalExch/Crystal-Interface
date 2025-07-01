@@ -34,20 +34,25 @@
   cursor: col-resize;
   height: calc(100%);
   position: absolute;
-  width: 4  px;
+  width: 2px;
   z-index: 3;
   margin-left: -2px;
+}
+.drag-handle::after{
+  content: '';
+  position: absolute;
   border-left: 1px solid rgba(179, 184, 249, 0.1);
+  width: 1px;
+  height: 100%;
+  margin-left: 2.5px;
+  z-index: 0;
 }
 
 .drag-handle:hover, 
 .isDragging .drag-handle {
-  background-color: rgb(24, 25, 28);
+  background-color: #aaaecf;
 }
 
-body[style*="cursor: col-resize"] .drag-handle {
-  background-color: rgba(171, 177, 210, 0.12);
-}
 
 .toggle-icon-container {
   align-items: center;

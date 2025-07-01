@@ -2863,7 +2863,7 @@ body {
 }
 
 .ordercenter-drag-handle {
-  height: 6px;
+  height: 2px;
   cursor: row-resize;
   position: absolute;
   width: 100%;
@@ -2872,11 +2872,11 @@ body {
 
 .ordercenter-drag-handle:hover,
 .isVertDragging .ordercenter-drag-handle {
-  background-color: rgb(24, 25, 28);
+  background-color: #aaaecf;
 }
 
 body[style*="cursor: row-resize"] .ordercenter-drag-handle {
-  background-color: rgb(24, 25, 28);
+  background-color: #aaaecf
 }
 
 
