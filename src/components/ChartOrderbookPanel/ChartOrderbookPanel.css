@@ -34,9 +34,10 @@
   cursor: col-resize;
   height: calc(100%);
   position: absolute;
-  width: 6px;
+  width: 4  px;
   z-index: 3;
   margin-left: -2px;
+  border-left: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .drag-handle:hover, 
