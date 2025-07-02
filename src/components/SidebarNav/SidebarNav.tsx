@@ -27,6 +27,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     const saved = localStorage.getItem('crystal_sidebar_expanded');
     return windowWidth <= 1020 ? false : saved !== null ? JSON.parse(saved) : windowWidth > 1920 ? true : false;
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const backgroundlesslogo = '/CrystalLogo.png';
 
   const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({
@@ -37,7 +38,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const isMobile = windowWidth <= 1020;
 
   const handleTooltip = (e: React.MouseEvent<HTMLElement>, content: string) => {
-    if (expanded || isMobile) return; // Don't show tooltips on mobile or when expanded
+    if (expanded || isMobile) return; 
     setTooltip({ content, target: e.currentTarget });
   };
 
@@ -59,11 +60,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
         setExpanded(false);
         localStorage.setItem('crystal_sidebar_expanded', 'false');
       }
+      if (newWidth > 1020 && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
     };
 
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [expanded]);
+  }, [expanded, mobileMenuOpen]);
 
   useEffect(() => {
     const savedExpanded = localStorage.getItem('crystal_sidebar_expanded');
@@ -79,6 +83,23 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     };
   }, [expanded]);
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (mobileMenuOpen && event.target instanceof Element) {
+        const mobileMenu = document.querySelector('.mobile-hamburger-menu');
+        const hamburgerButton = document.querySelector('.mobile-hamburger-button');
+        
+        if (mobileMenu && !mobileMenu.contains(event.target) && 
+            hamburgerButton && !hamburgerButton.contains(event.target)) {
+          setMobileMenuOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [mobileMenuOpen]);
+
   const isTradingPage = ['/swap', '/limit', '/send', '/scale', '/market'].some(tradePath =>
     path === tradePath || path.startsWith(tradePath)
   );
@@ -92,11 +113,18 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     }
   };
 
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen(!mobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setMobileMenuOpen(false);
+  };
+
   return (
     <>
       <div className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}>
         <div className="sidebar-nav-inner">
-          {/* Desktop logo - hidden on mobile */}
           {!isMobile && (
             <Link to="/" className="sidebar-logo">
               <img src={backgroundlesslogo} className="sidebar-logo-image" />
@@ -105,7 +133,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           )}
 
           <div className="sidebar-links">
-            {/* Main navigation items */}
             <Link
               to="/market"
               className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
@@ -169,9 +196,27 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className="sidebar-label">{t('leaderboard')}</span>
             </Link>
+                    {isMobile && (
+          <button
+            onClick={toggleMobileMenu}
+            className="mobile-hamburger-button"
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <line x1="3" y1="12" x2="21" y2="12"></line>
+              <line x1="3" y1="6" x2="21" y2="6"></line>
+              <line x1="3" y1="18" x2="21" y2="18"></line>
+            </svg>
+          </button>
+        )}
           </div>
 
-          {/* Desktop-only bottom section */}
           {!isMobile && (
             <div className="sidebar-bottom">
               <a
@@ -229,7 +274,75 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </div>
           )}
         </div>
+
       </div>
+
+      {isMobile && (
+        <>
+          <div 
+            className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`}
+            onClick={closeMobileMenu}
+          />
+          
+          <div className={`mobile-hamburger-menu ${mobileMenuOpen ? 'open' : ''}`}>
+            <div className="mobile-menu-header">
+              <div className="mobile-menu-logo">
+                <img src={backgroundlesslogo} className="mobile-menu-logo-image" />
+              </div>
+              <button onClick={closeMobileMenu} className="mobile-menu-close">
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="mobile-menu-content">
+
+              
+              <div className="mobile-menu-section">
+                                <a
+                  href="https://docs.crystal.exchange"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mobile-menu-item"
+                  onClick={closeMobileMenu}
+                >
+                  <img src={docs} className="mobile-menu-icon" />
+                  <span>{t('docs')}</span>
+                </a>
+                <a
+                  href="https://discord.gg/CrystalExch"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mobile-menu-item"
+                  onClick={closeMobileMenu}
+                >
+                  <img src={discord} className="mobile-menu-icon" />
+                  <span>{t('discord')}</span>
+                </a>
+                <a
+                  href="https://x.com/CrystalExch"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mobile-menu-item"
+                  onClick={closeMobileMenu}
+                >
+                  <img src={twitter} className="mobile-menu-icon" />
+                  <span>{'X / ' + t('twitter')}</span>
+                </a>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
 
       {!isMobile && (
         <SidebarTooltip content={tooltip.content} target={tooltip.target} visible={!!tooltip.target} />

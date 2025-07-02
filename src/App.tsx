@@ -16694,7 +16694,7 @@ const handleCancelAllOrders = useCallback(async () => {
                   ? `translateY(${mobileDragY}px)`
                   : showTrade
                     ? 'translateY(0)'
-                    : 'translateY(calc(100% - 95px))'
+                    : 'translateY(calc(100% - 91px))'
               }}
               onTouchStart={(e: React.TouchEvent) => {
                 if (windowWidth <= 1020 && showTrade) {

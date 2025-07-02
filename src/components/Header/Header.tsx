@@ -6,7 +6,6 @@ import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
-import Hamburger from '../../assets/header_menu.svg';
 import globeicon from '../../assets/globe.svg';
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
@@ -121,13 +120,13 @@ const Header: React.FC<HeaderProps> = ({
     <>
       <header className="app-header">
         <div className="mobile-left-header"> 
-        <button
+        {/* <button
           className={`hamburger ${isMenuOpen ? 'open' : ''}`}
           onClick={toggleMenu}
           type="button"
         >
           <img src={Hamburger} className="hamburger-image" />
-        </button>
+        </button> */}
         <div className="extitle">
           <img src={backgroundlesslogo} className="extitle-logo" />
           <span className="crystal-name">CRYSTAL</span>

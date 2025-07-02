@@ -39,12 +39,15 @@
     bottom: 0;
     top: auto;
     width: 100%;
-    height: 50px;
+    height: 46px;
     padding: 0;
     border-right: none;
     border-top: 1px solid rgba(179, 184, 249, 0.1);
     background-color: rgb(6,6,6);
     z-index: 1000;
+  }
+  .sidebar-nav-inner{
+   margin-left: -100px;
   }
 
 
@@ -55,7 +58,11 @@
   .sidebar-links {
     position: fixed;
     flex-direction: row !important;
+    justify-content: space-around;
     bottom: 0;
+    margin: 0 !important;
+    padding-top: 4px !important;
+    margin-left: 100px !important;
   }
 
   .sidebar-bottom {
@@ -82,6 +89,8 @@
     flex: 1;
     max-width: 60px;
   }
+
+
 
   .sidebar-label {
     display: none !important;
@@ -111,7 +120,6 @@
   .view-mode-button:hover,
   .page-mode-button:hover {
     background-color: rgba(202, 210, 249, 0.1);
-    transform: translateY(-2px);
   }
 
   .view-mode-button:hover .sidebar-icon,
@@ -122,7 +130,7 @@
   .app-container.sidebar-adjusted {
     margin-left: 0;
     width: 100%;
-    padding-bottom: 50px;
+    padding-bottom:46px;
   }
 }
 
@@ -237,14 +245,12 @@
 .sidebar-links {
   display: flex;
   flex-direction: column;
-  align-items: space-around;
-  justify-content: space-around;
   flex-grow: 1;
   width: 100%;
-  padding-top: 6px;
+  padding-top: 8px;
   margin-top: 8px;
   max-height: calc(100% - 190px);
-  overflow-y: auto;
+  overflow-y: auto; 
 }
 
 .sidebar-bottom {
@@ -304,4 +310,152 @@
 
 .sidebar-nav.expanded .sidebar-toggle-button .sidebar-svg-icon {
   transform: rotate(180deg);
+}
+
+.mobile-hamburger-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60px;
+  height: 35px;
+  color: #8c8c9a;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-right: 10px;
+  margin-left: 5px;
+}
+
+.mobile-hamburger-button:hover {
+  background: rgba(6,6,6,0.95);
+  border-color: rgba(179, 184, 249, 0.3);
+  color: #aaaecf;
+}
+
+.mobile-hamburger-button svg {
+  display: block;
+}
+
+.mobile-menu-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 1002;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-backdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mobile-hamburger-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-height: 70vh;
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
+  z-index: 1003;
+  transform: translateY(100%);
+  transition: transform 0.3s ease;
+  background-color: rgb(6,6,6);
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-hamburger-menu.open {
+  transform: translateY(0);
+}
+
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  position: relative;
+}
+
+
+
+.mobile-menu-logo {
+  display: flex;
+  align-items: center;
+}
+
+.mobile-menu-logo-image {
+  height: 24px;
+  width: auto;
+}
+
+.mobile-menu-close {
+  background: transparent;
+  border: none;
+  color: #8c8c9a;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-close:hover {
+  color: #aaaecf;
+  background: rgba(179, 184, 249, 0.1);
+}
+
+.mobile-menu-content {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  max-height: calc(70vh - 80px);
+  padding-top: 0;
+}
+
+.mobile-menu-section {
+  margin-bottom: 32px;
+}
+
+.mobile-menu-section-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #aaaecf;
+}
+
+.mobile-menu-item {
+  display: flex;
+  align-items: center;
+  padding: 6px 0;
+  color: #d8dbf5c7;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  margin-bottom: 4px;
+}
+
+.mobile-menu-item:hover {
+  background: rgba(179, 184, 249, 0.05);
+  color: #ffffff;
+}
+
+.mobile-menu-icon {
+  width: 20px;
+  height: 20px;
+  margin-right: 8px;
+  opacity: 0.7;
+  filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-item:hover .mobile-menu-icon {
+  opacity: 1;
+}
+
+.mobile-menu-item span {
+  font-size: 0.8rem;
+  font-weight: 400;
 }

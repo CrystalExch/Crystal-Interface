@@ -31,7 +31,7 @@ body.sidebar-expanded .app-header {
   align-items: center;
   min-width: 0;
 }
-
+/* 
 .hamburger {
   background: none;
   border: 1px solid rgba(179, 184, 249, 0.1);
@@ -45,7 +45,7 @@ body.sidebar-expanded .app-header {
   align-items: center;
   position: relative;
   transition: transform.3s ease-in-out;
-}
+} */
 
 .extitle {
   align-items: center;
@@ -57,10 +57,10 @@ body.sidebar-expanded .app-header {
   text-decoration: none;
 }
 
-.hamburger-image {
+/* .hamburger-image {
   opacity: 0.5;
   width: 16px;
-}
+} */
 
 .crystal-logo {
   height: 1.6rem;
@@ -359,10 +359,10 @@ body.sidebar-expanded .app-header {
 }
 
 @media(max-width:1020px){
-  .hamburger {
+  /* .hamburger {
     display: flex;
     order: -1;
-  }
+  } */
   .mobile-left-header{
     display: flex;
     margin-left: 10px;
