@@ -11,8 +11,6 @@ import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 
-
-
 import SidebarTooltip from './SidebarTooltip';
 
 interface SidebarNavProps {
@@ -36,8 +34,10 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     target: null,
   });
 
+  const isMobile = windowWidth <= 1020;
+
   const handleTooltip = (e: React.MouseEvent<HTMLElement>, content: string) => {
-    if (expanded) return;
+    if (expanded || isMobile) return; // Don't show tooltips on mobile or when expanded
     setTooltip({ content, target: e.currentTarget });
   };
 
@@ -46,10 +46,10 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   };
 
   useEffect(() => {
-    if (expanded) {
+    if (expanded || isMobile) {
       setTooltip({ content: '', target: null });
     }
-  }, [expanded]);
+  }, [expanded, isMobile]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -96,133 +96,144 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     <>
       <div className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}>
         <div className="sidebar-nav-inner">
-        <Link to="/" className="sidebar-logo">
-          <img src={backgroundlesslogo} className="sidebar-logo-image" />
-          <span className="sidebar-logo-text">CRYSTAL</span>
-        </Link>
+          {/* Desktop logo - hidden on mobile */}
+          {!isMobile && (
+            <Link to="/" className="sidebar-logo">
+              <img src={backgroundlesslogo} className="sidebar-logo-image" />
+              <span className="sidebar-logo-text">CRYSTAL</span>
+            </Link>
+          )}
 
-        <div className="sidebar-links">
-          <Link
-            to="/market"
-            className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
-            onClick={(e) => {
-              if (location.pathname === '/market') {
-                e.preventDefault();
-              }
-              else {
-                setSimpleView(false)
-              }
-            }}
-            onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={candlestick} className="sidebar-icon" />
-            <span className="sidebar-label">{t('advancedView')}</span>
-          </Link>
-          <Link
-            to="/swap"
-            className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''}`}
-            onClick={(e) => {
-              if (location.pathname === '/swap') {
-                e.preventDefault();
-              }
-              else {
-                setSimpleView(true)
-              }
-            }}
-            onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={swap} className="sidebar-icon" />
-            <span className="sidebar-label">{t('simpleView')}</span>
-          </Link>
-          <Link
-            to="/portfolio"
-            className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
-            onMouseEnter={(e) => handleTooltip(e, t('portfolio'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={portfolio} className="sidebar-icon" />
-            <span className="sidebar-label">{t('portfolio')}</span>
-          </Link>
-          <Link
-            to="/referrals"
-            className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
-            onMouseEnter={(e) => handleTooltip(e, t('referrals'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={referrals} className="sidebar-icon" />
-            <span className="sidebar-label">{t('referrals')}</span>
-          </Link>
-          <Link
-            to="/leaderboard"
-            className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
-            onMouseEnter={(e) => handleTooltip(e, t('leaderboard'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={leaderboard} className="sidebar-icon" />
-            <span className="sidebar-label">{t('leaderboard')}</span>
-          </Link>
-        </div>
-
-        <div className="sidebar-bottom">
-          <a
-            href="https://docs.crystal.exchange"
-            target="_blank"
-            rel="noreferrer"
-            className="sidebar-bottom-link"
-            onMouseEnter={(e) => handleTooltip(e, t('docs'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={docs} className="sidebar-icon" />
-            <span className="sidebar-label">{t('docs')}</span>
-          </a>
-          <a
-            href="https://discord.gg/CrystalExch"
-            target="_blank"
-            rel="noreferrer"
-            className="sidebar-bottom-link"
-            onMouseEnter={(e) => handleTooltip(e, t('discord'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={discord} className="sidebar-icon" />
-            <span className="sidebar-label">{t('discord')}</span>
-          </a>
-          <a
-            href="https://x.com/CrystalExch"
-            target="_blank"
-            rel="noreferrer"
-            className="sidebar-bottom-link"
-            onMouseEnter={(e) => handleTooltip(e, 'X / ' + t('twitter'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <img src={twitter} className="sidebar-icon" />
-            <span className="sidebar-label">{'X / ' + t('twitter')}</span>
-          </a>
-          <button
-            onClick={toggleSidebar}
-            className="sidebar-toggle-button"
-            onMouseEnter={(e) => handleTooltip(e, expanded ? t('collapse') : t('expand'))}
-            onMouseLeave={handleTooltipHide}
-          >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              className="sidebar-svg-icon"
+          <div className="sidebar-links">
+            {/* Main navigation items */}
+            <Link
+              to="/market"
+              className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
+              onClick={(e) => {
+                if (location.pathname === '/market') {
+                  e.preventDefault();
+                } else {
+                  setSimpleView(false);
+                }
+              }}
+              onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
+              onMouseLeave={handleTooltipHide}
             >
-              <polyline points="9 18 15 12 9 6"></polyline>
-            </svg>
-            <span className="sidebar-label">{expanded ? t('collapse') : t('expand')}</span>
-          </button>
-        </div>
+              <img src={candlestick} className="sidebar-icon" />
+              <span className="sidebar-label">{t('advancedView')}</span>
+            </Link>
+
+            <Link
+              to="/swap"
+              className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''}`}
+              onClick={(e) => {
+                if (location.pathname === '/swap') {
+                  e.preventDefault();
+                } else {
+                  setSimpleView(true);
+                }
+              }}
+              onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
+              onMouseLeave={handleTooltipHide}
+            >
+              <img src={swap} className="sidebar-icon" />
+              <span className="sidebar-label">{t('simpleView')}</span>
+            </Link>
+
+            <Link
+              to="/portfolio"
+              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
+              onMouseEnter={(e) => handleTooltip(e, t('portfolio'))}
+              onMouseLeave={handleTooltipHide}
+            >
+              <img src={portfolio} className="sidebar-icon" />
+              <span className="sidebar-label">{t('portfolio')}</span>
+            </Link>
+
+            <Link
+              to="/referrals"
+              className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
+              onMouseEnter={(e) => handleTooltip(e, t('referrals'))}
+              onMouseLeave={handleTooltipHide}
+            >
+              <img src={referrals} className="sidebar-icon" />
+              <span className="sidebar-label">{t('referrals')}</span>
+            </Link>
+
+            <Link
+              to="/leaderboard"
+              className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
+              onMouseEnter={(e) => handleTooltip(e, t('leaderboard'))}
+              onMouseLeave={handleTooltipHide}
+            >
+              <img src={leaderboard} className="sidebar-icon" />
+              <span className="sidebar-label">{t('leaderboard')}</span>
+            </Link>
+          </div>
+
+          {/* Desktop-only bottom section */}
+          {!isMobile && (
+            <div className="sidebar-bottom">
+              <a
+                href="https://docs.crystal.exchange"
+                target="_blank"
+                rel="noreferrer"
+                className="sidebar-bottom-link"
+                onMouseEnter={(e) => handleTooltip(e, t('docs'))}
+                onMouseLeave={handleTooltipHide}
+              >
+                <img src={docs} className="sidebar-icon" />
+                <span className="sidebar-label">{t('docs')}</span>
+              </a>
+              <a
+                href="https://discord.gg/CrystalExch"
+                target="_blank"
+                rel="noreferrer"
+                className="sidebar-bottom-link"
+                onMouseEnter={(e) => handleTooltip(e, t('discord'))}
+                onMouseLeave={handleTooltipHide}
+              >
+                <img src={discord} className="sidebar-icon" />
+                <span className="sidebar-label">{t('discord')}</span>
+              </a>
+              <a
+                href="https://x.com/CrystalExch"
+                target="_blank"
+                rel="noreferrer"
+                className="sidebar-bottom-link"
+                onMouseEnter={(e) => handleTooltip(e, 'X / ' + t('twitter'))}
+                onMouseLeave={handleTooltipHide}
+              >
+                <img src={twitter} className="sidebar-icon" />
+                <span className="sidebar-label">{'X / ' + t('twitter')}</span>
+              </a>
+              <button
+                onClick={toggleSidebar}
+                className="sidebar-toggle-button"
+                onMouseEnter={(e) => handleTooltip(e, expanded ? t('collapse') : t('expand'))}
+                onMouseLeave={handleTooltipHide}
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="sidebar-svg-icon"
+                >
+                  <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+                <span className="sidebar-label">{expanded ? t('collapse') : t('expand')}</span>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <SidebarTooltip content={tooltip.content} target={tooltip.target} visible={!!tooltip.target} />
+      {!isMobile && (
+        <SidebarTooltip content={tooltip.content} target={tooltip.target} visible={!!tooltip.target} />
+      )}
     </>
   );
 };

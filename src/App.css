@@ -2856,6 +2856,15 @@ body {
   width: 420px;
 }
 
+@media(max-width: 1020px){
+  .right-column{
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
+  }
+  .main-content-wrapper.simple-view .right-column {
+    border-top: none;
+  }
+}
+
 .main-content-wrapper.simple-view .app-container,
 .main-content-wrapper.simple-view .trade-container {
   height: 500px;
@@ -7062,7 +7071,6 @@ input::-webkit-inner-spin-button {
 .increment-amount {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
-  width: 33%;
 }
 
 .slider-settings-section {
@@ -7697,3 +7705,4 @@ input::-webkit-inner-spin-button {
   margin-bottom: 8px;
   font-weight: 500;
 }
+
