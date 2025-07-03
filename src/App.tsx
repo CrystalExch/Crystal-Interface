@@ -7389,7 +7389,7 @@ const handleCancelAllOrders = useCallback(async () => {
             </div>
           )
         ) : null}
-        {popup === 5 ? ( // settings
+{popup === 5 ? ( // settings
           <div
             className={`layout-settings-background ${simpleView ? 'simple' : ''}`}
             ref={popupref}
@@ -7410,7 +7410,7 @@ const handleCancelAllOrders = useCallback(async () => {
                   className={`settings-section-button ${activeSettingsSection === 'general' ? 'active' : ''}`}
                   onClick={() => updateActiveSettingsSection('general')}
                 >
-                  <span>{t('General')}</span>
+                  <span>{t('general')}</span>
                 </button>
 
                 {!simpleView && (
@@ -7418,7 +7418,7 @@ const handleCancelAllOrders = useCallback(async () => {
                     className={`settings-section-button ${activeSettingsSection === 'layout' ? 'active' : ''}`}
                     onClick={() => updateActiveSettingsSection('layout')}
                   >
-                    <span>{t('Trading Layout')}</span>
+                    <span>{t('tradingLayout')}</span>
                   </button>
                 )}
 
@@ -7426,21 +7426,21 @@ const handleCancelAllOrders = useCallback(async () => {
                   className={`settings-section-button ${activeSettingsSection === 'display' ? 'active' : ''}`}
                   onClick={() => updateActiveSettingsSection('display')}
                 >
-                  <span>{t('Trading Settings')}</span>
+                  <span>{t('tradingSettings')}</span>
                 </button>
 
                 <button
                   className={`settings-section-button ${activeSettingsSection === 'audio' ? 'active' : ''}`}
                   onClick={() => updateActiveSettingsSection('audio')}
                 >
-                  <span>{t('Notifications')}</span>
+                  <span>{t('notifications')}</span>
                 </button>
 
                 <button
                   className={`settings-section-button ${activeSettingsSection === 'keybinds' ? 'active' : ''}`}
                   onClick={() => updateActiveSettingsSection('keybinds')}
                 >
-                  <span>{t('Keybinds')}</span>
+                  <span>{t('keybinds')}</span>
                 </button>
               </div>
               <div className="right-side-settings-panel">
@@ -7450,7 +7450,8 @@ const handleCancelAllOrders = useCallback(async () => {
                       <div className="layout-language-row">
                         <span className="layout-language-label">{t('language')}</span>
                         <div className="settings-section-subtitle">
-                          Select your preferred interface language                        </div>
+                          {t('selectPreferredLanguage')}
+                        </div>
                         <div className="language-selector-app-container">
                           <div className="language-grid">
                             {languageOptions.map((lang) => (
@@ -7470,9 +7471,9 @@ const handleCancelAllOrders = useCallback(async () => {
                       </div>
                       <div className="slider-settings-section">
                         <div className="settings-subsection">
-                          <div className="layout-section-title">{t('Balance Slider Mode')}</div>
+                          <div className="layout-section-title">{t('balanceSliderMode')}</div>
                           <div className="settings-section-subtitle">
-                            Choose how you want to select balance percentages
+                            {t('chooseBalancePercentages')}
                           </div>
 
                           <div className="slider-mode-options">
@@ -7484,7 +7485,7 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               <div className="layout-label">
-                                <span className="control-layout-name">Slider</span>
+                                <span className="control-layout-name">{t('slider')}</span>
                               </div>
                             </button>
 
@@ -7496,7 +7497,7 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               <div className="layout-label">
-                                <span className="control-layout-name">Presets</span>
+                                <span className="control-layout-name">{t('presets')}</span>
                               </div>
                             </button>
 
@@ -7508,21 +7509,21 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               <div className="layout-label">
-                                <span className="control-layout-name">Increment</span>
+                                <span className="control-layout-name">{t('increment')}</span>
                               </div>
                             </button>
                           </div>
                         </div>
                         {sliderMode === 'presets' && (
                           <div className="settings-subsection">
-                            <div className="layout-section-title">Preset Percentages</div>
+                            <div className="layout-section-title">{t('presetPercentages')}</div>
                             <div className="settings-section-subtitle">
-                              Set your three favorite percentage values
+                              {t('setThreeFavoritePercentages')}
                             </div>
                             <div className="preset-inputs">
                               {sliderPresets.map((preset: number, index: number) => (
                                 <div key={index} className="preset-input-group">
-                                  <label className="preset-label">Preset {index + 1}</label>
+                                  <label className="preset-label">{t('preset')} {index + 1}</label>
                                   <div className="preset-input-container">
                                     <input
                                       type="text"
@@ -7557,9 +7558,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                         {sliderMode === 'increment' && (
                           <div className="settings-subsection">
-                            <div className="layout-section-title">Increment Amount</div>
+                            <div className="layout-section-title">{t('incrementAmount')}</div>
                             <div className="settings-section-subtitle">
-                              Set how much each +/− button changes the percentage
+                              {t('setIncrementAmount')}
                             </div>
                             <div className="increment-input-group">
                               <div className="increment-input-container">
@@ -7592,15 +7593,15 @@ const handleCancelAllOrders = useCallback(async () => {
                         )}
                         <div className="settings-subsection">
                           <div className="layout-section-title">
-                            {t('Custom RPC & Graph API')}
+                            {t('customRPCGraphAPI')}
                           </div>
                           <div className="settings-section-subtitle">
-                            Specify your own JSON-RPC endpoint and GraphQL API URL for blockchain data access.
+                            {t('specifyCustomEndpoints')}
                           </div>
 
                           <div className="custom-rpc-settings">
                             <div className="input-group">
-                              <label className="input-label">{t('RPC URL')}</label>
+                              <label className="input-label">{t('rpcURL')}</label>
                               <input
                                 type="text"
                                 className="input-field"
@@ -7614,7 +7615,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             </div>
 
                             <div className="input-group">
-                              <label className="input-label">{t('Graph API URL')}</label>
+                              <label className="input-label">{t('graphAPIURL')}</label>
                               <input
                                 type="text"
                                 className="input-field"
@@ -7628,12 +7629,12 @@ const handleCancelAllOrders = useCallback(async () => {
                             </div>
 
                             <div className="input-group">
-                              <label className="input-label">{t('Graph API Key')} <small>(optional)</small></label>
+                              <label className="input-label">{t('graphAPIKey')} <small>({t('optional')})</small></label>
                               <input
                                 type="text"
                                 className="input-field"
                                 value={graphKey}
-                                placeholder="YOUR_API_KEY"
+                                placeholder={t('yourAPIKey')}
                                 onChange={e => {
                                   setGraphKey(e.target.value)
                                   localStorage.setItem('crystal_graph_key', e.target.value)
@@ -7657,7 +7658,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('tradePanelPosition')}
                           </div>
                           <div className="settings-section-subtitle">
-                            Choose where the trading panel appears on your screen
+                            {t('chooseTradingPanelPosition')}
                           </div>
                           <div className="layout-section">
                             <button
@@ -7720,7 +7721,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('orderbookPosition')}
                           </div>
                           <div className="settings-section-subtitle">
-                            Position the orderbook on the left or right side of the chart
+                            {t('positionOrderbookSide')}
                           </div>
                           <div className="layout-section">
                             <button
@@ -7777,7 +7778,7 @@ const handleCancelAllOrders = useCallback(async () => {
                           {t('notificationPosition')}
                         </div>
                         <div className="settings-section-subtitle">
-                          Choose where notification popups appear on your screen
+                          {t('chooseNotificationPopupPosition')}
                         </div>
                         <div className="notification-position-grid">
                           <button
@@ -7828,7 +7829,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('showTradeMarkers')}
                           </span>
                           <span className="settings-option-subtitle">
-                            Display trade execution markers on the chart
+                            {t('displayTradeExecutionMarkers')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7848,7 +7849,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('showChartOrders')}
                           </span>
                           <span className="settings-option-subtitle">
-                            Show your active orders on the chart
+                            {t('showActiveOrdersOnChart')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7868,7 +7869,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('showOB')}
                           </span>
                           <span className="settings-option-subtitle">
-                            Display the orderbook panel
+                            {t('displayOrderbookPanel')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7889,7 +7890,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             {t('showOC')}
                           </span>
                           <span className="settings-option-subtitle">
-                            Show the order center at the bottom
+                            {t('showOrderCenterAtBottom')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7907,7 +7908,7 @@ const handleCancelAllOrders = useCallback(async () => {
                         <div className="settings-option-info">
                           <span className="audio-toggle-label">{t('showChartOutliers')}</span>
                           <span className="settings-option-subtitle">
-                            Include outlier data points in chart display
+                            {t('includeOutlierDataPoints')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7927,7 +7928,7 @@ const handleCancelAllOrders = useCallback(async () => {
                         <div className="settings-option-info">
                           <span className="audio-toggle-label">{t('audioNotifications')}</span>
                           <span className="settings-option-subtitle">
-                            Play sounds for trade executions and order fills
+                            {t('playSoundsForTrades')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -7942,9 +7943,9 @@ const handleCancelAllOrders = useCallback(async () => {
                         <div className="popup-type-settings">
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Play Swap Sounds</span>
+                              <span className="popup-type-label">{t('playSwapSounds')}</span>
                               <span className="settings-option-subtitle">
-                                Play sounds for successful and failed swaps
+                                {t('playSoundsForSwaps')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -7955,9 +7956,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Play Order Sounds</span>
+                              <span className="popup-type-label">{t('playOrderSounds')}</span>
                               <span className="settings-option-subtitle">
-                                Play sounds for limit orders, fills, and cancellations
+                                {t('playSoundsForOrders')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -7968,9 +7969,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Play Transfer Sounds</span>
+                              <span className="popup-type-label">{t('playTransferSounds')}</span>
                               <span className="settings-option-subtitle">
-                                Play sounds for sends, wrap/unwrap, and staking
+                                {t('playSoundsForTransfers')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -7981,9 +7982,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Play Approval Sounds</span>
+                              <span className="popup-type-label">{t('playApprovalSounds')}</span>
                               <span className="settings-option-subtitle">
-                                Play sounds for token approvals
+                                {t('playSoundsForApprovals')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -7996,9 +7997,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                       <div className="audio-toggle-row">
                         <div className="settings-option-info">
-                          <span className="audio-toggle-label">Notification Controls</span>
+                          <span className="audio-toggle-label">{t('notificationControls')}</span>
                           <span className="settings-option-subtitle">
-                            Show advanced options to selectively hide notification popups
+                            {t('showAdvancedNotificationOptions')}
                           </span>
                         </div>
                         <ToggleSwitch
@@ -8016,9 +8017,9 @@ const handleCancelAllOrders = useCallback(async () => {
                         <div className="popup-type-settings">
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Hide Swap Notifications</span>
+                              <span className="popup-type-label">{t('hideSwapNotifications')}</span>
                               <span className="settings-option-subtitle">
-                                Hide popups for successful swaps and failed swaps
+                                {t('hideSwapNotificationsDesc')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -8032,9 +8033,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Hide Order Notifications</span>
+                              <span className="popup-type-label">{t('hideOrderNotifications')}</span>
                               <span className="settings-option-subtitle">
-                                Hide popups for limit orders, fills, and cancellations
+                                {t('hideOrderNotificationsDesc')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -8048,9 +8049,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Hide Transfer Notifications</span>
+                              <span className="popup-type-label">{t('hideTransferNotifications')}</span>
                               <span className="settings-option-subtitle">
-                                Hide popups for sends, wrap/unwrap, and staking
+                                {t('hideTransferNotificationsDesc')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -8064,9 +8065,9 @@ const handleCancelAllOrders = useCallback(async () => {
 
                           <div className="popup-type-toggle-row">
                             <div className="settings-option-info">
-                              <span className="popup-type-label">Hide Approval Notifications</span>
+                              <span className="popup-type-label">{t('hideApprovalNotifications')}</span>
                               <span className="settings-option-subtitle">
-                                Hide popups for token approvals
+                                {t('hideApprovalNotificationsDesc')}
                               </span>
                             </div>
                             <ToggleSwitch
@@ -8085,14 +8086,14 @@ const handleCancelAllOrders = useCallback(async () => {
                     <div className="settings-section-content">
                       <div className="keybinds-section">
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Trading Shortcuts</div>
+                          <div className="layout-section-title">{t('tradingShortcuts')}</div>
                           <div className="settings-section-subtitle">
-                            Keyboard shortcuts for faster trading operations
+                            {t('keyboardShortcutsForTrading')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Submit Transaction</span>
-                              <span className="keybind-description">Execute trades, place orders, or confirm actions</span>
+                              <span className="keybind-label">{t('submitTransaction')}</span>
+                              <span className="keybind-description">{t('executeTradesPlaceOrders')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'submitTransaction' && isListeningForKey ? 'listening' : ''
@@ -8108,14 +8109,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'submitTransaction' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.submitTransaction)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Switch Tokens</span>
-                              <span className="keybind-description">Swap the input and output tokens</span>
+                              <span className="keybind-label">{t('switchTokens')}</span>
+                              <span className="keybind-description">{t('swapInputOutputTokens')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'switchTokens' && isListeningForKey ? 'listening' : ''
@@ -8131,14 +8132,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'switchTokens' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.switchTokens)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Max Amount</span>
-                              <span className="keybind-description">Set input to maximum available balance</span>
+                              <span className="keybind-label">{t('maxAmount')}</span>
+                              <span className="keybind-description">{t('setInputToMaxBalance')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'maxAmount' && isListeningForKey ? 'listening' : ''
@@ -8154,14 +8155,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'maxAmount' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.maxAmount)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Focus Input</span>
-                              <span className="keybind-description">Focus the main amount input field</span>
+                              <span className="keybind-label">{t('focusInput')}</span>
+                              <span className="keybind-description">{t('focusMainAmountInput')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'focusInput' && isListeningForKey ? 'listening' : ''
@@ -8177,20 +8178,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'focusInput' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.focusInput)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Token Selection</div>
+                          <div className="layout-section-title">{t('tokenSelection')}</div>
                           <div className="settings-section-subtitle">
-                            Quick access to token selection dialogs
+                            {t('quickAccessTokenSelection')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Select Input Token</span>
-                              <span className="keybind-description">Open token selection for input token</span>
+                              <span className="keybind-label">{t('selectInputToken')}</span>
+                              <span className="keybind-description">{t('openTokenSelectionForInput')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openTokenInSelect' && isListeningForKey ? 'listening' : ''
@@ -8206,14 +8207,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openTokenInSelect' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openTokenInSelect)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Select Output Token</span>
-                              <span className="keybind-description">Open token selection for output token</span>
+                              <span className="keybind-label">{t('selectOutputToken')}</span>
+                              <span className="keybind-description">{t('openTokenSelectionForOutput')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openTokenOutSelect' && isListeningForKey ? 'listening' : ''
@@ -8229,20 +8230,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openTokenOutSelect' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openTokenOutSelect)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Order Management</div>
+                          <div className="layout-section-title">{t('orderManagement')}</div>
                           <div className="settings-section-subtitle">
-                            Manage your active orders quickly
+                            {t('manageActiveOrdersQuickly')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Cancel All Orders</span>
-                              <span className="keybind-description">Cancel all active orders at once</span>
+                              <span className="keybind-label">{t('cancelAllOrders')}</span>
+                              <span className="keybind-description">{t('cancelAllActiveOrders')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'cancelAllOrders' && isListeningForKey ? 'listening' : ''
@@ -8258,14 +8259,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'cancelAllOrders' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.cancelAllOrders)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Cancel Top Order</span>
-                              <span className="keybind-description">Cancel your most recent order</span>
+                              <span className="keybind-label">{t('cancelTopOrder')}</span>
+                              <span className="keybind-description">{t('cancelMostRecentOrder')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'cancelTopOrder' && isListeningForKey ? 'listening' : ''
@@ -8281,20 +8282,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'cancelTopOrder' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.cancelTopOrder)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Interface Shortcuts</div>
+                          <div className="layout-section-title">{t('interfaceShortcuts')}</div>
                           <div className="settings-section-subtitle">
-                            Navigate the interface quickly
+                            {t('navigateInterfaceQuickly')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Settings</span>
-                              <span className="keybind-description">Open the settings panel</span>
+                              <span className="keybind-label">{t('openSettings')}</span>
+                              <span className="keybind-description">{t('openSettingsPanel')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openSettings' && isListeningForKey ? 'listening' : ''
@@ -8310,14 +8311,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openSettings' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openSettings)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Wallet</span>
-                              <span className="keybind-description">Open wallet connection and portfolio</span>
+                              <span className="keybind-label">{t('openWallet')}</span>
+                              <span className="keybind-description">{t('openWalletConnectionPortfolio')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openWallet' && isListeningForKey ? 'listening' : ''
@@ -8333,14 +8334,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openWallet' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openWallet)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Market Search</span>
-                              <span className="keybind-description">Open the market search dialog</span>
+                              <span className="keybind-label">{t('openMarketSearch')}</span>
+                              <span className="keybind-description">{t('openMarketSearchDialog')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openMarketSearch' && isListeningForKey ? 'listening' : ''
@@ -8356,14 +8357,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openMarketSearch' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openMarketSearch)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Toggle Simple View</span>
-                              <span className="keybind-description">Switch between simple and advanced view</span>
+                              <span className="keybind-label">{t('toggleSimpleView')}</span>
+                              <span className="keybind-description">{t('switchBetweenSimpleAdvanced')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'toggleSimpleView' && isListeningForKey ? 'listening' : ''
@@ -8379,14 +8380,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'toggleSimpleView' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.toggleSimpleView)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Refresh Quote</span>
-                              <span className="keybind-description">Refresh the current price quote</span>
+                              <span className="keybind-label">{t('refreshQuote')}</span>
+                              <span className="keybind-description">{t('refreshCurrentPriceQuote')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'refreshQuote' && isListeningForKey ? 'listening' : ''
@@ -8402,20 +8403,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'refreshQuote' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.refreshQuote)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Navigation Shortcuts</div>
+                          <div className="layout-section-title">{t('navigationShortcuts')}</div>
                           <div className="settings-section-subtitle">
-                            Jump to different pages quickly
+                            {t('jumpToDifferentPagesQuickly')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Portfolio</span>
-                              <span className="keybind-description">Navigate to portfolio page</span>
+                              <span className="keybind-label">{t('openPortfolio')}</span>
+                              <span className="keybind-description">{t('navigateToPortfolioPage')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openPortfolio' && isListeningForKey ? 'listening' : ''
@@ -8431,14 +8432,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openPortfolio' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openPortfolio)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Leaderboard</span>
-                              <span className="keybind-description">Navigate to leaderboard page</span>
+                              <span className="keybind-label">{t('openLeaderboard')}</span>
+                              <span className="keybind-description">{t('navigateToLeaderboardPage')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openLeaderboard' && isListeningForKey ? 'listening' : ''
@@ -8454,14 +8455,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openLeaderboard' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openLeaderboard)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Open Referrals</span>
-                              <span className="keybind-description">Navigate to referrals page</span>
+                              <span className="keybind-label">{t('openReferrals')}</span>
+                              <span className="keybind-description">{t('navigateToReferralsPage')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'openReferrals' && isListeningForKey ? 'listening' : ''
@@ -8477,20 +8478,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'openReferrals' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.openReferrals)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Market Shortcuts</div>
+                          <div className="layout-section-title">{t('marketShortcuts')}</div>
                           <div className="settings-section-subtitle">
-                            Interact with market data quickly
+                            {t('interactWithMarketDataQuickly')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Toggle Favorite</span>
-                              <span className="keybind-description">Add/remove current market from favorites</span>
+                              <span className="keybind-label">{t('toggleFavorite')}</span>
+                              <span className="keybind-description">{t('addRemoveCurrentMarketFavorites')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'toggleFavorite' && isListeningForKey ? 'listening' : ''
@@ -8506,20 +8507,20 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'toggleFavorite' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.toggleFavorite)}
                             </button>
                           </div>
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">Order Center Shortcuts</div>
+                          <div className="layout-section-title">{t('orderCenterShortcuts')}</div>
                           <div className="settings-section-subtitle">
-                            Navigate order center tabs quickly
+                            {t('navigateOrderCenterTabsQuickly')}
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Switch to Orders</span>
-                              <span className="keybind-description">View active orders tab</span>
+                              <span className="keybind-label">{t('switchToOrders')}</span>
+                              <span className="keybind-description">{t('viewActiveOrdersTab')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'switchToOrders' && isListeningForKey ? 'listening' : ''
@@ -8535,14 +8536,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'switchToOrders' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.switchToOrders)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Switch to Trade History</span>
-                              <span className="keybind-description">View trade history tab</span>
+                              <span className="keybind-label">{t('switchToTradeHistory')}</span>
+                              <span className="keybind-description">{t('viewTradeHistoryTab')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'switchToTrades' && isListeningForKey ? 'listening' : ''
@@ -8558,14 +8559,14 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'switchToTrades' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.switchToTrades)}
                             </button>
                           </div>
                           <div className="keybind-setting-row">
                             <div className="keybind-info">
-                              <span className="keybind-label">Switch to Order History</span>
-                              <span className="keybind-description">View order history tab</span>
+                              <span className="keybind-label">{t('switchToOrderHistory')}</span>
+                              <span className="keybind-description">{t('viewOrderHistoryTab')}</span>
                             </div>
                             <button
                               className={`keybind-button ${editingKeybind === 'switchToHistory' && isListeningForKey ? 'listening' : ''
@@ -8581,7 +8582,7 @@ const handleCancelAllOrders = useCallback(async () => {
                               }}
                             >
                               {editingKeybind === 'switchToHistory' && isListeningForKey
-                                ? 'Press a key...'
+                                ? t('pressAKey')
                                 : formatKeyDisplay(keybinds.switchToHistory)}
                             </button>
                           </div>
@@ -8619,7 +8620,7 @@ const handleCancelAllOrders = useCallback(async () => {
                           setIsListeningForKey(false);
                         }}
                       >
-                        Reset Keybinds
+                        {t('resetKeybinds')}
                       </button>
                     </div>
                   )}
@@ -8631,7 +8632,7 @@ const handleCancelAllOrders = useCallback(async () => {
                     setLanguage('EN');
                     localStorage.setItem('crystal_language', 'EN');
 
-                    setHideNotificationPopups(false); t
+                    setHideNotificationPopups(false);
                     localStorage.setItem('crystal_hide_notification_popups', 'false');
 
                     setNotificationPosition('bottom-right');
@@ -8657,7 +8658,7 @@ const handleCancelAllOrders = useCallback(async () => {
 
                     setHideNotificationPopups(false);
                     localStorage.setItem('crystal_hide_notification_popups', 'false');
-                    t
+
                     setIsOrderbookVisible(true);
                     localStorage.setItem('crystal_orderbook_visible', 'true');
 
