@@ -314,7 +314,8 @@ function App() {
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
 
-
+  const [orderSizePercent, setOrderSizePercent] = useState(100);
+  const [originalOrderSize, setOriginalOrderSize] = useState(0);
   type SliderMode = 'slider' | 'presets' | 'increment';
 
 
@@ -667,10 +668,10 @@ function App() {
   const [scaleButton, setScaleButton] = useState(12)
   const [scaleButtonDisabled, setScaleButtonDisabled] = useState(true)
   const [isBlurred, setIsBlurred] = useState(false);
-  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{orders: any[], key: string}>({orders: [], key: ''});
-  const [roundedSellOrders, setRoundedSellOrders] = useState<{orders: any[], key: string}>({orders: [], key: ''});
-  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{orders: any[], market: string}>({orders: [], market: ''});
-  const [liquiditySellOrders, setLiquiditySellOrders] = useState<{orders: any[], market: string}>({orders: [], market: ''});
+  const [roundedBuyOrders, setRoundedBuyOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
+  const [roundedSellOrders, setRoundedSellOrders] = useState<{ orders: any[], key: string }>({ orders: [], key: '' });
+  const [liquidityBuyOrders, setLiquidityBuyOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
+  const [liquiditySellOrders, setLiquiditySellOrders] = useState<{ orders: any[], market: string }>({ orders: [], market: '' });
   const [prevOrderData, setPrevOrderData] = useState<any[]>([])
   const [stateloading, setstateloading] = useState(true);
   const [tradesloading, settradesloading] = useState(true);
@@ -688,28 +689,36 @@ function App() {
   };
   const openEditOrderSizePopup = (order: any) => {
     setEditingOrderSize(order);
-    const tokenAddress = order[3] === 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress;
-    const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
 
-    const originalSizeBigInt = BigInt(order[1]);
-    const divisor = BigInt(10 ** tokenDecimals);
-    const wholePart = originalSizeBigInt / divisor;
-    const fractionalPart = originalSizeBigInt % divisor;
+    const marketKey = order[4];
+    const market = (markets as any)[marketKey];
+    const isBuyOrder = order[3] === 1;
 
-    let originalSizeStr;
-    if (fractionalPart === BigInt(0)) {
-      originalSizeStr = wholePart.toString();
+    const scaleFactor = Number(market.scaleFactor);
+    const quoteDecimals = Number(market.quoteDecimals);
+    const baseDecimals = Number(market.baseDecimals);
+
+    let originalSize;
+
+    if (isBuyOrder) {
+      let quotePrice = 1;
+      if (market.quoteAsset !== 'USDC') {
+        const chainConfig = (settings.chainConfig as any)[activechain];
+        const quotePriceKey = (market.quoteAsset == chainConfig?.wethticker ?
+          chainConfig.ethticker : market.quoteAsset) + 'USDC';
+
+        quotePrice = (trades as any)[quotePriceKey]?.[0]?.[3] /
+          Number((markets as any)[quotePriceKey]?.priceFactor) || 1;
+      }
+
+      originalSize = parseFloat((order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2));
     } else {
-      const fractionalStr = fractionalPart.toString().padStart(tokenDecimals, '0');
-      const trimmedFractional = fractionalStr.replace(/0+$/, '');
-      originalSizeStr = trimmedFractional.length > 0
-        ? wholePart.toString() + '.' + trimmedFractional
-        : wholePart.toString();
+      originalSize = parseFloat((order[2] / (10 ** baseDecimals)).toFixed(6));
     }
 
-    const originalSize = parseFloat(originalSizeStr);
-
+    setOriginalOrderSize(originalSize);
     setCurrentOrderSize(originalSize);
+    setOrderSizePercent(100); 
     setHasEditedSize(false);
     setpopup(20);
   };
@@ -2058,23 +2067,23 @@ function App() {
 
         const prevBuyMap = new Map(roundedBuyOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
         const prevSellMap = new Map(roundedSellOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
-        
+
         for (let i = 0; i < roundedBuy.length; i++) {
           const prevIndex = prevBuyMap.get(`${roundedBuy[i].price}_${roundedBuy[i].size}`);
           if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
             roundedBuy[i].shouldFlash = true;
           }
         }
-        
+
         for (let i = 0; i < roundedSell.length; i++) {
           const prevIndex = prevSellMap.get(`${roundedSell[i].price}_${roundedSell[i].size}`);
           if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
             roundedSell[i].shouldFlash = true;
           }
         }
-        
-        setRoundedBuyOrders({orders: roundedBuy, key: activeMarketKey});
-        setRoundedSellOrders({orders: roundedSell, key: activeMarketKey});
+
+        setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey });
+        setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey });
       } catch (error) {
         console.error(error);
       }
@@ -2305,26 +2314,26 @@ function App() {
 
             const prevBuyMap = new Map(roundedBuyOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
             const prevSellMap = new Map(roundedSellOrders?.orders?.map((o, i) => [`${o.price}_${o.size}`, i]));
-            
+
             for (let i = 0; i < roundedBuy.length; i++) {
               const prevIndex = prevBuyMap.get(`${roundedBuy[i].price}_${roundedBuy[i].size}`);
               if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
                 roundedBuy[i].shouldFlash = true;
               }
             }
-            
+
             for (let i = 0; i < roundedSell.length; i++) {
               const prevIndex = prevSellMap.get(`${roundedSell[i].price}_${roundedSell[i].size}`);
               if (prevIndex === undefined || (i === 0 && prevIndex !== 0)) {
                 roundedSell[i].shouldFlash = true;
               }
             }
-            
+
             setSpreadData(spread);
-            setRoundedBuyOrders({orders: roundedBuy, key: activeMarketKey});
-            setRoundedSellOrders({orders: roundedSell, key: activeMarketKey});
-            setLiquidityBuyOrders({orders: liquidityBuy, market: activeMarket.address});
-            setLiquiditySellOrders({orders: liquiditySell, market: activeMarket.address});
+            setRoundedBuyOrders({ orders: roundedBuy, key: activeMarketKey });
+            setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey });
+            setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
+            setLiquiditySellOrders({ orders: liquiditySell, market: activeMarket.address });
 
             setBaseInterval(1 / Number(activeMarket.priceFactor));
             setOBInterval(
@@ -5043,145 +5052,145 @@ function App() {
     await refetch()
     setIsRefreshing(false);
   }, [isRefreshing, refetch]);
-const handleCancelTopOrder = useCallback(async () => {
-  if (!connected || userchain !== activechain || orders.length === 0) {
-    return;
-  }
-
-  try {
-    setIsSigning(true);
-
-    const topOrder = orders[0];
-    const market = markets[topOrder[4]];
-
-    if (!market) {
-      console.error('Market not found for order');
+  const handleCancelTopOrder = useCallback(async () => {
+    if (!connected || userchain !== activechain || orders.length === 0) {
       return;
     }
 
-    const hash = await sendUserOperationAsync({
-      uo: {
-        target: market.address,
-        data: encodeFunctionData({
-          abi: CrystalMarketAbi,
-          functionName: 'cancelOrder',
-          args: [
-            BigInt(topOrder[0]), 
-            BigInt(topOrder[1]),
-            market.baseAddress,    // Add the missing hex address
-            market.quoteAddress    // Add the missing hex address
-          ],
-        }),
-        value: 0n,
-      },
-    });
+    try {
+      setIsSigning(true);
 
-    if (!client) {
-      await waitForTxReceipt(hash.hash);
-    }
+      const topOrder = orders[0];
+      const market = markets[topOrder[4]];
 
-    await refetch();
+      if (!market) {
+        console.error('Market not found for order');
+        return;
+      }
 
-    const quoteasset = market.quoteAddress;
-    const baseasset = market.baseAddress;
-    const amountquote = (
-      topOrder[8] /
-      (Number(market.scaleFactor) * 10 ** Number(market.quoteDecimals))
-    ).toFixed(2);
-    const amountbase = customRound(
-      (topOrder[2] - topOrder[7]) / 10 ** Number(market.baseDecimals),
-      3,
-    );
-
-    newTxPopup(
-      client ? hash.hash : hash.hash,
-      'cancel',
-      topOrder[3] == 1 ? quoteasset : baseasset,
-      topOrder[3] == 1 ? baseasset : quoteasset,
-      topOrder[3] == 1 ? amountquote : amountbase,
-      topOrder[3] == 1 ? amountbase : amountquote,
-      `${topOrder[0] / Number(market.priceFactor)} ${market.quoteAsset}`,
-      '',
-    );
-
-  } catch (error) {
-    console.error('Error canceling top order:', error);
-  } finally {
-    setIsSigning(false);
-  }
-}, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup, customRound]);
-
-const handleCancelAllOrders = useCallback(async () => {
-  if (!connected || userchain !== activechain || orders.length === 0) {
-    return;
-  }
-
-  try {
-    setIsSigning(true);
-
-    const ordersByMarket = orders.reduce((acc: any, order: any) => {
-      const marketKey = order[4];
-      if (!acc[marketKey]) acc[marketKey] = [];
-      acc[marketKey].push(order);
-      return acc;
-    }, {});
-
-    for (const [marketKey, marketOrders] of Object.entries(ordersByMarket) as [string, any[]][]) {
-      const market = markets[marketKey];
-      if (!market) continue;
-
-      const cancelPromises = marketOrders.map(async (order: any) => {
-        try {
-          const hash = await sendUserOperationAsync({
-            uo: {
-              target: market.address,
-              data: encodeFunctionData({
-                abi: CrystalMarketAbi,
-                functionName: 'cancelOrder',
-                args: [
-                  BigInt(order[0]), 
-                  BigInt(order[1]),
-                  market.baseAddress,    // Add the missing hex address
-                  market.quoteAddress    // Add the missing hex address
-                ],
-              }),
-              value: 0n,
-            },
-          });
-
-          if (!client) {
-            await waitForTxReceipt(hash.hash);
-          }
-
-          return hash;
-        } catch (error) {
-          console.error('Failed to cancel order:', error);
-          return null;
-        }
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: market.address,
+          data: encodeFunctionData({
+            abi: CrystalMarketAbi,
+            functionName: 'cancelOrder',
+            args: [
+              BigInt(topOrder[0]),
+              BigInt(topOrder[1]),
+              market.baseAddress,    // Add the missing hex address
+              market.quoteAddress    // Add the missing hex address
+            ],
+          }),
+          value: 0n,
+        },
       });
 
-      await Promise.allSettled(cancelPromises);
+      if (!client) {
+        await waitForTxReceipt(hash.hash);
+      }
+
+      await refetch();
+
+      const quoteasset = market.quoteAddress;
+      const baseasset = market.baseAddress;
+      const amountquote = (
+        topOrder[8] /
+        (Number(market.scaleFactor) * 10 ** Number(market.quoteDecimals))
+      ).toFixed(2);
+      const amountbase = customRound(
+        (topOrder[2] - topOrder[7]) / 10 ** Number(market.baseDecimals),
+        3,
+      );
+
+      newTxPopup(
+        client ? hash.hash : hash.hash,
+        'cancel',
+        topOrder[3] == 1 ? quoteasset : baseasset,
+        topOrder[3] == 1 ? baseasset : quoteasset,
+        topOrder[3] == 1 ? amountquote : amountbase,
+        topOrder[3] == 1 ? amountbase : amountquote,
+        `${topOrder[0] / Number(market.priceFactor)} ${market.quoteAsset}`,
+        '',
+      );
+
+    } catch (error) {
+      console.error('Error canceling top order:', error);
+    } finally {
+      setIsSigning(false);
+    }
+  }, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup, customRound]);
+
+  const handleCancelAllOrders = useCallback(async () => {
+    if (!connected || userchain !== activechain || orders.length === 0) {
+      return;
     }
 
-    await refetch();
+    try {
+      setIsSigning(true);
 
-    newTxPopup(
-      'batch-cancel',
-      'cancel',
-      '',
-      '',
-      `${orders.length}`,
-      0,
-      '',
-      ''
-    );
+      const ordersByMarket = orders.reduce((acc: any, order: any) => {
+        const marketKey = order[4];
+        if (!acc[marketKey]) acc[marketKey] = [];
+        acc[marketKey].push(order);
+        return acc;
+      }, {});
 
-  } catch (error) {
-    console.error('Error canceling all orders:', error);
-  } finally {
-    setIsSigning(false);
-  }
-}, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup]);
+      for (const [marketKey, marketOrders] of Object.entries(ordersByMarket) as [string, any[]][]) {
+        const market = markets[marketKey];
+        if (!market) continue;
+
+        const cancelPromises = marketOrders.map(async (order: any) => {
+          try {
+            const hash = await sendUserOperationAsync({
+              uo: {
+                target: market.address,
+                data: encodeFunctionData({
+                  abi: CrystalMarketAbi,
+                  functionName: 'cancelOrder',
+                  args: [
+                    BigInt(order[0]),
+                    BigInt(order[1]),
+                    market.baseAddress,    // Add the missing hex address
+                    market.quoteAddress    // Add the missing hex address
+                  ],
+                }),
+                value: 0n,
+              },
+            });
+
+            if (!client) {
+              await waitForTxReceipt(hash.hash);
+            }
+
+            return hash;
+          } catch (error) {
+            console.error('Failed to cancel order:', error);
+            return null;
+          }
+        });
+
+        await Promise.allSettled(cancelPromises);
+      }
+
+      await refetch();
+
+      newTxPopup(
+        'batch-cancel',
+        'cancel',
+        '',
+        '',
+        `${orders.length}`,
+        0,
+        '',
+        ''
+      );
+
+    } catch (error) {
+      console.error('Error canceling all orders:', error);
+    } finally {
+      setIsSigning(false);
+    }
+  }, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup]);
   const handleSubmitTransaction = useCallback(() => {
     if (popup !== 0) return;
 
@@ -7389,7 +7398,7 @@ const handleCancelAllOrders = useCallback(async () => {
             </div>
           )
         ) : null}
-{popup === 5 ? ( // settings
+        {popup === 5 ? ( // settings
           <div
             className={`layout-settings-background ${simpleView ? 'simple' : ''}`}
             ref={popupref}
@@ -7786,7 +7795,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             onClick={() => updateNotificationPosition('top-left')}
                           >
                             <div className="position-preview-container">
-                                <div className="preview-popup top-left"></div>
+                              <div className="preview-popup top-left"></div>
                             </div>
                           </button>
 
@@ -7795,7 +7804,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             onClick={() => updateNotificationPosition('top-right')}
                           >
                             <div className="position-preview-container">
-                                <div className="preview-popup top-right"></div>
+                              <div className="preview-popup top-right"></div>
                             </div>
                           </button>
 
@@ -7804,7 +7813,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             onClick={() => updateNotificationPosition('bottom-left')}
                           >
                             <div className="position-preview-container">
-                                <div className="preview-popup bottom-left"></div>
+                              <div className="preview-popup bottom-left"></div>
                             </div>
                           </button>
 
@@ -7813,7 +7822,7 @@ const handleCancelAllOrders = useCallback(async () => {
                             onClick={() => updateNotificationPosition('bottom-right')}
                           >
                             <div className="position-preview-container">
-                                <div className="preview-popup bottom-right"></div>
+                              <div className="preview-popup bottom-right"></div>
                             </div>
                           </button>
                         </div>
@@ -10214,10 +10223,13 @@ const handleCancelAllOrders = useCallback(async () => {
                     const inputValue = e.target.value;
                     if (inputValue === '') {
                       setCurrentOrderSize(0);
+                      setOrderSizePercent(0);
                     } else {
                       const newValue = parseFloat(inputValue);
                       if (!isNaN(newValue) && newValue >= 0) {
                         setCurrentOrderSize(newValue);
+                        const percentage = originalOrderSize > 0 ? Math.round((newValue / originalOrderSize) * 100) : 100;
+                        setOrderSizePercent(Math.min(200, Math.max(0, percentage)));
                       }
                     }
                     setHasEditedSize(true);
@@ -10248,62 +10260,72 @@ const handleCancelAllOrders = useCallback(async () => {
                 ) : null;
               })()}
 
-              <div className="edit-order-size-button-container">
-                <button
-                  className="edit-order-size-level-button decrease"
-                  onClick={() => {
-                    const newSize = currentOrderSize * 0.75; // -25%
-                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                    setHasEditedSize(true);
-                  }}
-                >
-                  -25%
-                </button>
-                <button
-                  className="edit-order-size-level-button decrease"
-                  onClick={() => {
-                    const newSize = currentOrderSize * 0.5; // -50%
-                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                    setHasEditedSize(true);
-                  }}
-                >
-                  -50%
-                </button>
-                <button
-                  className="edit-order-size-level-button increase"
-                  onClick={() => {
-                    const newSize = currentOrderSize * 1.25; // +25%
-                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                    setHasEditedSize(true);
-                  }}
-                >
-                  +25%
-                </button>
-                <button
-                  className="edit-order-size-level-button increase"
-                  onClick={() => {
-                    const newSize = currentOrderSize * 1.5; // +50%
-                    setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                    setHasEditedSize(true);
-                  }}
-                >
-                  +50%
-                </button>
-                <button
-                  className="edit-order-size-level-button"
-                  onClick={() => {
-                    if (!editingOrderSize) return;
-                    const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-                    const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-                    const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-                    const maxSize = Number(tokenBalance) / (10 ** tokenDecimals);
-                    setCurrentOrderSize(parseFloat(maxSize.toFixed(8)));
-                    setHasEditedSize(true);
-                  }}
-                >
-                  Max
-                </button>
+              <div className="order-size-balance-slider-wrapper">
+                <div className="order-size-slider-container">
+                  <input
+                    type="range"
+                    className="order-size-balance-amount-slider"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value={orderSizePercent}
+                    onChange={(e) => {
+                      const percent = parseInt(e.target.value);
+                      const newSize = (originalOrderSize * percent) / 100;
+                      setOrderSizePercent(percent);
+                      setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                      setHasEditedSize(true);
+
+                      const slider = e.target;
+                      const rect = slider.getBoundingClientRect();
+                      const trackWidth = rect.width - 15;
+                      const thumbPosition = (percent / 200) * trackWidth + 15 / 2;
+                      const popup = document.querySelector('.order-size-slider-percentage-popup');
+                      if (popup) {
+                        (popup as HTMLElement).style.left = `${thumbPosition}px`;
+                      }
+                    }}
+                    onMouseDown={() => {
+                      const popup = document.querySelector('.order-size-slider-percentage-popup');
+                      if (popup) popup.classList.add('visible');
+                    }}
+                    onMouseUp={() => {
+                      const popup = document.querySelector('.order-size-slider-percentage-popup');
+                      if (popup) popup.classList.remove('visible');
+                    }}
+                    style={{
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+                    }}
+                  />
+                  <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
+                  <div className="order-size-balance-slider-marks">
+                    {[0, 50, 100, 150, 200].map((markPercent) => (
+                      <span
+                        key={markPercent}
+                        className="order-size-balance-slider-mark"
+                        data-active={orderSizePercent >= markPercent}
+                        data-percentage={markPercent}
+                        onClick={() => {
+                          const newSize = (originalOrderSize * markPercent) / 100;
+                          setOrderSizePercent(markPercent);
+                          setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                          setHasEditedSize(true);
+
+                          const slider = document.querySelector('.order-size-balance-amount-slider');
+                          const popup = document.querySelector('.order-size-slider-percentage-popup');
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (markPercent / 200) + 15 / 2}px`;
+                          }
+                        }}
+                      >
+                        {markPercent}%
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
+
 
               <div className="edit-order-size-actions">
                 <button
@@ -11368,7 +11390,8 @@ const handleCancelAllOrders = useCallback(async () => {
                 </div>
               </div>
             )}
-          </div>        </div>
+          </div>
+        </div>
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
