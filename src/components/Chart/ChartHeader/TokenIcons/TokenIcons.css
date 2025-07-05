@@ -9,9 +9,9 @@
 
 .token-wrapper,
 .token-skeleton {
-  height: 30px;
+  height: 32px;
   position: relative;
-  width: 30px;
+  width: 32px;
 }
 
 .token-skeleton {
@@ -44,13 +44,14 @@
 .token-wrapper.second {
   margin-left: -10px;
   z-index: 0;
+  display: none;
 }
 
 .token-icon,
 .token-icon2 {
   border-radius: 50%;
-  height: 28px;
-  width: 28px;
+  height: 30px;
+  width: 30px;
   left: 0;
   margin-top: 1px;
   position: absolute;

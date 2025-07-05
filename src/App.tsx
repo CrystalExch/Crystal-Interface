@@ -10191,165 +10191,222 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 20 ? (
-          <div className="edit-order-size-popup-bg" ref={popupref}>
-            <div className="edit-order-size-header">
-              <span className="edit-order-size-title">Edit Order Size</span>
-              <span className="edit-order-size-subtitle">Adjust the size of your limit order</span>
-            </div>
-            <div className="edit-order-size-content">
-              {(() => {
-                if (!editingOrderSize) return null;
+{popup === 20 ? (
+  <div className="edit-order-size-popup-bg" ref={popupref}>
+    <div className="edit-order-size-header">
+      <span className="edit-order-size-title">Edit Order Size</span>
+      <span className="edit-order-size-subtitle">Adjust the size of your limit order</span>
+    </div>
+    <div className="edit-order-size-content">
+      {(() => {
+        if (!editingOrderSize) return null;
 
-                const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-                const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-                const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-                const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+        const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+        const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+        const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+        const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
 
-                return (
-                  <div className="edit-order-size-balance-display">
-                    <img src={walleticon} className="balance-wallet-icon" />{' '}
-                    <span className="balance-value">{availableBalance.toFixed(2)}</span>
-                  </div>
-                );
-              })()}
-
-              <div className="edit-order-size-input-container">
-                <input
-                  className="edit-order-size-input"
-                  type="number"
-                  value={currentOrderSize === 0 ? '' : currentOrderSize.toString()}
-                  onChange={(e) => {
-                    const inputValue = e.target.value;
-                    if (inputValue === '') {
-                      setCurrentOrderSize(0);
-                      setOrderSizePercent(0);
-                    } else {
-                      const newValue = parseFloat(inputValue);
-                      if (!isNaN(newValue) && newValue >= 0) {
-                        setCurrentOrderSize(newValue);
-                        const percentage = originalOrderSize > 0 ? Math.round((newValue / originalOrderSize) * 100) : 100;
-                        setOrderSizePercent(Math.min(200, Math.max(0, percentage)));
-                      }
-                    }
-                    setHasEditedSize(true);
-                  }}
-                  step="any"
-                  min="0"
-                  placeholder="0.00"
-                />
-                <span className="edit-order-size-token-label">
-                  {editingOrderSize && tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress]?.ticker}
-                </span>
-              </div>
-
-              {(() => {
-                if (!editingOrderSize) return null;
-
-                const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-                const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-                const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-                const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-
-                const showWarning = currentOrderSize > availableBalance;
-
-                return showWarning ? (
-                  <div className="edit-order-size-warning">
-                    <span>Insufficient balance. Available: {availableBalance.toFixed(6)} {tokendict[tokenAddress]?.ticker}</span>
-                  </div>
-                ) : null;
-              })()}
-
-              <div className="order-size-balance-slider-wrapper">
-                <div className="order-size-slider-container">
-                  <input
-                    type="range"
-                    className="order-size-balance-amount-slider"
-                    min="0"
-                    max="200"
-                    step="1"
-                    value={orderSizePercent}
-                    onChange={(e) => {
-                      const percent = parseInt(e.target.value);
-                      const newSize = (originalOrderSize * percent) / 100;
-                      setOrderSizePercent(percent);
-                      setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                      setHasEditedSize(true);
-
-                      const slider = e.target;
-                      const rect = slider.getBoundingClientRect();
-                      const trackWidth = rect.width - 15;
-                      const thumbPosition = (percent / 200) * trackWidth + 15 / 2;
-                      const popup = document.querySelector('.order-size-slider-percentage-popup');
-                      if (popup) {
-                        (popup as HTMLElement).style.left = `${thumbPosition}px`;
-                      }
-                    }}
-                    onMouseDown={() => {
-                      const popup = document.querySelector('.order-size-slider-percentage-popup');
-                      if (popup) popup.classList.add('visible');
-                    }}
-                    onMouseUp={() => {
-                      const popup = document.querySelector('.order-size-slider-percentage-popup');
-                      if (popup) popup.classList.remove('visible');
-                    }}
-                    style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
-                    }}
-                  />
-                  <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
-                  <div className="order-size-balance-slider-marks">
-                    {[0, 50, 100, 150, 200].map((markPercent) => (
-                      <span
-                        key={markPercent}
-                        className="order-size-balance-slider-mark"
-                        data-active={orderSizePercent >= markPercent}
-                        data-percentage={markPercent}
-                        onClick={() => {
-                          const newSize = (originalOrderSize * markPercent) / 100;
-                          setOrderSizePercent(markPercent);
-                          setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                          setHasEditedSize(true);
-
-                          const slider = document.querySelector('.order-size-balance-amount-slider');
-                          const popup = document.querySelector('.order-size-slider-percentage-popup');
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (markPercent / 200) + 15 / 2}px`;
-                          }
-                        }}
-                      >
-                        {markPercent}%
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-
-              <div className="edit-order-size-actions">
-                <button
-                  className="edit-order-size-confirm-button"
-                  onClick={handleEditOrderSizeConfirm}
-                  disabled={isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0}
-                  style={{
-                    opacity: (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0) ? 0.5 : 1,
-                    cursor: (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0) ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  {isEditingSizeSigning ? (
-                    <div className="signing-indicator">
-                      <div className="loading-spinner"></div>
-                      <span>{t('signTransaction')}</span>
-                    </div>
-                  ) : (
-                    'Confirm'
-                  )}
-                </button>
-              </div>
-            </div>
+        return (
+          <div className="edit-order-size-balance-display">
+            <img src={walleticon} className="balance-wallet-icon" />{' '}
+            <span className="balance-value">{availableBalance.toFixed(2)}</span>
           </div>
-        ) : null}
+        );
+      })()}
+
+      <div className="edit-order-size-input-container">
+        <input
+          className="edit-order-size-input"
+          type="number"
+          value={currentOrderSize === 0 ? '' : currentOrderSize.toString()}
+          onChange={(e) => {
+            const inputValue = e.target.value;
+            if (inputValue === '') {
+              setCurrentOrderSize(0);
+              setOrderSizePercent(0);
+            } else {
+              const newValue = parseFloat(inputValue);
+              if (!isNaN(newValue) && newValue >= 0) {
+                setCurrentOrderSize(newValue);
+                const percentage = originalOrderSize > 0 ? Math.round((newValue / originalOrderSize) * 100) : 100;
+                setOrderSizePercent(Math.min(200, Math.max(0, percentage)));
+              }
+            }
+            setHasEditedSize(true);
+          }}
+          step="any"
+          min="0"
+          placeholder="0.00"
+        />
+        <span className="edit-order-size-token-label">
+          {editingOrderSize && tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress]?.ticker}
+        </span>
+      </div>
+
+      {(() => {
+        if (!editingOrderSize) return null;
+
+        const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+        const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+        const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+        const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+
+        // Calculate the current unfilled amount (what's currently locked in the order)
+        const market = markets[editingOrderSize[4]];
+        const baseDecimals = Number(market.baseDecimals);
+        const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+        
+        // Calculate how much additional balance is needed
+        const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+        const showWarning = additionalAmountNeeded > availableBalance;
+
+        return showWarning ? (
+          <div className="edit-order-size-warning">
+            <span>
+              Insufficient balance. Need {additionalAmountNeeded.toFixed(6)} more {tokendict[tokenAddress]?.ticker}. 
+              Available: {availableBalance.toFixed(6)} {tokendict[tokenAddress]?.ticker}
+            </span>
+          </div>
+        ) : null;
+      })()}
+
+      <div className="order-size-balance-slider-wrapper">
+        <div className="order-size-slider-container">
+          <input
+            type="range"
+            className="order-size-balance-amount-slider"
+            min="0"
+            max="200"
+            step="1"
+            value={orderSizePercent}
+            onChange={(e) => {
+              const percent = parseInt(e.target.value);
+              const newSize = (originalOrderSize * percent) / 100;
+              setOrderSizePercent(percent);
+              setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+              setHasEditedSize(true);
+
+              const slider = e.target;
+              const rect = slider.getBoundingClientRect();
+              const trackWidth = rect.width - 15;
+              const thumbPosition = (percent / 200) * trackWidth + 15 / 2;
+              const popup = document.querySelector('.order-size-slider-percentage-popup');
+              if (popup) {
+                (popup as HTMLElement).style.left = `${thumbPosition}px`;
+              }
+            }}
+            onMouseDown={() => {
+              const popup = document.querySelector('.order-size-slider-percentage-popup');
+              if (popup) popup.classList.add('visible');
+            }}
+            onMouseUp={() => {
+              const popup = document.querySelector('.order-size-slider-percentage-popup');
+              if (popup) popup.classList.remove('visible');
+            }}
+            style={{
+              background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+            }}
+          />
+          <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
+          <div className="order-size-balance-slider-marks">
+            {[0, 50, 100, 150, 200].map((markPercent) => (
+              <span
+                key={markPercent}
+                className="order-size-balance-slider-mark"
+                data-active={orderSizePercent >= markPercent}
+                data-percentage={markPercent}
+                onClick={() => {
+                  const newSize = (originalOrderSize * markPercent) / 100;
+                  setOrderSizePercent(markPercent);
+                  setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                  setHasEditedSize(true);
+
+                  const slider = document.querySelector('.order-size-balance-amount-slider');
+                  const popup = document.querySelector('.order-size-slider-percentage-popup');
+                  if (slider && popup) {
+                    const rect = slider.getBoundingClientRect();
+                    (popup as HTMLElement).style.left = `${(rect.width - 15) * (markPercent / 200) + 15 / 2}px`;
+                  }
+                }}
+              >
+                {markPercent}%
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="edit-order-size-actions">
+        <button
+          className="edit-order-size-confirm-button"
+          onClick={handleEditOrderSizeConfirm}
+          disabled={(() => {
+            if (!editingOrderSize) return true;
+            
+            const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+            const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+            const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+            const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+            
+            // Calculate current unfilled amount
+            const market = markets[editingOrderSize[4]];
+            const baseDecimals = Number(market.baseDecimals);
+            const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+            
+            // Calculate additional amount needed
+            const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+            const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+            
+            return isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance;
+          })()}
+          style={{
+            opacity: (() => {
+              if (!editingOrderSize) return 0.5;
+              
+              const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+              const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+              const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+              const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+              
+              const market = markets[editingOrderSize[4]];
+              const baseDecimals = Number(market.baseDecimals);
+              const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+              const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+              const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+              
+              return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance) ? 0.5 : 1;
+            })(),
+            cursor: (() => {
+              if (!editingOrderSize) return 'not-allowed';
+              
+              const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+              const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+              const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+              const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+              
+              const market = markets[editingOrderSize[4]];
+              const baseDecimals = Number(market.baseDecimals);
+              const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+              const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+              const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+              
+              return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance) ? 'not-allowed' : 'pointer';
+            })()
+          }}
+        >
+          {isEditingSizeSigning ? (
+            <div className="signing-indicator">
+              <div className="loading-spinner"></div>
+              <span>{t('signTransaction')}</span>
+            </div>
+          ) : (
+            'Confirm'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
