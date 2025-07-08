@@ -9,10 +9,10 @@
   align-items: flex-start;
   padding-top: 17px;
   z-index: 10;
-  transition: width 0.3s ease;
   overflow: hidden;
   background-color: rgb(6,6,6);
   border-right: 1px solid rgba(179, 184, 249, 0.1);
+  transition: width 0.3s ease;
 }
 
 .sidebar-nav-inner{
@@ -28,6 +28,26 @@
   padding-top: 12px;
   transition: width 0.3s ease;
   overflow: hidden;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 5;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+}
+
+body.sidebar-hover-overlay::before {
+  opacity: 1;
+  visibility: visible;
 }
 
 @media (max-width: 1020px) {
@@ -49,7 +69,6 @@
   .sidebar-nav-inner{
    margin-left: -100px;
   }
-
 
   .sidebar-logo {
     display: none;
@@ -89,8 +108,6 @@
     flex: 1;
     max-width: 60px;
   }
-
-
 
   .sidebar-label {
     display: none !important;
@@ -132,6 +149,10 @@
     width: 100%;
     padding-bottom:46px;
   }
+
+  body.sidebar-hover-overlay::before {
+    display: none;
+  }
 }
 
 .sidebar-nav.expanded {
@@ -165,10 +186,13 @@
   margin-left: 3px;
   margin-top: -3px;
   margin-bottom: -3px;
+  opacity: 0;
+  transition: opacity 0.3s ease 0.1s;
 }
 
 .sidebar-nav.expanded .sidebar-logo-text {
   display: block;
+  opacity: 1;
 }
 
 .sidebar-icon {
@@ -207,7 +231,7 @@
   background-color: transparent;
   color: #8c8c9a;
   cursor: pointer;
-  transition: background-color 0.3s ease, color 0.3s ease;
+  transition: all 0.3s ease;
   overflow: visible;
   margin-left: 5px;
   margin-bottom: 5px;
@@ -284,12 +308,11 @@
   opacity: 0.8;
 }
 
-
 .sidebar-label {
   font-size: 0.75rem;
   margin-left: 7px;
   white-space: nowrap;
-  transition: opacity 0.3s ease;
+  transition: opacity 0.3s ease 0.15s;
   color: #d8dbf58a;
   opacity: 0;
   display: none;
@@ -382,8 +405,6 @@
   position: relative;
 }
 
-
-
 .mobile-menu-logo {
   display: flex;
   align-items: center;
@@ -454,9 +475,4 @@
 
 .mobile-menu-item:hover .mobile-menu-icon {
   opacity: 1;
-}
-
-.mobile-menu-item span {
-  font-size: 0.8rem;
-  font-weight: 400;
 }

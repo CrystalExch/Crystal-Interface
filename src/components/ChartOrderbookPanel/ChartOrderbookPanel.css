@@ -14,7 +14,6 @@
 .chart-container {
   flex: 1;
   min-width: 0;
-  transition: flex 0.3s ease;
 }
 
 .spacer {

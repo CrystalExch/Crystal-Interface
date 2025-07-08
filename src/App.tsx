@@ -16507,7 +16507,7 @@ useEffect(() => {
           <div className="headerfiller"></div>
         </>
       }
-      <div className="app-container sidebar-adjusted">
+      <div className="app-container">
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />

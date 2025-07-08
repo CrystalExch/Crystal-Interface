@@ -36,7 +36,6 @@ body,
 html {
   display: flex;
   scrollbar-width: none;
-  transition: all 0.3s ease;
 }
 
 .app-container {
@@ -47,6 +46,7 @@ html {
   overflow: auto;
   -ms-overflow-style: none;
   background: rgb(6, 6, 6);
+  padding-left: 55px;
 }
 
 .headerfiller {
@@ -2893,6 +2893,9 @@ body {
   .main-content-wrapper.simple-view .right-column {
     border-top: none;
   }
+  .app-container{
+    padding-left: 0;
+  }
 }
 
 .main-content-wrapper.simple-view .app-container,
@@ -3689,10 +3692,6 @@ body:has(.right-column.show) .blur-background-popups {
   width: calc(100% - 20px);
 }
 
-.sidebar-adjusted {
-  margin-left: 55px;
-  width: calc(100% - 55px);
-}
 
 /* PRO DROPDOWN */
 .navlink-container {
@@ -4842,11 +4841,6 @@ input[type="email"] {
     flex-direction: column;
     right: 15px;
     top: 60px;
-  }
-
-  .sidebar-adjusted {
-    margin-left: 0px;
-    width: calc(100%);
   }
 
   .navlink-dropdown {
@@ -7797,11 +7791,6 @@ input::-webkit-inner-spin-button {
   font-weight: 400;
 }
 
-
-
-
-
-/* Order Size Slider CSS */
 .order-size-balance-slider-mark {
   border-radius: 4px;
   cursor: pointer;
