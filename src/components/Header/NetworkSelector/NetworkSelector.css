@@ -7,15 +7,14 @@
 .network-selector-button {
   align-items: center;
   background: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
   cursor: pointer;
   display: flex;
   justify-content: center;
   overflow: hidden;
-  width: 53px;
-  height: 53px;
-  border-top: none;
-  border-bottom: none;
+  width: 37px;
+  height: 37px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
 }
 
 @media(max-width: 360px){

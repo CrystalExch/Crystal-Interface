@@ -6,7 +6,6 @@ import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
-import globeicon from '../../assets/globe.svg';
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
@@ -110,7 +109,6 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-  const shouldShowSettings = isTradeRoute && !simpleView;
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData.find(
     (market: any) => market.address === activeMarket.address
@@ -129,7 +127,6 @@ const Header: React.FC<HeaderProps> = ({
         </button> */}
         <div className="extitle">
           <img src={backgroundlesslogo} className="extitle-logo" />
-          <span className="crystal-name">CRYSTAL</span>
         </div>
         </div> 
         <div className="left-header">
@@ -185,20 +182,12 @@ const Header: React.FC<HeaderProps> = ({
               type="button"
               className="app-settings-button"
               onClick={() => {
-                if (shouldShowSettings) {
                   setpopup(5);
-                } else {
-                  setIsLanguageDropdownOpen(!isLanguageDropdownOpen);
-                }
               }}
             >
               <img
-                className={`other-settings-image ${shouldShowSettings ? 'visible' : ''}`}
+                className="other-settings-image"
                 src={settingsicon}
-              />
-              <img
-                className={`other-globe-image ${shouldShowSettings ? '' : 'visible'}`}
-                src={globeicon}
               />
             </button>
             {isLanguageDropdownOpen && (

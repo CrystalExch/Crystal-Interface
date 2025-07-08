@@ -33,22 +33,7 @@
   pointer-events: auto;
 }
 
-@media(max-width: 1020px) {
-  .popup-stack-container {
-    width: 100%;
-    height: 100vh;
-  }
-  
-  .popup-stack-container.bottom-right,
-  .popup-stack-container.bottom-left {
-    top: calc(-100vh + 140px);
-  }
-  
-  .popup-stack-container.top-right,
-  .popup-stack-container.top-left {
-    top: 140px;
-  }
-}
+
 
 .popup-stack-item {
   position: absolute;

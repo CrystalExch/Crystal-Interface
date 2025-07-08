@@ -113,7 +113,7 @@
 .token-actions {
   align-items: center;
   display: flex;
-  gap: 5px;
+  gap: 3px;
 }
 
 .token-name-vertical-divider {
@@ -701,4 +701,14 @@
   border: 1px solid #aaaecf5a;
   white-space: nowrap;
   height: 13px;
+}
+.market-item-container {
+    border: 1px solid transparent;
+
+}
+.market-item-container.selected {
+  background-color: rgba(170, 174, 207, );
+  border: 1px solid rgba(170, 174, 207, 0.15);
+  border-radius: 8px;
+  position: relative;
 }

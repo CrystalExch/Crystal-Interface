@@ -204,9 +204,24 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [manualPaging, setManualPaging] = useState(false);
   const rowsRef = useRef<HTMLDivElement>(null);
   const prevPageRef = useRef<number>(currentPage);
-    const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
+  const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
 
+  useEffect(() => {
+    const triggerOnboardingIfNeeded = () => {
+      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
+      const hasVisitedLeaderboard = localStorage.getItem('crystal_has_visited_leaderboard') === 'true';
+      
+      if (!hasCompletedOnboarding && !hasVisitedLeaderboard) {
+        localStorage.setItem('crystal_has_visited_leaderboard', 'true');
+        
+        if (setpopup) {
+          setpopup(14);
+        }
+      }
+    };
 
+    triggerOnboardingIfNeeded();
+  }, []);
   useEffect(() => {
     prevPageRef.current = currentPage;
   }, [currentPage]);

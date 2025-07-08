@@ -51,7 +51,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [shouldFocus, setShouldFocus] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const filterTabsRef = useRef<HTMLDivElement>(null);
+  const marketsListRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
   
@@ -117,6 +119,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const toggleDropdown = () => {
     if (!isDropdownOpen) {
       setSearchQuery('');
+      setSelectedIndex(0);
       setIsDropdownOpen(true);
       setShouldFocus(true);
       requestAnimationFrame(() => {
@@ -128,6 +131,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       setTimeout(() => {
         setIsDropdownOpen(false);
         setSearchQuery('');
+        setSelectedIndex(0);
       }, 200);
     }
   };
@@ -206,6 +210,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         setTimeout(() => {
           setIsDropdownOpen(false);
           setSearchQuery('');
+          setSelectedIndex(0);
         }, 200);
       }
     };
@@ -282,6 +287,62 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   });
 
+  const handleDropdownKeyDown = (e: React.KeyboardEvent) => {
+    if (!isDropdownVisible || sortedMarkets.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((prev) => {
+          const newIndex = prev < sortedMarkets.length - 1 ? prev + 1 : prev;
+          scrollToItem(newIndex);
+          return newIndex;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        e.stopPropagation();
+        setSelectedIndex((prev) => {
+          const newIndex = prev > 0 ? prev - 1 : prev;
+          scrollToItem(newIndex);
+          return newIndex;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        e.stopPropagation();
+        if (sortedMarkets[selectedIndex]) {
+          onMarketSelect(sortedMarkets[selectedIndex]);
+          toggleDropdown();
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        e.stopPropagation();
+        toggleDropdown();
+        break;
+    }
+  };
+
+  const scrollToItem = (index: number) => {
+    if (!marketsListRef.current) return;
+    
+    const allItems = marketsListRef.current.querySelectorAll('.market-item-container');
+    const itemElement = allItems[index];
+    
+    if (itemElement) {
+      itemElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  };
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery, activeFilter]);
+
   return (
     <div className={shouldShowTokenInfo}>
       <div
@@ -292,26 +353,26 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       >
         {isAdvancedView ? (
           <div className="markets-favorite-section">
-        <button
-          className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite(tokenAddress);
-          }}
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-          </svg>
-        </button>
+            <button
+              className={`favorite-icon ${favorites.includes(tokenAddress) ? 'active' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleFavorite(tokenAddress);
+              }}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
           </div>
         ) : (
           <Search className="token-info-search-icon" size={18} />
@@ -346,7 +407,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div className={isLoading && shouldShowFullHeader ? 'pair-skeleton' : 'token-name'}>
               <span className="full-token-name">
                 {tokendict[activeMarket.baseAddress].name}
-
               </span>
               <div
                 className="token-actions"
@@ -366,7 +426,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div
               className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
             >
-
             </div>
           </button>
 
@@ -374,6 +433,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
             <div
               className={`markets-dropdown-content ${isDropdownVisible ? 'visible' : ''}`}
               onClick={(e) => e.stopPropagation()}
+              onKeyDown={handleDropdownKeyDown}
             >
               <div className="markets-dropdown-header">
                 <div className="search-container">
@@ -458,12 +518,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   />
                 </div>
               </div>
-              <div className="markets-list">
+              <div className="markets-list" ref={marketsListRef}>
                 {sortedMarkets.length > 0 ? (
-                  sortedMarkets.map((market) => (
+                  sortedMarkets.map((market, index) => (
                     <div
                       key={market.pair}
-                      className="market-item-container"
+                      className={`market-item-container ${index === selectedIndex ? 'selected' : ''}`}
+                      onMouseEnter={() => setSelectedIndex(index)}
                     >
                       <div
                         className="market-item"
@@ -542,7 +603,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="ctrlktooltip">
-          Ctrl+K
+          CTRL+K
         </div>
       </div>
 

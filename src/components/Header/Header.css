@@ -31,21 +31,6 @@ body.sidebar-expanded .app-header {
   align-items: center;
   min-width: 0;
 }
-/* 
-.hamburger {
-  background: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
-  border-radius: 5px;
-  cursor: pointer;
-  display: none;
-  flex-direction: column;
-  height: 30px;
-  min-width: 30px;
-  justify-content: center;
-  align-items: center;
-  position: relative;
-  transition: transform.3s ease-in-out;
-} */
 
 .extitle {
   align-items: center;
@@ -56,11 +41,6 @@ body.sidebar-expanded .app-header {
   margin-left: 4px;
   text-decoration: none;
 }
-
-/* .hamburger-image {
-  opacity: 0.5;
-  width: 16px;
-} */
 
 .crystal-logo {
   height: 1.6rem;
@@ -94,9 +74,9 @@ body.sidebar-expanded .app-header {
   color: #0f0f12;
   cursor: pointer;
   display: flex;
-  font-size: 0.775rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  height: 30px;
+  height: 33px;
   justify-content: center;
   letter-spacing: -0.3px;
   text-decoration: none;
@@ -104,7 +84,6 @@ body.sidebar-expanded .app-header {
   min-width: 120px;
   z-index: 3;
   padding: 6px 12px;
-  margin-left: 15px;
 }
 
 .connect-button:hover {
@@ -121,11 +100,10 @@ body.sidebar-expanded .app-header {
   display: flex;
   font-size: 0.9rem;
   font-weight: 300;
-  height: 34px;
+  height: 37px;
   overflow: hidden;
   padding: 0 8px;
   transition: all.1s ease;
-  margin-left: 15px;
 }
 
 .transparent-button:active,
@@ -171,16 +149,15 @@ body.sidebar-expanded .app-header {
 .app-settings-button {
   align-items: center;
   background: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
   cursor: pointer;
   display: flex;
   justify-content: center;
   overflow: hidden;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
-  width: 53px;
-  height: 53px;
-  border-top: none;
-  border-bottom: none;
+  width: 37px;
+  height: 37px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
 }
 
 .app-settings-button:hover {
@@ -195,8 +172,10 @@ body.sidebar-expanded .app-header {
   justify-content: center;
   overflow: hidden;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
-  width: 53px;
-  height: 53px;
+  width: 37px;
+  height: 37px;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
 }
 
 .history-button:hover {
@@ -263,24 +242,14 @@ body.sidebar-expanded .app-header {
 }
 
 .other-settings-image {
-  display: none;
+  display: block;
+  opacity: 0.5;
   height: 27px;
-  opacity: 0;
   width: 27px;
 }
 
-.other-globe-image {
-  display: none;
-  height: 22px;
-  opacity: 0;
-  width: 22px;
-}
 
-.other-settings-image.visible,
-.other-globe-image.visible {
-  display: block;
-  opacity: 0.5;
-}
+
 
 .right-header {
   display: flex;
@@ -289,6 +258,7 @@ body.sidebar-expanded .app-header {
   max-height: 53px;
   min-height: 53px;
   padding-right: 10px;
+  gap: 9px;
 }
 
 .right-header-trade{
@@ -300,6 +270,7 @@ body.sidebar-expanded .app-header {
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 10px;
+  gap: 9px;
 }
 
 @media(max-width:1020px){

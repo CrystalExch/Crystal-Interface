@@ -64,9 +64,6 @@
   position: relative;
 }
 
-.market-item-container:hover .market-item {
-  background-color: #1e1e229d;
-}
 
 .market-mini-chart-wrapper::before {
   content: '';

@@ -522,6 +522,7 @@ export const translations: any = {
     'switchToOrderHistory': 'Switch to Order History',
     'viewOrderHistoryTab': 'View order history tab',
     'resetKeybinds': 'Reset Keybinds',
+    resetTab: 'Reset Tab',
 
   },
   CN: {

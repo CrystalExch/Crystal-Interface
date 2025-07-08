@@ -43,6 +43,7 @@ import './App.css';
 import approve from './scripts/approve';
 import limitOrder from './scripts/limitOrder';
 import multiBatchOrders from './scripts/multiBatchOrders';
+import cancelOrder from './scripts/cancelOrder';
 import sendeth from './scripts/sendeth';
 import sendtokens from './scripts/sendtokens';
 import _swap from './scripts/swap';
@@ -449,18 +450,59 @@ function App() {
 
   const [showPreview, setShowPreview] = useState(false);
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
+  const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
+  const [previewExiting, setPreviewExiting] = useState(false);
 
   const updateNotificationPosition = (position: string) => {
-    setPreviewPosition(position);
-    setShowPreview(true);
+    // Clear any existing timer
+    if (previewTimer) {
+      clearTimeout(previewTimer);
+      setPreviewTimer(null);
+    }
 
-    setNotificationPosition(position);
-    localStorage.setItem('crystal_notification_position', position);
+    // If we're changing positions and preview is already showing, trigger exit first
+    if (showPreview && previewPosition !== position) {
+      setPreviewExiting(true);
 
-    setTimeout(() => {
-      setShowPreview(false);
-      setPreviewPosition(null);
-    }, 8000);
+      setTimeout(() => {
+        setPreviewExiting(false);
+        setShowPreview(false);
+
+        setTimeout(() => {
+          setPreviewPosition(position);
+          setShowPreview(true);
+          setNotificationPosition(position);
+          localStorage.setItem('crystal_notification_position', position);
+
+          const newTimer = setTimeout(() => {
+            setPreviewExiting(true);
+            setTimeout(() => {
+              setShowPreview(false);
+              setPreviewPosition(null);
+              setPreviewExiting(false);
+            }, 300);
+          }, 8000);
+
+          setPreviewTimer(newTimer);
+        }, 50);
+      }, 300);
+    } else {
+      setPreviewPosition(position);
+      setShowPreview(true);
+      setNotificationPosition(position);
+      localStorage.setItem('crystal_notification_position', position);
+
+      const newTimer = setTimeout(() => {
+        setPreviewExiting(true);
+        setTimeout(() => {
+          setShowPreview(false);
+          setPreviewPosition(null);
+          setPreviewExiting(false);
+        }, 300);
+      }, 8000);
+
+      setPreviewTimer(newTimer);
+    }
   };
 
   const [hiddenPopupTypes, setHiddenPopupTypes] = useState(() => {
@@ -546,10 +588,7 @@ function App() {
     const savedLayout = localStorage.getItem('crystal_layout');
     return savedLayout || 'default';
   });
-  const [popup, setpopup] = useState(() => {
-    const done = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-    return done ? 0 : 14;
-  });
+  const [popup, setpopup] = useState(0);
   const [slippage, setSlippage] = useState(() => {
     const saved = localStorage.getItem('crystal_slippage');
     return saved !== null ? BigInt(saved) : BigInt(9900);
@@ -718,7 +757,7 @@ function App() {
 
     setOriginalOrderSize(originalSize);
     setCurrentOrderSize(originalSize);
-    setOrderSizePercent(100); 
+    setOrderSizePercent(100);
     setHasEditedSize(false);
     setpopup(20);
   };
@@ -770,16 +809,37 @@ function App() {
     try {
       setIsEditingSizeSigning(true);
       await handleSetChain();
-
-      const tokenDecimals = Number(tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress].decimals);
-      const scaledSizeStr = (currentOrderSize * (10 ** tokenDecimals)).toFixed(0);
-      const scaledSize = BigInt(scaledSizeStr);
+      const tokenAddress = editingOrderSize[3] === 1
+        ? markets[editingOrderSize[4]].quoteAddress
+        : markets[editingOrderSize[4]].baseAddress;
+      const tokenDecimals = Number(tokendict[tokenAddress].decimals);
+      const scaledSize = BigInt(
+        Math.round(currentOrderSize * 10 ** tokenDecimals)
+      );
       const hash = await sendUserOperationAsync({
         uo: replaceOrder(
           router,
           BigInt(0),
-          (editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].quoteAsset : markets[editingOrderSize[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress,
-          (editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].baseAsset : markets[editingOrderSize[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrderSize[3] == 1 ? markets[editingOrderSize[4]].baseAddress : markets[editingOrderSize[4]].quoteAddress,
+          (
+            (editingOrderSize[3] === 1
+              ? markets[editingOrderSize[4]].quoteAsset
+              : markets[editingOrderSize[4]].baseAsset
+            ) === settings.chainConfig[activechain].ethticker
+              ? settings.chainConfig[activechain].weth
+              : editingOrderSize[3] === 1
+                ? markets[editingOrderSize[4]].quoteAddress
+                : markets[editingOrderSize[4]].baseAddress
+          ),
+          (
+            (editingOrderSize[3] === 1
+              ? markets[editingOrderSize[4]].baseAsset
+              : markets[editingOrderSize[4]].quoteAsset
+            ) === settings.chainConfig[activechain].ethticker
+              ? settings.chainConfig[activechain].weth
+              : editingOrderSize[3] === 1
+                ? markets[editingOrderSize[4]].baseAddress
+                : markets[editingOrderSize[4]].quoteAddress
+          ),
           false,
           BigInt(editingOrderSize[0]),
           BigInt(editingOrderSize[1]),
@@ -793,14 +853,15 @@ function App() {
       refetch();
       setpopup(0);
       setEditingOrderSize(null);
+
     } catch (error) {
       console.error('Error editing order size:', error);
-      const originalSize = Number(editingOrderSize[1]) / (10 ** Number(tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress].decimals));
-      setCurrentOrderSize(originalSize);
+      setCurrentOrderSize(originalOrderSize);
     } finally {
       setIsEditingSizeSigning(false);
     }
   };
+
 
 
   const { chartData, portChartLoading } = usePortfolioData(
@@ -876,9 +937,91 @@ function App() {
   const handleLimitPriceUpdate = (price: number) => {
     setCurrentLimitPrice(price);
   };
+
+
+
+  const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
+
+
+  useEffect(() => {
+    setSelectedTokenIndex(0);
+  }, [popup, tokenString]);
+  const scrollToToken = (index: number) => {
+    const tokenListContainer = document.querySelector('.tokenlist');
+    if (!tokenListContainer) return;
+
+    const tokenButtons = tokenListContainer.querySelectorAll('.tokenbutton');
+    const selectedButton = tokenButtons[index];
+
+    if (selectedButton) {
+      selectedButton.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+      });
+    }
+  };
+  const handleTokenSelectKeyDown = (e: React.KeyboardEvent) => {
+    const currentTokenList = Object.values(tokendict).filter(
+      (token) =>
+        token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
+        token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
+        token.address.toLowerCase().includes(tokenString.toLowerCase())
+    );
+
+    if (!currentTokenList || currentTokenList.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedTokenIndex((prev) => {
+          const newIndex = prev < currentTokenList.length - 1 ? prev + 1 : prev;
+          scrollToToken(newIndex);
+          return newIndex;
+        });
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedTokenIndex((prev) => {
+          const newIndex = prev > 0 ? prev - 1 : prev;
+          scrollToToken(newIndex);
+          return newIndex;
+        });
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (currentTokenList[selectedTokenIndex]) {
+          const tokenButtons = document.querySelectorAll('.tokenbutton');
+          if (tokenButtons[selectedTokenIndex]) {
+            (tokenButtons[selectedTokenIndex] as HTMLElement).click();
+          }
+        }
+        break;
+      case 'Escape':
+        e.preventDefault();
+        setpopup(0);
+        settokenString('');
+        break;
+    }
+  };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
 
-
+  const displayLimitPrice = hasEditedPrice
+    ? limitPriceString
+    : (currentLimitPrice === 0 ? '' : currentLimitPrice.toString());
   type AudioGroups = 'swap' | 'order' | 'transfer' | 'approve';
 
   interface AudioGroupSettings {
@@ -1828,8 +1971,13 @@ function App() {
 
     return { roundedOrders, defaultOrders };
   };
+  const [orderSizeString, setOrderSizeString] = useState('');
 
-  // drag resizer
+
+
+  const displayValue = hasEditedSize
+    ? orderSizeString
+    : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -4517,9 +4665,11 @@ function App() {
   // popup
   useEffect(() => {
     if (user && !connected && !loading) {
+      // Only show popup 11 if they've completed onboarding but need to reconnect
       if (localStorage.getItem('crystal_has_completed_onboarding') === 'true') {
         setpopup(11);
       }
+      // Remove the automatic trigger to popup 14
     }
     else if (connected && popup === 11) {
       setpopup(12);
@@ -4527,7 +4677,7 @@ function App() {
     if (popup !== 14 && popup !== 15) {
       setShowWelcomeScreen(true);
     }
-    if (!loading && showWelcomeScreen) {
+    if (!loading && showWelcomeScreen && (popup === 14 || popup === 15)) {
       const welcomeText = "Introducing Crystals: Season 0";
 
       let index = 0;
@@ -4549,7 +4699,6 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, connected, user != null, loading]);
-
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
@@ -4781,43 +4930,34 @@ function App() {
     }, 10);
   };
 
-  useEffect(() => {
-    const fetchUsername = async () => {
-      try {
-        const read = await readContracts(config, {
-          contracts: [
-            {
-              abi: CrystalReferralAbi,
-              address: settings.chainConfig[activechain].referralManager,
-              functionName: 'addressToUsername',
-              args: [address as `0x${string}`],
-            },
-          ]
-        });
-
-        if (read[0]?.result?.length != null) {
-          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
-          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
-          setUsernameResolved(true)
-          if (read[0]?.result?.length > 0 && localStorage.getItem('crystal_has_completed_onboarding') != 'true') {
-            setTimeout(() => {
-              setpopup(18);
-              setTimeout(() => {
-                setIsTransitioning(false);
-              });
-            });
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch username:", error);
+useEffect(() => {
+  const fetchUsername = async () => {
+    try {
+      const read = await readContracts(config, {
+        contracts: [
+          {
+            abi: CrystalReferralAbi,
+            address: settings.chainConfig[activechain].referralManager,
+            functionName: 'addressToUsername',
+            args: [address as `0x${string}`],
+          },
+        ]
+      });
+      
+      if (read[0]?.result?.length != null) {
+        setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
+        setUsernameResolved(true);
       }
-    };
-
-    if (address) {
-      fetchUsername();
+    } catch (error) {
+      console.error("Failed to fetch username:", error);
     }
-  }, [address, activechain, config]);
-
+  };
+  
+  if (address) {
+    fetchUsername();
+  }
+}, [address, activechain, config]);
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
     let animatingTimer: ReturnType<typeof setTimeout> | undefined;
@@ -4840,6 +4980,9 @@ function App() {
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
+  const [keybindError, setKeybindError] = useState<string | null>(null);
+  const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
+
 
   const [keybinds, setKeybinds] = useState(() => {
     const saved = localStorage.getItem('crystal_keybinds');
@@ -4914,136 +5057,6 @@ function App() {
   };
 
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (isListeningForKey && editingKeybind) {
-        event.preventDefault();
-        event.stopPropagation();
-
-        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
-        if (forbiddenKeys.includes(event.code)) {
-          return;
-        }
-
-        const newKeybinds = { ...keybinds, [editingKeybind]: event.code };
-        setKeybinds(newKeybinds);
-        localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
-        setEditingKeybind(null);
-        setIsListeningForKey(false);
-        return;
-      }
-
-      if (event.code === 'Escape' && isListeningForKey) {
-        setEditingKeybind(null);
-        setIsListeningForKey(false);
-        return;
-      }
-
-      if (isListeningForKey) return;
-
-      if (event.code === keybinds.submitTransaction && popup !== 19) {
-        if (popup !== 0) return;
-        event.preventDefault();
-        const currentPath = location.pathname.slice(1);
-        if (!['swap', 'market', 'limit', 'send', 'scale'].includes(currentPath)) {
-          return;
-        }
-        switch (currentPath) {
-          case 'swap':
-          case 'market':
-            if (!swapButtonDisabled && !displayValuesLoading && !isSigning && connected && userchain === activechain) {
-              const swapButton = document.querySelector('.swap-button') as HTMLButtonElement;
-              if (swapButton && !swapButton.disabled) {
-                swapButton.click();
-              }
-            }
-            break;
-          case 'limit':
-            if (!limitButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const limitButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-              if (limitButton && !limitButton.disabled) {
-                limitButton.click();
-              }
-            }
-            break;
-          case 'send':
-            if (!sendButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const sendButton = document.querySelector('.send-swap-button') as HTMLButtonElement;
-              if (sendButton && !sendButton.disabled) {
-                sendButton.click();
-              }
-            }
-            break;
-          case 'scale':
-            if (!scaleButtonDisabled && !isSigning && connected && userchain === activechain) {
-              const scaleButton = document.querySelector('.limit-swap-button') as HTMLButtonElement;
-              if (scaleButton && !scaleButton.disabled) {
-                scaleButton.click();
-              }
-            }
-            break;
-          default:
-            break;
-        }
-      }
-
-      if (event.code === keybinds.openSettings && popup === 0) {
-        event.preventDefault();
-        setpopup(5);
-      }
-
-      if (event.code === keybinds.openWallet && popup === 0) {
-        event.preventDefault();
-        setpopup(4);
-      }
-
-      if (event.code === keybinds.switchTokens && popup === 0 &&
-        ['swap', 'limit', 'market', 'scale'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const switchButton = document.querySelector('.switch-button') as HTMLElement;
-        if (switchButton) switchButton.click();
-      }
-
-      if (event.code === keybinds.maxAmount && popup === 0 &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const maxButton = document.querySelector('.max-button') as HTMLElement;
-        if (maxButton) maxButton.click();
-      }
-
-      if (event.code === keybinds.focusInput && popup === 0 &&
-        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
-        event.preventDefault();
-        const mainInput = document.querySelector('.input') as HTMLInputElement;
-        if (mainInput) mainInput.focus();
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [
-    keybinds,
-    isListeningForKey,
-    editingKeybind,
-    popup,
-    location.pathname,
-    swapButtonDisabled,
-    limitButtonDisabled,
-    sendButtonDisabled,
-    scaleButtonDisabled,
-    displayValuesLoading,
-    isSigning,
-    connected,
-    userchain,
-    activechain,
-    isEditingSigning,
-    editingOrder,
-    hasEditedPrice
-  ]);
-
-
   const handleRefreshQuote = useCallback(async (e: any) => {
     e.preventDefault();
     if (isRefreshing) return;
@@ -5053,144 +5066,100 @@ function App() {
     setIsRefreshing(false);
   }, [isRefreshing, refetch]);
   const handleCancelTopOrder = useCallback(async () => {
-    if (!connected || userchain !== activechain || orders.length === 0) {
+    if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
       return;
     }
 
     try {
+      let hash;
       setIsSigning(true);
 
       const topOrder = orders[0];
-      const market = markets[topOrder[4]];
 
-      if (!market) {
-        console.error('Market not found for order');
-        return;
-      }
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: market.address,
-          data: encodeFunctionData({
-            abi: CrystalMarketAbi,
-            functionName: 'cancelOrder',
-            args: [
-              BigInt(topOrder[0]),
-              BigInt(topOrder[1]),
-              market.baseAddress,    // Add the missing hex address
-              market.quoteAddress    // Add the missing hex address
-            ],
-          }),
-          value: 0n,
-        },
-      });
-
-      if (!client) {
-        await waitForTxReceipt(hash.hash);
-      }
-
-      await refetch();
-
-      const quoteasset = market.quoteAddress;
-      const baseasset = market.baseAddress;
-      const amountquote = (
-        topOrder[8] /
-        (Number(market.scaleFactor) * 10 ** Number(market.quoteDecimals))
-      ).toFixed(2);
-      const amountbase = customRound(
-        (topOrder[2] - topOrder[7]) / 10 ** Number(market.baseDecimals),
-        3,
+      hash = await cancelOrder(
+        sendUserOperationAsync,
+        router,
+        topOrder[3] == 1
+          ? markets[topOrder[4]].quoteAddress
+          : markets[topOrder[4]].baseAddress,
+        topOrder[3] == 1
+          ? markets[topOrder[4]].baseAddress
+          : markets[topOrder[4]].quoteAddress,
+        BigInt(topOrder[0]),
+        BigInt(topOrder[1]),
       );
 
-      newTxPopup(
-        client ? hash.hash : hash.hash,
-        'cancel',
-        topOrder[3] == 1 ? quoteasset : baseasset,
-        topOrder[3] == 1 ? baseasset : quoteasset,
-        topOrder[3] == 1 ? amountquote : amountbase,
-        topOrder[3] == 1 ? amountbase : amountquote,
-        `${topOrder[0] / Number(market.priceFactor)} ${market.quoteAsset}`,
-        '',
-      );
+      await waitForTxReceipt(hash.hash);
+      refetch();
 
     } catch (error) {
       console.error('Error canceling top order:', error);
     } finally {
       setIsSigning(false);
     }
-  }, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup, customRound]);
+  }, [connected, userchain, activechain, orders, router, markets, sendUserOperationAsync, waitForTxReceipt, refetch, isSigning]);
 
   const handleCancelAllOrders = useCallback(async () => {
-    if (!connected || userchain !== activechain || orders.length === 0) {
+    if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
       return;
     }
 
     try {
+      let hash;
       setIsSigning(true);
 
-      const ordersByMarket = orders.reduce((acc: any, order: any) => {
-        const marketKey = order[4];
-        if (!acc[marketKey]) acc[marketKey] = [];
-        acc[marketKey].push(order);
-        return acc;
-      }, {});
+      // Use the exact same logic as your working cancel all
+      const orderbatch: Record<
+        string,
+        { 0: any[]; 1: any[]; 2: any[]; 3: any[] }
+      > = {};
 
-      for (const [marketKey, marketOrders] of Object.entries(ordersByMarket) as [string, any[]][]) {
-        const market = markets[marketKey];
-        if (!market) continue;
+      orders.forEach((order) => {
+        const k = markets[order[4]].address;
+        if (!orderbatch[k]) {
+          orderbatch[k] = { 0: [], 1: [], 2: [], 3: [] };
+        }
+        orderbatch[k][0].push(0);
+        orderbatch[k][1].push(order[0]);
+        orderbatch[k][2].push(order[1]);
+        orderbatch[k][3].push(
+          markets[order[4]].baseAddress ===
+            '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
+            order[3] === 0
+            ? router
+            : address,
+        );
+      });
 
-        const cancelPromises = marketOrders.map(async (order: any) => {
-          try {
-            const hash = await sendUserOperationAsync({
-              uo: {
-                target: market.address,
-                data: encodeFunctionData({
-                  abi: CrystalMarketAbi,
-                  functionName: 'cancelOrder',
-                  args: [
-                    BigInt(order[0]),
-                    BigInt(order[1]),
-                    market.baseAddress,    // Add the missing hex address
-                    market.quoteAddress    // Add the missing hex address
-                  ],
-                }),
-                value: 0n,
-              },
-            });
+      const m = Object.keys(orderbatch) as `0x${string}`[];
+      const action = m.map((market) => orderbatch[market][0]);
+      const price = m.map((market) => orderbatch[market][1]);
+      const param1 = m.map((market) => orderbatch[market][2]);
+      const param2 = m.map((market) => orderbatch[market][3]);
 
-            if (!client) {
-              await waitForTxReceipt(hash.hash);
-            }
+      hash = await sendUserOperationAsync({
+        uo: multiBatchOrders(
+          router,
+          BigInt(0),
+          m,
+          action,
+          price,
+          param1,
+          param2,
+          '0x0000000000000000000000000000000000000000',
+        )
+      });
 
-            return hash;
-          } catch (error) {
-            console.error('Failed to cancel order:', error);
-            return null;
-          }
-        });
-
-        await Promise.allSettled(cancelPromises);
-      }
-
-      await refetch();
-
-      newTxPopup(
-        'batch-cancel',
-        'cancel',
-        '',
-        '',
-        `${orders.length}`,
-        0,
-        '',
-        ''
-      );
+      await waitForTxReceipt(hash.hash);
+      refetch();
 
     } catch (error) {
       console.error('Error canceling all orders:', error);
     } finally {
       setIsSigning(false);
     }
-  }, [connected, userchain, activechain, orders, markets, sendUserOperationAsync, client, refetch, newTxPopup]);
+  }, [connected, userchain, activechain, orders, markets, router, address, sendUserOperationAsync, waitForTxReceipt, refetch, isSigning]);
+
   const handleSubmitTransaction = useCallback(() => {
     if (popup !== 0) return;
 
@@ -5239,14 +5208,30 @@ function App() {
 
 
 
-
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (isListeningForKey && editingKeybind) {
         event.preventDefault();
         event.stopPropagation();
+
         const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
         if (forbiddenKeys.includes(event.code)) {
+          return;
+        }
+
+        const existingKeybindEntry = Object.entries(keybinds).find(
+          ([key, value]) => value === event.code && key !== editingKeybind
+        );
+
+        if (existingKeybindEntry) {
+          const [duplicateKey] = existingKeybindEntry;
+          setKeybindError(`This key is already assigned to "${duplicateKey}"`);
+          setDuplicateKeybind(duplicateKey);
+          setTimeout(() => {
+            setKeybindError(null);
+            setDuplicateKeybind(null);
+          }, 3000);
+
           return;
         }
 
@@ -5255,11 +5240,18 @@ function App() {
         localStorage.setItem('crystal_keybinds', JSON.stringify(newKeybinds));
         setEditingKeybind(null);
         setIsListeningForKey(false);
+
+        // Clear any existing errors
+        setKeybindError(null);
+        setDuplicateKeybind(null);
         return;
       }
+
       if (event.code === 'Escape' && isListeningForKey) {
         setEditingKeybind(null);
         setIsListeningForKey(false);
+        setKeybindError(null);
+        setDuplicateKeybind(null);
         return;
       }
 
@@ -5439,7 +5431,46 @@ function App() {
     handleCancelTopOrder,
     setpopup
   ]);
+  const renderKeybindButton = (keybindKey: string, labelText: string, descriptionText: string) => (
+    <>
+      <div className="keybind-setting-row">
+        <div className="keybind-info">
+          <span className="keybind-label">{labelText}</span>
+          <span className="keybind-description">{descriptionText}</span>
+        </div>
+        <div className="keybind-button-container">
+          <button
+            className={`keybind-button ${editingKeybind === keybindKey && isListeningForKey ? 'listening' : ''
+              } ${duplicateKeybind === keybindKey ? 'error' : ''
+              }`}
+            onClick={() => {
+              if (editingKeybind === keybindKey && isListeningForKey) {
+                setEditingKeybind(null);
+                setIsListeningForKey(false);
+                setKeybindError(null);
+                setDuplicateKeybind(null);
+              } else {
+                setEditingKeybind(keybindKey);
+                setIsListeningForKey(true);
+                setKeybindError(null);
+                setDuplicateKeybind(null);
+              }
+            }}
+          >
+            {editingKeybind === keybindKey && isListeningForKey
+              ? t('pressAKey')
+              : formatKeyDisplay(keybinds[keybindKey])}
+          </button>
+        </div>
 
+      </div>
+      {keybindError && editingKeybind === keybindKey && (
+        <div className="keybind-error-message">
+          {keybindError}
+        </div>
+      )}
+    </>
+  );
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -5473,16 +5504,15 @@ function App() {
           Object.values(tokendict)
             .filter(
               (token) =>
-                token.ticker
-                  .toLowerCase()
-                  .includes(tokenString.toLowerCase()) ||
+                token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
                 token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
                 token.address.toLowerCase().includes(tokenString.toLowerCase()),
             )
-            .map((token) => (
+            .map((token, index) => (
               <button
-                className="tokenbutton"
+                className={`tokenbutton ${index === selectedTokenIndex ? 'selected' : ''}`}
                 key={token.address}
+                onMouseEnter={() => setSelectedTokenIndex(index)}
                 onClick={() => {
                   let pricefetchmarket;
                   let newTokenOut;
@@ -6208,16 +6238,15 @@ function App() {
           Object.values(tokendict)
             .filter(
               (token) =>
-                token.ticker
-                  .toLowerCase()
-                  .includes(tokenString.toLowerCase()) ||
+                token.ticker.toLowerCase().includes(tokenString.toLowerCase()) ||
                 token.name.toLowerCase().includes(tokenString.toLowerCase()) ||
                 token.address.toLowerCase().includes(tokenString.toLowerCase()),
             )
-            .map((token) => (
+            .map((token, index) => (
               <button
-                className="tokenbutton"
+                className={`tokenbutton ${index === selectedTokenIndex ? 'selected' : ''}`}
                 key={token.address}
+                onMouseEnter={() => setSelectedTokenIndex(index)}
                 onClick={() => {
                   let newTokenIn;
                   setpopup(0);
@@ -6745,7 +6774,7 @@ function App() {
     <>
       <div className={`blur-background-popups ${popup != 0 ? 'active' : ''}`}>
         {popup === 1 ? ( // token select
-          <div ref={popupref} className="tokenselectbg">
+          <div ref={popupref} className="tokenselectbg" onKeyDown={handleTokenSelectKeyDown}>
             <button
               className="tokenselect-close-button"
               onClick={() => {
@@ -6765,6 +6794,7 @@ function App() {
                   settokenString(e.target.value);
                 }}
                 placeholder={t('searchToken')}
+                onKeyDown={handleTokenSelectKeyDown}
                 autoFocus={!(windowWidth <= 1020)}
               />
               {tokenString && (
@@ -6789,7 +6819,8 @@ function App() {
           </div>
         ) : null}
         {popup === 2 ? ( // token select
-          <div ref={popupref} className="tokenselectbg">
+          <div ref={popupref} className="tokenselectbg" onKeyDown={handleTokenSelectKeyDown}
+          >
             <button
               className="tokenselect-close-button"
               onClick={() => {
@@ -6808,6 +6839,7 @@ function App() {
                   settokenString(e.target.value);
                 }}
                 placeholder={t('searchToken')}
+                onKeyDown={handleTokenSelectKeyDown}
                 autoFocus={!(windowWidth <= 1020)}
               />
               {tokenString && (
@@ -7185,7 +7217,7 @@ function App() {
                 {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
-                    {client ? t('sendingTransaction') : t('signTransaction')}
+                    {client ? t('') : t('signTransaction')}
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
@@ -7400,7 +7432,7 @@ function App() {
         ) : null}
         {popup === 5 ? ( // settings
           <div
-            className={`layout-settings-background ${simpleView ? 'simple' : ''}`}
+            className="layout-settings-background"
             ref={popupref}
           >
             <div className="layout-settings-header">
@@ -7415,43 +7447,165 @@ function App() {
 
             <div className="settings-main-container">
               <div className="settings-sidebar">
-                <button
-                  className={`settings-section-button ${activeSettingsSection === 'general' ? 'active' : ''}`}
-                  onClick={() => updateActiveSettingsSection('general')}
-                >
-                  <span>{t('general')}</span>
-                </button>
-
-                {!simpleView && (
+                <div className="settings-section-buttons">
                   <button
-                    className={`settings-section-button ${activeSettingsSection === 'layout' ? 'active' : ''}`}
-                    onClick={() => updateActiveSettingsSection('layout')}
+                    className={`settings-section-button ${activeSettingsSection === 'general' ? 'active' : ''}`}
+                    onClick={() => updateActiveSettingsSection('general')}
                   >
-                    <span>{t('tradingLayout')}</span>
+                    <span>{t('general')}</span>
                   </button>
-                )}
+                  {windowWidth >= 1020 && (
+                    <button
+                      className={`settings-section-button ${activeSettingsSection === 'layout' ? 'active' : ''}`}
+                      onClick={() => updateActiveSettingsSection('layout')}
+                    >
+                      <span>{t('tradingLayout')}</span>
+                    </button>
+                  )}
+                  <button
+                    className={`settings-section-button ${activeSettingsSection === 'display' ? 'active' : ''}`}
+                    onClick={() => updateActiveSettingsSection('display')}
+                  >
+                    <span>{t('tradingSettings')}</span>
+                  </button>
+                  <button
+                    className={`settings-section-button ${activeSettingsSection === 'audio' ? 'active' : ''}`}
+                    onClick={() => updateActiveSettingsSection('audio')}
+                  >
+                    <span>{t('notifications')}</span>
+                  </button>
+                  <button
+                    className={`settings-section-button ${activeSettingsSection === 'keybinds' ? 'active' : ''}`}
+                    onClick={() => updateActiveSettingsSection('keybinds')}
+                  >
+                    <span>{t('keybinds')}</span>
+                  </button>
+                </div>
 
                 <button
-                  className={`settings-section-button ${activeSettingsSection === 'display' ? 'active' : ''}`}
-                  onClick={() => updateActiveSettingsSection('display')}
-                >
-                  <span>{t('tradingSettings')}</span>
-                </button>
+                  className="revert-settings-button sidebar-revert-button"
+                  onClick={() => {
+                    setLanguage('EN');
+                    localStorage.setItem('crystal_language', 'EN');
 
-                <button
-                  className={`settings-section-button ${activeSettingsSection === 'audio' ? 'active' : ''}`}
-                  onClick={() => updateActiveSettingsSection('audio')}
-                >
-                  <span>{t('notifications')}</span>
-                </button>
+                    setHideNotificationPopups(false);
+                    localStorage.setItem('crystal_hide_notification_popups', 'false');
 
-                <button
-                  className={`settings-section-button ${activeSettingsSection === 'keybinds' ? 'active' : ''}`}
-                  onClick={() => updateActiveSettingsSection('keybinds')}
+                    setNotificationPosition('bottom-right');
+                    localStorage.setItem('crystal_notification_position', 'bottom-right');
+
+                    setHiddenPopupTypes({});
+                    localStorage.setItem('crystal_hidden_popup_types', JSON.stringify({}));
+
+                    setLayoutSettings('default');
+                    localStorage.setItem('crystal_layout', 'default');
+
+                    setOrderbookPosition('right');
+                    localStorage.setItem('crystal_orderbook', 'right');
+
+                    setSimpleView(false);
+                    localStorage.setItem('crystal_simple_view', 'false');
+
+                    setIsMarksVisible(true);
+                    localStorage.setItem('crystal_marks_visible', 'true');
+
+                    setIsOrdersVisible(true);
+                    localStorage.setItem('crystal_orders_visible', 'true');
+
+                    setHideNotificationPopups(false);
+                    localStorage.setItem('crystal_hide_notification_popups', 'false');
+
+                    setIsOrderbookVisible(true);
+                    localStorage.setItem('crystal_orderbook_visible', 'true');
+
+                    setIsOrderCenterVisible(true);
+                    localStorage.setItem(
+                      'crystal_ordercenter_visible',
+                      'true',
+                    );
+
+                    setShowChartOutliers(false);
+                    localStorage.setItem('crystal_show_chart_outliers', 'false');
+
+                    setIsAudioEnabled(false);
+                    localStorage.setItem('crystal_audio_notifications', 'false');
+
+                    setOrderbookWidth(300);
+                    localStorage.setItem('orderbookWidth', '300');
+
+                    setAddLiquidityOnly(false);
+                    localStorage.setItem(
+                      'crystal_add_liquidity_only',
+                      'false',
+                    );
+
+                    setorderType(1);
+                    localStorage.setItem('crystal_order_type', '1');
+
+                    setSlippageString('1');
+                    setSlippage(BigInt(9900));
+                    localStorage.setItem('crystal_slippage_string', '1');
+                    localStorage.setItem('crystal_slippage', '9900');
+
+                    setActiveSection('orders');
+                    localStorage.setItem('crystal_oc_tab', 'orders');
+
+                    setFilter('all');
+                    localStorage.setItem('crystal_oc_filter', 'all');
+
+                    setOnlyThisMarket(false);
+                    localStorage.setItem('crystal_only_this_market', 'false');
+
+                    setOBInterval(baseInterval);
+                    localStorage.setItem(
+                      `${activeMarket.baseAsset}_ob_interval`,
+                      JSON.stringify(baseInterval),
+                    );
+
+                    const currentKey = `${activeMarket.baseAsset}_ob_interval`;
+                    for (let i = localStorage.length - 1; i >= 0; i--) {
+                      const key = localStorage.key(i);
+                      if (
+                        key &&
+                        key.endsWith('_ob_interval') &&
+                        key !== currentKey
+                      ) {
+                        localStorage.removeItem(key);
+                      }
+                    }
+
+                    setViewMode('both');
+                    localStorage.setItem('ob_viewmode', 'both');
+
+                    setOBTab('orderbook');
+                    localStorage.setItem('ob_active_tab', 'orderbook');
+
+                    setMobileView('chart');
+
+                    setAmountsQuote('Quote');
+                    localStorage.setItem('ob_amounts_quote', 'Quote');
+
+                    localStorage.setItem('crystal_chart_timeframe', '5')
+
+                    let defaultHeight: number;
+
+                    if (window.innerHeight > 1080) defaultHeight = 367.58;
+                    else if (window.innerHeight > 960) defaultHeight = 324.38;
+                    else if (window.innerHeight > 840) defaultHeight = 282.18;
+                    else if (window.innerHeight > 720) defaultHeight = 239.98;
+                    else defaultHeight = 198.78;
+
+                    setOrderCenterHeight(defaultHeight);
+                    localStorage.setItem(
+                      'orderCenterHeight',
+                      defaultHeight.toString(),
+                    );
+                  }}
                 >
-                  <span>{t('keybinds')}</span>
+                  {t('revertToDefault')}
                 </button>
               </div>
+
               <div className="right-side-settings-panel">
                 <div className="settings-content-panel">
                   {activeSettingsSection === 'general' && (
@@ -7652,16 +7806,13 @@ function App() {
                             </div>
                           </div>
                         </div>
-
-
                       </div>
-
                     </div>
                   )}
 
-                  {activeSettingsSection === 'layout' && !simpleView && (
+                  {activeSettingsSection === 'layout' && (
                     <div className="settings-section-content">
-                      <div className="layout-options">
+                      {!simpleView && (<div className="layout-options">
                         <div>
                           <div className="layout-section-title">
                             {t('tradePanelPosition')}
@@ -7724,7 +7875,6 @@ function App() {
                             </button>
                           </div>
                         </div>
-
                         <div>
                           <div className="layout-section-title">
                             {t('orderbookPosition')}
@@ -7780,8 +7930,7 @@ function App() {
                             </button>
                           </div>
                         </div>
-
-                      </div>
+                      </div>)}
                       <div>
                         <div className="layout-section-title">
                           {t('notificationPosition')}
@@ -8021,7 +8170,6 @@ function App() {
                         />
                       </div>
 
-
                       {hideNotificationPopups && (
                         <div className="popup-type-settings">
                           <div className="popup-type-toggle-row">
@@ -8088,9 +8236,9 @@ function App() {
                           </div>
                         </div>
                       )}
-
                     </div>
                   )}
+
                   {activeSettingsSection === 'keybinds' && (
                     <div className="settings-section-content">
                       <div className="keybinds-section">
@@ -8099,667 +8247,157 @@ function App() {
                           <div className="settings-section-subtitle">
                             {t('keyboardShortcutsForTrading')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('submitTransaction')}</span>
-                              <span className="keybind-description">{t('executeTradesPlaceOrders')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'submitTransaction' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'submitTransaction' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('submitTransaction');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'submitTransaction' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.submitTransaction)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('switchTokens')}</span>
-                              <span className="keybind-description">{t('swapInputOutputTokens')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'switchTokens' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'switchTokens' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('switchTokens');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'switchTokens' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.switchTokens)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('maxAmount')}</span>
-                              <span className="keybind-description">{t('setInputToMaxBalance')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'maxAmount' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'maxAmount' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('maxAmount');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'maxAmount' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.maxAmount)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('focusInput')}</span>
-                              <span className="keybind-description">{t('focusMainAmountInput')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'focusInput' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'focusInput' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('focusInput');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'focusInput' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.focusInput)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('submitTransaction', t('submitTransaction'), t('executeTradesPlaceOrders'))}
+                          {renderKeybindButton('switchTokens', t('switchTokens'), t('swapInputOutputTokens'))}
+                          {renderKeybindButton('maxAmount', t('maxAmount'), t('setInputToMaxBalance'))}
+                          {renderKeybindButton('focusInput', t('focusInput'), t('focusMainAmountInput'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('tokenSelection')}</div>
                           <div className="settings-section-subtitle">
                             {t('quickAccessTokenSelection')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('selectInputToken')}</span>
-                              <span className="keybind-description">{t('openTokenSelectionForInput')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openTokenInSelect' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openTokenInSelect' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openTokenInSelect');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openTokenInSelect' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openTokenInSelect)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('selectOutputToken')}</span>
-                              <span className="keybind-description">{t('openTokenSelectionForOutput')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openTokenOutSelect' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openTokenOutSelect' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openTokenOutSelect');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openTokenOutSelect' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openTokenOutSelect)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('openTokenInSelect', t('selectInputToken'), t('openTokenSelectionForInput'))}
+                          {renderKeybindButton('openTokenOutSelect', t('selectOutputToken'), t('openTokenSelectionForOutput'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('orderManagement')}</div>
                           <div className="settings-section-subtitle">
                             {t('manageActiveOrdersQuickly')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('cancelAllOrders')}</span>
-                              <span className="keybind-description">{t('cancelAllActiveOrders')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'cancelAllOrders' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'cancelAllOrders' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('cancelAllOrders');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'cancelAllOrders' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.cancelAllOrders)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('cancelTopOrder')}</span>
-                              <span className="keybind-description">{t('cancelMostRecentOrder')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'cancelTopOrder' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'cancelTopOrder' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('cancelTopOrder');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'cancelTopOrder' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.cancelTopOrder)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('cancelAllOrders', t('cancelAllOrders'), t('cancelAllActiveOrders'))}
+                          {renderKeybindButton('cancelTopOrder', t('cancelTopOrder'), t('cancelMostRecentOrder'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('interfaceShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('navigateInterfaceQuickly')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openSettings')}</span>
-                              <span className="keybind-description">{t('openSettingsPanel')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openSettings' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openSettings' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openSettings');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openSettings' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openSettings)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openWallet')}</span>
-                              <span className="keybind-description">{t('openWalletConnectionPortfolio')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openWallet' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openWallet' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openWallet');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openWallet' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openWallet)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openMarketSearch')}</span>
-                              <span className="keybind-description">{t('openMarketSearchDialog')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openMarketSearch' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openMarketSearch' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openMarketSearch');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openMarketSearch' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openMarketSearch)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('toggleSimpleView')}</span>
-                              <span className="keybind-description">{t('switchBetweenSimpleAdvanced')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'toggleSimpleView' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'toggleSimpleView' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('toggleSimpleView');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'toggleSimpleView' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.toggleSimpleView)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('refreshQuote')}</span>
-                              <span className="keybind-description">{t('refreshCurrentPriceQuote')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'refreshQuote' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'refreshQuote' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('refreshQuote');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'refreshQuote' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.refreshQuote)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('openSettings', t('openSettings'), t('openSettingsPanel'))}
+                          {renderKeybindButton('openWallet', t('openWallet'), t('openWalletConnectionPortfolio'))}
+                          {renderKeybindButton('openMarketSearch', t('openMarketSearch'), t('openMarketSearchDialog'))}
+                          {renderKeybindButton('toggleSimpleView', t('toggleSimpleView'), t('switchBetweenSimpleAdvanced'))}
+                          {renderKeybindButton('refreshQuote', t('refreshQuote'), t('refreshCurrentPriceQuote'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('navigationShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('jumpToDifferentPagesQuickly')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openPortfolio')}</span>
-                              <span className="keybind-description">{t('navigateToPortfolioPage')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openPortfolio' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openPortfolio' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openPortfolio');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openPortfolio' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openPortfolio)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openLeaderboard')}</span>
-                              <span className="keybind-description">{t('navigateToLeaderboardPage')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openLeaderboard' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openLeaderboard' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openLeaderboard');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openLeaderboard' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openLeaderboard)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('openReferrals')}</span>
-                              <span className="keybind-description">{t('navigateToReferralsPage')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'openReferrals' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'openReferrals' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('openReferrals');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'openReferrals' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.openReferrals)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('openPortfolio', t('openPortfolio'), t('navigateToPortfolioPage'))}
+                          {renderKeybindButton('openLeaderboard', t('openLeaderboard'), t('navigateToLeaderboardPage'))}
+                          {renderKeybindButton('openReferrals', t('openReferrals'), t('navigateToReferralsPage'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('marketShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('interactWithMarketDataQuickly')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('toggleFavorite')}</span>
-                              <span className="keybind-description">{t('addRemoveCurrentMarketFavorites')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'toggleFavorite' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'toggleFavorite' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('toggleFavorite');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'toggleFavorite' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.toggleFavorite)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('toggleFavorite', t('toggleFavorite'), t('addRemoveCurrentMarketFavorites'))}
                         </div>
                         <div className="settings-subsection">
                           <div className="layout-section-title">{t('orderCenterShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('navigateOrderCenterTabsQuickly')}
                           </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('switchToOrders')}</span>
-                              <span className="keybind-description">{t('viewActiveOrdersTab')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'switchToOrders' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'switchToOrders' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('switchToOrders');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'switchToOrders' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.switchToOrders)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('switchToTradeHistory')}</span>
-                              <span className="keybind-description">{t('viewTradeHistoryTab')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'switchToTrades' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'switchToTrades' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('switchToTrades');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'switchToTrades' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.switchToTrades)}
-                            </button>
-                          </div>
-                          <div className="keybind-setting-row">
-                            <div className="keybind-info">
-                              <span className="keybind-label">{t('switchToOrderHistory')}</span>
-                              <span className="keybind-description">{t('viewOrderHistoryTab')}</span>
-                            </div>
-                            <button
-                              className={`keybind-button ${editingKeybind === 'switchToHistory' && isListeningForKey ? 'listening' : ''
-                                }`}
-                              onClick={() => {
-                                if (editingKeybind === 'switchToHistory' && isListeningForKey) {
-                                  setEditingKeybind(null);
-                                  setIsListeningForKey(false);
-                                } else {
-                                  setEditingKeybind('switchToHistory');
-                                  setIsListeningForKey(true);
-                                }
-                              }}
-                            >
-                              {editingKeybind === 'switchToHistory' && isListeningForKey
-                                ? t('pressAKey')
-                                : formatKeyDisplay(keybinds.switchToHistory)}
-                            </button>
-                          </div>
+                          {renderKeybindButton('switchToOrders', t('switchToOrders'), t('viewActiveOrdersTab'))}
+                          {renderKeybindButton('switchToTrades', t('switchToTradeHistory'), t('viewTradeHistoryTab'))}
+                          {renderKeybindButton('switchToHistory', t('switchToOrderHistory'), t('viewOrderHistoryTab'))}
                         </div>
                       </div>
-
-                      <button
-                        className="reset-keybinds-button"
-                        onClick={() => {
-                          const defaultKeybinds = {
-                            submitTransaction: 'Enter',
-                            switchTokens: 'KeyX',
-                            maxAmount: 'KeyM',
-                            focusInput: 'Slash',
-                            openSettings: 'KeyS',
-                            openWallet: 'KeyW',
-                            openTokenInSelect: 'KeyQ',
-                            openTokenOutSelect: 'KeyE',
-                            cancelAllOrders: 'KeyC',
-                            cancelTopOrder: 'Escape',
-                            openPortfolio: 'KeyP',
-                            openLeaderboard: 'KeyL',
-                            openReferrals: 'KeyR',
-                            openMarketSearch: 'KeyF',
-                            toggleFavorite: 'KeyT',
-                            toggleSimpleView: 'KeyV',
-                            refreshQuote: 'F5',
-                            switchToOrders: 'Digit1',
-                            switchToTrades: 'Digit2',
-                            switchToHistory: 'Digit3',
-                          };
-                          setKeybinds(defaultKeybinds);
-                          localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
-                          setEditingKeybind(null);
-                          setIsListeningForKey(false);
-                        }}
-                      >
-                        {t('resetKeybinds')}
-                      </button>
                     </div>
                   )}
-
                 </div>
+
                 <button
-                  className="revert-settings-button"
+                  className="reset-tab-button"
                   onClick={() => {
-                    setLanguage('EN');
-                    localStorage.setItem('crystal_language', 'EN');
+                    switch (activeSettingsSection) {
+                      case 'general':
+                        setLanguage('EN');
+                        localStorage.setItem('crystal_language', 'EN');
+                        setSliderMode('slider');
+                        localStorage.setItem('crystal_slider_mode', 'slider');
+                        setSliderPresets([25, 50, 75]);
+                        localStorage.setItem('crystal_slider_presets', JSON.stringify([25, 50, 75]));
+                        setSliderIncrement(10);
+                        localStorage.setItem('crystal_slider_increment', '10');
+                        setRpcUrl('');
+                        localStorage.setItem('crystal_rpc_url', '');
+                        setGraphUrl('');
+                        localStorage.setItem('crystal_graph_url', '');
+                        setGraphKey('');
+                        localStorage.setItem('crystal_graph_key', '');
+                        break;
 
-                    setHideNotificationPopups(false);
-                    localStorage.setItem('crystal_hide_notification_popups', 'false');
+                      case 'layout':
+                        setLayoutSettings('default');
+                        localStorage.setItem('crystal_layout', 'default');
+                        setOrderbookPosition('right');
+                        localStorage.setItem('crystal_orderbook', 'right');
+                        setNotificationPosition('bottom-right');
+                        localStorage.setItem('crystal_notification_position', 'bottom-right');
+                        break;
 
-                    setNotificationPosition('bottom-right');
-                    localStorage.setItem('crystal_notification_position', 'bottom-right');
+                      case 'display':
+                        setIsMarksVisible(true);
+                        localStorage.setItem('crystal_marks_visible', 'true');
+                        setIsOrdersVisible(true);
+                        localStorage.setItem('crystal_orders_visible', 'true');
+                        setIsOrderbookVisible(true);
+                        localStorage.setItem('crystal_orderbook_visible', 'true');
+                        setIsOrderCenterVisible(true);
+                        localStorage.setItem('crystal_ordercenter_visible', 'true');
+                        setShowChartOutliers(false);
+                        localStorage.setItem('crystal_show_chart_outliers', 'false');
+                        break;
 
-                    setHiddenPopupTypes({});
-                    localStorage.setItem('crystal_hidden_popup_types', JSON.stringify({}));
+                      case 'audio':
+                        setIsAudioEnabled(false);
+                        localStorage.setItem('crystal_audio_notifications', 'false');
+                        setAudioGroups({ swap: true, order: true, transfer: true, approve: true });
+                        localStorage.setItem('crystal_audio_groups', JSON.stringify({ swap: true, order: true, transfer: true, approve: true }));
+                        setHideNotificationPopups(false);
+                        localStorage.setItem('crystal_hide_notification_popups', 'false');
+                        setHiddenPopupTypes({});
+                        localStorage.setItem('crystal_hidden_popup_types', JSON.stringify({}));
+                        break;
 
-                    setLayoutSettings('default');
-                    localStorage.setItem('crystal_layout', 'default');
-
-                    setOrderbookPosition('right');
-                    localStorage.setItem('crystal_orderbook', 'right');
-
-                    setSimpleView(false);
-                    localStorage.setItem('crystal_simple_view', 'false');
-
-                    setIsMarksVisible(true);
-                    localStorage.setItem('crystal_marks_visible', 'true');
-
-                    setIsOrdersVisible(true);
-                    localStorage.setItem('crystal_orders_visible', 'true');
-
-                    setHideNotificationPopups(false);
-                    localStorage.setItem('crystal_hide_notification_popups', 'false');
-
-                    setIsOrderbookVisible(true);
-                    localStorage.setItem('crystal_orderbook_visible', 'true');
-
-                    setIsOrderCenterVisible(true);
-                    localStorage.setItem(
-                      'crystal_ordercenter_visible',
-                      'true',
-                    );
-
-                    setShowChartOutliers(false);
-                    localStorage.setItem('crystal_show_chart_outliers', 'false');
-
-                    setIsAudioEnabled(false);
-                    localStorage.setItem('crystal_audio_notifications', 'false');
-
-                    setOrderbookWidth(300);
-                    localStorage.setItem('orderbookWidth', '300');
-
-                    setAddLiquidityOnly(false);
-                    localStorage.setItem(
-                      'crystal_add_liquidity_only',
-                      'false',
-                    );
-
-                    setorderType(1);
-                    localStorage.setItem('crystal_order_type', '1');
-
-                    setSlippageString('1');
-                    setSlippage(BigInt(9900));
-                    localStorage.setItem('crystal_slippage_string', '1');
-                    localStorage.setItem('crystal_slippage', '9900');
-
-                    setActiveSection('orders');
-                    localStorage.setItem('crystal_oc_tab', 'orders');
-
-                    setFilter('all');
-                    localStorage.setItem('crystal_oc_filter', 'all');
-
-                    setOnlyThisMarket(false);
-                    localStorage.setItem('crystal_only_this_market', 'false');
-
-                    setOBInterval(baseInterval);
-                    localStorage.setItem(
-                      `${activeMarket.baseAsset}_ob_interval`,
-                      JSON.stringify(baseInterval),
-                    );
-
-                    const currentKey = `${activeMarket.baseAsset}_ob_interval`;
-                    for (let i = localStorage.length - 1; i >= 0; i--) {
-                      const key = localStorage.key(i);
-                      if (
-                        key &&
-                        key.endsWith('_ob_interval') &&
-                        key !== currentKey
-                      ) {
-                        localStorage.removeItem(key);
-                      }
+                      case 'keybinds':
+                        const defaultKeybinds = {
+                          submitTransaction: 'Enter',
+                          switchTokens: 'KeyX',
+                          maxAmount: 'KeyM',
+                          focusInput: 'Slash',
+                          openSettings: 'KeyS',
+                          openWallet: 'KeyW',
+                          openTokenInSelect: 'KeyQ',
+                          openTokenOutSelect: 'KeyE',
+                          cancelAllOrders: 'KeyC',
+                          cancelTopOrder: 'Escape',
+                          openPortfolio: 'KeyP',
+                          openLeaderboard: 'KeyL',
+                          openReferrals: 'KeyR',
+                          openMarketSearch: 'KeyF',
+                          toggleFavorite: 'KeyT',
+                          toggleSimpleView: 'KeyV',
+                          refreshQuote: 'F5',
+                          switchToOrders: 'Digit1',
+                          switchToTrades: 'Digit2',
+                          switchToHistory: 'Digit3',
+                        };
+                        setKeybinds(defaultKeybinds);
+                        localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
+                        setEditingKeybind(null);
+                        setIsListeningForKey(false);
+                        break;
                     }
-
-                    setViewMode('both');
-                    localStorage.setItem('ob_viewmode', 'both');
-
-                    setOBTab('orderbook');
-                    localStorage.setItem('ob_active_tab', 'orderbook');
-
-                    setMobileView('chart');
-
-                    setAmountsQuote('Quote');
-                    localStorage.setItem('ob_amounts_quote', 'Quote');
-
-                    localStorage.setItem('crystal_chart_timeframe', '5')
-
-                    let defaultHeight: number;
-
-                    if (window.innerHeight > 1080) defaultHeight = 367.58;
-                    else if (window.innerHeight > 960) defaultHeight = 324.38;
-                    else if (window.innerHeight > 840) defaultHeight = 282.18;
-                    else if (window.innerHeight > 720) defaultHeight = 239.98;
-                    else defaultHeight = 198.78;
-
-                    setOrderCenterHeight(defaultHeight);
-                    localStorage.setItem(
-                      'orderCenterHeight',
-                      defaultHeight.toString(),
-                    );
                   }}
                 >
-                  {t('revertToDefault')}
+                  {t('resetTab')}
                 </button>
               </div>
             </div>
-
           </div>
         ) : null}
         {popup === 6 && selectedConnector ? (
@@ -9708,16 +9346,16 @@ function App() {
                   >
                     <div className="challenge-intro-split-container">
                       <div className="floating-elements-container">
-                        <img src={circleleft} className="circle-bottom" />
-                        <img src={topright} className="top-right" />
-                        <img src={topleft} className="top-left" />
-                        <img src={circleleft} className="circle-left" />
-                        <img src={veryleft} className="very-left" />
-                        <img src={circleleft} className="circle-right" />
-                        <img src={veryright} className="very-right" />
-                        <img src={topmiddle} className="top-middle" />
-                        <img src={topleft} className="bottom-middle" />
-                        <img src={circleleft} className="challenge-bottom-right" />
+                        <img src={circleleft} className="circle-bottom-crystal" />
+                        <img src={topright} className="top-right-crystal" />
+                        <img src={topleft} className="top-left-crystal" />
+                        <img src={circleleft} className="circle-left-crystal" />
+                        <img src={veryleft} className="very-left-crystal" />
+                        <img src={circleleft} className="circle-right-crystal" />
+                        <img src={veryright} className="very-right-crystal" />
+                        <img src={topmiddle} className="top-middle-crystal" />
+                        <img src={topleft} className="bottom-middle-crystal" />
+                        <img src={circleleft} className="bottom-right-crystal" />
 
                         <div className="account-setup-header">
                           <div className="account-setup-title-wrapper">
@@ -10051,6 +9689,8 @@ function App() {
             </div>
           </div>
         ) : null}
+
+
         {popup === 19 ? (
           <div className="edit-limit-price-popup-bg" ref={popupref}>
             <div className="edit-limit-price-header">
@@ -10058,114 +9698,81 @@ function App() {
               <span className="edit-limit-price-subtitle">Adjust the price at which your limit order will trigger</span>
             </div>
             <div className="edit-limit-price-content">
-
               <input
                 className="edit-limit-price-input"
-                type="number"
-                value={currentLimitPrice === 0 ? '' : currentLimitPrice.toString()}
-                onChange={(e) => {
-                  const inputValue = e.target.value;
-                  if (inputValue === '') {
+                type="text"
+                inputMode="decimal"
+                value={displayLimitPrice}
+                placeholder="0.00"
+                onChange={e => {
+                  const val = e.target.value;
+                  if (!/^\d*(?:\.\d*)?$/.test(val)) return;
+                  setlimitPriceString(val);
+                  setHasEditedPrice(true);
+
+                  if (val === '' || val === '.') {
                     setCurrentLimitPrice(0);
                   } else {
-                    const newValue = parseFloat(inputValue);
-                    if (!isNaN(newValue)) {
-                      setCurrentLimitPrice(newValue);
-                    }
+                    const num = parseFloat(val);
+                    if (!isNaN(num)) setCurrentLimitPrice(num);
                   }
-                  setHasEditedPrice(true);
                 }}
-                step="any"
-                min="0"
-                placeholder="0.00"
               />
 
               {(() => {
                 const isBuyOrder = editingOrder[3] === 1;
-                const marketKey = editingOrder[4];
-                const market = markets[marketKey];
-
+                const market = markets[editingOrder[4]];
                 let midPriceRaw = 0;
-                if (mids?.[marketKey]?.[0]) {
+                if (mids?.[editingOrder[4]]?.[0]) {
+                  const m = mids[editingOrder[4]];
                   midPriceRaw = isBuyOrder
-                    ? (mids[marketKey][0] == mids[marketKey][1] ? mids[marketKey][2] : mids[marketKey][0])
-                    : (mids[marketKey][0] == mids[marketKey][2] ? mids[marketKey][1] : mids[marketKey][0]);
+                    ? (m[0] === m[1] ? m[2] : m[0])
+                    : (m[0] === m[2] ? m[1] : m[0]);
                 }
-
-                const midPrice = market?.priceFactor ? Number(midPriceRaw) / Number(market.priceFactor) : 0;
-
-                const showWarning = midPrice > 0 && (
-                  (isBuyOrder && currentLimitPrice > midPrice) ||
-                  (!isBuyOrder && currentLimitPrice < midPrice)
-                );
+                const midPrice = market.priceFactor
+                  ? Number(midPriceRaw) / Number(market.priceFactor)
+                  : 0;
+                const showWarning =
+                  midPrice > 0 &&
+                  ((isBuyOrder && currentLimitPrice > midPrice) ||
+                    (!isBuyOrder && currentLimitPrice < midPrice));
 
                 return showWarning ? (
                   <div className="edit-limit-price-warning">
-                    <span> {isBuyOrder
-                      ? t('priceOutOfRangeWarningBuy')
-                      : t('priceOutOfRangeWarningSell')}
+                    <span>
+                      {isBuyOrder
+                        ? t('priceOutOfRangeWarningBuy')
+                        : t('priceOutOfRangeWarningSell')}
                     </span>
                   </div>
                 ) : null;
               })()}
 
               <div className="edit-limit-price-button-container">
-                <button
-                  className="edit-limit-price-level-button"
-                  onClick={() => {
-                    const isBuyOrder = editingOrder[3] === 1;
-                    const newPrice = isBuyOrder
-                      ? Math.max(0, currentLimitPrice * 0.995)
-                      : currentLimitPrice * 1.005;
-                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
-                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
-                    setHasEditedPrice(true);
-                  }}
-                >
-                  {editingOrder && editingOrder[3] === 1 ? "-0.5%" : "+0.5%"}
-                </button>
-                <button
-                  className="edit-limit-price-level-button"
-                  onClick={() => {
-                    const isBuyOrder = editingOrder[3] === 1;
-                    const newPrice = isBuyOrder
-                      ? Math.max(0, currentLimitPrice * 0.99)
-                      : currentLimitPrice * 1.01;
-                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
-                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
-                    setHasEditedPrice(true);
-                  }}
-                >
-                  {editingOrder && editingOrder[3] === 1 ? "-1%" : "+1%"}
-                </button>
-                <button
-                  className="edit-limit-price-level-button"
-                  onClick={() => {
-                    const isBuyOrder = editingOrder[3] === 1;
-                    const newPrice = isBuyOrder
-                      ? Math.max(0, currentLimitPrice * 0.975)
-                      : currentLimitPrice * 1.025;
-                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
-                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
-                    setHasEditedPrice(true);
-                  }}
-                >
-                  {editingOrder && editingOrder[3] === 1 ? "-2.5%" : "+2.5%"}
-                </button>
-                <button
-                  className="edit-limit-price-level-button"
-                  onClick={() => {
-                    const isBuyOrder = editingOrder[3] === 1;
-                    const newPrice = isBuyOrder
-                      ? Math.max(0, currentLimitPrice * 0.95)
-                      : currentLimitPrice * 1.05;
-                    const decimals = Math.floor(Math.log10(Number(markets[editingOrder[4]].priceFactor)));
-                    setCurrentLimitPrice(parseFloat(newPrice.toFixed(decimals)));
-                    setHasEditedPrice(true);
-                  }}
-                >
-                  {editingOrder && editingOrder[3] === 1 ? "-5%" : "+5%"}
-                </button>
+                {[0.995, 0.99, 0.975, 0.95].map(factor => {
+                  const label = `${((factor - 1) * 100).toFixed(2)}%`;
+                  return (
+                    <button
+                      key={factor}
+                      className="edit-limit-price-level-button"
+                      onClick={() => {
+                        const isBuyOrder = editingOrder[3] === 1;
+                        const raw =
+                          currentLimitPrice *
+                          (isBuyOrder ? factor : 1 / factor);
+                        const decimals = Math.floor(
+                          Math.log10(Number(markets[editingOrder[4]].priceFactor))
+                        );
+                        const newPrice = parseFloat(raw.toFixed(decimals));
+                        setCurrentLimitPrice(newPrice);
+                        setlimitPriceString(newPrice.toFixed(decimals));
+                        setHasEditedPrice(true);
+                      }}
+                    >
+                      {editingOrder[3] === 1 ? label : `+${label.slice(1)}`}
+                    </button>
+                  );
+                })}
               </div>
 
               <div className="edit-limit-price-actions">
@@ -10174,11 +9781,275 @@ function App() {
                   onClick={handleEditLimitPriceConfirm}
                   disabled={isEditingSigning || !hasEditedPrice}
                   style={{
-                    opacity: (isEditingSigning || !hasEditedPrice) ? 0.5 : 1,
-                    cursor: (isEditingSigning || !hasEditedPrice) ? 'not-allowed' : 'pointer'
+                    opacity: isEditingSigning || !hasEditedPrice ? 0.5 : 1,
+                    cursor: isEditingSigning || !hasEditedPrice
+                      ? 'not-allowed'
+                      : 'pointer',
                   }}
                 >
                   {isEditingSigning ? (
+                    <div className="signing-indicator">
+                      <div className="loading-spinner" />
+                      <span>{t('signTransaction')}</span>
+                    </div>
+                  ) : (
+                    'Confirm'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 20 ? (
+          <div className="edit-order-size-popup-bg" ref={popupref}>
+            <div className="edit-order-size-header">
+              <span className="edit-order-size-title">Edit Order Size</span>
+              <span className="edit-order-size-subtitle">Adjust the size of your limit order</span>
+            </div>
+            <div className="edit-order-size-content">
+              {(() => {
+                if (!editingOrderSize) return null;
+
+                const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+
+                return (
+                  <div className="edit-order-size-balance-display">
+                    <img src={walleticon} className="balance-wallet-icon" />{' '}
+                    <span className="balance-value">{availableBalance.toFixed(2)}</span>
+                  </div>
+                );
+              })()}
+
+              <div className="edit-order-size-input-container">
+                <input
+                  className="edit-order-size-input"
+                  type="text"
+                  inputMode="decimal"
+                  value={displayValue}
+                  placeholder="0.00"
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (!/^\d*(?:\.\d{0,8})?$/.test(val)) return;
+                    setOrderSizeString(val);
+                    setHasEditedSize(true);
+
+                    if (val === '' || val === '.') {
+                      setCurrentOrderSize(0);
+                      setOrderSizePercent(0);
+                    } else {
+                      const num = parseFloat(val);
+                      setCurrentOrderSize(num);
+                      const pct = originalOrderSize > 0
+                        ? Math.round((num / originalOrderSize) * 100)
+                        : 100;
+                      setOrderSizePercent(Math.min(200, Math.max(0, pct)));
+                    }
+                  }}
+                />
+                <span className="edit-order-size-token-label">
+                  {editingOrderSize
+                    ? tokendict[
+                      editingOrderSize[3] === 1
+                        ? markets[editingOrderSize[4]].quoteAddress
+                        : markets[editingOrderSize[4]].baseAddress
+                    ]?.ticker
+                    : ''}
+                </span>
+              </div>
+
+              {(() => {
+                if (!editingOrderSize) return null;
+                const isBuy = editingOrderSize[3] === 1;
+                const market = markets[editingOrderSize[4]];
+
+                let quotePrice = 1;
+                if (market.quoteAsset !== 'USDC') {
+                  const cfg = settings.chainConfig[activechain];
+                  const key = `${market.quoteAsset === cfg.wethticker
+                    ? cfg.ethticker
+                    : market.quoteAsset}USDC`;
+
+                  const tradesMap = trades as any as Record<string, any[]>;
+                  const marketsMap = markets as any as Record<string, any>;
+
+                  const lastTrade = tradesMap[key]?.[0]?.[3] ?? 0;
+                  const priceFactor = Number(marketsMap[key]?.priceFactor ?? 1);
+                  quotePrice = lastTrade / priceFactor;
+                }
+                const baseFilled =
+                  editingOrderSize[7] / 10 ** Number(market.baseDecimals);
+
+                const unfilledInput = isBuy
+                  ? originalOrderSize - baseFilled * quotePrice
+                  : (editingOrderSize[2] - editingOrderSize[7]) /
+                  10 ** Number(market.baseDecimals);
+
+                const needed = Math.max(0, currentOrderSize - unfilledInput);
+
+                const inputAddr = isBuy ? market.quoteAddress : market.baseAddress;
+                const available =
+                  Number((tokenBalances as any)[inputAddr] ?? BigInt(0)) /
+                  10 ** Number((tokendict as any)[inputAddr]?.decimals ?? 18);
+                const isUsdcBacked = market.quoteAsset === 'USDC';
+                const minSize = isUsdcBacked ? 1 : 0.1;
+                const minSizeToken = isUsdcBacked ? 'USDC' : 'MON';
+                const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+
+                if (needed > available) {
+                  return (
+                    <div className="edit-order-size-warning">
+                      Insufficient balance. Need {needed.toFixed(6)} more{' '}
+                      {(tokendict as any)[inputAddr]?.ticker}. Available:{' '}
+                      {available.toFixed(6)}{' '}
+                      {(tokendict as any)[inputAddr]?.ticker}
+                    </div>
+                  );
+                }
+
+                if (isBelowMinSize) {
+                  return (
+                    <div className="edit-order-size-warning">
+                      Minimum order size is {minSize} {minSizeToken}
+                    </div>
+                  );
+                }
+
+                return null;
+              })()}
+
+              <div className="order-size-balance-slider-wrapper">
+                <div className="order-size-slider-container">
+                  <input
+                    type="range"
+                    className="order-size-balance-amount-slider"
+                    min="0"
+                    max="200"
+                    step="1"
+                    value={orderSizePercent}
+                    onChange={e => {
+                      const pct = parseInt(e.target.value, 10)
+                      const newSize = (originalOrderSize * pct) / 100
+
+                      setOrderSizePercent(pct)
+                      setCurrentOrderSize(newSize)
+                      setOrderSizeString(newSize === 0 ? '' : newSize.toFixed(2))
+                      setHasEditedSize(true)
+
+                      const rect = e.target.getBoundingClientRect()
+                      const thumb = (pct / 200) * (rect.width - 15) + 15 / 2
+                      const popup = document.querySelector('.order-size-slider-percentage-popup')
+                      if (popup) (popup as HTMLElement).style.left = `${thumb}px`
+                    }}
+                    onMouseDown={() => {
+                      const popup = document.querySelector('.order-size-slider-percentage-popup')
+                      if (popup) popup.classList.add('visible')
+                    }}
+                    onMouseUp={() => {
+                      const popup = document.querySelector('.order-size-slider-percentage-popup')
+                      if (popup) popup.classList.remove('visible')
+                    }}
+                    style={{
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+                    }}
+                  />
+                  <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
+                  <div className="order-size-balance-slider-marks">
+                    {[0, 50, 100, 150, 200].map((markPercent) => (
+                      <span
+                        key={markPercent}
+                        className="order-size-balance-slider-mark"
+                        data-active={orderSizePercent >= markPercent}
+                        data-percentage={markPercent}
+                        onClick={() => {
+                          const newSize = (originalOrderSize * markPercent) / 100;
+                          setOrderSizePercent(markPercent);
+                          setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
+                          setHasEditedSize(true);
+
+                          const slider = document.querySelector('.order-size-balance-amount-slider');
+                          const popup = document.querySelector('.order-size-slider-percentage-popup');
+                          if (slider && popup) {
+                            const rect = slider.getBoundingClientRect();
+                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (markPercent / 200) + 15 / 2}px`;
+                          }
+                        }}
+                      >
+                        {markPercent}%
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="edit-order-size-actions">
+                <button
+                  className="edit-order-size-confirm-button"
+                  onClick={handleEditOrderSizeConfirm}
+                  disabled={(() => {
+                    if (!editingOrderSize) return true;
+
+                    const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                    const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                    const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                    const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+                    const market = markets[editingOrderSize[4]];
+                    const baseDecimals = Number(market.baseDecimals);
+                    const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+                    const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+                    const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+                    const isUsdcBacked = market.quoteAsset === 'USDC';
+                    const minSize = isUsdcBacked ? 1 : 0.1;
+                    const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+
+                    return isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize;
+                  })()}
+                  style={{
+                    opacity: (() => {
+                      if (!editingOrderSize) return 0.5;
+
+                      const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                      const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                      const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                      const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+
+                      const market = markets[editingOrderSize[4]];
+                      const baseDecimals = Number(market.baseDecimals);
+                      const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+                      const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+                      const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+                      const isUsdcBacked = market.quoteAsset === 'USDC';
+                      const minSize = isUsdcBacked ? 1 : 0.1;
+                      const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+
+                      return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize) ? 0.5 : 1;
+                    })(),
+                    cursor: (() => {
+                      if (!editingOrderSize) return 'not-allowed';
+
+                      const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
+                      const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
+                      const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
+                      const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
+
+                      const market = markets[editingOrderSize[4]];
+                      const baseDecimals = Number(market.baseDecimals);
+                      const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
+                      const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
+                      const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
+
+                      const isUsdcBacked = market.quoteAsset === 'USDC';
+                      const minSize = isUsdcBacked ? 1 : 0.1;
+                      const isBelowMinSize = currentOrderSize > 0 && currentOrderSize < minSize;
+
+                      return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance || isBelowMinSize) ? 'not-allowed' : 'pointer';
+                    })()
+                  }}
+                >
+                  {isEditingSizeSigning ? (
                     <div className="signing-indicator">
                       <div className="loading-spinner"></div>
                       <span>{t('signTransaction')}</span>
@@ -10191,222 +10062,6 @@ function App() {
             </div>
           </div>
         ) : null}
-{popup === 20 ? (
-  <div className="edit-order-size-popup-bg" ref={popupref}>
-    <div className="edit-order-size-header">
-      <span className="edit-order-size-title">Edit Order Size</span>
-      <span className="edit-order-size-subtitle">Adjust the size of your limit order</span>
-    </div>
-    <div className="edit-order-size-content">
-      {(() => {
-        if (!editingOrderSize) return null;
-
-        const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-        const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-        const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-        const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-
-        return (
-          <div className="edit-order-size-balance-display">
-            <img src={walleticon} className="balance-wallet-icon" />{' '}
-            <span className="balance-value">{availableBalance.toFixed(2)}</span>
-          </div>
-        );
-      })()}
-
-      <div className="edit-order-size-input-container">
-        <input
-          className="edit-order-size-input"
-          type="number"
-          value={currentOrderSize === 0 ? '' : currentOrderSize.toString()}
-          onChange={(e) => {
-            const inputValue = e.target.value;
-            if (inputValue === '') {
-              setCurrentOrderSize(0);
-              setOrderSizePercent(0);
-            } else {
-              const newValue = parseFloat(inputValue);
-              if (!isNaN(newValue) && newValue >= 0) {
-                setCurrentOrderSize(newValue);
-                const percentage = originalOrderSize > 0 ? Math.round((newValue / originalOrderSize) * 100) : 100;
-                setOrderSizePercent(Math.min(200, Math.max(0, percentage)));
-              }
-            }
-            setHasEditedSize(true);
-          }}
-          step="any"
-          min="0"
-          placeholder="0.00"
-        />
-        <span className="edit-order-size-token-label">
-          {editingOrderSize && tokendict[editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress]?.ticker}
-        </span>
-      </div>
-
-      {(() => {
-        if (!editingOrderSize) return null;
-
-        const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-        const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-        const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-        const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-
-        // Calculate the current unfilled amount (what's currently locked in the order)
-        const market = markets[editingOrderSize[4]];
-        const baseDecimals = Number(market.baseDecimals);
-        const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
-        
-        // Calculate how much additional balance is needed
-        const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
-        const showWarning = additionalAmountNeeded > availableBalance;
-
-        return showWarning ? (
-          <div className="edit-order-size-warning">
-            <span>
-              Insufficient balance. Need {additionalAmountNeeded.toFixed(6)} more {tokendict[tokenAddress]?.ticker}. 
-              Available: {availableBalance.toFixed(6)} {tokendict[tokenAddress]?.ticker}
-            </span>
-          </div>
-        ) : null;
-      })()}
-
-      <div className="order-size-balance-slider-wrapper">
-        <div className="order-size-slider-container">
-          <input
-            type="range"
-            className="order-size-balance-amount-slider"
-            min="0"
-            max="200"
-            step="1"
-            value={orderSizePercent}
-            onChange={(e) => {
-              const percent = parseInt(e.target.value);
-              const newSize = (originalOrderSize * percent) / 100;
-              setOrderSizePercent(percent);
-              setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-              setHasEditedSize(true);
-
-              const slider = e.target;
-              const rect = slider.getBoundingClientRect();
-              const trackWidth = rect.width - 15;
-              const thumbPosition = (percent / 200) * trackWidth + 15 / 2;
-              const popup = document.querySelector('.order-size-slider-percentage-popup');
-              if (popup) {
-                (popup as HTMLElement).style.left = `${thumbPosition}px`;
-              }
-            }}
-            onMouseDown={() => {
-              const popup = document.querySelector('.order-size-slider-percentage-popup');
-              if (popup) popup.classList.add('visible');
-            }}
-            onMouseUp={() => {
-              const popup = document.querySelector('.order-size-slider-percentage-popup');
-              if (popup) popup.classList.remove('visible');
-            }}
-            style={{
-              background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
-            }}
-          />
-          <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
-          <div className="order-size-balance-slider-marks">
-            {[0, 50, 100, 150, 200].map((markPercent) => (
-              <span
-                key={markPercent}
-                className="order-size-balance-slider-mark"
-                data-active={orderSizePercent >= markPercent}
-                data-percentage={markPercent}
-                onClick={() => {
-                  const newSize = (originalOrderSize * markPercent) / 100;
-                  setOrderSizePercent(markPercent);
-                  setCurrentOrderSize(parseFloat(newSize.toFixed(8)));
-                  setHasEditedSize(true);
-
-                  const slider = document.querySelector('.order-size-balance-amount-slider');
-                  const popup = document.querySelector('.order-size-slider-percentage-popup');
-                  if (slider && popup) {
-                    const rect = slider.getBoundingClientRect();
-                    (popup as HTMLElement).style.left = `${(rect.width - 15) * (markPercent / 200) + 15 / 2}px`;
-                  }
-                }}
-              >
-                {markPercent}%
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="edit-order-size-actions">
-        <button
-          className="edit-order-size-confirm-button"
-          onClick={handleEditOrderSizeConfirm}
-          disabled={(() => {
-            if (!editingOrderSize) return true;
-            
-            const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-            const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-            const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-            const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-            
-            // Calculate current unfilled amount
-            const market = markets[editingOrderSize[4]];
-            const baseDecimals = Number(market.baseDecimals);
-            const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
-            
-            // Calculate additional amount needed
-            const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
-            const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
-            
-            return isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance;
-          })()}
-          style={{
-            opacity: (() => {
-              if (!editingOrderSize) return 0.5;
-              
-              const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-              const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-              const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-              const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-              
-              const market = markets[editingOrderSize[4]];
-              const baseDecimals = Number(market.baseDecimals);
-              const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
-              const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
-              const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
-              
-              return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance) ? 0.5 : 1;
-            })(),
-            cursor: (() => {
-              if (!editingOrderSize) return 'not-allowed';
-              
-              const tokenAddress = editingOrderSize[3] === 1 ? markets[editingOrderSize[4]].quoteAddress : markets[editingOrderSize[4]].baseAddress;
-              const tokenBalance = tokenBalances[tokenAddress] || BigInt(0);
-              const tokenDecimals = Number(tokendict[tokenAddress]?.decimals || 18);
-              const availableBalance = Number(tokenBalance) / (10 ** tokenDecimals);
-              
-              const market = markets[editingOrderSize[4]];
-              const baseDecimals = Number(market.baseDecimals);
-              const currentUnfilledAmount = (editingOrderSize[2] - editingOrderSize[7]) / (10 ** baseDecimals);
-              const additionalAmountNeeded = Math.max(0, currentOrderSize - currentUnfilledAmount);
-              const hasInsufficientBalance = additionalAmountNeeded > availableBalance;
-              
-              return (isEditingSizeSigning || !hasEditedSize || currentOrderSize <= 0 || hasInsufficientBalance) ? 'not-allowed' : 'pointer';
-            })()
-          }}
-        >
-          {isEditingSizeSigning ? (
-            <div className="signing-indicator">
-              <div className="loading-spinner"></div>
-              <span>{t('signTransaction')}</span>
-            </div>
-          ) : (
-            'Confirm'
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-) : null}
       </div>
     </>
   );
@@ -11969,7 +11624,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('sendingTransaction') : t('signTransaction')}
+              {client ? t('') : t('signTransaction')}
             </div>
           ) : swapButton == 0 ? (
             t('insufficientLiquidity')
@@ -14110,7 +13765,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('sendingTransaction') : t('signTransaction')}
+              {client ? t('') : t('signTransaction')}
             </div>
           ) : limitButton == 0 ? (
             t('enterAmount')
@@ -14874,7 +14529,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('sendingTransaction') : t('signTransaction')}
+              {client ? t('') : t('signTransaction')}
             </div>
           ) : !connected ? (
             t('connectWallet')
@@ -16485,7 +16140,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('sendingTransaction') : t('signTransaction')}
+              {client ? t('') : t('signTransaction')}
             </div>
           ) : scaleButton == 0 ? (
             t('enterAmount')
@@ -16961,16 +16616,10 @@ function App() {
           transactions={transactions}
           setTransactions={setTransactions}
           tokendict={tokendict}
+          showPreview={showPreview}
+          previewPosition={previewPosition}
+          previewExiting={previewExiting}
         />
-        {showPreview && (
-          <TransactionPopupManager
-            transactions={[]}
-            setTransactions={() => { }}
-            tokendict={tokendict}
-            showPreview={true}
-            previewPosition={previewPosition}
-          />
-        )}
       </div>
     </div>
   );

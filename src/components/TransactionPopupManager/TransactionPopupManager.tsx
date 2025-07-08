@@ -23,6 +23,7 @@ interface TransactionPopupManagerProps {
   tokendict: Record<string, any>;
   showPreview?: boolean;
   previewPosition?: string | null;
+  previewExiting?: boolean; 
 }
 
 
@@ -31,7 +32,8 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
   setTransactions,
   tokendict,
   showPreview = false,
-  previewPosition
+  previewPosition,
+  previewExiting = false
 }) => {
   const popupRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [popupHeights, setPopupHeights] = useState<Record<string, number>>({});
@@ -53,14 +55,14 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
     identifier: 'preview',
     explorerLink: '#',
     currentAction: 'preview',
-    tokenIn: 'ETH',
-    tokenOut: 'USDC',
-    amountIn: '1.5',
-    amountOut: '2847.32',
-    price: '1897.55',
+    tokenIn: '',
+    tokenOut: '',
+    amountIn: '',
+    amountOut: '',
+    price: '',
     address: '',
-    isNew: true,
-    isExiting: false,
+    isNew: !previewExiting, 
+    isExiting: previewExiting, 
     timestamp: Date.now()
   };
 
@@ -118,11 +120,16 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
   const getExpandedPosition = (index: number) => {
     let position = 0;
     const shouldReverseOrder = isTopPosition && !isMobile;
+    const gapSize = isMobile ? 20 : 10; 
+    
     if (isMobile) {
       for (let i = 0; i < index; i++) {
         const transaction = visibleTransactions[i];
         const height = popupHeights[transaction.identifier] || 100;
         position += height;
+        if (i < index - 1 || index > 0) {
+          position += gapSize;
+        }
       }
     } else {
       if (shouldReverseOrder) {
@@ -130,13 +137,17 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
           const transaction = visibleTransactions[i];
           const height = popupHeights[transaction.identifier] || 100;
           position += height;
+          if (i < index - 1 || index > 0) {
+            position += gapSize;
+          }
         }
       } else {
         for (let i = visibleTransactions.length - 1; i > index; i--) {
-          const transaction = visibleTransactions[i];
-          const height = popupHeights[transaction.identifier] || 100;
-          position += height;
-        }
+  const transaction = visibleTransactions[i];
+  const height = popupHeights[transaction.identifier] || 100;
+  position += height;
+  position += gapSize;
+}
       }
     }
 
@@ -196,14 +207,14 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
         return (
           <div
             className="popup-stack-item"
-            key={transaction.identifier}
+            key={`${transaction.identifier}-${previewPosition || 'default'}`} 
             ref={el => popupRefs.current[transaction.identifier] = el}
             style={{
               zIndex: isMobile ? 100 - stackIndex : 100 - stackIndex,
               '--expanded-y': expandedY,
               transform: transformValue,
               filter: isExpanded ? '' : `brightness(${1 - stackIndex * 0.05})`,
-              padding: isExpanded && stackIndex !== 0 ? '0px 0px 10px 0px' : '',
+              marginBottom: isExpanded && stackIndex === 0 && (isMobile || isTopPosition) ? (isMobile ? '20px' : '10px') : '',
             } as React.CSSProperties}
             data-index={stackIndex}
           >
@@ -228,6 +239,7 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
       })}
     </div>
   );
+
 };
 
 export default TransactionPopupManager;
