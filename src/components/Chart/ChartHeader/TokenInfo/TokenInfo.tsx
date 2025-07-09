@@ -603,7 +603,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="ctrlktooltip">
-          CTRL+K
+          Ctrl+K
         </div>
       </div>
 

@@ -437,7 +437,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
           className="oc-content"
           style={{
             overflowY: noData ? 'hidden' : 'auto',
-            maxHeight: noData ? '40px' : 'calc(100% - 36.67px)',
+            maxHeight: noData ? '40px' : 'calc(100% - 40px)',
             flex: 1,
           }}
         >

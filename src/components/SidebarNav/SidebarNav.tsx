@@ -23,10 +23,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const path = location.pathname;
   const { t } = useLanguage();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const [expanded, setExpanded] = useState(() => {
-    const saved = localStorage.getItem('crystal_sidebar_expanded');
-    return windowWidth <= 1020 ? false : saved !== null ? JSON.parse(saved) : windowWidth > 1920 ? true : false;
-  });
+  const [expanded, setExpanded] = useState(false);
   const [hoveredExpanded, setHoveredExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const backgroundlesslogo = '/CrystalLogo.png';
@@ -57,7 +54,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       if (newWidth <= 1020 && expanded) {
         setExpanded(false);
         setHoveredExpanded(false);
-        localStorage.setItem('crystal_sidebar_expanded', 'false');
       }
       if (newWidth > 1020 && mobileMenuOpen) {
         setMobileMenuOpen(false);
@@ -67,13 +63,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [expanded, mobileMenuOpen]);
-
-  useEffect(() => {
-    const savedExpanded = localStorage.getItem('crystal_sidebar_expanded');
-    if (savedExpanded !== null) {
-      setExpanded(savedExpanded === 'true' && window.innerWidth > 1020);
-    }
-  }, [windowWidth]);
 
   useEffect(() => {
     document.body.classList.toggle('sidebar-expanded', isActuallyExpanded);

@@ -1167,11 +1167,6 @@ function App() {
     return sortDirection === 'asc' ? aValue - bValue : bValue - aValue;
   }));
 
-
-
-
-
-
   const newTxPopup = useCallback((
     _transactionHash: any,
     _currentAction: any,
@@ -1206,7 +1201,6 @@ function App() {
       return [...prevTransactions, newTransaction];
     });
   }, [activechain, audio, isAudioEnabled]);
-
 
   const handleSetChain = useCallback(async () => {
     return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
@@ -1983,11 +1977,10 @@ function App() {
   };
   const [orderSizeString, setOrderSizeString] = useState('');
 
-
-
   const displayValue = hasEditedSize
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isVertDragging) return;
@@ -4709,6 +4702,7 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, connected, user != null, loading]);
+  
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
@@ -4733,7 +4727,6 @@ function App() {
     const regex = /^[a-zA-Z0-9-]{0,20}$/;
     return regex.test(value);
   };
-
 
   const handleWelcomeTransition = () => {
     audio.currentTime = 0;
@@ -4993,7 +4986,6 @@ function App() {
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
 
-
   const [keybinds, setKeybinds] = useState(() => {
     const saved = localStorage.getItem('crystal_keybinds');
     return saved ? JSON.parse(saved) : {
@@ -5022,7 +5014,6 @@ function App() {
 
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
-
 
   const formatKeyDisplay = (key: string) => {
     if (!key) return '';
@@ -5066,7 +5057,6 @@ function App() {
     return key;
   };
 
-
   const handleRefreshQuote = useCallback(async (e: any) => {
     e.preventDefault();
     if (isRefreshing) return;
@@ -5075,6 +5065,7 @@ function App() {
     await refetch()
     setIsRefreshing(false);
   }, [isRefreshing, refetch]);
+
   const handleCancelTopOrder = useCallback(async () => {
     if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
       return;
@@ -5214,9 +5205,6 @@ function App() {
         break;
     }
   }, [popup, location.pathname, swapButtonDisabled, displayValuesLoading, isSigning, connected, userchain, activechain, limitButtonDisabled, sendButtonDisabled, scaleButtonDisabled]);
-
-
-
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -5441,6 +5429,7 @@ function App() {
     handleCancelTopOrder,
     setpopup
   ]);
+
   const renderKeybindButton = (keybindKey: string, labelText: string, descriptionText: string) => (
     <>
       <div className="keybind-setting-row">
@@ -5481,6 +5470,7 @@ function App() {
       )}
     </>
   );
+
   // input tokenlist
   const TokenList1 = (
     <div className="tokenlistcontainer">
@@ -5785,7 +5775,7 @@ function App() {
                       }
                       setamountIn(
                         (amountIn * BigInt(10) ** token.decimals) /
-                        BigInt(10) ** tokendict[tokenIn].decimals,
+                        BigInt(10) ** tokendict[tokenIn].decimals
                       );
                       setlimitChase(true);
                       setScaleStart(BigInt(0))

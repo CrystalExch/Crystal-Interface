@@ -56,7 +56,7 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
     [];
 
   return (
-    <div className="orders-content-wrapper">
+    <>
       <div className="orders-oc-header">
         <div className="ghost" />
         <SortableHeaderCell
@@ -188,9 +188,7 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
           </span>
           ) : (<div className="cancel-all-loading-spinner"></div>)}
         </div>
-      </div>
-      
-      <div className="order-items-container">
+      </div>  
         {currentItems.length > 0 ? (
           currentItems.map((item, index) => (
             <OrderItem
@@ -213,8 +211,7 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
           ))
         ) : (null
         )}
-      </div>
-    </div>
+    </>
   );
 };
 

@@ -422,8 +422,7 @@
 }
 
 .markets-dropdown-content {
-  backdrop-filter: blur(20px);
-  background-color: #0000008f;
+  background-color: rgb(6, 6, 6);
   border: 1px solid rgba(179, 184, 249, 0.12);
   border-left: none;
   left: 0;

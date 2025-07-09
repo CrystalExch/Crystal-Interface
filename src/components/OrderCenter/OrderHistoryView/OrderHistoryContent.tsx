@@ -46,7 +46,7 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
     [];
 
   return (
-    <div className="order-history-content-wrapper">
+    <>
       <div className="order-history-oc-header">
         <div className="ghost" />
         <SortableHeaderCell
@@ -128,22 +128,20 @@ const OrderHistoryContent: React.FC<OrderHistoryContentProps> = ({
         <span className="oc-cell view">{t('view')}</span>
       </div>
       
-      <div className="order-history-items-container">
-        {currentItems.length > 0 ? (
-          currentItems.map((item, index) => (
-            <OrderHistoryItem
-              key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
-              order={item}
-              market={markets[item[4]]}
-              quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
-              / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
-              onMarketSelect={onMarketSelect}
-            />
-          ))
-        ) : (null
-        )}
-      </div>
-    </div>
+      {currentItems.length > 0 ? (
+        currentItems.map((item, index) => (
+          <OrderHistoryItem
+            key={`${item[4]}-${item[0]}-${item[1]}-${index}`}
+            order={item}
+            market={markets[item[4]]}
+            quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
+            / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
+            onMarketSelect={onMarketSelect}
+          />
+        ))
+      ) : (null
+      )}
+    </>
   );
 };
 

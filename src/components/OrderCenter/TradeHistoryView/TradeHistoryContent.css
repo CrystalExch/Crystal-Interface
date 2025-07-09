@@ -19,6 +19,7 @@
   top: 0;
   user-select: none;
   z-index: 2;
+  margin-bottom: -3px;
 }
 
 .trade-history-oc-header > * {
