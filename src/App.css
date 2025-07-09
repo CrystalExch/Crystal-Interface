@@ -2457,14 +2457,14 @@ body {
 .revert-settings-button {
   align-items: center;
   border: none;
-  border: 1.5px solid #ff000029;
+  border: 1px solid #ff000029;
   border-radius: 5px;
-  color: #ea5a5a;
-  background-color: #ff00000a;
+  color: #ee3939;
+  background-color: #ff000008;
   cursor: pointer;
   display: flex;
   flex: 1;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 300;
   height: 30px;
   justify-content: center;
@@ -2476,9 +2476,8 @@ body {
 }
 
 .revert-settings-button:hover {
-  border: 1.5px solid #ff0000;
-  color: #ff0000;
-  background-color: #ff00001a;
+  border: 1px solid #ff000042;
+  color: #f52f2f;
 }
 
 .reset-tab-button:hover {

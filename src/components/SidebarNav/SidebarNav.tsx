@@ -10,6 +10,7 @@ import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
+import vaults from '../../assets/yeildvaults.png';
 
 
 interface SidebarNavProps {
@@ -30,27 +31,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const backgroundlesslogo = '/CrystalLogo.png';
 
-  const [tooltip, setTooltip] = useState<{ content: string; target: HTMLElement | null }>({
-    content: '',
-    target: null,
-  });
 
   const isMobile = windowWidth <= 1020;
   const isActuallyExpanded = expanded || hoveredExpanded;
 
-  const handleTooltip = (e: React.MouseEvent<HTMLElement>, content: string) => {
-    if (isActuallyExpanded || isMobile) return; 
-    setTooltip({ content, target: e.currentTarget });
-  };
-
-  const handleTooltipHide = () => {
-    setTooltip({ content: '', target: null });
-  };
 
   const handleSidebarMouseEnter = () => {
     if (!isMobile && !expanded) {
       setHoveredExpanded(true);
-      setTooltip({ content: '', target: null }); 
       document.body.classList.add('sidebar-hover-overlay');
     }
   };
@@ -61,12 +49,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       document.body.classList.remove('sidebar-hover-overlay');
     }
   };
-
-  useEffect(() => {
-    if (isActuallyExpanded || isMobile) {
-      setTooltip({ content: '', target: null });
-    }
-  }, [isActuallyExpanded, isMobile]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -121,14 +103,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     path === tradePath || path.startsWith(tradePath)
   );
 
-  const toggleSidebar = () => {
-    if (windowWidth > 1020) {
-      const newExpanded = !expanded;
-      setExpanded(newExpanded);
-      localStorage.setItem('crystal_sidebar_expanded', newExpanded.toString());
-      window.dispatchEvent(new Event('resize'));
-    }
-  };
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen(!mobileMenuOpen);
@@ -164,8 +138,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                   setSimpleView(false);
                 }
               }}
-              onMouseEnter={(e) => handleTooltip(e, t('advancedView'))}
-              onMouseLeave={handleTooltipHide}
             >
               <img src={candlestick} className="sidebar-icon" />
               <span className="sidebar-label">{t('advancedView')}</span>
@@ -181,8 +153,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                   setSimpleView(true);
                 }
               }}
-              onMouseEnter={(e) => handleTooltip(e, t('simpleView'))}
-              onMouseLeave={handleTooltipHide}
             >
               <img src={swap} className="sidebar-icon" />
               <span className="sidebar-label">{t('simpleView')}</span>
@@ -191,8 +161,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/portfolio"
               className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
-              onMouseEnter={(e) => handleTooltip(e, t('portfolio'))}
-              onMouseLeave={handleTooltipHide}
             >
               <img src={portfolio} className="sidebar-icon" />
               <span className="sidebar-label">{t('portfolio')}</span>
@@ -201,8 +169,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/referrals"
               className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
-              onMouseEnter={(e) => handleTooltip(e, t('referrals'))}
-              onMouseLeave={handleTooltipHide}
             >
               <img src={referrals} className="sidebar-icon" />
               <span className="sidebar-label">{t('referrals')}</span>
@@ -211,12 +177,17 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/leaderboard"
               className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
-              onMouseEnter={(e) => handleTooltip(e, t('leaderboard'))}
-              onMouseLeave={handleTooltipHide}
             >
               <img src={leaderboard} className="sidebar-icon" />
               <span className="sidebar-label">{t('leaderboard')}</span>
             </Link>
+             <Link
+            to="/vaults"
+            className={`page-mode-button ${path === '/vaults' ? 'active' : ''}`}
+          >
+            <img src={vaults} className="sidebar-icon" />
+            <span className="sidebar-label">{t('Vaults')}</span>
+          </Link>
                     {isMobile && (
           <button
             onClick={toggleMobileMenu}
@@ -245,8 +216,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className="sidebar-bottom-link"
-                onMouseEnter={(e) => handleTooltip(e, t('docs'))}
-                onMouseLeave={handleTooltipHide}
               >
                 <img src={docs} className="sidebar-icon" />
                 <span className="sidebar-label">{t('docs')}</span>
@@ -256,8 +225,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className="sidebar-bottom-link"
-                onMouseEnter={(e) => handleTooltip(e, t('discord'))}
-                onMouseLeave={handleTooltipHide}
               >
                 <img src={discord} className="sidebar-icon" />
                 <span className="sidebar-label">{t('discord')}</span>
@@ -267,8 +234,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className="sidebar-bottom-link"
-                onMouseEnter={(e) => handleTooltip(e, 'X / ' + t('twitter'))}
-                onMouseLeave={handleTooltipHide}
               >
                 <img src={twitter} className="sidebar-icon" />
                 <span className="sidebar-label">{'X / ' + t('twitter')}</span>

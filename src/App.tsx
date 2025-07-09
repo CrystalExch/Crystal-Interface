@@ -138,6 +138,8 @@ import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
+import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
+
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -452,6 +454,14 @@ function App() {
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
+
+
+  interface Token {
+    icon: string;
+    symbol: string;
+  }
+  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
+  const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: Token) => void) | null>(null);
 
   const updateNotificationPosition = (position: string) => {
     // Clear any existing timer
@@ -2079,8 +2089,8 @@ function App() {
       case '/leaderboard':
         title = 'Leaderboard | Crystal';
         break;
-      case '/lend':
-        title = 'Lend | Crystal';
+      case '/vaults':
+        title = 'Vaults | Crystal';
         break;
       case '/swap':
       case '/market':
@@ -4930,34 +4940,34 @@ function App() {
     }, 10);
   };
 
-useEffect(() => {
-  const fetchUsername = async () => {
-    try {
-      const read = await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalReferralAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToUsername',
-            args: [address as `0x${string}`],
-          },
-        ]
-      });
-      
-      if (read[0]?.result?.length != null) {
-        setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
-        setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
-        setUsernameResolved(true);
+  useEffect(() => {
+    const fetchUsername = async () => {
+      try {
+        const read = await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalReferralAbi,
+              address: settings.chainConfig[activechain].referralManager,
+              functionName: 'addressToUsername',
+              args: [address as `0x${string}`],
+            },
+          ]
+        });
+
+        if (read[0]?.result?.length != null) {
+          setUsernameInput(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsername(read[0]?.result?.length > 0 ? read[0]?.result : "");
+          setUsernameResolved(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch username:", error);
       }
-    } catch (error) {
-      console.error("Failed to fetch username:", error);
+    };
+
+    if (address) {
+      fetchUsername();
     }
-  };
-  
-  if (address) {
-    fetchUsername();
-  }
-}, [address, activechain, config]);
+  }, [address, activechain, config]);
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
     let animatingTimer: ReturnType<typeof setTimeout> | undefined;
@@ -5514,6 +5524,15 @@ useEffect(() => {
                 key={token.address}
                 onMouseEnter={() => setSelectedTokenIndex(index)}
                 onClick={() => {
+                  if (location.pathname.slice(1) == 'vaults' && onSelectTokenCallback) {
+                    onSelectTokenCallback({
+                      icon: token.image,
+                      symbol: token.ticker
+                    });
+                    setpopup(0);
+                    settokenString('');
+                    return;
+                  }
                   let pricefetchmarket;
                   let newTokenOut;
                   setpopup(0);
@@ -16555,6 +16574,27 @@ useEffect(() => {
                 setTransitionDirection={setTransitionDirection}
               />
             }
+          />
+          <Route path="/vaults" element={
+            <EarnVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              selectedToken={selectedToken}
+              tokenBalances={tokenBalances}
+              tokendict={tokendict}
+              address={address}
+              connected={connected}
+              refetch={refetch}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
+            />}
           />
           <Route
             path="/portfolio"

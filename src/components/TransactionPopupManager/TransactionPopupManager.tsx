@@ -89,21 +89,7 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  useEffect(() => {
-    const calculateHeights = () => {
-      const newHeights: Record<string, number> = {};
-      visibleTransactions.forEach((transaction) => {
-        const element = popupRefs.current[transaction.identifier];
-        if (element) {
-          newHeights[transaction.identifier] = element.offsetHeight;
-        }
-      });
-      setPopupHeights(newHeights);
-    };
 
-    const timer = setTimeout(calculateHeights, 50);
-    return () => clearTimeout(timer);
-  }, [visibleTransactions]);
 
   const handleHidePopup = (identifier: string): void => {
     if (showPreview) return;
