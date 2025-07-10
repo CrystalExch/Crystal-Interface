@@ -117,7 +117,7 @@ export const SharedContextProvider: React.FC<{ children: ReactNode }> = ({
         return prevFavorites;
       }
     });
-  }, []);
+  }, [activechain]);
 
   return (
     <sharedContext.Provider

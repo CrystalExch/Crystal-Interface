@@ -36,7 +36,7 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
   previewExiting = false
 }) => {
   const popupRefs = useRef<Record<string, HTMLDivElement | null>>({});
-  const [popupHeights, setPopupHeights] = useState<Record<string, number>>({});
+  const [popupHeights] = useState<Record<string, number>>({});
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

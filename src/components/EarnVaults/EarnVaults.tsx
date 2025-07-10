@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChevronDown, ChevronLeft, Star } from 'lucide-react';
 import './EarnVaults.css';
 import walleticon from '../../assets/wallet_icon.png';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { settings } from '../../settings.ts';
 import { useSharedContext } from '../../contexts/SharedContext';
@@ -123,32 +123,23 @@ const apyChartData = [
 
 const EarnVaults: React.FC<EarnVaultsProps> = ({
     setpopup,
-    setSupplyBorrowInitialTab,
-    setSupplyBorrowVault,
     onSelectToken,
-    selectedToken,
     setOnSelectTokenCallback,
-
     tokenBalances,
     tokendict,
     address,
     connected,
-    refetch,
-    onCollateralSelect,
     tradesByMarket,
     markets,
-    usdc,
-    wethticker,
-    ethticker
+    usdc
 }) => {
-    const [earnActiveTab, setEarnActiveTab] = useState<'all' | 'deposited'>('all');
+    const [userHasPositions, setUserHasPositions] = useState(false);
+    const checkUserHasPositions = (vault: EarnVault) => {
+        return parseFloat(vault.userBalance) > 0;
+    };
+    const [earnActiveTab] = useState<'all' | 'deposited'>('all');
     const [earnSelectedVault, setEarnSelectedVault] = useState<string | null>(null);
-    const [earnDepositAmount, setEarnDepositAmount] = useState('0.00');
-    const [earnSliderValue, setEarnSliderValue] = useState(0);
-    const [earnSearchQuery, setEarnSearchQuery] = useState('');
-    const [earnIsSearchOpen, setEarnIsSearchOpen] = useState(false);
-    const [earnSelectedTokens, setEarnSelectedTokens] = useState<EarnToken[]>([]);
-    const earnSearchRef = useRef<HTMLDivElement>(null);
+    const [earnSelectedTokens] = useState<EarnToken[]>([]);
     const [chartPeriod, setChartPeriod] = useState('3 months');
     const [chartCurrency, setChartCurrency] = useState('USDC');
     const { favorites, toggleFavorite } = useSharedContext();
@@ -166,7 +157,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const apyDropdownRef = useRef<HTMLDivElement>(null);
     const [earnChartView, setEarnChartView] = useState<'overview' | 'positions'>('overview');
     const [attemptedExceedLimit, setAttemptedExceedLimit] = useState(false);
-    const backgroundlesslogo = '/CrystalLogo.png';
+    const hasInitializedFavorites = useRef(false);
 
     const chainId = 10143;
     const chainTokenDict = settings.chainConfig[chainId].tokendict;
@@ -209,7 +200,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             tokens: {
                 first: {
                     symbol: 'USDC',
-                    icon: chainTokenDict['0x88b8E2161DEDC77EF4ab7585569D2415a1C1055D']?.image || '/default-usdc-icon.png'
+                    icon: chainTokenDict['0xf817257fed379853cDe0fa4F97AB987181B1E5Ea']?.image
                 },
             },
             apy: 5.2,
@@ -342,75 +333,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             borrowApy: 10.8
         },
         {
-            id: 'earn-dak-monad-vault',
-            name: 'Molandak',
-            tokens: {
-                first: {
-                    symbol: 'DAK',
-                    icon: chainTokenDict['0x0F0BDEbF0F83cD1EE3974779Bcb7315f9808c714'].image
-                },
-            },
-            apy: 11.2,
-            tvl: '$3.9M',
-            description: 'Earn yield by providing liquidity to the ARB-USDC pool. This vault automatically compounds rewards into more tokens to maximize your returns.',
-            userBalance: '0.00',
-            tags: ['High Volume'],
-            dailyYield: '0.0307%',
-            protocolFee: '0.75%',
-            withdrawalTime: 'Instant',
-            depositRatio: '50.00%/50.00%',
-            totalSupply: '$3.1M',
-            supplyApy: 10.5,
-            totalBorrowed: '$0.8M',
-            borrowApy: 13.2
-        },
-        {
-            id: 'earn-yaki-mon-vault',
-            name: 'Moyaki',
-            tokens: {
-                first: {
-                    symbol: 'YAKI',
-                    icon: chainTokenDict['0xfe140e1dCe99Be9F4F15d657CD9b7BF622270C50'].image
-                },
-            },
-            apy: 15.3,
-            tvl: '$1.8M',
-            description: 'Earn yield by providing liquidity to the CHZ-USDC pool. This vault automatically compounds rewards into more tokens to maximize your returns.',
-            userBalance: '0.00',
-            tags: ['High APY'],
-            dailyYield: '0.0419%',
-            protocolFee: '0.75%',
-            withdrawalTime: 'Instant',
-            depositRatio: '50.00%/50.00%',
-            totalSupply: '$1.4M',
-            supplyApy: 14.2,
-            totalBorrowed: '$0.4M',
-            borrowApy: 18.1
-        },
-        {
-            id: 'earn-chog-usdc-vault',
-            name: 'Chog',
-            tokens: {
-                first: {
-                    symbol: 'CHOG',
-                    icon: chainTokenDict['0xE0590015A873bF326bd645c3E1266d4db41C4E6B'].image
-                },
-            },
-            apy: 42.7,
-            tvl: '$0.9M',
-            description: 'Earn yield by providing liquidity to the CHOG-USDC pool. This vault automatically compounds rewards into more tokens to maximize your returns.',
-            userBalance: '0.00',
-            tags: ['High APY', 'High Risk'],
-            dailyYield: '0.1170%',
-            protocolFee: '1.0%',
-            withdrawalTime: 'Instant',
-            depositRatio: '47.25%/52.75%',
-            totalSupply: '$0.7M',
-            supplyApy: 39.8,
-            totalBorrowed: '$0.2M',
-            borrowApy: 48.5
-        },
-        {
             id: 'earn-smon-mon-vault',
             name: 'Kintsu Staked Monad',
             tokens: {
@@ -464,9 +386,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         market: any,
         tradesByMarket: any,
         markets: any,
-        usdc: string,
-        wethticker: string,
-        ethticker: string,
         tokendict: any
     ) => {
         if (amount === BigInt(0)) return 0;
@@ -525,10 +444,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         tokenSymbol: string,
         inputValue: string,
         tradesByMarket: any,
-        markets: any,
         usdc: string,
-        wethticker: string,
-        ethticker: string
     ): string => {
         if (!inputValue || inputValue === '' || inputValue === '0' || inputValue === '0.00') {
             return '$0.00';
@@ -609,10 +525,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 market,
                 tradesByMarket,
                 chainMarkets,
-                usdc,
-                wethticker,
-                ethticker,
-                chainTokenDict
+                usdc
             );
 
             return formatUSDDisplay(usdValue);
@@ -622,24 +535,16 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     };
 
     const getEarnSliderColor = (value: number) => {
-        if (value <= 40) return '#50f08d'; // Green
-        if (value <= 60) return '#ffa500'; // Orange (removed the light yellow/white)
+        if (value <= 40) return '#50f08d';
+        if (value <= 60) return '#ffa500';
         if (value <= 75) return '#ff6b35';
-        return '#ff4757'; // Red
+        return '#ff4757';
     };
     const earnSelectedVaultData = earnSelectedVault ? earnVaults.find(vault => vault.id === earnSelectedVault) : null;
 
-    const getEarnRiskLevel = (value: number) => {
-        if (value <= 40) return 'Conservative';
-        if (value <= 60) return 'Moderate';
-        if (value <= 75) return 'Aggressive';
-        return 'Liquidation Risk';
-    };
     const handleEarnLtvChange = (newLtv: number) => {
         const cappedLtv = Math.min(newLtv, 90);
         setEarnLtvValue(cappedLtv);
-
-        // Reset the error state when LTV is within acceptable range
         if (cappedLtv <= 90) {
             setAttemptedExceedLimit(false);
         }
@@ -650,9 +555,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 earnCollateralAmount,
                 tradesByMarket,
                 markets,
-                usdc,
-                wethticker,
-                ethticker
             ).replace('$', '').replace(',', ''));
 
             const targetBorrowUSD = (collateralUSD * cappedLtv) / 100;
@@ -665,9 +567,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                     '1',
                     tradesByMarket,
                     markets,
-                    usdc,
-                    wethticker,
-                    ethticker
                 ).replace('$', '').replace(',', ''));
 
                 if (currentBorrowUSD > 0) {
@@ -682,7 +581,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const handleEarnBorrowAmountChange = (value: string) => {
         if (!earnCollateralAmount || !value || !earnSelectedCollateral || !earnSelectedVaultData) {
             setEarnBorrowAmount(value);
-            // Reset error state when clearing input
             setAttemptedExceedLimit(false);
             return;
         }
@@ -692,9 +590,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             earnCollateralAmount,
             tradesByMarket,
             markets,
-            usdc,
-            wethticker,
-            ethticker
         ).replace('$', '').replace(',', ''));
 
         const borrowUSD = parseFloat(getInputUSDValue(
@@ -702,9 +597,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             value,
             tradesByMarket,
             markets,
-            usdc,
-            wethticker,
-            ethticker
         ).replace('$', '').replace(',', ''));
 
         if (collateralUSD > 0) {
@@ -722,9 +614,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                         '1',
                         tradesByMarket,
                         markets,
-                        usdc,
-                        wethticker,
-                        ethticker
                     ).replace('$', '').replace(',', ''));
 
                     if (currentBorrowUSD > 0) {
@@ -736,7 +625,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             } else {
                 setEarnBorrowAmount(value);
                 setEarnLtvValue(newLTV);
-                // Reset error state when LTV is acceptable
                 setAttemptedExceedLimit(false);
             }
         } else {
@@ -747,7 +635,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     useEffect(() => {
         if (setOnSelectTokenCallback) {
             setOnSelectTokenCallback(() => (token: Token) => {
-                // Check if we're in borrow mode and expecting a collateral selection
                 if (earnActiveMode === 'borrow') {
                     handleCollateralTokenSelect(token);
                 } else {
@@ -761,8 +648,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 setOnSelectTokenCallback(null);
             }
         };
-    }, [onSelectToken, setOnSelectTokenCallback, earnActiveMode]);
-
+    }, [earnActiveMode]);
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -774,8 +660,10 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
-
     useEffect(() => {
+        if (hasInitializedFavorites.current) return;
+        hasInitializedFavorites.current = true;
+
         const earnAutoFavoriteDefaults = () => {
             earnDefaultTokens.forEach(symbol => {
                 const token = earnAvailableTokens.find(t => t.symbol === symbol);
@@ -786,7 +674,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         };
         earnAutoFavoriteDefaults();
     }, []);
-
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (apyDropdownRef.current && !apyDropdownRef.current.contains(event.target as Node)) {
@@ -810,18 +697,20 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         setEarnSelectedCollateral(earnToken);
         setpopup(0);
     };
-    const showEarnVaultDetail = (vaultId: string) => {
+    const showEarnVaultDetailWithMode = (vaultId: string, mode: 'supply' | 'borrow' | 'withdraw' | 'repay') => {
         setEarnSelectedVault(vaultId);
+        setEarnActiveMode(mode);
         const vaultData = earnVaults.find(vault => vault.id === vaultId);
         if (vaultData) {
             const vaultToken = earnAvailableTokens.find(t => t.symbol === vaultData.tokens.first.symbol);
             if (vaultToken) {
                 setEarnSelectedCollateral(vaultToken);
             }
+            setUserHasPositions(checkUserHasPositions(vaultData));
         }
     };
     const [supplyExceedsBalance, setSupplyExceedsBalance] = useState(false);
-    const [borrowExceedsBalance, setBorrowExceedsBalance] = useState(false);
+    const [borrowExceedsBalance] = useState(false);
     const [collateralExceedsBalance, setCollateralExceedsBalance] = useState(false);
 
     const checkExceedsBalance = (tokenSymbol: string, inputAmount: string, mode = 'supply') => {
@@ -849,14 +738,23 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             return false;
         }
     };
-
     const handleEarnTokenAmountChangeWithValidation = (tokenSymbol: string, value: string) => {
         handleEarnTokenAmountChange(tokenSymbol, value);
-        const exceedsBalance = checkExceedsBalance(tokenSymbol, value, 'supply');
+
+        let exceedsBalance = false;
+        if (earnActiveMode === 'withdraw') {
+            if (earnSelectedVaultData) {
+                const depositedAmount = parseFloat(earnSelectedVaultData.userBalance);
+                const withdrawAmount = parseFloat(value || '0');
+                exceedsBalance = withdrawAmount > depositedAmount;
+            }
+        } else {
+            exceedsBalance = checkExceedsBalance(tokenSymbol, value, 'supply');
+        }
+
         setSupplyExceedsBalance(exceedsBalance);
     };
-
-    const handleEarnCollateralAmountChangeWithValidation = (value: React.SetStateAction<string>) => {
+    const handleEarnCollateralAmountChangeWithValidation = (value: string) => {
         setEarnCollateralAmount(value);
 
         if (!value || value === '0') {
@@ -876,9 +774,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 value,
                 tradesByMarket,
                 markets,
-                usdc,
-                wethticker,
-                ethticker
             ).replace('$', '').replace(',', ''));
 
             const borrowUSD = parseFloat(getInputUSDValue(
@@ -886,9 +781,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 earnBorrowAmount,
                 tradesByMarket,
                 markets,
-                usdc,
-                wethticker,
-                ethticker
             ).replace('$', '').replace(',', ''));
 
             if (collateralUSD > 0) {
@@ -902,17 +794,8 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         }
     };
 
-    // Enhanced borrow amount change handler
-    const handleEarnBorrowAmountChangeWithValidation = (value) => {
-        handleEarnBorrowAmountChange(value);
 
-        // Check if user is trying to borrow more than available (this would be from the protocol's available liquidity)
-        // For now, we'll focus on the LTV validation which is already implemented
-        // You can add protocol liquidity checks here if needed
-    };
-
-    // Helper function to get error message
-    const getSupplyErrorMessage = (tokenSymbol) => {
+    const getSupplyErrorMessage = (tokenSymbol: string) => {
         if (!supplyExceedsBalance) return null;
 
         const balance = getFormattedBalance(tokenSymbol);
@@ -925,8 +808,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         const balance = getFormattedBalance(earnSelectedCollateral.symbol);
         return `Insufficient ${earnSelectedCollateral.symbol} balance. You have ${balance} ${earnSelectedCollateral.symbol} available.`;
     };
-
-    // Enhanced MAX button handler for supply
     const handleSupplyMaxClick = () => {
         if (connected && address && earnSelectedVaultData) {
             const balance = getTokenBalance(earnSelectedVaultData.tokens.first.symbol);
@@ -936,7 +817,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 const decimals = Number(tokendict[tokenData.address].decimals);
                 let amount = balance;
 
-                // Reserve gas for ETH
                 if (earnSelectedVaultData.tokens.first.symbol === 'ETH') {
                     amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
                         ? balance - settings.chainConfig[chainId].gasamount
@@ -948,12 +828,16 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                     3
                 ).toString();
 
-                handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, formattedAmount);
+                // Use the correct handler based on the mode
+                if (earnActiveMode === 'supply') {
+                    handleEarnCollateralAmountChangeWithValidation(formattedAmount);
+                } else {
+                    handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, formattedAmount);
+                }
             }
         }
     };
 
-    // Enhanced MAX button handler for collateral
     const handleCollateralMaxClick = () => {
         if (connected && address && earnSelectedCollateral) {
             const balance = getTokenBalance(earnSelectedCollateral.symbol);
@@ -963,7 +847,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 const decimals = Number(tokendict[tokenData.address].decimals);
                 let amount = balance;
 
-                // Reserve gas for ETH
                 if (earnSelectedCollateral.symbol === 'ETH') {
                     amount = balance - settings.chainConfig[chainId].gasamount > BigInt(0)
                         ? balance - settings.chainConfig[chainId].gasamount
@@ -980,13 +863,12 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         }
     };
 
-    // Check if action button should be disabled
     const isActionButtonDisabled = () => {
         if (!connected) return false;
 
-        if (earnActiveMode === 'supply') {
+        if (earnActiveMode === 'supply' || earnActiveMode === 'withdraw') {
             return supplyExceedsBalance;
-        } else if (earnActiveMode === 'borrow') {
+        } else if (earnActiveMode === 'borrow' || earnActiveMode === 'repay') {
             return (
                 collateralExceedsBalance ||
                 borrowExceedsBalance ||
@@ -997,18 +879,17 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
 
         return false;
     };
-
     const getActionButtonText = () => {
         if (!connected) return 'Connect Account';
 
-        if (earnActiveMode === 'supply') {
+        if (earnActiveMode === 'supply' || earnActiveMode === 'withdraw') {
             if (supplyExceedsBalance) return 'Insufficient Balance';
-            return 'Supply';
-        } else if (earnActiveMode === 'borrow') {
+            return earnActiveMode === 'withdraw' ? 'Withdraw' : 'Supply';
+        } else if (earnActiveMode === 'borrow' || earnActiveMode === 'repay') {
             if (collateralExceedsBalance) return 'Insufficient Collateral';
             if (borrowExceedsBalance) return 'Insufficient Liquidity';
             if (earnLtvValue > 90 || attemptedExceedLimit) return 'Reduce Borrow Amount';
-            return 'Borrow';
+            return earnActiveMode === 'repay' ? 'Repay' : 'Borrow';
         }
 
         return 'Continue';
@@ -1072,37 +953,40 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         return formatDisplayValue(balance, Number(tokendict[token.address].decimals));
     };
 
-    const handleEarnFavoriteToggle = (token: EarnToken, e: React.MouseEvent) => {
+    const handleEarnFavoriteToggle = (vault: EarnVault, e: React.MouseEvent) => {
         e.stopPropagation();
-        if (earnDefaultTokens.includes(token.symbol)) return;
-        toggleFavorite(token.address);
+
+        const tokenEntry = Object.values(chainTokenDict).find(
+            (token: any) => token.ticker === vault.tokens.first.symbol
+        ) as any;
+
+        if (!tokenEntry) return;
+
+        if (earnDefaultTokens.includes(vault.tokens.first.symbol)) return;
+
+        toggleFavorite(tokenEntry.address);
     };
 
 
+    const isVaultFavorited = (vault: EarnVault) => {
+        const tokenEntry = Object.values(chainTokenDict).find(
+            (token: any) => token.ticker === vault.tokens.first.symbol
+        ) as any;
+
+        if (!tokenEntry) return false;
+
+        return favorites.includes(tokenEntry.address);
+    };
+
     const backToEarnList = () => {
         setEarnSelectedVault(null);
-        setEarnSelectedCollateral(null); // Reset collateral when going back
-        setEarnCollateralAmount(''); // Reset amounts too
+        setEarnSelectedCollateral(null);
+        setEarnCollateralAmount('');
         setEarnBorrowAmount('');
         setEarnLtvValue(0);
     };
 
 
-
-    useEffect(() => {
-        if (earnSelectedVaultData) {
-            const tokenSymbol = earnSelectedVaultData.tokens.first.symbol;
-            setEarnDepositTokens([
-                {
-                    symbol: tokenSymbol,
-                    icon: earnSelectedVaultData.tokens.first.icon,
-                    amount: earnTokenAmounts[tokenSymbol] || '',
-                    usdValue: '0.00',
-                    selected: true
-                },
-            ]);
-        }
-    }, [earnSelectedVaultData, earnTokenAmounts]);
 
     const handleEarnTokenAmountChange = (tokenSymbol: string, value: string) => {
         if (value === '' || /^\d*\.?\d*$/.test(value)) {
@@ -1152,28 +1036,22 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                     <div className="earn-col earn-borrowed-col">Borrow LTV</div>
                                     <div className="earn-col earn-supply-apy-col">Supply APY</div>
                                     <div className="earn-col earn-borrow-apy-col">Borrow APY</div>
-                                    <div className="earn-col earn-borrow-apy-col"></div>
+                                    <div className="earn-col earn-actions-col"></div>
                                 </div>
 
                                 {earnFilteredVaults.map((vault) => (
                                     <div
                                         key={vault.id}
                                         className="earn-card"
-                                        onClick={() => showEarnVaultDetail(vault.id)}
                                     >
                                         <div className="earn-summary">
                                             <div className="earn-col earn-asset-col">
                                                 <Star
                                                     size={20}
                                                     className="vault-search-token-star"
-                                                    onClick={(e) => handleEarnFavoriteToggle({
-                                                        symbol: vault.tokens.first.symbol,
-                                                        icon: vault.tokens.first.icon,
-                                                        name: vault.name,
-                                                        address: vault.id
-                                                    }, e)}
-                                                    fill="none"
-                                                    color="#ffffff79"
+                                                    onClick={(e) => handleEarnFavoriteToggle(vault, e)}
+                                                    fill={isVaultFavorited(vault) ? "#aaaecf" : "none"}
+                                                    color={isVaultFavorited(vault) ? "#aaaecf" : "#ffffff79"}
                                                 />
                                                 <div className="earn-token-pair-icons">
                                                     <img
@@ -1250,8 +1128,27 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                             <div className="earn-col earn-borrow-apy-col">
                                                 <div className="earn-borrow-apy-value">{vault.borrowApy}%</div>
                                             </div>
-                                            <div className="earn-col earn-details-col">
-                                                <div className="earn-details-button">Details</div>
+                                            <div className="earn-col earn-actions-col">
+                                                <div className="earn-action-buttons">
+                                                    <button
+                                                        className="earn-supply-button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            showEarnVaultDetailWithMode(vault.id, 'supply');
+                                                        }}
+                                                    >
+                                                        Supply
+                                                    </button>
+                                                    <button
+                                                        className="earn-borrow-button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            showEarnVaultDetailWithMode(vault.id, 'borrow');
+                                                        }}
+                                                    >
+                                                        Borrow
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1321,13 +1218,24 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                             <div className="earn-chart-toggle-section">
                                                 <button
                                                     className={`earn-chart-toggle-btn ${earnChartView === 'overview' ? 'active' : ''}`}
-                                                    onClick={() => setEarnChartView('overview')}
+                                                    onClick={() => {
+                                                        setEarnChartView('overview');
+                                                        setUserHasPositions(false);
+                                                        setEarnActiveMode('supply');
+                                                    }}
                                                 >
                                                     Overview
                                                 </button>
                                                 <button
                                                     className={`earn-chart-toggle-btn ${earnChartView === 'positions' ? 'active' : ''}`}
-                                                    onClick={() => setEarnChartView('positions')}
+                                                    onClick={() => {
+                                                        setEarnChartView('positions');
+                                                        if (earnSelectedVaultData) {
+                                                            const hasPositions = checkUserHasPositions(earnSelectedVaultData);
+                                                            setUserHasPositions(hasPositions);
+                                                            setEarnActiveMode(hasPositions ? 'withdraw' : 'supply');
+                                                        }
+                                                    }}
                                                 >
                                                     Your Positions
                                                 </button>
@@ -1524,16 +1432,16 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                             <div className="earn-deposit-menu-container">
                                                 <div className="earn-mode-toggle">
                                                     <button
-                                                        onClick={() => setEarnActiveMode('supply')}
-                                                        className={`earn-mode-toggle-btn ${earnActiveMode === 'supply' ? 'active' : ''}`}
+                                                        onClick={() => setEarnActiveMode(userHasPositions ? 'withdraw' : 'supply')}
+                                                        className={`earn-mode-toggle-btn ${(earnActiveMode === 'supply' || earnActiveMode === 'withdraw') ? 'active' : ''}`}
                                                     >
-                                                        Supply
+                                                        {userHasPositions ? 'Withdraw' : 'Supply'}
                                                     </button>
                                                     <button
-                                                        onClick={() => setEarnActiveMode('borrow')}
-                                                        className={`earn-mode-toggle-btn ${earnActiveMode === 'borrow' ? 'active' : ''}`}
+                                                        onClick={() => setEarnActiveMode(userHasPositions ? 'repay' : 'borrow')}
+                                                        className={`earn-mode-toggle-btn ${(earnActiveMode === 'borrow' || earnActiveMode === 'repay') ? 'active' : ''}`}
                                                     >
-                                                        Borrow
+                                                        {userHasPositions ? 'Repay' : 'Borrow'}
                                                     </button>
                                                 </div>
 
@@ -1556,10 +1464,11 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                         <div className="earn-token-amount-row">
                                                             <input
                                                                 type="text"
-                                                                className={`earn-token-amount-input ${supplyExceedsBalance ? 'exceed-balance' : ''}`}
-                                                                value={earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || ''}
-                                                                onChange={(e) => handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, e.target.value)}
+                                                                className={`earn-token-amount-input ${collateralExceedsBalance ? 'exceed-balance' : ''}`}
+                                                                value={earnCollateralAmount}
+                                                                onChange={(e) => handleEarnCollateralAmountChangeWithValidation(e.target.value)}
                                                                 placeholder="0.00"
+                                                                disabled={!earnSelectedCollateral}
                                                             />
                                                         </div>
 
@@ -1567,12 +1476,9 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                             <div className={`earn-token-usd-value ${supplyExceedsBalance ? 'exceed-balance' : ''}`}>
                                                                 {getInputUSDValue(
                                                                     earnSelectedVaultData.tokens.first.symbol,
-                                                                    earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '',
+                                                                    earnCollateralAmount, // Changed this line - was using earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
                                                                     tradesByMarket,
                                                                     markets,
-                                                                    usdc,
-                                                                    wethticker,
-                                                                    ethticker
                                                                 )}
                                                             </div>
 
@@ -1601,7 +1507,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                                                     3
                                                                                 ).toString();
 
-                                                                                handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, formattedAmount);
+                                                                                handleEarnCollateralAmountChangeWithValidation(formattedAmount);
                                                                             }
                                                                         }
                                                                     }}
@@ -1626,7 +1532,68 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                         )}
                                                     </div>
                                                 )}
+                                                {earnActiveMode === 'withdraw' && (
+                                                    <div className={`earn-collateral-input-card ${supplyExceedsBalance ? 'exceed-balance' : ''}`}>
+                                                        <div className="earn-collateral-header">
+                                                            <span className="earn-collateral-label">Withdraw {earnSelectedVaultData.tokens.first.symbol}</span>
+                                                            <div className="earn-token-balance">
+                                                                <span className="earn-balance-text">
+                                                                    Deposited: {earnSelectedVaultData.userBalance}
+                                                                </span>
+                                                            </div>
+                                                        </div>
 
+                                                        <div className="earn-token-amount-row">
+                                                            <input
+                                                                type="text"
+                                                                className={`earn-token-amount-input ${supplyExceedsBalance ? 'exceed-balance' : ''}`}
+                                                                value={earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || ''}
+                                                                onChange={(e) => handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, e.target.value)}
+                                                                placeholder="0.00"
+                                                            />
+                                                        </div>
+
+                                                        <div className="earn-token-input-bottom-row">
+                                                            <div className={`earn-token-usd-value ${supplyExceedsBalance ? 'exceed-balance' : ''}`}>
+                                                                {getInputUSDValue(
+                                                                    earnSelectedVaultData.tokens.first.symbol,
+                                                                    earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '',
+                                                                    tradesByMarket,
+                                                                    markets,
+                                                                )}
+                                                            </div>
+
+                                                            <div className="earn-amount-buttons">
+                                                                <button
+                                                                    className={`earn-fifty-button ${supplyExceedsBalance ? 'exceed-balance' : ''}`}
+                                                                    onClick={() => {
+                                                                        const userBalance = parseFloat(earnSelectedVaultData.userBalance);
+                                                                        const fiftyPercent = (userBalance / 2).toString();
+                                                                        handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, fiftyPercent);
+                                                                    }}
+                                                                >
+                                                                    50%
+                                                                </button>
+                                                                <button
+                                                                    className={`earn-max-button ${supplyExceedsBalance ? 'exceed-balance' : ''}`}
+                                                                    onClick={() => {
+                                                                        handleEarnTokenAmountChangeWithValidation(earnSelectedVaultData.tokens.first.symbol, earnSelectedVaultData.userBalance);
+                                                                    }}
+                                                                >
+                                                                    MAX
+                                                                </button>
+                                                            </div>
+                                                        </div>
+
+                                                        {supplyExceedsBalance && (
+                                                            <div className="earn-exceeded-balance-warning">
+                                                                <div className="earn-exceeded-balance-warning-text">
+                                                                    Cannot withdraw more than deposited amount. You have {earnSelectedVaultData.userBalance} {earnSelectedVaultData.tokens.first.symbol} deposited.
+                                                                </div>
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                )}
 
                                                 {earnActiveMode === 'borrow' && (
                                                     <div className={`earn-collateral-input-card ${collateralExceedsBalance ? 'exceed-balance' : ''}`}>
@@ -1687,9 +1654,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                                     earnCollateralAmount,
                                                                     tradesByMarket,
                                                                     markets,
-                                                                    usdc,
-                                                                    wethticker,
-                                                                    ethticker
                                                                 ) : '$0.00'}
                                                             </div>
                                                             <div className="earn-amount-buttons">
@@ -1735,7 +1699,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                             </div>
                                                         </div>
 
-                                                        {/* Error message for collateral */}
                                                         {collateralExceedsBalance && (
                                                             <div className="earn-exceeded-balance-warning">
                                                                 <div className="earn-exceeded-balance-warning-text">
@@ -1779,9 +1742,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                                     earnBorrowAmount,
                                                                     tradesByMarket,
                                                                     markets,
-                                                                    usdc,
-                                                                    wethticker,
-                                                                    ethticker
                                                                 )}
                                                             </div>
                                                         </div>
@@ -1853,6 +1813,146 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                     </div>
                                                 )}
 
+                                                {earnActiveMode === 'repay' && (
+                                                    <>
+                                                        <div className="earn-repay-section">
+                                                            <div className="earn-repay-amount-section">
+                                                                <div className="earn-collateral-header">
+                                                                    <span className="earn-collateral-label">Amount</span>
+                                                                    <div className="earn-token-balance">
+                                                                        <img
+                                                                            src={walleticon}
+                                                                            alt="wallet"
+                                                                            className="earn-wallet-icon"
+                                                                        />
+                                                                        <span className="earn-balance-text">
+                                                                            {getFormattedBalance(earnSelectedVaultData.tokens.first.symbol)}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="earn-repay-input-container">
+                                                                    <input
+                                                                        type="text"
+                                                                        className="earn-repay-amount-input"
+                                                                        value={earnBorrowAmount}
+                                                                        onChange={(e) => {
+                                                                            const value = e.target.value;
+                                                                            const borrowedAmount = 1234.56;
+
+                                                                            if (value === '' || parseFloat(value) <= borrowedAmount) {
+                                                                                setEarnBorrowAmount(value);
+                                                                            }
+                                                                        }}
+                                                                        placeholder="0.00"
+                                                                    />
+                                                                </div>
+
+                                                                <div className="earn-repay-input-footer">
+                                                                    <div className="earn-token-usd-value">
+                                                                        {getInputUSDValue(
+                                                                            earnSelectedVaultData.tokens.first.symbol,
+                                                                            earnBorrowAmount,
+                                                                            tradesByMarket,
+                                                                            markets,
+                                                                        )}
+                                                                    </div>
+                                                                    <div className="earn-repay-balance-info">
+                                                                        <button
+                                                                            className="earn-repay-fifty-button"
+                                                                            onClick={() => setEarnBorrowAmount("617.28")}
+                                                                        >
+                                                                            50%
+                                                                        </button>
+                                                                        <button
+                                                                            className="earn-repay-max-button"
+                                                                            onClick={() => setEarnBorrowAmount("1234.56")}
+                                                                        >
+                                                                            MAX
+                                                                        </button>
+                                                                    </div>
+                                                                </div>
+                                                                {(() => {
+                                                                    const borrowedAmount = 1234.56;
+                                                                    const repayAmount = parseFloat(earnBorrowAmount || '0');
+
+                                                                    return repayAmount > borrowedAmount && repayAmount > 0 ? (
+                                                                        <div className="earn-repay-error">
+                                                                            Cannot repay more than borrowed amount. Maximum repayable: {borrowedAmount} {earnSelectedVaultData.tokens.first.symbol}
+                                                                        </div>
+                                                                    ) : null;
+                                                                })()}
+                                                            </div>
+                                                            <div className="earn-repay-overview-section">
+
+                                                                <div className="earn-repay-overview-item">
+                                                                    <div className="earn-repay-overview-row">
+                                                                        <span className="earn-repay-overview-label">Remaining debt</span>
+                                                                        <div className="earn-repay-overview-values">
+                                                                            <div className="earn-repay-overview-main">
+                                                                                {(() => {
+                                                                                    const borrowed = 1234.56;
+                                                                                    const repaying = parseFloat(earnBorrowAmount || '0');
+                                                                                    const remaining = Math.max(0, borrowed - repaying);
+                                                                                    return `${borrowed.toFixed(2)} ${earnSelectedVaultData.tokens.first.symbol} → ${remaining.toFixed(2)} ${earnSelectedVaultData.tokens.first.symbol}`;
+                                                                                })()}
+                                                                            </div>
+                                                                            <div className="earn-repay-overview-sub">
+                                                                                {(() => {
+                                                                                    const currentUSD = getInputUSDValue(
+                                                                                        earnSelectedVaultData.tokens.first.symbol,
+                                                                                        "1234.56",
+                                                                                        tradesByMarket,
+                                                                                        markets,
+                                                                                    );
+                                                                                    const borrowed = 1234.56;
+                                                                                    const repaying = parseFloat(earnBorrowAmount || '0');
+                                                                                    const remaining = Math.max(0, borrowed - repaying);
+                                                                                    const remainingUSD = getInputUSDValue(
+                                                                                        earnSelectedVaultData.tokens.first.symbol,
+                                                                                        remaining.toString(),
+                                                                                        tradesByMarket,
+                                                                                        markets,
+                                                                                    );
+                                                                                    return `${currentUSD} → ${remainingUSD}`;
+                                                                                })()}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+
+                                                                <div className="earn-repay-overview-item">
+                                                                    <div className="earn-repay-overview-row">
+                                                                        <span className="earn-repay-overview-label">Health factor</span>
+                                                                        <div className="earn-repay-overview-values">
+                                                                            <div className="earn-repay-overview-main">
+                                                                                {(() => {
+                                                                                    const repaying = parseFloat(earnBorrowAmount || '0');
+                                                                                    const currentHealth = 1.08;
+                                                                                    const newHealth = repaying > 0 ? Math.min(currentHealth + (repaying / 1234.56) * 2, 99.99) : currentHealth;
+
+                                                                                    return (
+                                                                                        <>
+                                                                                            <span className={currentHealth < 1.2 ? "earn-repay-health-bad" : "earn-repay-health-current"}>
+                                                                                                {currentHealth.toFixed(2)}
+                                                                                            </span>
+                                                                                            {" → "}
+                                                                                            <span className={newHealth > 1.5 ? "earn-repay-health-good" : "earn-repay-health-new"}>
+                                                                                                {newHealth.toFixed(2)}
+                                                                                            </span>
+                                                                                        </>
+                                                                                    );
+                                                                                })()}
+                                                                            </div>
+                                                                            <div className="earn-repay-overview-sub">Liquidation at &lt;1.0</div>
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </>
+                                                )}
+
                                                 {earnActiveMode === 'supply' && (
                                                     <div className="earn-token-details-item">
                                                         <div className="earn-deposit-total-row">
@@ -1860,12 +1960,9 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                             <div className="earn-deposit-total-value">
                                                                 {getInputUSDValue(
                                                                     earnSelectedVaultData.tokens.first.symbol,
-                                                                    earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '',
+                                                                    earnCollateralAmount,
                                                                     tradesByMarket,
                                                                     markets,
-                                                                    usdc,
-                                                                    wethticker,
-                                                                    ethticker
                                                                 )}
                                                             </div>
                                                         </div>
@@ -1879,7 +1976,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                             <span className="earn-deposit-total-label">Projected Earnings / Month (USD)</span>
                                                             <span className="earn-deposit-total-value">
                                                                 ${(() => {
-                                                                    const tokenAmount = earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '';
+                                                                    const tokenAmount = earnCollateralAmount; // Changed from earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
                                                                     if (!tokenAmount || tokenAmount === '0') return '0.00';
                                                                     const tokenEntry = Object.values(chainTokenDict).find((token: any) => token.ticker === earnSelectedVaultData.tokens.first.symbol) as any;
                                                                     if (!tokenEntry) return '0.00';
@@ -1902,7 +1999,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                                     }
                                                                     if (!market || !trades) return '0.00';
 
-                                                                    const rawUsdValue = calculateUSDValue(amountBigInt, trades, tokenEntry.address, market, tradesByMarket, chainMarkets, usdc, wethticker, ethticker, chainTokenDict);
+                                                                    const rawUsdValue = calculateUSDValue(amountBigInt, trades, tokenEntry.address, market, tradesByMarket, chainMarkets, usdc);
                                                                     const apy = earnSelectedVaultData.supplyApy;
                                                                     const monthlyEarnings = (rawUsdValue * (apy / 100)) / 12;
                                                                     return monthlyEarnings.toFixed(2);
@@ -1914,7 +2011,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                             <span className="earn-deposit-total-label">Projected Earnings / Year (USD)</span>
                                                             <span className="earn-deposit-total-value">
                                                                 ${(() => {
-                                                                    const tokenAmount = earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '';
+                                                                    const tokenAmount = earnCollateralAmount; // Changed from earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
                                                                     if (!tokenAmount || tokenAmount === '0') return '0.00';
                                                                     const tokenEntry = Object.values(chainTokenDict).find((token: any) => token.ticker === earnSelectedVaultData.tokens.first.symbol) as any;
                                                                     if (!tokenEntry) return '0.00';
@@ -1937,10 +2034,42 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                                     }
                                                                     if (!market || !trades) return '0.00';
 
-                                                                    const rawUsdValue = calculateUSDValue(amountBigInt, trades, tokenEntry.address, market, tradesByMarket, chainMarkets, usdc, wethticker, ethticker, chainTokenDict);
+                                                                    const rawUsdValue = calculateUSDValue(amountBigInt, trades, tokenEntry.address, market, tradesByMarket, chainMarkets, usdc);
                                                                     const apy = earnSelectedVaultData.supplyApy;
                                                                     const yearlyEarnings = rawUsdValue * (apy / 100);
                                                                     return yearlyEarnings.toFixed(2);
+                                                                })()}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {earnActiveMode === 'withdraw' && (
+                                                    <div className="earn-token-details-item">
+                                                        <div className="earn-deposit-total-row">
+                                                            <div className="earn-deposit-total-label">Withdrawal Amount</div>
+                                                            <div className="earn-deposit-total-value">
+                                                                {getInputUSDValue(
+                                                                    earnSelectedVaultData.tokens.first.symbol,
+                                                                    earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '',
+                                                                    tradesByMarket,
+                                                                    markets,
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                        <div className="earn-deposit-total-row">
+                                                            <span className="earn-deposit-total-label">Current Position</span>
+                                                            <span className="earn-deposit-total-value">
+                                                                {earnSelectedVaultData.userBalance} {earnSelectedVaultData.tokens.first.symbol}
+                                                            </span>
+                                                        </div>
+                                                        <div className="earn-deposit-total-row">
+                                                            <span className="earn-deposit-total-label">Remaining After Withdrawal</span>
+                                                            <span className="earn-deposit-total-value">
+                                                                {(() => {
+                                                                    const currentBalance = parseFloat(earnSelectedVaultData.userBalance);
+                                                                    const withdrawAmount = parseFloat(earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '0');
+                                                                    const remaining = currentBalance - withdrawAmount;
+                                                                    return `${remaining >= 0 ? remaining.toFixed(2) : '0.00'} ${earnSelectedVaultData.tokens.first.symbol}`;
                                                                 })()}
                                                             </span>
                                                         </div>
