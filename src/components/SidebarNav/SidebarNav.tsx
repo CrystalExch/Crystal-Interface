@@ -195,10 +195,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <line x1="3" y1="18" x2="21" y2="18"></line>
             </svg>
           </button>
+          
         )}
-          </div>
-
-          {!isMobile && (
+                  {!isMobile && (
             <div className="sidebar-bottom">
               <a
                 href="https://docs.crystal.exchange"
@@ -229,6 +228,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               </a>
             </div>
           )}
+          </div>
         </div>
 
       </div>

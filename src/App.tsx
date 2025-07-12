@@ -72,6 +72,7 @@ import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 import { shMonadAbi } from './abis/shMonadAbi.ts';
+import { CrystalLending } from './abis/CrystalLending.ts';
 
 // import types
 import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
@@ -4702,7 +4703,7 @@ function App() {
       return () => clearInterval(typingInterval);
     }
   }, [popup, connected, user != null, loading]);
-  
+
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
@@ -16584,6 +16585,15 @@ function App() {
               usdc={usdc}
               wethticker={wethticker}
               ethticker={ethticker}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              sendUserOperationAsync={sendUserOperationAsync}
+              waitForTxReceipt={waitForTxReceipt}
+              activechain={activechain}
+              setChain={handleSetChain}
             />}
           />
           <Route

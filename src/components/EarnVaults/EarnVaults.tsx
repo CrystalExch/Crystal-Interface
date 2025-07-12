@@ -6,6 +6,11 @@ import { AreaChart, Area, XAxis, ResponsiveContainer } from 'recharts';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { settings } from '../../settings.ts';
 import { useSharedContext } from '../../contexts/SharedContext';
+import { CrystalLending } from '../../abis/CrystalLending.ts';
+import { useReadContracts } from 'wagmi';
+import { encodeFunctionData } from 'viem';
+
+
 
 interface EarnVault {
     id: string;
@@ -36,13 +41,6 @@ export interface Token {
     symbol: string;
 }
 
-interface EarnTokenDeposit {
-    symbol: string;
-    icon: string;
-    amount: string;
-    usdValue: string;
-    selected: boolean;
-}
 
 interface EarnToken {
     symbol: string;
@@ -69,6 +67,11 @@ interface EarnVaultsProps {
     usdc: string;
     wethticker: string;
     ethticker: string;
+    account: any;
+    sendUserOperationAsync: any;
+    waitForTxReceipt: any;
+    activechain: number;
+    setChain: () => void;
 }
 
 const chartData = [
@@ -131,7 +134,16 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     connected,
     tradesByMarket,
     markets,
-    usdc
+    usdc,
+    wethticker,
+    ethticker,
+    account,
+    sendUserOperationAsync,
+    waitForTxReceipt,
+    activechain,
+    setChain,
+    refetch,
+
 }) => {
     const [userHasPositions, setUserHasPositions] = useState(false);
     const checkUserHasPositions = (vault: EarnVault) => {
@@ -143,7 +155,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const [chartPeriod, setChartPeriod] = useState('3 months');
     const [chartCurrency, setChartCurrency] = useState('USDC');
     const { favorites, toggleFavorite } = useSharedContext();
-    const [earnDepositTokens, setEarnDepositTokens] = useState<EarnTokenDeposit[]>([]);
     const [earnTokenAmounts, setEarnTokenAmounts] = useState<{ [key: string]: string }>({});
     const [earnActiveMode, setEarnActiveMode] = useState('supply');
     const [earnLtvValue, setEarnLtvValue] = useState(0);
@@ -168,6 +179,303 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
         name: token.name,
         address: token.address
     }));
+
+    const lendingAddress = null as `0x${string}` | null;
+    const { data: lendingData, isLoading: lendingLoading, refetch: lendingRefetch } = useReadContracts({
+        batchSize: 0,
+        contracts: [
+            // CrystalLending contract calls
+            ...(lendingAddress ? [
+                // Get governance address
+                {
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'gov',
+                    args: [],
+                },
+                // Get account health for account ID 0
+                {
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'getAccountHealth',
+                    args: [false, address ?? '0x0000000000000000000000000000000000000000', 0],
+                },
+                // Get account health for account ID 1
+                {
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'getAccountHealth',
+                    args: [false, address ?? '0x0000000000000000000000000000000000000000', 1],
+                },
+                // Get account health for account ID 2
+                {
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'getAccountHealth',
+                    args: [false, address ?? '0x0000000000000000000000000000000000000000', 2],
+                },
+                // Get interest rates for all tokens
+                ...Object.values(chainTokenDict).map((token: any) => ({
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'getInterestRate',
+                    args: [token.address],
+                })),
+                // Get token information for all tokens
+                ...Object.values(chainTokenDict).map((token: any) => ({
+                    abi: CrystalLending,
+                    address: lendingAddress,
+                    functionName: 'tokens',
+                    args: [token.address],
+                })),
+            ] : []),
+        ],
+        query: {
+            refetchInterval: 10000,
+            gcTime: 0
+        },
+    });
+
+
+    const [isSigning, setIsSigning] = useState(false);
+
+
+    const govAddress = lendingData?.[0]?.result;
+    const accountHealth0 = lendingData?.[1]?.result;
+    const accountHealth1 = lendingData?.[2]?.result;
+    const accountHealth2 = lendingData?.[3]?.result;
+
+
+
+
+    const handleApproval = async (tokenAddress: `0x${string}`, amount: string) => {
+  if (!account.connected || !address || !lendingAddress) {
+    return false;
+  }
+
+  try {
+    setIsSigning(true);
+    
+    const decimals = Number(tokendict[tokenAddress].decimals);
+    const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
+    
+    const maxApproval = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
+    
+    const hash = await sendUserOperationAsync({
+      uo: {
+        target: tokenAddress,
+        data: encodeFunctionData({
+          abi: [
+            {
+              "inputs": [
+                {"internalType": "address", "name": "spender", "type": "address"},
+                {"internalType": "uint256", "name": "amount", "type": "uint256"}
+              ],
+              "name": "approve",
+              "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
+              "stateMutability": "nonpayable",
+              "type": "function"
+            }
+          ],
+          functionName: 'approve',
+          args: [lendingAddress, maxApproval],
+        }),
+        value: 0n,
+      },
+    });
+    
+    await waitForTxReceipt(hash.hash);
+    return true;
+  } catch (error) {
+    console.error('Approval failed:', error);
+    return false;
+  } finally {
+    setIsSigning(false);
+  }
+};
+
+const handleSupply = async (tokenAddress: `0x${string}`, amount: string, accountId: number = 0) => {
+  if (!account.connected || !address) {
+    setpopup(4);
+    return false;
+  }
+
+  if (account.chainId !== activechain) {
+    setChain();
+    return false;
+  }
+
+  try {
+    setIsSigning(true);
+
+    const tokenData = earnAvailableTokens.find(t => t.address === tokenAddress);
+    if (!tokenData || !tokendict[tokenAddress]) return false;
+
+    // Skip approval for ETH/native token
+    if (tokenAddress !== wethticker) {
+      // Check if approval is needed and approve if necessary
+      const approvalSuccess = await handleApproval(tokenAddress, amount);
+      if (!approvalSuccess) return false;
+    }
+
+    const decimals = Number(tokendict[tokenAddress].decimals);
+    const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
+
+    const hash = await sendUserOperationAsync({
+      uo: {
+        target: lendingAddress,
+        data: encodeFunctionData({
+          abi: CrystalLending,
+          functionName: 'supply',
+          args: [tokenAddress, amountBigInt, BigInt(accountId)],
+        }),
+        value: tokenAddress === wethticker ? amountBigInt : 0n, // Send ETH value if it's ETH
+      },
+    });
+
+    await waitForTxReceipt(hash.hash);
+    refetch();
+    lendingRefetch();
+    return true;
+  } catch (error) {
+    console.error('Supply failed:', error);
+    return false;
+  } finally {
+    setIsSigning(false);
+  }
+};
+
+    const handleBorrow = async (tokenAddress: `0x${string}`, amount: string, accountId: number = 0) => {
+        if (!account.connected || !address) {
+            setpopup(4);
+            return false;
+        }
+
+        if (account.chainId !== activechain) {
+            setChain();
+            return false;
+        }
+
+        try {
+            setIsSigning(true);
+
+            const tokenData = earnAvailableTokens.find(t => t.address === tokenAddress);
+            if (!tokenData || !tokendict[tokenAddress]) return false;
+
+            const decimals = Number(tokendict[tokenAddress].decimals);
+            const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
+
+            const hash = await sendUserOperationAsync({
+                uo: {
+                    target: lendingAddress,
+                    data: encodeFunctionData({
+                        abi: CrystalLending,
+                        functionName: 'borrow',
+                        args: [tokenAddress, amountBigInt, BigInt(accountId)],
+                    }),
+                    value: 0n,
+                },
+            });
+
+            await waitForTxReceipt(hash.hash);
+            refetch();
+            lendingRefetch();
+            return true;
+        } catch (error) {
+            console.error('Borrow failed:', error);
+            return false;
+        } finally {
+            setIsSigning(false);
+        }
+    };
+
+    const handleWithdraw = async (tokenAddress: `0x${string}`, amount: string, accountId: number = 0) => {
+        if (!account.connected || !address) {
+            setpopup(4);
+            return false;
+        }
+
+        if (account.chainId !== activechain) {
+            setChain();
+            return false;
+        }
+
+        try {
+            setIsSigning(true);
+
+            const tokenData = earnAvailableTokens.find(t => t.address === tokenAddress);
+            if (!tokenData || !tokendict[tokenAddress]) return false;
+
+            const decimals = Number(tokendict[tokenAddress].decimals);
+            const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
+
+            const hash = await sendUserOperationAsync({
+                uo: {
+                    target: lendingAddress,
+                    data: encodeFunctionData({
+                        abi: CrystalLending,
+                        functionName: 'withdraw',
+                        args: [tokenAddress, amountBigInt, BigInt(accountId)],
+                    }),
+                    value: 0n,
+                },
+            });
+
+            await waitForTxReceipt(hash.hash);
+            refetch();
+            lendingRefetch();
+            return true;
+        } catch (error) {
+            console.error('Withdraw failed:', error);
+            return false;
+        } finally {
+            setIsSigning(false);
+        }
+    };
+
+    const handleRepay = async (tokenAddress: `0x${string}`, amount: string, accountId: number = 0) => {
+        if (!account.connected || !address) {
+            setpopup(4);
+            return false;
+        }
+
+        if (account.chainId !== activechain) {
+            setChain();
+            return false;
+        }
+
+        try {
+            setIsSigning(true);
+
+            const tokenData = earnAvailableTokens.find(t => t.address === tokenAddress);
+            if (!tokenData || !tokendict[tokenAddress]) return false;
+
+            const decimals = Number(tokendict[tokenAddress].decimals);
+            const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
+
+            const hash = await sendUserOperationAsync({
+                uo: {
+                    target: lendingAddress,
+                    data: encodeFunctionData({
+                        abi: CrystalLending,
+                        functionName: 'repay',
+                        args: [tokenAddress, amountBigInt, BigInt(accountId)],
+                    }),
+                    value: 0n,
+                },
+            });
+
+            await waitForTxReceipt(hash.hash);
+            refetch();
+            lendingRefetch();
+            return true;
+        } catch (error) {
+            console.error('Repay failed:', error);
+            return false;
+        } finally {
+            setIsSigning(false);
+        }
+    };
 
     const earnDefaultTokens = ['MON', 'WMON', 'USDC'];
     const earnVaults: EarnVault[] = [
@@ -1002,27 +1310,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             <div className="earn-content-wrapper">
                 {!earnSelectedVault && (
                     <>
-                        <div className="earn-apy-metrics-container">
-                            <div className="earn-apy-metric-card">
-                                <span className="earn-apy-metric-label">Total Market Size</span>
-                                <span className="earn-apy-metric-value"><span className="earn-dollar-sign">$</span>193.23M</span>
-                            </div>
 
-                            <div className="earn-apy-metric-card">
-                                <span className="earn-apy-metric-label">Total Value Locked</span>
-                                <span className="earn-apy-metric-value"><span className="earn-dollar-sign">$</span>92.32M</span>
-                            </div>
-
-                            <div className="earn-apy-metric-card">
-                                <span className="earn-apy-metric-label">Total Available</span>
-                                <span className="earn-apy-metric-value"><span className="earn-dollar-sign">$</span>92.32M</span>
-                            </div>
-
-                            <div className="earn-apy-metric-card">
-                                <span className="earn-apy-metric-label">Total Borrows</span>
-                                <span className="earn-apy-metric-value"><span className="earn-dollar-sign">$</span>42.98M</span>
-                            </div>
-                        </div>
                     </>
                 )}
                 <div className={`earn-rectangle ${earnSelectedVault ? 'earn-rectangle-no-border' : ''}`}>
@@ -2077,16 +2365,70 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                                                 )}
                                                 <button
                                                     className={`earn-connect-button ${isActionButtonDisabled() ? (earnActiveMode === 'supply' && supplyExceedsBalance ? 'exceed-balance' : 'disabled') : ''}`}
-                                                    disabled={isActionButtonDisabled()}
-                                                    onClick={() => {
+                                                    disabled={isActionButtonDisabled() || isSigning}
+                                                    onClick={async () => {
                                                         if (!connected) {
                                                             setpopup(4);
-                                                        } else if (isActionButtonDisabled()) {
                                                             return;
+                                                        }
+
+                                                        if (isActionButtonDisabled()) {
+                                                            return;
+                                                        }
+
+                                                        if (!lendingAddress) {
+                                                            console.error('Lending address not set');
+                                                            return;
+                                                        }
+
+                                                        const tokenAddress = earnSelectedVaultData?.tokens.first.symbol === 'ETH'
+                                                            ? wethticker // Use the weth address from props
+                                                            : earnAvailableTokens.find(t => t.symbol === earnSelectedVaultData?.tokens.first.symbol)?.address;
+
+                                                        if (!tokenAddress || !earnSelectedVaultData) return;
+
+                                                        let success = false;
+
+                                                        switch (earnActiveMode) {
+                                                            case 'supply':
+                                                                success = await handleSupply(tokenAddress as `0x${string}`, earnCollateralAmount);
+                                                                break;
+                                                            case 'withdraw':
+                                                                success = await handleWithdraw(tokenAddress as `0x${string}`, earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol] || '');
+                                                                break;
+                                                            case 'borrow':
+                                                                if (earnSelectedCollateral) {
+                                                                    // First supply collateral, then borrow
+                                                                    const collateralAddress = earnSelectedCollateral.symbol === 'ETH'
+                                                                        ? wethticker
+                                                                        : earnSelectedCollateral.address;
+                                                                    const supplySuccess = await handleSupply(collateralAddress as `0x${string}`, earnCollateralAmount);
+                                                                    if (supplySuccess) {
+                                                                        success = await handleBorrow(tokenAddress as `0x${string}`, earnBorrowAmount);
+                                                                    }
+                                                                }
+                                                                break;
+                                                            case 'repay':
+                                                                success = await handleRepay(tokenAddress as `0x${string}`, earnBorrowAmount);
+                                                                break;
+                                                        }
+
+                                                        if (success) {
+                                                            setEarnCollateralAmount('');
+                                                            setEarnBorrowAmount('');
+                                                            setEarnLtvValue(0);
+                                                            setEarnTokenAmounts({});
                                                         }
                                                     }}
                                                 >
-                                                    {getActionButtonText()}
+                                                    {isSigning ? (
+                                                        <>
+                                                            <div className="loading-spinner"></div>
+                                                            Signing...
+                                                        </>
+                                                    ) : (
+                                                        getActionButtonText()
+                                                    )}
                                                 </button>
                                             </div>
                                         </div>
