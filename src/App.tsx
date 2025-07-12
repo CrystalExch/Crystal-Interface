@@ -812,7 +812,6 @@ function App() {
   const [hasEditedSize, setHasEditedSize] = useState(false);
   const [isEditingSizeSigning, setIsEditingSizeSigning] = useState(false);
 
-
   const handleEditOrderSizeConfirm = async () => {
     if (isEditingSizeSigning || !editingOrderSize) return;
 
@@ -871,8 +870,6 @@ function App() {
       setIsEditingSizeSigning(false);
     }
   };
-
-
 
   const { chartData, portChartLoading } = usePortfolioData(
     address,
@@ -948,14 +945,8 @@ function App() {
     setCurrentLimitPrice(price);
   };
 
-
-
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
 
-
-  useEffect(() => {
-    setSelectedTokenIndex(0);
-  }, [popup, tokenString]);
   const scrollToToken = (index: number) => {
     const tokenListContainer = document.querySelector('.tokenlist');
     if (!tokenListContainer) return;
@@ -965,11 +956,12 @@ function App() {
 
     if (selectedButton) {
       selectedButton.scrollIntoView({
-        behavior: 'smooth',
+        behavior: 'auto',
         block: 'nearest',
       });
     }
   };
+  
   const handleTokenSelectKeyDown = (e: React.KeyboardEvent) => {
     const currentTokenList = Object.values(tokendict).filter(
       (token) =>
@@ -1014,18 +1006,11 @@ function App() {
     }
   };
 
+  const [orderSizeString, setOrderSizeString] = useState('');
 
-
-
-
-
-
-
-
-
-
-
-
+  const displayValue = hasEditedSize
+    ? orderSizeString
+    : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
 
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
 
@@ -1052,7 +1037,6 @@ function App() {
     const saved = localStorage.getItem('crystal_audio_groups');
     return saved ? JSON.parse(saved) : defaultGroups;
   });
-
 
   const audioGroupsRef = useRef(audioGroups);
 
@@ -1667,7 +1651,8 @@ function App() {
 
   useEffect(() => {
     setSelectedIndex(0);
-  }, [searchQuery]);
+    setSelectedTokenIndex(0);
+  }, [searchQuery, tokenString, popup]);
 
   const refocusSearchInput = () => {
     if (searchInputRef.current) {
@@ -1975,11 +1960,6 @@ function App() {
 
     return { roundedOrders, defaultOrders };
   };
-  const [orderSizeString, setOrderSizeString] = useState('');
-
-  const displayValue = hasEditedSize
-    ? orderSizeString
-    : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -3482,7 +3462,15 @@ function App() {
                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
                     const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
                       / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                    let high = Number(market.high24h);
+                    let low = Number(market.low24h);
                     const volume = newTrades.reduce((sum: number, trade: any) => {
+                      if (trade[3] / Number(market.priceFactor) > high) {
+                        high = trade[3] / Number(market.priceFactor)
+                      }
+                      if (trade[3] / Number(market.priceFactor) < low) {
+                        low = trade[3] / Number(market.priceFactor)
+                      }
                       const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
                       return sum + amount;
                     }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
@@ -3495,7 +3483,9 @@ function App() {
                         (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-                      priceChangeAmount: currentPriceRaw - firstKlineOpen
+                      priceChangeAmount: currentPriceRaw - firstKlineOpen,
+                      high24h: formatSubscript((high).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
+                      low24h: formatSubscript((low).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
                     };
                   })
                 );
@@ -4064,8 +4054,8 @@ function App() {
               marketKey: `${match.baseAsset}${match.quoteAsset}`,
               series: candles,
               firstPrice: firstPrice,
-              high24h: formatSubscript(high.toFixed(decimals)),
-              low24h: formatSubscript(low.toFixed(decimals)),
+              high24h: formatSubscript((high / Number(match.priceFactor)).toFixed(decimals)),
+              low24h: formatSubscript((low / Number(match.priceFactor)).toFixed(decimals)),
             };
           });
           setMarketsData(processedMarkets);
@@ -4668,41 +4658,13 @@ function App() {
   // popup
   useEffect(() => {
     if (user && !connected && !loading) {
-      // Only show popup 11 if they've completed onboarding but need to reconnect
-      if (localStorage.getItem('crystal_has_completed_onboarding') === 'true') {
-        setpopup(11);
-      }
-      // Remove the automatic trigger to popup 14
+      setpopup(11);
     }
     else if (connected && popup === 11) {
       setpopup(12);
     }
-    if (popup !== 14 && popup !== 15) {
-      setShowWelcomeScreen(true);
-    }
-    if (!loading && showWelcomeScreen && (popup === 14 || popup === 15)) {
-      const welcomeText = "Introducing Crystals: Season 0";
-
-      let index = 0;
-      typedTextRef.current = "";
-      setTypedText("");
-      setAnimationStarted(false);
-
-      const typingInterval = setInterval(() => {
-        if (index < welcomeText.length) {
-          typedTextRef.current += welcomeText.charAt(index);
-          setTypedText(typedTextRef.current);
-          index++;
-        } else {
-          clearInterval(typingInterval);
-          setAnimationStarted(true);
-        }
-      }, 100);
-
-      return () => clearInterval(typingInterval);
-    }
   }, [popup, connected, user != null, loading]);
-  
+
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [transitionDirection, setTransitionDirection] = useState('forward');
   const [exitingChallenge, setExitingChallenge] = useState(false);
@@ -4719,8 +4681,6 @@ function App() {
   const [usernameResolved, setUsernameResolved] = useState(false);
   const [isWelcomeExiting, setIsWelcomeExiting] = useState(false);
   const [animating, setAnimating] = useState(false);
-  const [typedText, setTypedText] = useState("");
-  const typedTextRef = useRef("");
   const backAudioRef = useRef<HTMLAudioElement>(null);
 
   const isValidInput = (value: string) => {
@@ -4961,6 +4921,7 @@ function App() {
       fetchUsername();
     }
   }, [address, activechain, config]);
+
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
     let animatingTimer: ReturnType<typeof setTimeout> | undefined;
@@ -4983,6 +4944,7 @@ function App() {
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
+
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
 
@@ -4990,22 +4952,21 @@ function App() {
     const saved = localStorage.getItem('crystal_keybinds');
     return saved ? JSON.parse(saved) : {
       submitTransaction: 'Enter',
-      switchTokens: 'KeyX',
-      maxAmount: 'KeyM',
-      focusInput: 'Slash',
+      switchTokens: 'KeyZ',
+      maxAmount: 'KeyA',
+      focusInput: 'KeyF',
       openSettings: 'KeyS',
       openWallet: 'KeyW',
       openTokenInSelect: 'KeyQ',
       openTokenOutSelect: 'KeyE',
       cancelAllOrders: 'KeyC',
-      cancelTopOrder: 'Escape',
+      cancelTopOrder: 'KeyX',
       openPortfolio: 'KeyP',
       openLeaderboard: 'KeyL',
-      openReferrals: 'KeyR',
-      openMarketSearch: 'KeyF',
-      toggleFavorite: 'KeyT',
+      openReferrals: 'KeyO',
+      toggleFavorite: 'KeyM',
       toggleSimpleView: 'KeyV',
-      refreshQuote: 'F5',
+      refreshQuote: 'KeyR',
       switchToOrders: 'Digit1',
       switchToTrades: 'Digit2',
       switchToHistory: 'Digit3',
@@ -5212,7 +5173,7 @@ function App() {
         event.preventDefault();
         event.stopPropagation();
 
-        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight'];
+        const forbiddenKeys = ['F5', 'F11', 'F12', 'Tab', 'AltLeft', 'AltRight', 'ControlLeft', 'ControlRight', 'Escape', 'ArrowUp', 'ArrowDown'];
         if (forbiddenKeys.includes(event.code)) {
           return;
         }
@@ -5239,15 +5200,6 @@ function App() {
         setEditingKeybind(null);
         setIsListeningForKey(false);
 
-        // Clear any existing errors
-        setKeybindError(null);
-        setDuplicateKeybind(null);
-        return;
-      }
-
-      if (event.code === 'Escape' && isListeningForKey) {
-        setEditingKeybind(null);
-        setIsListeningForKey(false);
         setKeybindError(null);
         setDuplicateKeybind(null);
         return;
@@ -5258,14 +5210,12 @@ function App() {
       }
 
       const activeElement = document.activeElement;
-      if (activeElement && (
+      if (activeElement && event.code !== keybinds.submitTransaction && (
         activeElement.tagName === 'INPUT' ||
         activeElement.tagName === 'TEXTAREA' ||
         activeElement.hasAttribute('contenteditable')
       )) {
-        if (event.code !== keybinds.submitTransaction && event.code !== 'Escape') {
-          return;
-        }
+        return;
       }
 
       if (event.code === keybinds.submitTransaction) {
@@ -5744,7 +5694,7 @@ function App() {
                       }
                     }
                   } else if (location.pathname.slice(1) == 'limit') {
-                    if (token.address != tokenOut) {
+                    if ((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) {
                       if (
                         markets[
                         `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
@@ -5885,7 +5835,7 @@ function App() {
                     setScaleEnd(BigInt(0))
                     setScaleStartString('')
                     setScaleEndString('')
-                    if (token.address == tokenOut && multihop == false) {
+                    if (((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) && multihop == false) {
                       setTokenOut(tokenIn);
                       pricefetchmarket = getMarket(token.address, tokenIn);
                     } else if (
@@ -6036,7 +5986,7 @@ function App() {
                       }
                     }
                   } else if (location.pathname.slice(1) == 'scale') {
-                    if (token.address != tokenOut) {
+                    if ((token.address == weth ? eth : token.address) != (tokenOut == weth ? eth : tokenOut)) {
                       if (
                         markets[
                         `${tokendict[token.address].ticker}${tokendict[tokenOut].ticker}`
@@ -6457,7 +6407,7 @@ function App() {
                       }
                     }
                   } else if (location.pathname.slice(1) == 'limit') {
-                    if (token.address != tokenIn) {
+                    if ((token.address == weth ? eth : token.address) != (tokenIn == weth ? eth : tokenIn)) {
                       if (
                         markets[
                         `${tokendict[token.address].ticker}${tokendict[tokenIn].ticker}`
@@ -6597,7 +6547,7 @@ function App() {
                       }
                     }
                   } else if (location.pathname.slice(1) == 'scale') {
-                    if (token.address != tokenIn) {
+                    if ((token.address == weth ? eth : token.address) != (tokenIn == weth ? eth : tokenIn)) {
                       if (
                         markets[
                         `${tokendict[token.address].ticker}${tokendict[tokenIn].ticker}`
@@ -6783,7 +6733,7 @@ function App() {
     <>
       <div className={`blur-background-popups ${popup != 0 ? 'active' : ''}`}>
         {popup === 1 ? ( // token select
-          <div ref={popupref} className="tokenselectbg" onKeyDown={handleTokenSelectKeyDown}>
+          <div ref={popupref} className="tokenselectbg">
             <button
               className="tokenselect-close-button"
               onClick={() => {
@@ -6802,8 +6752,8 @@ function App() {
                 onChange={(e) => {
                   settokenString(e.target.value);
                 }}
-                placeholder={t('searchToken')}
                 onKeyDown={handleTokenSelectKeyDown}
+                placeholder={t('searchToken')}
                 autoFocus={!(windowWidth <= 1020)}
               />
               {tokenString && (
@@ -6828,8 +6778,7 @@ function App() {
           </div>
         ) : null}
         {popup === 2 ? ( // token select
-          <div ref={popupref} className="tokenselectbg" onKeyDown={handleTokenSelectKeyDown}
-          >
+          <div ref={popupref} className="tokenselectbg" >
             <button
               className="tokenselect-close-button"
               onClick={() => {
@@ -6847,8 +6796,8 @@ function App() {
                 onChange={(e) => {
                   settokenString(e.target.value);
                 }}
-                placeholder={t('searchToken')}
                 onKeyDown={handleTokenSelectKeyDown}
+                placeholder={t('searchToken')}
                 autoFocus={!(windowWidth <= 1020)}
               />
               {tokenString && (
@@ -7426,13 +7375,13 @@ function App() {
               <div className="graph-assets-divider" />
               <div className="portfolio-content-popup">
                 <PortfolioContent
-                  trades={tradesByMarket}
                   tokenList={Object.values(tokendict)}
                   onMarketSelect={onMarketSelect}
                   setSendTokenIn={setSendTokenIn}
                   setpopup={setpopup}
                   sortConfig={memoizedSortConfig}
                   tokenBalances={tokenBalances}
+                  marketsData={marketsData}
                   isBlurred={isBlurred}
                 />
               </div>
@@ -8284,7 +8233,6 @@ function App() {
                           </div>
                           {renderKeybindButton('openSettings', t('openSettings'), t('openSettingsPanel'))}
                           {renderKeybindButton('openWallet', t('openWallet'), t('openWalletConnectionPortfolio'))}
-                          {renderKeybindButton('openMarketSearch', t('openMarketSearch'), t('openMarketSearchDialog'))}
                           {renderKeybindButton('toggleSimpleView', t('toggleSimpleView'), t('switchBetweenSimpleAdvanced'))}
                           {renderKeybindButton('refreshQuote', t('refreshQuote'), t('refreshCurrentPriceQuote'))}
                         </div>
@@ -8375,22 +8323,21 @@ function App() {
                       case 'keybinds':
                         const defaultKeybinds = {
                           submitTransaction: 'Enter',
-                          switchTokens: 'KeyX',
-                          maxAmount: 'KeyM',
-                          focusInput: 'Slash',
+                          switchTokens: 'KeyZ',
+                          maxAmount: 'KeyA',
+                          focusInput: 'KeyF',
                           openSettings: 'KeyS',
                           openWallet: 'KeyW',
                           openTokenInSelect: 'KeyQ',
                           openTokenOutSelect: 'KeyE',
                           cancelAllOrders: 'KeyC',
-                          cancelTopOrder: 'Escape',
+                          cancelTopOrder: 'KeyX',
                           openPortfolio: 'KeyP',
                           openLeaderboard: 'KeyL',
-                          openReferrals: 'KeyR',
-                          openMarketSearch: 'KeyF',
-                          toggleFavorite: 'KeyT',
+                          openReferrals: 'KeyO',
+                          toggleFavorite: 'KeyM',
                           toggleSimpleView: 'KeyV',
-                          refreshQuote: 'F5',
+                          refreshQuote: 'KeyR',
                           switchToOrders: 'Digit1',
                           switchToTrades: 'Digit2',
                           switchToHistory: 'Digit3',
@@ -9602,9 +9549,9 @@ function App() {
                     <div className={`crystal-welcome-screen ${isWelcomeExiting ? 'welcome-screen-exit' : ''}`}>
                       <div className="welcome-screen-content">
                         <div className="welcome-text-container">
-                          <p className="welcome-text">{typedText}</p>
+                          <p className="welcome-text"></p>
                         </div>
-                        {animationStarted && typedText ? (
+                        {animationStarted ? (
                           <button
                             className="welcome-enter-button"
                             onClick={handleWelcomeTransition}
@@ -10674,30 +10621,40 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-
-          <div className="balance-slider-wrapper">
-            {sliderMode === 'presets' ? (
-              <div className="slider-container presets-mode">
-                <div className="preset-buttons">
-                  {sliderPresets.map((preset: number, index: number) => (
-                    <button
-                      key={index}
-                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+          {sliderMode === 'presets' ? (
+            <div className="slider-container presets-mode">
+              <div className="preset-buttons">
+                {sliderPresets.map((preset: number, index: number) => (
+                  <button
+                    key={index}
+                    className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(preset)) /
-                            100n;
-                          setSliderPercent(preset);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(preset)) /
+                          100n;
+                        setSliderPercent(preset);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -10706,232 +10663,55 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector('.balance-amount-slider');
-                          const popup = document.querySelector('.slider-percentage-popup');
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                      disabled={!connected}
-                    >
-                      {preset}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : sliderMode === 'increment' ? (
-              <div className="slider-container increment-mode">
-                <button
-                  className="increment-button minus"
-                  onClick={() => {
-                    if (connected && sliderPercent > 0) {
-                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
                             ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
+                          );
+                        }
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                        }
                       }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 0}
-                >
-                  −
-                </button>
-                <div className="increment-display">
-                  <div className="increment-amount">{sliderIncrement}%</div>
-                </div>
-                <button
-                  className="increment-button plus"
-                  onClick={() => {
-                    if (connected && sliderPercent < 100) {
-                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
-                            ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
-                      }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 100}
-                >
-                  +
-                </button>
+                    }}
+                    disabled={!connected}
+                  >
+                    {preset}%
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="slider-container slider-mode">
-                <input
-                  type="range"
-                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={sliderPercent}
-                  disabled={!connected}
-                  onChange={(e) => {
-                    const percent = parseInt(e.target.value);
+            </div>
+          ) : sliderMode === 'increment' ? (
+            <div className="slider-container increment-mode">
+              <button
+                className="increment-button minus"
+                onClick={() => {
+                  if (connected && sliderPercent > 0) {
+                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -10941,9 +10721,9 @@ function App() {
                           settings.chainConfig[activechain].gasamount
                           : BigInt(0)
                         : tokenBalances[tokenIn]) *
-                        BigInt(percent)) /
+                        BigInt(newPercent)) /
                       100n;
-                    setSliderPercent(percent);
+                    setSliderPercent(newPercent);
                     setInputString(
                       newAmount == BigInt(0)
                         ? ''
@@ -10992,58 +10772,235 @@ function App() {
                         ).toString(),
                       );
                     }
-                    const slider = e.target;
-                    const rect = slider.getBoundingClientRect();
-                    const trackWidth = rect.width - 15;
-                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (popup) {
-                      popup.style.left = `${thumbPosition}px`;
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
                     }
-                  }}
-                  onMouseDown={() => {
-                    setIsDragging(true);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                  }
+                }}
+                disabled={!connected || sliderPercent === 0}
+              >
+                −
+              </button>
+              <div className="increment-display">
+                <div className="increment-amount">{sliderIncrement}%</div>
+              </div>
+              <button
+                className="increment-button plus"
+                onClick={() => {
+                  if (connected && sliderPercent < 100) {
+                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(newPercent)) /
+                      100n;
+                    setSliderPercent(newPercent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.add('visible');
-                  }}
-                  onMouseUp={() => {
-                    setIsDragging(false);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                    }
+                  }
+                }}
+                disabled={!connected || sliderPercent === 100}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <div className="slider-container slider-mode">
+              <input
+                type="range"
+                className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                min="0"
+                max="100"
+                step="1"
+                value={sliderPercent}
+                disabled={!connected}
+                onChange={(e) => {
+                  const percent = parseInt(e.target.value);
+                  const newAmount =
+                    (((tokenIn == eth && !client)
+                      ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount >
+                        BigInt(0)
+                        ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount
+                        : BigInt(0)
+                      : tokenBalances[tokenIn]) *
+                      BigInt(percent)) /
+                    100n;
+                  setSliderPercent(percent);
+                  setInputString(
+                    newAmount == BigInt(0)
+                      ? ''
+                      : customRound(
+                        Number(newAmount) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      ).toString(),
+                  );
+                  debouncedSetAmount(newAmount);
+                  setswitched(false);
+                  if (isWrap) {
+                    setoutputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.remove('visible');
-                  }}
-                  style={{
-                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
-                  }}
-                />
-                <div className="slider-percentage-popup">{sliderPercent}%</div>
-                <div className="balance-slider-marks">
-                  {[0, 25, 50, 75, 100].map((markPercent) => (
-                    <span
-                      key={markPercent}
-                      className="balance-slider-mark"
-                      data-active={sliderPercent >= markPercent}
-                      data-percentage={markPercent}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+                    setamountOutSwap(newAmount);
+                  }
+                  if (location.pathname.slice(1) === 'limit') {
+                    setamountOutSwap(
+                      limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                          : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                        : BigInt(0),
+                    );
+                    setoutputString(
+                      (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                          : customRound(
+                            Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                        : ''
+                      ).toString(),
+                    );
+                  }
+                  const slider = e.target;
+                  const rect = slider.getBoundingClientRect();
+                  const trackWidth = rect.width - 15;
+                  const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) {
+                    popup.style.left = `${thumbPosition}px`;
+                  }
+                }}
+                onMouseDown={() => {
+                  setIsDragging(true);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.add('visible');
+                }}
+                onMouseUp={() => {
+                  setIsDragging(false);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.remove('visible');
+                }}
+                style={{
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                }}
+              />
+              <div className="slider-percentage-popup">{sliderPercent}%</div>
+              <div className="balance-slider-marks">
+                {[0, 25, 50, 75, 100].map((markPercent) => (
+                  <span
+                    key={markPercent}
+                    className="balance-slider-mark"
+                    data-active={sliderPercent >= markPercent}
+                    data-percentage={markPercent}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(markPercent)) /
-                            100n;
-                          setSliderPercent(markPercent);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(markPercent)) /
+                          100n;
+                        setSliderPercent(markPercent);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -11052,66 +11009,53 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector(
-                            '.balance-amount-slider',
-                          );
-                          const popup: HTMLElement | null = document.querySelector(
-                            '.slider-percentage-popup',
-                          );
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                              }px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                    >
-                      {markPercent}%
-                    </span>
-                  ))}
-                </div>
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup: HTMLElement | null = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                            }px`;
+                        }
+                      }
+                    }}
+                  >
+                    {markPercent}%
+                  </span>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <button
           className={`swap-button ${isSigning ? 'signing' : ''}`}
@@ -11731,6 +11675,12 @@ function App() {
                   }`}
                 type="text"
                 value={slippageString}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    (e.target as HTMLInputElement).blur()
+                    e.stopPropagation()
+                  };
+                }}
                 onChange={(e) => {
                   const value = e.target.value;
 
@@ -13144,30 +13094,40 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-
-          <div className="balance-slider-wrapper">
-            {sliderMode === 'presets' ? (
-              <div className="slider-container presets-mode">
-                <div className="preset-buttons">
-                  {sliderPresets.map((preset: number, index: number) => (
-                    <button
-                      key={index}
-                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+          {sliderMode === 'presets' ? (
+            <div className="slider-container presets-mode">
+              <div className="preset-buttons">
+                {sliderPresets.map((preset: number, index: number) => (
+                  <button
+                    key={index}
+                    className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(preset)) /
-                            100n;
-                          setSliderPercent(preset);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(preset)) /
+                          100n;
+                        setSliderPercent(preset);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -13176,232 +13136,55 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector('.balance-amount-slider');
-                          const popup = document.querySelector('.slider-percentage-popup');
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                      disabled={!connected}
-                    >
-                      {preset}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : sliderMode === 'increment' ? (
-              <div className="slider-container increment-mode">
-                <button
-                  className="increment-button minus"
-                  onClick={() => {
-                    if (connected && sliderPercent > 0) {
-                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
                             ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
+                          );
+                        }
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                        }
                       }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 0}
-                >
-                  −
-                </button>
-                <div className="increment-display">
-                  <div className="increment-amount">{sliderIncrement}%</div>
-                </div>
-                <button
-                  className="increment-button plus"
-                  onClick={() => {
-                    if (connected && sliderPercent < 100) {
-                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
-                            ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
-                      }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 100}
-                >
-                  +
-                </button>
+                    }}
+                    disabled={!connected}
+                  >
+                    {preset}%
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="slider-container slider-mode">
-                <input
-                  type="range"
-                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={sliderPercent}
-                  disabled={!connected}
-                  onChange={(e) => {
-                    const percent = parseInt(e.target.value);
+            </div>
+          ) : sliderMode === 'increment' ? (
+            <div className="slider-container increment-mode">
+              <button
+                className="increment-button minus"
+                onClick={() => {
+                  if (connected && sliderPercent > 0) {
+                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -13411,9 +13194,9 @@ function App() {
                           settings.chainConfig[activechain].gasamount
                           : BigInt(0)
                         : tokenBalances[tokenIn]) *
-                        BigInt(percent)) /
+                        BigInt(newPercent)) /
                       100n;
-                    setSliderPercent(percent);
+                    setSliderPercent(newPercent);
                     setInputString(
                       newAmount == BigInt(0)
                         ? ''
@@ -13462,58 +13245,235 @@ function App() {
                         ).toString(),
                       );
                     }
-                    const slider = e.target;
-                    const rect = slider.getBoundingClientRect();
-                    const trackWidth = rect.width - 15;
-                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (popup) {
-                      popup.style.left = `${thumbPosition}px`;
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
                     }
-                  }}
-                  onMouseDown={() => {
-                    setIsDragging(true);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                  }
+                }}
+                disabled={!connected || sliderPercent === 0}
+              >
+                −
+              </button>
+              <div className="increment-display">
+                <div className="increment-amount">{sliderIncrement}%</div>
+              </div>
+              <button
+                className="increment-button plus"
+                onClick={() => {
+                  if (connected && sliderPercent < 100) {
+                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(newPercent)) /
+                      100n;
+                    setSliderPercent(newPercent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.add('visible');
-                  }}
-                  onMouseUp={() => {
-                    setIsDragging(false);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                    }
+                  }
+                }}
+                disabled={!connected || sliderPercent === 100}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <div className="slider-container slider-mode">
+              <input
+                type="range"
+                className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                min="0"
+                max="100"
+                step="1"
+                value={sliderPercent}
+                disabled={!connected}
+                onChange={(e) => {
+                  const percent = parseInt(e.target.value);
+                  const newAmount =
+                    (((tokenIn == eth && !client)
+                      ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount >
+                        BigInt(0)
+                        ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount
+                        : BigInt(0)
+                      : tokenBalances[tokenIn]) *
+                      BigInt(percent)) /
+                    100n;
+                  setSliderPercent(percent);
+                  setInputString(
+                    newAmount == BigInt(0)
+                      ? ''
+                      : customRound(
+                        Number(newAmount) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      ).toString(),
+                  );
+                  debouncedSetAmount(newAmount);
+                  setswitched(false);
+                  if (isWrap) {
+                    setoutputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.remove('visible');
-                  }}
-                  style={{
-                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
-                  }}
-                />
-                <div className="slider-percentage-popup">{sliderPercent}%</div>
-                <div className="balance-slider-marks">
-                  {[0, 25, 50, 75, 100].map((markPercent) => (
-                    <span
-                      key={markPercent}
-                      className="balance-slider-mark"
-                      data-active={sliderPercent >= markPercent}
-                      data-percentage={markPercent}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+                    setamountOutSwap(newAmount);
+                  }
+                  if (location.pathname.slice(1) === 'limit') {
+                    setamountOutSwap(
+                      limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                          : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                        : BigInt(0),
+                    );
+                    setoutputString(
+                      (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                          : customRound(
+                            Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                        : ''
+                      ).toString(),
+                    );
+                  }
+                  const slider = e.target;
+                  const rect = slider.getBoundingClientRect();
+                  const trackWidth = rect.width - 15;
+                  const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) {
+                    popup.style.left = `${thumbPosition}px`;
+                  }
+                }}
+                onMouseDown={() => {
+                  setIsDragging(true);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.add('visible');
+                }}
+                onMouseUp={() => {
+                  setIsDragging(false);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.remove('visible');
+                }}
+                style={{
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                }}
+              />
+              <div className="slider-percentage-popup">{sliderPercent}%</div>
+              <div className="balance-slider-marks">
+                {[0, 25, 50, 75, 100].map((markPercent) => (
+                  <span
+                    key={markPercent}
+                    className="balance-slider-mark"
+                    data-active={sliderPercent >= markPercent}
+                    data-percentage={markPercent}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(markPercent)) /
-                            100n;
-                          setSliderPercent(markPercent);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(markPercent)) /
+                          100n;
+                        setSliderPercent(markPercent);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -13522,66 +13482,54 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector(
-                            '.balance-amount-slider',
-                          );
-                          const popup: HTMLElement | null = document.querySelector(
-                            '.slider-percentage-popup',
-                          );
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                              }px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                    >
-                      {markPercent}%
-                    </span>
-                  ))}
-                </div>
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup: HTMLElement | null = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                            }px`;
+                        }
+                      }
+                    }}
+                  >
+                    {markPercent}%
+                  </span>
+                ))}
               </div>
-            )}
-          </div>        </div>
+            </div>
+          )}
+        </div>
         <button
           className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
           onClick={async () => {
@@ -15520,29 +15468,40 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          <div className="balance-slider-wrapper">
-            {sliderMode === 'presets' ? (
-              <div className="slider-container presets-mode">
-                <div className="preset-buttons">
-                  {sliderPresets.map((preset: number, index: number) => (
-                    <button
-                      key={index}
-                      className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+          {sliderMode === 'presets' ? (
+            <div className="slider-container presets-mode">
+              <div className="preset-buttons">
+                {sliderPresets.map((preset: number, index: number) => (
+                  <button
+                    key={index}
+                    className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(preset)) /
-                            100n;
-                          setSliderPercent(preset);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(preset)) /
+                          100n;
+                        setSliderPercent(preset);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -15551,232 +15510,55 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector('.balance-amount-slider');
-                          const popup = document.querySelector('.slider-percentage-popup');
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                      disabled={!connected}
-                    >
-                      {preset}%
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : sliderMode === 'increment' ? (
-              <div className="slider-container increment-mode">
-                <button
-                  className="increment-button minus"
-                  onClick={() => {
-                    if (connected && sliderPercent > 0) {
-                      const newPercent = Math.max(0, sliderPercent - sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
                             ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
+                          );
+                        }
+                        const slider = document.querySelector('.balance-amount-slider');
+                        const popup = document.querySelector('.slider-percentage-popup');
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          (popup as HTMLElement).style.left = `${(rect.width - 15) * (preset / 100) + 15 / 2}px`;
+                        }
                       }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 0}
-                >
-                  −
-                </button>
-                <div className="increment-display">
-                  <div className="increment-amount">{sliderIncrement}%</div>
-                </div>
-                <button
-                  className="increment-button plus"
-                  onClick={() => {
-                    if (connected && sliderPercent < 100) {
-                      const newPercent = Math.min(100, sliderPercent + sliderIncrement);
-                      const newAmount =
-                        (((tokenIn == eth && !client)
-                          ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount >
-                            BigInt(0)
-                            ? tokenBalances[tokenIn] -
-                            settings.chainConfig[activechain].gasamount
-                            : BigInt(0)
-                          : tokenBalances[tokenIn]) *
-                          BigInt(newPercent)) /
-                        100n;
-                      setSliderPercent(newPercent);
-                      setInputString(
-                        newAmount == BigInt(0)
-                          ? ''
-                          : customRound(
-                            Number(newAmount) /
-                            10 ** Number(tokendict[tokenIn].decimals),
-                            3,
-                          ).toString(),
-                      );
-                      debouncedSetAmount(newAmount);
-                      setswitched(false);
-                      if (isWrap) {
-                        setoutputString(
-                          newAmount == BigInt(0)
-                            ? ''
-                            : customRound(
-                              Number(newAmount) /
-                              10 ** Number(tokendict[tokenIn].decimals),
-                              3,
-                            ).toString(),
-                        );
-                        setamountOutSwap(newAmount);
-                      }
-                      if (location.pathname.slice(1) === 'limit') {
-                        setamountOutSwap(
-                          limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                              : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                            : BigInt(0),
-                        );
-                        setoutputString(
-                          (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                            ? tokenIn === activeMarket?.baseAddress
-                              ? customRound(
-                                Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                              : customRound(
-                                Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                10 ** Number(tokendict[tokenOut].decimals),
-                                3,
-                              )
-                            : ''
-                          ).toString(),
-                        );
-                      }
-                      const slider = document.querySelector('.balance-amount-slider');
-                      const popup = document.querySelector('.slider-percentage-popup');
-                      if (slider && popup) {
-                        const rect = slider.getBoundingClientRect();
-                        (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
-                      }
-                    }
-                  }}
-                  disabled={!connected || sliderPercent === 100}
-                >
-                  +
-                </button>
+                    }}
+                    disabled={!connected}
+                  >
+                    {preset}%
+                  </button>
+                ))}
               </div>
-            ) : (
-              <div className="slider-container slider-mode">
-                <input
-                  type="range"
-                  className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
-                  min="0"
-                  max="100"
-                  step="1"
-                  value={sliderPercent}
-                  disabled={!connected}
-                  onChange={(e) => {
-                    const percent = parseInt(e.target.value);
+            </div>
+          ) : sliderMode === 'increment' ? (
+            <div className="slider-container increment-mode">
+              <button
+                className="increment-button minus"
+                onClick={() => {
+                  if (connected && sliderPercent > 0) {
+                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -15786,9 +15568,9 @@ function App() {
                           settings.chainConfig[activechain].gasamount
                           : BigInt(0)
                         : tokenBalances[tokenIn]) *
-                        BigInt(percent)) /
+                        BigInt(newPercent)) /
                       100n;
-                    setSliderPercent(percent);
+                    setSliderPercent(newPercent);
                     setInputString(
                       newAmount == BigInt(0)
                         ? ''
@@ -15837,58 +15619,235 @@ function App() {
                         ).toString(),
                       );
                     }
-                    const slider = e.target;
-                    const rect = slider.getBoundingClientRect();
-                    const trackWidth = rect.width - 15;
-                    const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
-                    );
-                    if (popup) {
-                      popup.style.left = `${thumbPosition}px`;
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
                     }
-                  }}
-                  onMouseDown={() => {
-                    setIsDragging(true);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                  }
+                }}
+                disabled={!connected || sliderPercent === 0}
+              >
+                −
+              </button>
+              <div className="increment-display">
+                <div className="increment-amount">{sliderIncrement}%</div>
+              </div>
+              <button
+                className="increment-button plus"
+                onClick={() => {
+                  if (connected && sliderPercent < 100) {
+                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newAmount =
+                      (((tokenIn == eth && !client)
+                        ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount >
+                          BigInt(0)
+                          ? tokenBalances[tokenIn] -
+                          settings.chainConfig[activechain].gasamount
+                          : BigInt(0)
+                        : tokenBalances[tokenIn]) *
+                        BigInt(newPercent)) /
+                      100n;
+                    setSliderPercent(newPercent);
+                    setInputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.add('visible');
-                  }}
-                  onMouseUp={() => {
-                    setIsDragging(false);
-                    const popup: HTMLElement | null = document.querySelector(
-                      '.slider-percentage-popup',
+                    debouncedSetAmount(newAmount);
+                    setswitched(false);
+                    if (isWrap) {
+                      setoutputString(
+                        newAmount == BigInt(0)
+                          ? ''
+                          : customRound(
+                            Number(newAmount) /
+                            10 ** Number(tokendict[tokenIn].decimals),
+                            3,
+                          ).toString(),
+                      );
+                      setamountOutSwap(newAmount);
+                    }
+                    if (location.pathname.slice(1) === 'limit') {
+                      setamountOutSwap(
+                        limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                            : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                          : BigInt(0),
+                      );
+                      setoutputString(
+                        (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                          ? tokenIn === activeMarket?.baseAddress
+                            ? customRound(
+                              Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                            : customRound(
+                              Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                              10 ** Number(tokendict[tokenOut].decimals),
+                              3,
+                            )
+                          : ''
+                        ).toString(),
+                      );
+                    }
+                    const slider = document.querySelector('.balance-amount-slider');
+                    const popup = document.querySelector('.slider-percentage-popup');
+                    if (slider && popup) {
+                      const rect = slider.getBoundingClientRect();
+                      (popup as HTMLElement).style.left = `${(rect.width - 15) * (newPercent / 100) + 15 / 2}px`;
+                    }
+                  }
+                }}
+                disabled={!connected || sliderPercent === 100}
+              >
+                +
+              </button>
+            </div>
+          ) : (
+            <div className="slider-container slider-mode">
+              <input
+                type="range"
+                className={`balance-amount-slider ${isDragging ? 'dragging' : ''}`}
+                min="0"
+                max="100"
+                step="1"
+                value={sliderPercent}
+                disabled={!connected}
+                onChange={(e) => {
+                  const percent = parseInt(e.target.value);
+                  const newAmount =
+                    (((tokenIn == eth && !client)
+                      ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount >
+                        BigInt(0)
+                        ? tokenBalances[tokenIn] -
+                        settings.chainConfig[activechain].gasamount
+                        : BigInt(0)
+                      : tokenBalances[tokenIn]) *
+                      BigInt(percent)) /
+                    100n;
+                  setSliderPercent(percent);
+                  setInputString(
+                    newAmount == BigInt(0)
+                      ? ''
+                      : customRound(
+                        Number(newAmount) /
+                        10 ** Number(tokendict[tokenIn].decimals),
+                        3,
+                      ).toString(),
+                  );
+                  debouncedSetAmount(newAmount);
+                  setswitched(false);
+                  if (isWrap) {
+                    setoutputString(
+                      newAmount == BigInt(0)
+                        ? ''
+                        : customRound(
+                          Number(newAmount) /
+                          10 ** Number(tokendict[tokenIn].decimals),
+                          3,
+                        ).toString(),
                     );
-                    if (popup) popup.classList.remove('visible');
-                  }}
-                  style={{
-                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(11, 11, 12) ${sliderPercent}%)`,
-                  }}
-                />
-                <div className="slider-percentage-popup">{sliderPercent}%</div>
-                <div className="balance-slider-marks">
-                  {[0, 25, 50, 75, 100].map((markPercent) => (
-                    <span
-                      key={markPercent}
-                      className="balance-slider-mark"
-                      data-active={sliderPercent >= markPercent}
-                      data-percentage={markPercent}
-                      onClick={() => {
-                        if (connected) {
-                          const newAmount =
-                            (((tokenIn == eth && !client)
+                    setamountOutSwap(newAmount);
+                  }
+                  if (location.pathname.slice(1) === 'limit') {
+                    setamountOutSwap(
+                      limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                          : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                        : BigInt(0),
+                    );
+                    setoutputString(
+                      (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                        ? tokenIn === activeMarket?.baseAddress
+                          ? customRound(
+                            Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                          : customRound(
+                            Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                            10 ** Number(tokendict[tokenOut].decimals),
+                            3,
+                          )
+                        : ''
+                      ).toString(),
+                    );
+                  }
+                  const slider = e.target;
+                  const rect = slider.getBoundingClientRect();
+                  const trackWidth = rect.width - 15;
+                  const thumbPosition = (percent / 100) * trackWidth + 15 / 2;
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) {
+                    popup.style.left = `${thumbPosition}px`;
+                  }
+                }}
+                onMouseDown={() => {
+                  setIsDragging(true);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.add('visible');
+                }}
+                onMouseUp={() => {
+                  setIsDragging(false);
+                  const popup: HTMLElement | null = document.querySelector(
+                    '.slider-percentage-popup',
+                  );
+                  if (popup) popup.classList.remove('visible');
+                }}
+                style={{
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                }}
+              />
+              <div className="slider-percentage-popup">{sliderPercent}%</div>
+              <div className="balance-slider-marks">
+                {[0, 25, 50, 75, 100].map((markPercent) => (
+                  <span
+                    key={markPercent}
+                    className="balance-slider-mark"
+                    data-active={sliderPercent >= markPercent}
+                    data-percentage={markPercent}
+                    onClick={() => {
+                      if (connected) {
+                        const newAmount =
+                          (((tokenIn == eth && !client)
+                            ? tokenBalances[tokenIn] -
+                              settings.chainConfig[activechain].gasamount >
+                              BigInt(0)
                               ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount >
-                                BigInt(0)
-                                ? tokenBalances[tokenIn] -
-                                settings.chainConfig[activechain].gasamount
-                                : BigInt(0)
-                              : tokenBalances[tokenIn]) *
-                              BigInt(markPercent)) /
-                            100n;
-                          setSliderPercent(markPercent);
-                          setInputString(
+                              settings.chainConfig[activechain].gasamount
+                              : BigInt(0)
+                            : tokenBalances[tokenIn]) *
+                            BigInt(markPercent)) /
+                          100n;
+                        setSliderPercent(markPercent);
+                        setInputString(
+                          newAmount == BigInt(0)
+                            ? ''
+                            : customRound(
+                              Number(newAmount) /
+                              10 ** Number(tokendict[tokenIn].decimals),
+                              3,
+                            ).toString(),
+                        );
+                        debouncedSetAmount(newAmount);
+                        setswitched(false);
+                        if (isWrap) {
+                          setoutputString(
                             newAmount == BigInt(0)
                               ? ''
                               : customRound(
@@ -15897,66 +15856,53 @@ function App() {
                                 3,
                               ).toString(),
                           );
-                          debouncedSetAmount(newAmount);
-                          setswitched(false);
-                          if (isWrap) {
-                            setoutputString(
-                              newAmount == BigInt(0)
-                                ? ''
-                                : customRound(
-                                  Number(newAmount) /
-                                  10 ** Number(tokendict[tokenIn].decimals),
-                                  3,
-                                ).toString(),
-                            );
-                            setamountOutSwap(newAmount);
-                          }
-                          if (location.pathname.slice(1) === 'limit') {
-                            setamountOutSwap(
-                              limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
-                                  : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
-                                : BigInt(0),
-                            );
-                            setoutputString(
-                              (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
-                                ? tokenIn === activeMarket?.baseAddress
-                                  ? customRound(
-                                    Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                  : customRound(
-                                    Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
-                                    10 ** Number(tokendict[tokenOut].decimals),
-                                    3,
-                                  )
-                                : ''
-                              ).toString(),
-                            );
-                          }
-                          const slider = document.querySelector(
-                            '.balance-amount-slider',
-                          );
-                          const popup: HTMLElement | null = document.querySelector(
-                            '.slider-percentage-popup',
-                          );
-                          if (slider && popup) {
-                            const rect = slider.getBoundingClientRect();
-                            popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
-                              }px`;
-                          }
+                          setamountOutSwap(newAmount);
                         }
-                      }}
-                    >
-                      {markPercent}%
-                    </span>
-                  ))}
-                </div>
+                        if (location.pathname.slice(1) === 'limit') {
+                          setamountOutSwap(
+                            limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? (newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))
+                                : (newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice
+                              : BigInt(0),
+                          );
+                          setoutputString(
+                            (limitPrice !== BigInt(0) && newAmount !== BigInt(0)
+                              ? tokenIn === activeMarket?.baseAddress
+                                ? customRound(
+                                  Number((newAmount * limitPrice) / (activeMarket.scaleFactor || BigInt(1))) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                                : customRound(
+                                  Number((newAmount * (activeMarket.scaleFactor || BigInt(1))) / limitPrice) /
+                                  10 ** Number(tokendict[tokenOut].decimals),
+                                  3,
+                                )
+                              : ''
+                            ).toString(),
+                          );
+                        }
+                        const slider = document.querySelector(
+                          '.balance-amount-slider',
+                        );
+                        const popup: HTMLElement | null = document.querySelector(
+                          '.slider-percentage-popup',
+                        );
+                        if (slider && popup) {
+                          const rect = slider.getBoundingClientRect();
+                          popup.style.left = `${(rect.width - 15) * (markPercent / 100) + 15 / 2
+                            }px`;
+                        }
+                      }
+                    }}
+                  >
+                    {markPercent}%
+                  </span>
+                ))}
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
         <button
           className={`limit-swap-button ${isSigning ? 'signing' : ''}`}
@@ -16411,6 +16357,7 @@ function App() {
                 onLimitPriceUpdate={handleLimitPriceUpdate}
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}
+                marketsData={marketsData}
               />
             </div>
             {windowWidth > 1020 && (
@@ -16633,6 +16580,7 @@ function App() {
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
                 waitForTxReceipt={waitForTxReceipt}
+                marketsData={marketsData}
               />
             }
           />

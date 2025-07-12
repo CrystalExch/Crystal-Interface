@@ -12,7 +12,7 @@
   right: 0;
   top: 0;
   transition: left 0.3s ease;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 
@@ -74,7 +74,7 @@
   display: flex;
   font-size: 0.8rem;
   font-weight: 600;
-  height: 33px;
+  height: 32px;
   justify-content: center;
   letter-spacing: -0.3px;
   text-decoration: none;
@@ -91,14 +91,14 @@
 .transparent-button {
   background: none;
   border: none;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 5px;
   color: #fff;
   cursor: pointer;
   display: flex;
   font-size: 0.9rem;
   font-weight: 300;
-  height: 37px;
+  height: 35px;
   overflow: hidden;
   padding: 0 8px;
   transition: all.1s ease;
@@ -152,9 +152,9 @@
   justify-content: center;
   overflow: hidden;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
-  width: 37px;
-  height: 37px;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
 }
 
@@ -170,14 +170,20 @@
   justify-content: center;
   overflow: hidden;
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
-  width: 37px;
-  height: 37px;
-  border: 1px solid rgba(179, 184, 249, 0.1);
+  width: 35px;
+  height: 35px;
+  border: 1px solid rgba(179, 184, 249, 0.12);
   border-radius: 6px;
 }
 
 .history-button:hover {
   opacity: 0.8;
+}
+
+@media(max-width: 300px){
+  .history-button {
+    display: none;
+  }
 }
 
 .tx-notification-badge {
@@ -234,16 +240,16 @@
 }
 
 .history-icon {
-  height: 28px;
+  height: 24px;
   opacity: 0.5;
-  width: 28px;
+  width: 24px;
 }
 
 .other-settings-image {
   display: block;
   opacity: 0.5;
-  height: 27px;
-  width: 27px;
+  height: 24px;
+  width: 24px;
 }
 
 
@@ -256,7 +262,7 @@
   max-height: 53px;
   min-height: 53px;
   padding-right: 10px;
-  gap: 9px;
+  gap: 6px;
 }
 
 .right-header-trade{
@@ -268,7 +274,7 @@
   border-top-right-radius: 8px;
   border-bottom-right-radius: 8px;
   padding-right: 10px;
-  gap: 9px;
+  gap: 6px;
 }
 
 @media(max-width:1020px){
@@ -290,7 +296,7 @@
   }
 }
 
-@media(max-width: 550px){
+@media(max-width: 450px){
   .crystal-name {
     display: none;
   }

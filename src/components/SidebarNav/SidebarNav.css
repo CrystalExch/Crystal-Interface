@@ -12,7 +12,7 @@
   overflow: hidden;
   background-color: rgb(6,6,6);
   border-right: 1px solid rgba(179, 184, 249, 0.1);
-  transition: width 0.2s ease;
+  transition: width 0.3s ease;
 }
 
 .sidebar-nav-inner{
@@ -26,7 +26,7 @@
   align-items: flex-start;
   width: 47px;
   padding-top: 12px;
-  transition: width 0.2s ease;
+  transition: width 0.3s ease;
   overflow: hidden;
 }
 
@@ -37,11 +37,11 @@ body::before {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.5);
   z-index: 5;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
   pointer-events: none;
 }
 
@@ -156,13 +156,12 @@ body.sidebar-hover-overlay::before {
 }
 
 .sidebar-nav.expanded {
-  width: 210px;
+  width: 200px;
 }
 
 
 .sidebar-nav.expanded .sidebar-nav-inner {
-  width: 210px;
-  transition: all 0.2s ease;
+  width: 200px;
 }
 
 .sidebar-logo {
@@ -226,7 +225,7 @@ body.sidebar-hover-overlay::before {
   background-color: transparent;
   color: #8c8c9a;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
   overflow: visible;
   margin-left: 5px;
   margin-bottom: 5px;
@@ -238,10 +237,10 @@ body.sidebar-hover-overlay::before {
 .sidebar-nav.expanded .page-mode-button,
 .sidebar-nav.expanded .sidebar-bottom-link,
 .sidebar-nav.expanded .sidebar-toggle-button {
-  width: 191px;
+  width: 180px;
   padding-right: 15px;
   justify-content: flex-start;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 }
 
 .sidebar-nav .active {
@@ -305,7 +304,7 @@ body.sidebar-hover-overlay::before {
 
 .sidebar-label {
   font-size: 0.85rem;
-  margin-left: 7px;
+  margin-left: 8px;
   white-space: nowrap;
   transition: opacity 0.2s ease 0.15s;
   color: #d8dbf58a;

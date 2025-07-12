@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
 import AdvancedTradingChart from './ChartCanvas/AdvancedTradingChart';
@@ -54,8 +54,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
   const [selectedInterval, setSelectedInterval] = useState('5m');
-
-  const chartRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let isFetching = true;
@@ -171,45 +169,43 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   }, [selectedInterval, normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain), showChartOutliers]);
 
   return (
-    <div className="chartwrapper" ref={chartRef}>
-      <div className="chartcontainer">
-        {settings.useAdv ? (
-          <AdvancedTradingChart
-            data={data}
-            activeMarket={activeMarket}
-            selectedInterval={selectedInterval}
-            setSelectedInterval={setSelectedInterval}
-            setOverlayVisible={setOverlayVisible}
-            tradehistory={tradehistory} 
-            isMarksVisible={isMarksVisible}
-            orders={orders}
-            isOrdersVisible={isOrdersVisible}
-            showChartOutliers={showChartOutliers}
-            router={router}
-            refetch={refetch}
-            sendUserOperationAsync={sendUserOperationAsync}
-            setChain={setChain}
-            waitForTxReceipt={waitForTxReceipt}
-            address={address}
-            client={client}
-            newTxPopup={newTxPopup}
-            usedRefAddress={usedRefAddress}
-            realtimeCallbackRef={realtimeCallbackRef}
-          />
-        ) : (
-          <>
-            <div className="chart-options">
-              <UTCClock />
-              <TimeFrameSelector
-                selectedInterval={selectedInterval}
-                handleTimeChange={setSelectedInterval}
-              />
-            </div>
-            <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible}/>
-          </>
-        )}
-        <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
-      </div>
+    <div className="chartwrapper">
+      {settings.useAdv ? (
+        <AdvancedTradingChart
+          data={data}
+          activeMarket={activeMarket}
+          selectedInterval={selectedInterval}
+          setSelectedInterval={setSelectedInterval}
+          setOverlayVisible={setOverlayVisible}
+          tradehistory={tradehistory} 
+          isMarksVisible={isMarksVisible}
+          orders={orders}
+          isOrdersVisible={isOrdersVisible}
+          showChartOutliers={showChartOutliers}
+          router={router}
+          refetch={refetch}
+          sendUserOperationAsync={sendUserOperationAsync}
+          setChain={setChain}
+          waitForTxReceipt={waitForTxReceipt}
+          address={address}
+          client={client}
+          newTxPopup={newTxPopup}
+          usedRefAddress={usedRefAddress}
+          realtimeCallbackRef={realtimeCallbackRef}
+        />
+      ) : (
+        <>
+          <div className="chart-options">
+            <UTCClock />
+            <TimeFrameSelector
+              selectedInterval={selectedInterval}
+              handleTimeChange={setSelectedInterval}
+            />
+          </div>
+          <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible}/>
+        </>
+      )}
+      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
     </div>
   );
 };

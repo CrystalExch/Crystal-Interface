@@ -63,9 +63,9 @@
 }
 
 .totalSizeBar {
-  background: linear-gradient(90deg, rgb(255 255 255 / 15%), rgb(0 0 0 / 80%));
-  border-bottom-right-radius: 3px;
-  border-top-right-radius: 3px;
+  background: linear-gradient(90deg, rgb(255 255 255 / 5%), rgb(0 0 0 / 70%));
+  border-bottom-right-radius: 1px;
+  border-top-right-radius: 1px;
   height: 100%;
   left: 0;
   opacity: 0.125;

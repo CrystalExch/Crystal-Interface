@@ -1,4 +1,4 @@
-.chartcontainer {
+.chartwrapper {
   background: rgb(6,6,6);
   display: flex;
   flex-direction: column;
@@ -8,10 +8,6 @@
   z-index: 1;
 }
 
-.chartwrapper {
-  height: 100%;
-}
-
 .chart-options {
   align-items: center;
   display: flex;
@@ -19,6 +15,10 @@
   justify-content: space-between;
   padding: 0px 10px;
   margin-top: 5px;
-  z-index: 10;
+  z-index: 1;
   position: relative;
+}
+
+body:has(.markets-dropdown-content.visible) .advanced-chart-container {
+  pointer-events: none;
 }

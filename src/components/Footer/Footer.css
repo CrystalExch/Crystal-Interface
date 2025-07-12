@@ -64,7 +64,3 @@
     display: none;
   }
 }
-
-body.sidebar-expanded .footer {
-  left: 205px;
-}

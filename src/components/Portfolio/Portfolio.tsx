@@ -65,6 +65,7 @@ interface PortfolioProps {
   sendUserOperationAsync: any;
   setChain: any;
   waitForTxReceipt: any;
+  marketsData: any;
 }
 
 const Portfolio: React.FC<PortfolioProps> = ({
@@ -100,6 +101,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   sendUserOperationAsync,
   setChain,
   waitForTxReceipt,
+  marketsData,
 }) => {
   const [activeSection, setActiveSection] = useState<
   'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
@@ -405,6 +407,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
           waitForTxReceipt={waitForTxReceipt}
           openEditOrderPopup={handleEditOrder}
           openEditOrderSizePopup={handleEditOrder}
+          marketsData={marketsData}
         />
       </div>
     </div>
@@ -415,16 +418,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
       <div className="portfolio-specific-page">
         <div className="portfolio-content-container">
           {controlsContainer}
-
           {accountSummaryContainer}
-
           {portfolioGraph}
-
           <div className="mobile-stats-container">
             {tradingStats}
             {referralStats}
           </div>
-
           {orderSection}
         </div>
       </div>
