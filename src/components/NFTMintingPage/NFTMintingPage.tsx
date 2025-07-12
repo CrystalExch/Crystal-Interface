@@ -20,8 +20,8 @@ interface NFTMintingPageProps {
   setChain: any;
 }
 
-const NFT_ADDRESS = '0x690268345e92230404776ED960Ed82284a62a20d';
-const MAX_SUPPLY = 25000;
+const NFT_ADDRESS = '0xF25420bA0AB140C055EE6E28774176C948d5f00f';
+const MAX_SUPPLY = 1001;
 
 const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,
@@ -74,6 +74,50 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     }),
     [],
   );
+
+  useEffect(() => {
+    if (!address || !tree) return;           // need both loaded first
+    (async () => {
+      try {
+        /* on-chain merkle root */
+        const [rootRes] = (await readContracts(config, {
+          contracts: [
+            {
+              abi: CrystalNFTAbi,
+              address: NFT_ADDRESS,
+              functionName: 'merkleRoot',
+            },
+          ],
+        })) as any[];
+
+        const rootOnChain = rootRes.result as `0x${string}`;
+
+        console.log(tree);
+        const leaf = tree.leafHash([address.toLowerCase()]) as `0x${string}`;
+        const localOK = StandardMerkleTree.verify(
+          tree.root,
+          ['address'],
+          [address.toLowerCase()],
+          proof,
+        );
+
+        /* dump everything */
+        console.table({
+          addr:          address,
+          rootLocal:     tree.root,
+          rootOnChain,
+          rootMatch:     rootOnChain === tree.root,
+          leaf,
+          proofLen:      proof.length,
+          localVerify:   localOK,
+          contractElig:  isElig,
+          hasMinted,
+        });
+      } catch (err) {
+        console.error('debug read failed', err);
+      }
+    })();
+  }, [address, tree, proof, isElig, hasMinted]);
 
   useEffect(() => {
     async function fetchCurrentSupply() {
