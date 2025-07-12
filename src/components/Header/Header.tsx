@@ -118,15 +118,9 @@ const Header: React.FC<HeaderProps> = ({
     <>
       <header className="app-header">
         <div className="mobile-left-header"> 
-        {/* <button
-          className={`hamburger ${isMenuOpen ? 'open' : ''}`}
-          onClick={toggleMenu}
-          type="button"
-        >
-          <img src={Hamburger} className="hamburger-image" />
-        </button> */}
         <div className="extitle">
           <img src={backgroundlesslogo} className="extitle-logo" />
+          <span className="crystal-name">CRYSTAL</span>
         </div>
         </div> 
         <div className="left-header">
@@ -140,8 +134,8 @@ const Header: React.FC<HeaderProps> = ({
             ) || 'n/a'}
             priceChangePercent={marketHeader?.priceChange || 'n/a'}
             activeMarket={activeMarket}
-            high24h={formatCommas((parseFloat(marketHeader?.high24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString()) || 'n/a'}
-            low24h={formatCommas((parseFloat(marketHeader?.low24h.replace(/,/g, '')) / Number(activeMarket.priceFactor)).toString()) || 'n/a'}
+            high24h={marketHeader?.high24h || 'n/a'}
+            low24h={marketHeader?.low24h || 'n/a'}
             volume={marketHeader?.volume || 'n/a'}
             orderdata={orderdata || {}}
             tokendict={tokendict}

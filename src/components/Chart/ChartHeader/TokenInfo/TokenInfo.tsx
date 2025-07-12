@@ -422,13 +422,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           )}
         </div>
         <div className="markets-dropdown" ref={dropdownRef}>
-          <button className="markets-dropdown-trigger" >
-            <div
-              className={`trigger-content ${isDropdownVisible ? 'active' : ''}`}
-            >
-            </div>
-          </button>
-
           {isDropdownOpen && (
             <div
               className={`markets-dropdown-content ${isDropdownVisible ? 'visible' : ''}`}

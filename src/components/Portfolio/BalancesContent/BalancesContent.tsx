@@ -1,12 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
 import AssetRow from '../AssetRow/AssetRow.tsx';
 
 import { settings } from '../../../settings.ts';
 import customRound from '../../../utils/customRound.tsx';
-import { fetchLatestPrice } from '../../../utils/getPrice.ts';
 import normalizeTicker from '../../../utils/normalizeTicker.ts';
-import { get24hChange } from '../utils/get24Change.ts';
 
 import './BalancesContent.css';
 
@@ -16,86 +14,57 @@ interface SortConfig {
 }
 
 interface PortfolioContentProps {
-  trades: TradesByMarket;
   tokenList: any;
   onMarketSelect: any;
   setSendTokenIn: any;
   setpopup: any;
   sortConfig: SortConfig;
   tokenBalances: any;
+  marketsData: any;
   isBlurred?: boolean; 
 }
 
 const PortfolioContent: React.FC<PortfolioContentProps> = ({
-  trades,
   tokenList,
   onMarketSelect,
   setSendTokenIn,
   setpopup,
   sortConfig,
   tokenBalances,
+  marketsData,
   isBlurred = false,
 }) => {
-  const [tokenPrices, setTokenPrices] = useState<Record<string, number>>({});
 
-  const getPriceFromTrades = (ticker: string) => {
-    const normalizedTicker = normalizeTicker(ticker, activechain);
-    const marketKeyUSDC = `${normalizedTicker}USDC`;
-    if (markets[marketKeyUSDC]) {
-      const marketTrades = trades[marketKeyUSDC] || [];
-      return fetchLatestPrice(marketTrades, markets[marketKeyUSDC]) || 0;
-    }
-    else {
-      const quotePrice = trades[settings.chainConfig[activechain].ethticker + 'USDC']?.[0]?.[3]
-      / Number(markets[settings.chainConfig[activechain].ethticker + 'USDC']?.priceFactor)
-      const marketTrades = trades[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`] || [];
-      return (fetchLatestPrice(marketTrades, markets[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`]) || 0) * quotePrice;
-    }
-  };
-
-  const getPriceChangeFromTrades = (ticker: string) => {
-    const normalizedTicker = normalizeTicker(ticker, activechain);
-    const marketKey = `${normalizedTicker}USDC`;
-    if (markets[marketKey]) {
-      const marketTrades = trades[marketKey] || [];
-      return get24hChange(marketTrades);
-    }
-    return { percentageChange: 0, actualPriceChange: 0 };
-  };
-
-  const fetchAllTokenPrices = async () => {
-    const prices: Record<string, number> = {};
-
-    Object.keys(markets).forEach((marketKey) => {
-      const market = markets[marketKey];
-      const price = getPriceFromTrades(market.baseAsset);
-      prices[market.baseAddress] = price;
-    });
-
-    const wethPrice = prices[settings.chainConfig[activechain].eth];
-    if (wethPrice) {
-      prices[settings.chainConfig[activechain].weth] = wethPrice;
-    }
-
-    prices[settings.chainConfig[activechain].usdc] = 1;
-
-    setTokenPrices(prices);
-  };
-
-  useEffect(() => {
-    fetchAllTokenPrices();
-  }, [activechain, trades]);
+  const marketsDataDict = marketsData.reduce((acc: any, market: any) => {
+    acc[market.marketKey] = market;
+    return acc;
+  }, {} as any);
 
   const tokensWithBalances = tokenList.map((token: any) => {
+    const normalizedTicker = normalizeTicker(token.ticker, activechain);
+    const marketKeyUSDC = `${normalizedTicker}USDC`;
+    let price = 0;
+    let priceChange = 0;
+    if (token.address == settings.chainConfig[activechain].usdc) {
+      price = 1;
+      priceChange = 0;
+    }
+    else if (marketsDataDict[marketKeyUSDC]) {
+      price = Number(marketsDataDict[marketKeyUSDC].currentPrice.replace(/,/g, ''))
+      priceChange = Number(marketsDataDict[marketKeyUSDC].priceChange)
+    }
+    else {
+      const quotePrice = marketsDataDict[settings.chainConfig[activechain].ethticker + 'USDC'].currentPrice.replace(/,/g, '')
+      price = Number(marketsDataDict[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`].currentPrice.replace(/,/g, '') * quotePrice);
+      priceChange = (1 + Number(marketsDataDict[`${normalizedTicker}${settings.chainConfig[activechain].ethticker}`].priceChange)) * (1 + Number(marketsDataDict[settings.chainConfig[activechain].ethticker + 'USDC'].priceChange)) - 1
+    }
     const balance = customRound(
       Number(tokenBalances[token.address]) / 10 ** Number(token.decimals),
       3,
     );
-    const price = tokenPrices[token.address] || 0;
     const value =
       (Number(tokenBalances[token.address]) / 10 ** Number(token.decimals)) *
       price;
-    const priceChange = getPriceChangeFromTrades(token.ticker);
 
     return {
       ...token,
@@ -145,7 +114,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
   };
 
   const sortedTokens = sortTokens(tokensToDisplay);
-
+  
   return (
     <div className="portfolio-content">
       {sortedTokens.length > 0 &&
@@ -162,7 +131,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
             onMarketSelect={onMarketSelect}
             setSendTokenIn={setSendTokenIn}
             setpopup={setpopup}
-            priceChange={token.priceChange.percentageChange}
+            priceChange={token.priceChange}
             isBlurred={isBlurred}
             isLST={token?.lst == true}
           />

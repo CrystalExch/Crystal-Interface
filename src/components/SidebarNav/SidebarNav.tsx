@@ -24,25 +24,23 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const { t } = useLanguage();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [expanded, setExpanded] = useState(false);
-  const [hoveredExpanded, setHoveredExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const backgroundlesslogo = '/CrystalLogo.png';
 
 
   const isMobile = windowWidth <= 1020;
-  const isActuallyExpanded = expanded || hoveredExpanded;
 
 
   const handleSidebarMouseEnter = () => {
-    if (!isMobile && !expanded) {
-      setHoveredExpanded(true);
+    if (!isMobile) {
+      setExpanded(true);
       document.body.classList.add('sidebar-hover-overlay');
     }
   };
 
   const handleSidebarMouseLeave = () => {
-    if (!isMobile && !expanded) {
-      setHoveredExpanded(false);
+    if (!isMobile) {
+      setExpanded(false);
       document.body.classList.remove('sidebar-hover-overlay');
     }
   };
@@ -51,9 +49,8 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     const handleResize = () => {
       const newWidth = window.innerWidth;
       setWindowWidth(newWidth);
-      if (newWidth <= 1020 && expanded) {
+      if (newWidth <= 1020) {
         setExpanded(false);
-        setHoveredExpanded(false);
       }
       if (newWidth > 1020 && mobileMenuOpen) {
         setMobileMenuOpen(false);
@@ -63,13 +60,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [expanded, mobileMenuOpen]);
-
-  useEffect(() => {
-    document.body.classList.toggle('sidebar-expanded', isActuallyExpanded);
-    return () => {
-      document.body.classList.remove('sidebar-expanded');
-    };
-  }, [isActuallyExpanded]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -104,7 +94,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   return (
     <>
       <div 
-        className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${isActuallyExpanded ? 'expanded' : 'collapsed'}`}
+        className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
       >

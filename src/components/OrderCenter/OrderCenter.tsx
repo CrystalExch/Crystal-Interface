@@ -52,6 +52,7 @@ interface OrderCenterProps {
   onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
   openEditOrderSizePopup: (order: any) => void;
+  marketsData: any;
 }
 
 const OrderCenter: React.FC<OrderCenterProps> = 
@@ -89,7 +90,8 @@ const OrderCenter: React.FC<OrderCenterProps> =
     isOrderCenterVisible,
     onLimitPriceUpdate,
     openEditOrderPopup,
-    openEditOrderSizePopup, // Add this to destructuring
+    openEditOrderSizePopup,
+    marketsData,
   }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
     
@@ -282,7 +284,6 @@ const OrderCenter: React.FC<OrderCenterProps> =
             <div className="portfolio-assets-container">
               <PortfolioHeader onSort={onSort} sortConfig={sortConfig} />
               <PortfolioContent
-                trades={trades}
                 tokenList={tokenList}
                 onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
@@ -290,6 +291,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
                 sortConfig={sortConfig}
                 tokenBalances={tokenBalances}
                 isBlurred={isBlurred} 
+                marketsData={marketsData}
               />
             </div>
           );
@@ -310,7 +312,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
               setpopup={setpopup}
               onLimitPriceUpdate={onLimitPriceUpdate}
               openEditOrderPopup={openEditOrderPopup}
-              openEditOrderSizePopup={openEditOrderSizePopup} // Add this line
+              openEditOrderSizePopup={openEditOrderSizePopup}
             />
           );
         case 'tradeHistory':
@@ -437,7 +439,7 @@ const OrderCenter: React.FC<OrderCenterProps> =
           className="oc-content"
           style={{
             overflowY: noData ? 'hidden' : 'auto',
-            maxHeight: noData ? '40px' : 'calc(100% - 40px)',
+            maxHeight: noData ? '40px' : 'calc(100% - 38px)',
             flex: 1,
           }}
         >

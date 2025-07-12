@@ -207,24 +207,9 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
   const [showOrdersTooltip, setShowOrdersTooltip] = useState(false);
 
   useEffect(() => {
-    const triggerOnboardingIfNeeded = () => {
-      const hasCompletedOnboarding = localStorage.getItem('crystal_has_completed_onboarding') === 'true';
-      const hasVisitedLeaderboard = localStorage.getItem('crystal_has_visited_leaderboard') === 'true';
-      
-      if (!hasCompletedOnboarding && !hasVisitedLeaderboard) {
-        localStorage.setItem('crystal_has_visited_leaderboard', 'true');
-        
-        if (setpopup) {
-          setpopup(14);
-        }
-      }
-    };
-
-    triggerOnboardingIfNeeded();
-  }, []);
-  useEffect(() => {
     prevPageRef.current = currentPage;
   }, [currentPage]);
+  
   const loading = !overview;
   const placeholderCount = (loading || paginationLoading)
     ? (paginationLoading && prevPageRef.current === 0 && currentPage === 1

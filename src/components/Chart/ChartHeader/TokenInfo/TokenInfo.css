@@ -33,7 +33,7 @@
   margin-left: 3px;
 }
 .token-info-search-icon{
-  opacity: 0.3;
+  opacity: 0.5;
   margin-right: 5px;
 }
 .token-info-container{
@@ -66,8 +66,8 @@
   color: #aaa8b8;
   font-size: 0.75rem;
   padding: 4px 8px;
-  margin-left: -4px;
 }
+
 @media(max-width:1020px){
   .ctrlktooltip{
     display: none;
@@ -209,20 +209,6 @@
 
 .markets-dropdown {
   position: static;
-}
-
-.markets-dropdown-trigger {
-  align-items: center;
-  background: none;
-  border: none;
-  color: #6b7280;
-  cursor: pointer;
-  display: flex;
-  justify-content: center;
-  margin-top: 5px;
-  padding: 4px;
-  padding-left: 0;
-  transition: all.2s ease;
 }
 
 .markets-list {
@@ -431,8 +417,7 @@
   top: 100%;
   transform: translateY(-20px);
   transition:
-    opacity 0.2s ease,
-    visibility 0.2s ease,
+    opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
     transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   visibility: hidden;
   width: 340px;
@@ -450,15 +435,10 @@
   opacity: 0;
   pointer-events: none;
   transform: translateY(-20px);
-}
-
-.trigger-content {
-  transition: transform 0.2s ease;
-}
-
-.trigger-content.active {
-  transform: translateY(-3px) rotate(180deg);
-  transform: translateY(-3px) rotate(180deg);
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    transform 0.3s ease-in;
 }
 
 .search-input {
@@ -633,11 +613,11 @@
 
 
 .chart-header.simplified .second-asset {
-  color: #a8a9b973;
+  color: #ffffff80;
   font-size: 0.7rem;
   font-weight: 300; 
   margin: 0;
-  margin-top: -6px;
+  margin-top: -5px;
 }
 
 
@@ -681,7 +661,7 @@
   font-size: 0.75rem;
   padding: 3px 10px;
   border-radius: 4px;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s ease, color 0.2s ease;
   background-color: #1c1c2355;
   margin: 0 2px;
   flex-shrink: 0; 
@@ -706,7 +686,7 @@
 
 }
 .market-item-container.selected {
-  background-color: rgba(170, 174, 207, );
+  background-color: rgba(170, 174, 207, 0.05);
   border: 1px solid rgba(170, 174, 207, 0.15);
   border-radius: 8px;
   position: relative;
