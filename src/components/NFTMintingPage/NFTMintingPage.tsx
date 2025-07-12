@@ -1,7 +1,6 @@
 import React, {
   useState,
   useEffect,
-  useMemo,
   useCallback,
 } from 'react';
 import { readContracts } from '@wagmi/core';
@@ -10,7 +9,6 @@ import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 
 import { config } from '../../wagmi';
 import { CrystalNFTAbi } from '../../abis/CrystalNFTAbi';
-import LeaderboardBanner from '../../assets/nft.jpg';
 import './NFTMintingPage.css';
 
 interface NFTMintingPageProps {
@@ -31,98 +29,66 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
 }) => {
   const [tree, setTree] = useState<StandardMerkleTree<any[]> | null>(null);
   const [treeLoading, setTreeLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const cache = await caches.open('nft-tree-cache');
-        const cached = await cache.match('/tree.json');
-  
-        let res: Response;
-        if (cached) {
-          res = cached;
-        } else {
-          res = await fetch('/tree.json', { cache: 'no-cache' });
-          cache.put('/tree.json', res.clone());
-        }
-  
-        const json = await res.json();
-        const { StandardMerkleTree } = await import('@openzeppelin/merkle-tree');
-        const loadedTree = StandardMerkleTree.load(json);
-        setTree(loadedTree);
-      } catch (err) {
-        console.error('failed to load tree.json', err);
-      } finally {
-        setTreeLoading(false);
-      }
-    })();
-  }, []);
-
   const [proof, setProof] = useState<`0x${string}`[]>([]);
   const [isElig, setIsElig] = useState(false);
   const [hasMinted, setHasMinted] = useState(false);
   const [isMinting, setIsMinting] = useState(false);
   const [currentSupply, setCurrentSupply] = useState<number>(0);
   const [imageLoaded, setImageLoaded] = useState(false);
-
-  const nftData = useMemo(
-    () => ({
-      name: 'Crystal x BlockNads',
-      description: t('mintDesc'),
-      imageUrl: LeaderboardBanner,
-      totalSupply: MAX_SUPPLY,
-    }),
-    [],
-  );
+  const [meta, setMeta] = useState<{ name: string; desc: string; img: string } | null>(null);
+  const [metaLoad, setMetaLoad] = useState(false);
+  const [addrList, setAddrList] = useState<string[]|null>(null);
 
   useEffect(() => {
-    if (!address || !tree) return;           // need both loaded first
+    let cancelled = false;
+
     (async () => {
       try {
-        /* on-chain merkle root */
-        const [rootRes] = (await readContracts(config, {
-          contracts: [
-            {
-              abi: CrystalNFTAbi,
-              address: NFT_ADDRESS,
-              functionName: 'merkleRoot',
-            },
-          ],
-        })) as any[];
+        const cache = await caches.open('nft-tree-cache');
 
-        const rootOnChain = rootRes.result as `0x${string}`;
+        const fetchCached = async (path: string) => {
+          const cached = await cache.match(path);
+          if (cached) return cached;
+          const res = await fetch(path, { cache: 'no-cache' });
+          cache.put(path, res.clone());
+          return res;
+        };
 
-        console.log(tree);
-        const leaf = tree.leafHash([address.toLowerCase()]) as `0x${string}`;
-        const localOK = StandardMerkleTree.verify(
-          tree.root,
-          ['address'],
-          [address.toLowerCase()],
-          proof,
-        );
+        const treeRes = await fetchCached('/tree.json');
+        const treeJson = await treeRes.json();
+        const { StandardMerkleTree } = await import('@openzeppelin/merkle-tree');
+        const loadedTree = StandardMerkleTree.load(treeJson);
+        if (!cancelled) setTree(loadedTree);
 
-        /* dump everything */
-        console.table({
-          addr:          address,
-          rootLocal:     tree.root,
-          rootOnChain,
-          rootMatch:     rootOnChain === tree.root,
-          leaf,
-          proofLen:      proof.length,
-          localVerify:   localOK,
-          contractElig:  isElig,
-          hasMinted,
-        });
+        const addrRes = await fetchCached('/addresses.json');
+        const addrJson = await addrRes.json();
+        if (!cancelled) setAddrList(addrJson);
       } catch (err) {
-        console.error('debug read failed', err);
+        console.error('failed to load merkle tree or addresses', err);
+      } finally {
+        if (!cancelled) setTreeLoading(false);
       }
     })();
-  }, [address, tree, proof, isElig, hasMinted]);
+
+    return () => { cancelled = true; };
+  }, []);
+
+  const ipfsToHttp = (u: string | undefined) => u && u.startsWith('ipfs://') ? 'https://ipfs.io/ipfs/' + u.slice(7) : u ?? '';
 
   useEffect(() => {
+    if (!address || !addrList) return;
+
+    const idx = addrList.findIndex(a => a.toLowerCase() === address.toLowerCase());
+    if (idx === -1) { 
+      setMeta(null); 
+      return; 
+    }
+
+    const id = idx + 1;
+    setMetaLoad(true);
     async function fetchCurrentSupply() {
       try {
-        const [totalMintedResult] = (await readContracts(config, {
+        const [totalMintedResult, uri] = (await readContracts(config, {
           contracts: [
             {
               abi: CrystalNFTAbi,
@@ -130,13 +96,33 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
               functionName: 'totalMinted',
               args: [],
             },
+            {
+              abi: CrystalNFTAbi,
+              address: NFT_ADDRESS,
+              functionName: 'tokenURI',
+              args: [BigInt(id)],
+            }
           ],
-      })) as any[];
+        })) as any[];
 
+        const j = await fetch(ipfsToHttp(uri.result as string)).then(r => r.json());
+        
+        const rawDesc = j.description ?? '';
+        const roundedDesc = rawDesc.replace(
+          /(\d+\.\d+)/g,
+          (match: string) => Math.round(parseFloat(match)).toLocaleString()
+        );
+
+        setMeta({
+          name: j.name ?? `Crystal NFT #${id}`,
+          desc: roundedDesc,
+          img : ipfsToHttp(j.image ?? ''),
+        });
         const mintedCount = (totalMintedResult.result as bigint) || 0n;
         setCurrentSupply(Number(mintedCount));
       } catch (err) {
         console.error('failed to read totalMinted()', err);
+        setMeta(null);
         setCurrentSupply(0);
       }
     }
@@ -185,7 +171,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
         setHasMinted(mintedFlag.result as boolean);
         setIsElig(eligFlag.result as boolean);
       } catch (err) {
-        console.error('eligibility read failed', err);
         setHasMinted(false);
         setIsElig(false);
       }
@@ -210,23 +195,23 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
       await waitForTxReceipt(op.hash);
       setHasMinted(true);
     } catch (err) {
-      console.error('mint failed:', err);
+      console.error('Mint failed:', err);
     } finally {
       setIsMinting(false);
     }
   }, [isElig, hasMinted, proof, sendUserOperationAsync, waitForTxReceipt]);
 
   const supplySold = currentSupply;
-  const percentageSold =
-    nftData.totalSupply > 0 ? (supplySold / nftData.totalSupply) * 100 : 0;
+  const percentageSold = MAX_SUPPLY > 0 ? (supplySold / MAX_SUPPLY) * 100 : 0;
 
   const buttonDisabled =
     treeLoading ||
+    metaLoad ||
     !tree ||
     !isElig ||
     hasMinted ||
     isMinting ||
-    supplySold >= nftData.totalSupply;
+    supplySold >= MAX_SUPPLY;
 
   const buttonLabel = treeLoading
     ? t('loading')
@@ -236,7 +221,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
     ? t('alreadyMinted')
     : !isElig
     ? t('notEligible')
-    : supplySold >= nftData.totalSupply
+    : supplySold >= MAX_SUPPLY
     ? t('soldOut')
     : t('mintTitle');
 
@@ -246,7 +231,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
         <div className="nft-image-container">
           {!imageLoaded && <div className="nft-image-placeholder" />}
           <img
-            src={nftData.imageUrl}
+            src={meta?.img}
             className={`nft-image ${imageLoaded ? 'nft-image-loaded' : ''}`}
             onLoad={() => setImageLoaded(true)}
           />
@@ -262,13 +247,17 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
 
           <div className="nft-content">
             <div className="nft-details">
-              <h2 className="nft-name">{nftData.name}</h2>
-              <p className="nft-description">{nftData.description}</p>
+              <h2 className="nft-name">
+                {'Crystal Season 0 Finalists\' NFT'}
+              </h2>
+              <p className="nft-description">
+                {meta?.desc ?? t('mintDesc')}
+              </p>
 
               <div className="nft-supply-container">
                 <div className="nft-supply-text">
                   <span>
-                    {supplySold} / {nftData.totalSupply}
+                    {supplySold} / {MAX_SUPPLY}
                   </span>
                   <span className="nft-supply-percentage">
                     {percentageSold.toFixed(1)}% {t('minted')}
