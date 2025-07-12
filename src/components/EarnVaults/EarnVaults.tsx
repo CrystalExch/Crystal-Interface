@@ -36,6 +36,14 @@ export interface Token {
     symbol: string;
 }
 
+interface EarnTokenDeposit {
+    symbol: string;
+    icon: string;
+    amount: string;
+    usdValue: string;
+    selected: boolean;
+}
+
 interface EarnToken {
     symbol: string;
     icon: string;
@@ -135,6 +143,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const [chartPeriod, setChartPeriod] = useState('3 months');
     const [chartCurrency, setChartCurrency] = useState('USDC');
     const { favorites, toggleFavorite } = useSharedContext();
+    const [earnDepositTokens, setEarnDepositTokens] = useState<EarnTokenDeposit[]>([]);
     const [earnTokenAmounts, setEarnTokenAmounts] = useState<{ [key: string]: string }>({});
     const [earnActiveMode, setEarnActiveMode] = useState('supply');
     const [earnLtvValue, setEarnLtvValue] = useState(0);
@@ -454,6 +463,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
 
         let market = null;
         let trades = null;
+        let marketKey = '';
 
         const directUSDCKeys = [
             `${tokenSymbol}USDC`,
@@ -464,6 +474,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             if (chainMarkets[key] && tradesByMarket[key]) {
                 market = chainMarkets[key];
                 trades = tradesByMarket[key];
+                marketKey = key;
                 break;
             }
         }
@@ -480,6 +491,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
                 if (chainMarkets[key] && tradesByMarket[key]) {
                     market = chainMarkets[key];
                     trades = tradesByMarket[key];
+                    marketKey = key;
                     break;
                 }
             }
@@ -489,6 +501,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             if (chainMarkets['MONUSDC'] && tradesByMarket['MONUSDC']) {
                 market = chainMarkets['MONUSDC'];
                 trades = tradesByMarket['MONUSDC'];
+                marketKey = 'MONUSDC';
             }
         }
 
@@ -496,6 +509,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
             if (chainMarkets['WMONUSDC'] && tradesByMarket['WMONUSDC']) {
                 market = chainMarkets['WMONUSDC'];
                 trades = tradesByMarket['WMONUSDC'];
+                marketKey = 'WMONUSDC';
             }
         }
 
