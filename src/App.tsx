@@ -456,22 +456,15 @@ function App() {
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
 
-
-  interface Token {
-    icon: string;
-    symbol: string;
-  }
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-  const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: Token) => void) | null>(null);
+  const [selectedToken, setSelectedToken] = useState<any>(null);
+  const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
 
   const updateNotificationPosition = (position: string) => {
-    // Clear any existing timer
     if (previewTimer) {
       clearTimeout(previewTimer);
       setPreviewTimer(null);
     }
 
-    // If we're changing positions and preview is already showing, trigger exit first
     if (showPreview && previewPosition !== position) {
       setPreviewExiting(true);
 
@@ -492,7 +485,7 @@ function App() {
               setPreviewPosition(null);
               setPreviewExiting(false);
             }, 300);
-          }, 8000);
+          }, 3000);
 
           setPreviewTimer(newTimer);
         }, 50);
@@ -510,7 +503,7 @@ function App() {
           setPreviewPosition(null);
           setPreviewExiting(false);
         }, 300);
-      }, 8000);
+      }, 3000);
 
       setPreviewTimer(newTimer);
     }
@@ -945,6 +938,37 @@ function App() {
   const handleLimitPriceUpdate = (price: number) => {
     setCurrentLimitPrice(price);
   };
+
+  const [keybindError, setKeybindError] = useState<string | null>(null);
+  const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
+
+  const [keybinds, setKeybinds] = useState(() => {
+    const saved = localStorage.getItem('crystal_keybinds');
+    return saved ? JSON.parse(saved) : {
+      submitTransaction: 'Enter',
+      switchTokens: 'KeyZ',
+      maxAmount: 'KeyA',
+      focusInput: 'KeyF',
+      openSettings: 'KeyS',
+      openWallet: 'KeyW',
+      openTokenInSelect: 'KeyQ',
+      openTokenOutSelect: 'KeyE',
+      cancelAllOrders: 'KeyC',
+      cancelTopOrder: 'KeyX',
+      openPortfolio: 'KeyP',
+      openLeaderboard: 'KeyL',
+      openReferrals: 'KeyO',
+      toggleFavorite: 'KeyM',
+      toggleSimpleView: 'KeyV',
+      refreshQuote: 'KeyR',
+      switchToOrders: 'Digit1',
+      switchToTrades: 'Digit2',
+      switchToHistory: 'Digit3',
+    };
+  });
+
+  const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
+  const [isListeningForKey, setIsListeningForKey] = useState(false);
 
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
 
@@ -3463,18 +3487,19 @@ function App() {
                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
                     const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
                       / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                    let high = Number(market.high24h);
-                    let low = Number(market.low24h);
+                    let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+                    let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;                      
                     const volume = newTrades.reduce((sum: number, trade: any) => {
-                      if (trade[3] / Number(market.priceFactor) > high) {
+                      if (high && trade[3] / Number(market.priceFactor) > high) {
                         high = trade[3] / Number(market.priceFactor)
                       }
-                      if (trade[3] / Number(market.priceFactor) < low) {
+                      if (low && trade[3] / Number(market.priceFactor) < low) {
                         low = trade[3] / Number(market.priceFactor)
                       }
                       const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
                       return sum + amount;
                     }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
                     return {
                       ...market,
                       volume: formatCommas(
@@ -3485,8 +3510,16 @@ function App() {
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                       priceChangeAmount: currentPriceRaw - firstKlineOpen,
-                      high24h: formatSubscript((high).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
-                      low24h: formatSubscript((low).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
+                      ...(high != null && {
+                        high24h: formatSubscript(
+                          high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        )
+                      }),
+                      ...(low != null && {
+                        low24h: formatSubscript(
+                          low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        )
+                      })
                     };
                   })
                 );
@@ -4945,37 +4978,6 @@ function App() {
       if (animatingTimer) clearTimeout(animatingTimer);
     };
   }, [currentStep]);
-
-  const [keybindError, setKeybindError] = useState<string | null>(null);
-  const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
-
-  const [keybinds, setKeybinds] = useState(() => {
-    const saved = localStorage.getItem('crystal_keybinds');
-    return saved ? JSON.parse(saved) : {
-      submitTransaction: 'Enter',
-      switchTokens: 'KeyZ',
-      maxAmount: 'KeyA',
-      focusInput: 'KeyF',
-      openSettings: 'KeyS',
-      openWallet: 'KeyW',
-      openTokenInSelect: 'KeyQ',
-      openTokenOutSelect: 'KeyE',
-      cancelAllOrders: 'KeyC',
-      cancelTopOrder: 'KeyX',
-      openPortfolio: 'KeyP',
-      openLeaderboard: 'KeyL',
-      openReferrals: 'KeyO',
-      toggleFavorite: 'KeyM',
-      toggleSimpleView: 'KeyV',
-      refreshQuote: 'KeyR',
-      switchToOrders: 'Digit1',
-      switchToTrades: 'Digit2',
-      switchToHistory: 'Digit3',
-    };
-  });
-
-  const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
-  const [isListeningForKey, setIsListeningForKey] = useState(false);
 
   const formatKeyDisplay = (key: string) => {
     if (!key) return '';
@@ -7462,9 +7464,6 @@ function App() {
                     setOrderbookPosition('right');
                     localStorage.setItem('crystal_orderbook', 'right');
 
-                    setSimpleView(false);
-                    localStorage.setItem('crystal_simple_view', 'false');
-
                     setIsMarksVisible(true);
                     localStorage.setItem('crystal_marks_visible', 'true');
 
@@ -9646,8 +9645,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
-
         {popup === 19 ? (
           <div className="edit-limit-price-popup-bg" ref={popupref}>
             <div className="edit-limit-price-header">
@@ -9757,7 +9754,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
         {popup === 20 ? (
           <div className="edit-order-size-popup-bg" ref={popupref}>
             <div className="edit-order-size-header">

@@ -31,11 +31,6 @@ interface EarnVault {
     borrowApy: number;
 }
 
-export interface Token {
-    icon: string;
-    symbol: string;
-}
-
 interface EarnTokenDeposit {
     symbol: string;
     icon: string;
@@ -55,15 +50,15 @@ interface EarnVaultsProps {
     setpopup: (value: number) => void;
     setSupplyBorrowInitialTab?: (tab: 'supply' | 'borrow') => void;
     setSupplyBorrowVault?: (vault: any) => void;
-    onSelectToken: (token: Token) => void;
-    selectedToken: Token | null;
-    setOnSelectTokenCallback?: (callback: ((token: Token) => void) | null) => void;
+    onSelectToken: (token: any) => void;
+    selectedToken: any;
+    setOnSelectTokenCallback?: (callback: ((token: any) => void) | null) => void;
     tokenBalances: { [address: string]: bigint };
     tokendict: { [address: string]: any };
     address?: string;
     connected: boolean;
     refetch: () => void;
-    onCollateralSelect?: (token: Token) => void;
+    onCollateralSelect?: (token: any) => void;
     tradesByMarket: any;
     markets: any;
     usdc: string;
@@ -634,7 +629,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     };
     useEffect(() => {
         if (setOnSelectTokenCallback) {
-            setOnSelectTokenCallback(() => (token: Token) => {
+            setOnSelectTokenCallback(() => (token: any) => {
                 if (earnActiveMode === 'borrow') {
                     handleCollateralTokenSelect(token);
                 } else {
@@ -687,7 +682,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     }, []);
 
 
-    const handleCollateralTokenSelect = (token: Token) => {
+    const handleCollateralTokenSelect = (token: any) => {
         const earnToken: EarnToken = {
             symbol: token.symbol,
             icon: token.icon,

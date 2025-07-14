@@ -878,10 +878,6 @@ body {
   align-items: center;
 }
 
-.tokenbutton:hover {
-  background-color: #2d2d314b;
-}
-
 .tokenbutton.selected {
   background-color: #2d2d314b;
 }

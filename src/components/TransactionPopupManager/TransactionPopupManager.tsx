@@ -40,7 +40,7 @@ const TransactionPopupManager: React.FC<TransactionPopupManagerProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
-  const notificationPosition = showPreview 
+  const notificationPosition = isMobile ? 'top-right' : showPreview 
     ? (previewPosition || 'bottom-right')
     : localStorage.getItem('crystal_notification_position') || 'bottom-right';
 
