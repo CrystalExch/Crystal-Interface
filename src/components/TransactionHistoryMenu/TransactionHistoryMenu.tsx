@@ -8,7 +8,7 @@ type TxType = any;
 
 interface TransactionHistoryMenuProps {
   isOpen: boolean;
-  onClose: () => void;
+  setIsTransactionHistoryOpen: any;
   setPendingNotifs: any;
   transactions: any[]; 
   tokendict: any;
@@ -85,7 +85,7 @@ const formatBalance = (
 
 const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
   isOpen,
-  onClose,
+  setIsTransactionHistoryOpen,
   setPendingNotifs,
   transactions,
   tokendict,
@@ -112,7 +112,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
     
     setClosing(true);
     setTimeout(() => {
-      onClose();
+      setIsTransactionHistoryOpen(false);
       setClosing(false);
     }, 300);
   };
@@ -187,8 +187,8 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'swap') {
       return (
-        <div className="txhistory-inner-swap">
-          <div className="txhistory-main-content-swap">
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
             <div className="txhistory-title">{t('swapComplete')}
               <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
             </div>
@@ -247,8 +247,8 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
 
     if (tx.currentAction === 'send') {
       return (
-        <div className="txhistory-inner-send">
-          <div className="txhistory-main-content-send">
+        <div className="txhistory-inner">
+          <div className="txhistory-main-content">
           <div className="txhistory-title">{t('sendComplete')}
             <div className="txhistory-item-time">{formatTimeAgo(tx.timestamp)}</div>
           </div>
@@ -768,4 +768,4 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
   );
 };
 
-export default TransactionHistoryMenu;
+export default React.memo(TransactionHistoryMenu);

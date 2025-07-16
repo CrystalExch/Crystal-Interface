@@ -233,7 +233,7 @@ const Header: React.FC<HeaderProps> = ({
 
       <TransactionHistoryMenu
         isOpen={isTransactionHistoryOpen}
-        onClose={() => setIsTransactionHistoryOpen(false)}
+        setIsTransactionHistoryOpen={setIsTransactionHistoryOpen}
         setPendingNotifs={setPendingNotifs}
         transactions={transactions || []}
         tokendict={tokendict}

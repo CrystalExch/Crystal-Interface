@@ -251,17 +251,17 @@ html {
   cursor: pointer;
   display: flex;
   justify-content: center;
-  padding: 8px;
   position: absolute;
-  right: 10px;
-  top: 11px;
-  transition: 0.3s background ease;
-  z-index: 10;
+  right: 18px;
+  top: 18px;
+  transition: 0.2s opacity ease;
 }
 
+.layout-settings-close-button:hover,
+.connect-wallet-close-button:hover,
 .connecting-back-button:hover,
 .tokenselect-close-button:hover {
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
 .tokenselect::placeholder {
@@ -603,7 +603,6 @@ html {
   transition: all.3s ease;
 }
 
-.connect-wallet-close-button:hover,
 .popup-disconnect-button:hover,
 .popup-deposit-button:hover,
 .settings-button:hover,
@@ -628,7 +627,6 @@ html {
 }
 
 .eye-button:hover .eye-icon,
-.layout-settings-close-button:hover,
 .popup-deposit-button:hover .deposit-icon,
 .popup-disconnect-button:hover .disconnect-icon {
   opacity: 0.5;
@@ -1795,18 +1793,18 @@ body {
   justify-content: center;
   padding-right: 18px;
   padding-top: 6px;
-  transition: all.15s ease;
+  transition: 0.2s opacity ease;
 }
 
 .close-button-icon {
   height: 18px;
-  opacity: 0.7;
+  opacity: 0.8;
   width: 18px;
 }
 
 .send-close-button-icon {
   height: 15px;
-  opacity: 0.7;
+  opacity: 0.8;
   width: 15px;
 }
 
@@ -2101,12 +2099,11 @@ body {
 .layout-settings-close-button {
   background: 0 0;
   border: none;
-  border-radius: 7px;
   cursor: pointer;
-  opacity: 0.7;
   position: absolute;
-  right: 15px;
-  top: 17px;
+  right: 18px;
+  top: 18px;
+  transition: 0.2s opacity ease;
 }
 
 .layout-settings-header {
