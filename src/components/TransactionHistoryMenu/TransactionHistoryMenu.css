@@ -385,7 +385,7 @@
 .txhistory-main-content {
   display: flex;
   flex-direction: column;
-  gap: 5px;
+  gap: 4px;
 }
 
 
@@ -431,8 +431,8 @@
 
 .txhistory-token-icon {
   border-radius: 50%;
-  height: 17px;
-  width: 17px;
+  height: 16px;
+  width: 16px;
 }
 
 .txhistory-amount {

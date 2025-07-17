@@ -739,7 +739,7 @@ const TransactionHistoryMenu: React.FC<TransactionHistoryMenuProps> = ({
                   <List
                     height={Math.max(window.innerHeight-40, 0)}
                     itemCount={sortedTransactions[0].length}
-                    itemSize={104.73}
+                    itemSize={104}
                     width="100%"
                   >
                     {({ index, style }) => {
