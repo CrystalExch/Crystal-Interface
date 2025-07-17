@@ -10,7 +10,6 @@ import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
-import vaults from '../../assets/yeildvaults.png';
 
 
 interface SidebarNavProps {
@@ -151,13 +150,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className="sidebar-label">{t('leaderboard')}</span>
             </Link>
-             <Link
-            to="/vaults"
-            className={`page-mode-button ${path === '/vaults' ? 'active' : ''}`}
-          >
-            <img src={vaults} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Vaults')}</span>
-          </Link>
                     {isMobile && (
           <button
             onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
