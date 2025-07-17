@@ -82,15 +82,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     path === tradePath || path.startsWith(tradePath)
   );
 
-
-  const toggleMobileMenu = () => {
-    setMobileMenuOpen(!mobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setMobileMenuOpen(false);
-  };
-
   return (
     <>
       <div 
@@ -169,7 +160,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
           </Link>
                     {isMobile && (
           <button
-            onClick={toggleMobileMenu}
+            onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
             className="mobile-hamburger-button"
           >
             <svg
@@ -227,15 +218,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
         <>
           <div 
             className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`}
-            onClick={closeMobileMenu}
+            onClick={()=>setMobileMenuOpen(false)}
           />
           
           <div className={`mobile-hamburger-menu ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <div className="mobile-menu-logo">
-                <img src={backgroundlesslogo} className="mobile-menu-logo-image" />
+                <img src={backgroundlesslogo} className="extitle-logo" />
+                <span className="crystal-name">CRYSTAL</span>
               </div>
-              <button onClick={closeMobileMenu} className="mobile-menu-close">
+              <button onClick={()=>setMobileMenuOpen(false)} className="mobile-menu-close">
                 <svg
                   width="24"
                   height="24"
@@ -250,41 +242,37 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               </button>
             </div>
             
-            <div className="mobile-menu-content">
-
-              
-              <div className="mobile-menu-section">
-                                <a
-                  href="https://docs.crystal.exchange"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mobile-menu-item"
-                  onClick={closeMobileMenu}
-                >
-                  <img src={docs} className="mobile-menu-icon" />
-                  <span>{t('docs')}</span>
-                </a>
-                <a
-                  href="https://discord.gg/CrystalExch"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mobile-menu-item"
-                  onClick={closeMobileMenu}
-                >
-                  <img src={discord} className="mobile-menu-icon" />
-                  <span>{t('discord')}</span>
-                </a>
-                <a
-                  href="https://x.com/CrystalExch"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mobile-menu-item"
-                  onClick={closeMobileMenu}
-                >
-                  <img src={twitter} className="mobile-menu-icon" />
-                  <span>{'X / ' + t('twitter')}</span>
-                </a>
-              </div>
+            <div className="mobile-menu-content">       
+              <a
+                href="https://docs.crystal.exchange"
+                target="_blank"
+                rel="noreferrer"
+                className="mobile-menu-item"
+                onClick={()=>setMobileMenuOpen(false)}
+              >
+                <img src={docs} className="mobile-menu-icon" />
+                <span>{t('docs')}</span>
+              </a>
+              <a
+                href="https://discord.gg/CrystalExch"
+                target="_blank"
+                rel="noreferrer"
+                className="mobile-menu-item"
+                onClick={()=>setMobileMenuOpen(false)}
+              >
+                <img src={discord} className="mobile-menu-icon" />
+                <span>{t('discord')}</span>
+              </a>
+              <a
+                href="https://x.com/CrystalExch"
+                target="_blank"
+                rel="noreferrer"
+                className="mobile-menu-item"
+                onClick={()=>setMobileMenuOpen(false)}
+              >
+                <img src={twitter} className="mobile-menu-icon" />
+                <span>{'X / ' + t('twitter')}</span>
+              </a>
             </div>
           </div>
         </>

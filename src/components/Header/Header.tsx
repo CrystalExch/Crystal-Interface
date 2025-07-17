@@ -111,7 +111,7 @@ const Header: React.FC<HeaderProps> = ({
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData.find(
-    (market: any) => market.address === activeMarket.address
+    (market: any) => market?.address === activeMarket.address
   );
 
   return (
@@ -233,7 +233,7 @@ const Header: React.FC<HeaderProps> = ({
 
       <TransactionHistoryMenu
         isOpen={isTransactionHistoryOpen}
-        onClose={() => setIsTransactionHistoryOpen(false)}
+        setIsTransactionHistoryOpen={setIsTransactionHistoryOpen}
         setPendingNotifs={setPendingNotifs}
         transactions={transactions || []}
         tokendict={tokendict}

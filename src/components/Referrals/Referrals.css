@@ -21,8 +21,7 @@
 .referral-top-section{
   display: flex;
 }
-.referral-background,
-.referral-mobile-background {
+.referral-background {
   border-radius: 12px 12px 0 0 ;
   height: 100%;
   pointer-events: none;
@@ -30,10 +29,6 @@
      -moz-user-select: none;
           user-select: none;
   width: 100%;
-}
-
-.referral-mobile-background {
-  display: none;
 }
 
 .referral-background-wrapper {
@@ -83,8 +78,6 @@
   transition: all 0.2s;
   width: 100%;
 }
-
-
 
 .claim-button:disabled {
   background: linear-gradient(135deg,
@@ -674,6 +667,7 @@
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 0 10px rgb(170 174 207 / 50%);
  }
+
 .referral-bg-placeholder {
   max-height: 305px;
   overflow: hidden;
@@ -713,6 +707,7 @@
 @media (max-width: 1020px) {
   .referral-scroll-wrapper {
     height: auto;
+    padding-bottom: 45px;
     overflow: visible;
   }
 
@@ -783,14 +778,8 @@
   }
 }
 @media (width <=700px) {
-
-  .feature-description,
-  .referral-background {
+  .referral-background-wrapper {
     display: none;
-  }
-
-  .referral-mobile-background {
-    display: block;
   }
 
   .main-title {
@@ -921,7 +910,7 @@
 }
 
 .referrals-username-skeleton {
-  height: 21px;
+  height: 20px;
   width: 120px;
   margin: 0 0 2px 0;
 }
@@ -935,7 +924,7 @@
 .referrals-count-skeleton {
   height: 28px;
   width: 60px;
-  margin-bottom: -1px;
+  margin-bottom: 0px;
 }
 
 

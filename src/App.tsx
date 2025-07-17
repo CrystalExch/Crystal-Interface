@@ -6956,7 +6956,7 @@ function App() {
                         }
                       }
                     }}
-                    placeholder={displayMode == 'usd' ? '$0.00' : '0'}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
                     value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
                     autoFocus={!(windowWidth <= 1020)}
                   />

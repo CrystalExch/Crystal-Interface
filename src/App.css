@@ -149,11 +149,6 @@ html {
   font-weight: 350;
   padding-left: 35px;
   padding-right: 35px;
-  z-index: 2;
-}
-
-.sendselect,
-.sendselect:focus {
   background: #aaaecf08;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
   background-position: 10px center;
@@ -163,10 +158,7 @@ html {
 
 .sendselect:focus {
   outline: 0;
-}
-
-.sendselect:hover {
-  background: rgb(205 212 247/5%);
+  background: #aaaecf0f;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
   background-position: 10px center;
   background-repeat: no-repeat;
@@ -251,17 +243,17 @@ html {
   cursor: pointer;
   display: flex;
   justify-content: center;
-  padding: 8px;
   position: absolute;
-  right: 10px;
-  top: 11px;
-  transition: 0.3s background ease;
-  z-index: 10;
+  right: 18px;
+  top: 18px;
+  transition: 0.2s opacity ease;
 }
 
+.layout-settings-close-button:hover,
+.connect-wallet-close-button:hover,
 .connecting-back-button:hover,
 .tokenselect-close-button:hover {
-  opacity: 0.9;
+  opacity: 0.7;
 }
 
 .tokenselect::placeholder {
@@ -282,11 +274,6 @@ html {
   position: relative;
   top: 12px;
   width: calc(100% - 30px);
-  z-index: 2;
-}
-
-.tokenselect,
-.tokenselect:focus {
   background: #aaaecf08;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
   background-position: 10px center;
@@ -295,11 +282,8 @@ html {
 }
 
 .tokenselect:focus {
+  background: #aaaecf0f;
   outline: 0;
-}
-
-.tokenselect:hover {
-  background: rgb(205 212 247/5%);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23808080' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='11' cy='11' r='8'%3E%3C/circle%3E%3Cline x1='21' y1='21' x2='16.65' y2='16.65'%3E%3C/line%3E%3C/svg%3E");
   background-position: 10px center;
   background-repeat: no-repeat;
@@ -603,7 +587,6 @@ html {
   transition: all.3s ease;
 }
 
-.connect-wallet-close-button:hover,
 .popup-disconnect-button:hover,
 .popup-deposit-button:hover,
 .settings-button:hover,
@@ -628,7 +611,6 @@ html {
 }
 
 .eye-button:hover .eye-icon,
-.layout-settings-close-button:hover,
 .popup-deposit-button:hover .deposit-icon,
 .popup-disconnect-button:hover .disconnect-icon {
   opacity: 0.5;
@@ -863,43 +845,42 @@ body {
 
 .tokenbutton {
   background: 0 0;
-  border: 1px solid rgb(157 159 227/0);
   cursor: pointer;
   display: grid;
   font-weight: 400;
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 6px 12px 12px 37px;
+  padding: 5px 12px 11px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
-  width: calc(100%);
+  width: 100%;
   align-items: center;
 }
 
 .tokenbutton.selected {
-  background-color: #2d2d314b;
+  background-color: #2d2d3140;
 }
 
 .sendtokenbutton {
   background: 0 0;
-  border: 1px solid rgb(157 159 227/0);
   cursor: pointer;
   display: grid;
   font-weight: 400;
   grid-template-columns: auto 1fr auto;
   height: auto;
   min-height: 45px;
-  padding: 4px 12px 10.5px 37px;
+  padding: 5px 12px 11px 37px;
   position: relative;
   text-align: left;
   transition: all.2s ease;
-  width: calc(100%);
+  width: 100%;
+  align-items: center;
 }
 
 .sendtokenbutton:hover {
-  background-color: #2d2d314b;
+  background-color: #2d2d3140;
 }
 
 .token-right-content {
@@ -964,7 +945,7 @@ body {
 
 
 .tokenselectbg {
-  height: min(483px, 90vh);
+  height: min(464px, 90vh);
 }
 
 .tokenselectbg,
@@ -980,14 +961,14 @@ body {
 }
 
 .sendselectbg {
-  height: min(335px, 90vh);
+  height: min(336px, 90vh);
 }
 
 .blur-background-popups.active {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: rgb(0 0 0/65%);
+  background-color: rgb(0 0 0/60%);
   content: '';
   inset: 0;
   position: absolute;
@@ -1000,7 +981,6 @@ body {
   height: min(405px, 90vh);
   left: 50%;
   overflow: hidden;
-  position: fixed;
   padding: 14px 10px 4px 10px;
   top: 50%;
   width: min(480px, 90vw);
@@ -1654,7 +1634,6 @@ body {
   left: 50%;
   max-width: 90vw;
   padding: 0;
-  position: fixed;
   top: 50%;
   width: 300px;
 }
@@ -1671,8 +1650,8 @@ body {
   flex-direction: column;
   max-width: 90vw;
   padding: 0;
-  background-color: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
+  background-color: rgb(8, 8, 8);
+  border: 1px solid rgba(43, 43, 43, 0.6);
 }
 
 .smart-wallet-reminder {
@@ -1686,8 +1665,8 @@ body {
   top: -40px;
   line-height: 1.2;
   z-index: 12;
-  background-color: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
+  background-color: rgb(8, 8, 8);
+  border: 1px solid rgba(43, 43, 43, 0.6);
   border-radius: 12px;
   overflow: hidden;
   padding: 5px 10px;
@@ -1795,18 +1774,18 @@ body {
   justify-content: center;
   padding-right: 18px;
   padding-top: 6px;
-  transition: all.15s ease;
+  transition: 0.2s opacity ease;
 }
 
 .close-button-icon {
   height: 18px;
-  opacity: 0.7;
+  opacity: 0.8;
   width: 18px;
 }
 
 .send-close-button-icon {
   height: 15px;
-  opacity: 0.7;
+  opacity: 0.8;
   width: 15px;
 }
 
@@ -1964,7 +1943,7 @@ body {
 .tokenlistcontainer {
   display: flex;
   flex-direction: column;
-  height: 363.32px;
+  height: 345px;
   overflow: hidden;
   margin-top: 8px;
   padding-top: 1px;
@@ -2101,12 +2080,11 @@ body {
 .layout-settings-close-button {
   background: 0 0;
   border: none;
-  border-radius: 7px;
   cursor: pointer;
-  opacity: 0.7;
   position: absolute;
-  right: 15px;
-  top: 17px;
+  right: 18px;
+  top: 18px;
+  transition: 0.2s opacity ease;
 }
 
 .layout-settings-header {
@@ -2932,14 +2910,15 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 .tokenselectbg,
 .high-impact-confirmation-popup,
 .supply-borrow-popup,
-.edit-limit-price-popup-bg {
-  animation: fadeIn.2s ease-out;
+.edit-limit-price-popup-bg,
+.edit-order-size-popup-bg {
+  animation: fadeIn .2s ease-out;
   transform: translate(-50%, -50%);
-  z-index: 100;
-  transition: opacity.2s ease-out;
+  z-index: 12;
+  transition: opacity .2s ease-out;
   box-sizing: content-box;
-  background-color: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
+  background-color: rgb(8, 8, 8);
+  border: 1px solid rgba(43, 43, 43, 0.6);
 }
 
 
@@ -3367,12 +3346,9 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
 }
 
 body:has(.right-column.show) .blur-background-popups {
-  background-color: #000000a6;
-  content: "";
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  background-color: rgb(0 0 0/60%);
+  content: '';
+  inset: 0;
   position: absolute;
   z-index: 7;
 }
@@ -3774,7 +3750,6 @@ body:has(.popup-blur) {
   -webkit-overflow-scrolling: none;
 }
 
-
 .tokenselectbg,
 .sendselectbg,
 .connect-wallet-background,
@@ -3787,14 +3762,7 @@ body:has(.popup-blur) {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
-  transform: translate(-50%, -50%);
-  z-index: 12;
 }
-
-
-
-
-
 
 .bg-bg-surface-default {
   background: transparent !important;
@@ -4109,8 +4077,6 @@ input[type="email"] {
   max-width: 400px;
   padding: 15px;
   gap: 8px;
-  box-sizing: content-box;
-  background: rgb(6, 6, 6);
   display: flex;
   flex-direction: column;
   text-align: center;
@@ -4620,18 +4586,14 @@ input[type="email"] {
 
   .trade-container,
   .trade-mobile-view-container {
-    box-sizing: border-box;
     height: 100%;
-    margin: 0;
     width: 100%;
   }
 
   .trade-mobile-view-container {
     border: 1px solid #cbc8c808;
-    border-radius: 13px;
     display: flex;
     flex-direction: column;
-    padding: 0;
   }
 
   .swapmodal {
@@ -4654,12 +4616,13 @@ input[type="email"] {
   .chartandorderbookandordercenter {
     box-sizing: border-box;
     min-height: 550px;
-    height: calc(100vh - 150px);
+    height: calc(100vh - 225px);
     width: 100%;
   }
 
   .main-content-wrapper.simple-view {
     justify-content: center;
+    padding-bottom: 75px;
   }
 
 
@@ -4752,10 +4715,6 @@ input[type="email"] {
 
   .right-column:not(.dragging) {
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .trade-container {
-    padding-bottom: 45px;
   }
 
   .right-column .navlinkwrapper {
@@ -5268,8 +5227,8 @@ input[type="email"] {
   padding: 10px;
   padding-top: 15px;
   border-radius: 12px;
-  background-color: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
+  background-color: rgb(8, 8, 8);
+  border: 1px solid rgba(43, 43, 43, 0.6);
   margin-bottom: 8px;
 }
 
@@ -5534,7 +5493,7 @@ input[type="email"] {
   font-size: 0.9rem;
   padding: 10px;
   background-color: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
+  border: 1px solid rgba(43, 43, 43, 0.6);
   border-radius: 10px;
   cursor: pointer;
   transition: border-color 0.2s, transform 0.2s;
@@ -7406,42 +7365,13 @@ input::-webkit-inner-spin-button {
   75% { transform: translateX(4px); }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .edit-order-size-popup-bg {
   position: fixed;
   top: 50%;
   left: 50%;
   width: min(380px, 90vw);
-  background: rgb(6, 6, 6);
-  border: 1.5px solid rgba(43, 43, 43, 0.8);
   border-radius: 8px;
   box-shadow: 0 4px 24px rgb(0 0 0/10%);
-  transform: translate(-50%, -50%);
-  z-index: 12;
-  animation: fadeIn.2s ease-out;
   padding: 0;
   display: flex;
   flex-direction: column;
@@ -7665,8 +7595,6 @@ input::-webkit-inner-spin-button {
   width: 16px;
 }
 
-
-
 .notification-position-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -7685,7 +7613,6 @@ input::-webkit-inner-spin-button {
   align-items: center;
   gap: 8px;
 }
-
 
 .notification-position-option.active {
   background: rgb(170 174 207 / 8%);

@@ -7,7 +7,6 @@
   justify-content: center;
   width: 100%;
   min-height: 450px;
-
 }
 
 .portfolio-content-container {
@@ -509,7 +508,7 @@
 
   .portfolio-specific-page {
     height: auto;
-    margin: 0 0 5px 0;
+    padding-bottom: 45px;
     overflow: visible;
   }
 
@@ -532,6 +531,7 @@
     flex-direction: row;
     height: auto;
     padding: 12px;
+    display: none;
   }
 
   .control-button {
@@ -546,6 +546,7 @@
     border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     padding-right: 0;
   }
+  
   .referral-stats-container{
     border-top: none;
     border-left: 1px solid rgba(179, 184, 249, 0.1);
@@ -569,6 +570,7 @@
     flex-direction: column;
   }
   .referral-stats-container{
+    display: none;
     border-top: 1px solid rgba(179, 184, 249, 0.1);
   }
   .referral-stats-container{

@@ -384,7 +384,6 @@ const displayName = username && username.trim() !== ''
                     <div className="referral-bg-placeholder-content"></div>
                   )}
                 </div>
-                <span className="referral-loader"></span>
                 <div className="features-grid">
                   <div className="feature-card-left">
                     <div className="feature-icon">
