@@ -11,6 +11,8 @@ import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 import vaults from '../../assets/yeildvaults.png';
+import pool from '../../assets/pool.png';
+import launchpad from '../../assets/launchpad.png';
 
 
 interface SidebarNavProps {
@@ -66,9 +68,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       if (mobileMenuOpen && event.target instanceof Element) {
         const mobileMenu = document.querySelector('.mobile-hamburger-menu');
         const hamburgerButton = document.querySelector('.mobile-hamburger-button');
-        
-        if (mobileMenu && !mobileMenu.contains(event.target) && 
-            hamburgerButton && !hamburgerButton.contains(event.target)) {
+
+        if (mobileMenu && !mobileMenu.contains(event.target) &&
+          hamburgerButton && !hamburgerButton.contains(event.target)) {
           setMobileMenuOpen(false);
         }
       }
@@ -93,7 +95,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
   return (
     <>
-      <div 
+      <div
         className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
@@ -160,64 +162,78 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className="sidebar-label">{t('leaderboard')}</span>
             </Link>
-             <Link
-            to="/vaults"
-            className={`page-mode-button ${path === '/vaults' ? 'active' : ''}`}
-          >
-            <img src={vaults} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Vaults')}</span>
-          </Link>
-                    {isMobile && (
-          <button
-            onClick={toggleMobileMenu}
-            className="mobile-hamburger-button"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+            <Link
+              to="/lending"
+              className={`page-mode-button ${path === '/lending' ? 'active' : ''}`}
             >
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-          
-        )}
-                  {!isMobile && (
-            <div className="sidebar-bottom">
-              <a
-                href="https://docs.crystal.exchange"
-                target="_blank"
-                rel="noreferrer"
-                className="sidebar-bottom-link"
+              <img src={vaults} className="sidebar-icon" />
+              <span className="sidebar-label">{t('Lending')}</span>
+            </Link>
+             <Link
+              to="/earn"
+              className={`page-mode-button ${path === '/earn' ? 'active' : ''}`}
+            >
+              <img src={pool} className="sidebar-icon" />
+              <span className="sidebar-label">{t('Earn')}</span>
+            </Link>
+              <Link
+              to="/launchpad"
+              className={`page-mode-button ${path === '/launchpad' ? 'active' : ''}`}
+            >
+              <img src={launchpad} className="sidebar-icon" />
+              <span className="sidebar-label">{t('Launchpad')}</span>
+            </Link>
+            {isMobile && (
+              <button
+                onClick={toggleMobileMenu}
+                className="mobile-hamburger-button"
               >
-                <img src={docs} className="sidebar-icon" />
-                <span className="sidebar-label">{t('docs')}</span>
-              </a>
-              <a
-                href="https://discord.gg/CrystalExch"
-                target="_blank"
-                rel="noreferrer"
-                className="sidebar-bottom-link"
-              >
-                <img src={discord} className="sidebar-icon" />
-                <span className="sidebar-label">{t('discord')}</span>
-              </a>
-              <a
-                href="https://x.com/CrystalExch"
-                target="_blank"
-                rel="noreferrer"
-                className="sidebar-bottom-link"
-              >
-                <img src={twitter} className="sidebar-icon" />
-                <span className="sidebar-label">{'X / ' + t('twitter')}</span>
-              </a>
-            </div>
-          )}
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+
+            )}
+            {!isMobile && (
+              <div className="sidebar-bottom">
+                <a
+                  href="https://docs.crystal.exchange"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sidebar-bottom-link"
+                >
+                  <img src={docs} className="sidebar-icon" />
+                  <span className="sidebar-label">{t('docs')}</span>
+                </a>
+                <a
+                  href="https://discord.gg/CrystalExch"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sidebar-bottom-link"
+                >
+                  <img src={discord} className="sidebar-icon" />
+                  <span className="sidebar-label">{t('discord')}</span>
+                </a>
+                <a
+                  href="https://x.com/CrystalExch"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sidebar-bottom-link"
+                >
+                  <img src={twitter} className="sidebar-icon" />
+                  <span className="sidebar-label">{'X / ' + t('twitter')}</span>
+                </a>
+              </div>
+            )}
           </div>
         </div>
 
@@ -225,11 +241,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
       {isMobile && (
         <>
-          <div 
+          <div
             className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`}
             onClick={closeMobileMenu}
           />
-          
+
           <div className={`mobile-hamburger-menu ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <div className="mobile-menu-logo">
@@ -249,12 +265,12 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 </svg>
               </button>
             </div>
-            
+
             <div className="mobile-menu-content">
 
-              
+
               <div className="mobile-menu-section">
-                                <a
+                <a
                   href="https://docs.crystal.exchange"
                   target="_blank"
                   rel="noreferrer"

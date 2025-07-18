@@ -1,0 +1,322 @@
+.launchpad-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  color: #fff;
+  padding: 2rem;
+}
+
+.launchpad-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 500px;
+  width: 100%;
+}
+
+.launchpad-nav {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.launchpad-nav-item {
+  background: none;
+  border: none;
+  color: #ffffff79;
+  font-size: 0.9rem;
+  font-weight: 400;
+  cursor: pointer;
+  padding: 0.5rem 0;
+  transition: color 0.2s ease;
+  position: relative;
+  letter-spacing: -0.3px;
+}
+
+.launchpad-nav-item:hover {
+  color: #fff;
+}
+
+.launchpad-nav-item.active {
+  color: #50f08dde;
+}
+
+.launchpad-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background-color: #50f08dde;
+  border-radius: 1px;
+}
+
+.launchpad-form-wrapper {
+  width: 100%;
+}
+
+.launchpad-title {
+  font-size: 2rem;
+  font-weight: 100;
+  color: #fff;
+  margin-bottom: 2rem;
+  text-align: center;
+  letter-spacing: -0.5px;
+}
+
+.launchpad-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.launchpad-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.launchpad-label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #fff;
+  letter-spacing: -0.3px;
+}
+
+.optional-text {
+  font-size: 0.8rem;
+  color: #ffffff79;
+}
+
+.launchpad-input {
+  background-color: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.09);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  color: #fff;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+  font-weight: 300;
+}
+
+.launchpad-input:focus {
+  outline: none;
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
+}
+
+.launchpad-input::placeholder {
+  color: #ffffff4d;
+}
+
+.launchpad-upload-area {
+  border: 2px dashed rgba(179, 184, 249, 0.09);
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.launchpad-upload-area:hover,
+.launchpad-upload-area.drag-active {
+  border-color: #aaaecf;
+}
+
+.launchpad-upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.launchpad-upload-text {
+  color: #ffffff79;
+  font-size: 0.8rem;
+  letter-spacing: -0.3px;
+  font-weight: 300;
+}
+
+.launchpad-upload-text p {
+  margin: 0;
+  line-height: 1.2;
+}
+
+.launchpad-upload-icon {
+  color: #9595a6;
+}
+
+.launchpad-cost-info {
+  border: 1.5px solid rgba(179, 184, 249, 0.09);
+  border-radius: 12px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.launchpad-cost-item {
+  display: flex;
+  align-items: center;
+}
+
+.launchpad-cost-item span {
+  font-size: 0.9rem;
+  color: #ffffff79;
+  letter-spacing: -0.3px;
+  font-weight: 300;
+}
+
+
+
+.launchpad-launch-button {
+  width: 100%;
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 12px;
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.5px;
+  opacity: 0.5;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);
+}
+
+.launchpad-launch-button.enabled {
+  opacity: 1;
+}
+
+.launchpad-launch-button.enabled:hover {
+  filter: brightness(1.1);
+}
+
+.launchpad-launch-button:disabled {
+  cursor: not-allowed;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .launchpad-container {
+    padding: 1rem;
+  }
+
+  .launchpad-nav {
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .launchpad-nav-item {
+    font-size: 0.8rem;
+  }
+
+  .launchpad-title {
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .launchpad-form {
+    gap: 1.5rem;
+  }
+
+  .launchpad-upload-area {
+    padding: 2rem 1rem;
+  }
+
+  .launchpad-cost-info {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .launchpad-nav {
+    gap: 0.5rem;
+  }
+
+  .launchpad-nav-item {
+    font-size: 0.75rem;
+  }
+
+  .launchpad-title {
+    font-size: 1.3rem;
+  }
+
+  .launchpad-upload-area {
+    padding: 1.5rem 1rem;
+  }
+
+  .launchpad-upload-text {
+    font-size: 0.75rem;
+  }
+}
+
+.launchpad-image-container {
+  position: relative;
+}
+
+.launchpad-image-preview {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid rgba(219, 221, 249, 0.2);
+  margin-bottom: 1rem;
+}
+
+.launchpad-clear-button {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(6, 6, 6);
+  border: 1.5px solid rgba(179, 184, 249, .2);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #666;
+}
+
+.launchpad-socials-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.launchpad-social-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.launchpad-file-input {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .launchpad-socials-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+}

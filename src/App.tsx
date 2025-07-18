@@ -72,7 +72,6 @@ import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 import { shMonadAbi } from './abis/shMonadAbi.ts';
-import { CrystalLending } from './abis/CrystalLending.ts';
 
 // import types
 import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
@@ -140,7 +139,8 @@ import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrde
 import SidebarNav from './components/SidebarNav/SidebarNav';
 import CrystalObject from './components/CrystalObject.tsx';
 import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
-
+import LPVaults from './components/LPVaults/LPVaults.tsx';
+import Launchpad from './components/Launchpad/Launchpad.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -207,6 +207,11 @@ function App() {
     }
     return g;
   })();
+  const [selectedVaultForAction, setSelectedVaultForAction] = useState<VaultStrategy | null>(null);
+  const [vaultDepositAmount, setVaultDepositAmount] = useState('');
+  const [vaultWithdrawAmount, setVaultWithdrawAmount] = useState('');
+  const [isVaultDepositSigning, setIsVaultDepositSigning] = useState(false);
+  const [isVaultWithdrawSigning, setIsVaultWithdrawSigning] = useState(false);
   const txReceiptResolvers = new Map<string, () => void>();
   const clearlogo = '/CrystalLogo.png';
   // get market including multihop
@@ -963,7 +968,7 @@ function App() {
       });
     }
   };
-  
+
   const handleTokenSelectKeyDown = (e: React.KeyboardEvent) => {
     const currentTokenList = Object.values(tokendict).filter(
       (token) =>
@@ -2051,27 +2056,45 @@ function App() {
   useEffect(() => {
     let title = 'Crystal | Decentralized Cryptocurrency Exchange';
 
-    switch (location.pathname) {
-      case '/portfolio':
+    switch (true) {
+      case location.pathname === '/portfolio':
         title = 'Portfolio | Crystal';
         break;
-      case '/referrals':
+      case location.pathname === '/referrals':
         title = 'Referrals | Crystal';
         break;
-      case '/earn':
-        title = 'Earn | Crystal';
-        break;
-      case '/leaderboard':
+      case location.pathname === '/leaderboard':
         title = 'Leaderboard | Crystal';
         break;
-      case '/vaults':
-        title = 'Vaults | Crystal';
+      case location.pathname.startsWith('/earn/vaults'):
+        if (location.pathname === '/earn/vaults') {
+          title = 'Vaults | Crystal';
+        } else {
+          // Extract vault address from URL for specific vault page
+          const pathParts = location.pathname.split('/');
+          if (pathParts.length >= 4) {
+            const vaultAddress = pathParts[3];
+            title = `Vault ${vaultAddress.slice(0, 8)}... | Crystal`;
+          }
+        }
         break;
-      case '/swap':
-      case '/market':
-      case '/limit':
-      case '/send':
-      case '/scale':
+      case location.pathname.startsWith('/earn'):
+        if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
+          title = 'Earn | Crystal';
+        } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
+          // Extract pool identifier from URL
+          const pathParts = location.pathname.split('/');
+          if (pathParts.length >= 4) {
+            const poolIdentifier = pathParts[3];
+            const [firstToken, secondToken] = poolIdentifier.split('-');
+            title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
+          }
+        }
+        break;
+      case location.pathname === '/launchpad':
+        title = 'Launchpad | Crystal';
+        break;
+      case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
         if (trades.length > 0) {
           const formattedPrice = formatSubscript(trades[0][1]);
           if (activeMarket.quoteAsset) {
@@ -2079,12 +2102,13 @@ function App() {
           } else {
             title = `${location.pathname.slice(1).charAt(0).toUpperCase() + location.pathname.slice(2)} | Crystal`;
           }
-          break;
         }
+        break;
     }
 
     document.title = title;
-  }, [trades, location.pathname]);
+  }, [trades, location.pathname, activeMarket]);
+
 
   // referral data
   useEffect(() => {
@@ -5466,7 +5490,7 @@ function App() {
                 key={token.address}
                 onMouseEnter={() => setSelectedTokenIndex(index)}
                 onClick={() => {
-                  if (location.pathname.slice(1) == 'vaults' && onSelectTokenCallback) {
+                  if ((location.pathname.slice(1) == 'lending' || location.pathname.slice(1) == 'earn/liquidity-pools') && onSelectTokenCallback) {
                     onSelectTokenCallback({
                       icon: token.image,
                       symbol: token.ticker
@@ -6729,7 +6753,58 @@ function App() {
       </ul>
     </div>
   );
+  const [marketDropdownOpen, setMarketDropdownOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    name: '',
+    description: '',
+    depositAmount: '',
+    type: 'Spot' as 'Spot' | 'Margin',
+    tradableTokens: [] as string[],
+    selectedMarket: '',
+    website: '',
+    telegram: '',
+    discord: '',
+    twitter: ''
+  });
 
+
+  const usdcBalance = tokenBalances[usdc] || BigInt(0);
+  const usdcDecimals = Number(tokendict[usdc]?.decimals || 18);
+  const userUSDCBalance = Number(usdcBalance) / (10 ** usdcDecimals);
+
+  const minDeposit = 900;
+  const creationFee = 100;
+
+  const isCreateFormValid = () => {
+    const depositValid = parseFloat(createForm.depositAmount) >= minDeposit;
+    const balanceValid = parseFloat(createForm.depositAmount) <= (userUSDCBalance - creationFee);
+    const marketValid = createForm.type === 'Margin' || (createForm.type === 'Spot' && createForm.selectedMarket !== '');
+
+    return createForm.name.trim() !== '' &&
+      createForm.description.trim() !== '' &&
+      depositValid &&
+      balanceValid &&
+      marketValid;
+  };
+
+  const handleCreateVault = () => {
+    if (isCreateFormValid()) {
+      console.log('Creating vault:', createForm);
+      setpopup(0);
+      setCreateForm({
+        name: '',
+        description: '',
+        depositAmount: '',
+        type: 'Spot',
+        tradableTokens: [],
+        selectedMarket: '',
+        website: '',
+        telegram: '',
+        discord: '',
+        twitter: ''
+      });
+    }
+  };
   //popup modals
   const Modals = (
     <>
@@ -10014,6 +10089,506 @@ function App() {
                     </div>
                   ) : (
                     'Confirm'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 21 ? (
+          <div className="modal-overlay">
+            <div className="modal-content" ref={popupref}>
+              <div className="modal-header">
+                <h2>Create New Vault</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setpopup(0);
+                    setMarketDropdownOpen(false);
+                    setCreateForm({
+                      name: '',
+                      description: '',
+                      depositAmount: '',
+                      type: 'Spot',
+                      tradableTokens: [],
+                      selectedMarket: '',
+                      website: '',
+                      telegram: '',
+                      discord: '',
+                      twitter: ''
+                    });
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>Vault Name</label>
+                  <input
+                    type="text"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
+                    placeholder="Enter vault name"
+                    className="form-input"
+                  />
+                  <small>Name is permanent and cannot be changed later</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Vault Description</label>
+                  <textarea
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Describe your vault strategy..."
+                    className="form-textarea"
+                    rows={3}
+                  />
+                  <small>Description can be edited later</small>
+                </div>
+
+                <div className="form-group">
+                  <label>Vault Type</label>
+                  <div className="vault-type-selector">
+                    <button
+                      className={`type-option ${createForm.type === 'Spot' ? 'active' : ''}`}
+                      onClick={() => setCreateForm(prev => ({ ...prev, type: 'Spot', selectedMarket: '' }))}
+                    >
+                      <div className="type-title">Spot Vault</div>
+                      <div className="type-desc">Trade on exactly one market</div>
+                    </button>
+                    <button
+                      className={`type-option ${createForm.type === 'Margin' ? 'active' : ''}`}
+                      onClick={() => setCreateForm(prev => ({ ...prev, type: 'Margin', selectedMarket: '' }))}
+                    >
+                      <div className="type-title">Cross-Margin Vault</div>
+                      <div className="type-desc">Trade across multiple markets</div>
+                    </button>
+                  </div>
+                </div>
+
+                {createForm.type === 'Spot' ? (
+                  <div className="form-group">
+                    <label>Select Trading Market</label>
+                    <div className={`vault-market-dropdown-container ${marketDropdownOpen ? 'open' : ''}`}>
+                      <div
+                        className="vault-market-selected-display"
+                        onClick={() => setMarketDropdownOpen(!marketDropdownOpen)}
+                      >
+                        <div className="vault-market-selected-info">
+                          {createForm.selectedMarket ? (
+                            <>
+                              <img
+                                className="vault-market-icon"
+                                src={markets[createForm.selectedMarket]?.image || tokendict[markets[createForm.selectedMarket]?.baseAddress]?.image}
+                              />
+                              <span className="vault-market-name">{createForm.selectedMarket.replace(/(.+)(.{4})$/, '$1/$2')}</span>
+                            </>
+                          ) : (
+                            <span className="vault-market-placeholder">Choose a market...</span>
+                          )}
+                        </div>
+                        <svg
+                          className="vault-market-arrow"
+                          xmlns="http://www.w3.org/2000/svg"
+                          viewBox="0 0 24 24"
+                          width="20"
+                          height="20"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                      </div>
+
+                      {marketDropdownOpen && (
+                        <div className="vault-market-dropdown-list">
+                          {Object.values(markets).map((market) => {
+                            const marketKey = market.baseAsset + market.quoteAsset;
+                            return (
+                              <div
+                                key={marketKey}
+                                className={`vault-market-dropdown-item ${createForm.selectedMarket === marketKey ? 'selected' : ''}`}
+                                onClick={() => {
+                                  setCreateForm(prev => ({ ...prev, selectedMarket: marketKey }));
+                                  setMarketDropdownOpen(false);
+                                }}
+                              >
+                                <div className="vault-market-item-info">
+                                  <img
+                                    className="vault-market-icon"
+                                    src={market.image || tokendict[market.baseAddress]?.image}
+                                  />
+                                  <span className="vault-market-name">{market.baseAsset}/{market.quoteAsset}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                    <small>Your vault will only trade on this selected market</small>
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <label>Trading Markets</label>
+                    <div className="vault-market-info-text">
+                      <p>This vault is allowed to trade on all listed markets with USDC as the quote token.</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Add Social Media Fields */}
+                <div className="form-group">
+                  <label>Socials <span className="optional-text">[Optional]</span></label>
+                  <div className="vault-socials-grid">
+                    <div className="vault-social-field">
+                      <label className="vault-social-label">Website</label>
+                      <input
+                        type="text"
+                        value={createForm.website}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, website: e.target.value }))}
+                        className="form-input"
+                        placeholder="https://..."
+                      />
+                    </div>
+                    <div className="vault-social-field">
+                      <label className="vault-social-label">Telegram</label>
+                      <input
+                        type="text"
+                        value={createForm.telegram}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, telegram: e.target.value }))}
+                        className="form-input"
+                        placeholder="https://t.me/..."
+                      />
+                    </div>
+                    <div className="vault-social-field">
+                      <label className="vault-social-label">Discord</label>
+                      <input
+                        type="text"
+                        value={createForm.discord}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, discord: e.target.value }))}
+                        className="form-input"
+                        placeholder="https://discord.gg/..."
+                      />
+                    </div>
+                    <div className="vault-social-field">
+                      <label className="vault-social-label">X/Twitter</label>
+                      <input
+                        type="text"
+                        value={createForm.twitter}
+                        onChange={(e) => setCreateForm(prev => ({ ...prev, twitter: e.target.value }))}
+                        className="form-input"
+                        placeholder="https://x.com/..."
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label>Initial Deposit (USDC)</label>
+                  <input
+                    type="number"
+                    value={createForm.depositAmount}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, depositAmount: e.target.value }))}
+                    placeholder="100"
+                    min="100"
+                    className="form-input"
+                  />
+                  <div className="vault-deposit-info">
+                    <small>              <img src={walleticon} className="balance-wallet-icon" />{' '}
+                      {formatDisplayValue(usdcBalance, usdcDecimals)} USDC</small>
+                    <small>Minimum: {minDeposit} USDC + {creationFee} USDC creation fee</small>
+                  </div>
+                </div>
+
+                <div className="vault-requirements">
+                  <ul>
+                    <li>Vault creator must maintain {'>'}5% of total liquidity</li>
+                    <li>1000 USDC creation fee (non-refundable)</li>
+                    <li>Name is permanent, description can be edited later</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="vault-cancel-button"
+                  onClick={() => {
+                    setpopup(0);
+                    setMarketDropdownOpen(false);
+                    setCreateForm({
+                      name: '',
+                      description: '',
+                      depositAmount: '',
+                      type: 'Spot',
+                      tradableTokens: [],
+                      selectedMarket: '',
+                      website: '',
+                      telegram: '',
+                      discord: '',
+                      twitter: ''
+                    });
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  className={`create-button ${isCreateFormValid() ? 'enabled' : ''}`}
+                  onClick={handleCreateVault}
+                  disabled={!isCreateFormValid()}
+                >
+                  Create Vault
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 22 ? (
+          <div className="modal-overlay">
+            <div className="modal-content vault-action-modal" ref={popupref}>
+              <div className="modal-header">
+                <h2>Deposit to {selectedVaultForAction?.name}</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setpopup(0);
+                    setSelectedVaultForAction(null);
+                    setVaultDepositAmount('');
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                {/* <div className="vault-action-info">
+                  <div className="vault-action-header">
+                    <h3>{selectedVaultForAction?.name}</h3>
+                    <span className="vault-action-type">{selectedVaultForAction?.type} Vault</span>
+                  </div>
+                  <div className="vault-action-stats">
+                    <div className="vault-stat-item">
+                      <span className="stat-label">APR</span>
+                      <span className="stat-value">{selectedVaultForAction?.apy}%</span>
+                    </div>
+                    <div className="vault-stat-item">
+                      <span className="stat-label">TVL</span>
+                      <span className="stat-value">{selectedVaultForAction?.totalDeposits}</span>
+                    </div>
+                    <div className="vault-stat-item">
+                      <span className="stat-label">Your Balance</span>
+                      <span className="stat-value">${selectedVaultForAction?.userBalance || '0.00'}</span>
+                    </div>
+                  </div>
+                </div> */}
+
+                <div className="vault-deposit-form">
+                  <div className="deposit-form-group">
+                    <div className="vault-input-container">
+                      <input
+                        type="number"
+                        value={vaultDepositAmount}
+                        onChange={(e) => setVaultDepositAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="vault-amount-input"
+                        min="0"
+                        step="0.01"
+                      />
+                      <div className="vault-input-token">
+                        <img src={Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.image} alt="USDC" className="vault-token-icon" />
+                        <span>USDC</span>
+                      </div>
+                    </div>
+                    <div className="vault-balance-info">
+                      <span>              
+                        <img src={walleticon} className="balance-wallet-icon" />{' '}
+                        {customRound(
+                          Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.address] ?? 0) /
+                          10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.decimals ?? 18),
+                          3,
+                        )
+                          .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                          .replace(/\.0+$/, '')} USDC</span>
+                      <button
+                        className="vault-max-button"
+                        onClick={() => {
+                          const usdcToken = Object.values(tokendict).find((t: any) => t.ticker === 'USDC');
+                          if (usdcToken) {
+                            const maxAmount = customRound(
+                              Number(tokenBalances[usdcToken.address] ?? 0) / 10 ** Number(usdcToken.decimals ?? 18),
+                              3,
+                            )
+                              .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                              .replace(/\.0+$/, '');
+                            setVaultDepositAmount(maxAmount);
+                          }
+                        }}
+                      >
+                        MAX
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className={`vault-confirm-button ${(!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning) ? 'disabled' : ''}`}
+                  onClick={async () => {
+                    if (!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0) return;
+
+                    setIsVaultDepositSigning(true);
+                    try {
+                      // Add your deposit logic here
+                      console.log('Depositing:', vaultDepositAmount, 'to vault:', selectedVaultForAction?.id);
+                      // Simulate transaction
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+
+                      setpopup(0);
+                      setSelectedVaultForAction(null);
+                      setVaultDepositAmount('');
+                    } catch (error) {
+                      console.error('Deposit failed:', error);
+                    } finally {
+                      setIsVaultDepositSigning(false);
+                    }
+                  }}
+                  disabled={!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning}
+                >
+                  {isVaultDepositSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Depositing...
+                    </div>
+                  ) : (
+                    'Deposit'
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 23 ? (
+          <div className="modal-overlay">
+            <div className="modal-content vault-action-modal" ref={popupref}>
+              <div className="modal-header">
+                <h2>Withdraw from {selectedVaultForAction?.name}</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setpopup(0);
+                    setSelectedVaultForAction(null);
+                    setVaultWithdrawAmount('');
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div className="modal-body">
+                {/* <div className="vault-action-info">
+                  <div className="vault-action-header">
+                    <h3>{selectedVaultForAction?.name}</h3>
+                    <span className="vault-action-type">{selectedVaultForAction?.type} Vault</span>
+                  </div>
+                  <div className="vault-action-stats">
+                    <div className="vault-stat-item">
+                      <span className="stat-label">Your Balance</span>
+                      <span className="stat-value">${selectedVaultForAction?.userBalance || '0.00'}</span>
+                    </div>
+                    <div className="vault-stat-item">
+                      <span className="stat-label">Total Earned</span>
+                      <span className="stat-value positive">${selectedVaultForAction?.userEarnings || '0.00'}</span>
+                    </div>
+                  </div>
+                </div> */}
+
+                <div className="vault-withdraw-form">
+                  <div className="withdrawal-form-group">
+                    <div className="vault-input-container">
+                      <input
+                        type="number"
+                        value={vaultWithdrawAmount}
+                        onChange={(e) => setVaultWithdrawAmount(e.target.value)}
+                        placeholder="0.00"
+                        className="vault-amount-input"
+                        min="0"
+                        max={selectedVaultForAction?.userBalance || '0'}
+                        step="0.01"
+                      />
+                      <div className="vault-input-token">
+                        <span>USDC</span>
+                      </div>
+                    </div>
+                    <div className="vault-balance-info">
+                      <span>              <img src={walleticon} className="balance-wallet-icon" />{' '}
+                        {selectedVaultForAction?.userBalance || '0.00'}</span>
+                      <button
+                        className="vault-max-button"
+                        onClick={() => {
+                          setVaultWithdrawAmount(selectedVaultForAction?.userBalance || '0');
+                        }}
+                      >
+                        MAX
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* <div className="vault-withdraw-warning">
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    <span>Withdrawals may take up to 24 hours to process depending on vault strategy.</span>
+                  </div> */}
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className={`vault-confirm-button withdraw ${(!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning) ? 'disabled' : ''}`}
+                  onClick={async () => {
+                    if (!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0) return;
+
+                    setIsVaultWithdrawSigning(true);
+                    try {
+                      console.log('Withdrawing:', vaultWithdrawAmount, 'from vault:', selectedVaultForAction?.id);
+                      await new Promise(resolve => setTimeout(resolve, 2000));
+
+                      setpopup(0);
+                      setSelectedVaultForAction(null);
+                      setVaultWithdrawAmount('');
+                    } catch (error) {
+                      console.error('Withdrawal failed:', error);
+                    } finally {
+                      setIsVaultWithdrawSigning(false);
+                    }
+                  }}
+                  disabled={!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning}
+                >
+                  {isVaultWithdrawSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Withdrawing...
+                    </div>
+                  ) : (
+                    'Withdraw'
                   )}
                 </button>
               </div>
@@ -16514,7 +17089,7 @@ function App() {
               />
             }
           />
-          <Route path="/vaults" element={
+          <Route path="/lending" element={
             <EarnVaults
               setpopup={setpopup}
               onSelectToken={(token) => {
@@ -16542,8 +17117,147 @@ function App() {
               waitForTxReceipt={waitForTxReceipt}
               activechain={activechain}
               setChain={handleSetChain}
-            />}
-          />
+            />} />
+          <Route path="/earn" element={<Navigate to="/earn/liquidity-pools" replace />} />
+
+          {/* Base liquidity pools route */}
+          <Route path="/earn/liquidity-pools" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute="/earn/liquidity-pools"
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+
+          {/* Specific liquidity pool route */}
+          <Route path="/earn/liquidity-pools/:poolId" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute={location.pathname}
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+
+          {/* Base vaults route */}
+          <Route path="/earn/vaults" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute="/earn/vaults"
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+
+          {/* Specific vault route */}
+          <Route path="/earn/vaults/:vaultAddress" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute={location.pathname}
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+          <Route path="/launchpad" element={
+            <Launchpad />
+          } />
           <Route
             path="/portfolio"
             element={
@@ -16601,7 +17315,7 @@ function App() {
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
           <Route
-            path="/mint" 
+            path="/mint"
             element={
               <NFTMintingPage
                 address={address}

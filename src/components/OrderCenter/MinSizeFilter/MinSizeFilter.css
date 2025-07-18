@@ -34,8 +34,8 @@
   width: 240px;
   z-index: 4;
   padding: 2px 12px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
-  border-left:  1px solid rgba(179, 184, 249, 0.1);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-left:  1px solid rgba(179, 184, 249, 0.09);
 }
 
 

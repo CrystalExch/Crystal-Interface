@@ -184,44 +184,43 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const { data: lendingData, isLoading: lendingLoading, refetch: lendingRefetch } = useReadContracts({
         batchSize: 0,
         contracts: [
-            // CrystalLending contract calls
             ...(lendingAddress ? [
-                // Get governance address
+                // get governance address
                 {
                     abi: CrystalLending,
                     address: lendingAddress,
                     functionName: 'gov',
                     args: [],
                 },
-                // Get account health for account ID 0
+                // get account health for account ID 0
                 {
                     abi: CrystalLending,
                     address: lendingAddress,
                     functionName: 'getAccountHealth',
                     args: [false, address ?? '0x0000000000000000000000000000000000000000', 0],
                 },
-                // Get account health for account ID 1
+                // get account health for account ID 1
                 {
                     abi: CrystalLending,
                     address: lendingAddress,
                     functionName: 'getAccountHealth',
                     args: [false, address ?? '0x0000000000000000000000000000000000000000', 1],
                 },
-                // Get account health for account ID 2
+                // get account health for account ID 2
                 {
                     abi: CrystalLending,
                     address: lendingAddress,
                     functionName: 'getAccountHealth',
                     args: [false, address ?? '0x0000000000000000000000000000000000000000', 2],
                 },
-                // Get interest rates for all tokens
+                // get interest rates for all tokens
                 ...Object.values(chainTokenDict).map((token: any) => ({
                     abi: CrystalLending,
                     address: lendingAddress,
                     functionName: 'getInterestRate',
                     args: [token.address],
                 })),
-                // Get token information for all tokens
+                // get token information for all tokens
                 ...Object.values(chainTokenDict).map((token: any) => ({
                     abi: CrystalLending,
                     address: lendingAddress,
@@ -311,9 +310,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
     const tokenData = earnAvailableTokens.find(t => t.address === tokenAddress);
     if (!tokenData || !tokendict[tokenAddress]) return false;
 
-    // Skip approval for ETH/native token
     if (tokenAddress !== wethticker) {
-      // Check if approval is needed and approve if necessary
       const approvalSuccess = await handleApproval(tokenAddress, amount);
       if (!approvalSuccess) return false;
     }
@@ -329,7 +326,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
           functionName: 'supply',
           args: [tokenAddress, amountBigInt, BigInt(accountId)],
         }),
-        value: tokenAddress === wethticker ? amountBigInt : 0n, // Send ETH value if it's ETH
+        value: tokenAddress === wethticker ? amountBigInt : 0n, 
       },
     });
 
@@ -1135,8 +1132,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                     Number(amount) / 10 ** decimals,
                     3
                 ).toString();
-
-                // Use the correct handler based on the mode
                 if (earnActiveMode === 'supply') {
                     handleEarnCollateralAmountChangeWithValidation(formattedAmount);
                 } else {
@@ -1764,7 +1759,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                                                             <div className={`earn-token-usd-value ${supplyExceedsBalance ? 'exceed-balance' : ''}`}>
                                                                 {getInputUSDValue(
                                                                     earnSelectedVaultData.tokens.first.symbol,
-                                                                    earnCollateralAmount, // Changed this line - was using earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
+                                                                    earnCollateralAmount,  
                                                                     tradesByMarket,
                                                                     markets,
                                                                 )}
@@ -2264,7 +2259,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                                                             <span className="earn-deposit-total-label">Projected Earnings / Month (USD)</span>
                                                             <span className="earn-deposit-total-value">
                                                                 ${(() => {
-                                                                    const tokenAmount = earnCollateralAmount; // Changed from earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
+                                                                    const tokenAmount = earnCollateralAmount;
                                                                     if (!tokenAmount || tokenAmount === '0') return '0.00';
                                                                     const tokenEntry = Object.values(chainTokenDict).find((token: any) => token.ticker === earnSelectedVaultData.tokens.first.symbol) as any;
                                                                     if (!tokenEntry) return '0.00';
@@ -2299,7 +2294,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                                                             <span className="earn-deposit-total-label">Projected Earnings / Year (USD)</span>
                                                             <span className="earn-deposit-total-value">
                                                                 ${(() => {
-                                                                    const tokenAmount = earnCollateralAmount; // Changed from earnTokenAmounts[earnSelectedVaultData.tokens.first.symbol]
+                                                                    const tokenAmount = earnCollateralAmount;  
                                                                     if (!tokenAmount || tokenAmount === '0') return '0.00';
                                                                     const tokenEntry = Object.values(chainTokenDict).find((token: any) => token.ticker === earnSelectedVaultData.tokens.first.symbol) as any;
                                                                     if (!tokenEntry) return '0.00';
@@ -2382,7 +2377,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                                                         }
 
                                                         const tokenAddress = earnSelectedVaultData?.tokens.first.symbol === 'ETH'
-                                                            ? wethticker // Use the weth address from props
+                                                            ? wethticker 
                                                             : earnAvailableTokens.find(t => t.symbol === earnSelectedVaultData?.tokens.first.symbol)?.address;
 
                                                         if (!tokenAddress || !earnSelectedVaultData) return;
@@ -2398,7 +2393,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                                                                 break;
                                                             case 'borrow':
                                                                 if (earnSelectedCollateral) {
-                                                                    // First supply collateral, then borrow
                                                                     const collateralAddress = earnSelectedCollateral.symbol === 'ETH'
                                                                         ? wethticker
                                                                         : earnSelectedCollateral.address;

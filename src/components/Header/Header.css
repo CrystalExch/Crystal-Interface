@@ -1,6 +1,6 @@
 .app-header {
   align-items: flex-end;
-  background: rgb(6, 6, 6);
+  background: none;
   color: #fff;
   display: flex;
   flex: none;
@@ -12,7 +12,10 @@
   right: 0;
   top: 0;
   transition: left 0.3s ease;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  backdrop-filter: blur(10px);
+  z-index: 99;
+  background-color: #0000006d;
 }
 
 
@@ -91,7 +94,7 @@
 .transparent-button {
   background: none;
   border: none;
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.09);
   border-radius: 5px;
   color: #fff;
   cursor: pointer;
@@ -154,7 +157,7 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.09);
   border-radius: 6px;
 }
 
@@ -172,7 +175,7 @@
   transition: all.2s cubic-bezier(0.2, 0, 0.1, 1);
   width: 35px;
   height: 35px;
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.09);
   border-radius: 6px;
 }
 
