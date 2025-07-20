@@ -149,7 +149,6 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
-import NFTMintingPage from './components/NFTMintingPage/NFTMintingPage.tsx';
 
 function App() {
   useEffect(() => {
@@ -16586,17 +16585,6 @@ function App() {
           <Route path="/limit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
-          <Route
-            path="/mint" 
-            element={
-              <NFTMintingPage
-                address={address}
-                sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
-                setChain={handleSetChain}
-              />
-            }
-          />
         </Routes>
         <TransactionPopupManager
           transactions={transactions}

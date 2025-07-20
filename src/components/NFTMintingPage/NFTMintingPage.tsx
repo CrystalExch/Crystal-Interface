@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
-import { StandardMerkleTree } from '@openzeppelin/merkle-tree';
 
 import { config } from '../../wagmi';
 import { CrystalNFTAbi } from '../../abis/CrystalNFTAbi';
@@ -14,7 +13,7 @@ interface NFTMintingPageProps {
   setChain: any;
 }
 
-const NFT_ADDRESS = '0x7DCCd0e0Bfa8828f00D7Ba057Ba64c31eAB36e3a';
+const CLAIM_ADDRESS = '0x';
 const MAX_SUPPLY = 1000;
 
 interface AddressData {
@@ -28,7 +27,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   waitForTxReceipt,
   setChain,
 }) => {
-  const [tree, setTree] = useState<StandardMerkleTree<any[]> | null>(null);
+  const [tree, setTree] = useState<any | null>(null);
   const [addressMap, setAddressMap] = useState<Record<string, AddressData> | null>(null);
   const [loadingData, setLoadingData] = useState(true);
   const [proof, setProof] = useState<`0x${string}`[]>([]);
@@ -53,19 +52,18 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
         return res;
       };
       try {
-        let treeRes = await fetchCached('/tree.json');
+        //let treeRes = await fetchCached('/tree.json');
         let mapRes = await fetchCached('/addressMap.json');
         if (!mapRes.ok) {
           await cache.delete('/tree.json');
           await cache.delete('/addressMap.json');
-          treeRes = await fetchCached('/tree.json');
+          //treeRes = await fetchCached('/tree.json');
           mapRes = await fetchCached('/addressMap.json');
         }
-        const treeJson = await treeRes.json();
         const mapJson = await mapRes.json();
         if (!cancelled) {
           setAddressMap(mapJson);
-          setTree(StandardMerkleTree.load(treeJson));
+          setTree(null);
         }
       } catch (e) {
         console.error('failed to load tree or map', e);
@@ -105,9 +103,9 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
       try {
         const [claimedRes, totalRes, uriRes] = (await readContracts(config, {
           contracts: [
-            { abi: CrystalNFTAbi, address: NFT_ADDRESS, functionName: 'claimed', args: [address] },
-            { abi: CrystalNFTAbi, address: NFT_ADDRESS, functionName: 'totalMinted', args: [] },
-            { abi: CrystalNFTAbi, address: NFT_ADDRESS, functionName: 'tokenURI', args: [id] },
+            { abi: CrystalNFTAbi, address: CLAIM_ADDRESS, functionName: 'claimed', args: [address] },
+            { abi: CrystalNFTAbi, address: CLAIM_ADDRESS, functionName: 'totalMinted', args: [] },
+            { abi: CrystalNFTAbi, address: CLAIM_ADDRESS, functionName: 'tokenURI', args: [id] },
           ],
         })) as any[];
 
@@ -132,7 +130,7 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
         functionName: 'claim',
         args: [tokenId, amount, proof],
       });
-      const op = await sendUserOperationAsync({ uo: { target: NFT_ADDRESS, data, value: amount } });
+      const op = await sendUserOperationAsync({ uo: { target: CLAIM_ADDRESS, data, value: amount } });
       await waitForTxReceipt(op.hash);
       setHasMinted(true);
     } catch (e) {
