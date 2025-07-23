@@ -1,6 +1,3 @@
-// SPDX‑License‑Identifier: MIT
-// cleaned‑up version – all unused vars removed, logic tightened. IPFS block kept (commented) for future use.
-
 import React, { useEffect, useState } from 'react';
 import { encodeFunctionData } from 'viem';
 
@@ -9,9 +6,6 @@ import { settings } from '../../settings';
 
 import './Launchpad.css';
 
-// ──────────────────────────────────────────────────────────────────────────────
-// types
-// ──────────────────────────────────────────────────────────────────────────────
 interface LaunchpadFormData {
   name: string;
   ticker: string;
@@ -24,7 +18,7 @@ interface LaunchpadFormData {
 }
 
 interface LaunchpadProps {
-  address: `0x${string}` | undefined; // wallet address (unused here but left for future)
+  address: `0x${string}` | undefined;
   sendUserOperationAsync: any;
   waitForTxReceipt: any;
   account: any;
@@ -32,16 +26,26 @@ interface LaunchpadProps {
   setpopup: (n: number) => void;
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
-// constants
-// ──────────────────────────────────────────────────────────────────────────────
-const ACTIVE_CHAIN_ID = 10143; // monad testnet
-const ROUTER_ADDRESS = settings.chainConfig[ACTIVE_CHAIN_ID].launchpadRouter.toLowerCase();
+const ROUTER_ADDRESS = settings.chainConfig[10143].launchpadRouter.toLowerCase();
 const TOKEN_CREATED_TOPIC = '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063';
 
-// ──────────────────────────────────────────────────────────────────────────────
-// component
-// ──────────────────────────────────────────────────────────────────────────────
+const UPLOADER_URL = 'https://launchpad-api.bhealthyfences.workers.dev/';
+
+async function uploadToR2(
+  key: string,
+  body: File | string,
+  contentType: string
+): Promise<string> {
+  const res = await fetch(`${UPLOADER_URL}/${key}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': contentType },
+    body: body,
+  });
+  if (!res.ok) throw new Error(`upload failed: ${res.status}`);
+  const data = await res.json();
+  return data.url;
+}
+
 const Launchpad: React.FC<LaunchpadProps> = ({
   sendUserOperationAsync,
   waitForTxReceipt,
@@ -67,20 +71,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   const [deployedTokenAddress, setDeployedTokenAddress] = useState('');
   const [deployedMarketAddress, setDeployedMarketAddress] = useState('');
 
-  const decodeString = (hex: string, offset: number) => {
-    const start = offset * 2;
-    const len = parseInt(hex.slice(start, start + 64), 16);
-    const strHex = hex.slice(start + 64, start + 64 + len * 2);
-    let out = '';
-    for (let i = 0; i < strHex.length; i += 2) {
-      out += String.fromCharCode(parseInt(strHex.slice(i, i + 2), 16));
-    }
-    return out;
-  };
-
+  // WebSocket listener unchanged
   useEffect(() => {
     const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
-
     ws.onopen = () => {
       ws.send(
         JSON.stringify({
@@ -88,49 +81,21 @@ const Launchpad: React.FC<LaunchpadProps> = ({
           jsonrpc: '2.0',
           method: 'eth_subscribe',
           params: ['logs', { address: ROUTER_ADDRESS, topics: [TOKEN_CREATED_TOPIC] }],
-        }),
+        })
       );
     };
-
     ws.onmessage = ({ data }) => {
       const msg = JSON.parse(data);
       if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-      const log = msg.params.result;
-
-      const marketAddress = `0x${log.topics[1].slice(26)}`;
-      const dataHex = log.data.replace(/^0x/, '');
-      const offsets = [0, 1, 2].map((i) => parseInt(dataHex.slice(i * 64, i * 64 + 64), 16));
-      const name = decodeString(dataHex, offsets[0]);
-      const ticker = decodeString(dataHex, offsets[1]);
-      const cid = decodeString(dataHex, offsets[2]);
-
-      console.log('new token:', { marketAddress, name, ticker, cid });
+      console.log('new token log:', msg.params.result);
     };
-
     ws.onerror = (e) => console.error('ws error', e);
     return () => ws.close();
   }, []);
 
-  // ipfs for u later
-  /*
-  const uploadToIPFS = async () => {
-    if (!formData.image) throw new Error('No image selected');
-
-    const form = new FormData();
-    form.append('image', formData.image);
-    form.append('telegram', formData.telegram);
-    form.append('discord', formData.discord);
-    form.append('twitter', formData.twitter);
-    form.append('website', formData.website);
-
-    const res = await fetch('http://localhost:5000/upload-image', { method: 'POST', body: form });
-    const data = await res.json();
-    return data; // { metadataCID: string }
-  };
-  */
-  const uploadToIPFS = async () => ({ metadataCID: 'temp' }); // temp, remove it when u get ipfs or aws working
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((p) => ({ ...p, [name]: value }));
   };
@@ -141,7 +106,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     reader.readAsDataURL(file);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = e.target.files?.[0];
     if (file && file.size <= 1 * 1024 * 1024) {
       setFormData((p) => ({ ...p, image: file }));
@@ -163,26 +130,27 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   const clearImage = () => {
     setFormData((p) => ({ ...p, image: null }));
     setImagePreview(null);
-    const inp = document.getElementById('file-input') as HTMLInputElement | null;
-    if (inp) inp.value = '';
+    (document.getElementById('file-input') as HTMLInputElement | null)?.click();
   };
 
-  const deployToken = async (metadataCID: string) => {
-    const txHash = await sendUserOperationAsync({
+  const deployToken = async (metadataUri: string) => {
+    const op = await sendUserOperationAsync({
       uo: {
         target: ROUTER_ADDRESS,
         data: encodeFunctionData({
           abi: CrystalLaunchpadRouter,
           functionName: 'createToken',
-          args: [formData.name, formData.ticker, metadataCID],
+          args: [formData.name, formData.ticker, metadataUri],
         }),
       },
     });
-    return waitForTxReceipt(txHash.hash);
+    return waitForTxReceipt(op.hash);
   };
 
   const extractAddresses = (receipt: any) => {
-    const event = receipt.logs.find((l: any) => l.topics?.[0] === TOKEN_CREATED_TOPIC);
+    const event = receipt.logs.find(
+      (l: any) => l.topics?.[0] === TOKEN_CREATED_TOPIC
+    );
     if (!event) throw new Error('TokenCreated event not found');
     return {
       token: `0x${event.topics[2].slice(26)}`,
@@ -192,20 +160,46 @@ const Launchpad: React.FC<LaunchpadProps> = ({
 
   const handleLaunch = async () => {
     if (!formData.name || !formData.ticker || !formData.image) {
-      setError('Please fill in all required fields');
+      setError('Fill in name, ticker, and image');
       return;
     }
     if (!account.connected) return setpopup(4);
-    if (account.chainId !== ACTIVE_CHAIN_ID) return setChain();
+    if (account.chainId !== 10143) return setChain();
 
     setIsLaunching(true);
     setError('');
-    setLaunchStatus('Uploading metadata...');
-
     try {
-      const { metadataCID } = await uploadToIPFS();
+      setLaunchStatus('Uploading image...');
+      const imageKey = `img/${formData.ticker}-${Date.now()}.${
+        formData.image.name.split('.').pop()
+      }`;
+      const imageUrl = await uploadToR2(
+        imageKey,
+        formData.image,
+        formData.image.type
+      );
+
+      setLaunchStatus('Uploading metadata...');
+      const timestamp = Date.now();
+      const metaKey = `metadata/${formData.ticker}-${timestamp}.json`;
+      const metadata = {
+        name: formData.name,
+        symbol: formData.ticker,
+        description: formData.description,
+        image: imageUrl,
+        telegram: formData.telegram,
+        discord: formData.discord,
+        twitter: formData.twitter,
+        website: formData.website,
+      };
+      const metadataUrl = await uploadToR2(
+        metaKey,
+        JSON.stringify(metadata),
+        'application/json'
+      );
+
       setLaunchStatus('Deploying token...');
-      const receipt = await deployToken(metadataCID);
+      const receipt = await deployToken(metadataUrl);
       const { token, market } = extractAddresses(receipt);
       setDeployedTokenAddress(token);
       setDeployedMarketAddress(market);
@@ -270,10 +264,10 @@ const Launchpad: React.FC<LaunchpadProps> = ({
               </div>
             </div>
 
-            <div className="launchpad-cost-info"><span>Launch cost: 0.75 MON</span></div>
+            <div className="launchpad-cost-info"><span>Launch cost: 0 MON</span></div>
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
-              {isLaunching ? 'Signing…' : account.connected ? (account.chainId === ACTIVE_CHAIN_ID ? 'Launch Token' : `Switch to ${settings.chainConfig[ACTIVE_CHAIN_ID].name}`) : 'Connect Wallet'}
+              {isLaunching ? 'Signing…' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
             </button>
 
             {launchStatus && <p className="launchpad-status">{launchStatus}</p>}

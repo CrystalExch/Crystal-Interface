@@ -50,6 +50,7 @@ export interface Token {
   description: string;
   created: string;
   bondingAmount: number;
+  volumeDelta: number;
 }
 
 interface TokenExplorerProps {
@@ -66,6 +67,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063';
 const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/version/latest';
 
 type State = {
   tokensByStatus: Record<Token['status'], Token[]>;
@@ -110,13 +112,20 @@ function reducer(state: State, action: Action): State {
     }
     case 'UPDATE_MARKET': {
       const buckets = { ...state.tokensByStatus };
+
       (Object.keys(buckets) as Token['status'][]).forEach((s) => {
-        buckets[s] = buckets[s].map((t) =>
-          t.id.toLowerCase() === action.id.toLowerCase()
-            ? { ...t, ...action.updates }
-            : t,
-        );
+        buckets[s] = buckets[s].map((t) => {
+          if (t.id.toLowerCase() !== action.id.toLowerCase()) return t;
+
+          const { volumeDelta = 0, ...rest } = action.updates;
+          return {
+            ...t,
+            ...rest,
+            volume24h: t.volume24h + volumeDelta,
+          };
+        });
       });
+
       return { ...state, tokensByStatus: buckets };
     }
     case 'HIDE_TOKEN': {
@@ -157,19 +166,16 @@ const createColorGradient = (base: string) => {
 };
 
 const formatPrice = (p: number) => {
-  if (p >= 1e12) return `$${(p / 1e12).toFixed(1)}T`;
-  if (p >= 1e9) return `$${(p / 1e9).toFixed(1)}B`;
-  if (p >= 1e6) return `$${(p / 1e6).toFixed(1)}M`;
-  if (p >= 1e3) return `$${(p / 1e3).toFixed(1)}K`;
-  return `$${p.toFixed(2)}`;
+  if (p >= 1e12) return `${(p / 1e12).toFixed(1)}T MON`;
+  if (p >= 1e9) return `${(p / 1e9).toFixed(1)}B MON`;
+  if (p >= 1e6) return `${(p / 1e6).toFixed(1)}M MON`;
+  if (p >= 1e3) return `${(p / 1e3).toFixed(1)}K MON`;
+  return `${p.toFixed(2)} MON`;
 };
 
 const formatTimeAgo = (t: string) => {
-  if (t.includes('h ago')) return t.replace(' ago', '');
-  if (t.includes('d ago')) return `${parseInt(t) * 24}h`;
-  if (t.includes('w ago')) return `${parseInt(t) * 7 * 24}h`;
-  if (t.includes('m ago')) return t.replace(' ago', '');
-  if (t.includes('s ago')) return t.replace(' ago', '');
+  if (t.includes('d ago')) return `${parseInt(t) * 24}h ago`;
+  if (t.includes('w ago')) return `${parseInt(t) * 7 * 24}h ago`;
   return t;
 };
 
@@ -224,10 +230,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   };
 
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
@@ -269,8 +271,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       parseInt(hex.slice(128, 192), 16),
     ];
     const read = (at: number): string => {
-      const start  = at * 2;
-      const len    = parseInt(hex.slice(start, start + 64), 16);
+      const start = at * 2;
+      const len = parseInt(hex.slice(start, start + 64), 16);
       const strHex = hex.slice(start + 64, start + 64 + len * 2);
       const bytes: string[] = strHex.match(/.{2}/g) ?? [];
       return bytes
@@ -281,14 +283,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
     const name = read(offs[0]);
     const symbol = read(offs[1]);
-    // const cid = read(offs[2]);
+    const cid = read(offs[2]);
 
     let meta: any = {};
-    // optional ipfs fetch
-    // try {
-    //   const r = await fetch(`https://ipfs.io/ipfs/${cid}`);
-    //   meta = await r.json();
-    // } catch {}
+    try {
+      const res = await fetch(cid);
+      if (res.ok) meta = await res.json();
+    } catch (e) {
+      console.warn('failed to load metadata for', cid, e);
+    }
 
     const token: Token = {
       ...defaultMetrics,
@@ -296,13 +299,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       tokenAddress: tokenAddr,
       name,
       symbol,
-      image: meta?.image ?? '/discord.svg',
+      image: meta?.image ?? '',
       description: meta?.description ?? '',
       twitterHandle: meta?.twitter ?? '',
       website: meta?.website ?? '',
       status: 'new',
       marketCap: defaultMetrics.price * TOTAL_SUPPLY,
       created: '0s ago',
+      volumeDelta: 0
     };
 
     dispatch({ type: 'ADD_MARKET', token });
@@ -325,13 +329,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const words: string[] = [];
     for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
 
+    const amounts = BigInt('0x' + words[0]);
+    const isBuy = BigInt('0x' + words[1]);
     const priceRaw = BigInt('0x' + words[2]);
     const counts = BigInt('0x' + words[3]);
     const priceEth = Number(priceRaw) / 1e18;
     const buys = Number(counts >> 128n);
     const sells = Number(counts & ((1n << 128n) - 1n));
-
-    console.log(market, priceRaw, counts, priceEth, buys, sells);
+    const amountIn = Number(amounts >> 128n);
+    const amountOut = Number(amounts & ((1n << 128n) - 1n));
 
     dispatch({
       type: 'UPDATE_MARKET',
@@ -341,16 +347,25 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         marketCap: priceEth * TOTAL_SUPPLY,
         buyTransactions: buys,
         sellTransactions: sells,
+        volumeDelta: isBuy > 0 ? amountIn / 1e18: amountOut / 1e18,
       },
     });
   };
 
-  useEffect(() => {
+  function openWebsocket(initialMarkets: string[]): void {
     const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
     wsRef.current = ws;
 
     ws.onopen = () => {
       subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
+
+      initialMarkets.forEach((addr) => {
+        subscribe(
+          ws,
+          ['logs', { address: addr }],
+          (subId) => (marketSubs.current[addr] = subId),
+        );
+      });
     };
 
     ws.onmessage = ({ data }) => {
@@ -362,7 +377,77 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
 
     ws.onerror = (e) => console.error('ws error', e);
-    return () => ws.close();
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function bootstrap() {
+      try {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+            {
+              markets(first: 30, orderBy: createdAt, orderDirection: desc) {
+                id
+                tokenAddress
+                name
+                symbol
+                metadataCID
+                createdAt
+                latestPrice
+                buyCount
+                sellCount
+                volume24h
+              }
+            }`,
+          }),
+        });
+        const json = await res.json();
+
+        console.log(json);
+
+        if (cancelled) return;
+
+        const tokens: Token[] = (json.data?.markets ?? []).map((m: any) => {
+          const price = Number(m.latestPrice) / 1e18;
+          return {
+            ...defaultMetrics,
+            id: m.id.toLowerCase(),
+            tokenAddress: m.tokenAddress.toLowerCase(),
+            name: m.name,
+            symbol: m.symbol,
+            image: m.metadataCID,
+            description: '',
+            twitterHandle: '',
+            website: '',
+            status: 'new',
+            created: ((d => d >= 3600 ? `${Math.floor(d / 3600)}h ago` : d >= 60 ? `${Math.floor(d / 60)}m ago` : `${d}s ago`) (Math.floor(Date.now() / 1000) - Number(m.createdAt))),
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            buyTransactions: Number(m.buyCount),
+            sellTransactions: Number(m.sellCount),
+            volume24h: Number(m.volume24h) / 1e18,
+          };
+        });
+
+        dispatch({ type: 'INIT', tokens });
+
+        openWebsocket(tokens.map((t) => t.id));
+      } catch (err) {
+        console.error('initial subgraph fetch failed', err);
+      } finally {
+        if (!cancelled) setIsLoading(false);
+      }
+    }
+
+    bootstrap();
+    return () => {
+      cancelled = true;
+      if (wsRef.current) wsRef.current.close();
+    };
   }, []);
 
   const [hoveredToken, setHoveredToken] = useState<string | null>(null);
