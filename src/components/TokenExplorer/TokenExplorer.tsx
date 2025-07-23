@@ -406,35 +406,53 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }),
         });
         const json = await res.json();
-
-        console.log(json);
-
         if (cancelled) return;
 
-        const tokens: Token[] = (json.data?.markets ?? []).map((m: any) => {
-          const price = Number(m.latestPrice) / 1e18;
-          return {
-            ...defaultMetrics,
-            id: m.id.toLowerCase(),
-            tokenAddress: m.tokenAddress.toLowerCase(),
-            name: m.name,
-            symbol: m.symbol,
-            image: m.metadataCID,
-            description: '',
-            twitterHandle: '',
-            website: '',
-            status: 'new',
-            created: ((d => d >= 3600 ? `${Math.floor(d / 3600)}h ago` : d >= 60 ? `${Math.floor(d / 60)}m ago` : `${d}s ago`) (Math.floor(Date.now() / 1000) - Number(m.createdAt))),
-            price,
-            marketCap: price * TOTAL_SUPPLY,
-            buyTransactions: Number(m.buyCount),
-            sellTransactions: Number(m.sellCount),
-            volume24h: Number(m.volume24h) / 1e18,
-          };
-        });
+        const rawMarkets = json.data?.markets ?? [];
+
+        const tokens: Token[] = await Promise.all(
+          rawMarkets.map(async (m: any) => {
+            const price = Number(m.latestPrice) / 1e18;
+
+            let meta: any = {};
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) meta = await metaRes.json();
+            } catch (e) {
+              console.warn('failed to load metadata for', m.metadataCID, e);
+            }
+
+            const ageSec = Math.floor(Date.now() / 1000) - Number(m.createdAt);
+            const created =
+              ageSec >= 3600
+                ? `${Math.floor(ageSec / 3600)}h ago`
+                : ageSec >= 60
+                ? `${Math.floor(ageSec / 60)}m ago`
+                : `${ageSec}s ago`;
+
+            return {
+              ...defaultMetrics,
+              id: m.id.toLowerCase(),
+              tokenAddress: m.tokenAddress.toLowerCase(),
+              name: m.name,
+              symbol: m.symbol,
+              image: meta.image ?? '/discord.svg',
+              description: meta.description ?? '',
+              twitterHandle: meta.twitter ?? '',
+              website: meta.website ?? '',
+              status: 'new',
+              created,
+              price,
+              marketCap: price * TOTAL_SUPPLY,
+              buyTransactions: Number(m.buyCount),
+              sellTransactions: Number(m.sellCount),
+              volume24h: Number(m.volume24h) / 1e18,
+              volumeDelta: 0,
+            };
+          })
+        );
 
         dispatch({ type: 'INIT', tokens });
-
         openWebsocket(tokens.map((t) => t.id));
       } catch (err) {
         console.error('initial subgraph fetch failed', err);
