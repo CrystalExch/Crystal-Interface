@@ -176,6 +176,10 @@
 
 
 .launchpad-launch-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
   width: 100%;
   background: linear-gradient(135deg,
       #aaaecf 0,
@@ -276,7 +280,7 @@
   width: 120px;
   height: 120px;
   object-fit: cover;
-  border-radius: 50%;
+  border-radius: 10px;
   border: 2px solid rgba(219, 221, 249, 0.2);
   margin-bottom: 1rem;
 }
@@ -287,9 +291,9 @@
   right: -5px;
   width: 24px;
   height: 24px;
-  border-radius: 50%;
+  border-radius: 7px;
   background: rgba(6, 6, 6);
-  border: 1.5px solid rgba(179, 184, 249, .2);
+  border: 1.5px solid rgba(215, 217, 244, 0.2);
   cursor: pointer;
   display: flex;
   align-items: center;

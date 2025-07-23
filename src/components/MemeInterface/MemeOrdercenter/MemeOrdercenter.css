@@ -1,0 +1,904 @@
+* {
+  box-sizing: border-box;
+}
+
+.meme-oc-rectangle {
+  border-right: none;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  height: 100%;
+  overflow: hidden;
+  padding-top: 0;
+  pointer-events: auto;
+  position: relative;
+  width: 100%;
+  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  background-color: rgb(6,6,6);
+}
+
+@media(max-width: 1020px){
+  .meme-oc-rectangle{
+    border-top: none;
+  }
+}
+
+.meme-oc-top-bar {
+  align-items: flex-start;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  display: flex;
+  justify-content: space-between;
+  padding-right: 5px;
+  min-height: 35px;
+}
+
+@media(max-width: 1020px){
+  .meme-oc-top-bar{
+    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    height: 35px;
+  }
+}
+
+.meme-oc-type {
+  background: none;
+  border: none;
+  color: #ffffff73;
+  cursor: pointer;
+  flex: 1;
+  font-size: 0.75rem;
+  font-weight: 300;
+  padding: 8px 20px;
+  text-align: flex-start;
+  text-decoration: none;
+  transition: opacity 0.2s, color 0.3s, text-shadow 0.3s;
+  white-space: nowrap;
+  outline: none;
+  font-family: inherit;
+}
+
+.meme-oc-type:hover {
+  opacity: 0.7;
+  color: #aaaecf;
+}
+
+.meme-oc-type.active {
+  color: #aaaecf;
+  opacity: 1;
+  transition: color 0.2s, opacity 0.2s;
+}
+
+.meme-oc-content {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  height: calc(100% - 35px);
+  left: 0;
+  min-height: 0;
+  overflow-y: auto;
+  position: relative;
+  right: 0;
+  width: 100%;
+  background-color: rgb(6,6,6);
+}
+
+.meme-oc-no-data-container {
+  align-items: center;
+  display: flex;
+  height: calc(100% - 76.67px);
+  inset: 0;
+  justify-content: center;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  top: 78.86px;
+  z-index: 2;
+}
+
+.meme-oc-no-data {
+  color: #acabab;
+  font-size: 0.8rem;
+  margin-bottom: 39.43px;
+}
+
+.meme-oc-sliding-indicator {
+  background-color: #aaaecf;
+  border-top-left-radius: 1px;
+  border-top-right-radius: 1px;
+  bottom: 0px;
+  height: 1.5px;
+  position: absolute;
+  transition: left 0.2s ease, width 0.2s ease;
+}
+
+.meme-oc-types {
+  flex: 0 0 auto;
+  flex-direction: column;
+  padding: 0 2px;
+}
+
+.meme-oc-types,
+.meme-oc-types-rectangle {
+  display: flex;
+  position: relative;
+}
+
+.meme-oc-types-rectangle {
+  user-select: none;
+  width: 100%;
+}
+
+.meme-oc-section-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.meme-oc-header {
+  display: grid;
+  align-items: flex-start;
+  padding: 8px 15px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  background-color: rgba(6, 6, 6, 0.95);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  min-height: 35px;
+  width: 100%;
+}
+
+.meme-oc-items {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.meme-oc-item {
+  display: grid;
+  align-items: center;
+  padding: 4px 15px;
+  transition: background-color 0.2s ease;
+  min-height: 35px;
+  width: 100%;
+}
+
+.meme-oc-item:hover {
+  background-color: rgba(179, 184, 249, 0.02);
+}
+
+/* Grid layouts for different sections */
+.meme-oc-section-content[data-section="positions"] .meme-oc-header,
+.meme-oc-section-content[data-section="positions"] .meme-oc-item {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 100px;
+  gap: 15px;
+}
+
+.meme-oc-section-content[data-section="orders"] .meme-oc-header,
+.meme-oc-section-content[data-section="orders"] .meme-oc-item {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 15px;
+}
+
+.meme-oc-section-content[data-section="holders"] .meme-oc-header,
+.meme-oc-section-content[data-section="holders"] .meme-oc-item {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 80px;
+  gap: 15px;
+}
+
+.meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
+.meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 80px;
+  gap: 15px;
+}
+
+.meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
+.meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
+  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  gap: 15px;
+}
+
+.meme-oc-header-cell {
+  color: #ffffff73;
+  font-size: 0.75rem;
+  letter-spacing: -0.3px;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meme-oc-header-cell:not(:first-child) {
+  text-align: flex-start;
+}
+
+.meme-oc-cell {
+  color: #ffffff89;
+  font-size: 0.8rem;
+  font-weight: 300;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meme-oc-cell:not(:first-child) {
+  justify-content: flex-start;
+  text-align: center;
+}
+
+/* Wallet info styling */
+.meme-wallet-info,
+.meme-token-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  width: 100%;
+}
+
+.meme-wallet-index,
+.meme-token-index {
+    display: flex;
+    align-items: center;
+  color: #ffffff73;
+  font-size: 0.8rem;
+  min-width: 20px;
+  flex-shrink: 0;
+}
+
+.meme-wallet-address,
+.meme-token-name {
+  color: rgb(221, 221, 224);
+  font-size: 0.85rem;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.meme-wallet-tags,
+.meme-token-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.meme-tag-sniper {
+  color: #ff6b6b;
+}
+
+.meme-tag-dev {
+
+  color: #ffc107;
+}
+
+.meme-tag-kol {
+  color: #ff4400;
+}
+
+.meme-tag-bundler {
+  color: #ff4400;
+}
+
+.meme-tag-insider {
+  color: #dc143c;
+}
+
+.meme-mon-balance {
+  display: flex;
+  align-items: center;
+  color: rgb(214, 214, 219);
+  font-size: 0.8rem;
+}
+
+.meme-oc-monad-icon {
+  width: 13px;
+  height: 13px;
+  margin-right: 4px;
+}
+
+/* Trade info styling */
+.meme-trade-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: center;
+}
+
+.meme-usd-amount {
+  
+  font-size: 0.8rem;
+}
+
+.meme-usd-amount.buy {
+  color: rgb(67 254 154);
+}
+
+.meme-usd-amount.sell {
+  color: rgb(240, 103, 103);
+}
+
+.meme-token-amount {
+  color: #ffffff73;
+  font-size: 0.7rem;
+  margin-top: -3px;
+}
+
+/* PnL styling */
+.meme-pnl {
+  
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.meme-pnl.positive {
+  color: rgb(67 254 154);
+}
+
+.meme-pnl.negative {
+  color: rgb(240, 103, 103);
+}
+
+.meme-remaining {
+  color: #ffffffe8;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+.meme-remaining-percentage {
+  color: #ffffff73 !important;
+  font-size: 0.75rem;
+  margin-left: 4px;
+  background-color: #3333376b;
+  padding: 0px 4px;
+  border-radius: 4px;
+}
+
+
+.meme-remaining-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 4px;
+}
+
+.meme-migrated {
+  
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+.meme-migrated.yes {
+  color: rgb(67 254 154);
+}
+
+.meme-migrated.no {
+  color: rgb(240, 103, 103);
+}
+
+/* Order type styling */
+.meme-order-type {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 0.7rem;
+  
+  display: inline-block;
+}
+
+.meme-order-type.buy {
+  background: rgba(101, 237, 146, 0.1);
+  color: rgb(67 254 154);
+  border: 1px solid rgba(101, 237, 146, 0.3);
+}
+
+.meme-order-type.sell {
+  background: rgba(240, 103, 103, 0.1);
+  color: rgb(240, 103, 103);
+  border: 1px solid rgba(240, 103, 103, 0.3);
+}
+
+.meme-action-btn {
+  color: #ffffff73 !important;
+  font-size: 0.75rem;
+  margin-left: 4px;
+  background-color: #3333376b;
+  border-radius: 4px;
+  color: #b9b9b9;
+  cursor: pointer;
+  font-size: 0.7rem;
+  padding: 4px 8px;
+  transition: all 0.2s ease;
+  outline: none;
+  font-family: inherit;
+}
+
+.meme-action-btn:hover {
+  background-color: #3333376b;
+}
+
+.meme-action-btn:active {
+  transform: scale(0.95);
+}
+
+/* Mobile responsive */
+.meme-oc-mobile-tabs {
+  width: 100%;
+  padding: 0 10px;
+}
+
+.meme-oc-mobile-select {
+  width: 100%;
+  background: rgb(28, 28, 31);
+  color: #ffffff73;
+  border: 1px solid rgba(179, 184, 249, 0.09);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  outline: none;
+  font-family: inherit;
+}
+
+.meme-oc-mobile-select:focus {
+  border-color: #aaaecf;
+  color: #aaaecf;
+}
+
+/* Scrollbar styling */
+.meme-oc-content::-webkit-scrollbar,
+.meme-oc-items::-webkit-scrollbar {
+  width: 6px;
+}
+
+.meme-oc-content::-webkit-scrollbar-track,
+.meme-oc-items::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.meme-oc-content::-webkit-scrollbar-thumb,
+.meme-oc-items::-webkit-scrollbar-thumb {
+  background: rgba(170, 174, 207, 0.3);
+  border-radius: 3px;
+}
+
+.meme-oc-content::-webkit-scrollbar-thumb:hover,
+.meme-oc-items::-webkit-scrollbar-thumb:hover {
+  background: rgba(170, 174, 207, 0.5);
+}
+
+/* Mobile adjustments */
+@media (max-width: 1200px) {
+  .meme-oc-section-content[data-section="positions"] .meme-oc-header,
+  .meme-oc-section-content[data-section="positions"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
+    gap: 10px;
+  }
+  
+  .meme-oc-section-content[data-section="holders"] .meme-oc-header,
+  .meme-oc-section-content[data-section="holders"] .meme-oc-item,
+  .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
+  .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 60px;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 768px) {
+  .meme-oc-section-content[data-section="positions"] .meme-oc-header,
+  .meme-oc-section-content[data-section="positions"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .meme-oc-section-content[data-section="orders"] .meme-oc-header,
+  .meme-oc-section-content[data-section="orders"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .meme-oc-section-content[data-section="holders"] .meme-oc-header,
+  .meme-oc-section-content[data-section="holders"] .meme-oc-item,
+  .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
+  .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
+  .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .meme-wallet-tags,
+  .meme-token-tags {
+    display: none;
+  }
+  
+  .meme-trade-info {
+    font-size: 0.7rem;
+  }
+  
+  /* Hide columns on mobile */
+  .meme-oc-section-content .meme-oc-header-cell:nth-child(n+4),
+  .meme-oc-section-content .meme-oc-cell:nth-child(n+4) {
+    display: none;
+  }
+}
+
+.meme-ordercenter-tooltip-container {
+  position: relative;
+  display: inline-block;
+}
+
+/* Base tooltip styling */
+.meme-ordercenter-tooltip {
+  position: absolute;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+}
+
+/* Tooltip positioning */
+.meme-ordercenter-tooltip-top {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 0.25rem;
+}
+
+.meme-ordercenter-tooltip-bottom {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 0.25rem;
+}
+
+.meme-ordercenter-tooltip-left {
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-right: 0.25rem;
+}
+
+.meme-ordercenter-tooltip-right {
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  margin-left: 0.25rem;
+}
+
+/* Fade popup animation */
+.meme-ordercenter-fade-popup {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  pointer-events: none;
+}
+
+/* Visible state - this is the key piece */
+.meme-ordercenter-tooltip.meme-ordercenter-visible,
+.meme-ordercenter-fade-popup.meme-ordercenter-visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Tooltip content styling */
+.meme-ordercenter-tooltip-content {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: rgb(6, 6, 6);
+  border: 1px solid #b5bcf81f;
+  color: #e6e7f6;
+  font-size: 0.75rem;
+  border-radius: 0.375rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+  position: relative;
+  max-width: 200px;
+}
+
+/* Ensure tag containers work with tooltips */
+.meme-tag {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.meme-tag-icon {
+  pointer-events: none;
+}
+
+/* Tooltip arrows */
+.meme-ordercenter-tooltip-arrow {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.meme-ordercenter-tooltip-arrow-top {
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid rgb(6, 6, 6);
+}
+
+.meme-ordercenter-tooltip-arrow-bottom {
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-bottom: 4px solid rgb(6, 6, 6);
+}
+
+.meme-ordercenter-tooltip-arrow-left {
+  top: 50%;
+  left: 100%;
+  transform: translateY(-50%);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 4px solid rgb(6, 6, 6);
+}
+
+.meme-ordercenter-tooltip-arrow-right {
+  top: 50%;
+  right: 100%;
+  transform: translateY(-50%);
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-right: 4px solid rgb(6, 6, 6);
+}
+
+
+
+.meme-remaining-bar {
+  width: 100px;
+  height: 4px;
+  background-color: rgba(170, 174, 207, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.meme-remaining-bar-fill {
+  height: 100%;
+  background-color: #aaaecf;
+  transition: width 0.3s ease;
+}
+
+
+.meme-remaining-bar-fill {
+  width: 0; 
+  transition: width 0.3s ease;
+}
+
+
+.meme-oc-section-content[data-section="holders"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="holders"] .meme-oc-cell:last-child,
+.meme-oc-section-content[data-section="topTraders"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="topTraders"] .meme-oc-cell:last-child,
+.meme-oc-section-content[data-section="positions"] .meme-oc-header-cell:last-child,
+.meme-oc-section-content[data-section="positions"] .meme-oc-cell:last-child {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.meme-oc-drag-spacer {
+  min-width: 100%;
+  height: 0px;
+  user-select: none;
+}
+
+.meme-oc-drag-spacer.meme-oc-collapsed {
+  display: none;
+}
+
+.meme-oc-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: row-resize;
+  width: 100%;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.meme-oc-drag-handle:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+}
+
+.meme-oc-drag-handle:active {
+  background-color: rgba(179, 184, 249, 0.1);
+}
+
+/* .meme-oc-drag-indicator {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.meme-oc-drag-handle:hover .meme-oc-drag-indicator {
+  opacity: 1;
+} */
+
+.meme-oc-height-presets {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.meme-oc-preset-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.meme-oc-preset-btn:hover {
+  background-color: rgba(179, 184, 249, 0.08);
+  border-color: rgba(179, 184, 249, 0.25);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-oc-preset-btn.active {
+  background-color: rgba(170, 174, 207, 0.15);
+  border-color: #aaaecf;
+  color: #aaaecf;
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.3);
+}
+
+.meme-oc-preset-btn:active {
+  transform: scale(0.95);
+}
+
+.meme-oc-rectangle.meme-oc-dragging {
+  transition: none !important;
+}
+
+.meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-handle {
+  background-color: rgba(179, 184, 249, 0.1);
+}
+
+.meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-indicator {
+  opacity: 1;
+}
+
+.meme-oc-rectangle.meme-oc-dragging .meme-oc-drag-dot {
+  background-color: #aaaecf;
+}
+
+@media (max-width: 768px) {
+  .meme-oc-height-presets {
+    gap: 4px;
+  }
+  
+  .meme-oc-preset-btn {
+    width: 24px;
+    height: 24px;
+    font-size: 0.7rem;
+  }
+  
+  .meme-oc-drag-spacer {
+    padding: 0 8px;
+    height: 30px;
+  }
+  
+  .meme-oc-drag-handle {
+    padding: 6px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .meme-oc-height-presets {
+    gap: 2px;
+  }
+  
+  .meme-oc-preset-btn {
+    width: 20px;
+    height: 20px;
+    font-size: 0.65rem;
+  }
+  
+  .meme-oc-drag-dot {
+    width: 3px;
+    height: 3px;
+  }
+}
+
+/* Animation for height changes */
+.meme-oc-rectangle:not(.meme-oc-dragging) {
+  transition: height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Visual feedback during resize */
+.meme-oc-rectangle.meme-oc-resizing {
+  box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.3);
+}
+
+.meme-oc-rectangle.meme-oc-resizing .meme-oc-drag-spacer {
+  background-color: rgba(170, 174, 207, 0.05);
+}
+
+/* Disable text selection during drag */
+.meme-oc-dragging,
+.meme-oc-dragging * {
+  user-select: none !important;
+  pointer-events: none;
+}
+
+.meme-oc-dragging .meme-oc-drag-handle {
+  pointer-events: auto;
+}
+
+
+
+.meme-oc-height-presets .meme-ordercenter-tooltip-content {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+}
+
+
+
+.meme-oc-right-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+  height: 100%;
+}
+
+.meme-oc-quickbuy-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  color: #d8dcff;
+  background-color: rgba(201, 194, 243, .05);
+  border: 1px solid#aaaecf;
+  letter-spacing: -0.5px;
+}
+
+.meme-oc-quickbuy-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  color: #d8dcff;
+  background-color: rgba(201, 194, 243, .05);
+  border: 1px solid#aaaecf;
+  letter-spacing: -0.5px;
+}
+
+
+

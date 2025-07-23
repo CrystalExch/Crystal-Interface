@@ -1,15 +1,12 @@
 .leaderboard-container{
   color:#fff;
   margin:0 auto;
-  margin-top:20px;
   max-width:1000px;
   padding:20px;
-  width:100%
+  width:100%;
+  padding-bottom: 45px;
 }
 @media (max-width:750px){
-  .leaderboard-container{
-      margin-top:0
-  }
   .top-factions{
       flex-direction:column;
       margin-bottom:0
@@ -115,9 +112,6 @@
   margin-top:5px
 }
 .leaderboard-user-info{
-  -webkit-backdrop-filter:blur(3px);
-  backdrop-filter:blur(3px);
-  background-color:rgba(0,0,0,.3);
   border-top:1.5px solid rgba(255,255,255,.05);
   bottom:0;
   display:flex;
@@ -126,7 +120,6 @@
   padding:10px 25px 8px;
   position:absolute;
   width:100%;
-  z-index:0
 }
 @media (max-width:700px){
   .leaderboard-user-info{
@@ -139,15 +132,15 @@
   .column-divider{
       display:none
   }
-  .info-column{
-      width:100%
-  }
   .progress-container{
       margin-bottom:50px
   }
 }
+
 .info-column{
-  flex:1
+  flex:1;
+  width:100%;
+  min-width: 160px;
 }
 
 
@@ -157,6 +150,8 @@
   color:rgba(255,255,255,.6);
   font-size:14px;
   padding-right:10px;
+  text-wrap: nowrap;
+  overflow: hidden;
 }
 .column-content{
   align-items:center;
@@ -265,7 +260,7 @@
   border-radius: 16px;  
   border: 1px solid #18181b83;
 }
-@media(max-width: 600px){
+@media(max-width: 400px){
   .leaderboard-inner-row{
     flex-direction: column;
   }
@@ -299,6 +294,14 @@
 .leaderboard-user-address {
   display: flex;
   gap: 3px;
+  padding-right: 10px;
+  width: 100%;
+}
+
+.leaderboard-username {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .address-string{
@@ -324,17 +327,7 @@
   text-overflow: ellipsis;
   display: inline-block;
 }
-@media(max-width: 500px){
-  .faction-row-name{
-    max-width: 140px;
-  }
-  .faction-name {
-    max-width: 140px;
-  }
-  .leaderboard-user-address{
-    max-width: 140px;
-  }
-}
+
 .arrow{
   font-size:12px
 }

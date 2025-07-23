@@ -429,11 +429,12 @@ const Leaderboard: React.FC<LeaderboardProps> = ({
                 </div>
                 <div className="column-content">
                   <span className="leaderboard-user-address">
+                    <span className="leaderboard-username">
                     @{username && username.trim() !== ''
                       ? (username.startsWith('0x') ? getDisplayAddress(username) : username)
                       : overview!.username && overview!.username.trim() !== ''
                         ? (overview!.username.startsWith('0x') ? getDisplayAddress(overview!.username) : overview!.username)
-                        : getDisplayAddress(overview!.address)}
+                        : getDisplayAddress(overview!.address)}</span>
                     <CopyButton textToCopy={overview!.address} />
                   </span>
                 </div>

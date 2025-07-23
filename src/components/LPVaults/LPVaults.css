@@ -1795,7 +1795,7 @@
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
-.search-container{
+.vaults-search-container{
     position:relative;
     display:flex;
     align-items:center;
@@ -1806,7 +1806,7 @@
     min-width:200px;
     gap:.3rem
 }
-.search-container:focus-within{
+.vaults-search-container:focus-within{
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
@@ -1814,7 +1814,7 @@
     color:#8b8989;
     flex-shrink:0
 }
-.search-input{
+.vaults-search-input{
     background:0 0;
     border:none;
     outline:0;
@@ -1822,9 +1822,10 @@
     font-size:.8rem;
     flex:1;
     min-width:0;
-    letter-spacing:-.3px
+    letter-spacing:-.3px;
+    padding-left: 25px;
 }
-.search-input::placeholder{
+.vaults-search-input::placeholder{
     color:#ffffff4d
 }
 .vaults-list{
@@ -2097,7 +2098,7 @@
     letter-spacing:-.3px
 }
 .form-input:focus,.form-textarea:focus{
-    outline:0;
+    outline:none;
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
@@ -2528,7 +2529,7 @@
     .filter-controls{
         justify-content:space-between
     }
-    .search-container{
+    .vaults-search-container{
         min-width:180px
     }
     .vault-strategy-sticky-bar{
@@ -4027,3 +4028,5 @@
         padding:.75rem
     }
 }
+
+

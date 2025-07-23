@@ -386,7 +386,8 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className={isLoading && shouldShowFullHeader ? 'symbol-skeleton' : 'trading-pair'}>
             {shouldShowFullHeader ? (
               <>
-                <span className="first-asset">{activeMarket.baseAsset} /</span>
+                <span className="first-asset">{activeMarket.baseAsset}</span>
+                <span>/</span>
                 <span className="second-asset">{activeMarket.quoteAsset}</span>
                 {tokendict[activeMarket?.baseAddress]?.lst && (
                   <span className="lst-multiplier">

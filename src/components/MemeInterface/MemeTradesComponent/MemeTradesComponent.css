@@ -1,0 +1,243 @@
+.meme-trades-container {
+  height: 100%;
+  color: #fff;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.meme-trades-header {
+  display: flex;
+  padding: 12px 8px 8px 8px;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.6);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.meme-trades-header-item {
+  cursor: pointer;
+  transition: color 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meme-trades-header-item:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-trades-header-amount {
+  width: 70px;
+  text-align: left;
+}
+
+.meme-trades-header-mc {
+  width: 75px;
+  text-align: left;
+}
+
+.meme-trades-header-trader {
+  width: 50px;
+  text-align: left;
+}
+
+.meme-trades-header-age {
+  flex: 1;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.meme-header-switch-indicator {
+  font-size: 0.6rem;
+  opacity: 0.7;
+}
+
+.meme-trades-list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.meme-trades-list::-webkit-scrollbar {
+  width: 4px;
+}
+
+
+
+.meme-trade-row {
+  display: flex;
+  align-items: center;
+  padding: 3px 8px;
+  font-size: 0.8rem;
+  transition: background-color 0.2s ease;
+}
+
+.meme-trade-row:hover {
+  background-color: rgba(179, 184, 249, 0.05);
+}
+
+.meme-trade-amount {
+  display: flex;
+  align-items: center;
+  width: 70px;
+  gap: 4px;
+  text-align: left;
+}
+
+.meme-trade-amount.positive {
+  color: rgb(67 254 154);
+}
+
+.meme-trade-amount.negative {
+  color: rgb(235, 112, 112);
+}
+
+.meme-trade-mc {
+  width: 75px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.75rem;
+}
+
+.meme-trade-trader {
+  width: 50px;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.8rem;
+}
+
+.meme-trade-age-container {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.meme-trade-age {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.75rem;
+  min-width: 20px;
+  cursor: pointer;
+}
+
+.meme-trade-age:hover {
+  text-decoration: underline;
+}
+
+
+
+.meme-trade-tags {
+  display: flex;
+  gap: 2px;
+  align-items: center;
+}
+
+.meme-tag-icon {
+  width: 12px;
+  height: 12px;
+}
+
+.meme-tag-icon.sniper {
+  color: #ff6b6b;
+}
+
+.meme-tag-icon.dev {
+  color: #ffc107;
+}
+
+.meme-tag-icon.kol {
+  color: #ff4400;
+}
+
+.meme-tag-icon.bundler {
+  color: #ff4400;
+}
+
+.meme-tag-icon.insider {
+  color: #dc143c;
+}
+
+.meme-header-switch-icon{
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+  transform: rotate(90deg);
+  margin-left: -2px;
+  margin-top: 2px;
+}
+
+.meme-trade-mon-logo {
+  width: 11px;
+  height: 11px;
+}
+
+.meme-trades-dollar-sign{
+  width: 16px;
+  height: 16px;
+  margin-left:-2px;
+  margin-top: 1px;
+  opacity: 0.8;
+}
+
+/* Add these styles to your existing MemeTradesComponent.css file */
+
+/* Make the container relative for the pause indicator */
+.meme-trades-container {
+  position: relative;
+}
+
+/* Add clickable cursor for trader elements */
+.meme-trade-trader.clickable {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.meme-trade-trader.clickable:hover {
+  color: #d8dcff;
+  text-decoration: underline;
+}
+
+.pause-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  padding: 12px;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 20;
+}
+
+.pause-indicator.visible {
+  transform: translateY(0);
+}
+
+.pause-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.pause-icon {
+  display: flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.pause-line {
+  width: 3px;
+  height: 16px;
+  border-radius: 1.5px;
+}
+
+.pause-text {
+  color: #aaaecf;
+  font-size: 0.9rem;
+  letter-spacing: -0.5px;
+}

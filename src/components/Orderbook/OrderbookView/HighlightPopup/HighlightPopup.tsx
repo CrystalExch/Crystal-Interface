@@ -70,18 +70,18 @@ const OrderHighlightPopup: React.FC<OrderHighlightPopupProps> = ({
       }}
     >
       <div>
-        <span className="text-white">{t('avgPrice')}: </span>
+      <span style={{color: '#ffffffef'}}>{t('avgPrice')}: </span>
         {formatCommas(
           highlightData.averagePrice.toFixed(Math.floor(Math.log10(priceFactor))),
         )}{' '}
         {highlightData.unit}
       </div>
       <div>
-        <span className="text-white">{t('total')} {highlightData.unit}: </span>
+      <span style={{color: '#ffffffef'}}>{t('total')} {highlightData.unit}: </span>
         {formatCommas(highlightData.totalAmount.toFixed(2))}
       </div>
       <div>
-        <span className="text-white">
+        <span style={{color: '#ffffffef'}}>
           {t('total')} ({highlightData.otherUnit}):{' '}
         </span>
         {formatNumber(

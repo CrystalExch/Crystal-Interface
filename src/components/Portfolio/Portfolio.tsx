@@ -419,11 +419,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-content-container">
           {controlsContainer}
           {accountSummaryContainer}
-          {portfolioGraph}
           <div className="mobile-stats-container">
             {tradingStats}
             {referralStats}
           </div>
+          {portfolioGraph}
           {orderSection}
         </div>
       </div>

@@ -141,6 +141,8 @@ import CrystalObject from './components/CrystalObject.tsx';
 import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
 import LPVaults from './components/LPVaults/LPVaults.tsx';
 import Launchpad from './components/Launchpad/Launchpad.tsx';
+import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
+import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -207,7 +209,8 @@ function App() {
     }
     return g;
   })();
-  const [selectedVaultForAction, setSelectedVaultForAction] = useState<VaultStrategy | null>(null);
+
+  const [selectedVaultForAction, setSelectedVaultForAction] = useState<any | null>(null);
   const [vaultDepositAmount, setVaultDepositAmount] = useState('');
   const [vaultWithdrawAmount, setVaultWithdrawAmount] = useState('');
   const [isVaultDepositSigning, setIsVaultDepositSigning] = useState(false);
@@ -327,7 +330,12 @@ function App() {
   const [orderSizePercent, setOrderSizePercent] = useState(100);
   const [originalOrderSize, setOriginalOrderSize] = useState(0);
   type SliderMode = 'slider' | 'presets' | 'increment';
-
+  const [spotSliderMode, setSpotSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
+  const [trenchesSliderMode, setTrenchesSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
+  const [spotSliderPresets, setSpotSliderPresets] = useState([25, 50, 75, 100]);
+  const [trenchesSliderPresets, setTrenchesSliderPresets] = useState([25, 50, 75, 100]);
+  const [spotSliderIncrement, setSpotSliderIncrement] = useState(5);
+  const [trenchesSliderIncrement, setTrenchesSliderIncrement] = useState(5);
 
   const [sliderMode, setSliderMode] = useState<SliderMode>(() => {
     const saved = localStorage.getItem('crystal_slider_mode');
@@ -462,22 +470,15 @@ function App() {
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
 
-
-  interface Token {
-    icon: string;
-    symbol: string;
-  }
-  const [selectedToken, setSelectedToken] = useState<Token | null>(null);
-  const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: Token) => void) | null>(null);
+  const [selectedToken, setSelectedToken] = useState<any>(null);
+  const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
 
   const updateNotificationPosition = (position: string) => {
-    // Clear any existing timer
     if (previewTimer) {
       clearTimeout(previewTimer);
       setPreviewTimer(null);
     }
 
-    // If we're changing positions and preview is already showing, trigger exit first
     if (showPreview && previewPosition !== position) {
       setPreviewExiting(true);
 
@@ -498,7 +499,7 @@ function App() {
               setPreviewPosition(null);
               setPreviewExiting(false);
             }, 300);
-          }, 8000);
+          }, 3000);
 
           setPreviewTimer(newTimer);
         }, 50);
@@ -516,7 +517,7 @@ function App() {
           setPreviewPosition(null);
           setPreviewExiting(false);
         }, 300);
-      }, 8000);
+      }, 3000);
 
       setPreviewTimer(newTimer);
     }
@@ -951,6 +952,37 @@ function App() {
   const handleLimitPriceUpdate = (price: number) => {
     setCurrentLimitPrice(price);
   };
+
+  const [keybindError, setKeybindError] = useState<string | null>(null);
+  const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
+
+  const [keybinds, setKeybinds] = useState(() => {
+    const saved = localStorage.getItem('crystal_keybinds');
+    return saved ? JSON.parse(saved) : {
+      submitTransaction: 'Enter',
+      switchTokens: 'KeyZ',
+      maxAmount: 'KeyA',
+      focusInput: 'KeyF',
+      openSettings: 'KeyS',
+      openWallet: 'KeyW',
+      openTokenInSelect: 'KeyQ',
+      openTokenOutSelect: 'KeyE',
+      cancelAllOrders: 'KeyC',
+      cancelTopOrder: 'KeyX',
+      openPortfolio: 'KeyP',
+      openLeaderboard: 'KeyL',
+      openReferrals: 'KeyO',
+      toggleFavorite: 'KeyM',
+      toggleSimpleView: 'KeyV',
+      refreshQuote: 'KeyR',
+      switchToOrders: 'Digit1',
+      switchToTrades: 'Digit2',
+      switchToHistory: 'Digit3',
+    };
+  });
+
+  const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
+  const [isListeningForKey, setIsListeningForKey] = useState(false);
 
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
 
@@ -2066,11 +2098,16 @@ function App() {
       case location.pathname === '/leaderboard':
         title = 'Leaderboard | Crystal';
         break;
+      case location.pathname === '/launchpad':
+        title = 'Launchpad | Crystal';
+        break;
+      case location.pathname === '/explorer':
+        title = 'Explorer | Crystal';
+        break;
       case location.pathname.startsWith('/earn/vaults'):
         if (location.pathname === '/earn/vaults') {
           title = 'Vaults | Crystal';
         } else {
-          // Extract vault address from URL for specific vault page
           const pathParts = location.pathname.split('/');
           if (pathParts.length >= 4) {
             const vaultAddress = pathParts[3];
@@ -2082,7 +2119,6 @@ function App() {
         if (location.pathname === '/earn' || location.pathname === '/earn/liquidity-pools') {
           title = 'Earn | Crystal';
         } else if (location.pathname.startsWith('/earn/liquidity-pools/')) {
-          // Extract pool identifier from URL
           const pathParts = location.pathname.split('/');
           if (pathParts.length >= 4) {
             const poolIdentifier = pathParts[3];
@@ -2090,9 +2126,6 @@ function App() {
             title = `${firstToken.toUpperCase()}-${secondToken.toUpperCase()} Pool | Crystal`;
           }
         }
-        break;
-      case location.pathname === '/launchpad':
-        title = 'Launchpad | Crystal';
         break;
       case ['/swap', '/market', '/limit', '/send', '/scale'].includes(location.pathname):
         if (trades.length > 0) {
@@ -3488,18 +3521,19 @@ function App() {
                     const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
                     const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
                       / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-                    let high = Number(market.high24h);
-                    let low = Number(market.low24h);
+                    let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+                    let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
                     const volume = newTrades.reduce((sum: number, trade: any) => {
-                      if (trade[3] / Number(market.priceFactor) > high) {
+                      if (high && trade[3] / Number(market.priceFactor) > high) {
                         high = trade[3] / Number(market.priceFactor)
                       }
-                      if (trade[3] / Number(market.priceFactor) < low) {
+                      if (low && trade[3] / Number(market.priceFactor) < low) {
                         low = trade[3] / Number(market.priceFactor)
                       }
                       const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
                       return sum + amount;
                     }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
                     return {
                       ...market,
                       volume: formatCommas(
@@ -3510,8 +3544,16 @@ function App() {
                       ),
                       priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
                       priceChangeAmount: currentPriceRaw - firstKlineOpen,
-                      high24h: formatSubscript((high).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
-                      low24h: formatSubscript((low).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))),
+                      ...(high != null && {
+                        high24h: formatSubscript(
+                          high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        )
+                      }),
+                      ...(low != null && {
+                        low24h: formatSubscript(
+                          low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        )
+                      })
                     };
                   })
                 );
@@ -4971,37 +5013,6 @@ function App() {
     };
   }, [currentStep]);
 
-  const [keybindError, setKeybindError] = useState<string | null>(null);
-  const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
-
-  const [keybinds, setKeybinds] = useState(() => {
-    const saved = localStorage.getItem('crystal_keybinds');
-    return saved ? JSON.parse(saved) : {
-      submitTransaction: 'Enter',
-      switchTokens: 'KeyZ',
-      maxAmount: 'KeyA',
-      focusInput: 'KeyF',
-      openSettings: 'KeyS',
-      openWallet: 'KeyW',
-      openTokenInSelect: 'KeyQ',
-      openTokenOutSelect: 'KeyE',
-      cancelAllOrders: 'KeyC',
-      cancelTopOrder: 'KeyX',
-      openPortfolio: 'KeyP',
-      openLeaderboard: 'KeyL',
-      openReferrals: 'KeyO',
-      toggleFavorite: 'KeyM',
-      toggleSimpleView: 'KeyV',
-      refreshQuote: 'KeyR',
-      switchToOrders: 'Digit1',
-      switchToTrades: 'Digit2',
-      switchToHistory: 'Digit3',
-    };
-  });
-
-  const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
-  const [isListeningForKey, setIsListeningForKey] = useState(false);
-
   const formatKeyDisplay = (key: string) => {
     if (!key) return '';
     const keyMap: { [key: string]: string } = {
@@ -5096,7 +5107,6 @@ function App() {
       let hash;
       setIsSigning(true);
 
-      // Use the exact same logic as your working cancel all
       const orderbatch: Record<
         string,
         { 0: any[]; 1: any[]; 2: any[]; 3: any[] }
@@ -6805,6 +6815,156 @@ function App() {
       });
     }
   };
+  const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_tab');
+    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
+  });
+
+  const [explorerFiltersActiveSection, setExplorerFiltersActiveSection] = useState<'audit' | 'metrics' | 'socials'>(() => {
+    const saved = localStorage.getItem('crystal_explorer_active_section');
+    return (saved as 'audit' | 'metrics' | 'socials') || 'audit';
+  });
+  const handleOpenFiltersForColumn = useCallback((columnType: 'new' | 'graduating' | 'graduated') => {
+    setExplorerFiltersActiveTab(columnType);
+    setpopup(24);
+  }, []);
+
+
+  const initialExplorerFilters = {
+    ageMin: '', ageMax: '',
+    holdersMin: '', holdersMax: '',
+    proTradersMin: '', proTradersMax: '',
+    kolTradersMin: '', kolTradersMax: '',
+    top10HoldingMin: '', top10HoldingMax: '',
+    devHoldingMin: '', devHoldingMax: '',
+    sniperHoldingMin: '', sniperHoldingMax: '',
+    bundleHoldingMin: '', bundleHoldingMax: '',
+    insiderHoldingMin: '', insiderHoldingMax: '',
+    marketCapMin: '', marketCapMax: '',
+    volume24hMin: '', volume24hMax: '',
+    globalFeesMin: '', globalFeesMax: '',
+    buyTransactionsMin: '', buyTransactionsMax: '',
+    sellTransactionsMin: '', sellTransactionsMax: '',
+    priceMin: '', priceMax: '',
+    searchKeywords: '',
+    excludeKeywords: '',
+    hasWebsite: false,
+    hasTwitter: false,
+    hasTelegram: false
+  };
+
+  const [explorerFilters, setExplorerFilters] = useState(() => {
+    const saved = localStorage.getItem('crystal_explorer_filters');
+    return saved ? JSON.parse(saved) : initialExplorerFilters;
+  });
+
+  const [appliedExplorerFilters, setAppliedExplorerFilters] = useState(() => {
+    const saved = localStorage.getItem('crystal_applied_explorer_filters');
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [activeExplorerFilterTab, setActiveExplorerFilterTab] = useState(() => {
+    const saved = localStorage.getItem('crystal_active_explorer_filter_tab');
+    return saved || 'new';
+  });
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
+  }, [explorerFiltersActiveTab]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_active_section', explorerFiltersActiveSection);
+  }, [explorerFiltersActiveSection]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_explorer_filters', JSON.stringify(explorerFilters));
+  }, [explorerFilters]);
+
+  useEffect(() => {
+    if (appliedExplorerFilters) {
+      localStorage.setItem('crystal_applied_explorer_filters', JSON.stringify(appliedExplorerFilters));
+    } else {
+      localStorage.removeItem('crystal_applied_explorer_filters');
+    }
+  }, [appliedExplorerFilters]);
+
+  useEffect(() => {
+    localStorage.setItem('crystal_active_explorer_filter_tab', activeExplorerFilterTab);
+  }, [activeExplorerFilterTab]);
+  const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
+    setExplorerFilters((prev: any) => {
+      const newFilters = { ...prev, [field]: value };
+      return newFilters;
+    });
+  }, []);
+
+  const handleExplorerFiltersReset = useCallback(() => {
+    setExplorerFilters(initialExplorerFilters);
+    setAppliedExplorerFilters(null);
+    setActiveExplorerFilterTab('new');
+    setExplorerFiltersActiveTab('new');
+    setExplorerFiltersActiveSection('audit');
+    localStorage.removeItem('crystal_explorer_filters');
+    localStorage.removeItem('crystal_applied_explorer_filters');
+    localStorage.removeItem('crystal_active_explorer_filter_tab');
+    localStorage.setItem('crystal_explorer_active_tab', 'new');
+    localStorage.setItem('crystal_explorer_active_section', 'audit');
+  }, []);
+
+
+  const handleExplorerFiltersImport = useCallback(() => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const importedFilters = JSON.parse(e.target?.result as string);
+            setExplorerFilters(importedFilters);
+          } catch (error) {
+            alert('Invalid JSON file');
+          }
+        };
+        reader.readAsText(file);
+      }
+    };
+    input.click();
+  }, []);
+  const handleExplorerFiltersExport = useCallback(() => {
+    const dataStr = JSON.stringify(explorerFilters, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `explorer-filters-${explorerFiltersActiveTab}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }, [explorerFilters, explorerFiltersActiveTab]);
+
+  const handleExplorerFiltersApply = useCallback(() => {
+    const hasActiveFilters = Object.values(explorerFilters).some(value =>
+      value !== '' && value !== false && value !== null && value !== undefined
+    );
+
+    if (hasActiveFilters) {
+      setAppliedExplorerFilters(explorerFilters);
+      setActiveExplorerFilterTab(explorerFiltersActiveTab);
+    } else {
+      setAppliedExplorerFilters(null);
+      setActiveExplorerFilterTab('new');
+    }
+
+    setpopup(0);
+  }, [explorerFilters, explorerFiltersActiveTab]);
+
+  const handleExplorerTabSwitch = useCallback((newTab: 'new' | 'graduating' | 'graduated') => {
+    setExplorerFiltersActiveTab(newTab);
+  }, []);
+
+  const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
+
   //popup modals
   const Modals = (
     <>
@@ -7030,7 +7190,7 @@ function App() {
                         }
                       }
                     }}
-                    placeholder={displayMode == 'usd' ? '$0.00' : '0'}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
                     value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
                     autoFocus={!(windowWidth <= 1020)}
                   />
@@ -7538,9 +7698,6 @@ function App() {
                     setOrderbookPosition('right');
                     localStorage.setItem('crystal_orderbook', 'right');
 
-                    setSimpleView(false);
-                    localStorage.setItem('crystal_simple_view', 'false');
-
                     setIsMarksVisible(true);
                     localStorage.setItem('crystal_marks_visible', 'true');
 
@@ -7582,6 +7739,8 @@ function App() {
                     localStorage.setItem('crystal_slippage_string', '1');
                     localStorage.setItem('crystal_slippage', '9900');
 
+                    setTradingMode('spot');
+                    localStorage.setItem('crystal_trading_mode', 'spot');
                     setActiveSection('orders');
                     localStorage.setItem('crystal_oc_tab', 'orders');
 
@@ -7669,6 +7828,39 @@ function App() {
                       </div>
                       <div className="slider-settings-section">
                         <div className="settings-subsection">
+                          <div className="layout-section-title">{t('tradingMode')}</div>
+                          <div className="settings-section-subtitle">
+                            {t('chooseTradingInterface')}
+                          </div>
+
+                          <div className="slider-mode-options">
+                            <button
+                              className={`control-layout-option ${tradingMode === 'spot' ? 'active' : ''}`}
+                              onClick={() => {
+                                setTradingMode('spot');
+                                localStorage.setItem('crystal_trading_mode', 'spot');
+                              }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">{t('spot')}</span>
+                              </div>
+                            </button>
+
+                            <button
+                              className={`control-layout-option ${tradingMode === 'trenches' ? 'active' : ''}`}
+                              onClick={() => {
+                                setTradingMode('trenches');
+                                localStorage.setItem('crystal_trading_mode', 'trenches');
+                              }}
+                            >
+                              <div className="layout-label">
+                                <span className="control-layout-name">{t('trenches')}</span>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+
+                        <div className="settings-subsection">
                           <div className="layout-section-title">{t('balanceSliderMode')}</div>
                           <div className="settings-section-subtitle">
                             {t('chooseBalancePercentages')}
@@ -7676,10 +7868,15 @@ function App() {
 
                           <div className="slider-mode-options">
                             <button
-                              className={`control-layout-option ${sliderMode === 'slider' ? 'active' : ''}`}
+                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'slider' ? 'active' : ''}`}
                               onClick={() => {
-                                setSliderMode('slider');
-                                localStorage.setItem('crystal_slider_mode', 'slider');
+                                if (tradingMode === 'spot') {
+                                  setSpotSliderMode('slider');
+                                  localStorage.setItem('crystal_spot_slider_mode', 'slider');
+                                } else {
+                                  setTrenchesSliderMode('slider');
+                                  localStorage.setItem('crystal_trenches_slider_mode', 'slider');
+                                }
                               }}
                             >
                               <div className="layout-label">
@@ -7688,10 +7885,15 @@ function App() {
                             </button>
 
                             <button
-                              className={`control-layout-option ${sliderMode === 'presets' ? 'active' : ''}`}
+                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' ? 'active' : ''}`}
                               onClick={() => {
-                                setSliderMode('presets');
-                                localStorage.setItem('crystal_slider_mode', 'presets');
+                                if (tradingMode === 'spot') {
+                                  setSpotSliderMode('presets');
+                                  localStorage.setItem('crystal_spot_slider_mode', 'presets');
+                                } else {
+                                  setTrenchesSliderMode('presets');
+                                  localStorage.setItem('crystal_trenches_slider_mode', 'presets');
+                                }
                               }}
                             >
                               <div className="layout-label">
@@ -7700,10 +7902,15 @@ function App() {
                             </button>
 
                             <button
-                              className={`control-layout-option ${sliderMode === 'increment' ? 'active' : ''}`}
+                              className={`control-layout-option ${(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' ? 'active' : ''}`}
                               onClick={() => {
-                                setSliderMode('increment');
-                                localStorage.setItem('crystal_slider_mode', 'increment');
+                                if (tradingMode === 'spot') {
+                                  setSpotSliderMode('increment');
+                                  localStorage.setItem('crystal_spot_slider_mode', 'increment');
+                                } else {
+                                  setTrenchesSliderMode('increment');
+                                  localStorage.setItem('crystal_trenches_slider_mode', 'increment');
+                                }
                               }}
                             >
                               <div className="layout-label">
@@ -7712,14 +7919,16 @@ function App() {
                             </button>
                           </div>
                         </div>
-                        {sliderMode === 'presets' && (
+
+                        {/* Presets section - now checks the correct mode */}
+                        {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('presetPercentages')}</div>
                             <div className="settings-section-subtitle">
                               {t('setThreeFavoritePercentages')}
                             </div>
                             <div className="preset-inputs">
-                              {sliderPresets.map((preset: number, index: number) => (
+                              {(tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets).map((preset: number, index: number) => (
                                 <div key={index} className="preset-input-group">
                                   <label className="preset-label">{t('preset')} {index + 1}</label>
                                   <div className="preset-input-container">
@@ -7728,18 +7937,22 @@ function App() {
                                       value={preset === 0 ? '' : preset.toString()}
                                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                         const inputValue = e.target.value;
+                                        const currentPresets = tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets;
+                                        const setCurrentPresets = tradingMode === 'spot' ? setSpotSliderPresets : setTrenchesSliderPresets;
+                                        const storageKey = tradingMode === 'spot' ? 'crystal_spot_slider_presets' : 'crystal_trenches_slider_presets';
+
                                         if (inputValue === '') {
-                                          const newPresets = [...sliderPresets];
+                                          const newPresets = [...currentPresets];
                                           newPresets[index] = 0;
-                                          setSliderPresets(newPresets);
-                                          localStorage.setItem('crystal_slider_presets', JSON.stringify(newPresets));
+                                          setCurrentPresets(newPresets);
+                                          localStorage.setItem(storageKey, JSON.stringify(newPresets));
                                         } else if (/^\d*\.?\d*$/.test(inputValue)) {
                                           const numValue = parseFloat(inputValue);
                                           if (!isNaN(numValue) && numValue >= 0 && numValue <= 100) {
-                                            const newPresets = [...sliderPresets];
+                                            const newPresets = [...currentPresets];
                                             newPresets[index] = numValue;
-                                            setSliderPresets(newPresets);
-                                            localStorage.setItem('crystal_slider_presets', JSON.stringify(newPresets));
+                                            setCurrentPresets(newPresets);
+                                            localStorage.setItem(storageKey, JSON.stringify(newPresets));
                                           }
                                         }
                                       }}
@@ -7754,7 +7967,8 @@ function App() {
                           </div>
                         )}
 
-                        {sliderMode === 'increment' && (
+                        {/* Increment section - now checks the correct mode */}
+                        {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('incrementAmount')}</div>
                             <div className="settings-section-subtitle">
@@ -7765,17 +7979,20 @@ function App() {
                                 <div className="percentage-input-wrapper">
                                   <input
                                     type="text"
-                                    value={sliderIncrement === 0 ? '' : sliderIncrement.toString()}
+                                    value={(tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement) === 0 ? '' : (tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement).toString()}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                                       const inputValue = e.target.value;
+                                      const setCurrentIncrement = tradingMode === 'spot' ? setSpotSliderIncrement : setTrenchesSliderIncrement;
+                                      const storageKey = tradingMode === 'spot' ? 'crystal_spot_slider_increment' : 'crystal_trenches_slider_increment';
+
                                       if (inputValue === '') {
-                                        setSliderIncrement(0);
-                                        localStorage.setItem('crystal_slider_increment', '0');
+                                        setCurrentIncrement(0);
+                                        localStorage.setItem(storageKey, '0');
                                       } else if (/^\d*\.?\d{0,2}$/.test(inputValue)) {
                                         const numValue = parseFloat(inputValue || '0') || 0;
                                         if (numValue <= 50) {
-                                          setSliderIncrement(numValue);
-                                          localStorage.setItem('crystal_slider_increment', numValue.toString());
+                                          setCurrentIncrement(numValue);
+                                          localStorage.setItem(storageKey, numValue.toString());
                                         }
                                       }
                                     }}
@@ -7785,7 +8002,6 @@ function App() {
                                   <span className="percentage-input-suffix">%</span>
                                 </div>
                               </div>
-
                             </div>
                           </div>
                         )}
@@ -8350,6 +8566,8 @@ function App() {
                       case 'general':
                         setLanguage('EN');
                         localStorage.setItem('crystal_language', 'EN');
+                        setTradingMode('spot');
+                        localStorage.setItem('crystal_trading_mode', 'spot');
                         setSliderMode('slider');
                         localStorage.setItem('crystal_slider_mode', 'slider');
                         setSliderPresets([25, 50, 75]);
@@ -9722,8 +9940,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
-
         {popup === 19 ? (
           <div className="edit-limit-price-popup-bg" ref={popupref}>
             <div className="edit-limit-price-header">
@@ -9833,7 +10049,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
         {popup === 20 ? (
           <div className="edit-order-size-popup-bg" ref={popupref}>
             <div className="edit-order-size-header">
@@ -10242,7 +10457,6 @@ function App() {
                   </div>
                 )}
 
-                {/* Add Social Media Fields */}
                 <div className="form-group">
                   <label>Socials <span className="optional-text">[Optional]</span></label>
                   <div className="vault-socials-grid">
@@ -10405,7 +10619,7 @@ function App() {
                       </div>
                     </div>
                     <div className="vault-balance-info">
-                      <span>              
+                      <span>
                         <img src={walleticon} className="balance-wallet-icon" />{' '}
                         {customRound(
                           Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.address] ?? 0) /
@@ -10444,11 +10658,8 @@ function App() {
 
                     setIsVaultDepositSigning(true);
                     try {
-                      // Add your deposit logic here
                       console.log('Depositing:', vaultDepositAmount, 'to vault:', selectedVaultForAction?.id);
-                      // Simulate transaction
                       await new Promise(resolve => setTimeout(resolve, 2000));
-
                       setpopup(0);
                       setSelectedVaultForAction(null);
                       setVaultDepositAmount('');
@@ -10595,6 +10806,456 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 24 ? (
+          <div className="explorer-filters-popup" ref={popupref}>
+            <div className="explorer-filters-header">
+              <h2 className="filters-title">Filters</h2>
+              <button className="filters-close-button" onClick={() => setpopup(0)}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            <div className="status-tabs">
+              <button
+                className={`status-tab ${explorerFiltersActiveTab === 'new' ? 'active' : ''}`}
+                onClick={() => handleExplorerTabSwitch('new')}
+              >
+                New Pairs
+              </button>
+              <button
+                className={`status-tab ${explorerFiltersActiveTab === 'graduating' ? 'active' : ''}`}
+                onClick={() => handleExplorerTabSwitch('graduating')}
+              >
+                Graduating
+              </button>
+              <button
+                className={`status-tab ${explorerFiltersActiveTab === 'graduated' ? 'active' : ''}`}
+                onClick={() => handleExplorerTabSwitch('graduated')}
+              >
+                Graduated
+              </button>
+              <button className="explorer-revert-button" onClick={handleExplorerFiltersReset}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="23 4 23 10 17 10"></polyline>
+                  <polyline points="1 20 1 14 7 14"></polyline>
+                  <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+              </button>
+            </div>
+
+            <div className="section-tabs">
+              <button
+                className={`section-tab ${explorerFiltersActiveSection === 'audit' ? 'active' : ''}`}
+                onClick={() => setExplorerFiltersActiveSection('audit')}
+              >
+                Audit
+              </button>
+              <button
+                className={`section-tab ${explorerFiltersActiveSection === 'metrics' ? 'active' : ''}`}
+                onClick={() => setExplorerFiltersActiveSection('metrics')}
+              >
+                $ Metrics
+              </button>
+              <button
+                className={`section-tab ${explorerFiltersActiveSection === 'socials' ? 'active' : ''}`}
+                onClick={() => setExplorerFiltersActiveSection('socials')}
+              >
+                Socials
+              </button>
+            </div>
+
+            <div className="filters-content">
+              {explorerFiltersActiveSection === 'audit' && (
+                <div className="audit-filters">
+                  <div className="filter-row">
+                    <span className="filter-label">Age (mins)</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.ageMin}
+                        onChange={(e) => handleExplorerFilterInputChange('ageMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.ageMax}
+                        onChange={(e) => handleExplorerFilterInputChange('ageMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Holders</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.holdersMin}
+                        onChange={(e) => handleExplorerFilterInputChange('holdersMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.holdersMax}
+                        onChange={(e) => handleExplorerFilterInputChange('holdersMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Pro Traders</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.proTradersMin}
+                        onChange={(e) => handleExplorerFilterInputChange('proTradersMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.proTradersMax}
+                        onChange={(e) => handleExplorerFilterInputChange('proTradersMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">KOL Traders</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.kolTradersMin}
+                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.kolTradersMax}
+                        onChange={(e) => handleExplorerFilterInputChange('kolTradersMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Top 10 Holders %</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.top10HoldingMin}
+                        onChange={(e) => handleExplorerFilterInputChange('top10HoldingMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.top10HoldingMax}
+                        onChange={(e) => handleExplorerFilterInputChange('top10HoldingMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Dev Holding %</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.devHoldingMin}
+                        onChange={(e) => handleExplorerFilterInputChange('devHoldingMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.devHoldingMax}
+                        onChange={(e) => handleExplorerFilterInputChange('devHoldingMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Snipers %</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.sniperHoldingMin}
+                        onChange={(e) => handleExplorerFilterInputChange('sniperHoldingMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.sniperHoldingMax}
+                        onChange={(e) => handleExplorerFilterInputChange('sniperHoldingMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Bundle Holding %</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.bundleHoldingMin}
+                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.bundleHoldingMax}
+                        onChange={(e) => handleExplorerFilterInputChange('bundleHoldingMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Insider Holding %</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.insiderHoldingMin}
+                        onChange={(e) => handleExplorerFilterInputChange('insiderHoldingMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.insiderHoldingMax}
+                        onChange={(e) => handleExplorerFilterInputChange('insiderHoldingMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {explorerFiltersActiveSection === 'metrics' && (
+                <div className="metrics-filters">
+                  <div className="filter-row">
+                    <span className="filter-label">Market Cap</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.marketCapMin}
+                        onChange={(e) => handleExplorerFilterInputChange('marketCapMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.marketCapMax}
+                        onChange={(e) => handleExplorerFilterInputChange('marketCapMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Volume 24h</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.volume24hMin}
+                        onChange={(e) => handleExplorerFilterInputChange('volume24hMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.volume24hMax}
+                        onChange={(e) => handleExplorerFilterInputChange('volume24hMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Global Fees Paid</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.globalFeesMin}
+                        onChange={(e) => handleExplorerFilterInputChange('globalFeesMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.globalFeesMax}
+                        onChange={(e) => handleExplorerFilterInputChange('globalFeesMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Buy Transactions</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.buyTransactionsMin}
+                        onChange={(e) => handleExplorerFilterInputChange('buyTransactionsMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.buyTransactionsMax}
+                        onChange={(e) => handleExplorerFilterInputChange('buyTransactionsMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Sell Transactions</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.sellTransactionsMin}
+                        onChange={(e) => handleExplorerFilterInputChange('sellTransactionsMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.sellTransactionsMax}
+                        onChange={(e) => handleExplorerFilterInputChange('sellTransactionsMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="filter-row">
+                    <span className="filter-label">Price</span>
+                    <div className="filter-inputs">
+                      <input
+                        type="text"
+                        placeholder="Min"
+                        value={explorerFilters.priceMin}
+                        onChange={(e) => handleExplorerFilterInputChange('priceMin', e.target.value)}
+                        className="filter-input"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Max"
+                        value={explorerFilters.priceMax}
+                        onChange={(e) => handleExplorerFilterInputChange('priceMax', e.target.value)}
+                        className="filter-input"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {explorerFiltersActiveSection === 'socials' && (
+                <div className="socials-filters">
+                  <div className="keywords-section">
+                    <div className="keyword-group">
+                      <label className="keyword-label">Search Keywords</label>
+                      <input
+                        type="text"
+                        placeholder="keyword1, keyword2..."
+                        value={explorerFilters.searchKeywords}
+                        onChange={(e) => handleExplorerFilterInputChange('searchKeywords', e.target.value)}
+                        className="keyword-input"
+                      />
+                    </div>
+                    <div className="keyword-group">
+                      <label className="keyword-label">Exclude Keywords</label>
+                      <input
+                        type="text"
+                        placeholder="keyword1, keyword2..."
+                        value={explorerFilters.excludeKeywords}
+                        onChange={(e) => handleExplorerFilterInputChange('excludeKeywords', e.target.value)}
+                        className="keyword-input"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="social-checkboxes">
+                    <div className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        id="hasWebsite"
+                        checked={explorerFilters.hasWebsite}
+                        onChange={(e) => handleExplorerFilterInputChange('hasWebsite', e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      <label htmlFor="hasWebsite" className="checkbox-label">Has Website</label>
+                    </div>
+
+                    <div className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        id="hasTwitter"
+                        checked={explorerFilters.hasTwitter}
+                        onChange={(e) => handleExplorerFilterInputChange('hasTwitter', e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      <label htmlFor="hasTwitter" className="checkbox-label">Has Twitter</label>
+                    </div>
+
+                    <div className="checkbox-row">
+                      <input
+                        type="checkbox"
+                        id="hasTelegram"
+                        checked={explorerFilters.hasTelegram}
+                        onChange={(e) => handleExplorerFilterInputChange('hasTelegram', e.target.checked)}
+                        className="filter-checkbox"
+                      />
+                      <label htmlFor="hasTelegram" className="checkbox-label">Has Telegram</label>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="filters-actions">
+              <div className="action-buttons-left">
+                <button className="import-button" onClick={handleExplorerFiltersImport}>
+                  Import
+                </button>
+                <button className="export-button" onClick={handleExplorerFiltersExport}>
+                  Export
+                </button>
+              </div>
+              <div className="action-buttons-right">
+                <button className="apply-button" onClick={handleExplorerFiltersApply}>
+                  Apply All
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
+
       </div>
     </>
   );
@@ -17120,7 +17781,6 @@ function App() {
             />} />
           <Route path="/earn" element={<Navigate to="/earn/liquidity-pools" replace />} />
 
-          {/* Base liquidity pools route */}
           <Route path="/earn/liquidity-pools" element={
             <LPVaults
               setpopup={setpopup}
@@ -17154,7 +17814,6 @@ function App() {
             />
           } />
 
-          {/* Specific liquidity pool route */}
           <Route path="/earn/liquidity-pools/:poolId" element={
             <LPVaults
               setpopup={setpopup}
@@ -17188,7 +17847,6 @@ function App() {
             />
           } />
 
-          {/* Base vaults route */}
           <Route path="/earn/vaults" element={
             <LPVaults
               setpopup={setpopup}
@@ -17222,7 +17880,6 @@ function App() {
             />
           } />
 
-          {/* Specific vault route */}
           <Route path="/earn/vaults/:vaultAddress" element={
             <LPVaults
               setpopup={setpopup}
@@ -17255,9 +17912,52 @@ function App() {
               setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
             />
           } />
-          <Route path="/launchpad" element={
-            <Launchpad />
-          } />
+          <Route
+            path="/launchpad"
+            element={
+              <Launchpad
+                address={address}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={waitForTxReceipt}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                  logout: logout,
+                }}
+                setChain={handleSetChain}
+                setpopup={setpopup}
+                config={config}
+              />
+            }
+          />
+          {/* <Route path="/meme/:tokenAddress" element={
+            <MemeInterface
+              tradingMode={tradingMode}
+              sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
+              sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+              sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+              marketsData={marketsData}
+              onMarketSelect={onMarketSelect}
+              setSendTokenIn={setSendTokenIn}
+              setpopup={setpopup}
+              tokenList={memoizedTokenList}
+
+            />
+          } />     */}
+          <Route
+            path="/explorer"
+            element={
+              <TokenExplorer
+                setpopup={setpopup}
+                appliedFilters={appliedExplorerFilters}
+                activeFilterTab={activeExplorerFilterTab}
+                onOpenFiltersForColumn={handleOpenFiltersForColumn}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={waitForTxReceipt}
+              />
+            }
+          />
           <Route
             path="/portfolio"
             element={

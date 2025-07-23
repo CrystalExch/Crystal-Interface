@@ -51,7 +51,7 @@ export const settings: any = {
     10143: {
       name: 'Monad',
       httpurl:
-        'https://testnet-rpc.monad.xyz',
+        'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5',
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
@@ -59,6 +59,7 @@ export const settings: any = {
         '0xF6759341d82bB4Fc10e89E43c83568688Cada58f' as `0x${string}`,
       router: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
       referralManager: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
+      launchpadRouter: '0x920EEc07842dF03e726E9848A6B73FBdEA997Ee4' as `0x${string}`,
       firstblock: 17536756,
       ethticker: 'MON',
       wethticker: 'WMON',

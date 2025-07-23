@@ -2,15 +2,14 @@
   align-items: center;
   background: none;
   border: none;
-  color: #b8b7b7;
   cursor: pointer;
   display: flex;
   padding: 0;
-  transition: color 0.2s ease;
+  transition: opacity .2s;
 }
 
 .token-info-button:hover {
-  transform: scale(1.06);
+  opacity: 0.7;
 }
 
 .token-info-popup-icon {

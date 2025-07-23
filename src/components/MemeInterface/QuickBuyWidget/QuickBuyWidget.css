@@ -1,0 +1,399 @@
+.quickbuy-widget {
+    position: fixed;
+    width: 300px;
+    background: rgb(9,9,9);
+    border: 1px solid rgba(207, 210, 252, 0.15);
+    border-radius: 8px;
+    font-size: 14px;
+    color: #fff;
+    z-index: 100;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    user-select: none;
+}
+
+.quickbuy-widget.dragging {
+    cursor: grabbing;
+    opacity: 0.8;
+    transform: scale(1.02);
+    filter: blur(0.5px);
+}
+
+.quickbuy-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    border-bottom: 1px solid rgba(207, 210, 252, 0.15);
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+}
+
+.quickbuy-header:active {
+    cursor: grabbing;
+}
+
+.quickbuy-tabs {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tab {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.tab.active {
+    background: #0066cc;
+    color: white;
+}
+
+.tab:not(.active) {
+    background: #333;
+    color: #999;
+}
+
+.edit-icon {
+    margin-left: 8px;
+    cursor: pointer;
+    opacity: 0.7;
+}
+
+.quickbuy-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.settings-icon,
+.minimize-icon {
+    cursor: pointer;
+    opacity: 0.7;
+    padding: 4px;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.settings-icon:hover,
+.minimize-icon:hover {
+    background: #333;
+    opacity: 1;
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    transition: all 0.2s;
+}
+
+
+.quickbuy-content {
+    padding: 6px 16px;
+}
+
+.token-info {
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.token-info h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom:4px;
+    font-weight: 600;
+}
+.section-header span{
+    font-weight: 400;
+}
+
+
+
+.risk-info {
+    font-size: 12px;
+    color: #999;
+}
+
+.amount-buttons,
+.percent-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.amount-btn,
+.percent-btn {
+    padding: 4px 12px;
+    width: 100%;
+    border-radius: 20px;
+    color: #fff;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+
+.amount-btn:active,
+.percent-btn:active {
+    transform: scale(0.9);
+}
+
+.amount-btn{
+    color:rgb(67 254 154);
+    background-color: rgba(167, 234, 136, 0.133);
+    border: 1px solid rgba(167, 234, 136, 0.2);
+}
+
+.percent-btn {
+   background-color: #e04e4e20;
+   color: #e04e4e;
+    border: 1px solid rgba(224, 78, 78, 0.2);
+}
+
+.percent-btn:hover {
+   background-color: #cf13130f;
+}
+
+
+
+.trading-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.option {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: #999;
+    background: #2a2a2a;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.option:hover {
+    background: #333;
+}
+
+
+
+.icon {
+    font-size: 10px;
+}
+
+
+.buy-section {
+    margin-bottom: 20px;
+}
+
+.sell-section {
+    margin-bottom: 20px;
+}
+
+.quickbuy-portfolio-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding-top: 6px;
+    border-top: 1px solid rgba(207, 210, 252, 0.15);
+}
+
+.quickbuy-portfolio-item {
+    text-align: center;
+    border-right: 1px solid transparent;
+}
+
+.quickbuy-portfolio-item:not(:last-child) {
+    border-color: rgba(207, 210, 252, 0.15);;
+}
+
+.value {
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.value.green {
+    color: rgb(67 254 154);
+}
+
+.value.red {
+    color: #e04e4e;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .quickbuy-widget {
+        width: 280px;
+        max-width: calc(100vw - 20px);
+    }
+    
+    .quickbuy-content {
+        padding: 12px;
+    }
+}
+
+/* Animation for smooth dragging */
+.quickbuy-widget {
+    transition: opacity 0.2s ease;
+}
+
+.quickbuy-widget.dragging {
+    transition: none;
+}
+
+.quickbuy-monad-icon {
+    width: 14px;
+    height: 14px;
+    margin-right: 4px;
+}
+
+.quickbuy-order-indicator{
+    display: flex;
+    align-items: center;
+    font-weight: 400;
+}
+
+.quickbuy-percent{
+    font-size: 12px;
+    color: #999;
+    font-weight: 500;
+}
+
+.quickbuy-close-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.6;
+}
+.quickbuy-settings-icon {
+    width: 23px;
+    height: 23px;
+    opacity: 0.6;
+}
+
+.quickbuy-squares-icon{
+    pointer-events: none;
+    user-select: none;
+    width: 12px;
+    height: 12px;
+    opacity: 0.4;
+    margin-left: -2px;
+}
+
+.quickbuy-drag-handle {
+    right: calc(50% - 8px);
+    top: 8px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    width: 12px;
+}
+
+.quickbuy-edit-icon {
+    width: 20px;
+    height: 20px;
+    opacity: 0.7;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 2px
+}
+
+.quickbuy-controls-right-side{
+    display: flex;
+    align-items: center;
+}
+
+
+.quickbuy-edit-icon.active {
+    opacity: 1;
+    filter: brightness(0) saturate(100%) invert(83%) sepia(11%) saturate(527%) hue-rotate(194deg) brightness(95%) contrast(92%);
+    background-color: #aaaecf32;
+}
+
+.amount-btn.edit-mode,
+.percent-btn.edit-mode {
+    background-color: #b0c4de1c !important;
+    border: 1px solid #aaaecf !important;
+    color: #b0c4de !important;
+}
+
+.button-container {
+    position: relative;
+}
+
+.edit-input {
+    width: 100%;
+    padding: 4px 12px;
+    border-radius: 5px;
+    background: #b0c4de3e;
+    border: 1px solid #b0c4de;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 500;
+    text-align: center;
+    outline: none;
+}
+
+.edit-input:focus {
+    border-color: #b0c4de;
+    box-shadow: 0 0 0 2px rgba(176, 196, 222, 0.2);
+}
+
+.sell-header-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.sell-mode-toggle {
+    background: none;
+    border: none;
+    color: #999;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: all 0.2s;
+}
+
+
+
+.quickbuy-edit-icon {
+    transition: all 0.2s;
+}
+
+.quickbuy-edit-icon:hover {
+    opacity: 1;
+}
+
+.quickbuy-switch-icon {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    margin-right: 4px;
+}
