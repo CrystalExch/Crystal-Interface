@@ -1,8 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, TrendingUp, Search, Star, ArrowLeft, Share, Twitter, Edit3, X, ExternalLink } from 'lucide-react';
-import './LPVaults.css';
+import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star,  X, ExternalLink } from 'lucide-react';
 import iconmonad from '../../assets/iconmonad.png';
-import iconwmonad from '../../assets/iconwmonad.png';
 import iconusdc from '../../assets/iconusdc.png';
 import iconshmonad from '../../assets/iconshmon.png';
 import iconaprmonad from '../../assets/iconaprmon.png';
@@ -15,9 +13,10 @@ import iconyaki from '../../assets/iconyaki.png';
 import iconusdt from '../../assets/iconusdt.png';
 import iconsmon from '../../assets/iconsmon.png';
 import verified from '../../assets/verified.png';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
+import './LPVaults.css';
 
 interface Vault {
   id: string;
