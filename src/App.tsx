@@ -17927,10 +17927,12 @@ function App() {
                 setChain={handleSetChain}
                 setpopup={setpopup}
                 config={config}
+                tokenBalances={tokenBalances}
+                tokendict={tokendict}
               />
             }
           />
-          {/* <Route path="/meme/:tokenAddress" element={
+          <Route path="/meme/:tokenAddress" element={
             <MemeInterface
               tradingMode={tradingMode}
               sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
@@ -17941,9 +17943,17 @@ function App() {
               setSendTokenIn={setSendTokenIn}
               setpopup={setpopup}
               tokenList={memoizedTokenList}
-
+              sendUserOperationAsync={sendUserOperationAsync}
+              waitForTxReceipt={waitForTxReceipt}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+                logout: logout,
+              }}
+              setChain={handleSetChain}
             />
-          } />     */}
+          } />
           <Route
             path="/explorer"
             element={
@@ -18013,7 +18023,7 @@ function App() {
           <Route path="/limit" element={TradeLayout(limit)} />
           <Route path="/send" element={TradeLayout(send)} />
           <Route path="/scale" element={TradeLayout(scale)} />
-         
+
         </Routes>
         <TransactionPopupManager
           transactions={transactions}
