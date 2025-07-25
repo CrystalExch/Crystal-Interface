@@ -74,7 +74,78 @@
   padding: 4px 8px;
 }
 
-@media(max-width:1020px){
+/* Bonding percentage display styles */
+.token-icons-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bonding-amount-display {
+  position: absolute;
+  top: -2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background: rgb(0, 0, 0);
+  border: 1px solid #b5bcf81f;
+  color: #e6e7f6;
+  font-size: 0.75rem;
+  border-radius: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+  pointer-events: none;
+  letter-spacing: -0.3px;
+  z-index: 1000;
+}
+
+.token-icons-container:hover .bonding-amount-display {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* TokenIcons bonding progress ring */
+.token-icons-with-bonding {
+  width: 74px;
+  height: 74px;
+  border-radius: 8px;
+  background: conic-gradient(from 0deg,
+      var(--progress-color-start) 0deg,
+      var(--progress-color-mid) calc(var(--progress-angle) / 2),
+      var(--progress-color-end) var(--progress-angle),
+      rgba(255, 255, 255, 0.1) var(--progress-angle),
+      rgba(255, 255, 255, 0.1) 360deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 4px;
+}
+
+.token-icons-with-bonding.graduated {
+  background: conic-gradient(from 0deg,
+      #ffd700 0deg,
+      #ffed4e 90deg,
+      #ffc107 180deg,
+      #ff8f00 270deg,
+      #ffd700 360deg);
+}
+
+.token-icons-inner {
+  background: linear-gradient(135deg, #1a1a1c 0%, #2d2d30 100%);
+  border-radius: 4px;
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+@media(max-width: 1020px){
+  .token-icons-container{
+    display: none;
+  }
   .ctrlktooltip{
     display: none;
   }
@@ -697,3 +768,222 @@
   border-radius: 8px;
   position: relative;
 }
+
+
+.meme-interface-token-info-container-meme {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+    height: 53px;
+
+}
+
+.meme-interface-token-header-info {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 53px;
+  padding-left: 5px;
+  gap: 20px;
+
+}
+
+.meme-interface-token-header-left {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.meme-interface-token-icon-container {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.meme-interface-token-icon-wrapper {
+  position: relative;
+  width: 43px;
+  height: 43px;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 5px;
+    background: conic-gradient(
+      from 0deg,
+      var(--progress-color, #43e17d) 0deg,
+      var(--progress-color, #43e17d) var(--progress-angle, 0deg),
+      rgba(255, 255, 255, 0.1) var(--progress-angle, 0deg),
+      rgba(255, 255, 255, 0.1) 360deg
+    );
+    z-index: 1;
+    opacity: 0.9;
+    animation: meme-interface-glow 2s ease-in-out infinite alternate;
+  }
+
+}
+
+.meme-interface-token-icon {
+  width: 37px;
+  height: 37px;
+  border-radius: 5px;
+  object-fit: cover;
+  position: relative;
+  z-index: 3;
+  border: 2px solid rgba(29, 28, 28, 0.438);
+}
+
+.meme-interface-token-identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  margin-top: -4px;
+}
+
+/* Token name row */
+.meme-interface-token-name-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.meme-interface-token-symbol {
+  font-size: 1rem;
+  color: #ffffff;
+  margin: 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: -0.5px;
+}
+
+.meme-interface-token-name {
+  font-size: 1rem;
+  color: rgba(237, 236, 252, 0.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  letter-spacing: -0.5px;
+  transition: all 0.3 ease;
+    cursor: pointer;
+
+
+}
+
+.meme-interface-token-name-container:hover .meme-interface-token-name,
+.meme-interface-token-name-container:hover .meme-interface-social-btn{
+  color: #d8dbf5;
+}
+
+.meme-interface-token-name-container{
+  display: flex;
+  gap: 2px;
+}
+
+
+.meme-interface-token-status-badge {
+  font-size: 16px;
+  padding: 4px 8px;
+  background: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+  border-radius: 12px;
+  color: #ffc107;
+  font-weight: 600;
+}
+
+.meme-interface-token-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  line-height: 1;
+}
+
+.meme-interface-token-created {
+  font-size: 0.8rem;
+  color: #d8dbf5;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meme-interface-token-social-links {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.meme-interface-social-btn {
+  color: rgba(237, 236, 252, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+.meme-interface-social-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.meme-interface-token-header-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 16px;
+  flex-shrink: 0;
+}
+
+.meme-interface-token-metrics {
+  display: flex;
+  align-items: start;
+  gap: 15px;
+}
+
+.meme-interface-token-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.meme-interface-metric-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.5);
+  letter-spacing: -0.3px;
+}
+
+.meme-interface-metric-value {
+  font-size: 0.8rem;
+  color: #ffffff;
+  text-align: right;
+}
+
+.meme-interface-metric-value.positive {
+  color: #43e17d;
+}
+
+.meme-interface-metric-value.negative {
+  color: #ef5151;
+}
+/* Loading states */
+.meme-interface-token-info-container-meme.loading {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.meme-interface-token-info-container-meme.loading .meme-interface-token-icon-wrapper::before {
+  animation: meme-interface-loading-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes meme-interface-loading-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+}
+

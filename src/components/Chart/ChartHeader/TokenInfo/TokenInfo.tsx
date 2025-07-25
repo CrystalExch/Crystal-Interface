@@ -1,5 +1,6 @@
 import { Search } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
@@ -19,6 +20,35 @@ import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
 
+// Helper functions from TokenExplorer
+const getBondingColor = (percentage: number): string => {
+  if (percentage < 25) return '#ee5b5bff';
+  if (percentage < 50) return '#f59e0b';
+  if (percentage < 75) return '#eab308';
+  return '#43e17dff';
+};
+
+const createColorGradient = (base: string) => {
+  const hex = base.replace('#', '');
+  const [r, g, b] = [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+  const lighter = (x: number) => Math.min(255, Math.round(x + (255 - x) * 0.3));
+  const darker = (x: number) => Math.round(x * 0.7);
+  return {
+    start: `rgb(${darker(r)}, ${darker(g)}, ${darker(b)})`,
+    mid: base,
+    end: `rgb(${lighter(r)}, ${lighter(g)}, ${lighter(b)})`,
+  };
+};
+
+const calculateBondingPercentage = (marketCap: number) => {
+  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
+  return bondingPercentage;
+};
+
 interface TokenInfoProps {
   in_icon: string;
   out_icon: string;
@@ -31,6 +61,21 @@ interface TokenInfoProps {
   isLoading?: boolean;
   isTradeRoute?: boolean;
   simpleView?: boolean;
+  // New props for meme token display
+  isMemeToken?: boolean;
+  memeTokenData?: {
+    symbol: string;
+    name: string;
+    image: string;
+    tokenAddress: string;
+    marketCap: number;
+    change24h: number;
+    bondingPercentage: number;
+    status: 'new' | 'graduating' | 'graduated';
+    created: string;
+    website?: string;
+    twitterHandle?: string;
+  };
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -45,18 +90,78 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   isLoading,
   isTradeRoute = true,
   simpleView = false,
+  isMemeToken = false,
+  memeTokenData,
 }) => {
+  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [shouldFocus, setShouldFocus] = useState(false);
   const [activeFilter, setActiveFilter] = useState('All');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [hoveredToken, setHoveredToken] = useState(false);
   const filterTabsRef = useRef<HTMLDivElement>(null);
   const marketsListRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
   
+  // Calculate bonding percentage for regular tokens
+  const bondingPercentage = useMemo(() => {
+    if (isMemeToken || !activeMarket) return 0;
+    // Assuming we can calculate market cap from price and total supply
+    // You may need to adjust this based on your actual data structure
+    const TOTAL_SUPPLY = 1e9; // 1 billion tokens
+    const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
+    return calculateBondingPercentage(marketCap || 0);
+  }, [activeMarket, price, isMemeToken]);
+  
+  // Helper functions for meme token display
+  const getBondingColorMeme = (percentage: number): string => {
+    if (percentage < 25) return '#ef5151';
+    if (percentage < 50) return '#f59e0b';
+    if (percentage < 75) return '#eab308';
+    return '#43e17d';
+  };
+
+  const formatPrice = (price: number): string => {
+    if (price >= 1e9) return `$${(price / 1e9).toFixed(2)}B`;
+    if (price >= 1e6) return `$${(price / 1e6).toFixed(2)}M`;
+    if (price >= 1e3) return `$${(price / 1e3).toFixed(2)}K`;
+    return `$${price.toFixed(2)}`;
+  };
+
+  const formatTimeAgo = (timeStr: string): string => {
+    return timeStr.replace(' ago', '');
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
+  const handleWebsiteOpen = (url: string) => {
+    if (!url) return;
+    const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+    window.open(fullUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleTwitterOpen = (handle: string) => {
+    const cleanHandle = handle.replace('@', '');
+    window.open(`https://twitter.com/${cleanHandle}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleImageSearch = (imageUrl: string) => {
+    window.open(
+      `https://www.google.com/searchbyimage?image_url=${encodeURIComponent(imageUrl)}`,
+      '_blank',
+      'noopener,noreferrer'
+    );
+  };
+
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -343,6 +448,141 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     setSelectedIndex(0);
   }, [searchQuery, activeFilter]);
 
+// If it's a meme token, show the special meme header
+  if (isMemeToken && memeTokenData) {
+    return (
+      <div className="meme-interface-token-info-container-meme">
+        <div className="meme-interface-token-header-info">
+          <div className="meme-interface-token-header-left">
+            <div className="meme-interface-token-icon-container">
+              <div 
+                className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
+                style={
+                  memeTokenData.status !== 'graduated'
+                    ? {
+                        '--progress-angle': `${(memeTokenData.bondingPercentage / 100) * 360}deg`,
+                        '--progress-color': getBondingColorMeme(memeTokenData.bondingPercentage),
+                      } as React.CSSProperties
+                    : {}
+                }
+              >
+                <img src={memeTokenData.image} alt={memeTokenData.name} className="meme-interface-token-icon" />
+              </div>
+            </div>
+            
+            <div className="meme-interface-token-identity">
+              <div className="meme-interface-token-name-row">
+                <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
+                <div className="meme-interface-token-name-container">
+                <span className="meme-interface-token-name">{memeTokenData.name}</span>
+                  <button
+                    className="meme-interface-social-btn"
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
+                    title="Copy contract address"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
+                    </svg>
+                  </button>
+                 </div>
+
+                  
+              </div>
+              
+              <div className="meme-interface-token-meta-row">
+                <span className="meme-interface-token-created">{formatTimeAgo(memeTokenData.created)}</span>
+                
+                <div className="meme-interface-token-social-links">
+                  {memeTokenData.website && (
+                    <button
+                      className="meme-interface-social-btn"
+                      onClick={() => handleWebsiteOpen(memeTokenData.website!)}
+                      title="Visit website"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                      </svg>
+                    </button>
+                  )}
+                  
+                  {memeTokenData.twitterHandle && (
+                    <button
+                      className="meme-interface-social-btn"
+                      onClick={() => handleTwitterOpen(memeTokenData.twitterHandle!)}
+                      title={`@${memeTokenData.twitterHandle}`}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                      </svg>
+                    </button>
+                  )}
+                  
+              
+                  <button
+                    className="meme-interface-social-btn"
+                    onClick={() => handleImageSearch(memeTokenData.image)}
+                    title="Reverse image search"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="meme-interface-token-header-right">
+            <div className="meme-interface-token-metrics">
+               <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Market Cap</span>
+                <span className="meme-interface-metric-value">
+                  {formatPrice(memeTokenData.marketCap)}
+                </span>
+              </div>
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Price</span>
+                <span className="meme-interface-metric-value meme-price-large">
+                  {price} MON
+                </span>
+              </div>
+              
+      
+              
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">24h Change</span>
+                <span 
+                  className={`meme-interface-metric-value ${memeTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
+                >
+                  {memeTokenData.change24h >= 0 ? '+' : ''}{memeTokenData.change24h.toFixed(2)}%
+                </span>
+              </div>
+
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Supply</span>
+                <span className="meme-interface-metric-value meme-price-large">
+                  1B
+                </span>
+              </div>
+                {memeTokenData.status !== 'graduated' && (
+                <div className="meme-interface-token-metric">
+                  <span className="meme-interface-metric-label">Bonding</span>
+                  <span 
+                    className="meme-interface-metric-value" 
+                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+                  >
+                    {memeTokenData.bondingPercentage.toFixed(1)}%
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Original TokenInfo layout for non-meme tokens
   return (
     <div className={shouldShowTokenInfo}>
       <div
@@ -379,7 +619,41 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         )}
 
         {shouldShowFullHeader && (
-          <TokenIcons inIcon={in_icon} outIcon={out_icon} />
+          <div 
+            className="token-icons-container"
+            onMouseEnter={() => setHoveredToken(true)}
+            onMouseLeave={() => setHoveredToken(false)}
+          >
+            <div
+              className={`bonding-amount-display ${hoveredToken && bondingPercentage > 0 && !isMemeToken ? 'visible' : ''}`}
+              style={{ color: getBondingColor(bondingPercentage) }}
+            >
+              BONDING: {bondingPercentage.toFixed(1)}%
+            </div>
+            {bondingPercentage > 0 && !isMemeToken ? (
+              <div 
+                className="token-icons-with-bonding"
+                style={{
+                  '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
+                  '--progress-color-start': createColorGradient(
+                    getBondingColor(bondingPercentage),
+                  ).start,
+                  '--progress-color-mid': createColorGradient(
+                    getBondingColor(bondingPercentage),
+                  ).mid,
+                  '--progress-color-end': createColorGradient(
+                    getBondingColor(bondingPercentage),
+                  ).end,
+                } as React.CSSProperties}
+              >
+                <div className="token-icons-inner">
+                  <TokenIcons inIcon={in_icon} outIcon={out_icon} />
+                </div>
+              </div>
+            ) : (
+              <TokenIcons inIcon={in_icon} outIcon={out_icon} />
+            )}
+          </div>
         )}
 
         <div className="token-details">

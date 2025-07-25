@@ -31,6 +31,21 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
+  // Add missing props for meme token support
+  isMemeToken?: boolean;
+  memeTokenData?: {
+    symbol: string;
+    name: string;
+    image: string;
+    tokenAddress: string;
+    marketCap: number;
+    change24h: number;
+    bondingPercentage: number;
+    status: 'new' | 'graduating' | 'graduated';
+    created: string;
+    website?: string;
+    twitterHandle?: string;
+  };
 }
 
 const ChartHeader: React.FC<ChartHeaderProps> = ({
@@ -50,6 +65,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   marketsData,
   simpleView,
   tradesByMarket,
+  // Destructure the missing props
+  isMemeToken = false,
+  memeTokenData,
 }) => {
   const [buyLiquidity, setBuyLiquidity] = useState('0');
   const [sellLiquidity, setSellLiquidity] = useState('0');
@@ -150,8 +168,12 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         orderdata.liquiditySellOrders?.orders.length !== 0
           ? orderdata.liquiditySellOrders?.orders
           : [];
-      const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3]
-          / Number(markets[(activeMarket.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : activeMarket.quoteAsset) + 'USDC']?.priceFactor)
+      
+      const activechain = Object.keys(settings.chainConfig)[0]; // Fallback - you may want to pass this as a prop
+      const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : 
+        tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ? 
+          settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3];
+      
       if (roundedBuys.length !== 0 && quotePrice) {
         const buyLiquidity = roundedBuys[roundedBuys.length - 1].totalSize * quotePrice;
         setBuyLiquidity(formatCommas(buyLiquidity.toFixed(2)));
@@ -167,6 +189,8 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
       setIsLoading(orderdata.liquidityBuyOrders?.market != activeMarket.address)
     }
   }, [orderdata]);
+
+
 
   const metrics = [
     {
@@ -220,6 +244,9 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         isLoading={isLoading}
         isTradeRoute={isTradeRoute}
         simpleView={simpleView}
+        // Pass the missing props to TokenInfo
+        isMemeToken={isMemeToken}
+        memeTokenData={memeTokenData}
       />
       {shouldShowFullHeader && (
         <AdditionalMetrics 
