@@ -1,10 +1,4 @@
-.explorer-main {
-  background: rgb(6 6 6);
-  color: #f2f2f2;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  box-sizing: border-box;
-  width: 100%;
-}
+
 
 .explorer-filters-popup{
   border-radius: 14px;
@@ -83,6 +77,15 @@
   background: rgba(170, 174, 207, 0.03);
 }
 
+@media(max-width: 1350px){
+  .explorer-token-row{
+    height: 130px;
+  }
+  .explorer-quick-buy-btn{
+    margin-top: 20px !important;
+  }
+}
+
 .explorer-token-row:last-child {
   border-bottom: none;
 }
@@ -123,7 +126,27 @@
 }
 
 
+.explorer-token-name-preview {
+  color: rgba(237, 236, 252, 0.4);
+  font-size: 0.85rem;
+  margin: 0;
+}
+.explorer-token-ticker-preview{
+  color: rgb(255, 255, 255);
+  font-size: 0.85rem;
+  margin: 0;
+}
 
+.explorer-camera-preview-text {
+  width: 100%;
+  padding-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0 4px;
+  line-height: 1;
+  flex-wrap: wrap;
+}
 
 .explorer-token-symbol {
   color: #ffffff;
@@ -141,6 +164,12 @@
   flex: 1;
   min-width: 0;
   margin-left: 1rem;
+}
+
+@media(max-width: 1350px){
+  .explorer-token-details{
+    gap:1.5rem;
+  }
 }
 
 .explorer-detail-section {
@@ -162,7 +191,7 @@
 }
 
 .explorer-price-change.positive {
-  color: #10b981;
+  color: rgb(67, 254, 154);
   background: rgba(16, 185, 129, 0.1);
 }
 
@@ -226,8 +255,8 @@
 }
 
 .explorer-holding-value {
-  color: #aaaecf;
-  font-size: 0.8rem;
+  color: rgb(67, 254, 154);
+  font-size: 0.7rem;
   letter-spacing: -0.3px;
 }
 
@@ -361,40 +390,21 @@
   filter: brightness(1.1);
 }
 
-@media (max-width: 1020px) {
-  .explorer-token-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
-  }
 
-  .explorer-token-details {
-    margin-left: 0;
+@media(max-width:1560px){
+  .explorer-quick-buy-btn{
+    display: none;
   }
-
-  .explorer-actions-section {
-    margin-left: 0;
-    align-self: stretch;
-  }
-
-  .explorer-quick-buy-btn {
-    width: 100%;
-  }
-
-  .explorer-stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .explorer-holdings-section {
-    justify-content: center;
-  }
-
-  .explorer-contract-section {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+  .explorer-token-row:hover .explorer-quick-buy-btn{
+    display: flex;
   }
 }
+
+.explorer-additional-data{
+  display: flex;
+  gap: 0.5rem;
+}
+
 
 
 .explorer-token-header {
@@ -424,18 +434,6 @@
   background: rgba(255, 255, 255, 0.02);
   border-radius: 4px;
   border: 1px solid rgba(179, 184, 249, 0.05);
-}
-
-@media (max-width: 1020px) {
-  .explorer-token-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.25rem;
-  }
-
-  .explorer-time-created {
-    align-self: flex-end;
-  }
 }
 
 
@@ -496,12 +494,23 @@
   height: 18px;
 }
 
+@media(max-width: 1450px){
+  .explorer-second-row{
+    flex-direction: column;
+    align-self: start;
+    gap: 0;
+  }
+}
+
 
 
 .explorer-third-row {
+  position: absolute;
+  right: 1rem;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
+  z-index: 2;
 }
 
 
@@ -526,6 +535,8 @@
   align-items: flex-end;
   gap: 4px;
   height: 20px;
+  background-color: rgb(6,6,6);
+  box-shadow: -3px 0 2px 2px rgb(6,6,6);
 }
 
 
@@ -543,6 +554,8 @@
   color: #d8dbf5;
   font-size: 1rem;
   font-weight: 500;
+   background-color: rgb(6,6,6);
+  box-shadow: -3px 0 2px 2px rgb(6,6,6);
 }
 
 
@@ -669,34 +682,6 @@
   position: absolute;
   z-index: 50;
   pointer-events: none;
-}
-
-.tooltip-top {
-  bottom: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-bottom: 0.25rem;
-}
-
-.tooltip-bottom {
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 0.25rem;
-}
-
-.tooltip-left {
-  right: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-right: 0.25rem;
-}
-
-.tooltip-right {
-  left: 100%;
-  top: 50%;
-  transform: translateY(-50%);
-  margin-left: 0.25rem;
 }
 
 .tooltip-content {
@@ -1234,42 +1219,6 @@
   transform: scale(0.98);
 }
 
-@media (max-width: 768px) {
-  .explorer-filters-popup {
-    width: 95vw;
-    max-height: 95vh;
-  }
-  
-  .filter-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-  
-  .filter-label {
-    min-width: auto;
-  }
-  
-  .filter-inputs {
-    max-width: 100%;
-    width: 100%;
-  }
-  
-  .filters-actions {
-    flex-direction: column;
-    gap: 12px;
-  }
-  
-  .action-buttons-left,
-  .action-buttons-right {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .status-tabs {
-    flex-wrap: wrap;
-  }
-}
 
 
 .explorer-main {
@@ -1279,6 +1228,12 @@
   width: 100%;
   height: 100vh;
   overflow: hidden;
+}
+
+@media(max-width:1020px){
+  .explorer-main{
+    height: calc(100vh - 70px)
+  }
 }
 
 .explorer-container {
@@ -1759,7 +1714,6 @@
   border-radius: 4px;
 }
 
-/* Quick Buy Button Skeleton - Force same color */
 .explorer-token-row.loading .explorer-quick-buy-btn,
 .explorer-token-row.loading .explorer-actions-section .explorer-quick-buy-btn {
   background: var(--skeleton-bg) !important;
@@ -1790,7 +1744,6 @@
   animation: meme-shimmer 1.5s ease-in-out infinite;
 }
 
-/* Hide specific elements during loading */
 .explorer-token-row.loading .bonding-amount-display,
 .explorer-token-row.loading .explorer-hide-button,
 .explorer-token-row.loading .explorer-copy-btn,
@@ -1807,25 +1760,12 @@
   display: none !important;
 }
 
-/* Disable hover effects during loading */
 .explorer-token-row.loading:hover {
   background: transparent;
 }
 
-/* Responsive adjustments */
-@media (max-width: 1020px) {
-  .explorer-token-row.loading .explorer-token-name {
-    width: 150px !important;
-    margin-top: 8px;
-  }
-  
-  .explorer-token-row.loading .explorer-quick-buy-btn {
-    width: 100% !important;
-    height: 32px !important;
-  }
-}
 
-/* Sync all animations - remove staggering for smooth sync */
+
 .explorer-token-row.loading *,
 .explorer-token-row.loading *::before,
 .explorer-token-row.loading *::after {
@@ -1833,3 +1773,119 @@
 }
 
 
+
+
+
+
+.explorer-image-preview {
+  opacity: 0;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+.explorer-image-preview.show {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.explorer-preview-content {
+  padding: 8px;
+  background: rgba(6, 6, 6);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 
+             0 0 0 1px rgba(255, 255, 255, 0.1);
+  position: relative;
+  max-width: 150px;
+}
+
+
+
+.explorer-preview-image {
+  width: 150px;
+  height: 150px;
+  border-radius: 8px;
+  object-fit: cover;
+  display: block;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+
+.mobile-tab-selector {
+  display: none;
+  background: rgb(6, 6, 6);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  padding: 0;
+  overflow-x: auto;
+  flex-direction: row;
+  width: 100%;
+}
+
+.mobile-tab {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  flex: 1;
+  justify-content: center;
+}
+
+.mobile-tab:hover {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.mobile-tab.active {
+  color: #d8dbf5;
+  border-bottom-color: #d8dbf5;
+}
+
+
+.mobile-tab.active .mobile-tab-count {
+  background: rgba(170, 174, 207, 0.8);
+  color: #000000;
+}
+
+@media (max-width: 1100px) {
+  .mobile-tab-selector {
+    display: flex;
+  }
+
+  .explorer-columns {
+    display: block;
+    height: calc(100% - 60px);
+  }
+
+  .explorer-column {
+    display: none;
+    height: 100%;
+  }
+
+  .explorer-column.mobile-active {
+    display: flex;
+  }
+  .explorer-token-row{
+    height: 120px;
+  }
+  .explorer-quick-buy-btn{
+    display: flex;
+  }
+}
+
+
+@media(max-width:425px){
+.explorer-token-row{
+    height: 130px;
+  }
+}
+
+.mobile-tab-label{
+  font-size: 0.9rem;
+}

@@ -431,10 +431,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
             if (activeTradeType === 'buy') {
                 if (inputCurrency === 'MON') {
-                    // MON to TOKEN
                     convertedAmount = inputAmount / currentPrice;
                 } else {
-                    // TOKEN to MON  
                     convertedAmount = inputAmount * currentPrice;
                 }
             } else {
@@ -833,6 +831,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 <div className="memecharttradespanel">
                     <div className="meme-chart-container"></div>
                     <div className="meme-trades-container">
+                        <span className="meme-trades-title">Trades</span>
                         <MemeTradesComponent
                             tokenList={tokenList}
                             marketsData={marketsData}
@@ -930,7 +929,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         </div>
                     )}
                     
-                    {activeOrderType === 'limit' && (
+                    {activeOrderType === 'Limit' && (
                         <div className="meme-trade-input-wrapper">
                             <input
                                 type="number"
