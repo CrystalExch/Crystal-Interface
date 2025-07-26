@@ -59,7 +59,7 @@ export const settings: any = {
         '0xF6759341d82bB4Fc10e89E43c83568688Cada58f' as `0x${string}`,
       router: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
       referralManager: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
-      launchpadRouter: '0xCa9f19003325C745E4779a0B57528880a1698465' as `0x${string}`,
+      launchpadRouter: '0xD1555495E7DC159EB7FF7cECc3509bA3b9f40386' as `0x${string}`,
       firstblock: 17536756,
       ethticker: 'MON',
       wethticker: 'WMON',
