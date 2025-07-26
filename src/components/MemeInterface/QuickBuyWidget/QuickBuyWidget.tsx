@@ -19,8 +19,8 @@ interface QuickBuyWidgetProps {
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
   isOpen,
   onClose,
-  tokenSymbol = "TOKEN",
-  tokenName = "Token Name"
+  // tokenSymbol = "TOKEN",
+  // tokenName = "Token Name"
 }) => {
   const [position, setPosition] = useState({ x: 100, y: 100 });
   const [isDragging, setIsDragging] = useState(false);

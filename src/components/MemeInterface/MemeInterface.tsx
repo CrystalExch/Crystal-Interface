@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { encodeFunctionData } from "viem";
+
 import { defaultMetrics } from "../TokenExplorer/TokenData";
 import { settings } from "../../settings";
 import { CrystalLaunchpadRouter } from "../../abis/CrystalLaunchpadRouter";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
+
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
 import slippage from "../../assets/slippage.svg";
@@ -14,6 +16,7 @@ import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png";
+
 import "./MemeInterface.css";
 
 interface Token {

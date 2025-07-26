@@ -4,6 +4,8 @@ import switchicon from '../../../assets/switch.svg'
 import monadlogo from '../../../assets/monadlogo.svg'
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup'
 
+import { formatSubscript } from '../../../utils/numberDisplayFormat'
+
 import './MemeTradesComponent.css'
 
 export interface RawTrade {
@@ -72,12 +74,12 @@ export default function MemeTradesComponent({
       : `${Math.abs(v).toFixed(1)}`
 
   const fmtMC = (mc: number, price: number) =>
-    mcMode === 'MC' ? `$${mc.toFixed(1)}K` : `$${price.toFixed(6)}`
+    mcMode === 'MC' ? `$${mc.toFixed(1)}K` : `$${formatSubscript(price.toFixed(8))}`
 
   const fmtTime = (ts: number) =>
     new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-  const getTagIcon = (tag: string) => null   
+  const getTagIcon = () => null   
 
   return (
     <>
