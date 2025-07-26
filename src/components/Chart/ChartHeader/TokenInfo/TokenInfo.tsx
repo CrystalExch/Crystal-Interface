@@ -1,6 +1,5 @@
 import { Search } from 'lucide-react';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
-import { useLocation } from 'react-router-dom';
 
 import CopyButton from '../../../CopyButton/CopyButton';
 import TokenInfoPopup from './TokenInfoPopup/TokenInfoPopup';
@@ -20,7 +19,6 @@ import { settings } from '../../../../settings.ts';
 
 import './TokenInfo.css';
 
-// Helper functions from TokenExplorer
 const getBondingColor = (percentage: number): string => {
   if (percentage < 25) return '#ee5b5bff';
   if (percentage < 50) return '#f59e0b';
@@ -92,7 +90,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   isMemeToken = false,
   memeTokenData,
 }) => {
-  const location = useLocation();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,10 +102,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const isAdvancedView = isTradeRoute && !simpleView;
   
-  // Calculate bonding percentage for regular tokens
   const bondingPercentage = useMemo(() => {
     if (isMemeToken || !activeMarket) return 0;
-    const TOTAL_SUPPLY = 1e9; 
+    const TOTAL_SUPPLY = 1e9;
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
   }, [activeMarket, price, isMemeToken]);
@@ -444,7 +440,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     setSelectedIndex(0);
   }, [searchQuery, activeFilter]);
 
-// If it's a meme token, show the special meme header
   if (isMemeToken && memeTokenData) {
     return (
       <div className="meme-interface-token-info-container-meme">
@@ -539,7 +534,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  {price} MON
+                  {formatSubscript(Number(price).toFixed(10))} MON
                 </span>
               </div>
               
@@ -578,7 +573,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     );
   }
 
-  // Original TokenInfo layout for non-meme tokens
   return (
     <div className={shouldShowTokenInfo}>
       <div
