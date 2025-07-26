@@ -164,9 +164,8 @@
   width: 14px;
   height: 14px;
   cursor: pointer;
-  transform: rotate(90deg);
   margin-left: -2px;
-  margin-top: 2px;
+  transform: rotate(-45deg);
 }
 
 .meme-trade-mon-logo {
@@ -174,17 +173,8 @@
   height: 11px;
 }
 
-.meme-trades-dollar-sign{
-  width: 16px;
-  height: 16px;
-  margin-left:-2px;
-  margin-top: 1px;
-  opacity: 0.8;
-}
 
-/* Add these styles to your existing MemeTradesComponent.css file */
 
-/* Make the container relative for the pause indicator */
 .meme-trades-container {
   position: relative;
 }
@@ -240,4 +230,11 @@
   color: #aaaecf;
   font-size: 0.9rem;
   letter-spacing: -0.5px;
+}
+
+
+.subscript {
+  font-size: 0.8em;
+  vertical-align: sub;
+  line-height: 0;
 }

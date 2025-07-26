@@ -4,7 +4,7 @@ import switchicon from '../../../assets/switch.svg'
 import monadlogo from '../../../assets/monadlogo.svg'
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup'
 
-import { formatSubscript } from '../../../utils/numberDisplayFormat'
+import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript'
 
 import './MemeTradesComponent.css'
 
@@ -15,6 +15,7 @@ export interface RawTrade {
   price: number
   tokenAmount: number
   nativeAmount: number
+  tokenAddress?: string 
 }
 
 interface ViewTrade {
@@ -34,6 +35,13 @@ type MCMode = 'MC' | 'Price'
 interface Props {
   trades: RawTrade[]
   tokenList?: any[]
+  market?: any 
+  tradesByMarket?: any 
+  markets?: any 
+  tokendict?: any 
+  usdc?: string 
+  wethticker?: string
+  ethticker?: string
   onMarketSelect?: (m: any) => void
   setSendTokenIn?: (t: any) => void
   setpopup?: (v: number) => void
@@ -42,6 +50,13 @@ interface Props {
 export default function MemeTradesComponent({
   trades,
   tokenList = [],
+  market,
+  tradesByMarket,
+  markets,
+  tokendict,
+  usdc,
+  wethticker,
+  ethticker,
   onMarketSelect,
   setSendTokenIn,
   setpopup
@@ -52,21 +67,90 @@ export default function MemeTradesComponent({
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
 
+  // Add the fetchLatestPrice function (you'll need to import or define this)
+  const fetchLatestPrice = (trades: any[], market: any): number | null => {
+    // Your fetchLatestPrice implementation here
+    if (!trades || trades.length === 0) return null;
+    const sortedTrades = [...trades].sort((a, b) => b.timestamp - a.timestamp);
+    const latestTrade = sortedTrades[0];
+    return latestTrade ? latestTrade.price : null;
+  }
+
+  // Add the calculateUSDValue function
+  const calculateUSDValue = (
+    amount: bigint,
+    trades: any[],
+    tokenAddress: string,
+    market: any,
+  ) => {
+    if (!market || !tradesByMarket || !markets || !tokendict || !usdc || !wethticker || !ethticker) {
+      return 0; // Return 0 if required data is missing
+    }
+
+    if (amount === BigInt(0)) return 0;
+    
+    if (tokenAddress == market.quoteAddress && tokenAddress == usdc) {
+      return Number(amount) / 10 ** 6;
+    }
+    else if (tokenAddress == market.quoteAddress) {
+      return Number(amount) * tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+        / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
+    }
+    
+    const latestPrice = fetchLatestPrice(trades, market);
+    if (!latestPrice) return 0;
+    
+    const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+      / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+    
+    const usdValue = (Number(amount) * latestPrice * quotePrice / 10 ** Number(tokendict[tokenAddress].decimals));
+    return Number(usdValue);
+  };
+
   const viewTrades: ViewTrade[] = useMemo(() => {
     return trades.slice(0, 40).map(r => {
       const short = r.id.slice(0, 6)
+      
+      // Calculate proper USD amount using calculateUSDValue
+      let usdAmount = 0;
+      if (market && r.tokenAddress) {
+        const tokenAmount = BigInt(Math.floor(r.tokenAmount * 10 ** 18)); // Convert to proper bigint format
+        usdAmount = calculateUSDValue(tokenAmount, trades, r.tokenAddress, market);
+        // Make negative for sells
+        if (!r.isBuy) {
+          usdAmount = -usdAmount;
+        }
+      } else {
+        // Fallback to original logic if data is missing
+        usdAmount = r.isBuy ? r.nativeAmount : -r.nativeAmount;
+      }
+
       return {
         id: r.id,
         timestamp: r.timestamp,
-        amount: r.isBuy ? r.nativeAmount : -r.nativeAmount,
-        mc: 0,                           
+        amount: usdAmount, // Now using calculated USD value
+        mc: r.price * 1000000000,
         price: r.price,
         trader: short,
         fullAddress: r.id,
         tags: []                         
       }
     })
-  }, [trades])
+  }, [trades, market, tradesByMarket, markets, tokendict, usdc, wethticker, ethticker])
+
+const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
+  if (formatted.type === 'simple') {
+    return <span>{formatted.text}</span>;
+  }
+  
+  return (
+    <span>
+      {formatted.beforeSubscript}
+      <span className="subscript">{formatted.subscriptValue}</span>
+      {formatted.afterSubscript}
+    </span>
+  );
+};
 
   const fmtAmount = (v: number) =>
     amountMode === 'USDC'
@@ -94,7 +178,6 @@ export default function MemeTradesComponent({
             onClick={() => setAmountMode(p => (p === 'USDC' ? 'MON' : 'USDC'))}
           >
             Amount
-            <svg fill="currentColor" className="meme-trades-dollar-sign" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="50" height="50"><path d="M24 4C12.97 4 4 12.97 4 24s8.97 20 20 20 20-8.97 20-20S35.03 4 24 4Zm0 3c9.41 0 17 7.59 17 17s-7.59 17-17 17S7 33.41 7 24 14.59 7 24 7Zm-.52 3.98A1.5 1.5 0 0 0 22 12.5v1.15C19.21 13.04 17 15.36 17 18.25c0 3.16 2.59 5.75 5.75 5.75h2c1.81 0 3.25 1.44 3.25 3.25S24.56 30 22.75 30h-2.25c-1.18 0-2.14-.8-2.42-1.87a1.5 1.5 0 1 0-2.9.76c.58 2.21 2.52 3.77 4.82 4v1.08a1.5 1.5 0 1 0 3 0V32.4c3.31-.14 6-2.86 6-6.15 0-3.43-2.79-6.22-6.25-6.22h-2c-1.54 0-2.75-1.21-2.75-2.75S20.46 14.5 22 14.5h.76a1.5 1.5 0 0 0 .48 0h.76c1.17 0 2.14.8 2.42 1.87a1.5 1.5 0 1 0 2.9-.76c-.58-2.22-2.53-3.78-4.83-3.96V12.5a1.5 1.5 0 0 0-1.5-1.5Z" /></svg>
           </div>
           <div
             className="meme-trades-header-item meme-trades-header-mc"
@@ -114,7 +197,13 @@ export default function MemeTradesComponent({
                 {amountMode === 'MON' && <img src={monadlogo} alt="" className="meme-trade-mon-logo" />}
                 {fmtAmount(t.amount)}
               </div>
-              <div className="meme-trade-mc">{fmtMC(t.mc, t.price)}</div>
+              <div className="meme-trade-mc">
+                {mcMode === 'MC' ? (
+                  <span>${(t.mc / 1000).toFixed(1)}K</span>
+                ) : (
+                  <span>$<FormattedNumberDisplay formatted={formatSubscript(t.price.toFixed(8))} /></span>
+                )}
+              </div>              
               <div
                 className="meme-trade-trader clickable"
                 onClick={() => setPopupAddr(t.fullAddress)}

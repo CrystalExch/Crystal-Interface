@@ -3,7 +3,7 @@ import { encodeFunctionData } from 'viem';
 
 import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
 import { settings } from '../../settings';
-
+import upload from '../../assets/upload.svg'
 import './Launchpad.css';
 
 interface LaunchpadFormData {
@@ -71,7 +71,6 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   const [deployedTokenAddress, setDeployedTokenAddress] = useState('');
   const [deployedMarketAddress, setDeployedMarketAddress] = useState('');
 
-  // WebSocket listener unchanged
   useEffect(() => {
     const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
     ws.onopen = () => {
@@ -220,17 +219,19 @@ const Launchpad: React.FC<LaunchpadProps> = ({
           <h1 className="launchpad-title">Launch your token</h1>
 
           <div className="launchpad-form">
+            <div className="launchpad-token-info">
             <div className="launchpad-form-group">
               <label className="launchpad-label">Name *</label>
-              <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Bitcoin" disabled={isLaunching} />
+              <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Name your coin" disabled={isLaunching} />
             </div>
             <div className="launchpad-form-group">
               <label className="launchpad-label">Ticker *</label>
-              <input name="ticker" value={formData.ticker} onChange={handleInputChange} className="launchpad-input" placeholder="BTC" disabled={isLaunching} />
+              <input name="ticker" value={formData.ticker} onChange={handleInputChange} className="launchpad-input" placeholder="Add a coin ticker (e.g. BTC)" disabled={isLaunching} />
+            </div>
             </div>
             <div className="launchpad-form-group">
               <label className="launchpad-label">Description</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} className="launchpad-input" rows={3} disabled={isLaunching} />
+              <textarea name="description" value={formData.description} onChange={handleInputChange} className="launchpad-input"placeholder="Write a short description" rows={3} disabled={isLaunching} />
             </div>
             <div className="launchpad-form-group">
               <label className="launchpad-label">Upload a picture *</label>
@@ -247,8 +248,11 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                   </div>
                 ) : (
                   <div className="launchpad-upload-content">
-                    <p>Drag & drop or click to upload (max 1 MB)</p>
+                    <img src={upload}/>
+                    <p className="launchpad-upload-header">Select a video or image to upload</p>
+                    <p className="launchpad-upload-subtitle">or drag and drop it here</p>
                   </div>
+                  
                 )}
               </div>
             </div>
@@ -264,10 +268,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
               </div>
             </div>
 
-            <div className="launchpad-cost-info"><span>Launch cost: 0 MON</span></div>
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
-              {isLaunching ? 'Signing…' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
+              {isLaunching ? 'Sign Transaction' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
             </button>
 
             {launchStatus && <p className="launchpad-status">{launchStatus}</p>}

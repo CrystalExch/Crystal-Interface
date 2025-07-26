@@ -8,6 +8,7 @@ import { CrystalLaunchpadRouter } from "../../abis/CrystalLaunchpadRouter";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
+import MemeChart from "./MemeChart/MemeChart"; // TradingView advanced chart component
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -75,6 +76,11 @@ interface MemeInterfaceProps {
     setChain: () => void;
     tokenBalances?: { [key: string]: bigint };
     tokendict?: { [key: string]: any };
+    tradesByMarket?: any;
+    markets?: any;
+    usdc?: string;
+    wethticker?: string;
+    ethticker?: string;
 }
 
 const MARKET_UPDATE_EVENT =
@@ -83,15 +89,80 @@ const TOTAL_SUPPLY = 1e9;
 const SUBGRAPH_URL =
     "https://api.studio.thegraph.com/query/104695/crystal-launchpad/version/latest";
 
-const gq = async (query: string, variables: Record<string, any>) => {
-    const res = await fetch(SUBGRAPH_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query, variables }),
-    });
-    const j = await res.json();
-    if (j.errors) throw new Error(JSON.stringify(j.errors));
-    return j.data;
+// Rate limiting and caching for subgraph calls
+const queryCache = new Map();
+const lastRequestTime = { value: 0 };
+const MIN_REQUEST_INTERVAL = 2000; // 2 seconds between requests
+
+const gqWithRateLimit = async (query: string, variables: Record<string, any>, cacheKey?: string) => {
+    // Check cache first
+    if (cacheKey && queryCache.has(cacheKey)) {
+        const cached = queryCache.get(cacheKey);
+        if (Date.now() - cached.timestamp < 30000) { // Cache for 30 seconds
+            return cached.data;
+        }
+    }
+
+    // Rate limiting
+    const now = Date.now();
+    const timeSinceLastRequest = now - lastRequestTime.value;
+    if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+        await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
+    }
+
+    try {
+        lastRequestTime.value = Date.now();
+        const res = await fetch(SUBGRAPH_URL, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ query, variables }),
+        });
+
+        if (res.status === 429) {
+            // If rate limited, wait longer and retry once
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            const retryRes = await fetch(SUBGRAPH_URL, {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ query, variables }),
+            });
+
+            if (!retryRes.ok) {
+                throw new Error(`HTTP ${retryRes.status}: ${retryRes.statusText}`);
+            }
+
+            const retryData = await retryRes.json();
+            if (retryData.errors) {
+                throw new Error(JSON.stringify(retryData.errors));
+            }
+
+            // Cache successful response
+            if (cacheKey) {
+                queryCache.set(cacheKey, { data: retryData.data, timestamp: Date.now() });
+            }
+
+            return retryData.data;
+        }
+
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+
+        const data = await res.json();
+        if (data.errors) {
+            throw new Error(JSON.stringify(data.errors));
+        }
+
+        // Cache successful response
+        if (cacheKey) {
+            queryCache.set(cacheKey, { data: data.data, timestamp: Date.now() });
+        }
+
+        return data.data;
+    } catch (error) {
+        console.error('Subgraph query failed:', error);
+        return null;
+    }
 };
 
 const fmt = (v: number, d = 6) => {
@@ -117,6 +188,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setChain,
     tokenBalances = {},
     tokendict = {},
+    tradesByMarket,
+    markets,
+    usdc,
+    wethticker,
+    ethticker,
 }) => {
     const { tokenAddress } = useParams<{ tokenAddress: string }>();
     const location = useLocation();
@@ -142,6 +218,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     );
     const [live, setLive] = useState<Partial<Token>>({});
     const [trades, setTrades] = useState<Trade[]>([]);
+    const [selectedInterval, setSelectedInterval] = useState("5m"); // Chart interval state 
+    const [chartData, setChartData] = useState<any>(null); // Chart data like ChartComponent
+    const [overlayVisible, setOverlayVisible] = useState(true); // Chart loading overlay
+    const realtimeCallbackRef = useRef<any>({}); // Real-time updates for chart
     const wsRef = useRef<WebSocket | null>(null);
     const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
     const [buySlippageValue, setBuySlippageValue] = useState('20');
@@ -188,7 +268,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         setSellBribeValue(presetValues.bribe);
     }, []);
 
-
     const handleSettingsModePresetSelect = useCallback((preset: number) => {
         if (settingsMode === 'buy') {
             handleBuyPresetSelect(preset);
@@ -196,6 +275,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             handleSellPresetSelect(preset);
         }
     }, [settingsMode, handleBuyPresetSelect, handleSellPresetSelect]);
+
     const handlePresetSelect = (preset: number) => {
         setSelectedPreset(preset);
 
@@ -205,6 +285,55 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             handleSellPresetSelect(preset);
         }
     };
+
+    // Chart interval change handler
+    const handleIntervalChange = useCallback((interval: string) => {
+        setSelectedInterval(interval);
+    }, []);
+
+    // Convert trades to chart data like ChartComponent does
+    const convertTradesToChartData = useCallback((trades: Trade[], interval: string) => {
+        if (!trades || trades.length === 0) return null;
+
+        const getIntervalSeconds = (int: string): number => {
+            switch (int) {
+                case '5m': return 300;
+                case '15m': return 900;
+                case '1h': return 3600;
+                case '1d': return 86400;
+                default: return 300;
+            }
+        };
+
+        const intervalSeconds = getIntervalSeconds(interval);
+        const candleMap = new Map();
+
+        // Sort trades by timestamp
+        const sortedTrades = [...trades].sort((a, b) => a.timestamp - b.timestamp);
+
+        sortedTrades.forEach(trade => {
+            const intervalTime = Math.floor(trade.timestamp / intervalSeconds) * intervalSeconds;
+
+            if (!candleMap.has(intervalTime)) {
+                candleMap.set(intervalTime, {
+                    time: intervalTime * 1000, // TradingView expects milliseconds
+                    open: trade.price,
+                    high: trade.price,
+                    low: trade.price,
+                    close: trade.price,
+                    volume: 0
+                });
+            }
+
+            const candle = candleMap.get(intervalTime);
+            candle.high = Math.max(candle.high, trade.price);
+            candle.low = Math.min(candle.low, trade.price);
+            candle.close = trade.price; // Last trade becomes close
+            candle.volume += trade.nativeAmount;
+        });
+
+        return Array.from(candleMap.values()).sort((a, b) => a.time - b.time);
+    }, []);
 
 
     const baseToken: Token = (() => {
@@ -257,34 +386,96 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     const token: Token = { ...baseToken, ...live } as Token;
     const currentPrice = token.price || 0;
+    // Real-time chart updates when new trades arrive
+    useEffect(() => {
+        if (!realtimeCallbackRef.current || !trades.length) return;
 
+        const latestTrade = trades[0]; // trades are sorted newest first
+        const key = token.symbol + 'MON' + (
+            selectedInterval === '1d' ? '1D' :
+                selectedInterval === '4h' ? '240' :
+                    selectedInterval === '1h' ? '60' :
+                        selectedInterval.slice(0, -1)
+        );
 
+        const callback = realtimeCallbackRef.current[key];
+        if (callback && latestTrade) {
+            // Update current candle with latest trade
+            const bar = {
+                time: Date.now(),
+                open: latestTrade.price,
+                high: latestTrade.price,
+                low: latestTrade.price,
+                close: latestTrade.price,
+                volume: latestTrade.nativeAmount,
+            };
+            callback(bar);
+        }
+    }, [trades, selectedInterval, token.symbol]);
+
+    // Fetch/generate chart data like ChartComponent does
+    useEffect(() => {
+        if (!token.symbol) return;
+
+        setOverlayVisible(true);
+
+        const chartData = convertTradesToChartData(trades, selectedInterval);
+        const key = token.symbol + 'MON' + (
+            selectedInterval === '1d' ? '1D' :
+                selectedInterval === '4h' ? '240' :
+                    selectedInterval === '1h' ? '60' :
+                        selectedInterval.slice(0, -1)
+        );
+
+        if (chartData && chartData.length > 0) {
+            setChartData([chartData, key, false]); // [data, key, showOutliers]
+        } else if (token.price > 0) {
+            // Fallback: create single candle from current price
+            const fallbackData = [{
+                time: Date.now(),
+                open: token.price,
+                high: token.price,
+                low: token.price,
+                close: token.price,
+                volume: 0,
+            }];
+            setChartData([fallbackData, key, false]);
+        }
+    }, [selectedInterval, token.symbol, trades, token.price, convertTradesToChartData]);
     useEffect(() => {
         if (!token.id) return;
-        (async () => {
+
+        let isCancelled = false;
+
+        const fetchMemeTokenData = async () => {
             try {
-                const data = await gq(
+                const cacheKey = `market-${token.id.toLowerCase()}`;
+                const data = await gqWithRateLimit(
                     `
-          query ($id: ID!) {
-            market: markets(where: { id: $id }) {
-              latestPrice
-              volume24h
-              buyCount
-              sellCount
-            }
-            trades(first: 100, orderBy: timestamp, orderDirection: desc, where: { market: $id }) {
-              id
-              timestamp
-              isBuy
-              price
-              tokenAmount
-              nativeAmount
-            }
-          }
-        `,
+                    query ($id: ID!) {
+                        market: markets(where: { id: $id }) {
+                            latestPrice
+                            volume24h
+                            buyCount
+                            sellCount
+                        }
+                        trades(first: 50, orderBy: timestamp, orderDirection: desc, where: { market: $id }) {
+                            id
+                            timestamp
+                            isBuy
+                            price
+                            tokenAmount
+                            nativeAmount
+                        }
+                    }
+                    `,
                     { id: token.id.toLowerCase() },
+                    cacheKey
                 );
-                if (data.market.length) {
+
+                if (isCancelled || !data) return;
+
+                if (data.market && data.market.length > 0) {
                     const m = data.market[0];
                     setLive((p) => ({
                         ...p,
@@ -295,20 +486,42 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         sellTransactions: Number(m.sellCount),
                     }));
                 }
-                const mapped: Trade[] = data.trades.map((t: any) => ({
-                    id: t.id,
-                    timestamp: Number(t.timestamp),
-                    isBuy: t.isBuy,
-                    price: Number(t.price) / 1e18,
-                    tokenAmount: Number(t.tokenAmount) / 1e18,
-                    nativeAmount: Number(t.nativeAmount) / 1e18,
+
+                if (data.trades && data.trades.length > 0) {
+                    const mapped: Trade[] = data.trades.map((t: any) => ({
+                        id: t.id,
+                        timestamp: Number(t.timestamp),
+                        isBuy: t.isBuy,
+                        price: Number(t.price) / 1e18,
+                        tokenAmount: Number(t.tokenAmount) / 1e18,
+                        nativeAmount: Number(t.nativeAmount) / 1e18,
+                    }));
+                    setTrades(mapped);
+                } else {
+                    // Initialize with empty trades array
+                    setTrades([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch meme token data:', error);
+                // Set some default values so the UI doesn't break
+                setLive((p) => ({
+                    ...p,
+                    price: 0,
+                    marketCap: 0,
+                    volume24h: 0,
+                    buyTransactions: 0,
+                    sellTransactions: 0,
                 }));
-                setTrades(mapped);
-            } catch (e) {
-                console.error(e);
+                setTrades([]);
             }
-        })();
-    }, [token.id]);
+        };
+
+        fetchMemeTokenData();
+
+        return () => {
+            isCancelled = true;
+        };
+    }, [token.id]); // Only run when token.id changes
 
     useEffect(() => {
         if (!token.id) return;
@@ -529,12 +742,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         <div className="meme-interface-container">
             <div className="memechartandtradesandordercenter">
                 <div className="memecharttradespanel">
-                    <div className="meme-chart-container"></div>
+                    <div className="meme-chart-container">
+                        <MemeChart
+                            token={token}
+                            data={chartData}
+                            selectedInterval={selectedInterval}
+                            setSelectedInterval={setSelectedInterval}
+                            setOverlayVisible={setOverlayVisible}
+                            realtimeCallbackRef={realtimeCallbackRef}
+                        />
+                    </div>
                     <div className="meme-trades-container">
                         <span className="meme-trades-title">Trades</span>
                         <MemeTradesComponent
                             tokenList={tokenList}
                             trades={trades}
+                            market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
+                            tradesByMarket={tradesByMarket}
+                            markets={markets}
+                            tokendict={tokendict}
+                            usdc={usdc}
+                            wethticker={wethticker}
+                            ethticker={ethticker}
                             onMarketSelect={onMarketSelect}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}

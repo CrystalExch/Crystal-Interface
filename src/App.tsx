@@ -66,7 +66,7 @@ import replaceOrder from './scripts/replaceOrder';
 import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { getTradeValue } from './utils/getTradeValue.ts';
-import { formatCommas, formatSubscript } from './utils/numberDisplayFormat.ts';
+import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
 import { formatDisplay } from './components/OrderCenter/utils/formatDisplay.ts';
 
 // import abis
@@ -7117,9 +7117,9 @@ function App() {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const [activeExplorerFilterTab, setActiveExplorerFilterTab] = useState(() => {
+  const [activeExplorerFilterTab, setActiveExplorerFilterTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
     const saved = localStorage.getItem('crystal_active_explorer_filter_tab');
-    return saved || 'new';
+    return (saved as 'new' | 'graduating' | 'graduated') || 'new';
   });
   useEffect(() => {
     localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
@@ -18217,9 +18217,6 @@ function App() {
                 }}
                 setChain={handleSetChain}
                 setpopup={setpopup}
-                config={config}
-                tokenBalances={tokenBalances}
-                tokendict={tokendict}
               />
             }
           />
@@ -18240,7 +18237,6 @@ function App() {
                 connected: connected,
                 address: address,
                 chainId: userchain,
-                logout: logout,
               }}
               setChain={handleSetChain}
             />

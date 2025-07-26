@@ -12,8 +12,8 @@ import TokenIcons from '../TokenIcons/TokenIcons';
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import {
   formatCommas,
-  formatSubscript,
 } from '../../../../utils/numberDisplayFormat';
+import { formatSubscript, FormattedNumber } from '../../../../utils/memeFormatSubscript';
 
 import { settings } from '../../../../settings.ts';
 
@@ -101,14 +101,13 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const marketsListRef = useRef<HTMLDivElement>(null);
 
   const isAdvancedView = isTradeRoute && !simpleView;
-  
+
   const bondingPercentage = useMemo(() => {
-    if (isMemeToken || !activeMarket) return 0;
+    if (!isMemeToken || !activeMarket) return 0;
     const TOTAL_SUPPLY = 1e9;
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
   }, [activeMarket, price, isMemeToken]);
-  
   const getBondingColorMeme = (percentage: number): string => {
     if (percentage < 25) return '#ef5151';
     if (percentage < 50) return '#f59e0b';
@@ -126,7 +125,19 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   const formatTimeAgo = (timeStr: string): string => {
     return timeStr.replace(' ago', '');
   };
+  const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
+    if (formatted.type === 'simple') {
+      return <span>{formatted.text}</span>;
+    }
 
+    return (
+      <span>
+        {formatted.beforeSubscript}
+        <span className="subscript">{formatted.subscriptValue}</span>
+        {formatted.afterSubscript}
+      </span>
+    );
+  };
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -162,7 +173,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         if (isAdvancedView) {
           toggleDropdown();
         } else {
-          setpopup((popup: number) => {return popup == 0 ? 8 : 0});
+          setpopup((popup: number) => { return popup == 0 ? 8 : 0 });
         }
       }
       else if (e.key == 'Escape') {
@@ -424,10 +435,10 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
   const scrollToItem = (index: number) => {
     if (!marketsListRef.current) return;
-    
+
     const allItems = marketsListRef.current.querySelectorAll('.market-item-container');
     const itemElement = allItems[index];
-    
+
     if (itemElement) {
       itemElement.scrollIntoView({
         behavior: 'smooth',
@@ -446,26 +457,26 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         <div className="meme-interface-token-header-info">
           <div className="meme-interface-token-header-left">
             <div className="meme-interface-token-icon-container">
-              <div 
+              <div
                 className={`meme-interface-token-icon-wrapper ${memeTokenData.status === 'graduated' ? 'graduated' : ''}`}
                 style={
                   memeTokenData.status !== 'graduated'
                     ? {
-                        '--progress-angle': `${(memeTokenData.bondingPercentage / 100) * 360}deg`,
-                        '--progress-color': getBondingColorMeme(memeTokenData.bondingPercentage),
-                      } as React.CSSProperties
+                      '--progress-angle': `${(memeTokenData.bondingPercentage / 100) * 360}deg`,
+                      '--progress-color': getBondingColorMeme(memeTokenData.bondingPercentage),
+                    } as React.CSSProperties
                     : {}
                 }
               >
                 <img src={memeTokenData.image} alt={memeTokenData.name} className="meme-interface-token-icon" />
               </div>
             </div>
-            
+
             <div className="meme-interface-token-identity">
               <div className="meme-interface-token-name-row">
                 <h1 className="meme-interface-token-symbol">{memeTokenData.symbol}</h1>
                 <div className="meme-interface-token-name-container">
-                <span className="meme-interface-token-name">{memeTokenData.name}</span>
+                  <span className="meme-interface-token-name">{memeTokenData.name}</span>
                   <button
                     className="meme-interface-social-btn"
                     onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
@@ -475,14 +486,14 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       <path d="M4 2c-1.1 0-2 .9-2 2v14h2V4h14V2H4zm4 4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2H8zm0 2h14v14H8V8z" />
                     </svg>
                   </button>
-                 </div>
+                </div>
 
-                  
+
               </div>
-              
+
               <div className="meme-interface-token-meta-row">
                 <span className="meme-interface-token-created">{formatTimeAgo(memeTokenData.created)}</span>
-                
+
                 <div className="meme-interface-token-social-links">
                   {memeTokenData.website && (
                     <button
@@ -495,7 +506,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       </svg>
                     </button>
                   )}
-                  
+
                   {memeTokenData.twitterHandle && (
                     <button
                       className="meme-interface-social-btn"
@@ -507,25 +518,25 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                       </svg>
                     </button>
                   )}
-                  
-              
+
+
                   <button
                     className="meme-interface-social-btn"
                     onClick={() => handleImageSearch(memeTokenData.image)}
                     title="Reverse image search"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+                      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
                     </svg>
                   </button>
                 </div>
               </div>
             </div>
           </div>
-          
+
           <div className="meme-interface-token-header-right">
             <div className="meme-interface-token-metrics">
-               <div className="meme-interface-token-metric">
+              <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Market Cap</span>
                 <span className="meme-interface-metric-value">
                   {formatPrice(memeTokenData.marketCap)}
@@ -534,15 +545,15 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  {formatSubscript(Number(price).toFixed(10))} MON
+                  <FormattedNumberDisplay formatted={formatSubscript(Number(price).toFixed(10))} /> MON
                 </span>
               </div>
-              
-      
-              
+
+
+
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">24h Change</span>
-                <span 
+                <span
                   className={`meme-interface-metric-value ${memeTokenData.change24h >= 0 ? 'positive' : 'negative'}`}
                 >
                   {memeTokenData.change24h >= 0 ? '+' : ''}{memeTokenData.change24h.toFixed(2)}%
@@ -555,11 +566,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   1B
                 </span>
               </div>
-                {memeTokenData.status !== 'graduated' && (
+              {memeTokenData.status !== 'graduated' && (
                 <div className="meme-interface-token-metric">
                   <span className="meme-interface-metric-label">Bonding</span>
-                  <span 
-                    className="meme-interface-metric-value" 
+                  <span
+                    className="meme-interface-metric-value"
                     style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
                   >
                     {memeTokenData.bondingPercentage.toFixed(1)}%
@@ -609,19 +620,19 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
         )}
 
         {shouldShowFullHeader && (
-          <div 
+          <div
             className="token-icons-container"
             onMouseEnter={() => setHoveredToken(true)}
             onMouseLeave={() => setHoveredToken(false)}
           >
             <div
-              className={`bonding-amount-display ${hoveredToken && bondingPercentage > 0 && !isMemeToken ? 'visible' : ''}`}
+              className={`bonding-amount-display ${hoveredToken && bondingPercentage > 0 && isMemeToken ? 'visible' : ''}`}
               style={{ color: getBondingColor(bondingPercentage) }}
             >
               BONDING: {bondingPercentage.toFixed(1)}%
             </div>
-            {bondingPercentage > 0 && !isMemeToken ? (
-              <div 
+            {bondingPercentage > 0 && isMemeToken ? (
+              <div
                 className="token-icons-with-bonding"
                 style={{
                   '--progress-angle': `${(bondingPercentage / 100) * 360}deg`,
@@ -636,7 +647,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   ).end,
                 } as React.CSSProperties}
               >
-
+                <div className="token-icons-inner">
+                  <TokenIcons inIcon={in_icon} outIcon={out_icon} />
+                </div>
               </div>
             ) : (
               <TokenIcons inIcon={in_icon} outIcon={out_icon} />
@@ -840,7 +853,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                         </div>
                         <div className="market-price-section">
                           <div className="market-price">
-                            {formatSubscript(market.currentPrice)}
+                            <FormattedNumberDisplay formatted={formatSubscript(market.currentPrice)} />
                           </div>
                           <div
                             className={`market-change ${market.priceChange.startsWith('-') ? 'negative' : 'positive'}`}

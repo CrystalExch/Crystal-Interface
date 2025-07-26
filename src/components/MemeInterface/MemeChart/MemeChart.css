@@ -1,0 +1,157 @@
+/* Base container styling */
+.meme-chartwrapper {
+  background: rgb(6,6,6);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  width: 100%;
+  z-index: 1;
+  position: relative;
+}
+
+/* Chart options header */
+.meme-chart-options {
+  align-items: center;
+  display: flex;
+  height: 25px;
+  justify-content: space-between;
+  padding: 0px 10px;
+  margin-top: 5px;
+  z-index: 1;
+  position: relative;
+}
+
+/* UTC Clock styling */
+.meme-utc-clock {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-family: 'Funnel Display', sans-serif;
+  font-size: 12px;
+  color: #aaaecf;
+}
+
+.meme-utc-label {
+  font-weight: 500;
+  opacity: 0.7;
+}
+
+.meme-utc-time {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Timeframe selector styling */
+.meme-timeframe-selector {
+  display: flex;
+  gap: 2px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  padding: 2px;
+}
+
+.meme-timeframe-button {
+  background: transparent;
+  border: none;
+  color: #aaaecf;
+  cursor: pointer;
+  font-family: 'Funnel Display', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  min-width: 28px;
+  text-align: center;
+}
+
+.meme-timeframe-button:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: #bbbddb;
+}
+
+.meme-timeframe-button.active {
+  background: #aaaecf;
+  color: rgb(6,6,6);
+  font-weight: 600;
+}
+
+.meme-timeframe-button:focus {
+  outline: none;
+}
+
+/* Advanced chart container - inherit from main styling */
+.meme-chartwrapper .advanced-chart-container {
+  background-color: rgb(6,6,6);
+  flex-grow: 1;
+  position: relative;
+}
+
+.meme-chartwrapper .advanced-chart-container > div {
+  height: 100%;
+  left: 0;
+  position: absolute;
+  top: 0;
+  width: 100%;
+}
+
+/* Basic chart container (fallback) */
+.meme-basic-chart-container {
+  background-color: rgb(6,6,6);
+  flex-grow: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meme-chart-placeholder {
+  color: #aaaecf;
+  font-family: 'Funnel Display', sans-serif;
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+/* Ensure proper font inheritance for TradingView elements */
+.meme-chartwrapper .chart-page,
+.meme-chartwrapper .tv-chart-container,
+.meme-chartwrapper .chart-widget,
+.meme-chartwrapper .series-l31H9iuA .titlesWrapper-l31H9iuA {
+  font-family: 'Funnel Display', sans-serif !important;
+}
+
+/* Dropdown interaction fix */
+body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-container {
+  pointer-events: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .meme-chart-options {
+    padding: 0px 8px;
+  }
+  
+  .meme-timeframe-button {
+    font-size: 10px;
+    padding: 3px 6px;
+    min-width: 24px;
+  }
+  
+  .meme-utc-clock {
+    font-size: 11px;
+  }
+}
+
+/* Dark theme specifics for meme charts */
+.meme-chartwrapper.theme-dark {
+  --tv-color-platform-background: rgb(6,6,6);
+  --tv-color-pane-background: rgb(6,6,6);
+  --tv-color-toolbar-button-background-hover: rgb(255 255 255 / 10%);
+  --tv-color-toolbar-button-background-expanded: rgb(255 255 255 / 8%);
+  --tv-color-toolbar-button-background-active: rgb(255 255 255 / 8%);
+  --tv-color-toolbar-button-background-active-hover: rgb(255 255 255 / 12%);
+  --tv-color-popup-background: rgb(6,6,6);
+  --tv-color-popup-element-text: #aaaecf;
+  --tv-color-popup-element-background-active: #aaaecf;
+}
