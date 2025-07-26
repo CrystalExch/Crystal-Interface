@@ -1291,7 +1291,7 @@
   align-items: center;
   justify-content: center;
   height: 100%;
-  color: rgba(255, 255, 255, 0.5);
+  color: #d5dbf284;
   font-size: 0.85rem;
   padding: 2rem;
   line-height: 1.2;
@@ -1888,4 +1888,30 @@
 
 .mobile-tab-label{
   font-size: 0.9rem;
+}
+
+
+.column-pause-icon {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    color: #aaaecf;
+    font-size: 0.8rem;
+    margin-left: 8px;
+}
+
+.column-pause-icon.visible {
+    opacity: 1;
+}
+
+.pause-text {
+    font-weight: 500;
+    letter-spacing: -0.3px;
+}
+
+.explorer-column-title-section {
+    display: flex;
+    align-items: center;
 }

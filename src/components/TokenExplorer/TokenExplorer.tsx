@@ -7,7 +7,7 @@ import React, {
     useCallback,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, EyeOff } from 'lucide-react';
+import { Search, EyeOff, Pause } from 'lucide-react';
 
 import { settings } from '../../settings';
 import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
@@ -47,6 +47,7 @@ export interface Token {
     globalFeesPaid: number;
     website: string;
     twitterHandle: string;
+    discordInvite: string;
     progress: number;
     status: 'new' | 'graduating' | 'graduated';
     description: string;
@@ -346,10 +347,10 @@ const TokenRow = React.memo<{
     });
     const [showPreview, setShowPreview] = useState(false);
     const [positionCalculated, setPositionCalculated] = useState(false);
-   const bondingPercentage = useMemo(() => {
+    const bondingPercentage = useMemo(() => {
         return calculateBondingPercentage(token.marketCap);
     }, [token.marketCap]);
-    
+
     const updatePreviewPosition = useCallback(() => {
         if (!imageContainerRef.current) return;
 
@@ -361,7 +362,7 @@ const TokenRow = React.memo<{
         const viewportHeight = window.innerHeight;
 
         const previewWidth = 150;
-        const previewHeight = 150 + 30; 
+        const previewHeight = 150 + 30;
         const offset = 12;
 
         let top = 0;
@@ -486,14 +487,14 @@ const TokenRow = React.memo<{
                     <EyeOff size={16} />
                 </button>
             </Tooltip>
-           <div
+            <div
                 className={`bonding-amount-display ${showBonding ? 'visible' : ''}`}
                 style={{ color: getBondingColor(bondingPercentage) }}
             >
                 BONDING: {bondingPercentage.toFixed(1)}%
             </div>
 
-     <div className="explorer-token-left">
+            <div className="explorer-token-left">
                 <div
                     ref={imageContainerRef}
                     className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''}`}
@@ -584,7 +585,7 @@ const TokenRow = React.memo<{
                     <div className="explorer-second-row">
                         <div className="explorer-price-section">
                             <span className="explorer-time-created">{formatTimeAgo(token.created)}</span>
-                                
+
                             <button
                                 className="explorer-twitter-btn"
                                 onClick={(e) => {
@@ -888,8 +889,19 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const routerAddress = settings.chainConfig[activechain].launchpadRouter.toLowerCase();
 
     const [{ tokensByStatus, hidden, loading }, dispatch] = useReducer(reducer, initialState);
-const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
+    const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
+    const [pausedColumns, setPausedColumns] = useState<Set<Token['status']>>(new Set());
+    const handleColumnHover = useCallback((status: Token['status']) => {
+        setPausedColumns(prev => new Set(prev).add(status));
+    }, []);
 
+    const handleColumnLeave = useCallback((status: Token['status']) => {
+        setPausedColumns(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(status);
+            return newSet;
+        });
+    }, []);
 
     const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
         new: localStorage.getItem('explorer-quickbuy-new') ?? '0',
@@ -920,7 +932,13 @@ const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
     const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
         if (e.target.value === '0') e.target.select();
     }, []);
-
+    const PauseIcon: React.FC<{ isVisible: boolean }> = ({ isVisible }) => {
+        return (
+            <div className={`column-pause-icon ${isVisible ? 'visible' : ''}`}>
+                <Pause size={18} />
+            </div>
+        );
+    };
     const copyToClipboard = useCallback(async (t: string) => {
         try {
             await navigator.clipboard.writeText(t);
@@ -1056,7 +1074,9 @@ const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
             volumeDelta: 0
         };
 
-        dispatch({ type: 'ADD_MARKET', token });
+        if (!pausedColumns.has(token.status)) {
+            dispatch({ type: 'ADD_MARKET', token });
+        }
 
         if (!marketSubs.current[market] && wsRef.current) {
             subscribe(
@@ -1065,7 +1085,7 @@ const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
                 (sub) => (marketSubs.current[market] = sub),
             );
         }
-    }, [subscribe]);
+    }, [subscribe, pausedColumns]);
 
     const updateMarket = useCallback((log: any) => {
         if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
@@ -1251,26 +1271,32 @@ const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
     const newTokens = visibleTokens.new;
     const graduatingTokens = visibleTokens.graduating;
     const graduatedTokens = visibleTokens.graduated;
-const tokenCounts = useMemo(() => ({
-    new: newTokens.length,
-    graduating: graduatingTokens.length,
-    graduated: graduatedTokens.length,
-}), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
+    const tokenCounts = useMemo(() => ({
+        new: newTokens.length,
+        graduating: graduatingTokens.length,
+        graduated: graduatedTokens.length,
+    }), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
     return (
         <div className="explorer-main">
             <div className="explorer-container">
-                    <MobileTabSelector
-        activeTab={activeMobileTab}
-        onTabChange={setActiveMobileTab}
-        tokenCounts={tokenCounts}
-    />
+                <MobileTabSelector
+                    activeTab={activeMobileTab}
+                    onTabChange={setActiveMobileTab}
+                    tokenCounts={tokenCounts}
+                />
                 <div className="explorer-columns">
-        <div className={`explorer-column ${activeMobileTab === 'new' ? 'mobile-active' : ''}`}>
+                    <div
+                        className={`explorer-column ${activeMobileTab === 'new' ? 'mobile-active' : ''}`}
+                        onMouseEnter={() => handleColumnHover('new')}
+                        onMouseLeave={() => handleColumnLeave('new')}
+                    >
                         <div className="explorer-column-header">
                             <div className="explorer-column-title-section">
                                 <h2 className="explorer-column-title">New Pairs</h2>
+
                             </div>
                             <div className="explorer-column-title-right">
+                                <PauseIcon isVisible={pausedColumns.has('new')} />
                                 <div className="explorer-quickbuy-container">
                                     <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                                     <input
@@ -1374,8 +1400,11 @@ const tokenCounts = useMemo(() => ({
                         </div>
                     </div>
 
-        <div className={`explorer-column ${activeMobileTab === 'graduating' ? 'mobile-active' : ''}`}>
-                        <div className="explorer-column-header">
+                    <div
+                        className={`explorer-column ${activeMobileTab === 'graduating' ? 'mobile-active' : ''}`}
+                        onMouseEnter={() => handleColumnHover('graduating')}
+                        onMouseLeave={() => handleColumnLeave('graduating')}
+                    >                        <div className="explorer-column-header">
                             <div className="explorer-column-title-section">
                                 <h2 className="explorer-column-title">
                                     Graduating Tokens
@@ -1385,7 +1414,7 @@ const tokenCounts = useMemo(() => ({
                                 </h2>
                             </div>
                             <div className="explorer-column-title-right">
-                                <div className="explorer-quickbuy-container">
+                                <PauseIcon isVisible={pausedColumns.has('graduating')} />                                <div className="explorer-quickbuy-container">
                                     <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                                     <input
                                         type="text"
@@ -1488,8 +1517,11 @@ const tokenCounts = useMemo(() => ({
                         </div>
                     </div>
 
-        <div className={`explorer-column ${activeMobileTab === 'graduated' ? 'mobile-active' : ''}`}>
-
+                    <div
+                        className={`explorer-column ${activeMobileTab === 'graduating' ? 'mobile-active' : ''}`}
+                        onMouseEnter={() => handleColumnHover('graduated')}
+                        onMouseLeave={() => handleColumnLeave('graduated')}
+                    >
                         <div className="explorer-column-header">
                             <div className="explorer-column-title-section">
                                 <h2 className="explorer-column-title">
@@ -1500,6 +1532,7 @@ const tokenCounts = useMemo(() => ({
                                 </h2>
                             </div>
                             <div className="explorer-column-title-right">
+                                <PauseIcon isVisible={pausedColumns.has('graduated')} />
                                 <div className="explorer-quickbuy-container">
                                     <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                                     <input

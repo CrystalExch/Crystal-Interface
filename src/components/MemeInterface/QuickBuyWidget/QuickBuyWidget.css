@@ -1,6 +1,6 @@
 .quickbuy-widget {
     position: fixed;
-    width: 300px;
+    width: 330px;
     background: rgb(9,9,9);
     border: 1px solid rgba(207, 210, 252, 0.15);
     border-radius: 8px;
@@ -122,6 +122,7 @@
 }
 .section-header span{
     font-weight: 400;
+    color: #ced0df  
 }
 
 
@@ -208,11 +209,11 @@
 
 
 .buy-section {
-    margin-bottom: 20px;
+    margin-bottom: 5px;
 }
 
 .sell-section {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 .quickbuy-portfolio-section {
@@ -244,7 +245,6 @@
     color: #e04e4e;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
     .quickbuy-widget {
         width: 280px;
@@ -256,7 +256,6 @@
     }
 }
 
-/* Animation for smooth dragging */
 .quickbuy-widget {
     transition: opacity 0.2s ease;
 }
@@ -275,6 +274,7 @@
     display: flex;
     align-items: center;
     font-weight: 400;
+    color: #ced0df
 }
 
 .quickbuy-percent{
@@ -288,9 +288,24 @@
     height: 20px;
     opacity: 0.6;
 }
-.quickbuy-settings-icon {
-    width: 23px;
-    height: 23px;
+
+
+.quickbuy-settings-icon-slippage {
+    width: 15px;
+    height: 15px;
+    opacity: 0.6;
+}
+
+
+.quickbuy-settings-icon-priority {
+    width: 12px;
+    height: 12px;
+    opacity: 0.6;
+}
+
+.quickbuy-settings-icon-bribe {
+    width: 13px;
+    height: 13px;
     opacity: 0.6;
 }
 
@@ -299,7 +314,7 @@
     user-select: none;
     width: 12px;
     height: 12px;
-    opacity: 0.4;
+    opacity: 0.05;
     margin-left: -2px;
 }
 
@@ -396,4 +411,141 @@
     height: 16px;
     cursor: pointer;
     margin-right: 4px;
+}
+
+
+.quickbuy-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.quickbuy-controls-left {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quickbuy-preset-controls {
+    display: flex;
+    gap: 3px;
+    margin-left: 4px;
+}
+
+.quickbuy-preset-pill {
+    padding: 2px 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    background: rgba(219, 225, 245, 0.03);
+    color: #7f808d;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 20px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.quickbuy-preset-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a0a0a0;
+}
+
+.quickbuy-preset-pill.active {
+    background: #9fa5d92e;
+    color: #d8dcff;
+}
+
+.quickbuy-settings-display {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    gap: 8px;
+}
+
+.quickbuy-settings-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    height: 12px;
+}
+
+
+.quickbuy-settings-item:not(:last-child){
+    border-right: 1px solid rgb(51, 50, 54);
+    padding-right: 8px;
+}
+.quickbuy-settings-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+    filter: brightness(0.9);
+}
+
+.quickbuy-settings-value {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #a1a2ab;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quickbuy-settings-item:hover .quickbuy-settings-icon {
+    opacity: 1;
+    filter: brightness(1.1);
+}
+
+.quickbuy-settings-item:hover .quickbuy-settings-value {
+    color: #c0c0c0;
+}
+
+
+.quickbuy-content {
+    max-height: calc(100% - 60px);
+    overflow-y: auto;
+}
+
+/* Animation for settings */
+.quickbuy-settings-display {
+    animation: slideIn 0.2s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive adjustments */
+@media (max-width: 320px) {
+    .quickbuy-preset-controls {
+        gap: 2px;
+    }
+    
+    .quickbuy-preset-pill {
+        min-width: 18px;
+        font-size: 9px;
+        padding: 2px 4px;
+    }
+    
+    .quickbuy-settings-display {
+        flex-direction: column;
+        gap: 4px;
+        padding: 8px;
+    }
+    
+    .quickbuy-settings-item {
+        justify-content: space-between;
+        width: 100%;
+    }
 }

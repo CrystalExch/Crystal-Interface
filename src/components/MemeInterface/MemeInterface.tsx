@@ -109,6 +109,7 @@ interface Token {
     globalFeesPaid: number;
     website: string;
     twitterHandle: string;
+    discordInvite: string;
     progress: number;
     status: 'new' | 'graduating' | 'graduated';
     description: string;
@@ -156,7 +157,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     tokenBalances = {},
     tokendict = {}
 }) => {
-    
+
     const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
     const [isWidgetOpen, setIsWidgetOpen] = useState(false);
     type TimePeriod = '5M' | '1H' | '6H' | '24H';
@@ -177,17 +178,56 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const [orderCenterHeight, setOrderCenterHeight] = useState<number>(350);
     const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
     const [isOrderCenterVisible, setIsOrderCenterVisible] = useState<boolean>(true);
-   const [isSigning, setIsSigning] = useState(false);
+    const [isSigning, setIsSigning] = useState(false);
     const [currentPrice, setCurrentPrice] = useState<number>(0);
     const [quoteAmount, setQuoteAmount] = useState<string>('0');
-    
+    const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
+    const [buySlippageValue, setBuySlippageValue] = useState('20');
+    const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
+    const [buyBribeValue, setBuyBribeValue] = useState('0.05');
+
+    const [selectedSellPreset, setSelectedSellPreset] = useState(1);
+    const [sellSlippageValue, setSellSlippageValue] = useState('15');
+    const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
+    const [sellBribeValue, setSellBribeValue] = useState('0.03');
+
+    // Add these preset configurations after your existing presets:
+    const buyPresets = {
+        1: { slippage: '20', priority: '0.01', bribe: '0.05' },   // Conservative
+        2: { slippage: '15', priority: '0.02', bribe: '0.1' },   // Balanced
+        3: { slippage: '10', priority: '0.05', bribe: '0.2' }    // Aggressive
+    };
+
+    const sellPresets = {
+        1: { slippage: '15', priority: '0.005', bribe: '0.03' }, // Conservative
+        2: { slippage: '12', priority: '0.01', bribe: '0.07' },  // Balanced
+        3: { slippage: '8', priority: '0.03', bribe: '0.15' }    // Aggressive
+    };
+
+    // Add these handlers after your existing handlers:
+    const handleBuyPresetSelect = useCallback((preset: number) => {
+        setSelectedBuyPreset(preset);
+        const presetValues = buyPresets[preset as keyof typeof buyPresets];
+        setBuySlippageValue(presetValues.slippage);
+        setBuyPriorityFee(presetValues.priority);
+        setBuyBribeValue(presetValues.bribe);
+    }, []);
+
+    const handleSellPresetSelect = useCallback((preset: number) => {
+        setSelectedSellPreset(preset);
+        const presetValues = sellPresets[preset as keyof typeof sellPresets];
+        setSellSlippageValue(presetValues.slippage);
+        setSellPriorityFee(presetValues.priority);
+        setSellBribeValue(presetValues.bribe);
+    }, []);
+
     // Real-time token data state
     const [liveTokenData, setLiveTokenData] = useState<Partial<Token>>({});
-    
+
     // WebSocket refs
     const wsRef = useRef<WebSocket | null>(null);
     const marketSubRef = useRef<string | null>(null);
-    
+
     // WebSocket constants
     const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
     const TOTAL_SUPPLY = 1e9;
@@ -217,17 +257,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }, []);
     const getTokenData = (): Token | null => {
         let baseToken: Token | null = null;
-        
+
         // First try to get from navigation state
         if (location.state?.tokenData) {
             baseToken = location.state.tokenData as Token;
         } else {
             // Fallback: try to find in tokenList
-            const foundInList = tokenList.find(t => 
-                t.contractAddress === tokenAddress || 
+            const foundInList = tokenList.find(t =>
+                t.contractAddress === tokenAddress ||
                 t.tokenAddress === tokenAddress
             );
-            
+
             if (foundInList) {
                 baseToken = {
                     id: foundInList.id || foundInList.contractAddress || '',
@@ -271,7 +311,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 };
             }
         }
-        
+
         // Merge with live data if available
         if (baseToken && liveTokenData) {
             return {
@@ -289,15 +329,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 status: baseToken.status
             };
         }
-        
+
         return baseToken;
     };
     const token = getTokenData();
+    const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
 
     // Handle market updates from WebSocket
     const updateMarketData = useCallback((log: any) => {
         if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
-        
+
         const market = log.address.toLowerCase();
         if (market !== token?.id.toLowerCase()) return; // Only update if it's our token's market
 
@@ -309,7 +350,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const isBuy = BigInt('0x' + words[1]);
         const priceRaw = BigInt('0x' + words[2]);
         const counts = BigInt('0x' + words[3]);
-        
+
         const priceEth = Number(priceRaw) / 1e18;
         const buys = Number(counts >> 128n);
         const sells = Number(counts & ((1n << 128n) - 1n));
@@ -324,7 +365,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             sellTransactions: sells,
             volume24h: (prev.volume24h || 0) + (isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18),
         }));
-        
+
         // Update current price for quotes
         setCurrentPrice(priceEth);
     }, [token?.id]);
@@ -338,7 +379,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         ws.onopen = () => {
             console.log('WebSocket connected for token:', token.symbol);
-            // Subscribe to market updates for this specific token
             subscribe(ws, ['logs', { address: token.id }], (subId) => {
                 marketSubRef.current = subId;
                 console.log('Subscribed to market updates:', subId);
@@ -365,23 +405,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     // Get token balance and format it
     const getTokenBalance = useCallback(() => {
         if (!account.connected || !token) return '0';
-        
+
         const tokenKey = token.tokenAddress.toLowerCase();
         const tokenInfo = tokendict[tokenKey] || tokendict[token.symbol] || {};
         const balance = tokenBalances[tokenKey] || tokenBalances[token.symbol] || BigInt(0);
         const decimals = tokenInfo.decimals || 18;
-        
+
         const balanceNum = Number(balance) / Math.pow(10, decimals);
         return formatDisplayValue(balanceNum, 4);
     }, [account.connected, token, tokenBalances, tokendict]);
-    
+
     // Get active chain - handle both string and object cases
-    const activechain = typeof (settings as any).activechain === 'string' 
-        ? (settings as any).activechain 
+    const activechain = typeof (settings as any).activechain === 'string'
+        ? (settings as any).activechain
         : Object.keys(settings.chainConfig)[0];
     const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
 
-   // Get token data from navigation state or fallback to tokenList, then merge with live data
+    // Get token data from navigation state or fallback to tokenList, then merge with live data
 
 
     if (!token) {
@@ -395,7 +435,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     // Fetch current price from contract
     const fetchCurrentPrice = useCallback(async () => {
         if (!token.tokenAddress || !routerAddress) return;
-        
+
         try {
             const result = await readContracts(config, {
                 contracts: [
@@ -407,7 +447,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     },
                 ],
             });
-            
+
             if (result[0].result) {
                 const price = Number(result[0].result) / 1e18;
                 setCurrentPrice(price);
@@ -476,20 +516,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const newAmount = (1000 * preset) / 100; // Replace 1000 with actual balance
         setTradeAmount(newAmount.toString());
     };
-
+    const handleSettingsModePresetSelect = useCallback((preset: number) => {
+        if (settingsMode === 'buy') {
+            handleBuyPresetSelect(preset);
+        } else {
+            handleSellPresetSelect(preset);
+        }
+    }, [settingsMode, handleBuyPresetSelect, handleSellPresetSelect]);
     const handlePresetSelect = (preset: number) => {
         setSelectedPreset(preset);
 
-        const presets = {
-            1: { slippage: '20', priority: '0.001', bribe: '0.05' },
-            2: { slippage: '10', priority: '0.005', bribe: '0.1' },
-            3: { slippage: '5', priority: '0.01', bribe: '0.2' }
-        };
-
-        const presetValues = presets[preset as keyof typeof presets];
-        setSlippageValue(presetValues.slippage);
-        setPriorityFee(presetValues.priority);
-        setBribeValue(presetValues.bribe);
+        if (settingsMode === 'buy') {
+            handleBuyPresetSelect(preset);
+        } else {
+            handleSellPresetSelect(preset);
+        }
     };
 
     const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -609,9 +650,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     // Format numbers with K/M/B suffixes and commas
     const formatDisplayValue = (value: number, decimals: number = 6): string => {
         if (value === 0) return '0';
-        
+
         const num = Number(value);
-        
+
         if (num >= 1e9) {
             return `${(num / 1e9).toFixed(2)}B`;
         } else if (num >= 1e6) {
@@ -631,7 +672,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     const formatNumberWithCommas = (num: number): string => {
         if (num === 0) return '0';
-        
+
         if (num >= 1e9) {
             return `${(num / 1e9).toFixed(2)}B`;
         } else if (num >= 1e6) {
@@ -687,9 +728,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             return;
         }
 
-        const targetChainId = settings.chainConfig[activechain]?.chainId || 
-                             parseInt(activechain) || 
-                             activechain;
+        const targetChainId = settings.chainConfig[activechain]?.chainId ||
+            parseInt(activechain) ||
+            activechain;
 
         if (account.chainId !== targetChainId) {
             setChain();
@@ -698,7 +739,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         try {
             setIsSigning(true);
-            
+
             if (activeTradeType === 'buy') {
                 const value = BigInt(parseFloat(tradeAmount) * 1e18);
                 const uo = {
@@ -732,10 +773,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             setTradeAmount('');
             setLimitPrice('');
             setSliderPercent(0);
-            
+
             // Refresh price
             fetchCurrentPrice();
-            
+
         } catch (error) {
             console.error('Trade failed:', error);
         } finally {
@@ -747,12 +788,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         if (!account.connected) {
             return 'Connect Wallet';
         }
-        
+
         // More flexible chain comparison
-        const targetChainId = settings.chainConfig[activechain]?.chainId || 
-                             parseInt(activechain) || 
-                             activechain;
-        
+        const targetChainId = settings.chainConfig[activechain]?.chainId ||
+            parseInt(activechain) ||
+            activechain;
+
         if (account.chainId !== targetChainId) {
             return `Switch to ${settings.chainConfig[activechain]?.name || 'Monad'}`;
         }
@@ -768,11 +809,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     const isTradeDisabled = () => {
         if (!account.connected) return false; // Show connect wallet button
-        
-        const targetChainId = settings.chainConfig[activechain]?.chainId || 
-                             parseInt(activechain) || 
-                             activechain;
-        
+
+        const targetChainId = settings.chainConfig[activechain]?.chainId ||
+            parseInt(activechain) ||
+            activechain;
+
         if (account.chainId !== targetChainId) return false; // Show switch chain button
         if (isSigning) return true;
         if (!tradeAmount) return true;
@@ -838,7 +879,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             onMarketSelect={onMarketSelect}
                             setSendTokenIn={setSendTokenIn}
                             setpopup={setpopup}
-                        />                
+                        />
                     </div>
                 </div>
                 <div className="meme-ordercenter">
@@ -921,14 +962,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             </div>
                         )}
                     </div>
-                    
-                    {account.connected && (
-                        <div className="meme-token-balance">
-                            <img src={walleticon} className="balance-wallet-icon" />
-                            <span className="balance-amount">{getTokenBalance()} {token.symbol}</span>
-                        </div>
-                    )}
-                    
+
+
                     {activeOrderType === 'Limit' && (
                         <div className="meme-trade-input-wrapper">
                             <input
@@ -1051,25 +1086,39 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             <div className="meme-settings-content">
                                 <div className="meme-settings-presets">
                                     <button
-                                        className={`meme-settings-preset ${selectedPreset === 1 ? 'active' : ''}`}
+                                        className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
                                         onClick={() => handlePresetSelect(1)}
                                     >
                                         Preset 1
                                     </button>
                                     <button
-                                        className={`meme-settings-preset ${selectedPreset === 2 ? 'active' : ''}`}
+                                        className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
                                         onClick={() => handlePresetSelect(2)}
                                     >
                                         Preset 2
                                     </button>
                                     <button
-                                        className={`meme-settings-preset ${selectedPreset === 3 ? 'active' : ''}`}
+                                        className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
                                         onClick={() => handlePresetSelect(3)}
                                     >
                                         Preset 3
                                     </button>
                                 </div>
 
+                                <div className="meme-settings-mode-toggle">
+                                    <button
+                                        className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+                                        onClick={() => setSettingsMode('buy')}
+                                    >
+                                        Buy settings
+                                    </button>
+                                    <button
+                                        className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+                                        onClick={() => setSettingsMode('sell')}
+                                    >
+                                        Sell settings
+                                    </button>
+                                </div>
                                 <div className="meme-settings-grid">
                                     <div className="meme-setting-item">
                                         <label className="meme-setting-label">
@@ -1080,8 +1129,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                             <input
                                                 type="number"
                                                 className="meme-setting-input"
-                                                value={slippageValue}
-                                                onChange={(e) => setSlippageValue(e.target.value)}
+                                                value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
+                                                onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
                                                 step="0.1"
                                                 min="0"
                                                 max="100"
@@ -1099,9 +1148,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                             <input
                                                 type="number"
                                                 className="meme-setting-input"
-                                                value={priorityFee}
-                                                onChange={(e) => setPriorityFee(e.target.value)}
-                                                step="1"
+                                                value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
+                                                onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
+                                                step="0.001"
                                                 min="0"
                                             />
                                             <span className="meme-setting-unit">MON</span>
@@ -1117,9 +1166,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                                             <input
                                                 type="number"
                                                 className="meme-setting-input"
-                                                value={bribeValue}
-                                                onChange={(e) => setBribeValue(e.target.value)}
-                                                step="0.0000001"
+                                                value={settingsMode === 'buy' ? buyBribeValue : sellBribeValue}
+                                                onChange={(e) => settingsMode === 'buy' ? setBuyBribeValue(e.target.value) : setSellBribeValue(e.target.value)}
+                                                step="0.001"
                                                 min="0"
                                             />
                                             <span className="meme-setting-unit">MON</span>
@@ -1134,9 +1183,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                             if (!account.connected) {
                                 setpopup(4); // Show connect wallet popup
                             } else {
-                                const targetChainId = settings.chainConfig[activechain]?.chainId || 
-                                                     parseInt(activechain) || 
-                                                     activechain;
+                                const targetChainId = settings.chainConfig[activechain]?.chainId ||
+                                    parseInt(activechain) ||
+                                    activechain;
                                 if (account.chainId !== targetChainId) {
                                     setChain();
                                 } else {
@@ -1393,7 +1442,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 <div className="meme-token-info-footer">
                     <span className="meme-address">
                         <img className="meme-contract-icon" src={contract} />
-                        <span className="meme-address-title">CA:</span> {token.tokenAddress.slice(0, 16)}...{token.tokenAddress.slice(-8)}   
+                        <span className="meme-address-title">CA:</span> {token.tokenAddress.slice(0, 16)}...{token.tokenAddress.slice(-8)}
                         <svg
                             className="meme-address-link"
                             xmlns="http://www.w3.org/2000/svg"
@@ -1417,7 +1466,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         >
                             <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
                         </svg>
-                        <span className="meme-address-title">DA:</span> {token.tokenAddress.slice(0, 16)}...{token.tokenAddress.slice(-8)}        
+                        <span className="meme-address-title">DA:</span> {token.tokenAddress.slice(0, 16)}...{token.tokenAddress.slice(-8)}
                         <a target="_blank" rel="noopener noreferrer">
                             <svg
                                 className="meme-address-link"
@@ -1434,12 +1483,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     </span>
                 </div>
             </div>
-
             <QuickBuyWidget
                 isOpen={isWidgetOpen}
                 onClose={() => setIsWidgetOpen(false)}
                 tokenSymbol={token.symbol}
                 tokenName={token.name}
+                buySlippageValue={buySlippageValue}
+                buyPriorityFee={buyPriorityFee}
+                buyBribeValue={buyBribeValue}
+                sellSlippageValue={sellSlippageValue}
+                sellPriorityFee={sellPriorityFee}
+                sellBribeValue={sellBribeValue}
             />
         </div>
     );

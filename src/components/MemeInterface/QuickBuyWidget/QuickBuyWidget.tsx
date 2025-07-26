@@ -7,6 +7,11 @@ import squares from '../../../assets/squares.svg';
 import editicon from '../../../assets/edit.svg';
 import switchicon from '../../../assets/switch.svg';
 
+// Import settings icons
+import slippage from '../../../assets/slippage.svg';
+import gas from '../../../assets/gas.svg';
+import bribe from '../../../assets/bribe.svg';
+
 import { Check } from 'lucide-react';
 
 interface QuickBuyWidgetProps {
@@ -14,13 +19,27 @@ interface QuickBuyWidgetProps {
     onClose: () => void;
     tokenSymbol?: string;
     tokenName?: string;
+    // Buy settings
+    buySlippageValue: string;
+    buyPriorityFee: string;
+    buyBribeValue: string;
+    // Sell settings
+    sellSlippageValue: string;
+    sellPriorityFee: string;
+    sellBribeValue: string;
 }
 
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({ 
     isOpen, 
     onClose, 
     tokenSymbol = "TOKEN", 
-    tokenName = "Token Name" 
+    tokenName = "Token Name",
+    buySlippageValue,
+    buyPriorityFee,
+    buyBribeValue,
+    sellSlippageValue,
+    sellPriorityFee,
+    sellBribeValue
 }) => {
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
@@ -35,6 +54,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const [sellPercents, setSellPercents] = useState(['10%', '25%', '50%', '100%']);
     const [sellMONAmounts, setSellMONAmounts] = useState(['1', '5', '10', '25']);
     
+    // Internal preset state for QuickBuy widget only
+    const [quickBuyPreset, setQuickBuyPreset] = useState(1);
+    
+    // Internal preset configurations for QuickBuy
+    const quickBuyPresets = {
+        1: { slippage: '20', priority: '0.01', bribe: '0.05' },
+        2: { slippage: '15', priority: '0.02', bribe: '0.1' },
+        3: { slippage: '10', priority: '0.05', bribe: '0.2' }
+    };
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -46,8 +74,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             target.tagName === 'IMG' || 
             target.closest('button') || 
             target.closest('.quickbuy-edit-icon') ||
-            target.closest('.quickbuy-settings-icon') ||
-            target.closest('.close-btn')) {
+            target.closest('.close-btn') ||
+            target.closest('.quickbuy-settings-display') ||
+            target.closest('.quickbuy-preset-controls')) {
             return;
         }
         
@@ -67,7 +96,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const newY = e.clientY - dragOffset.y;
         
         const maxX = window.innerWidth - 300;
-        const maxY = window.innerHeight - 235;
+        const maxY = window.innerHeight - 480; // Updated for new height
         
         setPosition({
             x: Math.max(0, Math.min(newX, maxX)),
@@ -178,14 +207,37 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 onMouseDown={handleMouseDown}
             >
                 <div className="quickbuy-controls">
-                    <img 
-                        src={editicon} 
-                        alt="Edit" 
-                        className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
-                        onClick={handleEditToggle}
-                    />
+                    <div className="quickbuy-controls-left">
+                        <img 
+                            src={editicon} 
+                            alt="Edit" 
+                            className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
+                            onClick={handleEditToggle}
+                        />
+                    
+                        <div className="quickbuy-preset-controls">
+                            <button
+                                className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
+                                onClick={() => setQuickBuyPreset(1)}
+                            >
+                                P1
+                            </button>
+                            <button
+                                className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
+                                onClick={() => setQuickBuyPreset(2)}
+                            >
+                                P2
+                            </button>
+                            <button
+                                className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
+                                onClick={() => setQuickBuyPreset(3)}
+                            >
+                                P3
+                            </button>
+                        </div>
+                    </div>
+                    
                     <div className="quickbuy-controls-right-side">
-                        <img src={settings} alt="Settings" className="quickbuy-settings-icon" />
                         <button className="close-btn" onClick={onClose}>
                             <img className="quickbuy-close-icon" src={closebutton} alt="Close" />
                         </button>
@@ -229,6 +281,21 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 )}
                             </div>
                         ))}
+                    </div>
+
+                    <div className="quickbuy-settings-display">
+                        <div className="quickbuy-settings-item">
+                            <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
+                            <span className="quickbuy-settings-value">{buySlippageValue}%</span>
+                        </div>
+                        <div className="quickbuy-settings-item">
+                            <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
+                            <span className="quickbuy-settings-value">{buyPriorityFee}</span>
+                        </div>
+                        <div className="quickbuy-settings-item">
+                            <img src={bribe} alt="Bribe" className="quickbuy-settings-icon-bribe" />
+                            <span className="quickbuy-settings-value">{buyBribeValue}</span>
+                        </div>
                     </div>
                 </div>
 
@@ -275,6 +342,22 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 )}
                             </div>
                         ))}
+                    </div>
+
+                    {/* Sell Settings Display */}
+                    <div className="quickbuy-settings-display">
+                        <div className="quickbuy-settings-item">
+                            <img src={slippage} alt="Slippage" className="quickbuy-settings-icon" />
+                            <span className="quickbuy-settings-value">{sellSlippageValue}%</span>
+                        </div>
+                        <div className="quickbuy-settings-item">
+                            <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
+                            <span className="quickbuy-settings-value">{sellPriorityFee}</span>
+                        </div>
+                        <div className="quickbuy-settings-item">
+                            <img src={bribe} alt="Bribe" className="quickbuy-settings-icon" />
+                            <span className="quickbuy-settings-value">{sellBribeValue}</span>
+                        </div>
                     </div>
                 </div>
 

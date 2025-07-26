@@ -453,6 +453,7 @@
   display: flex;
   flex-direction: column;
   margin-top: 5px;
+  padding-bottom: 15px;
 }
 .meme-trade-conversion {
     position: absolute;
@@ -976,7 +977,7 @@
     margin-top: 12px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 }
 
 .meme-settings-presets {
@@ -1193,3 +1194,57 @@ opacity: 1;
     padding-top: 5px;
     padding-bottom: 10px;
 }
+
+
+
+
+
+.meme-settings-mode-toggle {
+    display: flex;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    overflow: hidden;
+}
+
+.meme-settings-mode-btn {
+    flex: 1;
+    padding: 2px 8px;
+    margin: 3px;
+    font-size: 0.8rem;
+    background: transparent;
+    color: #7f808d;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    border-radius: 5px;
+}
+
+.meme-settings-mode-btn:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #a0a0a0;
+}
+
+.meme-settings-mode-btn.active:first-child {
+    background: rgba(67, 254, 154, 0.15);
+    color: rgb(67, 254, 154);
+}
+
+.meme-settings-mode-btn.active:last-child {
+    background: rgba(235, 112, 112, 0.15);
+    color: rgb(235, 112, 112);
+}
+
+
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+

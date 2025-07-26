@@ -61,7 +61,6 @@ interface TokenInfoProps {
   isLoading?: boolean;
   isTradeRoute?: boolean;
   simpleView?: boolean;
-  // New props for meme token display
   isMemeToken?: boolean;
   memeTokenData?: {
     symbol: string;
@@ -109,14 +108,11 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   // Calculate bonding percentage for regular tokens
   const bondingPercentage = useMemo(() => {
     if (isMemeToken || !activeMarket) return 0;
-    // Assuming we can calculate market cap from price and total supply
-    // You may need to adjust this based on your actual data structure
-    const TOTAL_SUPPLY = 1e9; // 1 billion tokens
+    const TOTAL_SUPPLY = 1e9; 
     const marketCap = parseFloat(price.replace(/,/g, '')) * TOTAL_SUPPLY;
     return calculateBondingPercentage(marketCap || 0);
   }, [activeMarket, price, isMemeToken]);
   
-  // Helper functions for meme token display
   const getBondingColorMeme = (percentage: number): string => {
     if (percentage < 25) return '#ef5151';
     if (percentage < 50) return '#f59e0b';
@@ -646,9 +642,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                   ).end,
                 } as React.CSSProperties}
               >
-                <div className="token-icons-inner">
-                  <TokenIcons inIcon={in_icon} outIcon={out_icon} />
-                </div>
+
               </div>
             ) : (
               <TokenIcons inIcon={in_icon} outIcon={out_icon} />
