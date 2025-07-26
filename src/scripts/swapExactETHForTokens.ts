@@ -11,14 +11,14 @@ const swapExactETHForTokens = (
   ref: `0x${string}`,
 ) => {
   return {
-      target: address,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: 'swapExactETHForTokens',
-        args: [amountOutMin, path, to, deadline, ref],
-      }),
-      value: amountIn,
-    }
+    target: address,
+    data: encodeFunctionData({
+      abi: CrystalRouterAbi,
+      functionName: 'swapExactETHForTokens',
+      args: [amountOutMin, path, to, deadline, ref],
+    }),
+    value: amountIn,
   }
+}
 
 export default swapExactETHForTokens;

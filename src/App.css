@@ -662,9 +662,8 @@ html {
 
 .wallet-popup-copy-tooltip,
 .wallet-popup-hover-tooltip {
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  background: rgba(41, 41, 44, 0.3);
+  background: rgba(9, 9, 9);
+  border: 1px solid rgba(128, 128, 128, 0.08);
   border-radius: 5px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   color: #fff;
@@ -4134,16 +4133,16 @@ input[type="email"] {
 .deposit-address-box {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   border: 1.5px solid rgba(255, 255, 255, 0.05);
   border-radius: 4px;
-  padding: 1px 6px 0px 12px;
-  height: 33px;
-  position: relative;
+  padding: 1px 10px 0px 12px;
+  height: 32px;
 }
 
 .deposit-address {
-  color: #ffffffcf;
-  font-size: 0.8rem;
+  color: #fff;
+  font-size: 0.82rem;
   white-space: nowrap;
   overflow-x: auto;
   scrollbar-width: none;
@@ -4159,18 +4158,12 @@ input[type="email"] {
   border: none;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  padding: 6px;
   border-radius: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
-  width: 26px;
-  position: absolute;
-  right: 6px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 2;
+  width: 14px;
 }
 
 .deposit-copy-button.success {
@@ -4331,9 +4324,8 @@ input[type="email"] {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   scrollbar-width: thin;
   scrollbar-color: rgb(22, 23, 23) rgb(6, 6, 6);
-  animation: dropdownAppear 0.25s ease-out forwards;
+  animation: dropdownAppear 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
   transform-origin: top center;
-  transition: background-color 0.2s;
 }
 
 @keyframes dropdownAppear {
@@ -7810,4 +7802,23 @@ input::-webkit-inner-spin-button {
 
 .order-size-balance-slider-mark[data-active='false']::before {
   background-color:rgb(6,6,6);
+}
+
+.onect-address-box {
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  padding: 1px 0px 0px 6px;
+  height: 27px;
+  gap: 4px;
+}
+
+.onect-address {
+  color: #ffffffcf;
+  font-size: 0.67rem;
+  white-space: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }

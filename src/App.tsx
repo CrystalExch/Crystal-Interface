@@ -3,6 +3,8 @@ import {
   getBlockNumber,
   readContracts,
   waitForTransactionReceipt,
+  getTransactionCount,
+  signTypedData
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -22,7 +24,7 @@ import {
   useNavigate,
   useSearchParams,
 } from 'react-router-dom';
-import { TransactionExecutionError, encodeFunctionData, maxUint256 } from 'viem';
+import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult } from 'viem';
 import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
@@ -35,6 +37,8 @@ import {
   useUser,
   AuthCard,
 } from "@account-kit/react";
+import { Wallet, keccak256 } from 'ethers'
+import { useQuery } from '@tanstack/react-query';
 
 // import css
 import './App.css';
@@ -152,6 +156,7 @@ import { useSharedContext } from './contexts/SharedContext.tsx';
 import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
+const clearlogo = '/CrystalLogo.png';
 
 function App() {
   useEffect(() => {
@@ -161,22 +166,17 @@ function App() {
   }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
-  const { client, address } = useSmartAccountClient({});
+  const { client, address: scaAddress } = useSmartAccountClient({});
   const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
     client,
     waitForTxn: true,
   });
-  const sendUserOperationAsync = useCallback(
-    (params: any) => rawSendUserOperationAsync(params),
-    []
-  );
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
   const [searchParams, setSearchParams] = useSearchParams();
   const { activechain, percentage, setPercentage, favorites } = useSharedContext();
   const userchain = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.chainId || client?.chain?.id
-  const connected = address != undefined
   const location = useLocation();
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
@@ -215,7 +215,6 @@ function App() {
   const [isVaultDepositSigning, setIsVaultDepositSigning] = useState(false);
   const [isVaultWithdrawSigning, setIsVaultWithdrawSigning] = useState(false);
   const txReceiptResolvers = new Map<string, () => void>();
-  const clearlogo = '/CrystalLogo.png';
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
     return (
@@ -306,6 +305,63 @@ function App() {
     return null;
   };
 
+  const [useOneCT, setUseOneCT] = useState(true);
+  const [oneCTSigner, setOneCTSigner] = useState('');
+  const validOneCT = useOneCT && oneCTSigner
+  const oneCTNonceRef = useRef<number>(0);
+  const onectclient = validOneCT ? new Wallet(oneCTSigner) : {
+    address: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+    signTransaction: async () => ''
+  };
+  const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
+  const connected = address != undefined
+
+  const sendUserOperationAsync = useCallback(
+    async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
+      if (validOneCT) {
+        const tx = {
+          to: params.uo.target,
+          value: params.uo.value,
+          data: params.uo.data,
+          gasLimit: gasLimit > 0n ? gasLimit : 500000n,
+          maxFeePerGas: 100000000000n + (prioFee > 0n ? prioFee : 13000000000n),
+          maxPriorityFeePerGas: (prioFee > 0n ? prioFee : 13000000000n),
+          nonce: oneCTNonceRef.current,
+          chainId: activechain
+        }
+        oneCTNonceRef.current += 1;
+        const signedTx = await onectclient.signTransaction(tx);
+        const hash = keccak256(signedTx) as `0x${string}`;
+
+        const RPC_URLS = [
+          HTTP_URL,
+          'https://rpc.monad-testnet.fastlane.xyz/eyJhIjoiMHhlN0QxZjRBQjIyMmQ5NDM4OWI4Mjk4MWY5OUM1ODgyNGZGNDJhN2QwIiwidCI6MTc1MzUwMjEzNiwicyI6IjB4ODE1ODNhMjQ5Yjc5ZTljNjliYzJjNDkzZGZkMDQ0ODdiMWMzZmRhYzE1ZGZlMmVlYjgyOWQ0NTRkZWQ3MTZjMTU4ZmQwMWNmNzlkM2JkNWJlNWRlOTVkZjU1MzE3ODkzNmMyZTBmMGFiYzk1NDlkNTMzYWRmODA4Y2UxODEwNjUxYyJ9',
+          'https://rpc.ankr.com/monad_testnet',
+          'https://monad-testnet.drpc.org',
+          'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
+        ];
+        
+        RPC_URLS.forEach(url => {
+          fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              jsonrpc: '2.0',
+              id: 0,
+              method: 'eth_sendRawTransaction',
+              params: [signedTx]
+            })
+          }).catch();
+        });
+        return { hash }
+      }
+      else {
+        return rawSendUserOperationAsync(params)
+      }
+    },
+    [validOneCT]
+  );
+
   // state vars
   const [showSendDropdown, setShowSendDropdown] = useState(false);
   const sendDropdownRef = useRef<HTMLDivElement | null>(null);
@@ -350,7 +406,6 @@ function App() {
     const saved = localStorage.getItem('crystal_slider_increment');
     return saved ? parseFloat(saved) : 10;
   });
-
 
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
     {},
@@ -1510,91 +1565,6 @@ function App() {
     }, 300);
   };
 
-  // fetch state
-  const { data, isLoading, dataUpdatedAt, refetch } = useReadContracts({
-    batchSize: 0,
-    contracts: [
-      {
-        abi: CrystalRouterAbi,
-        address: router,
-        functionName: switched == false ? 'getAmountsOut' : 'getAmountsIn',
-        args: [
-          switched == false ? amountIn : amountOutSwap,
-          activeMarket.path[0] == tokenIn
-            ? activeMarket.path
-            : [...activeMarket.path].reverse(),
-        ],
-      },
-      {
-        abi: TokenAbi,
-        address: (tokenIn == eth ? weth : tokenIn) as `0x${string}`,
-        functionName: 'allowance',
-        args: [
-          address as `0x${string}`,
-          getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
-        ],
-      },
-      {
-        abi: CrystalDataHelperAbi,
-        address: balancegetter,
-        functionName: 'batchBalanceOf',
-        args: [
-          address as `0x${string}`,
-          Object.values(tokendict).map(
-            (token) => token.address as `0x${string}`,
-          ),
-        ],
-      },
-      {
-        abi: CrystalMarketAbi,
-        address: activeMarket?.address,
-        functionName: 'getPriceLevelsFromMid',
-        args: [BigInt(1000000)],
-      },
-      {
-        abi: CrystalDataHelperAbi,
-        address: balancegetter,
-        functionName: 'getPrices',
-        args: [
-          Array.from(
-            new Set(
-              Object.values(markets).map(
-                (market) => market.address as `0x${string}`
-              )
-            )
-          ),
-        ],
-      },
-      ...(isStake
-        ? tokenIn === eth && tokendict[tokenOut]?.lst && tokenOut == '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5'
-          ? [
-            {
-              abi: sMonAbi,
-              address: tokenOut,
-              functionName: switched
-                ? 'convertToAssets'
-                : 'convertToShares',
-              args: [switched ? amountOutSwap : amountIn] as const,
-            },
-          ]
-          : tokenIn === eth && tokendict[tokenOut]?.lst
-            ? [
-              {
-                abi: shMonadAbi,
-                address: tokenOut,
-                functionName: switched
-                  ? 'convertToAssets'
-                  : 'convertToShares',
-                args: [switched ? amountOutSwap : amountIn] as const,
-              },
-            ]
-            : []
-        : []) as any,
-    ],
-    query: { refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000, gcTime: 0 },
-  }) as any;
-
-  // fetch ref data
   const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
     batchSize: 0,
     contracts: [
@@ -1631,6 +1601,209 @@ function App() {
     ],
     query: { refetchInterval: 10000 },
   });
+
+  // data loop, reuse to eventually have every single call method in this loop
+  const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
+    queryKey: [
+      'crystal_rpc_reads',
+      switched,
+      String(amountOutSwap),
+      String(amountIn),
+      tokenIn,
+      tokenOut,
+      address,
+      activeMarketKey,
+      isStake
+    ],
+    queryFn: async () => {
+      let gasEstimateCall: any = null;
+      let gasEstimate: bigint = 0n;
+
+      try {
+        const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+
+        const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
+
+        let tx: any = null;
+
+        if (tokenIn === eth && tokenOut === weth) {
+          tx = wrapeth(amountIn, weth);
+        } else if (tokenIn === weth && tokenOut === eth) {
+          tx = unwrapeth(amountIn, weth);
+        } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
+          tx = stake(tokenOut, address, amountIn);
+        } else if (orderType === 1 || multihop) {
+          const slippageAmount = !switched 
+            ? (amountOutSwap * slippage + 5000n) / 10000n
+            : (amountIn * 10000n + slippage / 2n) / slippage;
+
+          if (tokenIn === eth && tokenOut !== eth) {
+            tx = !switched
+              ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+              : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+          } else if (tokenIn !== eth && tokenOut === eth) {
+            tx = !switched
+              ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+              : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+          } else {
+            tx = !switched
+              ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+              : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+          }
+        } else {
+          const amount = !switched ? amountIn : amountOutSwap;
+          const limitPrice = tokenIn === activeMarket.quoteAddress
+            ? (lowestAsk * 10000n + slippage / 2n) / slippage
+            : (highestBid * slippage + 5000n) / 10000n;
+
+          tx = _swap(
+            router,
+            tokenIn === eth
+              ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
+              : BigInt(0),
+            activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+            activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+            !switched,
+            BigInt(0),
+            amount,
+            limitPrice,
+            deadline,
+            usedRefAddress
+          );
+        }
+
+        if (tx) {
+          gasEstimateCall = {
+            jsonrpc: '2.0',
+            id: 1,
+            method: 'eth_estimateGas',
+            params: [{
+              from: address,
+              to: tx.target,
+              data: tx.data,
+              value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
+            }]
+          };
+        }
+      } catch (e) {
+        gasEstimateCall = null;
+      }
+
+      const calls: any = [
+        {
+          to: router,
+          abi: CrystalRouterAbi,
+          functionName: switched ? 'getAmountsIn' : 'getAmountsOut',
+          args: [
+            switched ? amountOutSwap : amountIn,
+            activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse()
+          ]
+        },
+        {
+          to: tokenIn === eth ? weth : tokenIn,
+          abi: TokenAbi,
+          functionName: 'allowance',
+          args: [
+            address,
+            (getMarket(activeMarket.path.at(0) as any, activeMarket.path.at(1) as any) as any).address
+          ]
+        },
+        {
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [
+            address,
+            Object.values(tokendict).map((t: any) => t.address)
+          ]
+        },
+        {
+          to: activeMarket?.address,
+          abi: CrystalMarketAbi,
+          functionName: 'getPriceLevelsFromMid',
+          args: [BigInt(1000000)]
+        },
+        {
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'getPrices',
+          args: [
+            Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
+          ]
+        },
+        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst
+          ? [{
+              to: tokenOut,
+              abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
+              functionName: switched ? 'convertToAssets' : 'convertToShares',
+              args: [switched ? amountOutSwap : amountIn]
+            }]
+          : [])
+      ]
+  
+      const callData: any = calls.map(({ to, abi, functionName, args }: any) => ({
+        target: to,
+        callData: encodeFunctionData({ abi, functionName, args })
+      }))
+  
+      const multicallData: any = encodeFunctionData({
+        abi: [{
+          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
+          name: 'aggregate',
+          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'aggregate',
+        args: [callData]
+      })
+
+      const response: any = await fetch(HTTP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([{
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [{ to: '0xcA11bde05977b3631167028862bE2a173976CA11', data: multicallData }, 'latest']
+        },  ...(gasEstimateCall ? [gasEstimateCall] : [])])
+      })
+
+      const json: any = await response.json()
+  
+      const returnData: any = decodeFunctionResult({
+        abi: [{
+          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
+          name: 'aggregate',
+          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'aggregate',
+        data: json[0].result
+      })
+  
+      const decoded: any = returnData?.[1]?.map((data: any, i: number) => ({
+        result: decodeFunctionResult({
+          abi: calls[i].abi,
+          functionName: calls[i].functionName,
+          data
+        })
+      }))
+
+      if (json?.[1].result) {
+        gasEstimate = BigInt(json[1].result)
+      }
+      
+      return {readContractData: decoded, gasEstimate: gasEstimate}
+    },
+    enabled: !!address && !!activeMarket && !!tokendict && !!markets,
+    refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
+    gcTime: 0,
+  })
+
+  const data = rpcQueryData?.readContractData;
+  const gasLimitData = rpcQueryData?.gasEstimate;
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -2938,6 +3111,10 @@ function App() {
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
 
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const WS_URL = 'wss://testnet-rpc2.monad.xyz'
+
   // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
@@ -3580,6 +3757,11 @@ function App() {
 
     (async () => {
       if (address) {
+        if (validOneCT) {
+          oneCTNonceRef.current = await getTransactionCount(config, {
+            address: (address as any),
+          })
+        }
         setTransactions([]);
         settradehistory([]);
         setorders([]);
@@ -3787,19 +3969,93 @@ function App() {
       startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
       endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
 
-      const blob = new Blob([workerCode], { type: 'application/javascript' });
-      worker = new Worker(URL.createObjectURL(blob));
-
-      worker.onmessage = () => {
-        fetchData();
-      };
+      fetchData();
     })()
+
+    const connectWebSocket = () => {
+      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+        return;
+      }
+      wsRef.current = new WebSocket(WS_URL);
+      wsRef.current.onopen = () => {
+        if (reconnectIntervalRef.current) {
+          clearTimeout(reconnectIntervalRef.current);
+          reconnectIntervalRef.current = null;
+        }
+        const subscriptionMessages = [
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 2,
+            method: 'eth_subscribe',
+            params: [
+              'logs',
+              {
+                address: Object.values(markets).map(
+                  (market: { address: string }) => market.address,
+                ),
+                topics: [
+                  [
+                    '0xc3bcf95b5242764f3f2dc3e504ce05823a3b50c4ccef5e660d13beab2f51f2ca',
+                  ],
+                ],
+              },
+            ],
+          }), ...(address?.slice(2) ? [JSON.stringify({
+            jsonrpc: '2.0',
+            id: 0,
+            method: 'eth_subscribe',
+            params: [
+              'logs',
+              {
+                address: Object.values(markets).map(
+                  (market: { address: string }) => market.address,
+                ),
+                topics: [
+                  [
+                    '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4',
+                  ],
+                  [
+                    '0x000000000000000000000000' + address?.slice(2),
+                  ],
+                ],
+              },
+            ],
+          })] : [])
+        ];
+
+        subscriptionMessages.forEach((message) => {
+          wsRef.current?.send(message);
+        });
+      };
+
+      wsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message?.params?.result) {
+          console.log(message)
+        }
+      }
+
+      wsRef.current.onclose = () => {
+        reconnectIntervalRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 100);
+      };
+
+      wsRef.current.onerror = (error) => {
+        console.error(error);
+      };
+    };
+
+    // connectWebSocket();
 
     return () => {
       liveStreamCancelled = true;
       isAddressInfoFetching = false;
-      if (worker) {
-        worker.terminate();
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (reconnectIntervalRef.current) {
+        clearTimeout(reconnectIntervalRef.current);
       }
     };
   }, [activechain, address]);
@@ -6776,7 +7032,6 @@ function App() {
     twitter: ''
   });
 
-
   const usdcBalance = tokenBalances[usdc] || BigInt(0);
   const usdcDecimals = Number(tokendict[usdc]?.decimals || 18);
   const userUSDCBalance = Number(usdcBalance) / (10 ** usdcDecimals);
@@ -7320,18 +7575,17 @@ function App() {
                     connected &&
                     userchain === activechain
                   ) {
-                    let hash;
+                    let hash: any;
                     setIsSigning(true)
                     if (client) {
                       txPending.current = true
                     }
                     try {
                       if (sendTokenIn == eth) {
-                        hash = await sendeth(
-                          sendUserOperationAsync,
+                        hash = await sendUserOperationAsync({ uo: sendeth(
                           recipient as `0x${string}`,
                           sendAmountIn,
-                        );
+                        )});
                         if (!client) {
                           txPending.current = true
                         }
@@ -7349,12 +7603,11 @@ function App() {
                           recipient,
                         );
                       } else {
-                        hash = await sendtokens(
-                          sendUserOperationAsync,
+                        hash = await sendUserOperationAsync({ uo: sendtokens(
                           sendTokenIn as `0x${string}`,
                           recipient as `0x${string}`,
                           sendAmountIn,
-                        );
+                        )});
                         if (!client) {
                           txPending.current = true
                         }
@@ -7373,13 +7626,14 @@ function App() {
                           recipient,
                         );
                       }
-                      await refetch()
-                      txPending.current = false
                       setSendUsdValue('')
                       setSendInputAmount('');
                       setSendAmountIn(BigInt(0));
                       setSendPopupButton(0);
                       setSendPopupButtonDisabled(true);
+                      setIsSigning(false)
+                      await refetch()
+                      txPending.current = false
                     } catch (error) {
                       if (!(error instanceof TransactionExecutionError)) {
                         newTxPopup(
@@ -7531,6 +7785,7 @@ function App() {
                 <button
                   className="popup-disconnect-button"
                   onClick={() => {
+                    setOneCTSigner('')
                     logout()
                   }}
                 >
@@ -8327,6 +8582,44 @@ function App() {
                           }}
                         />
                       </div>
+                      <div className="audio-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="audio-toggle-label">{t('useOneCT')}</span>
+                          <span className="settings-option-subtitle">
+                            {t('useOneCTText')}
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={useOneCT}
+                          onChange={() => {
+                            setUseOneCT(!useOneCT);
+                            localStorage.setItem('crystal_use_onect', JSON.stringify(!useOneCT));
+                          }}
+                        />
+                      </div>
+                      {useOneCT && (validOneCT ?
+                        <div className="onect-address-box">
+                          <span className="onect-address">{address}</span>
+                          <CopyButton textToCopy={address as string} />
+                        </div> : <button
+                        className="reset-tab-button"
+                        onClick={async () => {
+                          setOneCTSigner(keccak256(await signTypedData(config, {types: {
+                            createCrystalOneCT: [
+                              { name: 'version', type: 'string' },
+                              { name: 'account', type: 'uint256' },
+                            ],
+                          },
+                          primaryType: 'createCrystalOneCT',
+                          message: {
+                            version: 'Crystal v0.0.1 Testnet',
+                            account: 1n,
+                          }})))
+                          setpopup(3);
+                        }}
+                      >
+                        {t('createWallet')}
+                      </button>)}
                     </div>
                   )}
 
@@ -9215,7 +9508,8 @@ function App() {
                 <span className="deposit-address">{address}</span>
                 <button
                   className={`deposit-copy-button ${copyTooltipVisible ? 'success' : ''}`}
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation()
                     navigator.clipboard.writeText(address || '');
                     setCopyTooltipVisible(true);
                     setTimeout(() => setCopyTooltipVisible(false), 2000);
@@ -12322,14 +12616,14 @@ function App() {
                 });
                 if (!confirmed) return;
               }
-              let hash;
+              let hash: any;
               setIsSigning(true);
               if (client) {
                 txPending.current = true;
               }
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  hash = await wrapeth(sendUserOperationAsync, amountIn, weth);
+                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12343,7 +12637,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  hash = await unwrapeth(sendUserOperationAsync, amountIn, weth);
+                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12357,7 +12651,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
-                  hash = await stake(sendUserOperationAsync, tokenOut, address, amountIn);
+                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (gasLimitData ?? 0n) * 1100n / 1000n);
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12384,7 +12678,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        })
+                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12401,7 +12695,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        })
+                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -12514,7 +12808,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12531,7 +12825,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -12545,7 +12839,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12562,7 +12856,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -12580,7 +12874,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        })
+                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12597,7 +12891,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        })
+                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -12710,7 +13004,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12727,7 +13021,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -12741,7 +13035,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12758,7 +13052,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            })
+                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -12769,12 +13063,6 @@ function App() {
                   txPending.current = true
                   await waitForTxReceipt(hash.hash);
                 }
-                await refetch()
-                txPending.current = false
-                setTimeout(() => setoutputString(''), 0);
-                setTimeout(() => setamountOutSwap(BigInt(0)), 0);
-                setTimeout(() => setInputString(''), 0);
-                setTimeout(() => setamountIn(BigInt(0)), 0);
                 setswitched(false);
                 setInputString('');
                 setamountIn(BigInt(0));
@@ -12783,11 +13071,14 @@ function App() {
                 setSliderPercent(0);
                 setSwapButtonDisabled(true);
                 setSwapButton(1);
+                setIsSigning(false)
                 const slider = document.querySelector('.balance-amount-slider');
                 const popup = document.querySelector('.slider-percentage-popup');
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
+                await refetch()
+                txPending.current = false
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
@@ -14919,8 +15210,6 @@ function App() {
                   txPending.current = true
                   await waitForTxReceipt(hash.hash);
                 }
-                await refetch()
-                txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
                 setamountOutSwap(BigInt(0));
@@ -14928,11 +15217,14 @@ function App() {
                 setLimitButtonDisabled(true);
                 setLimitButton(0);
                 setSliderPercent(0);
+                setIsSigning(false)
                 const slider = document.querySelector('.balance-amount-slider');
                 const popup = document.querySelector('.slider-percentage-popup');
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
+                await refetch()
+                txPending.current = false
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
@@ -15624,18 +15916,17 @@ function App() {
               connected &&
               userchain === activechain
             ) {
-              let hash;
+              let hash: any;
               setIsSigning(true)
               if (client) {
                 txPending.current = true
               }
               try {
                 if (tokenIn == eth) {
-                  hash = await sendeth(
-                    sendUserOperationAsync,
+                  hash = await sendUserOperationAsync({ uo: sendeth(
                     recipient as `0x${string}`,
                     amountIn,
-                  );
+                  )});
                   if (!client) {
                     txPending.current = true
                   }
@@ -15653,12 +15944,11 @@ function App() {
                     recipient,
                   );
                 } else {
-                  hash = await sendtokens(
-                    sendUserOperationAsync,
+                  hash = await sendUserOperationAsync({ uo: sendtokens(
                     tokenIn as `0x${string}`,
                     recipient as `0x${string}`,
                     amountIn,
-                  );
+                  )});
                   if (!client) {
                     txPending.current = true
                   }
@@ -15677,14 +15967,13 @@ function App() {
                     recipient,
                   );
                 }
-                await refetch()
-                txPending.current = false
                 setInputString('');
                 setsendInputString('');
                 setamountIn(BigInt(0));
                 setSliderPercent(0);
                 setSendButton(0);
                 setSendButtonDisabled(true);
+                setIsSigning(false)
                 const slider = document.querySelector('.balance-amount-slider');
                 const popup = document.querySelector(
                   '.slider-percentage-popup',
@@ -15692,6 +15981,8 @@ function App() {
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
+                await refetch()
+                txPending.current = false
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
@@ -17283,8 +17574,6 @@ function App() {
                   txPending.current = true
                   await waitForTxReceipt(hash.hash);
                 }
-                await refetch()
-                txPending.current = false
                 setInputString('');
                 setamountIn(BigInt(0));
                 setamountOutSwap(BigInt(0));
@@ -17300,13 +17589,15 @@ function App() {
                 setScaleOrders(BigInt(0));
                 setScaleOrdersString('');
                 setSliderPercent(0);
+                setIsSigning(false)
                 const slider = document.querySelector('.balance-amount-slider');
                 const popup = document.querySelector('.slider-percentage-popup');
                 if (slider && popup) {
                   (popup as HTMLElement).style.left = `${15 / 2}px`;
                 }
+                await refetch()
+                txPending.current = false
               } catch (error) {
-                console.log(error)
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
                     hash?.hash,
