@@ -282,8 +282,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         timestamp: Date.now() / 1000,
         isBuy,
         price,
-        tokenAmount: isBuy ? amountIn : amountOut,
-        nativeAmount: isBuy ? amountOut : amountIn,
+        nativeAmount: isBuy ? amountIn : amountOut,
+        tokenAmount: isBuy ? amountOut : amountIn,
       };
       setTrades((prev) => [newTrade, ...prev.slice(0, 99)]);
     };
@@ -350,7 +350,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     try {
       setIsSigning(true);
       if (activeTradeType === "buy") {
-        const value = BigInt(parseFloat(tradeAmount) * 1e18);
+        const valNum =
+          inputCurrency === "MON"
+            ? parseFloat(tradeAmount)
+            : parseFloat(tradeAmount) * currentPrice;
+        const value = BigInt(Math.round(valNum * 1e18));
         const uo = {
           target: routerAddress,
           data: encodeFunctionData({
@@ -363,7 +367,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const op = await sendUserOperationAsync({ uo });
         await waitForTxReceipt(op.hash);
       } else {
-        const amountIn = BigInt(parseFloat(tradeAmount) * 1e18);
+        const amountIn =
+          inputCurrency === "MON"
+            ? BigInt(
+              Math.round(
+                (parseFloat(tradeAmount) / (currentPrice || 1)) * 1e18,
+              ),
+            )
+            : BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
         const uo = {
           target: routerAddress,
           data: encodeFunctionData({

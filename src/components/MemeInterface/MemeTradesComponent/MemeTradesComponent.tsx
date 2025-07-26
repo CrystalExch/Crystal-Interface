@@ -17,12 +17,12 @@ export interface RawTrade {
 
 interface ViewTrade {
   id: string
+  timestamp: number
   amount: number
   mc: number
   price: number
   trader: string
   fullAddress: string
-  age: number
   tags: string[]
 }
 
@@ -44,24 +44,24 @@ export default function MemeTradesComponent({
   setSendTokenIn,
   setpopup
 }: Props) {
+
   const [amountMode, setAmountMode] = useState<AmountMode>('USDC')
   const [mcMode, setMcMode] = useState<MCMode>('MC')
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
 
   const viewTrades: ViewTrade[] = useMemo(() => {
-    const now = Math.floor(Date.now() / 1000)
     return trades.slice(0, 40).map(r => {
-      const short = `${r.id.slice(0, 6)}`
+      const short = r.id.slice(0, 6)
       return {
         id: r.id,
+        timestamp: r.timestamp,
         amount: r.isBuy ? r.nativeAmount : -r.nativeAmount,
-        mc: 0,
+        mc: 0,                           
         price: r.price,
         trader: short,
         fullAddress: r.id,
-        age: now - r.timestamp,
-        tags: []
+        tags: []                         
       }
     })
   }, [trades])
@@ -69,12 +69,15 @@ export default function MemeTradesComponent({
   const fmtAmount = (v: number) =>
     amountMode === 'USDC'
       ? `$${Math.abs(v).toFixed(2)}`
-      : `${(Math.abs(v)).toFixed(1)}`
+      : `${Math.abs(v).toFixed(1)}`
 
   const fmtMC = (mc: number, price: number) =>
     mcMode === 'MC' ? `$${mc.toFixed(1)}K` : `$${price.toFixed(6)}`
 
-  const getTagIcon = (tag: string) => null
+  const fmtTime = (ts: number) =>
+    new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+
+  const getTagIcon = (tag: string) => null   
 
   return (
     <>
@@ -99,7 +102,7 @@ export default function MemeTradesComponent({
             <img src={switchicon} className="meme-header-switch-icon" alt="" />
           </div>
           <div className="meme-trades-header-item meme-trades-header-trader">Trader</div>
-          <div className="meme-trades-header-item meme-trades-header-age">Age</div>
+          <div className="meme-trades-header-item meme-trades-header-age">Time</div>
         </div>
 
         <div className="meme-trades-list">
@@ -118,7 +121,7 @@ export default function MemeTradesComponent({
               </div>
               <div className="meme-trade-age-container">
                 <div className="meme-trade-tags">{t.tags.map(getTagIcon)}</div>
-                <span className="meme-trade-age">{t.age}s</span>
+                <span className="meme-trade-age">{fmtTime(t.timestamp)}</span>
               </div>
             </div>
           ))}
@@ -129,7 +132,17 @@ export default function MemeTradesComponent({
         </div>
       </div>
 
-      { }
+      {popupAddr && (
+        <TraderPortfolioPopup
+          traderAddress={popupAddr}
+          onClose={() => setPopupAddr(null)}
+          tokenList={tokenList}
+          marketsData={[]} 
+          onMarketSelect={onMarketSelect}
+          setSendTokenIn={setSendTokenIn}
+          setpopup={setpopup}
+        />
+      )}
     </>
   )
 }
