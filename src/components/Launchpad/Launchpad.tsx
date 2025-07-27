@@ -168,17 +168,14 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     setIsLaunching(true);
     setError('');
     try {
-      setLaunchStatus('Uploading image...');
-      const imageKey = `img/${formData.ticker}-${Date.now()}.${
-        formData.image.name.split('.').pop()
-      }`;
+      const imageKey = `img/${formData.ticker}-${Date.now()}.${formData.image.name.split('.').pop()
+        }`;
       const imageUrl = await uploadToR2(
         imageKey,
         formData.image,
         formData.image.type
       );
 
-      setLaunchStatus('Uploading metadata...');
       const timestamp = Date.now();
       const metaKey = `metadata/${formData.ticker}-${timestamp}.json`;
       const metadata = {
@@ -195,16 +192,11 @@ const Launchpad: React.FC<LaunchpadProps> = ({
         metaKey,
         JSON.stringify(metadata),
         'application/json'
-      );
-
-      setLaunchStatus('Deploying token...');
-      const receipt = await deployToken(metadataUrl);
+      );      const receipt = await deployToken(metadataUrl);
       const { token, market } = extractAddresses(receipt);
       setDeployedTokenAddress(token);
       setDeployedMarketAddress(market);
-      setLaunchStatus('Success!');
     } catch (err: any) {
-      setError(err.message || 'Launch failed');
     } finally {
       setIsLaunching(false);
     }
@@ -220,18 +212,18 @@ const Launchpad: React.FC<LaunchpadProps> = ({
 
           <div className="launchpad-form">
             <div className="launchpad-token-info">
-            <div className="launchpad-form-group">
-              <label className="launchpad-label">Name *</label>
-              <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Name your coin" disabled={isLaunching} />
-            </div>
-            <div className="launchpad-form-group">
-              <label className="launchpad-label">Ticker *</label>
-              <input name="ticker" value={formData.ticker} onChange={handleInputChange} className="launchpad-input" placeholder="Add a coin ticker (e.g. BTC)" disabled={isLaunching} />
-            </div>
+              <div className="launchpad-form-group">
+                <label className="launchpad-label">Name *</label>
+                <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Name your coin" disabled={isLaunching} />
+              </div>
+              <div className="launchpad-form-group">
+                <label className="launchpad-label">Ticker *</label>
+                <input name="ticker" value={formData.ticker} onChange={handleInputChange} className="launchpad-input" placeholder="Add a coin ticker (e.g. BTC)" disabled={isLaunching} />
+              </div>
             </div>
             <div className="launchpad-form-group">
               <label className="launchpad-label">Description</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} className="launchpad-input"placeholder="Write a short description" rows={3} disabled={isLaunching} />
+              <textarea name="description" value={formData.description} onChange={handleInputChange} className="launchpad-input" placeholder="Write a short description" rows={3} disabled={isLaunching} />
             </div>
             <div className="launchpad-form-group">
               <label className="launchpad-label">Upload a picture *</label>
@@ -248,11 +240,11 @@ const Launchpad: React.FC<LaunchpadProps> = ({
                   </div>
                 ) : (
                   <div className="launchpad-upload-content">
-                    <img src={upload}/>
+                    <img src={upload} />
                     <p className="launchpad-upload-header">Select a video or image to upload</p>
                     <p className="launchpad-upload-subtitle">or drag and drop it here</p>
                   </div>
-                  
+
                 )}
               </div>
             </div>
@@ -270,19 +262,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
 
 
             <button className={`launchpad-launch-button ${isFormValid && !isLaunching ? 'enabled' : ''}`} onClick={handleLaunch} disabled={!isFormValid || isLaunching}>
+              {isLaunching && (<div className="loading-spinner" />)}
               {isLaunching ? 'Sign Transaction' : account.connected ? (account.chainId === 10143 ? 'Launch Token' : `Switch to ${settings.chainConfig[10143].name}`) : 'Connect Wallet'}
             </button>
-
-            {launchStatus && <p className="launchpad-status">{launchStatus}</p>}
-            {error && <p className="launchpad-error">{error}</p>}
-
-            {deployedTokenAddress && (
-              <div className="deployment-results">
-                <h3>Deployment Successful!</h3>
-                <p><strong>Token:</strong> {deployedTokenAddress}</p>
-                {deployedMarketAddress && <p><strong>Market:</strong> {deployedMarketAddress}</p>}
-              </div>
-            )}
           </div>
         </div>
       </div>

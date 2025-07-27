@@ -1,5 +1,6 @@
 .portfolio-specific-page {
-  align-items: center;
+  display: flex;
+  flex-direction: column;
   background: rgb(6 6 6);
   box-sizing: border-box;
   display: flex;
@@ -14,7 +15,34 @@
   height: 100%;
   overflow: hidden;
   width: 100%;
+    border-top: 1px solid rgba(179, 184, 249, 0.09);
 }
+
+.portfolio-tab-selector{
+  display: flex;
+  gap: 1.5rem;
+  padding: 0 1rem;
+}
+
+.portfolio-tab-title{
+  font-size: 1.1rem;
+  cursor: pointer;
+  letter-spacing: -0.5px;
+  padding: 0.5rem 0;
+}
+
+.portfolio-tab-title.active{
+  color: #d8dcff;
+  border-bottom: 1.5px solid #d8dcff;
+}
+
+.portfolio-tab-title.nonactive{
+  color: rgb(145, 145, 155);
+}
+
+
+
+
 
 .graph-container {
   background: rgb(6,6,6);

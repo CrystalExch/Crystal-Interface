@@ -104,8 +104,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   marketsData,
 }) => {
   const [activeSection, setActiveSection] = useState<
-  'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
->('balances');
+    'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
+  >('balances');
   const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     column: 'balance',
@@ -181,7 +181,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         tradeTime >= timeago
       ) {
         const quotePrice = markets[marketKey].quoteAsset == 'USDC' ? 1 : trades[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.[0]?.[3]
-        / Number(markets[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.priceFactor)
+          / Number(markets[(markets[marketKey].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[marketKey].quoteAsset) + 'USDC']?.priceFactor)
         volume += (tradeSide === 1 ? amount : price) * quotePrice / 10 ** Number(markets[marketKey].quoteDecimals);
       }
     });
@@ -232,9 +232,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
         </span>
         <div className="percentage-change-container">
           <span
-            className={`percentage-value ${isBlurred ? 'blurred' : ''} ${
-              percentage >= 0 ? 'positive' : 'negative'
-            }`}
+            className={`percentage-value ${isBlurred ? 'blurred' : ''} ${percentage >= 0 ? 'positive' : 'negative'
+              }`}
           >
             {portChartLoading ? (
               <div className="port-loading" style={{ width: 80 }} />
@@ -254,7 +253,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     <div className="graph-outer-container">
       {portChartLoading ? (
         <div className="graph-container">
-          <Overlay isVisible={true} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
+          <Overlay isVisible={true} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
         </div>
       ) : (
         <div className="graph-container">
@@ -431,6 +430,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
   } else {
     return (
       <div className="portfolio-specific-page">
+        <div className="portfolio-tab-selector">
+          <span className="portfolio-tab-title active">Spot</span>
+          <span className="portfolio-tab-title nonactive">Margin</span>
+          <span className="portfolio-tab-title nonactive">Referrals</span>
+          <span className="portfolio-tab-title nonactive">Wallets</span>
+          <span className="portfolio-tab-title nonactive">Trenches</span>
+
+
+        </div>
         <div className="portfolio-content-container">
           <div className="portfolio-left-column">
             {portfolioGraph}
