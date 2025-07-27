@@ -25,7 +25,6 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult } from 'viem';
-import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
@@ -181,6 +180,7 @@ function App() {
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
+  const WS_URL = settings.chainConfig[activechain].wssurl;
   const eth = settings.chainConfig[activechain].eth as `0x${string}`;
   const weth = settings.chainConfig[activechain].weth as `0x${string}`;
   const usdc = settings.chainConfig[activechain].usdc as `0x${string}`;
@@ -1003,10 +1003,18 @@ function App() {
   const [mobileDragY, setMobileDragY] = useState(0);
   const [mobileStartY, setMobileStartY] = useState(0);
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
-  const handleLimitPriceUpdate = (price: number) => {
-    setCurrentLimitPrice(price);
-  };
+  const lastRefGroupFetch = useRef(0);
+  const blockNumber = useRef(0n);
+  const refRefetch = useCallback(() => {
+    lastRefGroupFetch.current = 0;
+    refetch()
+  }, [])
 
+  
+  const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<any>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
 
@@ -1286,12 +1294,12 @@ function App() {
   const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
     if (!client) {
       return await Promise.race([
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.set(hash, resolve);
+        }),
         waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
           txReceiptResolvers.delete(hash);
           return r.transactionHash;
-        }),
-        new Promise<void>((resolve) => {
-          txReceiptResolvers.set(hash, resolve);
         }),
       ]);
     }
@@ -1565,43 +1573,6 @@ function App() {
     }, 300);
   };
 
-  const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
-    batchSize: 0,
-    contracts: [
-      {
-        address: settings.chainConfig[activechain].referralManager,
-        abi: CrystalReferralAbi as any,
-        functionName: 'addressToReferrer',
-        args: [address ?? '0x0000000000000000000000000000000000000000'],
-      },
-      ...Array.from(
-        new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        )
-      ).flatMap((marketAddress: any) => ({
-        address: marketAddress as `0x${string}`,
-        abi: CrystalMarketAbi,
-        functionName: 'accumulatedFeeQuote',
-        args: [address ?? undefined],
-      })),
-      ...Array.from(
-        new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        )
-      ).flatMap((marketAddress: any) => ({
-        address: marketAddress as `0x${string}`,
-        abi: CrystalMarketAbi,
-        functionName: 'accumulatedFeeBase',
-        args: [address ?? undefined],
-      })),
-    ],
-    query: { refetchInterval: 10000 },
-  });
-
   // data loop, reuse to eventually have every single call method in this loop
   const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
     queryKey: [
@@ -1618,79 +1589,82 @@ function App() {
     queryFn: async () => {
       let gasEstimateCall: any = null;
       let gasEstimate: bigint = 0n;
-
-      try {
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
-
-        const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
-
-        let tx: any = null;
-
-        if (tokenIn === eth && tokenOut === weth) {
-          tx = wrapeth(amountIn, weth);
-        } else if (tokenIn === weth && tokenOut === eth) {
-          tx = unwrapeth(amountIn, weth);
-        } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
-          tx = stake(tokenOut, address, amountIn);
-        } else if (orderType === 1 || multihop) {
-          const slippageAmount = !switched 
-            ? (amountOutSwap * slippage + 5000n) / 10000n
-            : (amountIn * 10000n + slippage / 2n) / slippage;
-
-          if (tokenIn === eth && tokenOut !== eth) {
-            tx = !switched
-              ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
-          } else if (tokenIn !== eth && tokenOut === eth) {
-            tx = !switched
-              ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+      
+      if (address && (amountIn || amountOutSwap)) {
+        try {
+          const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+  
+          const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
+  
+          let tx: any = null;
+  
+          if (tokenIn === eth && tokenOut === weth) {
+            tx = wrapeth(amountIn, weth);
+          } else if (tokenIn === weth && tokenOut === eth) {
+            tx = unwrapeth(amountIn, weth);
+          } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
+            tx = stake(tokenOut, address, amountIn);
+          } else if (orderType === 1 || multihop) {
+            const slippageAmount = !switched 
+              ? (amountOutSwap * slippage + 5000n) / 10000n
+              : (amountIn * 10000n + slippage / 2n) / slippage;
+  
+            if (tokenIn === eth && tokenOut !== eth) {
+              tx = !switched
+                ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else if (tokenIn !== eth && tokenOut === eth) {
+              tx = !switched
+                ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else {
+              tx = !switched
+                ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            }
           } else {
-            tx = !switched
-              ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            const amount = !switched ? amountIn : amountOutSwap;
+            const limitPrice = tokenIn === activeMarket.quoteAddress
+              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+              : (highestBid * slippage + 5000n) / 10000n;
+  
+            tx = _swap(
+              router,
+              tokenIn === eth
+                ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
+                : BigInt(0),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+              !switched,
+              BigInt(0),
+              amount,
+              limitPrice,
+              deadline,
+              usedRefAddress
+            );
           }
-        } else {
-          const amount = !switched ? amountIn : amountOutSwap;
-          const limitPrice = tokenIn === activeMarket.quoteAddress
-            ? (lowestAsk * 10000n + slippage / 2n) / slippage
-            : (highestBid * slippage + 5000n) / 10000n;
-
-          tx = _swap(
-            router,
-            tokenIn === eth
-              ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
-              : BigInt(0),
-            activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-            activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-            !switched,
-            BigInt(0),
-            amount,
-            limitPrice,
-            deadline,
-            usedRefAddress
-          );
+  
+          if (tx) {
+            gasEstimateCall = {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_estimateGas',
+              params: [{
+                from: address as `0x${string}`,
+                to: tx.target,
+                data: tx.data,
+                value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
+              }]
+            };
+          }
+        } catch (e) {
+          gasEstimateCall = null;
         }
-
-        if (tx) {
-          gasEstimateCall = {
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_estimateGas',
-            params: [{
-              from: address,
-              to: tx.target,
-              data: tx.data,
-              value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
-            }]
-          };
-        }
-      } catch (e) {
-        gasEstimateCall = null;
       }
-
-      const calls: any = [
+      
+      const mainGroup: any = [
         {
+          disabled: (switched ? amountOutSwap : amountIn) > maxUint256,
           to: router,
           abi: CrystalRouterAbi,
           functionName: switched ? 'getAmountsIn' : 'getAmountsOut',
@@ -1700,20 +1674,22 @@ function App() {
           ]
         },
         {
+          disabled: !address,
           to: tokenIn === eth ? weth : tokenIn,
           abi: TokenAbi,
           functionName: 'allowance',
           args: [
-            address,
+            address as `0x${string}`,
             (getMarket(activeMarket.path.at(0) as any, activeMarket.path.at(1) as any) as any).address
           ]
         },
         {
+          disabled: !address,
           to: balancegetter,
           abi: CrystalDataHelperAbi,
           functionName: 'batchBalanceOf',
           args: [
-            address,
+            address as `0x${string}`,
             Object.values(tokendict).map((t: any) => t.address)
           ]
         },
@@ -1731,7 +1707,7 @@ function App() {
             Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
           ]
         },
-        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst
+        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
           ? [{
               to: tokenOut,
               abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
@@ -1739,23 +1715,120 @@ function App() {
               args: [switched ? amountOutSwap : amountIn]
             }]
           : [])
+      ];
+
+      const refGroup: any = [
+        {
+          disabled: !address,
+          to: settings.chainConfig[activechain].referralManager,
+          abi: CrystalReferralAbi as any,
+          functionName: 'addressToReferrer',
+          args: [address],
+        },
+        ...Array.from(
+          new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          )
+        ).flatMap((marketAddress: any) => ({
+          to: marketAddress as `0x${string}`,
+          abi: CrystalMarketAbi,
+          functionName: 'accumulatedFeeQuote',
+          args: [address],
+        })),
+        ...Array.from(
+          new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          )
+        ).flatMap((marketAddress: any) => ({
+          to: marketAddress as `0x${string}`,
+          abi: CrystalMarketAbi,
+          functionName: 'accumulatedFeeBase',
+          args: [address],
+        }))
       ]
-  
-      const callData: any = calls.map(({ to, abi, functionName, args }: any) => ({
-        target: to,
-        callData: encodeFunctionData({ abi, functionName, args })
-      }))
-  
+
+      const oneCTDepositGroup: any = [
+
+      ]
+
+      const groups: any = {
+        mainGroup,
+        oneCTDepositGroup
+      };
+      
+      if (address && Date.now() - lastRefGroupFetch.current >= 9500) {
+        lastRefGroupFetch.current = Date.now();
+        groups.refGroup = refGroup;
+      }
+
+      const callData: any = []
+      const callMapping: any = []
+
+      const groupResults: any = {};
+      Object.keys(groups).forEach(groupKey => {
+        groupResults[groupKey] = [];
+      });
+
+      Object.entries(groups).forEach(([groupKey, group]: [string, any]) => {
+        group.forEach((call: any, callIndex: number) => {
+          if (!call.disabled) {
+            try {
+              callData.push({
+                target: call.to || call.address,
+                callData: encodeFunctionData({ 
+                  abi: call.abi, 
+                  functionName: call.functionName, 
+                  args: call.args 
+                })
+              });
+              
+              callMapping.push({
+                groupKey,
+                callIndex
+              });
+            } catch (e: any) {
+              while (groupResults[groupKey].length < callIndex) {
+                groupResults[groupKey].push(null);
+              }
+              groupResults[groupKey][callIndex] = {error: e.message, result: undefined, status: "failure"};
+            }
+          }
+          else {
+            while (groupResults[groupKey].length < callIndex) {
+              groupResults[groupKey].push(null);
+            }
+            groupResults[groupKey][callIndex] = {error: "param missing", result: undefined, status: "failure"};  
+          }
+        });
+      });
+      
       const multicallData: any = encodeFunctionData({
         abi: [{
-          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
-          name: 'aggregate',
-          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            { components: [
+              { name: 'target', type: 'address' }, 
+              { name: 'callData', type: 'bytes' }
+            ], name: 'calls', type: 'tuple[]' }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            { components: [
+              { name: 'success', type: 'bool' }, 
+              { name: 'returnData', type: 'bytes' }
+            ], name: 'returnData', type: 'tuple[]' }
+          ],
           stateMutability: 'view',
           type: 'function'
         }],
-        functionName: 'aggregate',
-        args: [callData]
+        functionName: 'tryBlockAndAggregate',
+        args: [false, callData]
       })
 
       const response: any = await fetch(HTTP_URL, {
@@ -1765,45 +1838,73 @@ function App() {
           jsonrpc: '2.0',
           id: 1,
           method: 'eth_call',
-          params: [{ to: '0xcA11bde05977b3631167028862bE2a173976CA11', data: multicallData }, 'latest']
+          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
         },  ...(gasEstimateCall ? [gasEstimateCall] : [])])
       })
 
       const json: any = await response.json()
-  
+
+
       const returnData: any = decodeFunctionResult({
         abi: [{
-          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
-          name: 'aggregate',
-          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            { components: [
+              { name: 'target', type: 'address' }, 
+              { name: 'callData', type: 'bytes' }
+            ], name: 'calls', type: 'tuple[]' }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            { components: [
+              { name: 'success', type: 'bool' }, 
+              { name: 'returnData', type: 'bytes' }
+            ], name: 'returnData', type: 'tuple[]' }
+          ],
           stateMutability: 'view',
           type: 'function'
         }],
-        functionName: 'aggregate',
+        functionName: 'tryBlockAndAggregate',
         data: json[0].result
       })
-  
-      const decoded: any = returnData?.[1]?.map((data: any, i: number) => ({
-        result: decodeFunctionResult({
-          abi: calls[i].abi,
-          functionName: calls[i].functionName,
-          data
-        })
-      }))
 
-      if (json?.[1].result) {
+      blockNumber.current = returnData?.[0]
+      returnData?.[2]?.forEach((data: any, responseIndex: number) => {
+        const { groupKey, callIndex } = callMapping[responseIndex] || {};
+        if (groupKey === undefined) return;
+        const originalCall = groups[groupKey][callIndex];
+        while (groupResults[groupKey].length <= callIndex) {
+          groupResults[groupKey].push(null);
+        }
+        if (data?.success == true) {
+          try {
+            const decodedResult = decodeFunctionResult({
+              abi: originalCall.abi,
+              functionName: originalCall.functionName,
+              data: data?.returnData
+            });
+            groupResults[groupKey][callIndex] = { result: decodedResult, status: "success" };
+          } catch (e: any) {
+            groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
+          }
+        }
+        else {
+          groupResults[groupKey][callIndex] = { error: 'call reverted', result: undefined, status: "failure" };
+        }
+      });
+
+      if (json?.[1]?.result) {
         gasEstimate = BigInt(json[1].result)
       }
-      
-      return {readContractData: decoded, gasEstimate: gasEstimate}
+
+      return {readContractData: groupResults, gasEstimate: gasEstimate}
     },
-    enabled: !!address && !!activeMarket && !!tokendict && !!markets,
+    enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
     gcTime: 0,
   })
-
-  const data = rpcQueryData?.readContractData;
-  const gasLimitData = rpcQueryData?.gasEstimate;
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -2314,80 +2415,6 @@ function App() {
     document.title = title;
   }, [trades, location.pathname, activeMarket]);
 
-
-  // referral data
-  useEffect(() => {
-    if (!refDataLoading && refData) {
-      setUsedRefAddress(
-        refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
-      );
-      setClaimableFees(() => {
-        let newFees = {};
-        let totalFees = 0;
-        const baseOffset = new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        ).size
-        Array.from(
-          Object.values(markets).reduce((acc, market: any) => {
-            if (!acc.has(market.address)) acc.set(market.address, market);
-            return acc;
-          }, new Map<string, any>()).values()
-        ).forEach((market: any, index) => {
-          if (
-            mids !== null &&
-            market !== null
-          ) {
-            const quoteIndex = index;
-            const baseIndex = index + baseOffset;
-            const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-              / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-            const midValue = Number(
-              (mids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
-            ) * quotePrice;
-            if (!(newFees as any)[market.quoteAsset]) {
-              (newFees as any)[market.quoteAsset] =
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-              totalFees +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-            } else {
-              (newFees as any)[market.quoteAsset] +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-              totalFees +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-            }
-
-            if (!(newFees as any)[market.baseAsset]) {
-              (newFees as any)[market.baseAsset] =
-                Number(refData[baseIndex + 1].result) /
-                10 ** Number(market.baseDecimals);
-              totalFees +=
-                (Number(refData[baseIndex + 1].result) * midValue) /
-                Number(market.scaleFactor) /
-                10 ** Number(market.quoteDecimals);
-            } else {
-              (newFees as any)[market.baseAsset] +=
-                Number(refData[baseIndex + 1].result) /
-                10 ** Number(market.baseDecimals);
-              totalFees +=
-                (Number(refData[baseIndex + 1].result) * midValue) /
-                Number(market.scaleFactor) /
-                10 ** Number(market.quoteDecimals);
-            }
-          }
-        });
-        setTotalClaimableFees(totalFees || 0);
-
-        return newFees;
-      });
-    }
-  }, [refData, mids]);
-
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -2454,6 +2481,8 @@ function App() {
 
   // update state variables when data is loaded
   useLayoutEffect(() => {
+    const data = rpcQueryData?.readContractData?.mainGroup;
+    const refData = rpcQueryData?.readContractData?.refGroup;
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
         if (data?.[1]?.result != null) {
@@ -2486,7 +2515,6 @@ function App() {
           }
           setTokenBalances(tempbalances);
         }
-
         if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
           setStateIsLoading(false);
           setstateloading(false);
@@ -2532,7 +2560,7 @@ function App() {
               }
             }
           }
-        } else if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
+        } else if (data?.[0]?.result || (data?.[0]?.error == 'call reverted') || (data?.[0]?.error == 'param missing')  ) {
           setStateIsLoading(false);
           setstateloading(false);
           if (switched == false && !isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
@@ -2712,10 +2740,79 @@ function App() {
           }
         }
       }
+      if (refData && Object.keys(tempmids).length > 0) {
+        setUsedRefAddress(
+          refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
+        );
+        setClaimableFees(() => {
+          let newFees = {};
+          let totalFees = 0;
+          const baseOffset = new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          ).size
+          Array.from(
+            Object.values(markets).reduce((acc, market: any) => {
+              if (!acc.has(market.address)) acc.set(market.address, market);
+              return acc;
+            }, new Map<string, any>()).values()
+          ).forEach((market: any, index) => {
+            if (
+              tempmids !== null &&
+              market !== null
+            ) {
+              const quoteIndex = index;
+              const baseIndex = index + baseOffset;
+              const quotePrice = market.quoteAsset == 'USDC' ? 1 : Number(tempmids[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0])
+                / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+              const midValue = Number(
+                (tempmids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
+              ) * quotePrice;
+              
+              if (!(newFees as any)[market.quoteAsset]) {
+                (newFees as any)[market.quoteAsset] =
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+                totalFees +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+              } else {
+                (newFees as any)[market.quoteAsset] +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+                totalFees +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+              }
+  
+              if (!(newFees as any)[market.baseAsset]) {
+                (newFees as any)[market.baseAsset] =
+                  Number(refData[baseIndex + 1].result) /
+                  10 ** Number(market.baseDecimals);
+                totalFees +=
+                  (Number(refData[baseIndex + 1].result) * midValue) /
+                  Number(market.scaleFactor) /
+                  10 ** Number(market.quoteDecimals);
+              } else {
+                (newFees as any)[market.baseAsset] +=
+                  Number(refData[baseIndex + 1].result) /
+                  10 ** Number(market.baseDecimals);
+                totalFees +=
+                  (Number(refData[baseIndex + 1].result) * midValue) /
+                  Number(market.scaleFactor) /
+                  10 ** Number(market.quoteDecimals);
+              }
+            }
+          });
+          setTotalClaimableFees(totalFees || 0);
+          return newFees;
+        });
+      }
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
+  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
 
   // update display values when loading is finished
   useLayoutEffect(() => {
@@ -2842,7 +2939,7 @@ function App() {
               amountIn > tokenBalances[tokenIn] ||
               ((orderType == 1 || multihop) &&
                 !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
+                BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
             connected &&
             userchain == activechain,
           );
@@ -2853,7 +2950,7 @@ function App() {
                 amountIn == BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
                   !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)
+                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)
                 ? 0
                 : amountIn === BigInt(0)
                   ? 1
@@ -2870,7 +2967,7 @@ function App() {
             !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
-                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
+                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn))
               ? multihop
                 ? 3
                 : 2
@@ -3074,7 +3171,7 @@ function App() {
     userchain,
     tokenBalances[tokenIn],
     multihop,
-    data?.[0].result?.at(0),
+    rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0),
     recipient,
     mids,
     scaleStart,
@@ -3111,23 +3208,12 @@ function App() {
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const WS_URL = 'wss://testnet-rpc2.monad.xyz'
-
   // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
+    let isAddressInfoFetching = false;
     let startBlockNumber = '';
     let endBlockNumber = '';
-    let worker: any;
-    let isAddressInfoFetching = false;
-
-    const workerCode = `
-      setInterval(() => {
-        self.postMessage('fetch');
-      }, 800);
-    `;
 
     const fetchData = async () => {
       try {
@@ -3965,30 +4051,26 @@ function App() {
         setcanceledorders([]);
         setaddressinfoloading(false);
       }
-      let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
-      endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
-
-      fetchData();
     })()
 
     const connectWebSocket = () => {
-      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
+      if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
         return;
       }
+      if (wsRef.current) {
+        wsRef.current.close();
+        wsRef.current = null;
+      }
       wsRef.current = new WebSocket(WS_URL);
-      wsRef.current.onopen = () => {
-        if (reconnectIntervalRef.current) {
-          clearTimeout(reconnectIntervalRef.current);
-          reconnectIntervalRef.current = null;
-        }
+
+      wsRef.current.onopen = async () => {  
         const subscriptionMessages = [
           JSON.stringify({
             jsonrpc: '2.0',
-            id: 2,
+            id: 'sub1',
             method: 'eth_subscribe',
             params: [
-              'logs',
+              'monadLogs',
               {
                 address: Object.values(markets).map(
                   (market: { address: string }) => market.address,
@@ -4002,10 +4084,10 @@ function App() {
             ],
           }), ...(address?.slice(2) ? [JSON.stringify({
             jsonrpc: '2.0',
-            id: 0,
+            id: 'sub2',
             method: 'eth_subscribe',
             params: [
-              'logs',
+              'monadLogs',
               {
                 address: Object.values(markets).map(
                   (market: { address: string }) => market.address,
@@ -4023,22 +4105,610 @@ function App() {
           })] : [])
         ];
 
+        pingIntervalRef.current = setInterval(()=>{
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'ping',
+              method: 'eth_syncing'
+            }));
+        }}, 15000);
+
         subscriptionMessages.forEach((message) => {
           wsRef.current?.send(message);
         });
+
+        if (blockNumber.current) {
+          startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
+        }
+        else {
+          let firstBlockNumber = await getBlockNumber(config);
+          startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
+        }
+        fetchData();
       };
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
         if (message?.params?.result) {
-          console.log(message)
+          const log = message?.params?.result;
+          let ordersChanged = false;
+          let canceledOrdersChanged = false;
+          let tradesByMarketChanged = false;
+          let tradeHistoryChanged = false;
+          let temporders: any;
+          let tempcanceledorders: any;
+          let temptradesByMarket: any;
+          let temptradehistory: any;
+          setorders((orders) => {
+            temporders = [...orders];
+            return orders;
+          })
+          setcanceledorders((canceledorders) => {
+            tempcanceledorders = [...canceledorders];
+            return canceledorders;
+          })
+          settradesByMarket((tradesByMarket: any) => {
+            temptradesByMarket = { ...tradesByMarket };
+            return tradesByMarket;
+          })
+          settradehistory((tradehistory: any) => {
+            temptradehistory = [...tradehistory];
+            return tradehistory;
+          })
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            let temptrades: any = {};
+            if (log['topics']?.[0] == '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4') {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket[log['address']];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
+                address?.slice(2).toLowerCase()) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(130);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                  if (_isplace) {
+                    let buy = parseInt(chunk.slice(0, 1), 16);
+                    let price = parseInt(chunk.slice(1, 20), 16);
+                    let id = parseInt(chunk.slice(20, 32), 16);
+                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let alreadyExist = tempcanceledorders.some(
+                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+                    );
+                    if (!alreadyExist) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let order = [
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ];
+                      temporders.push(order)
+                      tempcanceledorders.push([
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ])
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'limit',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  } else {
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 3;
+                    let price = parseInt(chunk.slice(1, 20), 16);
+                    let id = parseInt(chunk.slice(20, 32), 16);
+                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let index = temporders.findIndex(
+                      (o: any) =>
+                        o[0] == price &&
+                        o[1] == id &&
+                        o[4] == marketKey,
+                    );
+                    if (index != -1) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let canceledOrderIndex: number;
+                      canceledOrderIndex = tempcanceledorders.findIndex(
+                        (canceledOrder: any) =>
+                          canceledOrder[0] ==
+                          price &&
+                          canceledOrder[1] ==
+                          id &&
+                          canceledOrder[4] ==
+                          marketKey,
+                      );
+                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                        tempcanceledorders[canceledOrderIndex][9] = 0;
+                        tempcanceledorders[canceledOrderIndex][8] =
+                          tempcanceledorders[canceledOrderIndex][8] -
+                          size;
+                        tempcanceledorders[canceledOrderIndex][6] =
+                          _timestamp;
+                      }
+                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                        temporders[index] = [...temporders[index]]
+                        try {
+                          temporders[index][10].remove();
+                        }
+                        catch { }
+                        temporders[index].splice(10, 1)
+                      }
+                      temporders.splice(index, 1);
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'cancel',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            else {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket[log['address']];
+              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+                trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
+                trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
+                trade[5] == log['transactionHash'])) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(258);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let price = parseInt(chunk.slice(1, 20), 16);
+                  let id = parseInt(chunk.slice(20, 32), 16);
+                  let size = parseInt(chunk.slice(32, 64), 16);
+                  let orderIndex = temporders.findIndex(
+                    (sublist: any) =>
+                      sublist[0] ==
+                      price &&
+                      sublist[1] ==
+                      id &&
+                      sublist[4] == marketKey,
+                  );
+                  let canceledOrderIndex = tempcanceledorders.findIndex(
+                    (sublist: any) =>
+                      sublist[0] ==
+                      price &&
+                      sublist[1] ==
+                      id &&
+                      sublist[4] == marketKey,
+                  );
+                  if (orderIndex != -1 && canceledOrderIndex != -1) {
+                    ordersChanged = true;
+                    canceledOrdersChanged = true;
+                    temporders[orderIndex] = [...temporders[orderIndex]]
+                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                    let order = [...temporders[orderIndex]];
+                    let buy = order[3];
+                    let quoteasset =
+                      markets[marketKey]
+                        .quoteAddress;
+                    let baseasset =
+                      markets[marketKey]
+                        .baseAddress;
+                    let amountquote = (
+                      ((order[2] - order[7] - size / order[0]) *
+                        order[0]) /
+                      (Number(
+                        markets[marketKey]
+                          .scaleFactor,
+                      ) *
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .quoteDecimals,
+                        ))
+                    ).toFixed(2);
+                    let amountbase = customRound(
+                      (order[2] - order[7] - size / order[0]) /
+                      10 **
+                      Number(
+                        markets[marketKey]
+                          .baseDecimals,
+                      ),
+                      3,
+                    );
+                    newTxPopup(
+                      log['transactionHash'],
+                      'fill',
+                      buy ? quoteasset : baseasset,
+                      buy ? baseasset : quoteasset,
+                      buy ? amountquote : amountbase,
+                      buy ? amountbase : amountquote,
+                      `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                      '',
+                    );
+                    if (size == 0) {
+                      tradeHistoryChanged = true;
+                      temptradehistory.push([
+                        order[3] == 1
+                          ? (order[2] * order[0]) /
+                          Number(markets[order[4]].scaleFactor)
+                          : order[2],
+                        order[3] == 1
+                          ? order[2]
+                          : (order[2] * order[0]) /
+                          Number(markets[order[4]].scaleFactor),
+                        order[3],
+                        order[0],
+                        order[4],
+                        order[5],
+                        _timestamp,
+                        0,
+                      ]);
+                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                        try {
+                          temporders[orderIndex][10].remove();
+                        }
+                        catch { }
+                        temporders[orderIndex].splice(10, 1)
+                      }
+                      temporders.splice(orderIndex, 1);
+                      tempcanceledorders[canceledOrderIndex][9] =
+                        1;
+                      tempcanceledorders[canceledOrderIndex][7] = order[2]
+                      tempcanceledorders[canceledOrderIndex][8] = order[8];
+                    } else {
+                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                        try {
+                          temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                        }
+                        catch { }
+                      }
+                      temporders[orderIndex][7] =
+                        order[2] - size / order[0];
+                      tempcanceledorders[canceledOrderIndex][7] =
+                        order[2] - size / order[0];
+                    }
+                  }
+                }
+                tradesByMarketChanged = true;
+                if (!Array.isArray(temptradesByMarket[marketKey])) {
+                  temptradesByMarket[marketKey] = [];
+                }
+                let amountIn = parseInt(log['data'].slice(2, 34), 16);
+                let amountOut = parseInt(log['data'].slice(34, 66), 16);
+                let buy = parseInt(log['data'].slice(66, 67), 16);
+                let price = parseInt(log['data'].slice(98, 130), 16);
+                temptradesByMarket[marketKey].unshift([
+                  amountIn,
+                  amountOut,
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
+                ]);
+                if (!Array.isArray(temptrades[marketKey])) {
+                  temptrades[marketKey] = [];
+                }
+                temptrades[marketKey].unshift([
+                  amountIn,
+                  amountOut,
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
+                  parseInt(log['data'].slice(67, 98), 16),
+                ])
+                if (
+                  log['topics'][1].slice(26) ==
+                  address?.slice(2).toLowerCase()
+                ) {
+                  tradeHistoryChanged = true;
+                  temptradehistory.push([
+                    amountIn,
+                    amountOut,
+                    buy,
+                    price,
+                    marketKey,
+                    log['transactionHash'],
+                    _timestamp,
+                    1,
+                  ])
+                  let quoteasset =
+                    markets[marketKey].quoteAddress;
+                  let baseasset =
+                    markets[marketKey].baseAddress;
+                  let popupAmountIn = customRound(
+                    amountIn /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .quoteDecimals
+                        : markets[marketKey]
+                          .baseDecimals,
+                    ),
+                    3,
+                  );
+                  let popupAmountOut = customRound(
+                    amountOut /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .baseDecimals
+                        : markets[marketKey]
+                          .quoteDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'swap',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    popupAmountIn,
+                    popupAmountOut,
+                    '',
+                    '',
+                  );
+                }
+              }
+              if (tradesByMarketChanged) {
+                setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+                  const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+                  const updatedBars = [...existingBars];
+                  let rawVolume;
+                  if (marketKey && Array.isArray(temptrades?.[marketKey])) {
+                    const barSizeSec =
+                      existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
+                        existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+                          existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+                              existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+                                existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+                                    5 * 60;
+                    const priceFactor = Number(markets[marketKey].priceFactor);
+                    for (const lastTrade of temptrades[marketKey]) {
+                      const lastBarIndex = updatedBars.length - 1;
+                      const lastBar = updatedBars[lastBarIndex];
+  
+                      let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      rawVolume =
+                        (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
+                        10 ** Number(markets[marketKey].quoteDecimals);
+  
+                      const tradeTimeSec = lastTrade[6];
+                      const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+                      const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
+                      if (flooredTradeTimeSec === lastBarTimeSec) {
+                        updatedBars[lastBarIndex] = {
+                          ...lastBar,
+                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                          close: closePrice,
+                          volume: lastBar.volume + rawVolume,
+                        };
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            ...lastBar,
+                            high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                            low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                            close: closePrice,
+                            volume: lastBar.volume + rawVolume,
+                          });
+                        }
+                      } else {
+                        updatedBars.push({
+                          time: flooredTradeTimeSec * 1000,
+                          open: lastBar.close ?? openPrice,
+                          high: Math.max(lastBar.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          close: closePrice,
+                          volume: rawVolume,
+                        });
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            time: flooredTradeTimeSec * 1000,
+                            open: lastBar.close ?? openPrice,
+                            high: Math.max(lastBar.close ?? openPrice, closePrice),
+                            low: Math.min(lastBar.close ?? openPrice, closePrice),
+                            close: closePrice,
+                            volume: rawVolume,
+                          });
+                        }
+                      }
+                    }
+                  }
+                  setMarketsData((marketsData) =>
+                    marketsData.map((market) => {
+                      if (!market) return;
+                      const marketKey = market?.marketKey.replace(
+                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                        ethticker
+                      );
+                      const newTrades = temptrades?.[marketKey]
+                      if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+                      const firstKlineOpen: number =
+                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
+                          ? Number(market?.series[0].open)
+                          : 0;
+                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                      let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+                      let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
+                      const volume = newTrades.reduce((sum: number, trade: any) => {
+                        if (high && trade[3] / Number(market.priceFactor) > high) {
+                          high = trade[3] / Number(market.priceFactor)
+                        }
+                        if (low && trade[3] / Number(market.priceFactor) < low) {
+                          low = trade[3] / Number(market.priceFactor)
+                        }
+                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                        return sum + amount;
+                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+  
+                      return {
+                        ...market,
+                        volume: formatCommas(
+                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                        ),
+                        currentPrice: formatSubscript(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        ),
+                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                        priceChangeAmount: currentPriceRaw - firstKlineOpen,
+                        ...(high != null && {
+                          high24h: formatSubscript(
+                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          )
+                        }),
+                        ...(low != null && {
+                          low24h: formatSubscript(
+                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          )
+                        })
+                      };
+                    })
+                  );
+                  return [updatedBars, existingIntervalLabel, existingShowOutliers];
+                });
+              }
+            }
+            if (tradeHistoryChanged) {
+              settradehistory(temptradehistory)
+            }
+            if (tradesByMarketChanged) {
+              settradesByMarket(temptradesByMarket)
+            }
+            if (canceledOrdersChanged) {
+              setcanceledorders(tempcanceledorders)
+            }
+            if (ordersChanged) {
+              setorders(temporders)
+            }
+            return tempset;
+          })
         }
       }
 
       wsRef.current.onclose = () => {
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+        if (wsRef.current) {
+          wsRef.current.close();
+          wsRef.current = null;
+        }
         reconnectIntervalRef.current = setTimeout(() => {
           connectWebSocket();
-        }, 100);
+        }, 500);
       };
 
       wsRef.current.onerror = (error) => {
@@ -4046,16 +4716,22 @@ function App() {
       };
     };
 
-    // connectWebSocket();
+    connectWebSocket();
 
     return () => {
       liveStreamCancelled = true;
       isAddressInfoFetching = false;
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
       if (reconnectIntervalRef.current) {
         clearTimeout(reconnectIntervalRef.current);
+        reconnectIntervalRef.current = null;
       }
     };
   }, [activechain, address]);
@@ -12623,7 +13299,7 @@ function App() {
               }
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
+                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12637,7 +13313,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
+                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12651,7 +13327,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
-                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (gasLimitData ?? 0n) * 1100n / 1000n);
+                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (rpcQueryData?.gasEstimate ?? 0n) * 1100n / 1000n);
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12678,7 +13354,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12695,7 +13371,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -12808,7 +13484,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12825,7 +13501,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -12839,7 +13515,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12856,7 +13532,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -12874,7 +13550,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12891,7 +13567,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -13004,7 +13680,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -13021,7 +13697,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -13035,7 +13711,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -13052,7 +13728,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -17882,7 +18558,7 @@ function App() {
                 waitForTxReceipt={waitForTxReceipt}
                 isVertDragging={isVertDragging}
                 isOrderCenterVisible={isOrderCenterVisible}
-                onLimitPriceUpdate={handleLimitPriceUpdate}
+                onLimitPriceUpdate={setCurrentLimitPrice}
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}
                 marketsData={marketsData}
