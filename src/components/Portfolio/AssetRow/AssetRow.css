@@ -88,12 +88,13 @@
 }
 
 .asset-price-change {
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   margin-top: -2px;
+  letter-spacing: -0.3px;
 }
 
 .asset-price-change.positive {
-  color: #29ec97;
+  color: #d8dcff;
 }
 
 .asset-price-change.negative {

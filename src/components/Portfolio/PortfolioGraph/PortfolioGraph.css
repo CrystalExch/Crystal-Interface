@@ -57,7 +57,7 @@
 }
 
 .time-period-button.active {
-  color: #ffffffc9;
+  color: #e7e6f9c9;
   cursor: default;
 }
 
@@ -67,7 +67,7 @@
 
 .time-period-sliding-indicator {
   cursor: pointer;
-  background-color: #ffffff0d;
+  background-color: #9399eb0d;
   border-radius: 3px;
   bottom: 6px;
   height: 19px;

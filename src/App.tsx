@@ -18928,10 +18928,9 @@ function App() {
       chartDays={chartDays}
       setChartDays={setChartDays}
       totalClaimableFees={totalClaimableFees}
-      claimableFees={claimableFees} // Add this prop
+      claimableFees={claimableFees} 
       refLink={refLink}
-      setRefLink={setRefLink} // Add this prop
-      setShowRefModal={setShowReferralsModal}
+      setRefLink={setRefLink} 
       filter={filter}
       setFilter={setFilter}
       onlyThisMarket={onlyThisMarket}

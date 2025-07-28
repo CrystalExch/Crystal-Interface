@@ -62,6 +62,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [claimableLoading, setClaimableLoading] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
+  const [isRemovingCode, setIsRemovingCode] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEnterCode, setShowEnterCode] = useState(false);
@@ -69,6 +70,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const [enterRefCode, setEnterRefCode] = useState('');
   const [error, setError] = useState('');
   const [isBlurred, setIsBlurred] = useState(false);
+  const [isEditingCode, setIsEditingCode] = useState(false);
 
   const getDisplayAddress = (addr: string) =>
     addr && addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
@@ -180,7 +182,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const handleCreateRef = async () => {
     if (account.connected && account.chainId === activechain) {
       if (!isValidInput(newRefCode)) return false;
-      
+
       try {
         setIsSigning(true);
         let lookup = (await readContracts(config, {
@@ -230,6 +232,8 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const handleSetRef = async (used: string) => {
     if (account.connected && account.chainId === activechain) {
       let lookup;
+      const isRemoving = used === '';
+
       if (used !== '') {
         lookup = (await readContracts(config, {
           contracts: [
@@ -249,7 +253,12 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
       }
 
       try {
-        setIsSigning(true);
+        if (isRemoving) {
+          setIsRemovingCode(true);
+        } else {
+          setIsSigning(true);
+        }
+
         const hash = await sendUserOperationAsync({
           uo: {
             target: settings.chainConfig[activechain].referralManager,
@@ -266,10 +275,13 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         setUsedRefAddress(used === '' ? '0x0000000000000000000000000000000000000000' : lookup?.[0].result);
         setShowEnterCode(false);
         setEnterRefCode('');
+        setIsEditingCode(false);
         setIsSigning(false);
+        setIsRemovingCode(false);
         return true;
       } catch (error) {
         setIsSigning(false);
+        setIsRemovingCode(false);
         return false;
       }
     } else {
@@ -310,6 +322,21 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     } else {
       !account.connected ? setpopup(4) : setChain();
     }
+  };
+
+  // Updated handlers for opening modals
+  const handleOpenEnterCode = () => {
+    setEnterRefCode('');
+    setIsEditingCode(false);
+    setShowEnterCode(true);
+    setError('');
+  };
+
+  const handleOpenEditCode = () => {
+    setEnterRefCode(usedRefLink);
+    setIsEditingCode(true);
+    setShowEnterCode(true);
+    setError('');
   };
 
   return (
@@ -382,13 +409,9 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
               </div>
             ))
           ) : (
-            Object.entries(claimableFees).slice(0, 3).map(([token, value]) => (
+            Object.entries(claimableFees).map(([token, value]) => (
               <div key={token} className="token-row">
-                <img
-                  className="token-icon"
-                  src={tokenList.find((t: any) => t.ticker === token)?.image || ''}
-                  alt={token}
-                />
+              
                 <span className="token-symbol">{token}</span>
                 <span className={`token-amount ${isBlurred ? 'blurred' : ''}`}>
                   {value ? customRound(value as number, 3) : '0.00'}
@@ -445,7 +468,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                   className={`ref-copy-icon ${copySuccess ? 'hidden' : ''}`}
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#aaaecf"
+                  stroke="#aaaecf90"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -457,7 +480,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                   className={`ref-check-icon ${copySuccess ? 'visible' : ''}`}
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#aaaecf"
+                  stroke="#aaaecf90"
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -477,7 +500,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                   );
                 }}
               >
-                <Share2 size={12} />
+                <Share2 color={"#aaaecf90"} size={12} />
               </button>
             </div>
           </div>
@@ -498,7 +521,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             <span className="current-code">{usedRefLink}</span>
             <button
               className="change-btn"
-              onClick={() => setShowEnterCode(true)}
+              onClick={handleOpenEditCode}
             >
               Change
             </button>
@@ -506,7 +529,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         ) : (
           <button
             className="enter-code-btn"
-            onClick={() => setShowEnterCode(true)}
+            onClick={handleOpenEnterCode}
           >
             Enter Code
           </button>
@@ -522,7 +545,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                 {refLink ? 'Customize' : 'Create'}
               </h2>
               <button className="custom-modal-close" onClick={() => setShowCreateModal(false)}>
-                <img className="close-button-icon"src={closebutton}/>
+                <img className="close-button-icon" src={closebutton} />
               </button>
             </div>
             {refLink ? (
@@ -530,7 +553,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             ) : (
               <h3 className="ref-popup-subtitle">Create your personalized referral code</h3>
             )}
-            
+
             <div className="input-wrapper">
               <input
                 className={`custom-modal-input ${error ? 'has-error' : ''}`}
@@ -543,14 +566,12 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             </div>
             {error && <div className="input-error">{error}</div>}
             <div className="referral-preview">
-              Your Link
-              <br />
               <span className="ref-link-structure">
                 https://app.crystal.exchange?ref={' '}
                 <div className="ref-url">{newRefCode}</div>
               </span>
             </div>
-            
+
             <button
               className="customize-button"
               onClick={handleCreateRef}
@@ -573,42 +594,47 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         </div>
       )}
 
-      {/* Enter Code Modal - CustomLinkModal Style */}
       {showEnterCode && (
         <div className="custom-modal-overlay" onClick={() => setShowEnterCode(false)}>
           <div className="custom-modal-container" onClick={(e) => e.stopPropagation()}>
             <div className="custom-modal-header">
-              <h2 className="ref-popup-title">Enter Referral Code</h2>
+              <h2 className="ref-popup-title">
+                {isEditingCode ? 'Edit Ref Code' : 'Enter Referral Code'}
+              </h2>
               <button className="custom-modal-close" onClick={() => setShowEnterCode(false)}>
-                ×
+                <img className="close-button-icon" src={closebutton} />
               </button>
             </div>
-            <h3 className="ref-popup-subtitle">Enter a referral code to get fee discounts</h3>
-            
+            <h3 className="ref-popup-subtitle">
+              {isEditingCode
+                ? 'Edit your current referral code'
+                : 'Enter a referral code to get fee discounts'
+              }
+            </h3>
+
             <div className="input-wrapper">
               <input
                 className={`custom-modal-input ${error ? 'has-error' : ''}`}
                 value={enterRefCode}
                 onChange={handleEnterRefCodeChange}
-                placeholder="Enter referral code"
+                placeholder={isEditingCode ? 'Edit referral code' : 'Enter referral code'}
                 autoFocus
               />
             </div>
             {error && <div className="input-error">{error}</div>}
-            
+
             <div className="modal-actions-custom">
               <button
                 className="customize-button"
                 onClick={() => handleSetRef(enterRefCode)}
-                disabled={isSigning || !enterRefCode}
+                disabled={isSigning || !enterRefCode || (isEditingCode && enterRefCode === usedRefLink)}
               >
                 {isSigning ? (
                   <>
                     <div className="spinner"></div>
-                    Sign Transaction
                   </>
                 ) : account.connected && account.chainId === activechain ? (
-                  'Set Code'
+                  isEditingCode ? 'Update Code' : 'Set Code'
                 ) : account.connected ? (
                   `Switch to ${settings.chainConfig[activechain]?.name || 'Network'}`
                 ) : (
@@ -619,9 +645,15 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
                 <button
                   className="remove-button"
                   onClick={() => handleSetRef('')}
-                  disabled={isSigning}
+                  disabled={isRemovingCode}
                 >
-                  {isSigning ? 'Signing...' : 'Remove Code'}
+                  {isRemovingCode ? (
+                    <>
+                      <div className="spinner"></div>
+                    </>
+                  ) : (
+                    'Remove Code'
+                  )}
                 </button>
               )}
             </div>
