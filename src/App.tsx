@@ -3,8 +3,7 @@ import {
   getBlockNumber,
   readContracts,
   waitForTransactionReceipt,
-  getTransactionCount,
-  signTypedData
+  getTransactionCount
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -35,6 +34,7 @@ import {
   useAlchemyAccountContext,
   useUser,
   AuthCard,
+  useSignTypedData,
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
@@ -170,6 +170,7 @@ function App() {
     client,
     waitForTxn: true,
   });
+  const { signTypedDataAsync } = useSignTypedData({client})
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -1045,7 +1046,7 @@ function App() {
 
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
-
+  const [mainWalletBalances, setMainWalletBalances] = useState<any>({})
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
 
   const scrollToToken = (index: number) => {
@@ -1573,7 +1574,7 @@ function App() {
     }, 300);
   };
 
-  // data loop, reuse to eventually have every single call method in this loop
+  // data loop, reuse to have every single rpc call method in this loop
   const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
     queryKey: [
       'crystal_rpc_reads',
@@ -1752,17 +1753,29 @@ function App() {
       ]
 
       const oneCTDepositGroup: any = [
-
+        {
+          disabled: !scaAddress,
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [
+            scaAddress as `0x${string}`,
+            Object.values(tokendict).map((t: any) => t.address)
+          ]
+        },
       ]
 
       const groups: any = {
-        mainGroup,
-        oneCTDepositGroup
+        mainGroup
       };
       
       if (address && Date.now() - lastRefGroupFetch.current >= 9500) {
         lastRefGroupFetch.current = Date.now();
         groups.refGroup = refGroup;
+      }
+
+      if (popup == 25) {
+        groups.oneCTDepositGroup = oneCTDepositGroup;
       }
 
       const callData: any = []
@@ -2483,6 +2496,7 @@ function App() {
   useLayoutEffect(() => {
     const data = rpcQueryData?.readContractData?.mainGroup;
     const refData = rpcQueryData?.readContractData?.refGroup;
+    const oneCTDepositData = rpcQueryData?.readContractData?.oneCTDepositGroup;
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
         if (data?.[1]?.result != null) {
@@ -2808,6 +2822,15 @@ function App() {
           setTotalClaimableFees(totalFees || 0);
           return newFees;
         });
+      }
+      if (oneCTDepositData || !scaAddress) {
+        let tempbalances = mainWalletBalances;
+        tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
+          const balance = oneCTDepositData[0].result?.[i] || BigInt(0);
+          acc[token.address] = balance;
+          return acc;
+        }, {});
+        setMainWalletBalances(tempbalances);
       }
     } else {
       setStateIsLoading(true);
@@ -9280,18 +9303,21 @@ function App() {
                         </div> : <button
                         className="reset-tab-button"
                         onClick={async () => {
-                          setOneCTSigner(keccak256(await signTypedData(config, {types: {
+                          setOneCTSigner(keccak256(await signTypedDataAsync({typedData: {types: {
                             createCrystalOneCT: [
+                              { name: 'warning', type: 'string' },
                               { name: 'version', type: 'string' },
                               { name: 'account', type: 'uint256' },
                             ],
                           },
                           primaryType: 'createCrystalOneCT',
                           message: {
+                            warning: 'domain should match crystal.exchange',
                             version: 'Crystal v0.0.1 Testnet',
                             account: 1n,
-                          }})))
-                          setpopup(3);
+                          }}})))
+                          setpopup(25);
+                          refetch();
                         }}
                       >
                         {t('createWallet')}
@@ -11653,7 +11679,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
         {popup === 23 ? (
           <div className="modal-overlay">
             <div className="modal-content vault-action-modal" ref={popupref}>
@@ -12224,7 +12249,383 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 25 ? ( // send popup
+          <div ref={popupref} className="send-popup-container">
+            <div className="send-popup-background">
+              <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
 
+                <div className="sendbutton1container">
+                  <div className="send-Send">{t('send')}</div>
+                  <button
+                    className="send-button1"
+                    onClick={() => {
+                      setpopup(10);
+                    }}
+                  >
+                    <img className="send-button1pic" src={tokendict[sendTokenIn].image} />
+                    <span>{tokendict[sendTokenIn].ticker || '?'}</span>
+                  </button>
+
+                </div>
+                <div className="sendinputcontainer">
+                  <input
+                    inputMode="decimal"
+                    className={`send-input ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    onCompositionStart={() => {
+                      setIsComposing(true);
+                    }}
+                    onCompositionEnd={(
+                      e: React.CompositionEvent<HTMLInputElement>,
+                    ) => {
+                      setIsComposing(false);
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.currentTarget.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.currentTarget.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.currentTarget.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.currentTarget.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    onChange={(e) => {
+                      if (isComposing) {
+                        setSendInputAmount(e.target.value);
+                        return;
+                      }
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.target.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.target.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.target.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.target.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
+                    value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
+                    autoFocus={!(windowWidth <= 1020)}
+                  />
+                </div>
+                <div className="send-balance-wrapper">
+                  <div className="send-balance-max-container">
+                    <div className="send-balance1">
+                      <img src={walleticon} className="send-balance-wallet-icon" />{' '}
+                      {formatDisplayValue(mainWalletBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
+                    </div>
+                    <div
+                      className="send-max-button"
+                      onClick={() => {
+                        if (mainWalletBalances[sendTokenIn] != BigInt(0)) {
+                          let amount =
+                            (sendTokenIn == eth && !client)
+                              ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : mainWalletBalances[sendTokenIn];
+                          setSendAmountIn(amount);
+                          setSendInputAmount(
+                            customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
+                          );
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              amount,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }}
+                    >
+                      {t('max')}
+                    </div>
+                  </div>
+                  <div
+                    className="send-usd-switch-wrapper"
+                    onClick={() => {
+                      if (displayMode === 'usd') {
+                        setDisplayMode('token');
+                        if (parseFloat(sendUsdValue.replace(/^\$|,/g, '')) == 0) {
+                          setSendInputAmount('');
+                        }
+                      } else {
+                        setDisplayMode('usd');
+                        if (parseFloat(sendInputAmount) == 0) {
+                          setSendUsdValue('');
+                        }
+                      }
+                    }}
+                  >
+                    <div className="send-usd-value">
+                      {displayMode === 'usd'
+                        ? `${customRound(Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn].decimals), 3)} ${tokendict[sendTokenIn].ticker}`
+                        : sendAmountIn === BigInt(0)
+                          ? '$0.00'
+                          : formatUSDDisplay(
+                            calculateUSDValue(
+                              sendAmountIn,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            )
+                          )}
+                    </div>
+                    <img src={sendSwitch} className="send-arrow" />
+                  </div>
+                </div>
+              </div>
+              <div className="sendaddressbg">
+                <div className="send-To">{t('to')}</div>
+                <div className="send-address-input-container">
+                  <input
+                    className="send-output"
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+                        setrecipient(e.target.value);
+                      }
+                    }}
+                    value={recipient}
+                    placeholder={t('enterWalletAddress')}
+                  />
+                  <button
+                    className="address-paste-button"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+                          setrecipient(text);
+                        }
+                      } catch (err) {
+                      }
+                    }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button
+                className={`send-swap-button ${isSigning ? 'signing' : ''}`}
+                onClick={async () => {
+                  if (
+                    connected &&
+                    userchain === activechain
+                  ) {
+                    let hash: any;
+                    setIsSigning(true)
+                    if (client) {
+                      txPending.current = true
+                    }
+                    try {
+                      if (sendTokenIn == eth) {
+                        hash = await sendUserOperationAsync({ uo: sendeth(
+                          recipient as `0x${string}`,
+                          sendAmountIn,
+                        )});
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          eth,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      } else {
+                        hash = await sendUserOperationAsync({ uo: sendtokens(
+                          sendTokenIn as `0x${string}`,
+                          recipient as `0x${string}`,
+                          sendAmountIn,
+                        )});
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          sendTokenIn,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) /
+                            10 ** Number(tokendict[sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      }
+                      setSendUsdValue('')
+                      setSendInputAmount('');
+                      setSendAmountIn(BigInt(0));
+                      setSendPopupButton(0);
+                      setSendPopupButtonDisabled(true);
+                      setIsSigning(false)
+                      await refetch()
+                      txPending.current = false
+                    } catch (error) {
+                      if (!(error instanceof TransactionExecutionError)) {
+                        newTxPopup(
+                          hash.hash,
+                          "sendFailed",
+                          sendTokenIn === eth ? eth : sendTokenIn,
+                          "",
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn === eth ? eth : sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          "",
+                          recipient,
+                        );
+                      }
+                    } finally {
+                      txPending.current = false
+                      setIsSigning(false)
+                    }
+                  } else {
+                    !connected
+                      ? setpopup(4)
+                      : handleSetChain()
+                  }
+                }}
+                disabled={sendPopupButtonDisabled || isSigning}
+              >
+                {isSigning ? (
+                  <div className="button-content">
+                    <div className="loading-spinner" />
+                    {client ? t('') : t('signTransaction')}
+                  </div>
+                ) : !connected ? (
+                  t('connectWallet')
+                ) : sendPopupButton == 0 ? (
+                  t('enterAmount')
+                ) : sendPopupButton == 1 ? (
+                  t('enterWalletAddress')
+                ) : sendPopupButton == 2 ? (
+                  t('send')
+                ) : sendPopupButton == 3 ? (
+                  t('insufficient') +
+                  (tokendict[sendTokenIn].ticker || '?') +
+                  ' ' +
+                  t('bal')
+                ) : sendPopupButton == 4 ? (
+                  `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+                ) : (
+                  t('connectWallet')
+                )}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
