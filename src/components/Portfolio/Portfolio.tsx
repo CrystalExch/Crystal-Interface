@@ -1,8 +1,5 @@
-import { Eye, Share2, TrendingUp, Users, Zap, Gem, Search } from 'lucide-react';
+import { Eye, Search, Eye as EyeIcon } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { readContracts } from '@wagmi/core';
-import { encodeFunctionData } from 'viem';
 
 import Overlay from '../loading/LoadingComponent';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
@@ -10,10 +7,8 @@ import OrderCenter from '../OrderCenter/OrderCenter';
 import ReferralSidebar from './ReferralSidebar/ReferralSidebar';
 
 import { useSharedContext } from '../../contexts/SharedContext';
-import customRound from '../../utils/customRound';
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import { settings } from '../../settings';
-import { config } from '../../wagmi';
 
 import './Portfolio.css';
 
@@ -80,6 +75,13 @@ interface PortfolioProps {
   client: any;
   activechain: any;
   markets: any;
+  isSpectating?: boolean;
+  spectatedAddress?: string;
+  onStartSpectating?: (address: string) => void;
+  onStopSpectating?: () => void;
+  originalAddress?: string;
+  onSpectatingChange?: (isSpectating: boolean, address: string | null) => void;
+
 }
 
 type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
@@ -109,7 +111,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   claimableFees,
   refLink,
   setRefLink,
-  setShowRefModal,
   filter,
   setFilter,
   onlyThisMarket,
@@ -127,6 +128,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
   client,
   activechain,
   markets,
+  isSpectating: propIsSpectating,
+  spectatedAddress: propSpectatedAddress,
+  onStartSpectating,
+  onStopSpectating,
+  originalAddress,
+  onSpectatingChange,
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
   const [activeSection, setActiveSection] = useState<
@@ -137,14 +144,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     column: 'balance',
     direction: 'desc',
   });
-  const [orderCenterHeight, setOrderCenterHeight] = useState(() => {
-    if (window.innerHeight > 1080) return 363.58;
-    if (window.innerHeight > 960) return 322.38;
-    if (window.innerHeight > 840) return 281.18;
-    if (window.innerHeight > 720) return 239.98;
-    return 198.78;
-  });
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1020);
+
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
@@ -170,6 +170,76 @@ const Portfolio: React.FC<PortfolioProps> = ({
     useSharedContext();
 
   const activeOrders = orders.length;
+  const [orderCenterHeight, setOrderCenterHeight] = useState(() => {
+    if (window.innerHeight > 1080) return 363.58;
+    if (window.innerHeight > 960) return 322.38;
+    if (window.innerHeight > 840) return 281.18;
+    if (window.innerHeight > 720) return 239.98;
+    return 198.78;
+  });
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 1020);
+
+  const [internalIsSpectating, setInternalIsSpectating] = useState(false);
+  const [internalSpectatedAddress, setInternalSpectatedAddress] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+
+  const isSpectating = propIsSpectating !== undefined ? propIsSpectating : internalIsSpectating;
+  const spectatedAddress = propSpectatedAddress !== undefined ? propSpectatedAddress : internalSpectatedAddress;
+
+  const getActiveAddress = () => {
+    return isSpectating ? spectatedAddress : address;
+  };
+
+  const isValidAddress = (addr: string) => {
+    return /^0x[a-fA-F0-9]{40}$/.test(addr);
+  };
+
+  const handleConfirmSpectating = () => {
+    if (searchInput.trim() && isValidAddress(searchInput.trim())) {
+      if (onStartSpectating) {
+        onStartSpectating(searchInput.trim());
+      } else {
+        setInternalSpectatedAddress(searchInput.trim());
+        setInternalIsSpectating(true);
+      }
+
+      if (onSpectatingChange) {
+        onSpectatingChange(true, searchInput.trim());
+      }
+
+      refetch(searchInput.trim());
+    } else {
+      alert('Please enter a valid wallet address');
+    }
+  };
+
+  const isButtonDisabled = !isSpectating && (!searchInput.trim() || !isValidAddress(searchInput.trim()));
+
+  const clearSpectating = () => {
+    if (onStopSpectating) {
+      onStopSpectating();
+    } else {
+      setInternalIsSpectating(false);
+      setInternalSpectatedAddress('');
+    }
+
+    if (onSpectatingChange) {
+      onSpectatingChange(false, null);
+    }
+
+    setSearchInput('');
+    refetch(originalAddress || address);
+  };
+
+  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(e.target.value);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleConfirmSpectating();
+    }
+  };
 
   const getTimeRangeText = (timeRange: string) => {
     switch (timeRange) {
@@ -221,15 +291,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
       default:
         return (
           <div className="portfolio-layout-with-referrals">
-            {/* Referral Sidebar */}
             <ReferralSidebar
               tokenList={tokenList}
               markets={markets}
               router={router}
-              address={address}
+              usedRefAddress={usedRefAddress as `0x${string}`}
+              address={getActiveAddress() as `0x${string}`}
               usedRefLink={usedRefLink}
               setUsedRefLink={setUsedRefLink}
-              usedRefAddress={usedRefAddress}
               setUsedRefAddress={setUsedRefAddress}
               totalClaimableFees={totalClaimableFees}
               claimableFees={claimableFees}
@@ -244,8 +313,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               client={client}
               activechain={activechain}
             />
-            
-            {/* Main Portfolio Content */}
+
             <div className="portfolio-left-column">
               <div className="graph-outer-container">
                 {portChartLoading ? (
@@ -254,9 +322,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   </div>
                 ) : (
                   <div className="graph-container">
-                    <span className="graph-label">{t("performance")}</span>
+                    <span className="graph-label">
+                      {isSpectating ? t("spectatingPerformance") : t("performance")}
+                    </span>
                     <PortfolioGraph
-                      address={address}
+                      address={getActiveAddress()}
                       colorValue={portfolioColorValue}
                       setColorValue={setPortfolioColorValue}
                       isPopup={false}
@@ -277,7 +347,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     tradehistory={tradehistory}
                     canceledorders={canceledorders}
                     router={router}
-                    address={address}
+                    address={getActiveAddress()}
                     trades={trades}
                     currentMarket={''}
                     orderCenterHeight={orderCenterHeight}
@@ -308,7 +378,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="account-stats-wrapper">
               <div className="controls-container">
                 <button
@@ -321,6 +391,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   </div>
                   Hide Balances
                 </button>
+
                 <button
                   className="control-button"
                   onClick={() => {
@@ -342,7 +413,26 @@ const Portfolio: React.FC<PortfolioProps> = ({
               <div
                 className={`account-summary-container ${percentage >= 0 ? 'positive' : 'negative'}`}
               >
-                <div className="account-header">{t("account")}</div>
+                <div className="account-header">
+                  {isSpectating ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <EyeIcon size={16} style={{ color: '#ff6b6b' }} />
+                      <span>SPECTATING</span>
+                    </div>
+                  ) : (
+                    t("account")
+                  )}
+                </div>
+                {isSpectating && (
+                  <div style={{
+                    fontSize: '12px',
+                    color: '#888',
+                    marginBottom: '8px',
+                    wordBreak: 'break-all'
+                  }}>
+                    {spectatedAddress.slice(0, 6)}...{spectatedAddress.slice(-4)}
+                  </div>
+                )}
                 <div className="total-value-container">
                   <span className={`total-value ${isBlurred ? 'blurred' : ''}`}>
                     ${formatCommas(typeof totalAccountValue === 'number' ? totalAccountValue.toFixed(2) : '0.00')}
@@ -366,7 +456,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
               </div>
               <div className="trading-stats-container">
                 <div className="trading-stats-header">
-                  <span className="trading-stats-title">{t("tradingStats")}</span>
+                  <span className="trading-stats-title">
+                    {isSpectating ? t("spectatedTradingStats") : t("tradingStats")}
+                  </span>
                 </div>
                 <div className="stats-list">
                   <div className="stat-row">
@@ -375,7 +467,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `$${formatCommas(address ? totalVolume.toFixed(2) : '0.00')}`
+                        `$${formatCommas(getActiveAddress() ? totalVolume.toFixed(2) : '0.00')}`
                       )}
                     </span>
                   </div>
@@ -385,7 +477,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `$${formatCommas(address ? high.toFixed(2) : '0.00')}`
+                        `$${formatCommas(getActiveAddress() ? high.toFixed(2) : '0.00')}`
                       )}
                     </span>
                   </div>
@@ -395,7 +487,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `$${formatCommas(address ? low.toFixed(2) : '0.00')}`
+                        `$${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
                       )}
                     </span>
                   </div>
@@ -405,7 +497,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `${address ? activeOrders : 0}`
+                        `${getActiveAddress() ? activeOrders : 0}`
                       )}
                     </span>
                   </div>
@@ -447,14 +539,26 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Trenches
             </span>
           </div>
+          <div className="search-wallet-wrapper">
           <div className="portfolio-wallet-search-container">
             <Search size={16} className="search-icon" />
             <input
               type="text"
               placeholder="Search vaults..."
               className="portfolio-wallet-search-input"
+              value={searchInput}
+              onChange={handleSearchInputChange}
+              onKeyPress={handleKeyPress}
             />
           </div>
+           <button
+              className={`wallet-search-confirm-button ${isButtonDisabled ? 'disabled' : ''}`}
+              onClick={isSpectating ? clearSpectating : handleConfirmSpectating}
+              disabled={isButtonDisabled}
+            >
+              {isSpectating ? 'Stop Spectating' : 'Spectate'}
+            </button>
+            </div>
         </div>
         <div className="portfolio-content-container">
           {renderTabContent()}
@@ -465,44 +569,53 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return (
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
-        <div className="portfolio-tab-selector">
-          <span
-            className={`portfolio-tab-title ${activeTab === 'spot' ? 'active' : 'nonactive'}`}
-            onClick={() => setActiveTab('spot')}
-          >
-            Spot
-          </span>
-          <span
-            className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
-            onClick={() => setActiveTab('margin')}
-          >
-            Margin
-          </span>
-          <span
-            className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
-            onClick={() => setActiveTab('wallets')}
-          >
-            Wallets
-          </span>
-          <span
-            className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
-            onClick={() => setActiveTab('trenches')}
-          >
-            Trenches
-          </span>
+          <div className="portfolio-tab-selector">
+            <span
+              className={`portfolio-tab-title ${activeTab === 'spot' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('spot')}
+            >
+              Spot
+            </span>
+            <span
+              className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('margin')}
+            >
+              Margin
+            </span>
+            <span
+              className={`portfolio-tab-title ${activeTab === 'wallets' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('wallets')}
+            >
+              Wallets
+            </span>
+            <span
+              className={`portfolio-tab-title ${activeTab === 'trenches' ? 'active' : 'nonactive'}`}
+              onClick={() => setActiveTab('trenches')}
+            >
+              Trenches
+            </span>
+          </div>
+          <div className="search-wallet-wrapper">
+            <div className="portfolio-wallet-search-container">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search to track wallet..."
+                className="portfolio-wallet-search-input"
+                value={searchInput}
+                onChange={handleSearchInputChange}
+                onKeyPress={handleKeyPress}
+              />
+            </div>
+            <button
+              className={`wallet-search-confirm-button ${isButtonDisabled ? 'disabled' : ''}`}
+              onClick={isSpectating ? clearSpectating : handleConfirmSpectating}
+              disabled={isButtonDisabled}
+            >
+              {isSpectating ? 'Stop Spectating' : 'Spectate'}
+            </button>
+          </div>
         </div>
-        <div className="search-wallet-wrapper">
-          <div className="portfolio-wallet-search-container">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search to track wallet..."
-              className="portfolio-wallet-search-input"
-            />
-          </div>
-          <button className="wallet-search-confirm-button">Confirm</button>
-          </div>
-          </div>
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>

@@ -137,14 +137,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <span className="sidebar-label">{t('portfolio')}</span>
             </Link>
 
-            {/* <Link
-              to="/referrals"
-              className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
-            >
-              <img src={referrals} className="sidebar-icon" />
-              <span className="sidebar-label">{t('referrals')}</span>
-            </Link> */}
-
             <Link
               to="/leaderboard"
               className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
@@ -166,14 +158,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <img src={earn} className="sidebar-icon" />
             <span className="sidebar-label">{t('Earn')}</span>
           </Link>
-          <Link
-            to="/launchpad"
-            className={`page-mode-button ${path === '/launchpad' ? 'active' : ''}`}
-          >
-            <img src={launchpad} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Launchpad')}</span>
-          </Link>
-
           <Link
             to="/explorer"
             className={`page-mode-button ${path === '/explorer' ? 'active' : ''}`}

@@ -1915,3 +1915,56 @@
     display: flex;
     align-items: center;
 }
+
+
+
+.explorer-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: .5rem 1rem;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  background: rgb(6, 6, 6);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.explorer-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.explorer-app-title {
+  font-size: 1.25rem;
+  color: #d9dbf6;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.explorer-header-right {
+  display: flex;
+  align-items: center;
+}
+
+.launch-token-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0.25rem .75rem;
+  border: none;
+  background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  color: #0f0f12;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 
+              inset 0 -1px 1px rgba(0, 0, 0, 0.45), 
+              0 2px 8px rgba(170, 174, 207, 0.1);
+  letter-spacing: -0.5px;
+}
+
+.launch-token-btn:hover {
+  filter: brightness(1.1);
+}
