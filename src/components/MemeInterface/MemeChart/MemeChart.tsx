@@ -71,7 +71,6 @@ interface MemeChartProps {
   data: any;
   selectedInterval: string;
   setSelectedInterval: (interval: string) => void;
-  setOverlayVisible: (visible: boolean) => void;
   realtimeCallbackRef: any;
 }
 
@@ -80,29 +79,14 @@ const MemeChart: React.FC<MemeChartProps> = ({
   data,
   selectedInterval,
   setSelectedInterval,
-  setOverlayVisible,
   realtimeCallbackRef,
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
-  const [lastPair, setLastPair] = useState('');
 
-  // Use advanced chart by default for meme tokens, but can be configured
-  const useAdvancedChart = settings.useAdv !== false; // Default to true for meme charts
-
-  useEffect(() => {
-    const currentPair = `${token.symbol}MON${selectedInterval}`;
-    setLastPair((lastPair) => {
-      if (currentPair !== lastPair && !useAdvancedChart) {
-        setLocalOverlayVisible(true);
-        setOverlayVisible(true);
-      }
-      return currentPair;
-    });
-  }, [token.symbol, selectedInterval, useAdvancedChart, setOverlayVisible]);
+  const useAdvancedChart = settings.useAdv !== false;
 
   const handleOverlayChange = (visible: boolean) => {
     setLocalOverlayVisible(visible);
-    setOverlayVisible(visible);
   };
 
   return (
@@ -125,7 +109,6 @@ const MemeChart: React.FC<MemeChartProps> = ({
               handleTimeChange={setSelectedInterval}
             />
           </div>
-          {/* Basic chart component would go here if needed */}
           <div className="meme-basic-chart-container">
             <div className="meme-chart-placeholder">
               <span>Basic Chart View (Not Implemented)</span>
@@ -134,7 +117,6 @@ const MemeChart: React.FC<MemeChartProps> = ({
         </>
       )}
       
-      {/* Loading overlay */}
       <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
     </div>
   );

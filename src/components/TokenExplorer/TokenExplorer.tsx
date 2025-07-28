@@ -298,7 +298,7 @@ const Tooltip: React.FC<{
     );
 };
 const calculateBondingPercentage = (marketCap: number) => {
-    const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
+    const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
     return bondingPercentage;
 };
 const TokenRow = React.memo<{

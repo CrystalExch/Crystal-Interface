@@ -1,6 +1,5 @@
-/* Base container styling */
 .meme-chartwrapper {
-  background: rgb(6,6,6);
+  background: rgb(6, 6, 6);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -10,7 +9,6 @@
   position: relative;
 }
 
-/* Chart options header */
 .meme-chart-options {
   align-items: center;
   display: flex;
@@ -22,7 +20,6 @@
   position: relative;
 }
 
-/* UTC Clock styling */
 .meme-utc-clock {
   display: flex;
   align-items: center;
@@ -42,7 +39,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Timeframe selector styling */
 .meme-timeframe-selector {
   display: flex;
   gap: 2px;
@@ -73,7 +69,7 @@
 
 .meme-timeframe-button.active {
   background: #aaaecf;
-  color: rgb(6,6,6);
+  color: rgb(6, 6, 6);
   font-weight: 600;
 }
 
@@ -81,14 +77,13 @@
   outline: none;
 }
 
-/* Advanced chart container - inherit from main styling */
 .meme-chartwrapper .advanced-chart-container {
-  background-color: rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
   flex-grow: 1;
   position: relative;
 }
 
-.meme-chartwrapper .advanced-chart-container > div {
+.meme-chartwrapper .advanced-chart-container>div {
   height: 100%;
   left: 0;
   position: absolute;
@@ -96,9 +91,8 @@
   width: 100%;
 }
 
-/* Basic chart container (fallback) */
 .meme-basic-chart-container {
-  background-color: rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
   flex-grow: 1;
   position: relative;
   display: flex;
@@ -113,7 +107,6 @@
   opacity: 0.6;
 }
 
-/* Ensure proper font inheritance for TradingView elements */
 .meme-chartwrapper .chart-page,
 .meme-chartwrapper .tv-chart-container,
 .meme-chartwrapper .chart-widget,
@@ -121,37 +114,34 @@
   font-family: 'Funnel Display', sans-serif !important;
 }
 
-/* Dropdown interaction fix */
 body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-container {
   pointer-events: none;
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .meme-chart-options {
     padding: 0px 8px;
   }
-  
+
   .meme-timeframe-button {
     font-size: 10px;
     padding: 3px 6px;
     min-width: 24px;
   }
-  
+
   .meme-utc-clock {
     font-size: 11px;
   }
 }
 
-/* Dark theme specifics for meme charts */
 .meme-chartwrapper.theme-dark {
-  --tv-color-platform-background: rgb(6,6,6);
-  --tv-color-pane-background: rgb(6,6,6);
+  --tv-color-platform-background: rgb(6, 6, 6);
+  --tv-color-pane-background: rgb(6, 6, 6);
   --tv-color-toolbar-button-background-hover: rgb(255 255 255 / 10%);
   --tv-color-toolbar-button-background-expanded: rgb(255 255 255 / 8%);
   --tv-color-toolbar-button-background-active: rgb(255 255 255 / 8%);
   --tv-color-toolbar-button-background-active-hover: rgb(255 255 255 / 12%);
-  --tv-color-popup-background: rgb(6,6,6);
+  --tv-color-popup-background: rgb(6, 6, 6);
   --tv-color-popup-element-text: #aaaecf;
   --tv-color-popup-element-background-active: #aaaecf;
 }
