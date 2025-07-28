@@ -2822,10 +2822,10 @@ function App() {
           return newFees;
         });
       }
-      if (oneCTDepositData || !scaAddress) {
+      if (oneCTDepositData?.[0]?.result || !scaAddress) {
         let tempbalances = mainWalletBalances;
         tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
-          const balance = oneCTDepositData[0].result?.[i] || BigInt(0);
+          const balance = oneCTDepositData?.[0]?.result?.[i] || BigInt(0);
           acc[token.address] = balance;
           return acc;
         }, {});
@@ -9304,14 +9304,12 @@ function App() {
                         onClick={async () => {
                           setOneCTSigner(keccak256(await signTypedDataAsync({typedData: {types: {
                             createCrystalOneCT: [
-                              { name: 'warning', type: 'string' },
                               { name: 'version', type: 'string' },
                               { name: 'account', type: 'uint256' },
                             ],
                           },
                           primaryType: 'createCrystalOneCT',
                           message: {
-                            warning: 'domain should match crystal.exchange',
                             version: 'Crystal v0.0.1 Testnet',
                             account: 1n,
                           }}})))
