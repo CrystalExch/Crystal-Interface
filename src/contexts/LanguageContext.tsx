@@ -523,6 +523,8 @@ export const translations: any = {
     'viewOrderHistoryTab': 'View order history tab',
     'resetKeybinds': 'Reset Keybinds',
     resetTab: 'Reset Tab',
+    spectatedTradingStats:'SPECTATED TRADING STATS',
+    spectatingPerformance: 'SPECTATING PERFORMANCE'
 
   },
   CN: {

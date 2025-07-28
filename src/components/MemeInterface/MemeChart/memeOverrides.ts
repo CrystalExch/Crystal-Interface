@@ -1,85 +1,69 @@
-// memeOverrides.ts - TradingView styling overrides for meme charts
-
 export const memeOverrides = {
-  // Background colors
-  'paneProperties.background': 'rgb(6,6,6)',
   'paneProperties.backgroundType': 'solid',
-  
-  // Grid lines
-  'paneProperties.vertGridProperties.color': 'rgba(255, 255, 255, 0.05)',
-  'paneProperties.horzGridProperties.color': 'rgba(255, 255, 255, 0.05)',
-  'paneProperties.vertGridProperties.style': 2,
-  'paneProperties.horzGridProperties.style': 2,
-  
-  // Price scale
-  'scalesProperties.backgroundColor': 'rgb(6,6,6)',
-  'scalesProperties.lineColor': 'rgba(255, 255, 255, 0.1)',
-  'scalesProperties.textColor': '#aaaecf',
-  'scalesProperties.fontSize': 11,
-  'scalesProperties.fontFamily': 'Funnel Display',
-  
-  // Time scale
-  'timeScale.backgroundColor': 'rgb(6,6,6)',
-  'timeScale.borderColor': 'rgba(255, 255, 255, 0.1)',
-  'timeScale.textColor': '#aaaecf',
-  'timeScale.fontSize': 11,
-  'timeScale.fontFamily': 'Funnel Display',
-  
-  // Candles
-  'mainSeriesProperties.candlestick.upColor': '#50f08d',
-  'mainSeriesProperties.candlestick.downColor': '#ef5151',
-  'mainSeriesProperties.candlestick.drawWick': true,
-  'mainSeriesProperties.candlestick.drawBorder': true,
-  'mainSeriesProperties.candlestick.borderColor': '#50f08d',
-  'mainSeriesProperties.candlestick.borderUpColor': '#50f08d',
-  'mainSeriesProperties.candlestick.borderDownColor': '#ef5151',
-  'mainSeriesProperties.candlestick.wickUpColor': '#50f08d',
-  'mainSeriesProperties.candlestick.wickDownColor': '#ef5151',
-  
-  // Volume
-  'volumePaneSize': 'medium',
-  'volume.volume.color.0': 'rgba(239, 81, 81, 0.4)',
-  'volume.volume.color.1': 'rgba(80, 240, 141, 0.4)',
-  'volume.volume.transparency': 60,
-  
-  // Crosshair
-  'crosshairProperties.color': '#aaaecf',
-  'crosshairProperties.width': 1,
-  'crosshairProperties.style': 2,
-  
-  // Legend
-  'legendProperties.showLegend': true,
-  'legendProperties.showStudyArguments': true,
-  'legendProperties.showStudyTitles': true,
-  'legendProperties.showStudyValues': true,
-  'legendProperties.showSeriesTitle': true,
-  'legendProperties.showSeriesOHLC': true,
-  
-  // Toolbar
-  'toolbar.backgroundColor': 'rgb(6,6,6)',
-  'toolbar.borderColor': 'rgba(255, 255, 255, 0.1)',
-  
-  // Meme-specific styling
-  'symbolWatermarkProperties.transparency': 90,
-  'symbolWatermarkProperties.color': '#aaaecf',
-  'symbolWatermarkProperties.fontFamily': 'Funnel Display',
-  
-  // Price line
-  'priceLineProperties.color': '#aaaecf',
-  'priceLineProperties.linewidth': 1,
-  'priceLineProperties.linestyle': 2,
-  
-  // Session breaks
-  'sessionProperties.backgroundColor': 'rgba(255, 255, 255, 0.02)',
-  'sessionProperties.backgroundTransparency': 95,
-  
-  // Border
-  'paneProperties.topMargin': 10,
-  'paneProperties.bottomMargin': 8,
-  'paneProperties.leftAxisProperties.autoScale': true,
-  'paneProperties.rightAxisProperties.autoScale': true,
-  
-  // Font overrides for all text
-  'font.fontFamily': 'Funnel Display',
-  'font.fontSize': 11,
+  'paneProperties.background': 'rgb(6,6,6)',
+
+  'mainSeriesProperties.candleStyle.upColor': '#50f08d',
+  'mainSeriesProperties.candleStyle.downColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.candleStyle.borderUpColor': '#50f08d',
+  'mainSeriesProperties.candleStyle.borderDownColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.candleStyle.wickUpColor': '#50f08d',
+  'mainSeriesProperties.candleStyle.wickDownColor': 'rgb(239, 81, 81)',
+
+  'mainSeriesProperties.hollowCandleStyle.upColor': '#50f08d',
+  'mainSeriesProperties.hollowCandleStyle.downColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.hollowCandleStyle.borderUpColor': '#50f08d',
+  'mainSeriesProperties.hollowCandleStyle.borderDownColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.hollowCandleStyle.wickUpColor': '#50f08d',
+  'mainSeriesProperties.hollowCandleStyle.wickDownColor': 'rgb(239, 81, 81)',
+
+  'mainSeriesProperties.columnStyle.upColor': 'rgba(131, 251, 145, 0.4)',
+  'mainSeriesProperties.columnStyle.downColor': 'rgba(239, 81, 81, 0.4)',
+
+  'mainSeriesProperties.barStyle.upColor': '#50f08d',
+  'mainSeriesProperties.barStyle.downColor': 'rgb(239, 81, 81)',
+
+  'mainSeriesProperties.haStyle.upColor': '#50f08d',
+  'mainSeriesProperties.haStyle.downColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.haStyle.borderUpColor': '#50f08d',
+  'mainSeriesProperties.haStyle.borderDownColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.haStyle.wickUpColor': '#50f08d',
+  'mainSeriesProperties.haStyle.wickDownColor': 'rgb(239, 81, 81)',
+
+  'mainSeriesProperties.hlcAreaStyle.highLineColor': '#50f08d',
+  'mainSeriesProperties.hlcAreaStyle.lowLineColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.hlcAreaStyle.closeLineColor': '#aaaecf',
+  'mainSeriesProperties.hlcAreaStyle.highLineWidth': 1,
+  'mainSeriesProperties.hlcAreaStyle.lowLineWidth': 1,
+  'mainSeriesProperties.hlcAreaStyle.closeLineWidth': 1,
+
+  'mainSeriesProperties.baselineStyle.baselineColor': '#aaaecf',
+  'mainSeriesProperties.baselineStyle.topFillColor1':
+    'rgba(80, 240, 141, 0.28)',
+  'mainSeriesProperties.baselineStyle.topFillColor2':
+    'rgba(80, 240, 141, 0.05)',
+  'mainSeriesProperties.baselineStyle.bottomFillColor1':
+    'rgba(239, 81, 81, 0.28)',
+  'mainSeriesProperties.baselineStyle.bottomFillColor2':
+    'rgba(239, 81, 81, 0.05)',
+  'mainSeriesProperties.baselineStyle.topLineColor': '#50f08d',
+  'mainSeriesProperties.baselineStyle.bottomLineColor': 'rgb(239, 81, 81)',
+  'mainSeriesProperties.baselineStyle.topLineWidth': 2,
+  'mainSeriesProperties.baselineStyle.bottomLineWidth': 2,
+
+  'charts_dialogs_background_color': 'rgb(6,6,6)',
+  'charts_dialogs_text_color': '#aaaecf',
+  'charts_toggles_button_text_color': '#aaaecf',
+  'popup.background.color': 'rgb(6,6,6)',
+  'popup.text.color': '#aaaecf',
+  'calendar.background.color': 'rgb(6,6,6)',
+  'calendar.text.color': '#aaaecf',
+  'calendar.header.background.color': 'rgb(6,6,6)',
+  'calendar.header.text.color': '#aaaecf',
+  'dialog.background.color': 'rgb(6,6,6)',
+  'dialog.text.color': '#aaaecf',
+  'dialog.button.background.color': 'rgb(6,6,6)',
+  'dialog.button.text.color': '#aaaecf',
+  'dialog.input.background.color': 'rgb(6,6,6)',
+  'dialog.input.text.color': '#aaaecf',
+
 };

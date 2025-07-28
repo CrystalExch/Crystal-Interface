@@ -298,7 +298,7 @@ const Tooltip: React.FC<{
     );
 };
 const calculateBondingPercentage = (marketCap: number) => {
-    const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
+    const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
     return bondingPercentage;
 };
 const TokenRow = React.memo<{
@@ -346,10 +346,10 @@ const TokenRow = React.memo<{
     });
     const [showPreview, setShowPreview] = useState(false);
     const [positionCalculated, setPositionCalculated] = useState(false);
-   const bondingPercentage = useMemo(() => {
+    const bondingPercentage = useMemo(() => {
         return calculateBondingPercentage(token.marketCap);
     }, [token.marketCap]);
-    
+
     const updatePreviewPosition = useCallback(() => {
         if (!imageContainerRef.current) return;
 
@@ -361,7 +361,7 @@ const TokenRow = React.memo<{
         const viewportHeight = window.innerHeight;
 
         const previewWidth = 150;
-        const previewHeight = 150 + 30; 
+        const previewHeight = 150 + 30;
         const offset = 12;
 
         let top = 0;
@@ -486,14 +486,14 @@ const TokenRow = React.memo<{
                     <EyeOff size={16} />
                 </button>
             </Tooltip>
-           <div
+            <div
                 className={`bonding-amount-display ${showBonding ? 'visible' : ''}`}
                 style={{ color: getBondingColor(bondingPercentage) }}
             >
                 BONDING: {bondingPercentage.toFixed(1)}%
             </div>
 
-     <div className="explorer-token-left">
+            <div className="explorer-token-left">
                 <div
                     ref={imageContainerRef}
                     className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''}`}
@@ -584,7 +584,7 @@ const TokenRow = React.memo<{
                     <div className="explorer-second-row">
                         <div className="explorer-price-section">
                             <span className="explorer-time-created">{formatTimeAgo(token.created)}</span>
-                                
+
                             <button
                                 className="explorer-twitter-btn"
                                 onClick={(e) => {
@@ -888,7 +888,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const routerAddress = settings.chainConfig[activechain].launchpadRouter.toLowerCase();
 
     const [{ tokensByStatus, hidden, loading }, dispatch] = useReducer(reducer, initialState);
-const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
+    const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
 
 
     const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
@@ -1251,21 +1251,35 @@ const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
     const newTokens = visibleTokens.new;
     const graduatingTokens = visibleTokens.graduating;
     const graduatedTokens = visibleTokens.graduated;
-const tokenCounts = useMemo(() => ({
-    new: newTokens.length,
-    graduating: graduatingTokens.length,
-    graduated: graduatedTokens.length,
-}), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
+    const tokenCounts = useMemo(() => ({
+        new: newTokens.length,
+        graduating: graduatingTokens.length,
+        graduated: graduatedTokens.length,
+    }), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
     return (
         <div className="explorer-main">
+               <div className="explorer-header-row">
+            <div className="explorer-header-left">
+                <h1 className="explorer-app-title">Trenches Terminal</h1>
+            </div>
+            <div className="explorer-header-right">
+                <button 
+                    className="launch-token-btn"
+                    onClick={() => navigate('/launchpad')}
+                >
+                    Launch a Token
+                </button>
+            </div>
+        </div>
+
             <div className="explorer-container">
-                    <MobileTabSelector
-        activeTab={activeMobileTab}
-        onTabChange={setActiveMobileTab}
-        tokenCounts={tokenCounts}
-    />
+                <MobileTabSelector
+                    activeTab={activeMobileTab}
+                    onTabChange={setActiveMobileTab}
+                    tokenCounts={tokenCounts}
+                />
                 <div className="explorer-columns">
-        <div className={`explorer-column ${activeMobileTab === 'new' ? 'mobile-active' : ''}`}>
+                    <div className={`explorer-column ${activeMobileTab === 'new' ? 'mobile-active' : ''}`}>
                         <div className="explorer-column-header">
                             <div className="explorer-column-title-section">
                                 <h2 className="explorer-column-title">New Pairs</h2>
@@ -1374,7 +1388,7 @@ const tokenCounts = useMemo(() => ({
                         </div>
                     </div>
 
-        <div className={`explorer-column ${activeMobileTab === 'graduating' ? 'mobile-active' : ''}`}>
+                    <div className={`explorer-column ${activeMobileTab === 'graduating' ? 'mobile-active' : ''}`}>
                         <div className="explorer-column-header">
                             <div className="explorer-column-title-section">
                                 <h2 className="explorer-column-title">
@@ -1488,7 +1502,7 @@ const tokenCounts = useMemo(() => ({
                         </div>
                     </div>
 
-        <div className={`explorer-column ${activeMobileTab === 'graduated' ? 'mobile-active' : ''}`}>
+                    <div className={`explorer-column ${activeMobileTab === 'graduated' ? 'mobile-active' : ''}`}>
 
                         <div className="explorer-column-header">
                             <div className="explorer-column-title-section">

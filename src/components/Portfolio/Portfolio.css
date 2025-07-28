@@ -15,37 +15,40 @@
   height: 100%;
   overflow: hidden;
   width: 100%;
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+  border-top: 1px solid rgba(179, 184, 249, 0.09);
 }
 
-.portfolio-tab-selector{
+.portfolio-tab-selector {
   display: flex;
   gap: 1.5rem;
   padding: 0 1rem;
 }
 
-.portfolio-tab-title{
+.portfolio-tab-title {
   font-size: 1.1rem;
   cursor: pointer;
   letter-spacing: -0.5px;
   padding: 0.5rem 0;
 }
 
-.portfolio-tab-title.active{
+.portfolio-tab-title.active {
   color: #d8dcff;
   border-bottom: 1.5px solid #d8dcff;
 }
 
-.portfolio-tab-title.nonactive{
+.portfolio-tab-title.nonactive {
   color: rgb(145, 145, 155);
 }
 
-
-
-
+.portfolio-layout-with-referrals {
+  display: flex;
+  gap: 0;
+  height: 100%;
+  width: 100%;
+}
 
 .graph-container {
-  background: rgb(6,6,6);
+  background: rgb(6, 6, 6);
   height: 100%;
   padding: 15px 10px 30px;
 }
@@ -80,7 +83,7 @@
 }
 
 .portfolio-order-center-wrapper {
-  background: rgb(6,6,6);
+  background: rgb(6, 6, 6);
   flex: 2;
   overflow: hidden;
   width: 100%;
@@ -186,7 +189,7 @@
   display: flex;
   flex: 1;
   flex-direction: column;
-  gap:1px;
+  gap: 1px;
   max-width: 350px;
   min-width: 275px;
 }
@@ -199,7 +202,7 @@
 }
 
 .account-summary-container.positive {
-  background: linear-gradient(145deg, rgb(17 17 20/90%), rgb(0 184 148/20%));
+  background: linear-gradient(145deg, rgba(16, 16, 18, 0.9), rgba(177, 172, 232, 0.2));
 }
 
 .account-summary-container.negative {
@@ -215,7 +218,7 @@
 }
 
 .percentage-value.positive {
-  color: #00b894;
+  color: #d8dcff;
 }
 
 .percentage-value.negative {
@@ -229,8 +232,7 @@
   margin-bottom: 12px;
 }
 
-.trading-stats-title,
-.referral-stats-title {
+.trading-stats-title {
   color: rgb(255 255 255/50%);
   font-size: 0.75rem;
   font-weight: 400;
@@ -289,13 +291,11 @@
 
 .port-loading::after {
   animation: shimmer 2s infinite;
-  background-image: linear-gradient(
-    90deg,
-    rgb(255 255 255/0) 0,
-    rgb(255 255 255/5%) 20%,
-    rgb(255 255 255/10%) 60%,
-    rgb(255 255 255/0)
-  );
+  background-image: linear-gradient(90deg,
+      rgb(255 255 255/0) 0,
+      rgb(255 255 255/5%) 20%,
+      rgb(255 255 255/10%) 60%,
+      rgb(255 255 255/0));
   content: '';
   inset: 0;
   position: absolute;
@@ -303,7 +303,7 @@
 }
 
 .controls-container {
-  background: rgb(6,6,6);
+  background: rgb(6, 6, 6);
   display: flex;
   gap: 4px;
   height: 65px;
@@ -343,6 +343,7 @@
   transition: 0.3s all;
   width: 20px;
 }
+
 .control-button:hover .port-eye-slash {
   background-color: rgb(183, 181, 181);
 }
@@ -352,7 +353,7 @@
 }
 
 .trading-stats-container {
-  background: rgb(6,6,6);
+  background: rgb(6, 6, 6);
   color: #fff;
   display: flex;
   flex: 1;
@@ -432,13 +433,6 @@
   width: 100%;
 }
 
-.referral-codes-container {
-  background: #0f0f12;
-  color: #fff;
-  flex: 2;
-  padding: 15px 20px;
-}
-
 .portfolio-layout {
   display: flex;
   gap: 4px;
@@ -460,47 +454,87 @@
   width: 100%;
 }
 
-.referral-stats-header,
-.trading-stats-header {
-  margin-bottom: 12px;
-}
-
-.referral-stats-list,
-.stats-list,
-.referral-stats-list,
-.stats-list {
+.portfolio-top-row {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: 0.5rem;
 }
 
-.referral-stats-container {
-  background: rgb(6,6,6);
+.portfolio-wallet-search-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+  border: 1.5px solid rgba(179, 184, 249, .1);
+  border-radius: 12px;
+  padding: 0 .5rem;
+  height: 32px;
+  min-width: 350px;
+  gap: .3rem
+}
+
+.portfolio-wallet-search-container-container:focus-within {
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, .3)
+}
+
+.search-icon {
+  color: #8b8989;
+  flex-shrink: 0
+}
+
+.portfolio-wallet-search-input {
+  background: 0 0;
+  border: none;
+  outline: 0;
   color: #fff;
+  font-size: .8rem;
   flex: 1;
-  min-height: 130px;
-  padding: 15px 20px;
-  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  min-width: 0;
+  letter-spacing: -.3px;
+  padding-left: 25px;
 }
 
-.create-code-text {
-  color: #aaaecf;
-  font-size: 0.7rem;
-  margin-top: 5px;
+.vaults-search-input::placeholder {
+  color: #ffffff4d
 }
 
-.create-code-text:hover {
-  color: #b5bae8;
-  cursor: pointer;
-  text-decoration: underline;
+.wallet-search-confirm-button {
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  background-size: 200% 200%;
+  border: none;
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/45%),
+    0 2px 8px rgb(170 174 207/10%);
+  color: #0f0f12;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  letter-spacing: -0.5px;
+}
+
+.wallet-search-confirm-button.disabled {
+  opacity: 0.5;
+}
+
+.search-wallet-wrapper {
+  display: flex;
+  gap: 0.5rem
 }
 
 @media (width <=1020px) {
-  .portfolio-layout {
+  .portfolio-layout-with-referrals {
     display: grid;
     flex-direction: column;
     gap: 4px;
-    grid-template-areas: 'graph' 'stats' 'orders';
+    grid-template-areas: 'referrals' 'graph' 'stats' 'orders';
     height: auto;
     padding-bottom: 10px;
   }
@@ -540,6 +574,10 @@
     overflow: visible;
   }
 
+  .portfolio-wallet-search-container {
+    min-width: 200px;
+  }
+
   .portfolio-content-container {
     flex-direction: column;
     margin: 0;
@@ -547,7 +585,6 @@
     padding: 0;
   }
 
-  .referral-stats-container,
   .trading-stats-container,
   .account-summary-container {
     max-height: 100%;
@@ -574,11 +611,6 @@
     border-bottom: 1px solid rgba(179, 184, 249, 0.09);
     padding-right: 0;
   }
-  
-  .referral-stats-container{
-    border-top: none;
-    border-left: 1px solid rgba(179, 184, 249, 0.09);
-  }
 
   .portfolio-graph-container {
     margin: 0;
@@ -597,11 +629,10 @@
   .mobile-stats-container {
     flex-direction: column;
   }
-  .referral-stats-container{
+}
+
+@media(max-width: 650px){
+  .search-wallet-wrapper{
     display: none;
-    border-top: 1px solid rgba(179, 184, 249, 0.1);
-  }
-  .referral-stats-container{
-    border-left: none;
   }
 }
