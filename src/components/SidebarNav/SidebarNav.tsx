@@ -137,13 +137,13 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <span className="sidebar-label">{t('portfolio')}</span>
             </Link>
 
-            <Link
+            {/* <Link
               to="/referrals"
               className={`page-mode-button ${path === '/referrals' ? 'active' : ''}`}
             >
               <img src={referrals} className="sidebar-icon" />
               <span className="sidebar-label">{t('referrals')}</span>
-            </Link>
+            </Link> */}
 
             <Link
               to="/leaderboard"

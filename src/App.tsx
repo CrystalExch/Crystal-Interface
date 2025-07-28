@@ -119,7 +119,6 @@ import backaudio from './assets/back_audio.mp3';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
-import Referrals from './components/Referrals/Referrals.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
@@ -18672,38 +18671,6 @@ function App() {
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
           <Route
-            path="/referrals"
-            element={
-              <Referrals
-                tokenList={Object.values(tokendict)}
-                markets={markets}
-                router={router}
-                address={address ?? undefined}
-                usedRefLink={usedRefLink}
-                usedRefAddress={usedRefAddress}
-                setUsedRefAddress={setUsedRefAddress}
-                setUsedRefLink={setUsedRefLink}
-                totalClaimableFees={totalClaimableFees}
-                claimableFees={claimableFees}
-                refLink={refLink}
-                setRefLink={setRefLink}
-                showModal={showReferralsModal}
-                setShowModal={setShowReferralsModal}
-                setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
-                setpopup={setpopup}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                refetch={refRefetch}
-                sendUserOperationAsync={sendUserOperationAsync}
-                client={client}
-              />
-            }
-          />
-          <Route
             path="/leaderboard"
             element={
               <Leaderboard
@@ -18930,57 +18897,67 @@ function App() {
               />
             }
           />
-          <Route
-            path="/portfolio"
-            element={
-              <Portfolio
-                orders={orders}
-                tradehistory={tradehistory}
-                trades={tradesByMarket}
-                canceledorders={canceledorders}
-                tokenList={memoizedTokenList}
-                router={router}
-                address={address ?? ''}
-                isBlurred={isBlurred}
-                setIsBlurred={setIsBlurred}
-                onMarketSelect={onMarketSelect}
-                setSendTokenIn={setSendTokenIn}
-                setpopup={setpopup}
-                tokenBalances={tokenBalances}
-                totalAccountValue={totalAccountValue}
-                setTotalVolume={setTotalVolume}
-                totalVolume={totalVolume}
-                chartData={typeof totalAccountValue === 'number' ? [
-                  ...chartData.slice(0, -1),
-                  {
-                    ...chartData[chartData.length - 1],
-                    value: totalAccountValue,
-                  },
-                ] : chartData}
-                portChartLoading={portChartLoading}
-                chartDays={chartDays}
-                setChartDays={setChartDays}
-                totalClaimableFees={totalClaimableFees}
-                refLink={refLink}
-                setShowRefModal={setShowReferralsModal}
-                filter={filter}
-                setFilter={setFilter}
-                onlyThisMarket={onlyThisMarket}
-                setOnlyThisMarket={setOnlyThisMarket}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                  logout: logout,
-                }}
-                refetch={refetch}
-                sendUserOperationAsync={sendUserOperationAsync}
-                setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
-                marketsData={marketsData}
-              />
-            }
-          />
+   <Route
+  path="/portfolio"
+  element={
+    <Portfolio
+      orders={orders}
+      tradehistory={tradehistory}
+      trades={tradesByMarket}
+      canceledorders={canceledorders}
+      tokenList={memoizedTokenList}
+      router={router}
+      address={address ?? ''}
+      isBlurred={isBlurred}
+      setIsBlurred={setIsBlurred}
+      onMarketSelect={onMarketSelect}
+      setSendTokenIn={setSendTokenIn}
+      setpopup={setpopup}
+      tokenBalances={tokenBalances}
+      totalAccountValue={totalAccountValue}
+      setTotalVolume={setTotalVolume}
+      totalVolume={totalVolume}
+      chartData={typeof totalAccountValue === 'number' ? [
+        ...chartData.slice(0, -1),
+        {
+          ...chartData[chartData.length - 1],
+          value: totalAccountValue,
+        },
+      ] : chartData}
+      portChartLoading={portChartLoading}
+      chartDays={chartDays}
+      setChartDays={setChartDays}
+      totalClaimableFees={totalClaimableFees}
+      claimableFees={claimableFees} // Add this prop
+      refLink={refLink}
+      setRefLink={setRefLink} // Add this prop
+      setShowRefModal={setShowReferralsModal}
+      filter={filter}
+      setFilter={setFilter}
+      onlyThisMarket={onlyThisMarket}
+      setOnlyThisMarket={setOnlyThisMarket}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+        logout: logout,
+      }}
+      refetch={refetch}
+      sendUserOperationAsync={sendUserOperationAsync}
+      setChain={handleSetChain}
+      waitForTxReceipt={waitForTxReceipt}
+      marketsData={marketsData}
+      // Additional props for referrals functionality
+      usedRefLink={usedRefLink} // Add this prop
+      setUsedRefLink={setUsedRefLink} // Add this prop
+      usedRefAddress={usedRefAddress} // Add this prop
+      setUsedRefAddress={setUsedRefAddress} // Add this prop
+      client={client} // Add this prop
+      activechain={activechain} // Add this prop
+      markets={markets} // Add this prop
+    />
+  }
+/>
           <Route path="/swap" element={TradeLayout(swap)} />
           <Route path="/market" element={TradeLayout(swap)} />
           <Route path="/limit" element={TradeLayout(limit)} />

@@ -53,10 +53,11 @@ const AssetRow: React.FC<AssetRowProps> = ({
         <img src={logo} className="asset-icon" />
         <div className="asset-details">
           <div className="asset-ticker">
-            {assetName}
-            <CopyButton textToCopy={tokenAddress} />
+            {tokenName}
           </div>
-          <div className="asset-name">{tokenName}</div>
+          <div className="asset-name">{assetName}            <CopyButton textToCopy={tokenAddress} />
+</div>
+          
         </div>
       </div>
       <div className="oc-cell">

@@ -38,6 +38,9 @@
 }
 
 .asset-name {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   color: rgb(255 255 255 / 50%);
   font-size: 0.7rem;
   line-height: 1.3;
