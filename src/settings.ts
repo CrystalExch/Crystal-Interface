@@ -52,7 +52,7 @@ export const settings: any = {
       name: 'Monad',
       httpurl:
         'https://floral-cosmopolitan-scion.monad-testnet.quiknode.pro/4c14cc05dc572fc5d138e8202f249f5f04a24fd5',
-      wssurl: 'wss://docs-demo.monad-testnet.quiknode.pro/',
+      wssurl: `ws://${location.host}/ws`,
       eth: '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE',
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',

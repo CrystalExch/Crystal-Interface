@@ -4076,13 +4076,7 @@ function App() {
     })()
 
     const connectWebSocket = () => {
-      if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) {
-        return;
-      }
-      if (wsRef.current) {
-        wsRef.current.close();
-        wsRef.current = null;
-      }
+      if (liveStreamCancelled) return;
       wsRef.current = new WebSocket(WS_URL);
 
       wsRef.current.onopen = async () => {  
@@ -4724,13 +4718,11 @@ function App() {
           clearInterval(pingIntervalRef.current);
           pingIntervalRef.current = null;
         }
-        if (wsRef.current) {
-          wsRef.current.close();
-          wsRef.current = null;
+        if (liveStreamCancelled) {
+          reconnectIntervalRef.current = setTimeout(() => {
+            connectWebSocket();
+          }, 500);
         }
-        reconnectIntervalRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 500);
       };
 
       wsRef.current.onerror = (error) => {
