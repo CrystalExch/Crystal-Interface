@@ -456,7 +456,7 @@
   inset: 0;
   justify-content: center;
   position: fixed;
-  z-index: 11;
+  z-index: 101;
 }
 
 @keyframes bgFade {
@@ -623,7 +623,7 @@
   letter-spacing: -0.3px;
   padding: 10px;
   transition: all 0.2s;
-  width: calc(100% - 30px);
+  width: calc(100% - 16px);
   margin:10px 0 10px 15px;
 }
 
@@ -636,26 +636,12 @@
   opacity: 0.4;
 }
 
-.loading-spinner {
-  animation: spin 1s linear infinite;
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-left: 2px solid #0f0f12;
-  border-radius: 50%;
-  height: 12px;
-  width: 12px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 .modal-actions-custom {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 10px 16px 16px 16px;
+  margin: 0 16px 5px 5px;
 }
 .remove-button {
   align-items: center;

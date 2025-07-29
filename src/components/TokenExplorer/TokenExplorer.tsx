@@ -20,7 +20,7 @@ import monadicon from '../../assets/monadlogo.svg';
 import camera from '../../assets/camera.svg';
 import filter from '../../assets/filter.svg';
 import empty from '../../assets/empty.svg';
-
+import discord from '../../assets/discord1.svg';
 import './TokenExplorer.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -53,6 +53,9 @@ export interface Token {
     created: string;
     bondingAmount: number;
     volumeDelta: number;
+    telegramHandle: string;
+    discordHandle: string;
+
 }
 
 interface TokenExplorerProps {
@@ -319,6 +322,8 @@ const TokenRow = React.memo<{
     onTwitterOpen: (handle: string) => void;
     onTwitterContractSearch: (address: string) => void;
     onImageSearch: (image: string) => void;
+    onTelegramOpen: (handle: string) => void;
+    onDiscordOpen: (handle: string) => void;
 }>(({
     token,
     quickbuyAmount,
@@ -337,6 +342,8 @@ const TokenRow = React.memo<{
     onTwitterOpen,
     onTwitterContractSearch,
     onImageSearch,
+    onTelegramOpen,
+    onDiscordOpen,
 }) => {
     const imageContainerRef = useRef<HTMLDivElement>(null);
     const [previewPosition, setPreviewPosition] = useState({
@@ -376,42 +383,34 @@ const TokenRow = React.memo<{
         const spaceRight = viewportWidth - rect.right;
         const spaceLeft = rect.left;
 
-        // Determine best placement
         if (spaceBelow >= previewHeight + offset) {
-            // Place below
             placement = 'bottom';
             top = rect.bottom + scrollY + offset;
             left = centerX + scrollX - previewWidth / 2;
         } else if (spaceAbove >= previewHeight + offset) {
-            // Place above
             placement = 'top';
             top = rect.top + scrollY - previewHeight - offset;
             left = centerX + scrollX - previewWidth / 2;
         } else if (spaceRight >= previewWidth + offset) {
-            // Place to the right
             placement = 'right';
             top = centerY + scrollY - previewHeight / 2;
             left = rect.right + scrollX + offset;
         } else if (spaceLeft >= previewWidth + offset) {
-            // Place to the left
             placement = 'left';
             top = centerY + scrollY - previewHeight / 2;
             left = rect.left + scrollX - previewWidth - offset;
         } else {
-            // Fallback: place below and clamp to viewport
             placement = 'bottom';
             top = rect.bottom + scrollY + offset;
             left = centerX + scrollX - previewWidth / 2;
         }
 
-        // Clamp horizontal position to viewport
         if (left < scrollX + 10) {
             left = scrollX + 10;
         } else if (left + previewWidth > scrollX + viewportWidth - 10) {
             left = scrollX + viewportWidth - previewWidth - 10;
         }
 
-        // Clamp vertical position to viewport
         if (top < scrollY + 10) {
             top = scrollY + 10;
         } else if (top + previewHeight > scrollY + viewportHeight - 10) {
@@ -426,7 +425,6 @@ const TokenRow = React.memo<{
             setPositionCalculated(false);
             updatePreviewPosition();
 
-            // Small delay to ensure position is calculated before showing
             const timer = setTimeout(() => {
                 setPositionCalculated(true);
                 setShowPreview(true);
@@ -585,41 +583,57 @@ const TokenRow = React.memo<{
                         <div className="explorer-price-section">
                             <span className="explorer-time-created">{formatTimeAgo(token.created)}</span>
 
-                            <button
-                                className="explorer-twitter-btn"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onTwitterOpen(token.twitterHandle);
-                                }}
-                                title={`visit @${token.twitterHandle}`}
-                            >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                                </svg>
-                            </button>
+                            {token.twitterHandle && (
+                                <button
+                                    className="explorer-twitter-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onTwitterOpen(token.twitterHandle);
+                                    }}
+                                    title={`visit @${token.twitterHandle}`}
+                                >
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                                    </svg>
+                                </button>
+                            )}
 
-                            <button
-                                className="explorer-website-link"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onWebsiteOpen(token.website);
-                                }}
-                            >
-                                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                                </svg>
-                            </button>
+                            {token.website && (
+                                <button
+                                    className="explorer-website-link"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onWebsiteOpen(token.website);
+                                    }}
+                                >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                                    </svg>
+                                </button>
+                            )}{token.telegramHandle && (
+                                <button
+                                    className="explorer-telegram-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onTelegramOpen(token.telegramHandle);
+                                    }}
+                                    title="share on telegram"
+                                >
+                                    <img src={telegram} alt="telegram" />
+                                </button>
+                            )}
+                            {token.discordHandle && (
+                                <button
+                                    className="explorer-discord-btn"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDiscordOpen(token.discordHandle);
+                                    }}
+                                >
+                                    <img src={discord} alt="discord" />
+                                </button>
+                            )}
 
-                            <button
-                                className="explorer-telegram-btn"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    onTwitterOpen(token.twitterHandle);
-                                }}
-                                title="share on telegram"
-                            >
-                                <img src={telegram} alt="telegram" />
-                            </button>
 
                             <button
                                 className="explorer-twitter-btn"
@@ -936,9 +950,14 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }, []);
 
     const handleTwitterOpen = useCallback((h: string) => {
-        window.open(`https://twitter.com/${h}`, '_blank', 'noopener,noreferrer');
+        window.open(`https://${h}`, '_blank', 'noopener,noreferrer');
     }, []);
-
+    const handleTelegramOpen = useCallback((h: string) => {
+        window.open(`https://${h}`, '_blank', 'noopener,noreferrer');
+    }, []);
+    const handleDiscordOpen = useCallback((h: string) => {
+        window.open(`https://${h}`, '_blank', 'noopener,noreferrer');
+    }, []);
     const handleTwitterContractSearch = useCallback((addr: string) => {
         window.open(`https://twitter.com/search?q=${addr}`, '_blank', 'noopener,noreferrer');
     }, []);
@@ -1053,7 +1072,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             status: 'new',
             marketCap: defaultMetrics.price * TOTAL_SUPPLY,
             created: '0s ago',
-            volumeDelta: 0
+            volumeDelta: 0,
+            telegramHandle: meta?.telegram ?? '',
+            discordHandle: meta?.discord ?? '',
         };
 
         dispatch({ type: 'ADD_MARKET', token });
@@ -1195,6 +1216,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                             sellTransactions: Number(m.sellCount),
                             volume24h: Number(m.volume24h) / 1e18,
                             volumeDelta: 0,
+                            telegramHandle: meta.telegram ?? '',
+                            discordHandle: meta.discord ?? '',
                         };
                     })
                 );
@@ -1258,19 +1281,19 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
     return (
         <div className="explorer-main">
-               <div className="explorer-header-row">
-            <div className="explorer-header-left">
-                <h1 className="explorer-app-title">Trenches Terminal</h1>
+            <div className="explorer-header-row">
+                <div className="explorer-header-left">
+                    <h1 className="explorer-app-title">Terminal</h1>
+                </div>
+                <div className="explorer-header-right">
+                    <button
+                        className="launch-token-btn"
+                        onClick={() => navigate('/launchpad')}
+                    >
+                        Launch a Token
+                    </button>
+                </div>
             </div>
-            <div className="explorer-header-right">
-                <button 
-                    className="launch-token-btn"
-                    onClick={() => navigate('/launchpad')}
-                >
-                    Launch a Token
-                </button>
-            </div>
-        </div>
 
             <div className="explorer-container">
                 <MobileTabSelector
@@ -1375,8 +1398,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                         onCopyToClipboard={copyToClipboard}
                                         onWebsiteOpen={handleWebsiteOpen}
                                         onTwitterOpen={handleTwitterOpen}
+                                        onTelegramOpen={handleTelegramOpen}
                                         onTwitterContractSearch={handleTwitterContractSearch}
                                         onImageSearch={handleImageSearch}
+                                        onDiscordOpen={handleDiscordOpen}
                                     />
                                 ))
                             ) : (
@@ -1491,6 +1516,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                         onTwitterOpen={handleTwitterOpen}
                                         onTwitterContractSearch={handleTwitterContractSearch}
                                         onImageSearch={handleImageSearch}
+                                        onTelegramOpen={handleTelegramOpen}
+                                        onDiscordOpen={handleDiscordOpen}
                                     />
                                 ))
                             ) : (
@@ -1611,6 +1638,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                                         onTwitterOpen={handleTwitterOpen}
                                         onTwitterContractSearch={handleTwitterContractSearch}
                                         onImageSearch={handleImageSearch}
+                                        onTelegramOpen={handleTelegramOpen}
+                                        onDiscordOpen={handleDiscordOpen}
                                     />
                                 ))
                             ) : (

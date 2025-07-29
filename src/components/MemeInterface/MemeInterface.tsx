@@ -4,7 +4,7 @@ import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { settings } from "../../settings";
 import { useQuery } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
-
+import "./MemeInterface.css";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
@@ -23,8 +23,7 @@ import slippage from "../../assets/slippage.svg";
 import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
-
-import "./MemeInterface.css";
+import walleticon from "../../assets/wallet_icon.png"
 
 interface Token {
   id: string;
@@ -55,6 +54,7 @@ interface Token {
   created: string;
   bondingAmount: number;
   volumeDelta: number;
+  quote?: number;
 }
 
 interface Trade {
@@ -185,7 +185,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   waitForTxReceipt,
   account,
   setChain,
-  // tokenBalances = {},
   tokendict = {},
   tradesByMarket,
   markets,
@@ -201,6 +200,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
+  const [quoteValue, setQuoteValue] = useState<number | undefined>(undefined);
   const [inputCurrency, setInputCurrency] = useState<"MON" | "TOKEN">("MON");
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -697,28 +697,50 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       ws.close();
     };
   }, [token.id]);
-
   useEffect(() => {
+    if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
+      setIsQuoteLoading(true);
+    }
+
     const id = setTimeout(() => {
-      if (!tradeAmount) {
+      if (!tradeAmount || tradeAmount === "" || !currentPrice || currentPrice === 0) {
+        setQuoteValue(undefined);
         setIsQuoteLoading(false);
         return;
       }
-      setIsQuoteLoading(true);
+
       const amt = parseFloat(tradeAmount);
-      let converted = 0;
-      if (activeTradeType === "buy") {
-        converted =
-          inputCurrency === "MON" ? amt / currentPrice : amt * currentPrice;
-      } else {
-        converted =
-          inputCurrency === "MON" ? amt * currentPrice : amt / currentPrice;
+
+      if (isNaN(amt) || amt <= 0) {
+        setQuoteValue(undefined);
+        setIsQuoteLoading(false);
+        return;
       }
-      setLive((p) => ({ ...p, quote: fmt(converted, 6) }));
+
+      let converted = 0;
+
+      if (activeTradeType === "buy") {
+        if (inputCurrency === "MON") {
+          converted = amt / currentPrice;
+        } else {
+          converted = amt * currentPrice;
+        }
+      } else {
+        if (inputCurrency === "TOKEN") {
+          converted = amt * currentPrice;
+        } else {
+          converted = amt / currentPrice;
+        }
+      }
+
+      setQuoteValue(converted);
       setIsQuoteLoading(false);
     }, 400);
+
     return () => clearTimeout(id);
   }, [tradeAmount, currentPrice, activeTradeType, inputCurrency]);
+
+
 
   useEffect(() => {
     if (activeTradeType === 'sell') {
@@ -942,21 +964,39 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </button>
           </div>
           <div className="meme-amount-header">
-            <span className="meme-amount-label">
-              {inputCurrency === "TOKEN" ? "Qty" : "Amount"}
-            </span>
-            <button
-              className="meme-currency-switch-button"
-              onClick={() =>
-                setInputCurrency((p) => (p === "MON" ? "TOKEN" : "MON"))
-              }
-            >
-              <img
-                src={switchicon}
-                alt=""
-                className="meme-currency-switch-icon"
-              />
-            </button>
+            <div className="meme-amount-header-left">
+              <span className="meme-amount-label">
+                {inputCurrency === "TOKEN" ? "Qty" : "Amount"}
+              </span>
+              <button
+                className="meme-currency-switch-button"
+                onClick={() =>
+                  setInputCurrency((p) => (p === "MON" ? "TOKEN" : "MON"))
+                }
+              >
+                <img
+                  src={switchicon}
+                  alt=""
+                  className="meme-currency-switch-icon"
+                />
+              </button>
+            </div>
+            <div className="meme-balance-right">
+              {activeTradeType === 'sell' && (
+                <div className="meme-balance-display">
+                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(tokenBalance, 3)} {token.symbol}
+                </div>
+              )}
+                 {activeTradeType === 'sell' && (
+              <button
+                className="meme-balance-max"
+                onClick={() => setTradeAmount(tokenBalance.toString())}
+              >
+                MAX
+              </button>
+            )}
+              </div>
+         
           </div>
           <div className="meme-trade-input-wrapper">
             <input
@@ -966,14 +1006,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               onChange={(e) => setTradeAmount(e.target.value)}
               className="meme-trade-input"
             />
-            {activeTradeType === 'sell' && (
-              <button
-                className="meme-balance-max"
-                onClick={() => setTradeAmount(tokenBalance.toString())}
-              >
-                MAX
-              </button>
-            )}
+
             <div
               className="meme-trade-currency"
               style={{
@@ -982,23 +1015,50 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             >
               {inputCurrency === "TOKEN" ? token.symbol : "MON"}
             </div>
+
             {isQuoteLoading ? (
               <div className="meme-trade-spinner"></div>
             ) : (
               <div className="meme-trade-conversion">
-                ≈{" "}
-                {formatNumberWithCommas(
-                  parseFloat(token.price.toString() || "0"),
-                )}{" "}
-                {inputCurrency === "TOKEN" ? "MON" : token.symbol}
+                {quoteValue !== undefined && quoteValue > 0 ? (
+                  <>
+                    ≈ {formatNumberWithCommas(quoteValue, 6)}{" "}
+                    {(() => {
+                      if (activeTradeType === "buy") {
+                        return inputCurrency === "MON" ? token.symbol : "MON";
+                      } else {
+                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
+                      }
+                    })()}
+                  </>
+                ) : tradeAmount && tradeAmount !== "" && tradeAmount !== "0" ? (
+                  <>
+                    ≈ 0.00{" "}
+                    {(() => {
+                      if (activeTradeType === "buy") {
+                        return inputCurrency === "MON" ? token.symbol : "MON";
+                      } else {
+                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
+                      }
+                    })()}
+                  </>
+                ) : tradeAmount === "0" ? (
+                  <>
+                    ≈ 0.00{" "}
+                    {(() => {
+                      if (activeTradeType === "buy") {
+                        return inputCurrency === "MON" ? token.symbol : "MON";
+                      } else {
+                        return inputCurrency === "TOKEN" ? "MON" : token.symbol;
+                      }
+                    })()}
+                  </>
+                ) : (
+                  ""
+                )}
               </div>
             )}
           </div>
-          {activeTradeType === 'sell' && (
-            <div className="meme-balance-display">
-              Balance: {tokenBalance.toFixed(4)} {token.symbol}
-            </div>
-          )}
           {activeOrderType === "Limit" && (
             <div className="meme-trade-input-wrapper">
               <input

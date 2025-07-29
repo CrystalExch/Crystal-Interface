@@ -153,8 +153,7 @@ const Header: React.FC<HeaderProps> = ({
       volume24h: (prev.volume24h || 0) + (isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18),
     }));
   }, []);
-
-  const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
+const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
     const token = location.state.tokenData;
     const mergedData = { ...token, ...liveTokenData };
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
@@ -172,13 +171,14 @@ const Header: React.FC<HeaderProps> = ({
       created: token.created,
       website: token.website || '',
       twitterHandle: token.twitterHandle || '',
+      telegramHandle: token.telegramHandle || '',
+      discordHandle: token.discordHandle || '',
       price: liveTokenData.price || token.price,
       buyTransactions: liveTokenData.buyTransactions || token.buyTransactions,
       sellTransactions: liveTokenData.sellTransactions || token.sellTransactions,
       volume24h: liveTokenData.volume24h || token.volume24h,
     };
   })() : undefined;
-
   useEffect(() => {
     if (activeMarket && tokendict) {
       if (tokendict[activeMarket.baseAddress]) {

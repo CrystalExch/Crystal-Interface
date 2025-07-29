@@ -7823,3 +7823,102 @@ input::-webkit-inner-spin-button {
   -ms-overflow-style: none;
 }
 
+
+
+
+.subwallets-section {
+  margin-top: 16px;
+}
+
+.active-wallet-section {
+  margin-bottom: 20px;
+}
+
+.create-wallet-section {
+  margin-bottom: 20px;
+}
+
+.create-subwallet-btn {
+  margin-top: 8px;
+}
+
+.subwallets-list {
+  margin-top: 20px;
+}
+
+.subwallets-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.subwallet-item {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.subwallet-info {
+  margin-bottom: 12px;
+}
+
+.subwallet-address,
+.subwallet-private-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.subwallet-label {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+  min-width: 80px;
+}
+
+.subwallet-address-text,
+.subwallet-key-text {
+  font-family: monospace;
+  color: rgba(255, 255, 255, 0.9);
+  flex: 1;
+}
+
+.subwallet-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.subwallet-action-btn {
+  padding: 4px 12px;
+  border: 1px solid;
+  border-radius: 4px;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  font-size: 11px;
+  transition: all 0.2s;
+}
+
+.activate-btn {
+  border-color: #4CAF50;
+}
+
+.activate-btn:hover {
+  background: #4CAF50;
+}
+
+.delete-btn {
+  border-color: #f44336;
+}
+
+.delete-btn:hover {
+  background: #f44336;
+}

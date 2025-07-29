@@ -169,7 +169,7 @@ function App() {
     client,
     waitForTxn: true,
   });
-  const { signTypedDataAsync } = useSignTypedData({client})
+  const { signTypedDataAsync } = useSignTypedData({ client })
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -315,6 +315,75 @@ function App() {
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
   const connected = address != undefined
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
+  useEffect(() => {
+    const storedSubWallets = localStorage.getItem('crystal_sub_wallets');
+    if (storedSubWallets) {
+      try {
+        setSubWallets(JSON.parse(storedSubWallets));
+      } catch (error) {
+        console.error('Error loading stored subwallets:', error);
+      }
+    }
+  }, []);
+  const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
+    localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
+  };
+
+
+  const createSubWallet = async () => {
+    try {
+      const privateKey = keccak256(await signTypedDataAsync({
+        typedData: {
+          types: {
+            createCrystalOneCT: [
+              { name: 'version', type: 'string' },
+              { name: 'account', type: 'uint256' },
+            ],
+          },
+          primaryType: 'createCrystalOneCT',
+          message: {
+            version: 'Crystal v0.0.1 Testnet',
+            account: BigInt(subWallets.length + 1),
+          }
+        }
+      }));
+
+      const tempWallet = new Wallet(privateKey);
+      const walletAddress = tempWallet.address as string;
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: privateKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      console.log('New Subwallet Created:', newWallet);
+
+      if (!validOneCT && updatedWallets.length === 1) {
+        setOneCTSigner(privateKey);
+        setpopup(25);
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error creating subwallet:', error);
+    }
+  };
+
+  const deleteSubWallet = (index: number) => {
+    const updatedWallets = subWallets.filter((_, i) => i !== index);
+    setSubWallets(updatedWallets);
+    saveSubWalletsToStorage(updatedWallets);
+  };
+
+  const setActiveSubWallet = (privateKey: string) => {
+    setOneCTSigner(privateKey);
+    setpopup(25);
+    refetch();
+  };
 
   const sendUserOperationAsync = useCallback(
     async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
@@ -340,7 +409,7 @@ function App() {
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
         ];
-        
+
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
@@ -1010,11 +1079,11 @@ function App() {
     refetch()
   }, [])
 
-  
+
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
 
@@ -1589,15 +1658,15 @@ function App() {
     queryFn: async () => {
       let gasEstimateCall: any = null;
       let gasEstimate: bigint = 0n;
-      
+
       if (address && (amountIn || amountOutSwap)) {
         try {
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
-  
+
           const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
-  
+
           let tx: any = null;
-  
+
           if (tokenIn === eth && tokenOut === weth) {
             tx = wrapeth(amountIn, weth);
           } else if (tokenIn === weth && tokenOut === eth) {
@@ -1605,10 +1674,10 @@ function App() {
           } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
             tx = stake(tokenOut, address, amountIn);
           } else if (orderType === 1 || multihop) {
-            const slippageAmount = !switched 
+            const slippageAmount = !switched
               ? (amountOutSwap * slippage + 5000n) / 10000n
               : (amountIn * 10000n + slippage / 2n) / slippage;
-  
+
             if (tokenIn === eth && tokenOut !== eth) {
               tx = !switched
                 ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
@@ -1627,7 +1696,7 @@ function App() {
             const limitPrice = tokenIn === activeMarket.quoteAddress
               ? (lowestAsk * 10000n + slippage / 2n) / slippage
               : (highestBid * slippage + 5000n) / 10000n;
-  
+
             tx = _swap(
               router,
               tokenIn === eth
@@ -1643,7 +1712,7 @@ function App() {
               usedRefAddress
             );
           }
-  
+
           if (tx) {
             gasEstimateCall = {
               jsonrpc: '2.0',
@@ -1661,7 +1730,7 @@ function App() {
           gasEstimateCall = null;
         }
       }
-      
+
       const mainGroup: any = [
         {
           disabled: (switched ? amountOutSwap : amountIn) > maxUint256,
@@ -1709,11 +1778,11 @@ function App() {
         },
         ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
           ? [{
-              to: tokenOut,
-              abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
-              functionName: switched ? 'convertToAssets' : 'convertToShares',
-              args: [switched ? amountOutSwap : amountIn]
-            }]
+            to: tokenOut,
+            abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
+            functionName: switched ? 'convertToAssets' : 'convertToShares',
+            args: [switched ? amountOutSwap : amountIn]
+          }]
           : [])
       ];
 
@@ -1767,7 +1836,7 @@ function App() {
       const groups: any = {
         mainGroup
       };
-      
+
       if (address && Date.now() - lastRefGroupFetch.current >= 9500) {
         lastRefGroupFetch.current = Date.now();
         groups.refGroup = refGroup;
@@ -1791,13 +1860,13 @@ function App() {
             try {
               callData.push({
                 target: call.to || call.address,
-                callData: encodeFunctionData({ 
-                  abi: call.abi, 
-                  functionName: call.functionName, 
-                  args: call.args 
+                callData: encodeFunctionData({
+                  abi: call.abi,
+                  functionName: call.functionName,
+                  args: call.args
                 })
               });
-              
+
               callMapping.push({
                 groupKey,
                 callIndex
@@ -1806,35 +1875,39 @@ function App() {
               while (groupResults[groupKey].length < callIndex) {
                 groupResults[groupKey].push(null);
               }
-              groupResults[groupKey][callIndex] = {error: e.message, result: undefined, status: "failure"};
+              groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
             }
           }
           else {
             while (groupResults[groupKey].length < callIndex) {
               groupResults[groupKey].push(null);
             }
-            groupResults[groupKey][callIndex] = {error: "param missing", result: undefined, status: "failure"};  
+            groupResults[groupKey][callIndex] = { error: "param missing", result: undefined, status: "failure" };
           }
         });
       });
-      
+
       const multicallData: any = encodeFunctionData({
         abi: [{
           inputs: [
             { name: 'requireSuccess', type: 'bool' },
-            { components: [
-              { name: 'target', type: 'address' }, 
-              { name: 'callData', type: 'bytes' }
-            ], name: 'calls', type: 'tuple[]' }
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
           ],
           name: 'tryBlockAndAggregate',
           outputs: [
             { name: 'blockNumber', type: 'uint256' },
             { name: 'blockHash', type: 'bytes32' },
-            { components: [
-              { name: 'success', type: 'bool' }, 
-              { name: 'returnData', type: 'bytes' }
-            ], name: 'returnData', type: 'tuple[]' }
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
           ],
           stateMutability: 'view',
           type: 'function'
@@ -1851,7 +1924,7 @@ function App() {
           id: 1,
           method: 'eth_call',
           params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
-        },  ...(gasEstimateCall ? [gasEstimateCall] : [])])
+        }, ...(gasEstimateCall ? [gasEstimateCall] : [])])
       })
 
       const json: any = await response.json()
@@ -1861,19 +1934,23 @@ function App() {
         abi: [{
           inputs: [
             { name: 'requireSuccess', type: 'bool' },
-            { components: [
-              { name: 'target', type: 'address' }, 
-              { name: 'callData', type: 'bytes' }
-            ], name: 'calls', type: 'tuple[]' }
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
           ],
           name: 'tryBlockAndAggregate',
           outputs: [
             { name: 'blockNumber', type: 'uint256' },
             { name: 'blockHash', type: 'bytes32' },
-            { components: [
-              { name: 'success', type: 'bool' }, 
-              { name: 'returnData', type: 'bytes' }
-            ], name: 'returnData', type: 'tuple[]' }
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
           ],
           stateMutability: 'view',
           type: 'function'
@@ -1911,7 +1988,7 @@ function App() {
         gasEstimate = BigInt(json[1].result)
       }
 
-      return {readContractData: groupResults, gasEstimate: gasEstimate}
+      return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
@@ -2573,7 +2650,7 @@ function App() {
               }
             }
           }
-        } else if (data?.[0]?.result || (data?.[0]?.error == 'call reverted') || (data?.[0]?.error == 'param missing')  ) {
+        } else if (data?.[0]?.result || (data?.[0]?.error == 'call reverted') || (data?.[0]?.error == 'param missing')) {
           setStateIsLoading(false);
           setstateloading(false);
           if (switched == false && !isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
@@ -2782,7 +2859,7 @@ function App() {
               const midValue = Number(
                 (tempmids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
               ) * quotePrice;
-              
+
               if (!(newFees as any)[market.quoteAsset]) {
                 (newFees as any)[market.quoteAsset] =
                   Number(refData[quoteIndex + 1].result) /
@@ -2798,7 +2875,7 @@ function App() {
                   Number(refData[quoteIndex + 1].result) /
                   10 ** Number(market.quoteDecimals);
               }
-  
+
               if (!(newFees as any)[market.baseAsset]) {
                 (newFees as any)[market.baseAsset] =
                   Number(refData[baseIndex + 1].result) /
@@ -4085,7 +4162,7 @@ function App() {
       }
       wsRef.current = new WebSocket(WS_URL);
 
-      wsRef.current.onopen = async () => {  
+      wsRef.current.onopen = async () => {
         const subscriptionMessages = [
           JSON.stringify({
             jsonrpc: '2.0',
@@ -4127,14 +4204,15 @@ function App() {
           })] : [])
         ];
 
-        pingIntervalRef.current = setInterval(()=>{
+        pingIntervalRef.current = setInterval(() => {
           if (wsRef.current?.readyState === WebSocket.OPEN) {
             wsRef.current.send(JSON.stringify({
               jsonrpc: '2.0',
               id: 'ping',
               method: 'eth_syncing'
             }));
-        }}, 15000);
+          }
+        }, 15000);
 
         subscriptionMessages.forEach((message) => {
           wsRef.current?.send(message);
@@ -4596,13 +4674,13 @@ function App() {
                     for (const lastTrade of temptrades[marketKey]) {
                       const lastBarIndex = updatedBars.length - 1;
                       const lastBar = updatedBars[lastBarIndex];
-  
+
                       let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                       let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                       rawVolume =
                         (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
                         10 ** Number(markets[marketKey].quoteDecimals);
-  
+
                       const tradeTimeSec = lastTrade[6];
                       const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
                       const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
@@ -4674,7 +4752,7 @@ function App() {
                         const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
                         return sum + amount;
                       }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
-  
+
                       return {
                         ...market,
                         volume: formatCommas(
@@ -8280,10 +8358,12 @@ function App() {
                     }
                     try {
                       if (sendTokenIn == eth) {
-                        hash = await sendUserOperationAsync({ uo: sendeth(
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendeth(
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -8301,11 +8381,13 @@ function App() {
                           recipient,
                         );
                       } else {
-                        hash = await sendUserOperationAsync({ uo: sendtokens(
-                          sendTokenIn as `0x${string}`,
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendtokens(
+                            sendTokenIn as `0x${string}`,
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -8872,7 +8954,6 @@ function App() {
                           </div>
                         </div>
 
-                        {/* Presets section - now checks the correct mode */}
                         {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('presetPercentages')}</div>
@@ -8919,7 +9000,6 @@ function App() {
                           </div>
                         )}
 
-                        {/* Increment section - now checks the correct mode */}
                         {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('incrementAmount')}</div>
@@ -9280,45 +9360,89 @@ function App() {
                           }}
                         />
                       </div>
-                      <div className="audio-toggle-row">
-                        <div className="settings-option-info">
-                          <span className="audio-toggle-label">{t('useOneCT')}</span>
-                          <span className="settings-option-subtitle">
-                            {t('useOneCTText')}
-                          </span>
-                        </div>
-                        <ToggleSwitch
-                          checked={useOneCT}
-                          onChange={() => {
-                            setUseOneCT(!useOneCT);
-                            localStorage.setItem('crystal_use_onect', JSON.stringify(!useOneCT));
-                          }}
-                        />
-                      </div>
-                      {useOneCT && (validOneCT ?
-                        <div className="onect-address-box">
-                          <span className="onect-address">{address}</span>
-                          <CopyButton textToCopy={address as string} />
-                        </div> : <button
-                        className="reset-tab-button"
-                        onClick={async () => {
-                          setOneCTSigner(keccak256(await signTypedDataAsync({typedData: {types: {
-                            createCrystalOneCT: [
-                              { name: 'version', type: 'string' },
-                              { name: 'account', type: 'uint256' },
-                            ],
-                          },
-                          primaryType: 'createCrystalOneCT',
-                          message: {
-                            version: 'Crystal v0.0.1 Testnet',
-                            account: 1n,
-                          }}})))
-                          setpopup(25);
-                          refetch();
-                        }}
-                      >
-                        {t('createWallet')}
-                      </button>)}
+<div className="audio-toggle-row">
+  <div className="settings-option-info">
+    <span className="audio-toggle-label">{t('useOneCT')}</span>
+    <span className="settings-option-subtitle">
+      {t('useOneCTText')}
+    </span>
+  </div>
+  <ToggleSwitch
+    checked={useOneCT}
+    onChange={() => {
+      setUseOneCT(!useOneCT);
+      localStorage.setItem('crystal_use_onect', JSON.stringify(!useOneCT));
+    }}
+  />
+</div>
+
+{useOneCT && (
+  <div className="subwallets-section">
+    {/* Current Active Wallet Display */}
+    {validOneCT && (
+      <div className="active-wallet-section">
+        <div className="layout-section-title">{t('activeWallet')}</div>
+        <div className="onect-address-box">
+          <span className="onect-address">{address}</span>
+          <CopyButton textToCopy={address as string} />
+        </div>
+      </div>
+    )}
+
+    {/* Create New Subwallet Button */}
+    <div className="create-wallet-section">
+      <div className="layout-section-title">{t('subWallets')}</div>
+      <div className="settings-section-subtitle">
+        {t('createAndManageSubWallets')}
+      </div>
+      <button
+        className="reset-tab-button create-subwallet-btn"
+        onClick={createSubWallet}
+      >
+        {t('createNewWallet')}
+      </button>
+    </div>
+
+    {/* Subwallets List */}
+    {subWallets.length > 0 && (
+      <div className="subwallets-list">
+        <div className="layout-section-title">{t('savedSubWallets')}</div>
+        <div className="subwallets-container">
+          {subWallets.map((wallet, index) => (
+            <div key={index} className="subwallet-item">
+              <div className="subwallet-info">
+                <div className="subwallet-address">
+                  <span className="subwallet-label">{t('wallet')} {index + 1}:</span>
+                  <span className="subwallet-address-text">{wallet.address}</span>
+                  <CopyButton textToCopy={wallet.address} />
+                </div>
+                <div className="subwallet-private-key">
+                  <span className="subwallet-label">{t('privateKey')}:</span>
+                  <span className="subwallet-key-text">{wallet.privateKey.slice(0, 10)}...{wallet.privateKey.slice(-6)}</span>
+                  <CopyButton textToCopy={wallet.privateKey} />
+                </div>
+              </div>
+              <div className="subwallet-actions">
+                <button
+                  className="subwallet-action-btn activate-btn"
+                  onClick={() => setActiveSubWallet(wallet.privateKey)}
+                >
+                  {t('setActive')}
+                </button>
+                <button
+                  className="subwallet-action-btn delete-btn"
+                  onClick={() => deleteSubWallet(index)}
+                >
+                  {t('delete')}
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
                     </div>
                   )}
 
@@ -12516,10 +12640,12 @@ function App() {
                     }
                     try {
                       if (sendTokenIn == eth) {
-                        hash = await sendUserOperationAsync({ uo: sendeth(
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendeth(
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -12537,11 +12663,13 @@ function App() {
                           recipient,
                         );
                       } else {
-                        hash = await sendUserOperationAsync({ uo: sendtokens(
-                          sendTokenIn as `0x${string}`,
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendtokens(
+                            sendTokenIn as `0x${string}`,
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -16997,10 +17125,12 @@ function App() {
               }
               try {
                 if (tokenIn == eth) {
-                  hash = await sendUserOperationAsync({ uo: sendeth(
-                    recipient as `0x${string}`,
-                    amountIn,
-                  )});
+                  hash = await sendUserOperationAsync({
+                    uo: sendeth(
+                      recipient as `0x${string}`,
+                      amountIn,
+                    )
+                  });
                   if (!client) {
                     txPending.current = true
                   }
@@ -17018,11 +17148,13 @@ function App() {
                     recipient,
                   );
                 } else {
-                  hash = await sendUserOperationAsync({ uo: sendtokens(
-                    tokenIn as `0x${string}`,
-                    recipient as `0x${string}`,
-                    amountIn,
-                  )});
+                  hash = await sendUserOperationAsync({
+                    uo: sendtokens(
+                      tokenIn as `0x${string}`,
+                      recipient as `0x${string}`,
+                      amountIn,
+                    )
+                  });
                   if (!client) {
                     txPending.current = true
                   }
@@ -19297,66 +19429,65 @@ function App() {
               />
             }
           />
-   <Route
-  path="/portfolio"
-  element={
-    <Portfolio
-      orders={orders}
-      tradehistory={tradehistory}
-      trades={tradesByMarket}
-      canceledorders={canceledorders}
-      tokenList={memoizedTokenList}
-      router={router}
-      address={address ?? ''}
-      isBlurred={isBlurred}
-      setIsBlurred={setIsBlurred}
-      onMarketSelect={onMarketSelect}
-      setSendTokenIn={setSendTokenIn}
-      setpopup={setpopup}
-      tokenBalances={tokenBalances}
-      totalAccountValue={totalAccountValue}
-      setTotalVolume={setTotalVolume}
-      totalVolume={totalVolume}
-      chartData={typeof totalAccountValue === 'number' ? [
-        ...chartData.slice(0, -1),
-        {
-          ...chartData[chartData.length - 1],
-          value: totalAccountValue,
-        },
-      ] : chartData}
-      portChartLoading={portChartLoading}
-      chartDays={chartDays}
-      setChartDays={setChartDays}
-      totalClaimableFees={totalClaimableFees}
-      claimableFees={claimableFees} 
-      refLink={refLink}
-      setRefLink={setRefLink} 
-      filter={filter}
-      setFilter={setFilter}
-      onlyThisMarket={onlyThisMarket}
-      setOnlyThisMarket={setOnlyThisMarket}
-      account={{
-        connected: connected,
-        address: address,
-        chainId: userchain,
-        logout: logout,
-      }}
-      refetch={refetch}
-      sendUserOperationAsync={sendUserOperationAsync}
-      setChain={handleSetChain}
-      waitForTxReceipt={waitForTxReceipt}
-      marketsData={marketsData}
-      // Additional props for referrals functionality
-      usedRefLink={usedRefLink} // Add this prop
-      setUsedRefLink={setUsedRefLink} // Add this prop
-      usedRefAddress={usedRefAddress} // Add this prop
-      setUsedRefAddress={setUsedRefAddress} // Add this prop
-      client={client} // Add this prop
-      activechain={activechain} // Add this prop
-      markets={markets} // Add this prop
-    />
-  }
-/>
+          <Route
+            path="/portfolio"
+            element={
+              <Portfolio
+                orders={orders}
+                tradehistory={tradehistory}
+                trades={tradesByMarket}
+                canceledorders={canceledorders}
+                tokenList={memoizedTokenList}
+                router={router}
+                address={address ?? ''}
+                isBlurred={isBlurred}
+                setIsBlurred={setIsBlurred}
+                onMarketSelect={onMarketSelect}
+                setSendTokenIn={setSendTokenIn}
+                setpopup={setpopup}
+                tokenBalances={tokenBalances}
+                totalAccountValue={totalAccountValue}
+                setTotalVolume={setTotalVolume}
+                totalVolume={totalVolume}
+                chartData={typeof totalAccountValue === 'number' ? [
+                  ...chartData.slice(0, -1),
+                  {
+                    ...chartData[chartData.length - 1],
+                    value: totalAccountValue,
+                  },
+                ] : chartData}
+                portChartLoading={portChartLoading}
+                chartDays={chartDays}
+                setChartDays={setChartDays}
+                totalClaimableFees={totalClaimableFees}
+                claimableFees={claimableFees}
+                refLink={refLink}
+                setRefLink={setRefLink}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                  logout: logout,
+                }}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
+                setChain={handleSetChain}
+                waitForTxReceipt={waitForTxReceipt}
+                marketsData={marketsData}
+                usedRefLink={usedRefLink}
+                setUsedRefLink={setUsedRefLink}
+                usedRefAddress={usedRefAddress}
+                setUsedRefAddress={setUsedRefAddress}
+                client={client}
+                activechain={activechain}
+                markets={markets}
+              />
+            }
+          />
           <Route path="/swap" element={TradeLayout(swap)} />
           <Route path="/market" element={TradeLayout(swap)} />
           <Route path="/limit" element={TradeLayout(limit)} />

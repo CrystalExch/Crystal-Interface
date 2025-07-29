@@ -464,6 +464,10 @@
     font-size: 0.75rem;
     font-weight: 400;
     pointer-events: none;
+    backdrop-filter: blur(5px);
+    background-color: rgb(6,6,6, 0.3);
+    border-radius: 4px;
+    z-index: 100;
 }
 
 .meme-trade-action-button {
@@ -597,6 +601,7 @@
 .meme-amount-header{
   display: flex;
   align-items: center;
+  justify-content: space-between;
   margin-bottom: 2px;
     padding: 0 12px;
 
@@ -1249,3 +1254,39 @@ opacity: 1;
     }
 }
 
+
+
+.meme-amount-header-left{
+    display: flex;
+    align-items: center;
+}
+
+.meme-balance-max{
+    background-color: #6e324051;
+    color: rgb(235, 112, 112);
+    font-size: 0.7rem;
+    padding: 0 .25rem;
+    border-radius: 3px;
+}
+
+.meme-balance-display{
+    display: flex;
+    align-items: center;
+}
+
+.meme-balance-right{
+    display: flex;
+    gap: 5px;
+}
+
+.meme-balance-display{
+    font-size: 0.8rem;
+    color: rgba(255, 255, 255, 0.5)
+}
+
+.meme-wallet-icon{
+    height: 15px;
+    width: 15px;
+    opacity: 0.5;
+    margin-right: 2px;
+}
