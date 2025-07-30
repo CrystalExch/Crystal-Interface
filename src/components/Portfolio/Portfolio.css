@@ -3087,14 +3087,10 @@
 
 .draggable-wallet-item.selected {
   background: rgba(170, 174, 207, 0.15);
-  border: 1px solid rgba(170, 174, 207, 0.3);
-  transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(170, 174, 207, 0.2);
 }
 
 .draggable-wallet-item.multi-drag-ghost {
   opacity: 0.5;
-  transform: scale(0.95);
 }
 
 .drop-preview-line {
@@ -3120,7 +3116,6 @@
   }
 }
 
-/* Container States */
 .drag-wallets-list {
   position: relative;
   user-select: none;
@@ -3139,7 +3134,6 @@
   cursor: crosshair;
 }
 
-/* Prevent text selection during drag operations */
 .drag-wallets-list.selecting *,
 .drop-zone-wallets.selecting * {
   user-select: none;
@@ -3151,13 +3145,22 @@
   pointer-events: auto;
 }
 
-/* Multi-drag indicator */
 .multi-drag-count {
   position: absolute;
   top: -8px;
   right: -8px;
-  background: linear-gradient(135deg, #aaaecf, #7f82a1);
-  color: #0f0f12;
+  background: linear-gradient(135deg,
+      #aaaecf 0,
+      #9a9ec7 25%,
+      #8b8eb8 50%,
+      #7f82ac 75%,
+      #7f82a1 100%);
+  border: none;
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 1px rgb(255 255 255/35%),
+    inset 0 -1px 1px rgb(0 0 0/55%),
+    0 2px 8px rgb(170 174 207/10%);  color: #0f0f12;
   border-radius: 50%;
   width: 20px;
   height: 20px;
@@ -3167,10 +3170,8 @@
   font-size: 0.75rem;
   font-weight: 600;
   z-index: 101;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-/* Enhanced draggable item for reordering */
 .draggable-wallet-item {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   position: relative;
@@ -3188,4 +3189,8 @@
 
 .draggable-wallet-item.drag-over-bottom {
   border-bottom: 2px solid #aaaecf;
+}
+
+.draggable-wallet-item.preview-selected {
+  background: rgba(170, 174, 207, 0.15);
 }

@@ -215,12 +215,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [importPrivateKey, setImportPrivateKey] = useState<string>('');
   const [importError, setImportError] = useState<string>('');
   const [isImporting, setIsImporting] = useState(false);
-const mainWalletsRef = useRef<HTMLDivElement>(null);
-const sourceWalletsRef = useRef<HTMLDivElement>(null);
-const destinationWalletsRef = useRef<HTMLDivElement>(null);
+  const mainWalletsRef = useRef<HTMLDivElement>(null);
+  const sourceWalletsRef = useRef<HTMLDivElement>(null);
+  const destinationWalletsRef = useRef<HTMLDivElement>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
-
+const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
     if (window.innerHeight > 1080) {
@@ -324,32 +324,152 @@ const destinationWalletsRef = useRef<HTMLDivElement>(null);
   const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
-  const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
-    e.stopPropagation();
-    const dragData: WalletDragItem = {
-      address: wallet.address,
-      name: getWalletName(wallet.address, index),
-      balance: getWalletBalance(wallet.address),
-      totalValue: getTotalWalletValue(wallet.address),
-      index
-    };
 
-    setDraggedWallet(dragData);
-    e.dataTransfer.effectAllowed = 'copy';
-    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+
+const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
+  setDraggedWallet({ ...wallet, sourceZone: zone });
+  e.dataTransfer.effectAllowed = 'move';
+  
+  const dragData = { ...wallet, sourceZone: zone, type: 'single-zone-drag' };
+  e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+  e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+};
+const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
+  e.stopPropagation();
+  const dragData: WalletDragItem & { type: string } = {
+    address: wallet.address,
+    name: getWalletName(wallet.address, index),
+    balance: getWalletBalance(wallet.address),
+    totalValue: getTotalWalletValue(wallet.address),
+    index,
+    type: 'single-main-drag'
   };
+
+  setDraggedWallet(dragData);
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+  e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+};
+const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
+  console.log('Single main drop:', dragData.address, 'to', targetZone);
+  
+  const targetArray = targetZone === 'source' ? sourceWallets : destinationWallets;
+  const isAlreadyInZone = targetArray.some(w => w.address === dragData.address);
+
+  if (isAlreadyInZone) return;
+
+  if (targetZone === 'source') {
+    setSourceWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
+  } else {
+    setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
+  }
+};
+
+const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
+  console.log('Single zone drop:', dragData.address, 'from', dragData.sourceZone, 'to', targetZone);
+  
+  if (targetZone === 'main') {
+    if (dragData.sourceZone === 'source') {
+      setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+    } else if (dragData.sourceZone === 'destination') {
+      setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+    }
+  } else {
+    const sourceZone = dragData.sourceZone;
+    
+    if (sourceZone === 'source') {
+      setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+    } else if (sourceZone === 'destination') {
+      setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+    }
+    
+    if (targetZone === 'source') {
+      setSourceWallets(prev => {
+        const exists = prev.some(w => w.address === dragData.address);
+        if (exists) return prev;
+        return [...prev, { ...dragData, sourceZone: undefined }];
+      });
+    } else if (targetZone === 'destination') {
+      setDestinationWallets(prev => {
+        const exists = prev.some(w => w.address === dragData.address);
+        if (exists) return prev;
+        return [...prev, { ...dragData, sourceZone: undefined }];
+      });
+    }
+  }
+};
+const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
+  e.preventDefault();
+  e.stopPropagation();
+  setDragOverZone(null);
+  setDropPreviewLine(null);
+
+  console.log('Universal drop triggered for zone:', targetZone);
+
+  try {
+    let data = null;
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      data = JSON.parse(jsonData);
+    } else {
+      const textData = e.dataTransfer.getData('text/plain');
+      if (textData) {
+        data = JSON.parse(textData);
+      }
+    }
+
+    if (!data) {
+      console.log('No valid drag data found');
+      return;
+    }
+
+    console.log('Processing drop data:', data.type, 'to', targetZone);
+
+    switch (data.type) {
+      case 'multi-drag':
+        handleMultiDrop(e, targetZone);
+        break;
+        
+      case 'reorder':
+        if (data.container === targetZone) {
+          handleReorderDrop(e, targetZone);
+        }
+        break;
+        
+      case 'single-zone-drag':
+        if (data.sourceZone && data.sourceZone !== targetZone) {
+          handleSingleZoneDrop(data, targetZone);
+        }
+        break;
+        
+      case 'single-main-drag':
+        if (targetZone !== 'main') {
+          handleSingleMainDrop(data, targetZone);
+        }
+        break;
+        
+      default:
+        if (data.sourceZone) {
+          handleSingleZoneDrop(data, targetZone);
+        } else {
+          handleSingleMainDrop(data, targetZone);
+        }
+    }
+
+  } catch (error) {
+    console.error('Error handling drop:', error);
+  }
+
+  setDraggedWallet(null);
+  setIsMultiDrag(false);
+};
 
 
   const handleDragOver = (e: React.DragEvent, zone: 'source' | 'destination' | 'main') => {
     e.preventDefault();
-    if (zone === 'main') {
-      e.dataTransfer.dropEffect = 'move';
-    } else {
-      e.dataTransfer.dropEffect = 'copy';
-    }
+    e.dataTransfer.dropEffect = 'move';
     setDragOverZone(zone);
   };
-
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     setDragOverZone(null);
@@ -374,14 +494,6 @@ const destinationWalletsRef = useRef<HTMLDivElement>(null);
 
     setDraggedWallet(null);
   };
-
-
-  const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
-    setDraggedWallet({ ...wallet, sourceZone: zone });
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', JSON.stringify({ ...wallet, sourceZone: zone }));
-  };
-
 
 
   const handleDropBetweenZones = (e: React.DragEvent, targetZone: 'source' | 'destination') => {
@@ -420,22 +532,60 @@ const destinationWalletsRef = useRef<HTMLDivElement>(null);
 
 
 
-  const handleDropOnMain = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverZone(null);
+const handleDropOnMainContainer = (e: React.DragEvent) => {
+  e.preventDefault();
+  setDragOverZone(null);
+  setDropPreviewLine(null);
 
-    if (!draggedWallet) return;
+  console.log('Drop on main container triggered');
 
-    if (draggedWallet.sourceZone) {
-      if (draggedWallet.sourceZone === 'source') {
-        setSourceWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
-      } else {
-        setDestinationWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
+  try {
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData) {
+      const data = JSON.parse(jsonData);
+
+      if (data.type === 'multi-drag') {
+        const { wallets, sourceContainer } = data;
+        console.log(`Multi-drop on main: ${wallets.length} wallets from ${sourceContainer}`);
+
+        if (sourceContainer === 'source') {
+          setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+        } else if (sourceContainer === 'destination') {
+          setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+        }
+        setSelectedWalletsPerContainer({
+          main: new Set(),
+          source: new Set(),
+          destination: new Set()
+        });
+        setIsMultiDrag(false);
+        return;
       }
     }
+  } catch (error) {
+    console.error('Error handling JSON drop on main:', error);
+  }
 
-    setDraggedWallet(null);
-  };
+  try {
+    const textData = e.dataTransfer.getData('text/plain');
+    if (textData) {
+      const dragData = JSON.parse(textData);
+
+      if (dragData.sourceZone) {
+        console.log('Single wallet drop back to main from:', dragData.sourceZone);
+
+        if (dragData.sourceZone === 'source') {
+          setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+        } else if (dragData.sourceZone === 'destination') {
+          setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Error handling text drop on main:', error);
+  }
+  setDraggedWallet(null);
+};
   const clearAllZones = () => {
     setSourceWallets([]);
     setDestinationWallets([]);
@@ -687,183 +837,139 @@ const destinationWalletsRef = useRef<HTMLDivElement>(null);
     const actualIndex = subWallets.findIndex(w => w.address === address);
     return `Wallet ${actualIndex !== -1 ? actualIndex + 1 : (walletIndex !== undefined ? walletIndex + 1 : 1)}`;
   };
-const [isDepositing, setIsDepositing] = useState(false);
+  const [isDepositing, setIsDepositing] = useState(false);
 
-const openDepositModal = (targetWallet: React.SetStateAction<string>) => {
-  setDepositTargetWallet(targetWallet);
-  setDepositAmount('');
-  setShowDepositModal(true);
-};
-
-const closeDepositModal = () => {
-  setShowDepositModal(false);
-  setDepositTargetWallet('');
-  setDepositAmount('');
-};
-
-
-const handleDepositFromEOA = async () => {
-  if (!depositAmount || !depositTargetWallet) return;
-
-  try {
-    setIsDepositing(true);
-    await handleSetChain();
-
-    const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
-
-    const hash = await sendUserOperationAsync({
-      uo: {
-        target: depositTargetWallet,
-        value: ethAmount,
-        data: '0x'
-      }
-    });
-
-    console.log('Deposit successful:', hash);
-    await refreshWalletBalance(depositTargetWallet);
-    refetch();
-    closeDepositModal();
-
-  } catch (error) {
-    console.error('Deposit failed:', error);
-    alert('Deposit failed. Please try again.');
-  } finally {
-    setIsDepositing(false);
-  }
-};
-const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
-const [customAddressError, setCustomAddressError] = useState<string>('');
-const calculateMaxAmount = () => {
-  const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
-    return total + getWalletBalance(wallet.address);
-  }, 0);
-  return totalSourceBalance;
-};
-const handleMaxAmount = () => {
-  const maxAmount = calculateMaxAmount();
-  setDistributionAmount(maxAmount.toString());
-};
-
-// Add this function to handle adding custom address:
-const handleAddCustomAddress = () => {
-  setCustomAddressError('');
-  
-  if (!customDestinationAddress.trim()) {
-    setCustomAddressError('Please enter an address');
-    return;
-  }
-
-  if (!isValidAddress(customDestinationAddress.trim())) {
-    setCustomAddressError('Invalid address format');
-    return;
-  }
-
-  // Check if address is already in destination wallets
-  const isAlreadyAdded = destinationWallets.some(w => 
-    w.address.toLowerCase() === customDestinationAddress.trim().toLowerCase()
-  );
-  
-  if (isAlreadyAdded) {
-    setCustomAddressError('Address already added to destinations');
-    return;
-  }
-
-  // Add custom address to destination wallets
-  const customWallet: WalletDragItem = {
-    address: customDestinationAddress.trim(),
-    name: `Custom (${customDestinationAddress.slice(0, 6)}...${customDestinationAddress.slice(-4)})`,
-    balance: 0, // We don't have balance info for custom addresses
-    totalValue: 0,
-    index: -1 // Mark as custom address
+  const openDepositModal = (targetWallet: React.SetStateAction<string>) => {
+    setDepositTargetWallet(targetWallet);
+    setDepositAmount('');
+    setShowDepositModal(true);
   };
 
-  setDestinationWallets(prev => [...prev, customWallet]);
-  setCustomDestinationAddress('');
-};
+  const closeDepositModal = () => {
+    setShowDepositModal(false);
+    setDepositTargetWallet('');
+    setDepositAmount('');
+  };
 
-// Add this function to send back to main wallet:
-const handleSendBackToMain = async () => {
-  if (destinationWallets.length === 0) {
-    alert('No destination wallets to send from');
-    return;
-  }
 
-  try {
-    setIsVaultDepositSigning(true);
-    await handleSetChain();
-
-    for (const destWallet of destinationWallets) {
-      const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
-      if (!sourceWalletData) continue;
-
-      const walletBalance = getWalletBalance(destWallet.address);
-      if (walletBalance > 0.001) { 
-        const transferAmount = walletBalance - 0.001;
-        
-        await handleSubwalletTransfer(
-          destWallet.address,
-          address, 
-          transferAmount.toString(),
-          sourceWalletData.privateKey
-        );
-      }
-    }
-
-    for (const wallet of destinationWallets) {
-      await refreshWalletBalance(wallet.address);
-    }
-    refetch(); 
-
-    alert('Successfully sent back to main wallet!');
-
-  } catch (error) {
-    console.error('Send back to main wallet failed:', error);
-    alert('Send back to main wallet failed. Please try again.');
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
-
-  const handleDeposit = async () => {
+  const handleDepositFromEOA = async () => {
     if (!depositAmount || !depositTargetWallet) return;
+
+    try {
+      setIsDepositing(true);
+      await handleSetChain();
+
+      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: depositTargetWallet,
+          value: ethAmount,
+          data: '0x'
+        }
+      });
+
+      console.log('Deposit successful:', hash);
+      await refreshWalletBalance(depositTargetWallet);
+      refetch();
+      closeDepositModal();
+
+    } catch (error) {
+      console.error('Deposit failed:', error);
+      alert('Deposit failed. Please try again.');
+    } finally {
+      setIsDepositing(false);
+    }
+  };
+  const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
+  const [customAddressError, setCustomAddressError] = useState<string>('');
+  const calculateMaxAmount = () => {
+    const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
+      return total + getWalletBalance(wallet.address);
+    }, 0);
+    return totalSourceBalance;
+  };
+  const handleMaxAmount = () => {
+    const maxAmount = calculateMaxAmount();
+    setDistributionAmount(maxAmount.toString());
+  };
+
+  const handleAddCustomAddress = () => {
+    setCustomAddressError('');
+
+    if (!customDestinationAddress.trim()) {
+      setCustomAddressError('Please enter an address');
+      return;
+    }
+
+    if (!isValidAddress(customDestinationAddress.trim())) {
+      setCustomAddressError('Invalid address format');
+      return;
+    }
+
+    const isAlreadyAdded = destinationWallets.some(w =>
+      w.address.toLowerCase() === customDestinationAddress.trim().toLowerCase()
+    );
+
+    if (isAlreadyAdded) {
+      setCustomAddressError('Address already added to destinations');
+      return;
+    }
+
+    const customWallet: WalletDragItem = {
+      address: customDestinationAddress.trim(),
+      name: `Custom (${customDestinationAddress.slice(0, 6)}...${customDestinationAddress.slice(-4)})`,
+      balance: 0, 
+      totalValue: 0,
+      index: -1 
+    };
+
+    setDestinationWallets(prev => [...prev, customWallet]);
+    setCustomDestinationAddress('');
+  };
+
+  const handleSendBackToMain = async () => {
+    if (destinationWallets.length === 0) {
+      alert('No destination wallets to send from');
+      return;
+    }
 
     try {
       setIsVaultDepositSigning(true);
       await handleSetChain();
 
-      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+      for (const destWallet of destinationWallets) {
+        const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
+        if (!sourceWalletData) continue;
 
-      if (depositMode === 'main') {
-        const hash = await sendUserOperationAsync({
-          uo: {
-            target: depositTargetWallet as `0x${string}`,
-            value: ethAmount,
-            data: '0x'
-          }
-        });
+        const walletBalance = getWalletBalance(destWallet.address);
+        if (walletBalance > 0.001) {
+          const transferAmount = walletBalance - 0.001;
 
-        console.log('Deposit successful:', hash);
-
-        await refreshWalletBalance(depositTargetWallet);
-        refetch();
-
-      } else if (depositMode === 'subwallet' && depositFromWallet) {
-        const sourceWallet = subWallets.find(w => w.address === depositFromWallet);
-        if (sourceWallet) {
-          await handleSubwalletTransfer(depositFromWallet, depositTargetWallet, depositAmount, sourceWallet.privateKey);
-        } else {
-          throw new Error('Source wallet not found');
+          await handleSubwalletTransfer(
+            destWallet.address,
+            address,
+            transferAmount.toString(),
+            sourceWalletData.privateKey
+          );
         }
       }
 
-      closeDepositModal();
+      for (const wallet of destinationWallets) {
+        await refreshWalletBalance(wallet.address);
+      }
+      refetch();
+
+      alert('Successfully sent back to main wallet!');
 
     } catch (error) {
-      console.error('Deposit failed:', error);
+      console.error('Send back to main wallet failed:', error);
+      alert('Send back to main wallet failed. Please try again.');
     } finally {
       setIsVaultDepositSigning(false);
     }
   };
+
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
@@ -877,46 +983,51 @@ const handleSendBackToMain = async () => {
     return 0;
   };
 
-interface SelectionRect {
-  startX: number;
-  startY: number;
-  currentX: number;
-  currentY: number;
-}
+  interface SelectionRect {
+    startX: number;
+    startY: number;
+    currentX: number;
+    currentY: number;
+  }
 
-interface DragReorderState {
-  draggedIndex: number;
-  dragOverIndex: number;
-  dragOverPosition: 'top' | 'bottom' | null;
-}
+  interface DragReorderState {
+    draggedIndex: number;
+    dragOverIndex: number;
+    dragOverPosition: 'top' | 'bottom' | null;
+  }
 
-// Add these new state variables inside your Portfolio component
-const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
-const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
-const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
-const [dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
-const [isMultiDrag, setIsMultiDrag] = useState(false);
+  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
+  const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+  const [dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [isMultiDrag, setIsMultiDrag] = useState(false);
 
-// Reordering states
-const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
-  draggedIndex: -1,
-  dragOverIndex: -1,
-  dragOverPosition: null
-});
-const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
+  const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
+    draggedIndex: -1,
+    dragOverIndex: -1,
+    dragOverPosition: null
+  });
+  const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
 
 const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | 'destination') => {
-  if (e.button !== 0) return; // Only left mouse button
-  
-  // Prevent starting selection if clicking on a wallet item
+  if (e.button !== 0) return; 
+
   if ((e.target as HTMLElement).closest('.draggable-wallet-item')) {
     return;
   }
-  
+
+  if (!e.ctrlKey && !e.metaKey) {
+    setSelectedWalletsPerContainer({
+      main: new Set(),
+      source: new Set(),
+      destination: new Set()
+    });
+  }
+
   const rect = e.currentTarget.getBoundingClientRect();
   const startX = e.clientX - rect.left;
   const startY = e.clientY - rect.top;
-  
+
   setActiveSelectionContainer(containerKey);
   setDragStartPoint({ x: e.clientX, y: e.clientY });
   setSelectionRect({
@@ -925,29 +1036,34 @@ const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | '
     currentX: startX,
     currentY: startY
   });
-  
-  // Clear previous selection if not holding Ctrl/Cmd
-  if (!e.ctrlKey && !e.metaKey) {
-    setSelectedWallets(new Set());
-  }
 };
+
+
+  const [selectedWalletsPerContainer, setSelectedWalletsPerContainer] = useState<{
+    main: Set<string>;
+    source: Set<string>;
+    destination: Set<string>;
+  }>({
+    main: new Set(),
+    source: new Set(),
+    destination: new Set()
+  });
 const updateSelection = (e: React.MouseEvent, container: HTMLElement, containerKey: 'main' | 'source' | 'destination') => {
   if (activeSelectionContainer !== containerKey || !selectionRect) return;
-  
+
   const rect = container.getBoundingClientRect();
   const currentX = e.clientX - rect.left;
   const currentY = e.clientY - rect.top;
-  
+
   setSelectionRect(prev => prev ? {
     ...prev,
     currentX,
     currentY
   } : null);
-  
-  // Get wallets within selection rectangle
+
   const walletElements = container.querySelectorAll('.draggable-wallet-item');
   const newSelection = new Set<string>();
-  
+
   walletElements.forEach((element) => {
     const walletRect = element.getBoundingClientRect();
     const elementRect = {
@@ -956,244 +1072,402 @@ const updateSelection = (e: React.MouseEvent, container: HTMLElement, containerK
       right: walletRect.right - rect.left,
       bottom: walletRect.bottom - rect.top
     };
-    
+
     const selectionBounds = {
       left: Math.min(selectionRect.startX, currentX),
       top: Math.min(selectionRect.startY, currentY),
       right: Math.max(selectionRect.startX, currentX),
       bottom: Math.max(selectionRect.startY, currentY)
     };
-    
-    // Check if wallet intersects with selection rectangle
+
     if (elementRect.left < selectionBounds.right &&
-        elementRect.right > selectionBounds.left &&
-        elementRect.top < selectionBounds.bottom &&
-        elementRect.bottom > selectionBounds.top) {
-      
+      elementRect.right > selectionBounds.left &&
+      elementRect.top < selectionBounds.bottom &&
+      elementRect.bottom > selectionBounds.top) {
+
       const walletAddress = element.getAttribute('data-wallet-address');
       if (walletAddress) newSelection.add(walletAddress);
     }
   });
-  
-  setSelectedWallets(prev => {
-    const combined = new Set(prev);
-    newSelection.forEach(addr => combined.add(addr));
-    return combined;
-  });
-};
 
+  setPreviewSelection(newSelection);
+};
 const endSelection = () => {
+  if (activeSelectionContainer && previewSelection.size > 0) {
+    setSelectedWalletsPerContainer(prev => {
+      const combined = new Set(prev[activeSelectionContainer]);
+      previewSelection.forEach(addr => combined.add(addr));
+      return {
+        ...prev,
+        [activeSelectionContainer]: combined
+      };
+    });
+  }
+
+  setPreviewSelection(new Set());
   setActiveSelectionContainer(null);
   setSelectionRect(null);
   setDragStartPoint(null);
 };
 
+
 const handleMultiDragStart = (e: React.DragEvent, wallet: any, containerType: 'main' | 'source' | 'destination') => {
-  const isWalletSelected = selectedWallets.has(wallet.address);
-  
-  if (isWalletSelected && selectedWallets.size > 1) {
-    setIsMultiDrag(true);
-    
-    // Get all selected wallets data
-    const selectedWalletsData = getWalletsForContainer(containerType)
-      .filter(w => selectedWallets.has(w.address))
-      .map(w => ({
+  e.stopPropagation();
+  setIsMultiDrag(true);
+
+  const walletsInContainer = getWalletsForContainer(containerType);
+  const selectedWalletsData = walletsInContainer
+    .filter((w) => {
+      return selectedWalletsPerContainer[containerType].has(w.address);
+    })
+    .map((w, arrayIndex) => {
+      const actualIndex = containerType === 'main'
+        ? subWallets.findIndex(sw => sw.address === w.address)
+        : arrayIndex;
+
+      return {
         address: w.address,
         name: getWalletName(w.address),
         balance: getWalletBalance(w.address),
         totalValue: getTotalWalletValue(w.address),
-        index: w.index || 0,
-        privateKey: w.privateKey // Make sure to include privateKey for main wallets
-      }));
-    
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      type: 'multi-drag',
-      wallets: selectedWalletsData,
-      sourceContainer: containerType
-    }));
-  } else {
-    setIsMultiDrag(false);
-    // Handle single drag as before
-    handleDragStart(e, wallet, wallet.index || 0);
-  }
-};
+        index: actualIndex,
+        privateKey: w.privateKey || ''
+      };
+    });
 
-const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination') => {
-  e.preventDefault();
-  setDragOverZone(null);
-  
-  try {
-    const data = JSON.parse(e.dataTransfer.getData('application/json'));
-    
-    if (data.type === 'multi-drag') {
-      const { wallets, sourceContainer } = data;
-      
-      // Remove from source containers
-      if (sourceContainer === 'source') {
-        setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-      } else if (sourceContainer === 'destination') {
-        setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-      }
-      
-      // Add to target container
-      if (targetZone === 'source') {
-        setSourceWallets(prev => [...prev, ...wallets.filter((w: any) => !prev.some(pw => pw.address === w.address))]);
-      } else {
-        setDestinationWallets(prev => [...prev, ...wallets.filter((w: any) => !prev.some(pw => pw.address === w.address))]);
-      }
-      
-      setSelectedWallets(new Set());
-    }
-  } catch (error) {
-    // Handle regular drop
-    handleDrop(e, targetZone);
-  }
-};
+  console.log('Multi-drag data prepared:', {
+    containerType,
+    selectedCount: selectedWalletsData.length,
+    wallets: selectedWalletsData.map(w => w.address)
+  });
 
-// Reordering functions
-const handleReorderDragStart = (e: React.DragEvent, walletIndex: number, containerType: 'main' | 'source' | 'destination') => {
-  setDragReorderState(prev => ({ ...prev, draggedIndex: walletIndex }));
+  e.dataTransfer.effectAllowed = 'move';
   e.dataTransfer.setData('application/json', JSON.stringify({
-    type: 'reorder',
-    index: walletIndex,
-    container: containerType
+    type: 'multi-drag',
+    wallets: selectedWalletsData,
+    sourceContainer: containerType,
+    count: selectedWalletsData.length,
+    timestamp: Date.now()
   }));
 };
-
-const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
+const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
   e.preventDefault();
-  
-  const element = e.currentTarget as HTMLElement;
-  const rect = element.getBoundingClientRect();
-  const y = e.clientY - rect.top;
-  const isTopHalf = y < rect.height / 2;
-  
-  setDragReorderState(prev => ({
-    ...prev,
-    dragOverIndex: targetIndex,
-    dragOverPosition: isTopHalf ? 'top' : 'bottom'
-  }));
-  
-  // Calculate drop preview line position
-  const lineTop = isTopHalf ? rect.top - element.parentElement!.getBoundingClientRect().top : 
-                             rect.bottom - element.parentElement!.getBoundingClientRect().top;
-  
-  setDropPreviewLine({ top: lineTop, containerKey });
-};
+  e.stopPropagation();
+  setDragOverZone(null);
+  setDropPreviewLine(null);
 
-const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
-  e.preventDefault();
-  
+  console.log('Multi-drop triggered for zone:', targetZone);
+
   try {
-    const data = JSON.parse(e.dataTransfer.getData('application/json'));
-    
-    if (data.type === 'reorder' && data.container === containerType) {
-      const { index: draggedIndex } = data;
-      const { dragOverIndex, dragOverPosition } = dragReorderState;
-      
-      if (draggedIndex === dragOverIndex) return;
-      
-      let targetIndex = dragOverIndex;
-      if (dragOverPosition === 'bottom') targetIndex++;
-      if (draggedIndex < targetIndex) targetIndex--;
-      
-      // Reorder the appropriate array
-      if (containerType === 'main') {
-        const reorderedWallets = [...subWallets];
-        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
-        reorderedWallets.splice(targetIndex, 0, movedWallet);
-        setSubWallets(reorderedWallets);
-        saveSubWalletsToStorage(reorderedWallets);
-      } else if (containerType === 'source') {
-        const reorderedWallets = [...sourceWallets];
-        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
-        reorderedWallets.splice(targetIndex, 0, movedWallet);
-        setSourceWallets(reorderedWallets);
-      } else if (containerType === 'destination') {
-        const reorderedWallets = [...destinationWallets];
-        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
-        reorderedWallets.splice(targetIndex, 0, movedWallet);
-        setDestinationWallets(reorderedWallets);
+    const jsonData = e.dataTransfer.getData('application/json');
+    console.log('Drop data received:', jsonData ? 'JSON data found' : 'No JSON data');
+
+    if (jsonData) {
+      const data = JSON.parse(jsonData);
+      console.log('Parsed drop data:', data);
+
+      if (data.type === 'multi-drag' && data.wallets && data.wallets.length > 0) {
+        const { wallets, sourceContainer } = data;
+        console.log(`Processing multi-drop: ${wallets.length} wallets from ${sourceContainer} to ${targetZone}`);
+
+        if (sourceContainer !== targetZone) {
+          if (sourceContainer === 'source') {
+            setSourceWallets(prev => {
+              const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
+              console.log('Removed from source:', prev.length - filtered.length);
+              return filtered;
+            });
+          } else if (sourceContainer === 'destination') {
+            setDestinationWallets(prev => {
+              const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
+              console.log('Removed from destination:', prev.length - filtered.length);
+              return filtered;
+            });
+          }
+
+          if (targetZone === 'source') {
+            setSourceWallets(prev => {
+              const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
+              console.log('Adding to source:', newWallets.length);
+              return [...prev, ...newWallets];
+            });
+          } else if (targetZone === 'destination') {
+            setDestinationWallets(prev => {
+              const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
+              console.log('Adding to destination:', newWallets.length);
+              return [...prev, ...newWallets];
+            });
+          }
+        }
+        setSelectedWalletsPerContainer({
+          main: new Set(),
+          source: new Set(),
+          destination: new Set()
+        });
+        setIsMultiDrag(false);
+        console.log('Multi-drop completed successfully');
+        return;
+      } else if (data.type === 'reorder') {
+        console.log('Handling reorder drop');
+        handleReorderDrop(e, targetZone as any);
+        return;
       }
     }
   } catch (error) {
-    console.error('Error handling reorder drop:', error);
+    console.error('Error handling multi-drop JSON:', error);
   }
-  
-  // Clean up
-  setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-  setDropPreviewLine(null);
-};
 
-// Helper function to get wallets for a container
-const getWalletsForContainer = (containerType: 'main' | 'source' | 'destination') => {
-  switch (containerType) {
-    case 'main':
-      return subWallets.filter(wallet =>
-        !sourceWallets.some(w => w.address === wallet.address) &&
-        !destinationWallets.some(w => w.address === wallet.address)
-      );
-    case 'source':
-      return sourceWallets;
-    case 'destination':
-      return destinationWallets;
-    default:
-      return [];
+  console.log('Falling back to single drop handling');
+  try {
+    const textData = e.dataTransfer.getData('text/plain');
+    if (textData) {
+      const dragData = JSON.parse(textData);
+      handleDrop(e, targetZone as any);
+      return;
+    }
+  } catch (error) {
+    console.error('Error handling text drop data:', error);
+  }
+  setIsMultiDrag(false);
+  if (draggedWallet?.sourceZone) {
+    handleDropBetweenZones(e, targetZone as any);
+  } else {
+    handleDrop(e, targetZone as any);
   }
 };
 
+  const handleReorderDragStart = (e: React.DragEvent, walletIndex: number, containerType: 'main' | 'source' | 'destination') => {
+
+    setDragReorderState(prev => ({ ...prev, draggedIndex: walletIndex }));
+
+    const reorderData = {
+      type: 'reorder',
+      index: walletIndex,
+      container: containerType,
+      timestamp: Date.now()
+    };
+
+    console.log('Setting reorder data:', reorderData);
+
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify(reorderData));
+
+    e.dataTransfer.setData('text/plain', JSON.stringify(reorderData));
+  };
+
+
+  useEffect(() => {
+    const handleGlobalMouseUp = () => {
+      endSelection();
+      setDropPreviewLine(null);
+    };
+
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedWallets(new Set());
+        setIsMultiDrag(false);
+        setDropPreviewLine(null);
+        endSelection();
+      }
+    };
+
+    document.addEventListener('mouseup', handleGlobalMouseUp);
+    document.addEventListener('keydown', handleGlobalKeyDown);
+
+    return () => {
+      document.removeEventListener('mouseup', handleGlobalMouseUp);
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, []);
+
+  const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
+    e.preventDefault();
+    if (isMultiDrag) {
+      return;
+    }
+
+    const element = e.currentTarget as HTMLElement;
+    const rect = element.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const isTopHalf = y < rect.height / 2;
+
+    setDragReorderState(prev => ({
+      ...prev,
+      dragOverIndex: targetIndex,
+      dragOverPosition: isTopHalf ? 'top' : 'bottom'
+    }));
+
+    const parentElement = element.parentElement;
+    if (parentElement) {
+      const parentRect = parentElement.getBoundingClientRect();
+      const lineTop = isTopHalf ?
+        rect.top - parentRect.top :
+        rect.bottom - parentRect.top;
+
+      setDropPreviewLine({ top: lineTop, containerKey });
+    }
+  };
+
+  const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
+    e.preventDefault();
+
+    try {
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (!jsonData || jsonData.trim() === '') {
+        console.log('No JSON data found for reorder operation');
+        return;
+      }
+
+      const data = JSON.parse(jsonData);
+
+      if (data.type === 'reorder' && data.container === containerType) {
+        const { index: draggedIndex } = data;
+        const { dragOverIndex, dragOverPosition } = dragReorderState;
+        if (draggedIndex === dragOverIndex) return;
+        let targetIndex = dragOverIndex;
+        if (dragOverPosition === 'bottom') targetIndex++;
+        if (draggedIndex < targetIndex) targetIndex--;
+        if (containerType === 'main') {
+          const reorderedWallets = [...subWallets];
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setSubWallets(reorderedWallets);
+          saveSubWalletsToStorage(reorderedWallets);
+        } else if (containerType === 'source') {
+          const reorderedWallets = [...sourceWallets];
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setSourceWallets(reorderedWallets);
+        } else if (containerType === 'destination') {
+          const reorderedWallets = [...destinationWallets];
+          const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+          reorderedWallets.splice(targetIndex, 0, movedWallet);
+          setDestinationWallets(reorderedWallets);
+        }
+      }
+    } catch (error) {
+      console.error('Error handling reorder drop:', error);
+    }
+    setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+    setDropPreviewLine(null);
+  };
+
+  const getWalletsForContainer = (containerType: 'main' | 'source' | 'destination') => {
+    switch (containerType) {
+      case 'main':
+        return subWallets.filter(wallet =>
+          !sourceWallets.some(w => w.address === wallet.address) &&
+          !destinationWallets.some(w => w.address === wallet.address)
+        );
+      case 'source':
+        return sourceWallets;
+      case 'destination':
+        return destinationWallets;
+      default:
+        return [];
+    }
+  };
 const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
-  const isSelected = selectedWallets.has(wallet.address);
+  const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
+  const isPreviewSelected = previewSelection.has(wallet.address);
   const isDragging = dragReorderState.draggedIndex === index;
   const isDragOver = dragReorderState.dragOverIndex === index;
-  
+
   return (
     <div
       key={wallet.address}
       data-wallet-address={wallet.address}
-      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
       draggable
       onDragStart={(e) => {
-        if (selectedWallets.size > 1 && isSelected) {
+        setDropPreviewLine(null);
+        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+
+        if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
+          console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
           handleMultiDragStart(e, wallet, containerType);
+          return;
+        }
+
+        setSelectedWalletsPerContainer(prev => ({
+          ...prev,
+          [containerType]: new Set([wallet.address])
+        }));
+
+        if (containerType === 'main') {
+          if (e.shiftKey) {
+            handleReorderDragStart(e, index, containerType);
+          } else {
+            handleDragStart(e, wallet, index);
+          }
         } else {
-          handleReorderDragStart(e, index, containerType);
+          if (e.shiftKey) {
+            handleReorderDragStart(e, index, containerType);
+          } else {
+            handleDragStartFromZone(e, wallet, containerType);
+          }
         }
       }}
-      onDragOver={(e) => handleReorderDragOver(e, index, containerKey)}
-      onDrop={(e) => handleReorderDrop(e, containerType)}
+      onDragEnd={(e) => {
+        setIsMultiDrag(false);
+        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+        setDropPreviewLine(null);
+        setDraggedWallet(null);
+        setDragOverZone(null);
+        console.log('Drag ended, cleaned up states');
+      }}
+      onDragOver={(e) => {
+        if (!isMultiDrag) {
+          handleReorderDragOver(e, index, containerKey);
+        }
+      }}
+      onDragLeave={(e) => {
+        const relatedTarget = e.relatedTarget as Node;
+        if (!e.currentTarget.contains(relatedTarget)) {
+          setDropPreviewLine(null);
+          setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+        }
+      }}
+      onDrop={(e) => {
+        return;
+      }}
       onClick={(e) => {
-         e.stopPropagation(); 
+        e.stopPropagation();
+        console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
+        
         if (e.ctrlKey || e.metaKey) {
-          setSelectedWallets(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(wallet.address)) {
-              newSet.delete(wallet.address);
+          setSelectedWalletsPerContainer(prev => {
+            const newContainerSet = new Set(prev[containerType]);
+            if (newContainerSet.has(wallet.address)) {
+              newContainerSet.delete(wallet.address);
             } else {
-              newSet.add(wallet.address);
+              newContainerSet.add(wallet.address);
             }
-            return newSet;
+            console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
+            return {
+              ...prev,
+              [containerType]: newContainerSet
+            };
           });
         } else {
-          setSelectedWallets(new Set([wallet.address]));
+          setSelectedWalletsPerContainer({
+            main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
+            source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
+            destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
+          });
+          console.log(`Single selected in ${containerType}:`, wallet.address);
         }
       }}
     >
-      {isSelected && isMultiDrag && selectedWallets.size > 1 && (
-        <div className="multi-drag-count">{selectedWallets.size}</div>
-      )}
-      
-      {dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
-        <div 
-          className="drop-preview-line" 
-          style={{ 
+      {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+        <div
+          className="drop-preview-line"
+          style={{
             top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
-          }} 
+          }}
         />
       )}
-      
-      {/* Your existing wallet item content */}
+
       <div className="wallet-drag-info">
         <div className="wallet-name-container">
           {editingWallet === wallet.address ? (
@@ -1323,14 +1597,14 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
 };
 
 const renderWalletContainer = (
-  wallets: any[], 
+  wallets: any[],
   containerType: 'main' | 'source' | 'destination',
   containerKey: string,
   emptyMessage: string,
   containerRef: React.RefObject<HTMLDivElement>
 ) => {
   const isThisContainerSelecting = activeSelectionContainer === containerType;
-  
+
   return (
     <div
       ref={containerRef}
@@ -1343,9 +1617,19 @@ const renderWalletContainer = (
       }}
       onMouseUp={endSelection}
       onMouseLeave={endSelection}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setDragOverZone(containerType);
+      }}
+      onDrop={(e) => handleUniversalDrop(e, containerType)}
+      onDragLeave={(e) => {
+        const relatedTarget = e.relatedTarget as Node;
+        if (!e.currentTarget.contains(relatedTarget)) {
+          setDragOverZone(null);
+        }
+      }}
       style={{ position: 'relative' }}
     >
-      {/* Selection rectangle - only show for active container */}
       {isThisContainerSelecting && selectionRect && (
         <div
           className="selection-rectangle"
@@ -1357,7 +1641,7 @@ const renderWalletContainer = (
           }}
         />
       )}
-      
+
       {wallets.length === 0 ? (
         <div className="drop-zone-empty">
           <div className="drop-zone-text">{emptyMessage}</div>
@@ -1368,6 +1652,7 @@ const renderWalletContainer = (
     </div>
   );
 };
+
   const getTotalWalletValue = (address: string) => {
     return walletTotalValues[address] || 0;
   };
@@ -1437,7 +1722,30 @@ const renderWalletContainer = (
   const handlePercentageChange = (value: number) => {
     setPercentage(value);
   };
+useEffect(() => {
+  const totalSelected = Object.values(selectedWalletsPerContainer).reduce((sum, set) => sum + set.size, 0);
+  if (totalSelected <= 1) {
+    setIsMultiDrag(false);
+  }
+}, [selectedWalletsPerContainer]);
 
+useEffect(() => {
+  const handleGlobalKeyDown = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setSelectedWalletsPerContainer({
+        main: new Set(),
+        source: new Set(),
+        destination: new Set()
+      });
+      setIsMultiDrag(false);
+      setDropPreviewLine(null);
+      endSelection();
+    }
+  };
+
+  document.addEventListener('keydown', handleGlobalKeyDown);
+  return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+}, []);
   useEffect(() => {
     const now = Date.now() / 1000;
     const timeago = now - 24 * 60 * 60 * days;
@@ -1749,18 +2057,18 @@ const renderWalletContainer = (
                   </div>
                 </div>
               ) : (
-<div className="drag-wallets-container">
- {renderWalletContainer(
-  subWallets.filter(wallet =>
-    !sourceWallets.some(w => w.address === wallet.address) &&
-    !destinationWallets.some(w => w.address === wallet.address)
-  ),
-  'main',
-  'main-wallets',
-  'Drag wallets here',
-  mainWalletsRef
-)}
-</div>
+                <div className="drag-wallets-container">
+                  {renderWalletContainer(
+                    subWallets.filter(wallet =>
+                      !sourceWallets.some(w => w.address === wallet.address) &&
+                      !destinationWallets.some(w => w.address === wallet.address)
+                    ),
+                    'main',
+                    'main-wallets',
+                    'Drag wallets here',
+                    mainWalletsRef
+                  )}
+                </div>
               )}
             </div>
 
@@ -1769,14 +2077,7 @@ const renderWalletContainer = (
                 className={`drop-zone source-zone ${dragOverZone === 'source' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'source')}
                 onDragLeave={handleDragLeave}
-               onDrop={(e) => {
-  if (draggedWallet?.sourceZone) {
-    handleDropBetweenZones(e, 'source');
-  } else {
-    handleMultiDrop(e, 'source');
-  }
-}}
-              >
+onDrop={(e) => handleUniversalDrop(e, 'source')}              >
                 <div className="drop-zone-header">
                   <span className="drop-zone-title">Source Wallets</span>
                   <span className="drop-zone-count">{sourceWallets.length}</span>
@@ -1790,119 +2091,112 @@ const renderWalletContainer = (
                   )}
                 </div>
 
-{renderWalletContainer(
-  sourceWallets,
-  'source',
-  'source-wallets',
-  'Drag source wallets here',
-  sourceWalletsRef
-)}
+                {renderWalletContainer(
+                  sourceWallets,
+                  'source',
+                  'source-wallets',
+                  'Drag source wallets here',
+                  sourceWalletsRef
+                )}
               </div>
 
               <div
                 className={`drop-zone destination-zone ${dragOverZone === 'destination' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'destination')}
                 onDragLeave={handleDragLeave}
-onDrop={(e) => {
-  if (draggedWallet?.sourceZone) {
-    handleDropBetweenZones(e, 'source');
-  } else {
-    handleMultiDrop(e, 'destination');
-  }
-}}
-              >
-<div className="drop-zone-header2">
-  <div className="destination-wallets-container">
-  <span className="drop-zone-title">Destination Wallets</span>
-  <span className="drop-zone-count">{destinationWallets.length}</span>
-  </div>
-  {destinationWallets.length > 0 && (
-    <>
-      <button
-        className="clear-zone-button"
-        onClick={() => setDestinationWallets([])}
-      >
-        Clear
-      </button>
-      <button
-        className="clear-zone-button"
-        onClick={handleSendBackToMain}
-        disabled={isVaultDepositSigning || destinationWallets.length === 0}
-        style={{ marginLeft: '8px' }}
-      >
-        {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
-      </button>
-    </>
-  )}
-  <div className="custom-address-section">
-  <div style={{ flex: 1 }}>
-    <input
-      type="text"
-      className="custom-address-input"
-      value={customDestinationAddress}
-      onChange={(e) => {
-        setCustomDestinationAddress(e.target.value);
-        setCustomAddressError('');
-      }}
-      placeholder="0x..."
-      style={{ fontSize: '0.8rem', padding: '6px 10px' }}
-    />
-    {customAddressError && (
-      <div style={{
-        color: '#ff6b6b',
-        fontSize: '0.7rem',
-        marginTop: '2px'
-      }}>
-        {customAddressError}
-      </div>
-    )}
-  </div>
-  <button
-    className="deposit-max-button"
-    onClick={handleAddCustomAddress}
-    disabled={!customDestinationAddress.trim()}
-  >
-    Add
-  </button>
-</div>
-</div>
+onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
+                <div className="drop-zone-header2">
+                  <div className="destination-wallets-container">
+                    <span className="drop-zone-title">Destination Wallets</span>
+                    <span className="drop-zone-count">{destinationWallets.length}</span>
+                  </div>
+                  {destinationWallets.length > 0 && (
+                    <>
+                      <button
+                        className="clear-zone-button"
+                        onClick={() => setDestinationWallets([])}
+                      >
+                        Clear
+                      </button>
+                      <button
+                        className="clear-zone-button"
+                        onClick={handleSendBackToMain}
+                        disabled={isVaultDepositSigning || destinationWallets.length === 0}
+                        style={{ marginLeft: '8px' }}
+                      >
+                        {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
+                      </button>
+                    </>
+                  )}
+                  <div className="custom-address-section">
+                    <div style={{ flex: 1 }}>
+                      <input
+                        type="text"
+                        className="custom-address-input"
+                        value={customDestinationAddress}
+                        onChange={(e) => {
+                          setCustomDestinationAddress(e.target.value);
+                          setCustomAddressError('');
+                        }}
+                        placeholder="0x..."
+                        style={{ fontSize: '0.8rem', padding: '6px 10px' }}
+                      />
+                      {customAddressError && (
+                        <div style={{
+                          color: '#ff6b6b',
+                          fontSize: '0.7rem',
+                          marginTop: '2px'
+                        }}>
+                          {customAddressError}
+                        </div>
+                      )}
+                    </div>
+                    <button
+                      className="deposit-max-button"
+                      onClick={handleAddCustomAddress}
+                      disabled={!customDestinationAddress.trim()}
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
 
-{renderWalletContainer(
-  destinationWallets,
-  'destination',
-  'destination-wallets',
-  'Drag destination wallets here',
-  destinationWalletsRef
-)}
+                {renderWalletContainer(
+                  destinationWallets,
+                  'destination',
+                  'destination-wallets',
+                  'Drag destination wallets here',
+                  destinationWalletsRef
+                )}
               </div>
             </div>
             {(sourceWallets.length > 0 || destinationWallets.length > 0) && (
               <div className="distribution-controls">
                 <div className="distribution-settings">
-<div className="distribution-amount-section">
-  <label className="distribution-label">Amount to Distribute (MON):</label>
-  <div className="distribution-amount-input-container">
-    <input
-      type="text"
-      className="distribution-amount-input"
-      value={distributionAmount}
-      onChange={(e) => {
-        const value = e.target.value;
-        if (/^\d*\.?\d{0,18}$/.test(value)) {
-          setDistributionAmount(value);
-        }
-      }}
-      placeholder="0.00"
-    />
-    <button
-      className="deposit-max-button"
-      onClick={handleMaxAmount}
-      disabled={sourceWallets.length === 0}
-    >
-      Max
-    </button>
-  </div>
-</div>
+                  <div className="distribution-amount-section">
+                    <label className="distribution-label">Amount to Distribute (MON):</label>
+                    <div className="distribution-amount-input-container">
+                      <input
+                        type="text"
+                        className="distribution-amount-input"
+                        value={distributionAmount}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          if (/^\d*\.?\d{0,18}$/.test(value)) {
+                            setDistributionAmount(value);
+                          }
+                        }}
+                        placeholder="0.00"
+                      />
+                      <button
+                        className="deposit-max-button"
+                        onClick={handleMaxAmount}
+                        disabled={sourceWallets.length === 0}
+                      >
+                        Max
+                      </button>
+                    </div>
+                  </div>
 
                   <div className="distribution-mode-section">
                     <label className="distribution-label">Distribution Mode:</label>
@@ -2070,48 +2364,48 @@ onDrop={(e) => {
               </div>
             )}
             {showDepositModal && (
-  <div className="pk-modal-backdrop" onClick={closeDepositModal}>
-    <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
-      <div className="pk-modal-header">
-        <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
-        <button className="pk-modal-close" onClick={closeDepositModal}>
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
-      <div className="pk-modal-content">
-       
-        <div className="pk-input-section">
-          <label className="pk-label">Amount (MON):</label>
-          <div className="pk-input-container">
-            <input
-              type="text"
-              className="pk-input"
-              value={depositAmount}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (/^\d*\.?\d{0,18}$/.test(value)) {
-                  setDepositAmount(value);
-                }
-              }}
-              placeholder="0.00"
-              autoComplete="off"
-            />
-          </div>
-        </div>
-        
-        <div className="pk-modal-actions">
-          <button
-            className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
-            onClick={handleDepositFromEOA}
-            disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isDepositing}
-          >
-            {isDepositing ? 'Depositing...' : 'Deposit'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
+              <div className="pk-modal-backdrop" onClick={closeDepositModal}>
+                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="pk-modal-header">
+                    <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
+                    <button className="pk-modal-close" onClick={closeDepositModal}>
+                      <img src={closebutton} className="close-button-icon" />
+                    </button>
+                  </div>
+                  <div className="pk-modal-content">
+
+                    <div className="pk-input-section">
+                      <label className="pk-label">Amount (MON):</label>
+                      <div className="pk-input-container">
+                        <input
+                          type="text"
+                          className="pk-input"
+                          value={depositAmount}
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            if (/^\d*\.?\d{0,18}$/.test(value)) {
+                              setDepositAmount(value);
+                            }
+                          }}
+                          placeholder="0.00"
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pk-modal-actions">
+                      <button
+                        className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
+                        onClick={handleDepositFromEOA}
+                        disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isDepositing}
+                      >
+                        {isDepositing ? 'Depositing...' : 'Deposit'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         );
     }
