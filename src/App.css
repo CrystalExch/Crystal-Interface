@@ -813,7 +813,7 @@ html {
 
 .main-content-wrapper.simple-view .sliding-tab-indicator {
   border-radius: 6px;
-  border: 1px solid #19191f;
+  border: 1.5px solid rgb(20 20 24);
   box-shadow: none;
   height: 100%;
   opacity: 1;
@@ -2673,7 +2673,7 @@ body {
 }
 
 .main-content-wrapper.simple-view .swapmodal {
-  border: 1px solid rgb(22, 22, 27);
+  border:1.5px solid rgb(20 20 24);
   border-radius: 10px;
   padding: 0;
   padding-bottom: 11px;
@@ -4422,15 +4422,16 @@ input[type="email"] {
   border: none;
   color: #ffffff90;
   cursor: pointer;
-  display: none;
+  display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   margin-left: auto;
-  width: 35px;
-  height: 35px;
+  width: 40px;
+  height: 40px;
   transition: color 0.2s ease, background-color 0.2s ease;
   overflow: visible;
+  margin-right: -5px;
 }
 
 .main-content-wrapper.simple-view .refresh-quote-button {
@@ -4475,7 +4476,7 @@ input[type="email"] {
 .timer-circle-border {
   fill: none;
   stroke: rgba(179, 184, 249, 0.09);
-  stroke-width: 0.5;
+  stroke-width: 1;
   stroke-linecap: round;
   transform-origin: center;
   transform: rotate(-90deg);
