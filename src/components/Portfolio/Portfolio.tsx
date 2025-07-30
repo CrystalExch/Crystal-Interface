@@ -1,4 +1,4 @@
-import { Eye, Search, Eye as EyeIcon, Edit2, Check, X, Star } from 'lucide-react';
+import { Eye, Search, Eye as EyeIcon, Edit2, Check, X, Star, Plus } from 'lucide-react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
@@ -459,7 +459,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         amountPerDestination = amount / destinationWallets.length;
       } else {
         const totalDestinationValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
-        amountPerDestination = amount; 
+        amountPerDestination = amount;
       }
 
       for (const sourceWallet of sourceWallets) {
@@ -555,7 +555,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const openExportModal = (wallet: { address: string, privateKey: string }) => {
     setExportingWallet(wallet);
-    setPrivateKeyRevealed(false); 
+    setPrivateKeyRevealed(false);
     setShowExportModal(true);
   };
 
@@ -684,21 +684,50 @@ const Portfolio: React.FC<PortfolioProps> = ({
     const actualIndex = subWallets.findIndex(w => w.address === address);
     return `Wallet ${actualIndex !== -1 ? actualIndex + 1 : (walletIndex !== undefined ? walletIndex + 1 : 1)}`;
   };
+const [isDepositing, setIsDepositing] = useState(false);
 
-  const openDepositModal = (targetWallet: string, mode: 'main' | 'subwallet') => {
-    setDepositTargetWallet(targetWallet);
-    setDepositMode(mode);
-    setDepositAmount('');
-    setDepositFromWallet('');
-    setShowDepositModal(true);
-  };
+const openDepositModal = (targetWallet: React.SetStateAction<string>) => {
+  setDepositTargetWallet(targetWallet);
+  setDepositAmount('');
+  setShowDepositModal(true);
+};
 
-  const closeDepositModal = () => {
-    setShowDepositModal(false);
-    setDepositTargetWallet('');
-    setDepositAmount('');
-    setDepositFromWallet('');
-  };
+const closeDepositModal = () => {
+  setShowDepositModal(false);
+  setDepositTargetWallet('');
+  setDepositAmount('');
+};
+
+
+const handleDepositFromEOA = async () => {
+  if (!depositAmount || !depositTargetWallet) return;
+
+  try {
+    setIsDepositing(true);
+    await handleSetChain();
+
+    const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+
+    const hash = await sendUserOperationAsync({
+      uo: {
+        target: depositTargetWallet,
+        value: ethAmount,
+        data: '0x'
+      }
+    });
+
+    console.log('Deposit successful:', hash);
+    await refreshWalletBalance(depositTargetWallet);
+    refetch();
+    closeDepositModal();
+
+  } catch (error) {
+    console.error('Deposit failed:', error);
+    alert('Deposit failed. Please try again.');
+  } finally {
+    setIsDepositing(false);
+  }
+};
 
   const handleDeposit = async () => {
     if (!depositAmount || !depositTargetWallet) return;
@@ -1207,35 +1236,49 @@ const Portfolio: React.FC<PortfolioProps> = ({
                             </div>
                             <div className="wallet-drag-address">
                               {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                              <img
+                                src={copy}
+                                className="wallets-copy-icon"
+                                alt="Copy"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(wallet.address);
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              />
                             </div>
                           </div>
+<div className="wallet-drag-actions">
+  <button
+    className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
+    onClick={() => {
+      setOneCTSigner(wallet.privateKey);
+      setpopup(25);
+      refetch();
+    }}
+  >
+    <Star
+      size={14}
+      fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
+      color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+    />
+  </button>
 
-                          <div className="wallet-drag-actions">
-                            <button
-                              className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
-                              onClick={() => {
-                                setOneCTSigner(wallet.privateKey);
-                                setpopup(25);
-                                refetch();
-                              }}
+  <button
+    className="wallet-icon-button"
+    onClick={() => openDepositModal(wallet.address)}
+    title="Deposit from Main Wallet"
+  >
+    <Plus size={14} className="wallet-action-icon" />
+  </button>
 
-                            >
-                              <Star
-                                size={14}
-                                fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-                                color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
-                              />
-                            </button>
-
-                            <button
-                              className="wallet-icon-button key-button"
-                              onClick={() => openExportModal(wallet)}
-                              title="Export Private Key"
-                            >
-                              <img src={key} className="wallet-action-icon" alt="Export Key" />
-                            </button>
-
+  <button
+    className="wallet-icon-button key-button"
+    onClick={() => openExportModal(wallet)}
+    title="Export Private Key"
+  >
+    <img src={key} className="wallet-action-icon" alt="Export Key" />
+  </button>
                             <a
                               href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
                               target="_blank"
@@ -1353,7 +1396,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
                               </div>                            </div>
                             <div className="wallet-drag-address">
                               {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                              <img
+                                src={copy}
+                                className="wallets-copy-icon"
+                                alt="Copy"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  navigator.clipboard.writeText(wallet.address);
+                                }}
+                                style={{ cursor: 'pointer' }}
+                              />
                             </div>
                           </div>
                         </div>
@@ -1374,6 +1426,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                               }
                             }}
                           >
+                            
                             <Star
                               size={14}
                               fill={(() => {
@@ -1385,7 +1438,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                 return originalWallet && isWalletActive(originalWallet.privateKey) ? '#0f0f12' : 'currentColor';
                               })()}
                             />
+                            
                           </button>
+  <button
+    className="wallet-icon-button"
+    onClick={() => openDepositModal(wallet.address)}
+    title="Deposit from Main Wallet"
+  >
+    <Plus size={14} className="wallet-action-icon" />
+  </button>
 
                           <button
                             className="wallet-icon-button key-button"
@@ -1538,7 +1599,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                   </div>                                </div>
                                 <div className="wallet-drag-address">
                                   {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                  <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                                  <img
+                                    src={copy}
+                                    className="wallets-copy-icon"
+                                    alt="Copy"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      navigator.clipboard.writeText(wallet.address);
+                                    }}
+                                    style={{ cursor: 'pointer' }}
+                                  />
                                 </div>
                               </div>
                             </div>
@@ -1571,6 +1641,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
                                   })()}
                                 />
                               </button>
+  <button
+    className="wallet-icon-button"
+    onClick={() => openDepositModal(wallet.address)}
+    title="Deposit from Main Wallet"
+  >
+    <Plus size={14} className="wallet-action-icon" />
+  </button>
 
                               <button
                                 className="wallet-icon-button key-button"
@@ -1813,6 +1890,49 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
               </div>
             )}
+            {showDepositModal && (
+  <div className="pk-modal-backdrop" onClick={closeDepositModal}>
+    <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="pk-modal-header">
+        <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
+        <button className="pk-modal-close" onClick={closeDepositModal}>
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+      <div className="pk-modal-content">
+       
+        <div className="pk-input-section">
+          <label className="pk-label">Amount (MON):</label>
+          <div className="pk-input-container">
+            <input
+              type="text"
+              className="pk-input"
+              value={depositAmount}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (/^\d*\.?\d{0,18}$/.test(value)) {
+                  setDepositAmount(value);
+                }
+              }}
+              placeholder="0.00"
+              autoComplete="off"
+            />
+          </div>
+        </div>
+        
+        <div className="pk-modal-actions">
+          <button
+            className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
+            onClick={handleDepositFromEOA}
+            disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isDepositing}
+          >
+            {isDepositing ? 'Depositing...' : 'Deposit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
           </div>
         );
     }
