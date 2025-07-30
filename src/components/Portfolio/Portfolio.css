@@ -457,13 +457,7 @@
     background:rgb(6,6,6);
     border-right:1px solid rgba(179,184,249,.09)
 }
-.wallets-right-panel{
-    flex:1;
-    width:50%;
-    display:flex;
-    flex-direction:column;
-    background:rgb(6,6,6)
-}
+
 .drag-wallets-container{
     flex:1;
     display:flex;
@@ -553,7 +547,8 @@
 }
 .wallet-drag-actions{
     display:none;
-    gap:8px;
+    gap:12px;
+    padding-right: 6px;
     align-items:center
 }
 
@@ -585,14 +580,15 @@
 }
 .clear-zone-button{
     background:transparent;
-    border:1.5px solid rgba(255,255,255,.1);
+    border:1.5px solid rgba(179,184,249,.1);
     border-radius:20px;
     color:rgba(255,255,255,.6);
     padding:2px 8px;
-    font-size:.7rem;
+    font-size:.8rem;
     cursor:pointer;
     margin-left:auto;
-    transition:all.2s
+    transition:all.2s;
+    letter-spacing:-.2px;
 }
 .clear-zone-button:hover{
     background:rgba(255,255,255,.05);
@@ -605,7 +601,7 @@
     align-items:center;
     justify-content:center;
     gap:4px;
-    padding:40px 20px
+    height: 100%;
 }
 .drop-zone-icon{
     font-size:2rem;
@@ -711,12 +707,12 @@
     letter-spacing:-.5px
 }
 .distribution-amount-input{
-    border:1.5px solid rgba(179,184,249,.15);
+    border:1.5px solid rgba(179,184,249,.1);
     background: none;
     border-radius:20px;
     color:#ebebf4;
-    padding:8px 12px;
-    font-size:.85rem;
+    padding:4px 12px;
+    font-size:1rem;
     width:100%;
     transition:border-color.2s
 }
@@ -725,12 +721,18 @@
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.2)
 }
+
+
+.distribution-amount-input-container{
+    display: flex;
+    gap: .5rem;
+}
 .distribution-mode-select{
     display: flex;
     align-items: center;
     justify-content: center;
     background:none;
-    border:1.5px solid rgba(179,184,249,.15);
+    border:1.5px solid rgba(179,184,249,.1);
     border-radius:20px;
     color:#ebebf4;
     padding:8px 12px;
@@ -1580,7 +1582,6 @@
         width:50%;
         display:flex;
         flex-direction:column;
-        gap:1px;
         background:rgb(6,6,6)
     }
     .drag-wallets-container{
@@ -1634,6 +1635,7 @@
     .drop-zone-header2{
         display:flex;
         align-items:center;
+        justify-content: space-between;
         gap:8px;
         height: 50px;
         padding: 0 20px;
@@ -2055,26 +2057,21 @@
     transition:border-color.2s
 }
 .deposit-max-button{
-    background:rgba(255,255,255,.1);
-    border:1px solid rgba(255,255,255,.2);
-    border-radius:6px;
+    border:1.5px solid rgba(179,184,249,.1);
+    border-radius:20px;
     color:rgba(255,255,255,.8);
-    padding:8px 16px;
     font-size:.75rem;
-    font-weight:500;
     cursor:pointer;
     transition:all.2s;
-    background:#333;
-    border:1px solid #555;
+    background:none;
     color:white;
-    padding:10px 16px;
-    font-size:12px;
-    font-weight:600
+    padding:5px 16px;
+    letter-spacing: -0.3px;
+    cursor: pointer;
+    height: 35px;
 }
 .deposit-max-button:hover{
-    background:rgba(255,255,255,.2);
     color:rgba(255,255,255,.9);
-    background:#444
 }
 .deposit-modal-actions{
     display:flex;
@@ -2222,13 +2219,40 @@
   border: 1.5px solid rgba(179, 184, 249, 0.1);
   background: none;
   border-radius: 12px;
-  color: #d8dcff;
-  padding: 5px 12px;
+  color: #e6e7f8;
+  padding: 2px 12px;
   font-size: 0.85rem;
   transition: all 0.2s;
   box-sizing: border-box;
 }
 
+.custom-address-input:focus {
+  outline: none;
+  border-color: #aaaecf;
+  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
+}
+
+.custom-address-input{
+    width: 100%;
+    border: 1.5px solid rgba(179, 184, 249, 0.1);
+    background: none;
+    border-radius: 12px;
+    color: #e6e7f8;
+    padding: 5px 12px;
+    font-size: 0.85rem;
+    transition: all 0.2s;
+    box-sizing: border-box;
+    height: 35px;
+
+}
+
+.custom-address-label{
+    display: block;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.7rem;
+    letter-spacing: -0.3px;
+    margin-bottom: -1px;
+}
 .pk-input:focus {
   outline: none;
   border-color: #aaaecf;
@@ -2750,8 +2774,8 @@
 
 
 .wallet-action-icon {
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
   transition: opacity 0.2s ease;
   opacity: 0.4;
 
@@ -2762,8 +2786,8 @@
 }
 
 .wallet-action-icon-svg {
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
   opacity: 0.4;
   transition: opacity 0.2s ease;
 }
@@ -3035,4 +3059,133 @@
     transition:all.2s;
     min-width:80px;
     letter-spacing:-.5px
+}
+
+
+.custom-address-section {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+
+.destination-wallets-container{
+    display: flex;
+    gap: 8px;
+}
+
+
+.selection-rectangle {
+  position: absolute;
+  border: 1.5px solid rgb(200, 204, 236);
+  background: rgba(170, 174, 207, 0.1);
+  pointer-events: none;
+  z-index: 100;
+  backdrop-filter: blur(2px);
+  box-shadow: inset 0 0 1px 2px rgb(134, 139, 159);
+}
+
+.draggable-wallet-item.selected {
+  background: rgba(170, 174, 207, 0.15);
+  border: 1px solid rgba(170, 174, 207, 0.3);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(170, 174, 207, 0.2);
+}
+
+.draggable-wallet-item.multi-drag-ghost {
+  opacity: 0.5;
+  transform: scale(0.95);
+}
+
+.drop-preview-line {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, #aaaecf, #7f82a1);
+  border-radius: 1px;
+  z-index: 50;
+  box-shadow: 0 0 4px rgba(170, 174, 207, 0.5);
+  animation: dropPreviewPulse 1s infinite alternate;
+}
+
+@keyframes dropPreviewPulse {
+  from {
+    opacity: 0.6;
+    transform: scaleY(1);
+  }
+  to {
+    opacity: 1;
+    transform: scaleY(1.5);
+  }
+}
+
+/* Container States */
+.drag-wallets-list {
+  position: relative;
+  user-select: none;
+}
+
+.drag-wallets-list.selecting {
+  cursor: crosshair;
+}
+
+.drop-zone-wallets {
+  position: relative;
+  user-select: none;
+}
+
+.drop-zone-wallets.selecting {
+  cursor: crosshair;
+}
+
+/* Prevent text selection during drag operations */
+.drag-wallets-list.selecting *,
+.drop-zone-wallets.selecting * {
+  user-select: none;
+  pointer-events: none;
+}
+
+.drag-wallets-list.selecting .draggable-wallet-item,
+.drop-zone-wallets.selecting .draggable-wallet-item {
+  pointer-events: auto;
+}
+
+/* Multi-drag indicator */
+.multi-drag-count {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: linear-gradient(135deg, #aaaecf, #7f82a1);
+  color: #0f0f12;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  z-index: 101;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced draggable item for reordering */
+.draggable-wallet-item {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  position: relative;
+}
+
+.draggable-wallet-item.dragging {
+  z-index: 1000;
+  transform:scale(1.02);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+}
+
+.draggable-wallet-item.drag-over-top {
+  border-top: 2px solid #aaaecf;
+}
+
+.draggable-wallet-item.drag-over-bottom {
+  border-bottom: 2px solid #aaaecf;
 }

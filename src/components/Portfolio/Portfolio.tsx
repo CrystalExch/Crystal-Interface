@@ -215,7 +215,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [importPrivateKey, setImportPrivateKey] = useState<string>('');
   const [importError, setImportError] = useState<string>('');
   const [isImporting, setIsImporting] = useState(false);
-
+const mainWalletsRef = useRef<HTMLDivElement>(null);
+const sourceWalletsRef = useRef<HTMLDivElement>(null);
+const destinationWalletsRef = useRef<HTMLDivElement>(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
 
@@ -323,6 +325,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
   const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
+    e.stopPropagation();
     const dragData: WalletDragItem = {
       address: wallet.address,
       name: getWalletName(wallet.address, index),
@@ -728,6 +731,98 @@ const handleDepositFromEOA = async () => {
     setIsDepositing(false);
   }
 };
+const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
+const [customAddressError, setCustomAddressError] = useState<string>('');
+const calculateMaxAmount = () => {
+  const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
+    return total + getWalletBalance(wallet.address);
+  }, 0);
+  return totalSourceBalance;
+};
+const handleMaxAmount = () => {
+  const maxAmount = calculateMaxAmount();
+  setDistributionAmount(maxAmount.toString());
+};
+
+// Add this function to handle adding custom address:
+const handleAddCustomAddress = () => {
+  setCustomAddressError('');
+  
+  if (!customDestinationAddress.trim()) {
+    setCustomAddressError('Please enter an address');
+    return;
+  }
+
+  if (!isValidAddress(customDestinationAddress.trim())) {
+    setCustomAddressError('Invalid address format');
+    return;
+  }
+
+  // Check if address is already in destination wallets
+  const isAlreadyAdded = destinationWallets.some(w => 
+    w.address.toLowerCase() === customDestinationAddress.trim().toLowerCase()
+  );
+  
+  if (isAlreadyAdded) {
+    setCustomAddressError('Address already added to destinations');
+    return;
+  }
+
+  // Add custom address to destination wallets
+  const customWallet: WalletDragItem = {
+    address: customDestinationAddress.trim(),
+    name: `Custom (${customDestinationAddress.slice(0, 6)}...${customDestinationAddress.slice(-4)})`,
+    balance: 0, // We don't have balance info for custom addresses
+    totalValue: 0,
+    index: -1 // Mark as custom address
+  };
+
+  setDestinationWallets(prev => [...prev, customWallet]);
+  setCustomDestinationAddress('');
+};
+
+// Add this function to send back to main wallet:
+const handleSendBackToMain = async () => {
+  if (destinationWallets.length === 0) {
+    alert('No destination wallets to send from');
+    return;
+  }
+
+  try {
+    setIsVaultDepositSigning(true);
+    await handleSetChain();
+
+    for (const destWallet of destinationWallets) {
+      const sourceWalletData = subWallets.find(w => w.address === destWallet.address);
+      if (!sourceWalletData) continue;
+
+      const walletBalance = getWalletBalance(destWallet.address);
+      if (walletBalance > 0.001) { 
+        const transferAmount = walletBalance - 0.001;
+        
+        await handleSubwalletTransfer(
+          destWallet.address,
+          address, 
+          transferAmount.toString(),
+          sourceWalletData.privateKey
+        );
+      }
+    }
+
+    for (const wallet of destinationWallets) {
+      await refreshWalletBalance(wallet.address);
+    }
+    refetch(); 
+
+    alert('Successfully sent back to main wallet!');
+
+  } catch (error) {
+    console.error('Send back to main wallet failed:', error);
+    alert('Send back to main wallet failed. Please try again.');
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
 
   const handleDeposit = async () => {
     if (!depositAmount || !depositTargetWallet) return;
@@ -782,6 +877,497 @@ const handleDepositFromEOA = async () => {
     return 0;
   };
 
+interface SelectionRect {
+  startX: number;
+  startY: number;
+  currentX: number;
+  currentY: number;
+}
+
+interface DragReorderState {
+  draggedIndex: number;
+  dragOverIndex: number;
+  dragOverPosition: 'top' | 'bottom' | null;
+}
+
+// Add these new state variables inside your Portfolio component
+const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
+const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
+const [dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
+const [isMultiDrag, setIsMultiDrag] = useState(false);
+
+// Reordering states
+const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
+  draggedIndex: -1,
+  dragOverIndex: -1,
+  dragOverPosition: null
+});
+const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
+
+const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | 'destination') => {
+  if (e.button !== 0) return; // Only left mouse button
+  
+  // Prevent starting selection if clicking on a wallet item
+  if ((e.target as HTMLElement).closest('.draggable-wallet-item')) {
+    return;
+  }
+  
+  const rect = e.currentTarget.getBoundingClientRect();
+  const startX = e.clientX - rect.left;
+  const startY = e.clientY - rect.top;
+  
+  setActiveSelectionContainer(containerKey);
+  setDragStartPoint({ x: e.clientX, y: e.clientY });
+  setSelectionRect({
+    startX,
+    startY,
+    currentX: startX,
+    currentY: startY
+  });
+  
+  // Clear previous selection if not holding Ctrl/Cmd
+  if (!e.ctrlKey && !e.metaKey) {
+    setSelectedWallets(new Set());
+  }
+};
+const updateSelection = (e: React.MouseEvent, container: HTMLElement, containerKey: 'main' | 'source' | 'destination') => {
+  if (activeSelectionContainer !== containerKey || !selectionRect) return;
+  
+  const rect = container.getBoundingClientRect();
+  const currentX = e.clientX - rect.left;
+  const currentY = e.clientY - rect.top;
+  
+  setSelectionRect(prev => prev ? {
+    ...prev,
+    currentX,
+    currentY
+  } : null);
+  
+  // Get wallets within selection rectangle
+  const walletElements = container.querySelectorAll('.draggable-wallet-item');
+  const newSelection = new Set<string>();
+  
+  walletElements.forEach((element) => {
+    const walletRect = element.getBoundingClientRect();
+    const elementRect = {
+      left: walletRect.left - rect.left,
+      top: walletRect.top - rect.top,
+      right: walletRect.right - rect.left,
+      bottom: walletRect.bottom - rect.top
+    };
+    
+    const selectionBounds = {
+      left: Math.min(selectionRect.startX, currentX),
+      top: Math.min(selectionRect.startY, currentY),
+      right: Math.max(selectionRect.startX, currentX),
+      bottom: Math.max(selectionRect.startY, currentY)
+    };
+    
+    // Check if wallet intersects with selection rectangle
+    if (elementRect.left < selectionBounds.right &&
+        elementRect.right > selectionBounds.left &&
+        elementRect.top < selectionBounds.bottom &&
+        elementRect.bottom > selectionBounds.top) {
+      
+      const walletAddress = element.getAttribute('data-wallet-address');
+      if (walletAddress) newSelection.add(walletAddress);
+    }
+  });
+  
+  setSelectedWallets(prev => {
+    const combined = new Set(prev);
+    newSelection.forEach(addr => combined.add(addr));
+    return combined;
+  });
+};
+
+const endSelection = () => {
+  setActiveSelectionContainer(null);
+  setSelectionRect(null);
+  setDragStartPoint(null);
+};
+
+const handleMultiDragStart = (e: React.DragEvent, wallet: any, containerType: 'main' | 'source' | 'destination') => {
+  const isWalletSelected = selectedWallets.has(wallet.address);
+  
+  if (isWalletSelected && selectedWallets.size > 1) {
+    setIsMultiDrag(true);
+    
+    // Get all selected wallets data
+    const selectedWalletsData = getWalletsForContainer(containerType)
+      .filter(w => selectedWallets.has(w.address))
+      .map(w => ({
+        address: w.address,
+        name: getWalletName(w.address),
+        balance: getWalletBalance(w.address),
+        totalValue: getTotalWalletValue(w.address),
+        index: w.index || 0,
+        privateKey: w.privateKey // Make sure to include privateKey for main wallets
+      }));
+    
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      type: 'multi-drag',
+      wallets: selectedWalletsData,
+      sourceContainer: containerType
+    }));
+  } else {
+    setIsMultiDrag(false);
+    // Handle single drag as before
+    handleDragStart(e, wallet, wallet.index || 0);
+  }
+};
+
+const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination') => {
+  e.preventDefault();
+  setDragOverZone(null);
+  
+  try {
+    const data = JSON.parse(e.dataTransfer.getData('application/json'));
+    
+    if (data.type === 'multi-drag') {
+      const { wallets, sourceContainer } = data;
+      
+      // Remove from source containers
+      if (sourceContainer === 'source') {
+        setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+      } else if (sourceContainer === 'destination') {
+        setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+      }
+      
+      // Add to target container
+      if (targetZone === 'source') {
+        setSourceWallets(prev => [...prev, ...wallets.filter((w: any) => !prev.some(pw => pw.address === w.address))]);
+      } else {
+        setDestinationWallets(prev => [...prev, ...wallets.filter((w: any) => !prev.some(pw => pw.address === w.address))]);
+      }
+      
+      setSelectedWallets(new Set());
+    }
+  } catch (error) {
+    // Handle regular drop
+    handleDrop(e, targetZone);
+  }
+};
+
+// Reordering functions
+const handleReorderDragStart = (e: React.DragEvent, walletIndex: number, containerType: 'main' | 'source' | 'destination') => {
+  setDragReorderState(prev => ({ ...prev, draggedIndex: walletIndex }));
+  e.dataTransfer.setData('application/json', JSON.stringify({
+    type: 'reorder',
+    index: walletIndex,
+    container: containerType
+  }));
+};
+
+const handleReorderDragOver = (e: React.DragEvent, targetIndex: number, containerKey: string) => {
+  e.preventDefault();
+  
+  const element = e.currentTarget as HTMLElement;
+  const rect = element.getBoundingClientRect();
+  const y = e.clientY - rect.top;
+  const isTopHalf = y < rect.height / 2;
+  
+  setDragReorderState(prev => ({
+    ...prev,
+    dragOverIndex: targetIndex,
+    dragOverPosition: isTopHalf ? 'top' : 'bottom'
+  }));
+  
+  // Calculate drop preview line position
+  const lineTop = isTopHalf ? rect.top - element.parentElement!.getBoundingClientRect().top : 
+                             rect.bottom - element.parentElement!.getBoundingClientRect().top;
+  
+  setDropPreviewLine({ top: lineTop, containerKey });
+};
+
+const handleReorderDrop = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
+  e.preventDefault();
+  
+  try {
+    const data = JSON.parse(e.dataTransfer.getData('application/json'));
+    
+    if (data.type === 'reorder' && data.container === containerType) {
+      const { index: draggedIndex } = data;
+      const { dragOverIndex, dragOverPosition } = dragReorderState;
+      
+      if (draggedIndex === dragOverIndex) return;
+      
+      let targetIndex = dragOverIndex;
+      if (dragOverPosition === 'bottom') targetIndex++;
+      if (draggedIndex < targetIndex) targetIndex--;
+      
+      // Reorder the appropriate array
+      if (containerType === 'main') {
+        const reorderedWallets = [...subWallets];
+        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+        reorderedWallets.splice(targetIndex, 0, movedWallet);
+        setSubWallets(reorderedWallets);
+        saveSubWalletsToStorage(reorderedWallets);
+      } else if (containerType === 'source') {
+        const reorderedWallets = [...sourceWallets];
+        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+        reorderedWallets.splice(targetIndex, 0, movedWallet);
+        setSourceWallets(reorderedWallets);
+      } else if (containerType === 'destination') {
+        const reorderedWallets = [...destinationWallets];
+        const [movedWallet] = reorderedWallets.splice(draggedIndex, 1);
+        reorderedWallets.splice(targetIndex, 0, movedWallet);
+        setDestinationWallets(reorderedWallets);
+      }
+    }
+  } catch (error) {
+    console.error('Error handling reorder drop:', error);
+  }
+  
+  // Clean up
+  setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+  setDropPreviewLine(null);
+};
+
+// Helper function to get wallets for a container
+const getWalletsForContainer = (containerType: 'main' | 'source' | 'destination') => {
+  switch (containerType) {
+    case 'main':
+      return subWallets.filter(wallet =>
+        !sourceWallets.some(w => w.address === wallet.address) &&
+        !destinationWallets.some(w => w.address === wallet.address)
+      );
+    case 'source':
+      return sourceWallets;
+    case 'destination':
+      return destinationWallets;
+    default:
+      return [];
+  }
+};
+
+const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
+  const isSelected = selectedWallets.has(wallet.address);
+  const isDragging = dragReorderState.draggedIndex === index;
+  const isDragOver = dragReorderState.dragOverIndex === index;
+  
+  return (
+    <div
+      key={wallet.address}
+      data-wallet-address={wallet.address}
+      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        if (selectedWallets.size > 1 && isSelected) {
+          handleMultiDragStart(e, wallet, containerType);
+        } else {
+          handleReorderDragStart(e, index, containerType);
+        }
+      }}
+      onDragOver={(e) => handleReorderDragOver(e, index, containerKey)}
+      onDrop={(e) => handleReorderDrop(e, containerType)}
+      onClick={(e) => {
+         e.stopPropagation(); 
+        if (e.ctrlKey || e.metaKey) {
+          setSelectedWallets(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(wallet.address)) {
+              newSet.delete(wallet.address);
+            } else {
+              newSet.add(wallet.address);
+            }
+            return newSet;
+          });
+        } else {
+          setSelectedWallets(new Set([wallet.address]));
+        }
+      }}
+    >
+      {isSelected && isMultiDrag && selectedWallets.size > 1 && (
+        <div className="multi-drag-count">{selectedWallets.size}</div>
+      )}
+      
+      {dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+        <div 
+          className="drop-preview-line" 
+          style={{ 
+            top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
+          }} 
+        />
+      )}
+      
+      {/* Your existing wallet item content */}
+      <div className="wallet-drag-info">
+        <div className="wallet-name-container">
+          {editingWallet === wallet.address ? (
+            <div className="wallet-name-edit-container">
+              <input
+                type="text"
+                className="wallet-name-input"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    saveWalletName(wallet.address);
+                  } else if (e.key === 'Escape') {
+                    setEditingWallet(null);
+                    setEditingName('');
+                  }
+                }}
+                autoFocus
+                onBlur={() => saveWalletName(wallet.address)}
+              />
+            </div>
+          ) : (
+            <div className="wallet-name-display">
+              <span
+                className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                style={{
+                  color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                }}
+              >
+                {getWalletName(wallet.address, index)}
+              </span>
+              <Edit2
+                size={12}
+                className="wallet-name-edit-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEditingWallet(wallet.address);
+                }}
+              />
+            </div>
+          )}
+        </div>
+        <div className="wallet-drag-address">
+          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+          <img
+            src={copy}
+            className="wallets-copy-icon"
+            alt="Copy"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(wallet.address);
+            }}
+            style={{ cursor: 'pointer' }}
+          />
+        </div>
+      </div>
+
+      <div className="wallet-drag-actions">
+        <button
+          className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
+          onClick={() => {
+            setOneCTSigner(wallet.privateKey);
+            setpopup(25);
+            refetch();
+          }}
+        >
+          <Star
+            size={14}
+            fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
+            color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+          />
+        </button>
+
+        <button
+          className="wallet-icon-button"
+          onClick={() => openDepositModal(wallet.address)}
+          title="Deposit from Main Wallet"
+        >
+          <Plus size={14} className="wallet-action-icon" />
+        </button>
+
+        <button
+          className="wallet-icon-button key-button"
+          onClick={() => openExportModal(wallet)}
+          title="Export Private Key"
+        >
+          <img src={key} className="wallet-action-icon" alt="Export Key" />
+        </button>
+
+        <a
+          href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="wallet-icon-button explorer-button"
+          title="View on Explorer"
+        >
+          <svg
+            className="wallet-action-icon-svg"
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="white"
+          >
+            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+          </svg>
+        </a>
+
+        <button
+          className="wallet-icon-button delete-button"
+          onClick={() => confirmDeleteWallet(wallet.address)}
+          title="Delete Wallet"
+        >
+          <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+        </button>
+      </div>
+
+      <div className="wallet-drag-values">
+        <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+          <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+          {getWalletBalance(wallet.address).toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const renderWalletContainer = (
+  wallets: any[], 
+  containerType: 'main' | 'source' | 'destination',
+  containerKey: string,
+  emptyMessage: string,
+  containerRef: React.RefObject<HTMLDivElement>
+) => {
+  const isThisContainerSelecting = activeSelectionContainer === containerType;
+  
+  return (
+    <div
+      ref={containerRef}
+      className={`${containerType === 'main' ? 'drag-wallets-list' : 'drop-zone-wallets'} ${isThisContainerSelecting ? 'selecting' : ''}`}
+      onMouseDown={(e) => startSelection(e, containerType)}
+      onMouseMove={(e) => {
+        if (isThisContainerSelecting && containerRef.current) {
+          updateSelection(e, containerRef.current, containerType);
+        }
+      }}
+      onMouseUp={endSelection}
+      onMouseLeave={endSelection}
+      style={{ position: 'relative' }}
+    >
+      {/* Selection rectangle - only show for active container */}
+      {isThisContainerSelecting && selectionRect && (
+        <div
+          className="selection-rectangle"
+          style={{
+            left: Math.min(selectionRect.startX, selectionRect.currentX),
+            top: Math.min(selectionRect.startY, selectionRect.currentY),
+            width: Math.abs(selectionRect.currentX - selectionRect.startX),
+            height: Math.abs(selectionRect.currentY - selectionRect.startY),
+          }}
+        />
+      )}
+      
+      {wallets.length === 0 ? (
+        <div className="drop-zone-empty">
+          <div className="drop-zone-text">{emptyMessage}</div>
+        </div>
+      ) : (
+        wallets.map((wallet, index) => renderWalletItem(wallet, index, containerType, containerKey))
+      )}
+    </div>
+  );
+};
   const getTotalWalletValue = (address: string) => {
     return walletTotalValues[address] || 0;
   };
@@ -1163,161 +1749,18 @@ const handleDepositFromEOA = async () => {
                   </div>
                 </div>
               ) : (
-                <div className="drag-wallets-container">
-                  <div
-                    className={`drag-wallets-list ${dragOverZone === 'main' ? 'drag-over' : ''}`}
-                    onDragOver={(e) => handleDragOver(e, 'main')}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDropOnMain}
-                  >
-                    {subWallets
-                      .filter(wallet =>
-                        !sourceWallets.some(w => w.address === wallet.address) &&
-                        !destinationWallets.some(w => w.address === wallet.address)
-                      )
-                      .map((wallet, index) => (
-                        <div
-                          key={wallet.address}
-                          className="draggable-wallet-item"
-                          draggable
-                          onDragStart={(e) => handleDragStart(e, wallet, index)}
-                        >
-                          <div className="wallet-drag-info">
-                            <div className="wallet-name-container">
-                              {editingWallet === wallet.address ? (
-                                <div className="wallet-name-edit-container">
-                                  <input
-                                    type="text"
-                                    className="wallet-name-input"
-                                    value={editingName}
-                                    onChange={(e) => setEditingName(e.target.value)}
-                                    onKeyPress={(e) => {
-                                      if (e.key === 'Enter') {
-                                        saveWalletName(wallet.address);
-                                      } else if (e.key === 'Escape') {
-                                        setEditingWallet(null);
-                                        setEditingName('');
-                                      }
-                                    }}
-                                    autoFocus
-                                    onBlur={() => saveWalletName(wallet.address)}
-                                  />
-                                </div>
-                              ) : (
-                                <div
-                                  className="wallet-name-display"
-                                  onMouseEnter={(e) => {
-                                    const icon = e.currentTarget.querySelector('.wallet-name-edit-icon') as HTMLElement;
-                                    if (icon) icon.style.opacity = '1';
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    const icon = e.currentTarget.querySelector('.wallet-name-edit-icon') as HTMLElement;
-                                    if (icon) icon.style.opacity = '0';
-                                  }}
-                                >
-                                  <span
-                                    className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
-                                    style={{
-                                      color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
-                                    }}
-                                  >
-                                    {getWalletName(wallet.address, subWallets.findIndex(w => w.address === wallet.address))}
-                                  </span>
-                                  <Edit2
-                                    size={12}
-                                    className="wallet-name-edit-icon"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      startEditingWallet(wallet.address);
-                                    }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-                            <div className="wallet-drag-address">
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              <img
-                                src={copy}
-                                className="wallets-copy-icon"
-                                alt="Copy"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(wallet.address);
-                                }}
-                                style={{ cursor: 'pointer' }}
-                              />
-                            </div>
-                          </div>
-<div className="wallet-drag-actions">
-  <button
-    className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
-    onClick={() => {
-      setOneCTSigner(wallet.privateKey);
-      setpopup(25);
-      refetch();
-    }}
-  >
-    <Star
-      size={14}
-      fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-      color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
-    />
-  </button>
-
-  <button
-    className="wallet-icon-button"
-    onClick={() => openDepositModal(wallet.address)}
-    title="Deposit from Main Wallet"
-  >
-    <Plus size={14} className="wallet-action-icon" />
-  </button>
-
-  <button
-    className="wallet-icon-button key-button"
-    onClick={() => openExportModal(wallet)}
-    title="Export Private Key"
-  >
-    <img src={key} className="wallet-action-icon" alt="Export Key" />
-  </button>
-                            <a
-                              href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="wallet-icon-button explorer-button"
-                              title="View on Explorer"
-                            >
-                              <svg
-                                className="wallet-action-icon-svg"
-                                xmlns="http://www.w3.org/2000/svg"
-                                width="16"
-                                height="16"
-                                viewBox="0 0 24 24"
-                                fill="white"
-                              >
-                                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                              </svg>
-                            </a>
-
-                            <button
-                              className="wallet-icon-button delete-button"
-                              onClick={() => confirmDeleteWallet(wallet.address)}
-                              title="Delete Wallet"
-                            >
-                              <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-                            </button>
-                          </div>
-                          <div className="wallet-drag-values">
-                            <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-                              <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />{getWalletBalance(wallet.address).toFixed(2)}
-                            </div>
-
-                          </div>
-
-                        </div>
-                      ))}
-                  </div>
-                </div>
+<div className="drag-wallets-container">
+ {renderWalletContainer(
+  subWallets.filter(wallet =>
+    !sourceWallets.some(w => w.address === wallet.address) &&
+    !destinationWallets.some(w => w.address === wallet.address)
+  ),
+  'main',
+  'main-wallets',
+  'Drag wallets here',
+  mainWalletsRef
+)}
+</div>
               )}
             </div>
 
@@ -1326,13 +1769,13 @@ const handleDepositFromEOA = async () => {
                 className={`drop-zone source-zone ${dragOverZone === 'source' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'source')}
                 onDragLeave={handleDragLeave}
-                onDrop={(e) => {
-                  if (draggedWallet?.sourceZone) {
-                    handleDropBetweenZones(e, 'source');
-                  } else {
-                    handleDrop(e, 'source');
-                  }
-                }}
+               onDrop={(e) => {
+  if (draggedWallet?.sourceZone) {
+    handleDropBetweenZones(e, 'source');
+  } else {
+    handleMultiDrop(e, 'source');
+  }
+}}
               >
                 <div className="drop-zone-header">
                   <span className="drop-zone-title">Source Wallets</span>
@@ -1347,383 +1790,119 @@ const handleDepositFromEOA = async () => {
                   )}
                 </div>
 
-                {sourceWallets.length === 0 ? (
-                  <div className="drop-zone-empty">
-                    <div className="drop-zone-icon">
-                      <svg
-                        className="wallets-drop-icon"
-                        viewBox="0 0 24 24"
-                        width="40"
-                        height="40"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="7 11 12 16 17 11"></polyline>
-                        <line x1="12" y1="1" x2="12" y2="14"></line>
-                        <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
-                      </svg>
-                    </div>
-                    <div className="drop-zone-text">Drag source wallets here</div>
-                  </div>
-                ) : (
-                  <div className="drop-zone-wallets">
-                    {sourceWallets.map((wallet) => (
-                      <div
-                        key={wallet.address}
-                        className="draggable-wallet-item"
-                        draggable
-                        onDragStart={(e) => handleDragStartFromZone(e, wallet, 'source')}
-                      >
-                        <div className="wallet-drag-info">
-                          <div className="wallet-name-container">
-                            <div className="wallet-name-display">
-                              <div className="wallet-name-display">
-                                <span
-                                  className={`wallet-drag-name ${(() => {
-                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? 'active' : '';
-                                  })()}`}
-                                  style={{
-                                    color: (() => {
-                                      const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                      return originalWallet && isWalletActive(originalWallet.privateKey) ? '#d8dcff' : '#fff';
-                                    })()
-                                  }}
-                                >
-                                  {wallet.name}
-                                </span>
-                              </div>                            </div>
-                            <div className="wallet-drag-address">
-                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                              <img
-                                src={copy}
-                                className="wallets-copy-icon"
-                                alt="Copy"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigator.clipboard.writeText(wallet.address);
-                                }}
-                                style={{ cursor: 'pointer' }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-
-                        <div className="wallet-drag-actions">
-                          <button
-                            className={`wallet-action-button ${(() => {
-                              const originalWallet = subWallets.find(w => w.address === wallet.address);
-                              return originalWallet && isWalletActive(originalWallet.privateKey) ? 'primary' : '';
-                            })()}`}
-                            onClick={() => {
-                              const originalWallet = subWallets.find(w => w.address === wallet.address);
-                              if (originalWallet) {
-                                setOneCTSigner(originalWallet.privateKey);
-                                setpopup(25);
-                                refetch();
-                              }
-                            }}
-                          >
-                            
-                            <Star
-                              size={14}
-                              fill={(() => {
-                                const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                return originalWallet && isWalletActive(originalWallet.privateKey) ? '#aaaecf' : 'none';
-                              })()}
-                              color={(() => {
-                                const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                return originalWallet && isWalletActive(originalWallet.privateKey) ? '#0f0f12' : 'currentColor';
-                              })()}
-                            />
-                            
-                          </button>
-  <button
-    className="wallet-icon-button"
-    onClick={() => openDepositModal(wallet.address)}
-    title="Deposit from Main Wallet"
-  >
-    <Plus size={14} className="wallet-action-icon" />
-  </button>
-
-                          <button
-                            className="wallet-icon-button key-button"
-                            onClick={() => {
-                              const originalWallet = subWallets.find(w => w.address === wallet.address);
-                              if (originalWallet) openExportModal(originalWallet);
-                            }}
-                            title="Export Private Key"
-                          >
-                            <img src={key} className="wallet-action-icon" alt="Export Key" />
-                          </button>
-
-                          <a
-                            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="wallet-icon-button explorer-button"
-                            title="View on Explorer"
-                          >
-                            <svg
-                              className="wallet-action-icon-svg"
-                              xmlns="http://www.w3.org/2000/svg"
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="white"
-                            >
-                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                            </svg>
-                          </a>
-
-                          <button
-                            className="wallet-icon-button delete-button"
-                            onClick={() => {
-                              const originalWallet = subWallets.find(w => w.address === wallet.address);
-                              if (originalWallet) confirmDeleteWallet(originalWallet.address);
-                            }}
-                            title="Delete Wallet"
-                          >
-                            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-                          </button>
-                        </div>
-
-                        <div className="wallet-drag-values">
-                          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-                            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-                            {wallet.balance.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
+{renderWalletContainer(
+  sourceWallets,
+  'source',
+  'source-wallets',
+  'Drag source wallets here',
+  sourceWalletsRef
+)}
               </div>
 
               <div
                 className={`drop-zone destination-zone ${dragOverZone === 'destination' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'destination')}
                 onDragLeave={handleDragLeave}
-                onDrop={(e) => {
-                  if (draggedWallet?.sourceZone) {
-                    handleDropBetweenZones(e, 'destination');
-                  } else {
-                    handleDrop(e, 'destination');
-                  }
-                }}
+onDrop={(e) => {
+  if (draggedWallet?.sourceZone) {
+    handleDropBetweenZones(e, 'source');
+  } else {
+    handleMultiDrop(e, 'destination');
+  }
+}}
               >
-                <div className="drop-zone-header2">
-                  <span className="drop-zone-title">Destination Wallets</span>
-                  <span className="drop-zone-count">{destinationWallets.length}</span>
-                  {destinationWallets.length > 0 && (
-                    <button
-                      className="clear-zone-button"
-                      onClick={() => setDestinationWallets([])}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-
-                {destinationWallets.length === 0 ? (
-                  <div className="drop-zone-empty">
-                    <div className="drop-zone-icon">
-                      <svg
-                        className="wallets-drop-icon"
-                        viewBox="0 0 24 24"
-                        width="40"
-                        height="40"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <polyline points="7 11 12 16 17 11"></polyline>
-                        <line x1="12" y1="1" x2="12" y2="14"></line>
-                        <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
-                      </svg>
-                    </div>
-                    <div className="drop-zone-text">Drag destination wallets here</div>
-                  </div>
-                ) : (
-                  <div className="drop-zone-wallets">
-
-                    {destinationWallets.length === 0 ? (
-                      <div className="drop-zone-empty">
-                        <div className="drop-zone-icon">
-                          <svg
-                            className="wallets-drop-icon"
-                            viewBox="0 0 24 24"
-                            width="40"
-                            height="40"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <polyline points="7 11 12 16 17 11"></polyline>
-                            <line x1="12" y1="1" x2="12" y2="14"></line>
-                            <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
-                          </svg>
-                        </div>
-                        <div className="drop-zone-text">Drag destination wallets here</div>
-                      </div>
-                    ) : (
-                      <div className="drop-zone-wallets">
-                        {destinationWallets.map((wallet) => (
-                          <div
-                            key={wallet.address}
-                            className="draggable-wallet-item"
-                            draggable
-                            onDragStart={(e) => handleDragStartFromZone(e, wallet, 'destination')}
-                          >
-                            <div className="wallet-drag-info">
-                              <div className="wallet-name-container">
-                                <div className="wallet-name-display">
-                                  <div className="wallet-name-display">
-                                    <span
-                                      className={`wallet-drag-name ${(() => {
-                                        const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                        return originalWallet && isWalletActive(originalWallet.privateKey) ? 'active' : '';
-                                      })()}`}
-                                      style={{
-                                        color: (() => {
-                                          const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                          return originalWallet && isWalletActive(originalWallet.privateKey) ? '#d8dcff' : '#fff';
-                                        })()
-                                      }}
-                                    >
-                                      {wallet.name}
-                                    </span>
-                                  </div>                                </div>
-                                <div className="wallet-drag-address">
-                                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                                  <img
-                                    src={copy}
-                                    className="wallets-copy-icon"
-                                    alt="Copy"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      navigator.clipboard.writeText(wallet.address);
-                                    }}
-                                    style={{ cursor: 'pointer' }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-
-                            <div className="wallet-drag-actions">
-                              <button
-                                className={`wallet-action-button ${(() => {
-                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                  return originalWallet && isWalletActive(originalWallet.privateKey) ? 'primary' : '';
-                                })()}`}
-                                onClick={() => {
-                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                  if (originalWallet) {
-                                    setOneCTSigner(originalWallet.privateKey);
-                                    setpopup(25);
-                                    refetch();
-                                  }
-                                }}
-                              >
-                                <Star
-                                  size={14}
-                                  fill={(() => {
-                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? '#aaaecf' : 'none';
-                                  })()}
-                                  color={(() => {
-                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? '#0f0f12' : 'currentColor';
-                                  })()}
-                                />
-                              </button>
+<div className="drop-zone-header2">
+  <div className="destination-wallets-container">
+  <span className="drop-zone-title">Destination Wallets</span>
+  <span className="drop-zone-count">{destinationWallets.length}</span>
+  </div>
+  {destinationWallets.length > 0 && (
+    <>
+      <button
+        className="clear-zone-button"
+        onClick={() => setDestinationWallets([])}
+      >
+        Clear
+      </button>
+      <button
+        className="clear-zone-button"
+        onClick={handleSendBackToMain}
+        disabled={isVaultDepositSigning || destinationWallets.length === 0}
+        style={{ marginLeft: '8px' }}
+      >
+        {isVaultDepositSigning ? 'Sending...' : 'Send Back to Main'}
+      </button>
+    </>
+  )}
+  <div className="custom-address-section">
+  <div style={{ flex: 1 }}>
+    <input
+      type="text"
+      className="custom-address-input"
+      value={customDestinationAddress}
+      onChange={(e) => {
+        setCustomDestinationAddress(e.target.value);
+        setCustomAddressError('');
+      }}
+      placeholder="0x..."
+      style={{ fontSize: '0.8rem', padding: '6px 10px' }}
+    />
+    {customAddressError && (
+      <div style={{
+        color: '#ff6b6b',
+        fontSize: '0.7rem',
+        marginTop: '2px'
+      }}>
+        {customAddressError}
+      </div>
+    )}
+  </div>
   <button
-    className="wallet-icon-button"
-    onClick={() => openDepositModal(wallet.address)}
-    title="Deposit from Main Wallet"
+    className="deposit-max-button"
+    onClick={handleAddCustomAddress}
+    disabled={!customDestinationAddress.trim()}
   >
-    <Plus size={14} className="wallet-action-icon" />
+    Add
   </button>
+</div>
+</div>
 
-                              <button
-                                className="wallet-icon-button key-button"
-                                onClick={() => {
-                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                  if (originalWallet) openExportModal(originalWallet);
-                                }}
-                                title="Export Private Key"
-                              >
-                                <img src={key} className="wallet-action-icon" alt="Export Key" />
-                              </button>
-
-                              <a
-                                href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="wallet-icon-button explorer-button"
-                                title="View on Explorer"
-                              >
-                                <svg
-                                  className="wallet-action-icon-svg"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                  width="16"
-                                  height="16"
-                                  viewBox="0 0 24 24"
-                                  fill="white"
-                                >
-                                  <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                                  <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                                </svg>
-                              </a>
-
-                              <button
-                                className="wallet-icon-button delete-button"
-                                onClick={() => {
-                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
-                                  if (originalWallet) confirmDeleteWallet(originalWallet.address);
-                                }}
-                                title="Delete Wallet"
-                              >
-                                <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-                              </button>
-                            </div>
-
-                            <div className="wallet-drag-values">
-                              <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-                                <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-                                {wallet.balance.toFixed(2)}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+{renderWalletContainer(
+  destinationWallets,
+  'destination',
+  'destination-wallets',
+  'Drag destination wallets here',
+  destinationWalletsRef
+)}
               </div>
             </div>
             {(sourceWallets.length > 0 || destinationWallets.length > 0) && (
               <div className="distribution-controls">
                 <div className="distribution-settings">
-                  <div className="distribution-amount-section">
-                    <label className="distribution-label">Amount to Distribute (MON):</label>
-                    <input
-                      type="text"
-                      className="distribution-amount-input"
-                      value={distributionAmount}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (/^\d*\.?\d{0,18}$/.test(value)) {
-                          setDistributionAmount(value);
-                        }
-                      }}
-                      placeholder="0.00"
-                    />
-                  </div>
+<div className="distribution-amount-section">
+  <label className="distribution-label">Amount to Distribute (MON):</label>
+  <div className="distribution-amount-input-container">
+    <input
+      type="text"
+      className="distribution-amount-input"
+      value={distributionAmount}
+      onChange={(e) => {
+        const value = e.target.value;
+        if (/^\d*\.?\d{0,18}$/.test(value)) {
+          setDistributionAmount(value);
+        }
+      }}
+      placeholder="0.00"
+    />
+    <button
+      className="deposit-max-button"
+      onClick={handleMaxAmount}
+      disabled={sourceWallets.length === 0}
+    >
+      Max
+    </button>
+  </div>
+</div>
 
                   <div className="distribution-mode-section">
                     <label className="distribution-label">Distribution Mode:</label>
