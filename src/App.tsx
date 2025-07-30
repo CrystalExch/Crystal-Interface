@@ -1470,6 +1470,268 @@ function App() {
     );
   };
 
+  const [walletTokenBalances, setWalletTokenBalances] = useState({});
+  const [walletTotalValues, setWalletTotalValues] = useState({});
+  const [walletsLoading, setWalletsLoading] = useState(false);
+  const [subwalletBalanceLoading, setSubwalletBalanceLoading] = useState({});
+
+  const findMarketForToken = useCallback((tokenAddress: string) => {
+    for (const [marketKey, marketData] of Object.entries(markets)) {
+      if (marketData.baseAddress === tokenAddress || marketData.quoteAddress === tokenAddress) {
+        return { marketKey, marketData, trades: tradesByMarket[marketKey] };
+      }
+    }
+    return null;
+  }, [markets, tradesByMarket]);
+
+  const refreshWalletBalance = useCallback(async (walletAddress: string) => {
+    if (!walletAddress || !tokendict || Object.keys(tokendict).length === 0) return;
+
+    setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: true }));
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const tokenAddresses = Object.values(tokendict).map((t) => t.address);
+
+      const callData = {
+        target: balancegetter,
+        callData: encodeFunctionData({
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [walletAddress as `0x${string}`, tokenAddresses]
+        })
+      };
+
+      const multicallData = encodeFunctionData({
+        abi: [{
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'tryBlockAndAggregate',
+        args: [false, [callData]]
+      });
+
+      const response = await fetch(HTTP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: Math.random(),
+          method: 'eth_call',
+          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const json = await response.json();
+
+      if (json.error) {
+        throw new Error(json.error.message || 'RPC Error');
+      }
+
+      if (json.result) {
+        const returnData = decodeFunctionResult({
+          abi: [{
+            inputs: [
+              { name: 'requireSuccess', type: 'bool' },
+              {
+                components: [
+                  { name: 'target', type: 'address' },
+                  { name: 'callData', type: 'bytes' }
+                ], name: 'calls', type: 'tuple[]'
+              }
+            ],
+            name: 'tryBlockAndAggregate',
+            outputs: [
+              { name: 'blockNumber', type: 'uint256' },
+              { name: 'blockHash', type: 'bytes32' },
+              {
+                components: [
+                  { name: 'success', type: 'bool' },
+                  { name: 'returnData', type: 'bytes' }
+                ], name: 'returnData', type: 'tuple[]'
+              }
+            ],
+            stateMutability: 'view',
+            type: 'function'
+          }],
+          functionName: 'tryBlockAndAggregate',
+          data: json.result
+        });
+
+        if (returnData[2] && returnData[2][0] && returnData[2][0].success) {
+          const balances = decodeFunctionResult({
+            abi: CrystalDataHelperAbi,
+            functionName: 'batchBalanceOf',
+            data: returnData[2][0].returnData
+          });
+
+          const balanceMap: { [key: string]: bigint } = {};
+          let totalValue = 0;
+
+          tokenAddresses.forEach((tokenAddress, index) => {
+            if (balances[index]) {
+              balanceMap[tokenAddress] = balances[index];
+
+              try {
+                const marketInfo = findMarketForToken(tokenAddress);
+                if (marketInfo && marketInfo.trades) {
+                  const usdValue = calculateUSDValue(
+                    balances[index],
+                    marketInfo.trades,
+                    tokenAddress,
+                    marketInfo.marketData
+                  );
+                  totalValue += usdValue;
+                }
+              } catch (error) {
+                console.warn('Error calculating USD value for', tokenAddress, error);
+              }
+            }
+          });
+
+          setWalletTokenBalances(prev => ({
+            ...prev,
+            [walletAddress]: balanceMap
+          }));
+
+          setWalletTotalValues(prev => ({
+            ...prev,
+            [walletAddress]: totalValue
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing wallet balance:', error);
+      // Don't throw the error, just log it and continue
+    } finally {
+      setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: false }));
+    }
+  }, [tokendict, activechain, tradesByMarket, findMarketForToken, calculateUSDValue]);
+
+  // Sequential refresh function to avoid rate limiting
+  const forceRefreshAllWallets = useCallback(async () => {
+    if (subWallets.length === 0) return;
+
+    setWalletsLoading(true);
+
+    try {
+      // Refresh wallets one by one with delays to avoid rate limiting
+      for (const wallet of subWallets) {
+        await refreshWalletBalance(wallet.address);
+        // Add delay between requests
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    } catch (error) {
+      console.error('Error refreshing all wallets:', error);
+    } finally {
+      setWalletsLoading(false);
+    }
+  }, [subWallets, refreshWalletBalance]);
+
+  // Debounced effect to refresh wallet balances
+  const refreshDebounceRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    // Clear any existing timeout
+    if (refreshDebounceRef.current) {
+      clearTimeout(refreshDebounceRef.current);
+    }
+
+    // Only refresh if we have the required data
+    if (subWallets.length > 0 && tokendict && Object.keys(tokendict).length > 0 && markets && Object.keys(markets).length > 0) {
+      // Debounce the refresh to avoid too many calls
+      refreshDebounceRef.current = setTimeout(() => {
+        console.log('Refreshing wallet balances for', subWallets.length, 'wallets');
+        forceRefreshAllWallets();
+      }, 1000); // 1 second delay
+    }
+
+    return () => {
+      if (refreshDebounceRef.current) {
+        clearTimeout(refreshDebounceRef.current);
+      }
+    };
+  }, [subWallets.length, Object.keys(tokendict).length, Object.keys(markets).length]);
+
+  const handleSubwalletTransfer = useCallback(async (fromAddress: string, toAddress: string, amount: string, fromPrivateKey: string) => {
+    try {
+      setIsVaultDepositSigning(true);
+      const originalSigner = oneCTSigner;
+      setOneCTSigner(fromPrivateKey);
+
+      const ethAmount = BigInt(Math.round(parseFloat(amount) * 1e18));
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: toAddress as `0x${string}`,
+          value: ethAmount,
+          data: '0x'
+        }
+      });
+
+      console.log('Subwallet transfer successful:', hash);
+
+      // Restore original signer
+      setOneCTSigner(originalSigner);
+
+      // Refresh both wallet balances after a delay
+      setTimeout(() => {
+        refreshWalletBalance(fromAddress);
+        refreshWalletBalance(toAddress);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Subwallet transfer failed:', error);
+      throw error;
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  }, [refreshWalletBalance, sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
+
+  const saveSubWallets = useCallback((wallets) => {
+    setSubWallets(wallets);
+    saveSubWalletsToStorage(wallets);
+  }, [saveSubWalletsToStorage]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
@@ -9352,89 +9614,89 @@ function App() {
                           }}
                         />
                       </div>
-<div className="audio-toggle-row">
-  <div className="settings-option-info">
-    <span className="audio-toggle-label">{t('useOneCT')}</span>
-    <span className="settings-option-subtitle">
-      {t('useOneCTText')}
-    </span>
-  </div>
-  <ToggleSwitch
-    checked={useOneCT}
-    onChange={() => {
-      setUseOneCT(!useOneCT);
-      localStorage.setItem('crystal_use_onect', JSON.stringify(!useOneCT));
-    }}
-  />
-</div>
+                      <div className="audio-toggle-row">
+                        <div className="settings-option-info">
+                          <span className="audio-toggle-label">{t('useOneCT')}</span>
+                          <span className="settings-option-subtitle">
+                            {t('useOneCTText')}
+                          </span>
+                        </div>
+                        <ToggleSwitch
+                          checked={useOneCT}
+                          onChange={() => {
+                            setUseOneCT(!useOneCT);
+                            localStorage.setItem('crystal_use_onect', JSON.stringify(!useOneCT));
+                          }}
+                        />
+                      </div>
 
-{useOneCT && (
-  <div className="subwallets-section">
-    {/* Current Active Wallet Display */}
-    {validOneCT && (
-      <div className="active-wallet-section">
-        <div className="layout-section-title">{t('activeWallet')}</div>
-        <div className="onect-address-box">
-          <span className="onect-address">{address}</span>
-          <CopyButton textToCopy={address as string} />
-        </div>
-      </div>
-    )}
+                      {useOneCT && (
+                        <div className="subwallets-section">
+                          {/* Current Active Wallet Display */}
+                          {validOneCT && (
+                            <div className="active-wallet-section">
+                              <div className="layout-section-title">{t('activeWallet')}</div>
+                              <div className="onect-address-box">
+                                <span className="onect-address">{address}</span>
+                                <CopyButton textToCopy={address as string} />
+                              </div>
+                            </div>
+                          )}
 
-    {/* Create New Subwallet Button */}
-    <div className="create-wallet-section">
-      <div className="layout-section-title">{t('subWallets')}</div>
-      <div className="settings-section-subtitle">
-        {t('createAndManageSubWallets')}
-      </div>
-      <button
-        className="reset-tab-button create-subwallet-btn"
-        onClick={createSubWallet}
-      >
-        {t('createNewWallet')}
-      </button>
-    </div>
+                          {/* Create New Subwallet Button */}
+                          <div className="create-wallet-section">
+                            <div className="layout-section-title">{t('subWallets')}</div>
+                            <div className="settings-section-subtitle">
+                              {t('createAndManageSubWallets')}
+                            </div>
+                            <button
+                              className="reset-tab-button create-subwallet-btn"
+                              onClick={createSubWallet}
+                            >
+                              {t('createNewWallet')}
+                            </button>
+                          </div>
 
-    {/* Subwallets List */}
-    {subWallets.length > 0 && (
-      <div className="subwallets-list">
-        <div className="layout-section-title">{t('savedSubWallets')}</div>
-        <div className="subwallets-container">
-          {subWallets.map((wallet, index) => (
-            <div key={index} className="subwallet-item">
-              <div className="subwallet-info">
-                <div className="subwallet-address">
-                  <span className="subwallet-label">{t('wallet')} {index + 1}:</span>
-                  <span className="subwallet-address-text">{wallet.address}</span>
-                  <CopyButton textToCopy={wallet.address} />
-                </div>
-                <div className="subwallet-private-key">
-                  <span className="subwallet-label">{t('privateKey')}:</span>
-                  <span className="subwallet-key-text">{wallet.privateKey.slice(0, 10)}...{wallet.privateKey.slice(-6)}</span>
-                  <CopyButton textToCopy={wallet.privateKey} />
-                </div>
-              </div>
-              <div className="subwallet-actions">
-                <button
-                  className="subwallet-action-btn activate-btn"
-                  onClick={() => setActiveSubWallet(wallet.privateKey)}
-                >
-                  {t('setActive')}
-                </button>
-                <button
-                  className="subwallet-action-btn delete-btn"
-                  onClick={() => deleteSubWallet(index)}
-                >
-                  {t('delete')}
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    )}
-  </div>
-)}
+                          {/* Subwallets List */}
+                          {subWallets.length > 0 && (
+                            <div className="subwallets-list">
+                              <div className="layout-section-title">{t('savedSubWallets')}</div>
+                              <div className="subwallets-container">
+                                {subWallets.map((wallet, index) => (
+                                  <div key={index} className="subwallet-item">
+                                    <div className="subwallet-info">
+                                      <div className="subwallet-address">
+                                        <span className="subwallet-label">{t('wallet')} {index + 1}:</span>
+                                        <span className="subwallet-address-text">{wallet.address}</span>
+                                        <CopyButton textToCopy={wallet.address} />
+                                      </div>
+                                      <div className="subwallet-private-key">
+                                        <span className="subwallet-label">{t('privateKey')}:</span>
+                                        <span className="subwallet-key-text">{wallet.privateKey.slice(0, 10)}...{wallet.privateKey.slice(-6)}</span>
+                                        <CopyButton textToCopy={wallet.privateKey} />
+                                      </div>
+                                    </div>
+                                    <div className="subwallet-actions">
+                                      <button
+                                        className="subwallet-action-btn activate-btn"
+                                        onClick={() => setActiveSubWallet(wallet.privateKey)}
+                                      >
+                                        {t('setActive')}
+                                      </button>
+                                      <button
+                                        className="subwallet-action-btn delete-btn"
+                                        onClick={() => deleteSubWallet(index)}
+                                      >
+                                        {t('delete')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -12740,6 +13002,55 @@ function App() {
                   t('connectWallet')
                 )}
               </button>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 26 ? ( // Import Wallet Popup
+          <div
+            className="layout-settings-background"
+            ref={popupref}
+          >
+            <div className="layout-settings-header">
+              <button
+                className="layout-settings-close-button"
+                onClick={() => setpopup(0)}
+              >
+                <img src={closebutton} className="close-button-icon" />
+              </button>
+              <div className="layout-settings-title">Import Wallet</div>
+            </div>
+
+            <div className="settings-main-container">
+              <div className="import-wallet-content">
+                <div className="import-wallet-section">
+                  <div className="layout-section-title">Import Existing Wallet</div>
+                  <div className="settings-section-subtitle">
+                    Enter the private key of an existing wallet to import it
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">Private Key</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="0x... or without 0x prefix"
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div className="import-actions">
+                    <button
+                      className="reset-tab-button"
+                      onClick={() => {
+                        setpopup(0);
+                      }}
+                    >
+                      Import Wallet
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         ) : null}
@@ -19477,6 +19788,24 @@ function App() {
                 client={client}
                 activechain={activechain}
                 markets={markets}
+                // Subwallet props
+                subWallets={subWallets}
+                setSubWallets={saveSubWallets}
+                walletTokenBalances={walletTokenBalances}
+                walletTotalValues={walletTotalValues}
+                walletsLoading={walletsLoading}
+                subwalletBalanceLoading={subwalletBalanceLoading}
+                refreshWalletBalance={refreshWalletBalance}
+                forceRefreshAllWallets={forceRefreshAllWallets}
+                setOneCTSigner={setOneCTSigner}
+                isVaultDepositSigning={isVaultDepositSigning}
+                setIsVaultDepositSigning={setIsVaultDepositSigning}
+                handleSetChain={handleSetChain}
+                handleSubwalletTransfer={handleSubwalletTransfer}
+                createSubWallet={createSubWallet}
+                signTypedDataAsync={signTypedDataAsync}
+                keccak256={keccak256}
+                Wallet={Wallet}
               />
             }
           />

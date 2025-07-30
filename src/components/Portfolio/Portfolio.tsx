@@ -1,5 +1,5 @@
-import { Eye, Search, Eye as EyeIcon, Edit2, Check, X } from 'lucide-react';
-import React, { useEffect, useState } from 'react';
+import { Eye, Search, Eye as EyeIcon, Edit2, Check, X, Star } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
@@ -9,10 +9,12 @@ import cheveron from '../../assets/chevron_arrow.png'
 import { useSharedContext } from '../../contexts/SharedContext';
 import { formatCommas } from '../../utils/numberDisplayFormat';
 import { settings } from '../../settings';
-import { fetchLatestPrice } from '../../utils/getPrice';
-import normalizeTicker from '../../utils/normalizeTicker';
 import './Portfolio.css';
 import copy from '../../assets/copy.svg'
+import closebutton from '../../assets/close_button.png'
+import monadicon from '../../assets/monadlogo.svg';
+import key from '../../assets/key.svg';
+import trash from '../../assets/trash.svg';
 type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
@@ -33,6 +35,14 @@ interface TradesByMarket {
   [key: string]: any[];
 }
 
+interface WalletDragItem {
+  address: string;
+  name: string;
+  balance: number;
+  totalValue: number;
+  index: number;
+  sourceZone?: 'source' | 'destination';
+}
 interface PortfolioProps {
   orders: any[];
   tradehistory: any[];
@@ -82,6 +92,25 @@ interface PortfolioProps {
   onStopSpectating?: () => void;
   originalAddress?: string;
   onSpectatingChange?: (isSpectating: boolean, address: string | null) => void;
+  subWallets: Array<{ address: string, privateKey: string }>;
+  setSubWallets: (wallets: Array<{ address: string, privateKey: string }>) => void;
+  walletTokenBalances: { [address: string]: any };
+  walletTotalValues: { [address: string]: number };
+  walletsLoading: boolean;
+  subwalletBalanceLoading: { [address: string]: boolean };
+  refreshWalletBalance: (address: string) => void;
+  forceRefreshAllWallets: () => void;
+  setOneCTSigner: (privateKey: string) => void;
+  isVaultDepositSigning: boolean;
+  setIsVaultDepositSigning: (signing: boolean) => void;
+  handleSetChain: () => Promise<void>;
+  handleSubwalletTransfer: (fromAddress: string, toAddress: string, amount: string, fromPrivateKey: string) => Promise<void>;
+  createSubWallet?: () => Promise<void>;
+  signTypedDataAsync?: any;
+  keccak256?: any;
+  Wallet?: any;
+  activeWalletPrivateKey?: string;
+
 }
 
 type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
@@ -134,6 +163,24 @@ const Portfolio: React.FC<PortfolioProps> = ({
   onStopSpectating,
   originalAddress,
   onSpectatingChange,
+  subWallets,
+  setSubWallets,
+  walletTokenBalances,
+  walletTotalValues,
+  walletsLoading,
+  subwalletBalanceLoading,
+  refreshWalletBalance,
+  forceRefreshAllWallets,
+  setOneCTSigner,
+  isVaultDepositSigning,
+  setIsVaultDepositSigning,
+  handleSetChain,
+  handleSubwalletTransfer,
+  createSubWallet,
+  signTypedDataAsync,
+  keccak256,
+  Wallet,
+  activeWalletPrivateKey
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
   const [activeSection, setActiveSection] = useState<
@@ -145,23 +192,32 @@ const Portfolio: React.FC<PortfolioProps> = ({
     direction: 'desc',
   });
 
-  // Subwallet management state
-  const [subWallets, setSubWallets] = useState<Array<{address: string, privateKey: string}>>([]);
   const [enabledWallets, setEnabledWallets] = useState<Set<string>>(new Set());
-  const [walletNames, setWalletNames] = useState<{[address: string]: string}>({});
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
   const [editingWallet, setEditingWallet] = useState<string | null>(null);
   const [editingName, setEditingName] = useState<string>('');
-  const [walletTotalValues, setWalletTotalValues] = useState<{[address: string]: number}>({});
-  const [walletTokenBalances, setWalletTokenBalances] = useState<{[address: string]: any}>({});
-  const [walletsLoading, setWalletsLoading] = useState(false);
-  const [lastFetchTime, setLastFetchTime] = useState<number>(0);
-  
-  // Deposit modal state
+
+  const [draggedWallet, setDraggedWallet] = useState<WalletDragItem | null>(null);
+  const [sourceWallets, setSourceWallets] = useState<WalletDragItem[]>([]);
+  const [destinationWallets, setDestinationWallets] = useState<WalletDragItem[]>([]);
+  const [dragOverZone, setDragOverZone] = useState<'source' | 'destination' | 'main' | null>(null);
+
+  const [distributionAmount, setDistributionAmount] = useState<string>('');
+  const [distributionMode, setDistributionMode] = useState<'equal' | 'proportional'>('equal');
+
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositTargetWallet, setDepositTargetWallet] = useState<string>('');
   const [depositMode, setDepositMode] = useState<'main' | 'subwallet'>('main');
   const [depositAmount, setDepositAmount] = useState<string>('');
   const [depositFromWallet, setDepositFromWallet] = useState<string>('');
+
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importPrivateKey, setImportPrivateKey] = useState<string>('');
+  const [importError, setImportError] = useState<string>('');
+  const [isImporting, setIsImporting] = useState(false);
+
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
@@ -195,7 +251,35 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return 198.78;
   });
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 1020);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+  const [walletToDelete, setWalletToDelete] = useState<string>('');
+  const isWalletActive = (walletPrivateKey: string) => {
+    return activeWalletPrivateKey === walletPrivateKey;
+  };
+  const deleteWallet = (address: string) => {
+    const updatedWallets = subWallets.filter(w => w.address !== address);
+    setSubWallets(updatedWallets);
+    saveSubWalletsToStorage(updatedWallets);
 
+    const newEnabledWallets = new Set(enabledWallets);
+    newEnabledWallets.delete(address);
+    setEnabledWallets(newEnabledWallets);
+    localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
+
+    const newWalletNames = { ...walletNames };
+    delete newWalletNames[address];
+    setWalletNames(newWalletNames);
+    localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+
+    setShowDeleteConfirmation(false);
+    setWalletToDelete('');
+    closeExportModal();
+  };
+
+  const confirmDeleteWallet = (address: string) => {
+    setWalletToDelete(address);
+    setShowDeleteConfirmation(true);
+  };
   const [internalIsSpectating, setInternalIsSpectating] = useState(false);
   const [internalSpectatedAddress, setInternalSpectatedAddress] = useState('');
   const [searchInput, setSearchInput] = useState('');
@@ -211,19 +295,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
   };
 
-  // Load subwallets data on component mount
-  useEffect(() => {
-    // Load subwallets from localStorage
-    const storedSubWallets = localStorage.getItem('crystal_sub_wallets');
-    if (storedSubWallets) {
-      try {
-        const wallets = JSON.parse(storedSubWallets);
-        setSubWallets(wallets);
-      } catch (error) {
-        console.error('Error loading stored subwallets:', error);
-      }
-    }
+  const isValidPrivateKey = (key: string) => {
+    return /^0x[a-fA-F0-9]{64}$/.test(key) || /^[a-fA-F0-9]{64}$/.test(key);
+  };
 
+  useEffect(() => {
     const storedEnabledWallets = localStorage.getItem('crystal_enabled_wallets');
     if (storedEnabledWallets) {
       try {
@@ -233,7 +309,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       }
     }
 
-    // Load wallet names from localStorage
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
     if (storedWalletNames) {
       try {
@@ -244,7 +319,340 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
   }, []);
 
-  // Wallet management helper functions
+  const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
+    localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
+  };
+  const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
+    const dragData: WalletDragItem = {
+      address: wallet.address,
+      name: getWalletName(wallet.address, index),
+      balance: getWalletBalance(wallet.address),
+      totalValue: getTotalWalletValue(wallet.address),
+      index
+    };
+
+    setDraggedWallet(dragData);
+    e.dataTransfer.effectAllowed = 'copy';
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+  };
+
+
+  const handleDragOver = (e: React.DragEvent, zone: 'source' | 'destination' | 'main') => {
+    e.preventDefault();
+    if (zone === 'main') {
+      e.dataTransfer.dropEffect = 'move';
+    } else {
+      e.dataTransfer.dropEffect = 'copy';
+    }
+    setDragOverZone(zone);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverZone(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, zone: 'source' | 'destination') => {
+    e.preventDefault();
+    setDragOverZone(null);
+
+    if (!draggedWallet) return;
+
+    const targetArray = zone === 'source' ? sourceWallets : destinationWallets;
+    const isAlreadyInZone = targetArray.some(w => w.address === draggedWallet.address);
+
+    if (isAlreadyInZone) return;
+
+    if (zone === 'source') {
+      setSourceWallets(prev => [...prev, { ...draggedWallet, sourceZone: undefined }]);
+    } else {
+      setDestinationWallets(prev => [...prev, { ...draggedWallet, sourceZone: undefined }]);
+    }
+
+    setDraggedWallet(null);
+  };
+
+
+  const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
+    setDraggedWallet({ ...wallet, sourceZone: zone });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', JSON.stringify({ ...wallet, sourceZone: zone }));
+  };
+
+
+
+  const handleDropBetweenZones = (e: React.DragEvent, targetZone: 'source' | 'destination') => {
+    e.preventDefault();
+    setDragOverZone(null);
+
+    if (!draggedWallet) return;
+    if (draggedWallet.sourceZone) {
+      const sourceZone = draggedWallet.sourceZone;
+      if (sourceZone === targetZone) {
+        setDraggedWallet(null);
+        return;
+      }
+      if (sourceZone === 'source') {
+        setSourceWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
+      } else {
+        setDestinationWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
+      }
+      if (targetZone === 'source') {
+        setSourceWallets(prev => {
+          const exists = prev.some(w => w.address === draggedWallet.address);
+          if (exists) return prev;
+          return [...prev, { ...draggedWallet, sourceZone: undefined }];
+        });
+      } else {
+        setDestinationWallets(prev => {
+          const exists = prev.some(w => w.address === draggedWallet.address);
+          if (exists) return prev;
+          return [...prev, { ...draggedWallet, sourceZone: undefined }];
+        });
+      }
+    }
+
+    setDraggedWallet(null);
+  };
+
+
+
+  const handleDropOnMain = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverZone(null);
+
+    if (!draggedWallet) return;
+
+    if (draggedWallet.sourceZone) {
+      if (draggedWallet.sourceZone === 'source') {
+        setSourceWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
+      } else {
+        setDestinationWallets(prev => prev.filter(w => w.address !== draggedWallet.address));
+      }
+    }
+
+    setDraggedWallet(null);
+  };
+  const clearAllZones = () => {
+    setSourceWallets([]);
+    setDestinationWallets([]);
+  };
+
+  const executeDistribution = async () => {
+    if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
+      alert('Please add source wallets, destination wallets, and set an amount');
+      return;
+    }
+
+    const amount = parseFloat(distributionAmount);
+    if (amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+
+    try {
+      setIsVaultDepositSigning(true);
+      await handleSetChain();
+
+      let amountPerDestination: number;
+      if (distributionMode === 'equal') {
+        amountPerDestination = amount / destinationWallets.length;
+      } else {
+        const totalDestinationValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+        amountPerDestination = amount; 
+      }
+
+      for (const sourceWallet of sourceWallets) {
+        const sourceWalletData = subWallets.find(w => w.address === sourceWallet.address);
+        if (!sourceWalletData) continue;
+
+        const amountPerSource = amount / sourceWallets.length;
+
+        for (const destWallet of destinationWallets) {
+          let transferAmount: number;
+
+          if (distributionMode === 'equal') {
+            transferAmount = amountPerSource / destinationWallets.length;
+          } else {
+            const totalDestValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
+            const proportion = destWallet.totalValue / (totalDestValue || 1);
+            transferAmount = amountPerSource * proportion;
+          }
+
+          if (transferAmount > 0) {
+            await handleSubwalletTransfer(
+              sourceWallet.address,
+              destWallet.address,
+              transferAmount.toString(),
+              sourceWalletData.privateKey
+            );
+          }
+        }
+      }
+
+      for (const wallet of [...sourceWallets, ...destinationWallets]) {
+        await refreshWalletBalance(wallet.address);
+      }
+
+      alert('Distribution completed successfully!');
+      clearAllZones();
+      setDistributionAmount('');
+
+    } catch (error) {
+      console.error('Distribution failed:', error);
+      alert('Distribution failed. Please try again.');
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  };
+
+  const createPortfolioSubWallet = async () => {
+    try {
+      if (!signTypedDataAsync || !keccak256 || !Wallet) {
+        console.error('Required wallet functions not available');
+        alert('Wallet creation functionality not available');
+        return;
+      }
+
+      const randomAccountNumber = Math.floor(Math.random() * 9000) + 1000;
+
+      const privateKey = keccak256(await signTypedDataAsync({
+        typedData: {
+          types: {
+            createCrystalOneCT: [
+              { name: 'version', type: 'string' },
+              { name: 'account', type: 'uint256' },
+            ],
+          },
+          primaryType: 'createCrystalOneCT',
+          message: {
+            version: 'Crystal v0.0.1 Testnet',
+            account: BigInt(randomAccountNumber),
+          }
+        }
+      }));
+
+      const tempWallet = new Wallet(privateKey);
+      const walletAddress = tempWallet.address;
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: privateKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      console.log('New Portfolio Subwallet Created:', { address: walletAddress, privateKey: '***' });
+    } catch (error) {
+      console.error('Error creating portfolio subwallet:', error);
+      alert('Failed to create subwallet. Please try again.');
+    }
+  };
+
+  const [privateKeyRevealed, setPrivateKeyRevealed] = useState(false);
+
+  const openExportModal = (wallet: { address: string, privateKey: string }) => {
+    setExportingWallet(wallet);
+    setPrivateKeyRevealed(false); 
+    setShowExportModal(true);
+  };
+
+  const closeExportModal = () => {
+    setShowExportModal(false);
+    setExportingWallet(null);
+    setPrivateKeyRevealed(false);
+  };
+
+  const revealPrivateKey = () => {
+    setPrivateKeyRevealed(true);
+  };
+
+  const copyPrivateKey = () => {
+    if (exportingWallet) {
+      navigator.clipboard.writeText(exportingWallet.privateKey);
+      alert('Private key copied to clipboard!');
+    }
+  };
+
+  const handleImportWallet = async () => {
+    setImportError('');
+    setIsImporting(true);
+
+    try {
+      if (!importPrivateKey.trim()) {
+        setImportError('Please enter a private key');
+        return;
+      }
+
+      let formattedKey = importPrivateKey.trim();
+      if (!formattedKey.startsWith('0x')) {
+        formattedKey = '0x' + formattedKey;
+      }
+
+      if (!isValidPrivateKey(formattedKey)) {
+        setImportError('Invalid private key format (must be 64 hex characters)');
+        return;
+      }
+
+      const existingWallet = subWallets.find(w => w.privateKey.toLowerCase() === formattedKey.toLowerCase());
+      if (existingWallet) {
+        setImportError('This wallet is already imported');
+        return;
+      }
+
+      let walletAddress: string;
+      try {
+        if (Wallet) {
+          const tempWallet = new Wallet(formattedKey);
+          walletAddress = tempWallet.address;
+        } else {
+          setImportError('Wallet functionality not available');
+          return;
+        }
+      } catch (walletError) {
+        setImportError('Invalid private key - unable to create wallet');
+        return;
+      }
+
+      const existingAddress = subWallets.find(w => w.address.toLowerCase() === walletAddress.toLowerCase());
+      if (existingAddress) {
+        setImportError('A wallet with this address already exists');
+        return;
+      }
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: formattedKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      console.log('Wallet Imported:', { address: walletAddress, privateKey: '***' });
+      closeImportModal();
+    } catch (error) {
+      console.error('Error importing wallet:', error);
+      setImportError('Failed to import wallet. Please check your private key.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const openImportModal = () => {
+    setImportPrivateKey('');
+    setImportError('');
+    setShowImportModal(true);
+  };
+
+  const closeImportModal = () => {
+    setShowImportModal(false);
+    setImportPrivateKey('');
+    setImportError('');
+  };
+
   const toggleWalletEnabled = (address: string) => {
     const newEnabledWallets = new Set(enabledWallets);
     if (newEnabledWallets.has(address)) {
@@ -256,167 +664,27 @@ const Portfolio: React.FC<PortfolioProps> = ({
     localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
   };
 
-const startEditingWallet = (address: string) => {
-  setEditingWallet(address);
-  setEditingName(walletNames[address] || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}`);
-};
-
-const saveWalletName = (address: string) => {
-  const newWalletNames = { ...walletNames, [address]: editingName || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}` };
-  setWalletNames(newWalletNames);
-  localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
-  setEditingWallet(null);
-  setEditingName('');
-};
-
-
-  const getWalletName = (address: string, index: number) => {
-    return walletNames[address] || `Wallet ${index + 1}`;
+  const startEditingWallet = (address: string) => {
+    setEditingWallet(address);
+    setEditingName(walletNames[address] || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}`);
   };
 
-  // Function to fetch token balances for a specific wallet address
-  const fetchTokenBalancesForWallet = async (walletAddress: string) => {
-    try {
-      // Use dynamic imports to load your existing blockchain infrastructure
-      const { readContract } = await import('@wagmi/core');
-      const { config } = await import('../../wagmi');
-      const { CrystalDataHelperAbi } = await import('../../abis/CrystalDataHelperAbi');
+  const saveWalletName = (address: string) => {
+    const newWalletNames = { ...walletNames, [address]: editingName || `Wallet ${subWallets.findIndex(w => w.address === address) + 1}` };
+    setWalletNames(newWalletNames);
+    localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+    setEditingWallet(null);
+    setEditingName('');
+  };
 
-      // Fetch current token balances using the same method as TraderPortfolioPopup
-      const balancesData = await readContract(config, {
-        abi: CrystalDataHelperAbi,
-        address: settings.chainConfig[activechain].balancegetter,
-        functionName: 'batchBalanceOf',
-        args: [
-          walletAddress as `0x${string}`,
-          tokenList.map((token) => token.address as `0x${string}`),
-        ],
-      });
-
-      // Convert blockchain response to the format expected by your components
-      const balances: { [key: string]: string } = {};
-      for (const [index, balance] of balancesData.entries()) {
-        const token = tokenList[index];
-        if (token) {
-          balances[token.address] = balance.toString();
-        }
-      }
-
-      return balances;
-
-    } catch (error) {
-      console.error(`Error fetching token balances for ${walletAddress}:`, error);
-      return {};
+  const getWalletName = (address: string, walletIndex?: number) => {
+    if (walletNames[address]) {
+      return walletNames[address];
     }
+    const actualIndex = subWallets.findIndex(w => w.address === address);
+    return `Wallet ${actualIndex !== -1 ? actualIndex + 1 : (walletIndex !== undefined ? walletIndex + 1 : 1)}`;
   };
 
-  // Function to calculate total account value for a specific wallet address
-  const calculateTotalAccountValueForWallet = (walletAddress: string, walletTokenBalances: any) => {
-    if (!walletTokenBalances || !marketsData) return 0;
-    
-    let totalValue = 0;
-    const ethTicker = settings.chainConfig[activechain].ethticker;
-    
-    // Create marketDataMap (same as in usePortfolioData)
-    const marketDataMap: Record<string, any> = {};
-    marketsData.forEach((market: any) => {
-      if (market) {
-        const key = `${market.baseAsset}${market.quoteAsset}`;
-        marketDataMap[key] = market;
-      }
-    });
-    
-    const ethMarket = marketDataMap[`${ethTicker}USDC`];
-
-    tokenList.forEach((token) => {
-      const bal = Number(walletTokenBalances[token.address]) / 10 ** Number(token.decimals) || 0;
-      const normalized = normalizeTicker(token.ticker, activechain);
-      let price = 0;
-      const usdcMkt = marketDataMap[`${normalized}USDC`];
-
-      if (usdcMkt?.series?.length) {
-        price = usdcMkt.series[usdcMkt.series.length - 1].close / Number(usdcMkt.priceFactor);
-      } else if (normalized === 'USDC') {
-        price = 1;
-      } else {
-        const tokenEth = marketDataMap[`${normalized}${ethTicker}`];
-        if (
-          tokenEth?.series?.length &&
-          ethMarket?.series?.length
-        ) {
-          price = tokenEth.series[tokenEth.series.length - 1].close / Number(tokenEth.priceFactor) * ethMarket.series[ethMarket.series.length - 1].close / Number(ethMarket.priceFactor);
-        }
-      }
-
-      totalValue += bal * price;
-    });
-    
-    return totalValue;
-  };
-
-  // Load balances and total values for all wallets with debouncing
-  useEffect(() => {
-    const loadWalletData = async () => {
-      if (subWallets.length === 0) return;
-      
-      // Debounce: only fetch if it's been more than 10 seconds since last fetch
-      const now = Date.now();
-      if (now - lastFetchTime < 10000 && Object.keys(walletTokenBalances).length > 0) {
-        return;
-      }
-      
-      // Check if we have the necessary data
-      if (!marketsData || marketsData.length === 0 || !tokenList || tokenList.length === 0) {
-        return;
-      }
-
-      setWalletsLoading(true);
-      setLastFetchTime(now);
-      
-      const balances: {[address: string]: any} = {};
-      const totalValues: {[address: string]: number} = {};
-      
-      try {
-        // Fetch balances for all wallets in parallel
-        const balancePromises = subWallets.map(wallet => 
-          fetchTokenBalancesForWallet(wallet.address)
-        );
-        
-        const allBalances = await Promise.all(balancePromises);
-        
-        // Calculate total values
-        subWallets.forEach((wallet, index) => {
-          const tokenBalances = allBalances[index];
-          balances[wallet.address] = tokenBalances;
-          totalValues[wallet.address] = calculateTotalAccountValueForWallet(wallet.address, tokenBalances);
-        });
-        
-        setWalletTokenBalances(balances);
-        setWalletTotalValues(totalValues);
-      } catch (error) {
-        console.error('Error loading wallet data:', error);
-      } finally {
-        setWalletsLoading(false);
-      }
-    };
-    
-    loadWalletData();
-  }, [subWallets.length, activechain]); // Removed marketsData and tokenList from dependencies
-
-  // Separate useEffect to recalculate values when market data changes (without refetching balances)
-  useEffect(() => {
-    if (Object.keys(walletTokenBalances).length > 0 && marketsData && tokenList) {
-      const totalValues: {[address: string]: number} = {};
-      
-      subWallets.forEach((wallet) => {
-        totalValues[wallet.address] = calculateTotalAccountValueForWallet(wallet.address, walletTokenBalances[wallet.address]);
-      });
-      
-      setWalletTotalValues(totalValues);
-    }
-  }, [marketsData, tokenList, walletTokenBalances, subWallets]);
-
-  // Deposit functions
   const openDepositModal = (targetWallet: string, mode: 'main' | 'subwallet') => {
     setDepositTargetWallet(targetWallet);
     setDepositMode(mode);
@@ -436,52 +704,52 @@ const saveWalletName = (address: string) => {
     if (!depositAmount || !depositTargetWallet) return;
 
     try {
-      const tokenIn = tokenList.find(t => t.ticker === 'MON' || t.symbol === 'MON');
-      if (!tokenIn) return;
+      setIsVaultDepositSigning(true);
+      await handleSetChain();
 
-      const amountBigInt = BigInt(
-        Math.round(parseFloat(depositAmount) * 10 ** Number(tokenIn.decimals))
-      );
+      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
 
-      // Use your existing send functionality
       if (depositMode === 'main') {
-        // Send from main wallet to target wallet
         const hash = await sendUserOperationAsync({
           uo: {
             target: depositTargetWallet as `0x${string}`,
-            value: amountBigInt,
+            value: ethAmount,
             data: '0x'
           }
         });
-        
+
         console.log('Deposit successful:', hash);
-      } else {
-        // Send from selected subwallet to target wallet
-        if (!depositFromWallet) return;
-        
-        // You'll need to implement sending from subwallet
-        // This would require switching to the source subwallet temporarily
-        console.log('Sending from subwallet:', depositFromWallet, 'to:', depositTargetWallet);
+
+        await refreshWalletBalance(depositTargetWallet);
+        refetch();
+
+      } else if (depositMode === 'subwallet' && depositFromWallet) {
+        const sourceWallet = subWallets.find(w => w.address === depositFromWallet);
+        if (sourceWallet) {
+          await handleSubwalletTransfer(depositFromWallet, depositTargetWallet, depositAmount, sourceWallet.privateKey);
+        } else {
+          throw new Error('Source wallet not found');
+        }
       }
 
       closeDepositModal();
-      // Refresh wallet data after deposit
-      setLastFetchTime(0); // Force refresh
+
     } catch (error) {
       console.error('Deposit failed:', error);
+    } finally {
+      setIsVaultDepositSigning(false);
     }
   };
 
   const getWalletBalance = (address: string) => {
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
-    
-    // Get MON balance specifically
-    const monToken = tokenList.find(t => t.ticker === 'MON' || t.symbol === 'MON');
-    if (monToken && balances[monToken.address]) {
-      return Number(balances[monToken.address]) / 10 ** Number(monToken.decimals);
+
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+    if (ethToken && balances[ethToken.address]) {
+      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
     }
-    
+
     return 0;
   };
 
@@ -804,9 +1072,10 @@ const saveWalletName = (address: string) => {
 
       case 'wallets':
         return (
-          <div className="wallets-tab-content">
-                <div className="wallets-summary">
-                  <div className="wallets-summary-left">
+          <div className="wallets-drag-drop-layout">
+            <div className="wallets-left-panel">
+              <div className="wallets-summary">
+                <div className="wallets-summary-left">
                   <div className="summary-item">
                     <span className="summary-label">Total Wallets</span>
                     <span className="summary-value">{subWallets.length}</span>
@@ -825,229 +1094,719 @@ const saveWalletName = (address: string) => {
                       )}
                     </span>
                   </div>
-                  </div>
-                  <div className="wallets-summary-right">
-                    <button className="import-wallet-button">Import</button>
-                    <button className="create-wallet-button">Create Subwallet</button>
-                  </div>
                 </div>
-            {subWallets.length === 0 ? (
-              <div className="no-wallets-container">
-                <div className="no-wallets-message">
-                  <h4>No Sub Wallets Found</h4>
-                  <p>Create sub wallets in Settings to manage multiple wallets from one interface.</p>
-                  <button 
-                    className="create-wallet-cta-button"
-                    onClick={() => setpopup(5)}
+
+                <div className="wallets-summary-right">
+                  <button
+                    className="import-wallet-button"
+                    onClick={openImportModal}
                   >
-                    Go to Settings
+                    Import
+                  </button>
+                  <button
+                    className="create-wallet-button"
+                    onClick={createPortfolioSubWallet}
+                  >
+                    Create Subwallet
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="wallets-table-container">
-                <div className="wallets-table-header">
-                  <div className="wallet-header-name">Wallet Name</div>
-                  <div className="wallet-header-address">Address</div>
-                  <div className="wallet-header-mon">MON Balance</div>
-                  <div className="wallet-header-total">Total Value</div>
-                  <div className="wallet-header-actions">Actions</div>
+
+              {subWallets.length === 0 ? (
+                <div className="no-wallets-container">
+                  <div className="no-wallets-message">
+                    <h4>No Sub Wallets Found</h4>
+                    <p>Create sub wallets to manage multiple wallets from one interface.</p>
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
+                      <button
+                        className="create-wallet-cta-button"
+                        onClick={createPortfolioSubWallet}
+                      >
+                        Create Subwallet
+                      </button>
+                      <button
+                        className="import-wallet-cta-button"
+                        onClick={openImportModal}
+                      >
+                        Import Wallet
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="wallets-table-body">
-                  {subWallets.map((wallet, index) => (
-                    <div key={wallet.address} className="wallet-row">
-                      
-                     
-<div className="wallet-name-cell">
-  <input
-    type="checkbox"
-    className="wallet-checkbox"
-    checked={enabledWallets.has(wallet.address)}
-    onChange={() => toggleWalletEnabled(wallet.address)}
-  />
-  {editingWallet === wallet.address ? (
-    <div className="wallet-name-edit-container">
-      <input
-        type="text"
-        value={editingName}
-        onChange={(e) => setEditingName(e.target.value)}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') saveWalletName(wallet.address);
-        }}
-        onBlur={() => saveWalletName(wallet.address)}
-        className="wallet-name-input"
-        autoFocus
-      />
-    </div>
-  ) : (
-    <div 
-      className="wallet-name-display"
-      onClick={() => startEditingWallet(wallet.address)}
-    >
-      <span className="wallet-name-text">{getWalletName(wallet.address, index)}</span>
-      <Edit2 size={12} className="wallet-name-edit-icon" />
-    </div>
-  )}
-</div>
-                      
-                      <div className="wallet-address-cell">
-                        <span className="wallet-address-text">
-                          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                        </span>
-                        <button 
-                          className="wallet-copy-button"
-                          onClick={() => navigator.clipboard.writeText(wallet.address)}
+              ) : (
+                <div className="drag-wallets-container">
+                  <div
+                    className={`drag-wallets-list ${dragOverZone === 'main' ? 'drag-over' : ''}`}
+                    onDragOver={(e) => handleDragOver(e, 'main')}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDropOnMain}
+                  >
+                    {subWallets
+                      .filter(wallet =>
+                        !sourceWallets.some(w => w.address === wallet.address) &&
+                        !destinationWallets.some(w => w.address === wallet.address)
+                      )
+                      .map((wallet, index) => (
+                        <div
+                          key={wallet.address}
+                          className="draggable-wallet-item"
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, wallet, index)}
                         >
-                          <img src={copy} className="wallet-address-copy-icon"alt="Copy" />
-                        </button>
-                      </div>
-                      
-                      <div className="wallet-balance-cell">
-                        <span className={`wallet-balance ${isBlurred ? 'blurred' : ''}`}>
-                          {walletsLoading ? (
-                            <div className="port-loading" style={{ width: 60 }} />
-                          ) : (
-                            `${getWalletBalance(wallet.address).toFixed(2)} MON`
-                          )}
-                        </span>
-                      </div>
-                      
-                      <div className="wallet-total-cell">
-                        <span className={`wallet-total ${isBlurred ? 'blurred' : ''}`}>
-                          {walletsLoading ? (
-                            <div className="port-loading" style={{ width: 80 }} />
-                          ) : (
-                            `${getTotalWalletValue(wallet.address).toFixed(2)}`
-                          )}
-                        </span>
-                      </div>
-                      
-                      <div className="wallet-actions-cell">
-                        <div className="wallet-actions-grid">
-                          <button 
-                            className="wallet-action-button primary"
+                          <div className="wallet-drag-info">
+                            <div className="wallet-name-container">
+                              {editingWallet === wallet.address ? (
+                                <div className="wallet-name-edit-container">
+                                  <input
+                                    type="text"
+                                    className="wallet-name-input"
+                                    value={editingName}
+                                    onChange={(e) => setEditingName(e.target.value)}
+                                    onKeyPress={(e) => {
+                                      if (e.key === 'Enter') {
+                                        saveWalletName(wallet.address);
+                                      } else if (e.key === 'Escape') {
+                                        setEditingWallet(null);
+                                        setEditingName('');
+                                      }
+                                    }}
+                                    autoFocus
+                                    onBlur={() => saveWalletName(wallet.address)}
+                                  />
+                                </div>
+                              ) : (
+                                <div
+                                  className="wallet-name-display"
+                                  onMouseEnter={(e) => {
+                                    const icon = e.currentTarget.querySelector('.wallet-name-edit-icon') as HTMLElement;
+                                    if (icon) icon.style.opacity = '1';
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    const icon = e.currentTarget.querySelector('.wallet-name-edit-icon') as HTMLElement;
+                                    if (icon) icon.style.opacity = '0';
+                                  }}
+                                >
+                                  <span
+                                    className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                                    style={{
+                                      color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                                    }}
+                                  >
+                                    {getWalletName(wallet.address, subWallets.findIndex(w => w.address === wallet.address))}
+                                  </span>
+                                  <Edit2
+                                    size={12}
+                                    className="wallet-name-edit-icon"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      startEditingWallet(wallet.address);
+                                    }}
+                                  />
+                                </div>
+                              )}
+                            </div>
+                            <div className="wallet-drag-address">
+                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                            </div>
+                          </div>
+
+                          <div className="wallet-drag-actions">
+                            <button
+                              className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
+                              onClick={() => {
+                                setOneCTSigner(wallet.privateKey);
+                                setpopup(25);
+                                refetch();
+                              }}
+
+                            >
+                              <Star
+                                size={14}
+                                fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
+                                color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+                              />
+                            </button>
+
+                            <button
+                              className="wallet-icon-button key-button"
+                              onClick={() => openExportModal(wallet)}
+                              title="Export Private Key"
+                            >
+                              <img src={key} className="wallet-action-icon" alt="Export Key" />
+                            </button>
+
+                            <a
+                              href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="wallet-icon-button explorer-button"
+                              title="View on Explorer"
+                            >
+                              <svg
+                                className="wallet-action-icon-svg"
+                                xmlns="http://www.w3.org/2000/svg"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 24 24"
+                                fill="white"
+                              >
+                                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                              </svg>
+                            </a>
+
+                            <button
+                              className="wallet-icon-button delete-button"
+                              onClick={() => confirmDeleteWallet(wallet.address)}
+                              title="Delete Wallet"
+                            >
+                              <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+                            </button>
+                          </div>
+                          <div className="wallet-drag-values">
+                            <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+                              <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />{getWalletBalance(wallet.address).toFixed(2)}
+                            </div>
+
+                          </div>
+
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="wallets-right-panel">
+              <div
+                className={`drop-zone source-zone ${dragOverZone === 'source' ? 'drag-over' : ''}`}
+                onDragOver={(e) => handleDragOver(e, 'source')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => {
+                  if (draggedWallet?.sourceZone) {
+                    handleDropBetweenZones(e, 'source');
+                  } else {
+                    handleDrop(e, 'source');
+                  }
+                }}
+              >
+                <div className="drop-zone-header">
+                  <span className="drop-zone-title">Source Wallets</span>
+                  <span className="drop-zone-count">{sourceWallets.length}</span>
+                  {sourceWallets.length > 0 && (
+                    <button
+                      className="clear-zone-button"
+                      onClick={() => setSourceWallets([])}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {sourceWallets.length === 0 ? (
+                  <div className="drop-zone-empty">
+                    <div className="drop-zone-icon">
+                      <svg
+                        className="wallets-drop-icon"
+                        viewBox="0 0 24 24"
+                        width="40"
+                        height="40"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="7 11 12 16 17 11"></polyline>
+                        <line x1="12" y1="1" x2="12" y2="14"></line>
+                        <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
+                      </svg>
+                    </div>
+                    <div className="drop-zone-text">Drag source wallets here</div>
+                  </div>
+                ) : (
+                  <div className="drop-zone-wallets">
+                    {sourceWallets.map((wallet) => (
+                      <div
+                        key={wallet.address}
+                        className="draggable-wallet-item"
+                        draggable
+                        onDragStart={(e) => handleDragStartFromZone(e, wallet, 'source')}
+                      >
+                        <div className="wallet-drag-info">
+                          <div className="wallet-name-container">
+                            <div className="wallet-name-display">
+                              <div className="wallet-name-display">
+                                <span
+                                  className={`wallet-drag-name ${(() => {
+                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? 'active' : '';
+                                  })()}`}
+                                  style={{
+                                    color: (() => {
+                                      const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                      return originalWallet && isWalletActive(originalWallet.privateKey) ? '#d8dcff' : '#fff';
+                                    })()
+                                  }}
+                                >
+                                  {wallet.name}
+                                </span>
+                              </div>                            </div>
+                            <div className="wallet-drag-address">
+                              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                            </div>
+                          </div>
+                        </div>
+
+
+                        <div className="wallet-drag-actions">
+                          <button
+                            className={`wallet-action-button ${(() => {
+                              const originalWallet = subWallets.find(w => w.address === wallet.address);
+                              return originalWallet && isWalletActive(originalWallet.privateKey) ? 'primary' : '';
+                            })()}`}
                             onClick={() => {
-                              console.log('Setting wallet as active:', wallet.address);
+                              const originalWallet = subWallets.find(w => w.address === wallet.address);
+                              if (originalWallet) {
+                                setOneCTSigner(originalWallet.privateKey);
+                                setpopup(25);
+                                refetch();
+                              }
                             }}
                           >
-                            Set Active
+                            <Star
+                              size={14}
+                              fill={(() => {
+                                const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                return originalWallet && isWalletActive(originalWallet.privateKey) ? '#aaaecf' : 'none';
+                              })()}
+                              color={(() => {
+                                const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                return originalWallet && isWalletActive(originalWallet.privateKey) ? '#0f0f12' : 'currentColor';
+                              })()}
+                            />
                           </button>
-                          <button 
-                            className="wallet-action-button secondary"
-                            onClick={() => openDepositModal(wallet.address, 'main')}
+
+                          <button
+                            className="wallet-icon-button key-button"
+                            onClick={() => {
+                              const originalWallet = subWallets.find(w => w.address === wallet.address);
+                              if (originalWallet) openExportModal(originalWallet);
+                            }}
+                            title="Export Private Key"
                           >
-                            From Main
+                            <img src={key} className="wallet-action-icon" alt="Export Key" />
                           </button>
-                          <button 
-                            className="wallet-action-button secondary"
-                            onClick={() => openDepositModal(wallet.address, 'subwallet')}
+
+                          <a
+                            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="wallet-icon-button explorer-button"
+                            title="View on Explorer"
                           >
-                            From Sub
+                            <svg
+                              className="wallet-action-icon-svg"
+                              xmlns="http://www.w3.org/2000/svg"
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="white"
+                            >
+                              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                            </svg>
+                          </a>
+
+                          <button
+                            className="wallet-icon-button delete-button"
+                            onClick={() => {
+                              const originalWallet = subWallets.find(w => w.address === wallet.address);
+                              if (originalWallet) confirmDeleteWallet(originalWallet.address);
+                            }}
+                            title="Delete Wallet"
+                          >
+                            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
                           </button>
                         </div>
+
+                        <div className="wallet-drag-values">
+                          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+                            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+                            {wallet.balance.toFixed(2)}
+                          </div>
+                        </div>
                       </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div
+                className={`drop-zone destination-zone ${dragOverZone === 'destination' ? 'drag-over' : ''}`}
+                onDragOver={(e) => handleDragOver(e, 'destination')}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => {
+                  if (draggedWallet?.sourceZone) {
+                    handleDropBetweenZones(e, 'destination');
+                  } else {
+                    handleDrop(e, 'destination');
+                  }
+                }}
+              >
+                <div className="drop-zone-header2">
+                  <span className="drop-zone-title">Destination Wallets</span>
+                  <span className="drop-zone-count">{destinationWallets.length}</span>
+                  {destinationWallets.length > 0 && (
+                    <button
+                      className="clear-zone-button"
+                      onClick={() => setDestinationWallets([])}
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+
+                {destinationWallets.length === 0 ? (
+                  <div className="drop-zone-empty">
+                    <div className="drop-zone-icon">
+                      <svg
+                        className="wallets-drop-icon"
+                        viewBox="0 0 24 24"
+                        width="40"
+                        height="40"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <polyline points="7 11 12 16 17 11"></polyline>
+                        <line x1="12" y1="1" x2="12" y2="14"></line>
+                        <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
+                      </svg>
                     </div>
-                  ))}
+                    <div className="drop-zone-text">Drag destination wallets here</div>
+                  </div>
+                ) : (
+                  <div className="drop-zone-wallets">
+
+                    {destinationWallets.length === 0 ? (
+                      <div className="drop-zone-empty">
+                        <div className="drop-zone-icon">
+                          <svg
+                            className="wallets-drop-icon"
+                            viewBox="0 0 24 24"
+                            width="40"
+                            height="40"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="7 11 12 16 17 11"></polyline>
+                            <line x1="12" y1="1" x2="12" y2="14"></line>
+                            <path d="M22 14V19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V14" />
+                          </svg>
+                        </div>
+                        <div className="drop-zone-text">Drag destination wallets here</div>
+                      </div>
+                    ) : (
+                      <div className="drop-zone-wallets">
+                        {destinationWallets.map((wallet) => (
+                          <div
+                            key={wallet.address}
+                            className="draggable-wallet-item"
+                            draggable
+                            onDragStart={(e) => handleDragStartFromZone(e, wallet, 'destination')}
+                          >
+                            <div className="wallet-drag-info">
+                              <div className="wallet-name-container">
+                                <div className="wallet-name-display">
+                                  <div className="wallet-name-display">
+                                    <span
+                                      className={`wallet-drag-name ${(() => {
+                                        const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                        return originalWallet && isWalletActive(originalWallet.privateKey) ? 'active' : '';
+                                      })()}`}
+                                      style={{
+                                        color: (() => {
+                                          const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                          return originalWallet && isWalletActive(originalWallet.privateKey) ? '#d8dcff' : '#fff';
+                                        })()
+                                      }}
+                                    >
+                                      {wallet.name}
+                                    </span>
+                                  </div>                                </div>
+                                <div className="wallet-drag-address">
+                                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                  <img src={copy} className="wallets-copy-icon" alt="Copy" />
+                                </div>
+                              </div>
+                            </div>
+
+
+                            <div className="wallet-drag-actions">
+                              <button
+                                className={`wallet-action-button ${(() => {
+                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                  return originalWallet && isWalletActive(originalWallet.privateKey) ? 'primary' : '';
+                                })()}`}
+                                onClick={() => {
+                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                  if (originalWallet) {
+                                    setOneCTSigner(originalWallet.privateKey);
+                                    setpopup(25);
+                                    refetch();
+                                  }
+                                }}
+                              >
+                                <Star
+                                  size={14}
+                                  fill={(() => {
+                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? '#aaaecf' : 'none';
+                                  })()}
+                                  color={(() => {
+                                    const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                    return originalWallet && isWalletActive(originalWallet.privateKey) ? '#0f0f12' : 'currentColor';
+                                  })()}
+                                />
+                              </button>
+
+                              <button
+                                className="wallet-icon-button key-button"
+                                onClick={() => {
+                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                  if (originalWallet) openExportModal(originalWallet);
+                                }}
+                                title="Export Private Key"
+                              >
+                                <img src={key} className="wallet-action-icon" alt="Export Key" />
+                              </button>
+
+                              <a
+                                href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="wallet-icon-button explorer-button"
+                                title="View on Explorer"
+                              >
+                                <svg
+                                  className="wallet-action-icon-svg"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width="16"
+                                  height="16"
+                                  viewBox="0 0 24 24"
+                                  fill="white"
+                                >
+                                  <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                                  <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                                </svg>
+                              </a>
+
+                              <button
+                                className="wallet-icon-button delete-button"
+                                onClick={() => {
+                                  const originalWallet = subWallets.find(w => w.address === wallet.address);
+                                  if (originalWallet) confirmDeleteWallet(originalWallet.address);
+                                }}
+                                title="Delete Wallet"
+                              >
+                                <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+                              </button>
+                            </div>
+
+                            <div className="wallet-drag-values">
+                              <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+                                <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+                                {wallet.balance.toFixed(2)}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+            {(sourceWallets.length > 0 || destinationWallets.length > 0) && (
+              <div className="distribution-controls">
+                <div className="distribution-settings">
+                  <div className="distribution-amount-section">
+                    <label className="distribution-label">Amount to Distribute (MON):</label>
+                    <input
+                      type="text"
+                      className="distribution-amount-input"
+                      value={distributionAmount}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (/^\d*\.?\d{0,18}$/.test(value)) {
+                          setDistributionAmount(value);
+                        }
+                      }}
+                      placeholder="0.00"
+                    />
+                  </div>
+
+                  <div className="distribution-mode-section">
+                    <label className="distribution-label">Distribution Mode:</label>
+                    <select
+                      className="distribution-mode-select"
+                      value={distributionMode}
+                      onChange={(e) => setDistributionMode(e.target.value as 'equal' | 'proportional')}
+                    >
+                      <option value="equal">Equal Distribution</option>
+                      <option value="proportional">Proportional by Balance</option>
+                    </select>
+                  </div>
+
+                  <div className="distribution-actions">
+                    <button
+                      className="clear-all-button"
+                      onClick={clearAllZones}
+                    >
+                      Clear All
+                    </button>
+                    <button
+                      className="execute-distribution-button"
+                      onClick={executeDistribution}
+                      disabled={
+                        sourceWallets.length === 0 ||
+                        destinationWallets.length === 0 ||
+                        !distributionAmount ||
+                        parseFloat(distributionAmount) <= 0 ||
+                        isVaultDepositSigning
+                      }
+                    >
+                      {isVaultDepositSigning ? 'Distributing...' : 'Execute Distribution'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
 
-            {showDepositModal && (
-              <div className="deposit-modal-backdrop" onClick={closeDepositModal}>
-                <div className="deposit-modal-container" onClick={(e) => e.stopPropagation()}>
-                  <div className="deposit-modal-header">
-                    <h3 className="deposit-modal-title">
-                      Deposit to {getWalletName(depositTargetWallet, subWallets.findIndex(w => w.address === depositTargetWallet))}
-                    </h3>
-                    <button className="deposit-modal-close" onClick={closeDepositModal}>
-                      <X size={20} />
+            {showImportModal && (
+              <div className="pk-modal-backdrop" onClick={closeImportModal}>
+                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="pk-modal-header">
+                    <h3 className="pk-modal-title">Import Wallet</h3>
+                    <button className="pk-modal-close" onClick={closeImportModal}>
+                      <img src={closebutton} className="close-button-icon" />
                     </button>
                   </div>
-
-                  <div className="deposit-modal-content">
-                    <div className="deposit-mode-info">
-                      <span className="deposit-mode-label">
-                        {depositMode === 'main' ? 'From Main Wallet' : 'From Sub Wallet'}
-                      </span>
-                      <span className="deposit-target-address">
-                        To: {depositTargetWallet.slice(0, 6)}...{depositTargetWallet.slice(-4)}
-                      </span>
-                    </div>
-
-                    {depositMode === 'subwallet' && (
-                      <div className="deposit-source-selection">
-                        <label className="deposit-label">Select Source Wallet:</label>
-                        <select 
-                          className="deposit-source-select"
-                          value={depositFromWallet}
-                          onChange={(e) => setDepositFromWallet(e.target.value)}
-                        >
-                          <option value="">Choose a wallet...</option>
-                          {subWallets
-                            .filter(w => w.address !== depositTargetWallet)
-                            .map((wallet, index) => (
-                              <option key={wallet.address} value={wallet.address}>
-                                {getWalletName(wallet.address, index)} ({wallet.address.slice(0, 6)}...{wallet.address.slice(-4)})
-                              </option>
-                            ))}
-                        </select>
-                      </div>
-                    )}
-
-                    <div className="deposit-amount-section">
-                      <label className="deposit-label">Amount (MON):</label>
-                      <div className="deposit-amount-input-container">
+                  <div className="pk-modal-content">
+                    <div className="pk-input-section">
+                      <label className="pk-label">Private Key:</label>
+                      <div className="pk-input-container">
                         <input
                           type="text"
-                          className="deposit-amount-input"
-                          value={depositAmount}
+                          className="pk-input"
+                          value={importPrivateKey}
                           onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d*\.?\d{0,18}$/.test(value)) {
-                              setDepositAmount(value);
-                            }
+                            setImportPrivateKey(e.target.value);
+                            setImportError('');
                           }}
-                          placeholder="0.00"
+                          placeholder="0x... or without 0x prefix"
+                          autoComplete="off"
+                          spellCheck="false"
                         />
-                        <button 
-                          className="deposit-max-button"
-                          onClick={() => {
-                            // Set to available balance from source wallet
-                            if (depositMode === 'main') {
-                              const monToken = tokenList.find(t => t.ticker === 'MON' || t.symbol === 'MON');
-                              if (monToken && tokenBalances[monToken.address]) {
-                                const balance = Number(tokenBalances[monToken.address]) / 10 ** Number(monToken.decimals);
-                                setDepositAmount(balance.toString());
-                              }
-                            } else if (depositFromWallet) {
-                              const balance = getWalletBalance(depositFromWallet);
-                              setDepositAmount(balance.toString());
-                            }
-                          }}
-                        >
-                          MAX
-                        </button>
+                        {importError && (
+                          <div className="pk-error-message">
+                            {importError}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                    <div className="pk-modal-actions">
+                      <button
+                        className={`pk-confirm-button ${isImporting ? 'loading' : ''}`}
+                        onClick={handleImportWallet}
+                        disabled={!importPrivateKey.trim() || isImporting}
+                      >
+                        {isImporting ? 'Importing...' : 'Import Wallet'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showExportModal && exportingWallet && (
+              <div className="export-private-key-modal-backdrop" onClick={closeExportModal}>
+                <div className="export-private-key-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="export-private-key-modal-header">
+                    <h3 className="export-private-key-modal-title">Export Private Key</h3>
+                    <button className="export-private-key-modal-close" onClick={closeExportModal}>
+                      <img src={closebutton} className="close-button-icon" />
+                    </button>
+                  </div>
+                  <div className="export-private-key-modal-content">
+                    <div className="export-private-key-warning">
+                      <div className="export-private-key-warning-text">
+                        Never share your private key with anyone. Anyone with access to your private key can control your wallet and steal your funds.
                       </div>
                     </div>
 
-                    <div className="deposit-modal-actions">
-                      <button 
-                        className="deposit-cancel-button"
-                        onClick={closeDepositModal}
+                    <div className="export-private-key-wallet-info">
+                      <div className="export-private-key-info-row">
+                        <span className="export-private-key-label">Address:</span>
+                        <span className="export-private-key-value">{exportingWallet.address.slice(0, 6)}...{exportingWallet.address.slice(-4)}</span>
+                      </div>
+                      <div className="export-private-key-info-row">
+                        <span className="export-private-key-label">Name:</span>
+                        <span className="export-private-key-value">
+                          {getWalletName(exportingWallet.address, subWallets.findIndex(w => w.address === exportingWallet.address))}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="export-private-key-section">
+                      <label className="export-private-key-pk-label">Private Key:</label>
+                      <div className="export-private-key-container">
+                        {!privateKeyRevealed ? (
+                          <div
+                            className="export-private-key-reveal-button"
+                            onClick={revealPrivateKey}
+                          >
+                            <span>Click to reveal private key</span>
+                          </div>
+                        ) : (
+                          <>
+                            <textarea
+                              className="export-private-key-input"
+                              value={exportingWallet.privateKey}
+                              readOnly
+                            />
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            {showDeleteConfirmation && (
+              <div className="delete-confirmation-modal-backdrop" onClick={() => setShowDeleteConfirmation(false)}>
+                <div className="delete-confirmation-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="delete-confirmation-modal-header">
+                    <h3 className="delete-confirmation-modal-title">Delete Wallet</h3>
+                    <button className="delete-confirmation-modal-close" onClick={() => setShowDeleteConfirmation(false)}>
+                      <img src={closebutton} className="close-button-icon" />
+                    </button>
+                  </div>
+                  <div className="delete-confirmation-modal-content">
+                    <div className="delete-confirmation-warning">
+                      <div className="delete-confirmation-warning-text">
+                        <h4>Are you sure you want to delete this wallet?</h4>
+                        <p>This action cannot be undone. The private key will not be recoverable unless you have it saved elsewhere.</p>
+                      </div>
+                    </div>
+                    <div className="delete-confirmation-actions">
+                      <button
+                        className="delete-confirmation-confirm-button"
+                        onClick={() => deleteWallet(walletToDelete)}
                       >
-                        Cancel
-                      </button>
-                      <button 
-                        className="deposit-confirm-button"
-                        onClick={handleDeposit}
-                        disabled={
-                          !depositAmount || 
-                          parseFloat(depositAmount) <= 0 || 
-                          (depositMode === 'subwallet' && !depositFromWallet)
-                        }
-                      >
-                        Deposit
+                        Delete Wallet
                       </button>
                     </div>
                   </div>
@@ -1090,25 +1849,25 @@ const saveWalletName = (address: string) => {
             </span>
           </div>
           <div className="search-wallet-wrapper">
-          <div className="portfolio-wallet-search-container">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search vaults..."
-              className="portfolio-wallet-search-input"
-              value={searchInput}
-              onChange={handleSearchInputChange}
-              onKeyPress={handleKeyPress}
-            />
-          </div>
-           <button
+            <div className="portfolio-wallet-search-container">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search vaults..."
+                className="portfolio-wallet-search-input"
+                value={searchInput}
+                onChange={handleSearchInputChange}
+                onKeyPress={handleKeyPress}
+              />
+            </div>
+            <button
               className={`wallet-search-confirm-button ${isButtonDisabled ? 'disabled' : ''}`}
               onClick={isSpectating ? clearSpectating : handleConfirmSpectating}
               disabled={isButtonDisabled}
             >
               {isSpectating ? 'Stop Spectating' : 'Spectate'}
             </button>
-            </div>
+          </div>
         </div>
         <div className="portfolio-content-container">
           {renderTabContent()}
@@ -1147,7 +1906,7 @@ const saveWalletName = (address: string) => {
           </div>
           <div className="search-wallet-wrapper">
             <button className="portfolio-selected-wallet">Main Wallet
-              <img src={cheveron} className="portfolio-wallet-selector"/>
+              <img src={cheveron} className="portfolio-wallet-selector" />
             </button>
             <div className="portfolio-wallet-search-container">
               <Search size={16} className="search-icon" />
@@ -1176,7 +1935,5 @@ const saveWalletName = (address: string) => {
     );
   }
 };
-
-
 
 export default Portfolio;
