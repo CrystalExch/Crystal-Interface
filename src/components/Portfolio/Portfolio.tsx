@@ -1116,7 +1116,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 <div className="no-wallets-container">
                   <div className="no-wallets-message">
                     <h4>No Sub Wallets Found</h4>
-                    <p>Create sub wallets to manage multiple wallets from one interface.</p>
+                    <p>Create sub wallets to manage multiple wallets from one interface and trade with 1CT.</p>
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
                       <button
                         className="create-wallet-cta-button"
