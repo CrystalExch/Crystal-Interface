@@ -2144,7 +2144,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 20px;
+  padding: 10px 12px;
   padding-bottom: 0;
 }
 
@@ -2173,7 +2173,7 @@
 }
 
 .pk-modal-content {
-  padding: 20px;
+  padding: 12px;
   padding-top: 10px;
 }
 
