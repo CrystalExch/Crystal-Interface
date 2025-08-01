@@ -4432,6 +4432,7 @@ input[type="email"] {
   transition: color 0.2s ease, background-color 0.2s ease;
   overflow: visible;
   margin-right: -5px;
+  display: none;
 }
 
 .main-content-wrapper.simple-view .refresh-quote-button {

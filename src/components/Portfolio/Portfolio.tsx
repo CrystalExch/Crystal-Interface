@@ -15,6 +15,8 @@ import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
 import key from '../../assets/key.svg';
 import trash from '../../assets/trash.svg';
+import WalletOperationPopup from '../MemeTransactionPopup/WalletOperationPopup';
+import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
@@ -219,8 +221,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const sourceWalletsRef = useRef<HTMLDivElement>(null);
   const destinationWalletsRef = useRef<HTMLDivElement>(null);
   const [showExportModal, setShowExportModal] = useState(false);
-  const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
+const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
 const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
+
+  const {
+    isVisible: isWalletPopupVisible,
+    popupData: walletPopupData,
+    hidePopup: hideWalletPopup,
+    showDistributionSuccess,
+    showDepositSuccess,
+    showTransferSuccess,
+    showWalletCreated,
+    showWalletImported,
+    showSendBackSuccess,
+  } = useWalletPopup();
+
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
     if (window.innerHeight > 1080) {
@@ -591,7 +606,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
     setDestinationWallets([]);
   };
 
-  const executeDistribution = async () => {
+const executeDistribution = async () => {
     if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
       alert('Please add source wallets, destination wallets, and set an amount');
       return;
@@ -647,7 +662,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
         await refreshWalletBalance(wallet.address);
       }
 
-      alert('Distribution completed successfully!');
+      showDistributionSuccess(distributionAmount, sourceWallets.length, destinationWallets.length);
       clearAllZones();
       setDistributionAmount('');
 
@@ -659,7 +674,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
     }
   };
 
-  const createPortfolioSubWallet = async () => {
+const createPortfolioSubWallet = async () => {
     try {
       if (!signTypedDataAsync || !keccak256 || !Wallet) {
         console.error('Required wallet functions not available');
@@ -697,7 +712,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
       setSubWallets(updatedWallets);
       saveSubWalletsToStorage(updatedWallets);
 
-      console.log('New Portfolio Subwallet Created:', { address: walletAddress, privateKey: '***' });
+      showWalletCreated();
     } catch (error) {
       console.error('Error creating portfolio subwallet:', error);
       alert('Failed to create subwallet. Please try again.');
@@ -729,7 +744,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
     }
   };
 
-  const handleImportWallet = async () => {
+const handleImportWallet = async () => {
     setImportError('');
     setIsImporting(true);
 
@@ -786,6 +801,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
 
       console.log('Wallet Imported:', { address: walletAddress, privateKey: '***' });
       closeImportModal();
+      showWalletImported(walletAddress);
     } catch (error) {
       console.error('Error importing wallet:', error);
       setImportError('Failed to import wallet. Please check your private key.');
@@ -852,7 +868,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
   };
 
 
-  const handleDepositFromEOA = async () => {
+const handleDepositFromEOA = async () => {
     if (!depositAmount || !depositTargetWallet) return;
 
     try {
@@ -873,6 +889,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
       await refreshWalletBalance(depositTargetWallet);
       refetch();
       closeDepositModal();
+      showDepositSuccess(depositAmount, depositTargetWallet);
 
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -928,7 +945,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
     setCustomDestinationAddress('');
   };
 
-  const handleSendBackToMain = async () => {
+const handleSendBackToMain = async () => {
     if (destinationWallets.length === 0) {
       alert('No destination wallets to send from');
       return;
@@ -960,7 +977,7 @@ const handleDropOnMainContainer = (e: React.DragEvent) => {
       }
       refetch();
 
-      alert('Successfully sent back to main wallet!');
+      showSendBackSuccess(destinationWallets.length);
 
     } catch (error) {
       console.error('Send back to main wallet failed:', error);
@@ -1809,7 +1826,7 @@ useEffect(() => {
                 ) : (
                   <div className="graph-container">
                     <span className="graph-label">
-                      {isSpectating ? "Spectating Performance" : "Performance"}
+                      {isSpectating ? t("spectatingPerformance") : t("performance")}
                     </span>
                     <PortfolioGraph
                       address={getActiveAddress()}
@@ -1906,7 +1923,7 @@ useEffect(() => {
                       <span>SPECTATING</span>
                     </div>
                   ) : (
-                    "Account"
+                    t("account")
                   )}
                 </div>
                 {isSpectating && (
@@ -1943,7 +1960,7 @@ useEffect(() => {
               <div className="trading-stats-container">
                 <div className="trading-stats-header">
                   <span className="trading-stats-title">
-                    {isSpectating ? "Spectated Trading Stats" : "Trading Stats"}
+                    {isSpectating ? t("spectatedTradingStats") : t("tradingStats")}
                   </span>
                 </div>
                 <div className="stats-list">
@@ -2411,7 +2428,7 @@ onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
     }
   };
 
-  if (isMobile) {
+if (isMobile) {
     return (
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
@@ -2465,10 +2482,26 @@ onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
+        
+        {/* Add wallet popup */}
+        {walletPopupData && (
+          <WalletOperationPopup
+            isVisible={isWalletPopupVisible}
+            type={walletPopupData.type}
+            title={walletPopupData.title}
+            subtitle={walletPopupData.subtitle}
+            amount={walletPopupData.amount}
+            sourceWallet={walletPopupData.sourceWallet}
+            destinationWallet={walletPopupData.destinationWallet}
+            walletCount={walletPopupData.walletCount}
+            onClose={hideWalletPopup}
+            autoCloseDelay={walletPopupData.autoCloseDelay}
+          />
+        )}
       </div>
     );
   } else {
-    return (
+   return (
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
           <div className="portfolio-tab-selector">
@@ -2524,6 +2557,22 @@ onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
+        
+        {/* Add wallet popup */}
+        {walletPopupData && (
+          <WalletOperationPopup
+            isVisible={isWalletPopupVisible}
+            type={walletPopupData.type}
+            title={walletPopupData.title}
+            subtitle={walletPopupData.subtitle}
+            amount={walletPopupData.amount}
+            sourceWallet={walletPopupData.sourceWallet}
+            destinationWallet={walletPopupData.destinationWallet}
+            walletCount={walletPopupData.walletCount}
+            onClose={hideWalletPopup}
+            autoCloseDelay={walletPopupData.autoCloseDelay}
+          />
+        )}
       </div>
     );
   }
