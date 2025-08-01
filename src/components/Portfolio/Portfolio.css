@@ -2921,7 +2921,8 @@
 
 
 .wallet-drag-name.active {
-  color: #d8dcff !important;
+  color: #d8dcff;
+  text-shadow: 0 0 2px 2px #d8dcff;
 }
 
 .wallet-action-button.star-active {
@@ -2933,13 +2934,6 @@
 
 .wallet-action-button.star-active:hover {
   filter: brightness(1.1);
-  transform: translateY(-1px);
-}
-
-.wallet-star-icon {
-  width: 12px;
-  height: 12px;
-  margin-right: 4px;
 }
 
 .wallet-star-icon.filled {
@@ -2992,7 +2986,6 @@
   white-space: nowrap;
   border-radius: 6px;
   transition: all 0.2s ease;
-  opacity: 0.4;
 }
 
 .wallet-star-icon {

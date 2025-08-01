@@ -49,62 +49,9 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       setShouldRender(false);
       setIsAnimatingOut(false);
       onClose();
-    }, 300); // Match animation duration
+    }, 300); 
   };
 
-  const getIcon = () => {
-    switch (type) {
-      case 'distribution':
-        return (
-          <div className="wallet-popup-icon distribution">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L15.09 8.26L22 9L17 14L18.18 21L12 17.77L5.82 21L7 14L2 9L8.91 8.26L12 2Z" fill="currentColor"/>
-            </svg>
-          </div>
-        );
-      case 'deposit':
-        return (
-          <div className="wallet-popup-icon deposit">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2V22M5 12L12 5L19 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        );
-      case 'transfer':
-      case 'send':
-        return (
-          <div className="wallet-popup-icon transfer">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M5 12H19M19 12L12 5M19 12L12 19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        );
-      case 'import':
-        return (
-          <div className="wallet-popup-icon import">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 15V3M7 10L12 15L17 10M19 21H5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        );
-      case 'create':
-        return (
-          <div className="wallet-popup-icon create">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 5V19M5 12H19" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        );
-      default:
-        return (
-          <div className="wallet-popup-icon default">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M9 12L11 14L15 10M21 12C21 16.9706 16.9706 21 12 21C7.02944 21 3 16.9706 3 12C3 7.02944 7.02944 3 12 3C16.9706 3 21 7.02944 21 12Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-        );
-    }
-  };
 
   const formatAddress = (address: string) => {
     return `${address.slice(0, 6)}...${address.slice(-4)}`;
@@ -130,9 +77,7 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
         </div>
 
         <div className="wallet-popup-content">
-          {/* Header with icon and title */}
           <div className="wallet-popup-header">
-            {getIcon()}
             <h3 className="wallet-popup-title">{title}</h3>
           </div>
           

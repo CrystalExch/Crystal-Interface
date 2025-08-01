@@ -18,93 +18,92 @@ import trash from '../../assets/trash.svg';
 import WalletOperationPopup from '../MemeTransactionPopup/WalletOperationPopup';
 import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 import { createPortal } from 'react-dom';
-
-
+import './Portfolio.css'
 const Tooltip: React.FC<{
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-    const [vis, setVis] = useState(false);
-    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-    const containerRef = useRef<HTMLDivElement>(null);
+  const [vis, setVis] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
 
-    const updatePosition = useCallback(() => {
-        if (!containerRef.current) return;
+  const updatePosition = useCallback(() => {
+    if (!containerRef.current) return;
 
-        const rect = containerRef.current.getBoundingClientRect();
-        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+    const rect = containerRef.current.getBoundingClientRect();
+    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-        let top = 0;
-        let left = 0;
+    let top = 0;
+    let left = 0;
 
-        switch (position) {
-            case 'top':
-                top = rect.top + scrollY - 25;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'bottom':
-                top = rect.bottom + scrollY + 25;
-                left = rect.left + scrollX + rect.width / 2;
-                break;
-            case 'left':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.left + scrollX - 25;
-                break;
-            case 'right':
-                top = rect.top + scrollY + rect.height / 2;
-                left = rect.right + scrollX + 25;
-                break;
-        }
+    switch (position) {
+      case 'top':
+        top = rect.top + scrollY - 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'bottom':
+        top = rect.bottom + scrollY + 25;
+        left = rect.left + scrollX + rect.width / 2;
+        break;
+      case 'left':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.left + scrollX - 25;
+        break;
+      case 'right':
+        top = rect.top + scrollY + rect.height / 2;
+        left = rect.right + scrollX + 25;
+        break;
+    }
 
-        setTooltipPosition({ top, left });
-    }, [position]);
+    setTooltipPosition({ top, left });
+  }, [position]);
 
-    useEffect(() => {
-        if (vis) {
-            updatePosition();
-            window.addEventListener('scroll', updatePosition);
-            window.addEventListener('resize', updatePosition);
-            return () => {
-                window.removeEventListener('scroll', updatePosition);
-                window.removeEventListener('resize', updatePosition);
-            };
-        }
-    }, [vis, updatePosition]);
+  useEffect(() => {
+    if (vis) {
+      updatePosition();
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [vis, updatePosition]);
 
-    return (
+  return (
+    <div
+      ref={containerRef}
+      className="tooltip-container"
+      onMouseEnter={() => setVis(true)}
+      onMouseLeave={() => setVis(false)}
+    >
+      {children}
+      {vis && createPortal(
         <div
-            ref={containerRef}
-            className="tooltip-container"
-            onMouseEnter={() => setVis(true)}
-            onMouseLeave={() => setVis(false)}
+          className={`tooltip tooltip-${position} fade-popup visible`}
+          style={{
+            position: 'absolute',
+            top: `${tooltipPosition.top}px`,
+            left: `${tooltipPosition.left}px`,
+            transform: position === 'top' || position === 'bottom'
+              ? 'translateX(-50%)'
+              : position === 'left' || position === 'right'
+                ? 'translateY(-50%)'
+                : 'none',
+            zIndex: 9999,
+            pointerEvents: 'none'
+          }}
         >
-            {children}
-            {vis && createPortal(
-                <div
-                    className={`tooltip tooltip-${position} fade-popup visible`}
-                    style={{
-                        position: 'absolute',
-                        top: `${tooltipPosition.top}px`,
-                        left: `${tooltipPosition.left}px`,
-                        transform: position === 'top' || position === 'bottom'
-                            ? 'translateX(-50%)'
-                            : position === 'left' || position === 'right'
-                                ? 'translateY(-50%)'
-                                : 'none',
-                        zIndex: 9999,
-                        pointerEvents: 'none'
-                    }}
-                >
-                    <div className="tooltip-content">
-                        {content}
-                    </div>
-                </div>,
-                document.body
-            )}
-        </div>
-    );
+          <div className="tooltip-content">
+            {content}
+          </div>
+        </div>,
+        document.body
+      )}
+    </div>
+  );
 };
 type SortDirection = 'asc' | 'desc';
 
@@ -310,8 +309,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const sourceWalletsRef = useRef<HTMLDivElement>(null);
   const destinationWalletsRef = useRef<HTMLDivElement>(null);
   const [showExportModal, setShowExportModal] = useState(false);
-const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
-const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
+  const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
+  const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
 
   const {
     isVisible: isWalletPopupVisible,
@@ -430,143 +429,143 @@ const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set())
   };
 
 
-const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
-  setDraggedWallet({ ...wallet, sourceZone: zone });
-  e.dataTransfer.effectAllowed = 'move';
-  
-  const dragData = { ...wallet, sourceZone: zone, type: 'single-zone-drag' };
-  e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-  e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-};
-const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
-  e.stopPropagation();
-  const dragData: WalletDragItem & { type: string } = {
-    address: wallet.address,
-    name: getWalletName(wallet.address, index),
-    balance: getWalletBalance(wallet.address),
-    totalValue: getTotalWalletValue(wallet.address),
-    index,
-    type: 'single-main-drag'
+  const handleDragStartFromZone = (e: React.DragEvent, wallet: WalletDragItem, zone: 'source' | 'destination') => {
+    setDraggedWallet({ ...wallet, sourceZone: zone });
+    e.dataTransfer.effectAllowed = 'move';
+
+    const dragData = { ...wallet, sourceZone: zone, type: 'single-zone-drag' };
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+  };
+  const handleDragStart = (e: React.DragEvent, wallet: { address: string, privateKey: string }, index: number) => {
+    e.stopPropagation();
+    const dragData: WalletDragItem & { type: string } = {
+      address: wallet.address,
+      name: getWalletName(wallet.address, index),
+      balance: getWalletBalance(wallet.address),
+      totalValue: getTotalWalletValue(wallet.address),
+      index,
+      type: 'single-main-drag'
+    };
+
+    setDraggedWallet(dragData);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify(dragData));
+    e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
+  };
+  const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
+    console.log('Single main drop:', dragData.address, 'to', targetZone);
+
+    const targetArray = targetZone === 'source' ? sourceWallets : destinationWallets;
+    const isAlreadyInZone = targetArray.some(w => w.address === dragData.address);
+
+    if (isAlreadyInZone) return;
+
+    if (targetZone === 'source') {
+      setSourceWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
+    } else {
+      setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
+    }
   };
 
-  setDraggedWallet(dragData);
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('application/json', JSON.stringify(dragData));
-  e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
-};
-const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
-  console.log('Single main drop:', dragData.address, 'to', targetZone);
-  
-  const targetArray = targetZone === 'source' ? sourceWallets : destinationWallets;
-  const isAlreadyInZone = targetArray.some(w => w.address === dragData.address);
+  const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
+    console.log('Single zone drop:', dragData.address, 'from', dragData.sourceZone, 'to', targetZone);
 
-  if (isAlreadyInZone) return;
-
-  if (targetZone === 'source') {
-    setSourceWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
-  } else {
-    setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
-  }
-};
-
-const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
-  console.log('Single zone drop:', dragData.address, 'from', dragData.sourceZone, 'to', targetZone);
-  
-  if (targetZone === 'main') {
-    if (dragData.sourceZone === 'source') {
-      setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
-    } else if (dragData.sourceZone === 'destination') {
-      setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
-    }
-  } else {
-    const sourceZone = dragData.sourceZone;
-    
-    if (sourceZone === 'source') {
-      setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
-    } else if (sourceZone === 'destination') {
-      setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
-    }
-    
-    if (targetZone === 'source') {
-      setSourceWallets(prev => {
-        const exists = prev.some(w => w.address === dragData.address);
-        if (exists) return prev;
-        return [...prev, { ...dragData, sourceZone: undefined }];
-      });
-    } else if (targetZone === 'destination') {
-      setDestinationWallets(prev => {
-        const exists = prev.some(w => w.address === dragData.address);
-        if (exists) return prev;
-        return [...prev, { ...dragData, sourceZone: undefined }];
-      });
-    }
-  }
-};
-const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
-  e.preventDefault();
-  e.stopPropagation();
-  setDragOverZone(null);
-  setDropPreviewLine(null);
-
-  console.log('Universal drop triggered for zone:', targetZone);
-
-  try {
-    let data = null;
-    const jsonData = e.dataTransfer.getData('application/json');
-    if (jsonData) {
-      data = JSON.parse(jsonData);
+    if (targetZone === 'main') {
+      if (dragData.sourceZone === 'source') {
+        setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+      } else if (dragData.sourceZone === 'destination') {
+        setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+      }
     } else {
-      const textData = e.dataTransfer.getData('text/plain');
-      if (textData) {
-        data = JSON.parse(textData);
+      const sourceZone = dragData.sourceZone;
+
+      if (sourceZone === 'source') {
+        setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+      } else if (sourceZone === 'destination') {
+        setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+      }
+
+      if (targetZone === 'source') {
+        setSourceWallets(prev => {
+          const exists = prev.some(w => w.address === dragData.address);
+          if (exists) return prev;
+          return [...prev, { ...dragData, sourceZone: undefined }];
+        });
+      } else if (targetZone === 'destination') {
+        setDestinationWallets(prev => {
+          const exists = prev.some(w => w.address === dragData.address);
+          if (exists) return prev;
+          return [...prev, { ...dragData, sourceZone: undefined }];
+        });
       }
     }
+  };
+  const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverZone(null);
+    setDropPreviewLine(null);
 
-    if (!data) {
-      console.log('No valid drag data found');
-      return;
+    console.log('Universal drop triggered for zone:', targetZone);
+
+    try {
+      let data = null;
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (jsonData) {
+        data = JSON.parse(jsonData);
+      } else {
+        const textData = e.dataTransfer.getData('text/plain');
+        if (textData) {
+          data = JSON.parse(textData);
+        }
+      }
+
+      if (!data) {
+        console.log('No valid drag data found');
+        return;
+      }
+
+      console.log('Processing drop data:', data.type, 'to', targetZone);
+
+      switch (data.type) {
+        case 'multi-drag':
+          handleMultiDrop(e, targetZone);
+          break;
+
+        case 'reorder':
+          if (data.container === targetZone) {
+            handleReorderDrop(e, targetZone);
+          }
+          break;
+
+        case 'single-zone-drag':
+          if (data.sourceZone && data.sourceZone !== targetZone) {
+            handleSingleZoneDrop(data, targetZone);
+          }
+          break;
+
+        case 'single-main-drag':
+          if (targetZone !== 'main') {
+            handleSingleMainDrop(data, targetZone);
+          }
+          break;
+
+        default:
+          if (data.sourceZone) {
+            handleSingleZoneDrop(data, targetZone);
+          } else {
+            handleSingleMainDrop(data, targetZone);
+          }
+      }
+
+    } catch (error) {
+      console.error('Error handling drop:', error);
     }
 
-    console.log('Processing drop data:', data.type, 'to', targetZone);
-
-    switch (data.type) {
-      case 'multi-drag':
-        handleMultiDrop(e, targetZone);
-        break;
-        
-      case 'reorder':
-        if (data.container === targetZone) {
-          handleReorderDrop(e, targetZone);
-        }
-        break;
-        
-      case 'single-zone-drag':
-        if (data.sourceZone && data.sourceZone !== targetZone) {
-          handleSingleZoneDrop(data, targetZone);
-        }
-        break;
-        
-      case 'single-main-drag':
-        if (targetZone !== 'main') {
-          handleSingleMainDrop(data, targetZone);
-        }
-        break;
-        
-      default:
-        if (data.sourceZone) {
-          handleSingleZoneDrop(data, targetZone);
-        } else {
-          handleSingleMainDrop(data, targetZone);
-        }
-    }
-
-  } catch (error) {
-    console.error('Error handling drop:', error);
-  }
-
-  setDraggedWallet(null);
-  setIsMultiDrag(false);
-};
+    setDraggedWallet(null);
+    setIsMultiDrag(false);
+  };
 
 
   const handleDragOver = (e: React.DragEvent, zone: 'source' | 'destination' | 'main') => {
@@ -636,66 +635,66 @@ const handleUniversalDrop = (e: React.DragEvent, targetZone: 'source' | 'destina
 
 
 
-const handleDropOnMainContainer = (e: React.DragEvent) => {
-  e.preventDefault();
-  setDragOverZone(null);
-  setDropPreviewLine(null);
+  const handleDropOnMainContainer = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOverZone(null);
+    setDropPreviewLine(null);
 
-  console.log('Drop on main container triggered');
+    console.log('Drop on main container triggered');
 
-  try {
-    const jsonData = e.dataTransfer.getData('application/json');
-    if (jsonData) {
-      const data = JSON.parse(jsonData);
+    try {
+      const jsonData = e.dataTransfer.getData('application/json');
+      if (jsonData) {
+        const data = JSON.parse(jsonData);
 
-      if (data.type === 'multi-drag') {
-        const { wallets, sourceContainer } = data;
-        console.log(`Multi-drop on main: ${wallets.length} wallets from ${sourceContainer}`);
+        if (data.type === 'multi-drag') {
+          const { wallets, sourceContainer } = data;
+          console.log(`Multi-drop on main: ${wallets.length} wallets from ${sourceContainer}`);
 
-        if (sourceContainer === 'source') {
-          setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-        } else if (sourceContainer === 'destination') {
-          setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-        }
-        setSelectedWalletsPerContainer({
-          main: new Set(),
-          source: new Set(),
-          destination: new Set()
-        });
-        setIsMultiDrag(false);
-        return;
-      }
-    }
-  } catch (error) {
-    console.error('Error handling JSON drop on main:', error);
-  }
-
-  try {
-    const textData = e.dataTransfer.getData('text/plain');
-    if (textData) {
-      const dragData = JSON.parse(textData);
-
-      if (dragData.sourceZone) {
-        console.log('Single wallet drop back to main from:', dragData.sourceZone);
-
-        if (dragData.sourceZone === 'source') {
-          setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
-        } else if (dragData.sourceZone === 'destination') {
-          setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+          if (sourceContainer === 'source') {
+            setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+          } else if (sourceContainer === 'destination') {
+            setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
+          }
+          setSelectedWalletsPerContainer({
+            main: new Set(),
+            source: new Set(),
+            destination: new Set()
+          });
+          setIsMultiDrag(false);
+          return;
         }
       }
+    } catch (error) {
+      console.error('Error handling JSON drop on main:', error);
     }
-  } catch (error) {
-    console.error('Error handling text drop on main:', error);
-  }
-  setDraggedWallet(null);
-};
+
+    try {
+      const textData = e.dataTransfer.getData('text/plain');
+      if (textData) {
+        const dragData = JSON.parse(textData);
+
+        if (dragData.sourceZone) {
+          console.log('Single wallet drop back to main from:', dragData.sourceZone);
+
+          if (dragData.sourceZone === 'source') {
+            setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
+          } else if (dragData.sourceZone === 'destination') {
+            setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error handling text drop on main:', error);
+    }
+    setDraggedWallet(null);
+  };
   const clearAllZones = () => {
     setSourceWallets([]);
     setDestinationWallets([]);
   };
 
-const executeDistribution = async () => {
+  const executeDistribution = async () => {
     if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
       alert('Please add source wallets, destination wallets, and set an amount');
       return;
@@ -763,7 +762,7 @@ const executeDistribution = async () => {
     }
   };
 
-const createPortfolioSubWallet = async () => {
+  const createPortfolioSubWallet = async () => {
     try {
       if (!signTypedDataAsync || !keccak256 || !Wallet) {
         console.error('Required wallet functions not available');
@@ -833,7 +832,7 @@ const createPortfolioSubWallet = async () => {
     }
   };
 
-const handleImportWallet = async () => {
+  const handleImportWallet = async () => {
     setImportError('');
     setIsImporting(true);
 
@@ -957,7 +956,7 @@ const handleImportWallet = async () => {
   };
 
 
-const handleDepositFromEOA = async () => {
+  const handleDepositFromEOA = async () => {
     if (!depositAmount || !depositTargetWallet) return;
 
     try {
@@ -1025,16 +1024,16 @@ const handleDepositFromEOA = async () => {
     const customWallet: WalletDragItem = {
       address: customDestinationAddress.trim(),
       name: `Custom (${customDestinationAddress.slice(0, 6)}...${customDestinationAddress.slice(-4)})`,
-      balance: 0, 
+      balance: 0,
       totalValue: 0,
-      index: -1 
+      index: -1
     };
 
     setDestinationWallets(prev => [...prev, customWallet]);
     setCustomDestinationAddress('');
   };
 
-const handleSendBackToMain = async () => {
+  const handleSendBackToMain = async () => {
     if (destinationWallets.length === 0) {
       alert('No destination wallets to send from');
       return;
@@ -1115,34 +1114,34 @@ const handleSendBackToMain = async () => {
   });
   const [dropPreviewLine, setDropPreviewLine] = useState<{ top: number; containerKey: string } | null>(null);
 
-const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | 'destination') => {
-  if (e.button !== 0) return; 
+  const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | 'destination') => {
+    if (e.button !== 0) return;
 
-  if ((e.target as HTMLElement).closest('.draggable-wallet-item')) {
-    return;
-  }
+    if ((e.target as HTMLElement).closest('.draggable-wallet-item')) {
+      return;
+    }
 
-  if (!e.ctrlKey && !e.metaKey) {
-    setSelectedWalletsPerContainer({
-      main: new Set(),
-      source: new Set(),
-      destination: new Set()
+    if (!e.ctrlKey && !e.metaKey) {
+      setSelectedWalletsPerContainer({
+        main: new Set(),
+        source: new Set(),
+        destination: new Set()
+      });
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const startX = e.clientX - rect.left;
+    const startY = e.clientY - rect.top;
+
+    setActiveSelectionContainer(containerKey);
+    setDragStartPoint({ x: e.clientX, y: e.clientY });
+    setSelectionRect({
+      startX,
+      startY,
+      currentX: startX,
+      currentY: startY
     });
-  }
-
-  const rect = e.currentTarget.getBoundingClientRect();
-  const startX = e.clientX - rect.left;
-  const startY = e.clientY - rect.top;
-
-  setActiveSelectionContainer(containerKey);
-  setDragStartPoint({ x: e.clientX, y: e.clientY });
-  setSelectionRect({
-    startX,
-    startY,
-    currentX: startX,
-    currentY: startY
-  });
-};
+  };
 
 
   const [selectedWalletsPerContainer, setSelectedWalletsPerContainer] = useState<{
@@ -1154,193 +1153,193 @@ const startSelection = (e: React.MouseEvent, containerKey: 'main' | 'source' | '
     source: new Set(),
     destination: new Set()
   });
-const updateSelection = (e: React.MouseEvent, container: HTMLElement, containerKey: 'main' | 'source' | 'destination') => {
-  if (activeSelectionContainer !== containerKey || !selectionRect) return;
+  const updateSelection = (e: React.MouseEvent, container: HTMLElement, containerKey: 'main' | 'source' | 'destination') => {
+    if (activeSelectionContainer !== containerKey || !selectionRect) return;
 
-  const rect = container.getBoundingClientRect();
-  const currentX = e.clientX - rect.left;
-  const currentY = e.clientY - rect.top;
+    const rect = container.getBoundingClientRect();
+    const currentX = e.clientX - rect.left;
+    const currentY = e.clientY - rect.top;
 
-  setSelectionRect(prev => prev ? {
-    ...prev,
-    currentX,
-    currentY
-  } : null);
+    setSelectionRect(prev => prev ? {
+      ...prev,
+      currentX,
+      currentY
+    } : null);
 
-  const walletElements = container.querySelectorAll('.draggable-wallet-item');
-  const newSelection = new Set<string>();
+    const walletElements = container.querySelectorAll('.draggable-wallet-item');
+    const newSelection = new Set<string>();
 
-  walletElements.forEach((element) => {
-    const walletRect = element.getBoundingClientRect();
-    const elementRect = {
-      left: walletRect.left - rect.left,
-      top: walletRect.top - rect.top,
-      right: walletRect.right - rect.left,
-      bottom: walletRect.bottom - rect.top
-    };
+    walletElements.forEach((element) => {
+      const walletRect = element.getBoundingClientRect();
+      const elementRect = {
+        left: walletRect.left - rect.left,
+        top: walletRect.top - rect.top,
+        right: walletRect.right - rect.left,
+        bottom: walletRect.bottom - rect.top
+      };
 
-    const selectionBounds = {
-      left: Math.min(selectionRect.startX, currentX),
-      top: Math.min(selectionRect.startY, currentY),
-      right: Math.max(selectionRect.startX, currentX),
-      bottom: Math.max(selectionRect.startY, currentY)
-    };
+      const selectionBounds = {
+        left: Math.min(selectionRect.startX, currentX),
+        top: Math.min(selectionRect.startY, currentY),
+        right: Math.max(selectionRect.startX, currentX),
+        bottom: Math.max(selectionRect.startY, currentY)
+      };
 
-    if (elementRect.left < selectionBounds.right &&
-      elementRect.right > selectionBounds.left &&
-      elementRect.top < selectionBounds.bottom &&
-      elementRect.bottom > selectionBounds.top) {
+      if (elementRect.left < selectionBounds.right &&
+        elementRect.right > selectionBounds.left &&
+        elementRect.top < selectionBounds.bottom &&
+        elementRect.bottom > selectionBounds.top) {
 
-      const walletAddress = element.getAttribute('data-wallet-address');
-      if (walletAddress) newSelection.add(walletAddress);
+        const walletAddress = element.getAttribute('data-wallet-address');
+        if (walletAddress) newSelection.add(walletAddress);
+      }
+    });
+
+    setPreviewSelection(newSelection);
+  };
+  const endSelection = () => {
+    if (activeSelectionContainer && previewSelection.size > 0) {
+      setSelectedWalletsPerContainer(prev => {
+        const combined = new Set(prev[activeSelectionContainer]);
+        previewSelection.forEach(addr => combined.add(addr));
+        return {
+          ...prev,
+          [activeSelectionContainer]: combined
+        };
+      });
     }
-  });
 
-  setPreviewSelection(newSelection);
-};
-const endSelection = () => {
-  if (activeSelectionContainer && previewSelection.size > 0) {
-    setSelectedWalletsPerContainer(prev => {
-      const combined = new Set(prev[activeSelectionContainer]);
-      previewSelection.forEach(addr => combined.add(addr));
-      return {
-        ...prev,
-        [activeSelectionContainer]: combined
-      };
-    });
-  }
-
-  setPreviewSelection(new Set());
-  setActiveSelectionContainer(null);
-  setSelectionRect(null);
-  setDragStartPoint(null);
-};
+    setPreviewSelection(new Set());
+    setActiveSelectionContainer(null);
+    setSelectionRect(null);
+    setDragStartPoint(null);
+  };
 
 
-const handleMultiDragStart = (e: React.DragEvent, wallet: any, containerType: 'main' | 'source' | 'destination') => {
-  e.stopPropagation();
-  setIsMultiDrag(true);
+  const handleMultiDragStart = (e: React.DragEvent, wallet: any, containerType: 'main' | 'source' | 'destination') => {
+    e.stopPropagation();
+    setIsMultiDrag(true);
 
-  const walletsInContainer = getWalletsForContainer(containerType);
-  const selectedWalletsData = walletsInContainer
-    .filter((w) => {
-      return selectedWalletsPerContainer[containerType].has(w.address);
-    })
-    .map((w, arrayIndex) => {
-      const actualIndex = containerType === 'main'
-        ? subWallets.findIndex(sw => sw.address === w.address)
-        : arrayIndex;
+    const walletsInContainer = getWalletsForContainer(containerType);
+    const selectedWalletsData = walletsInContainer
+      .filter((w) => {
+        return selectedWalletsPerContainer[containerType].has(w.address);
+      })
+      .map((w, arrayIndex) => {
+        const actualIndex = containerType === 'main'
+          ? subWallets.findIndex(sw => sw.address === w.address)
+          : arrayIndex;
 
-      return {
-        address: w.address,
-        name: getWalletName(w.address),
-        balance: getWalletBalance(w.address),
-        totalValue: getTotalWalletValue(w.address),
-        index: actualIndex,
-        privateKey: w.privateKey || ''
-      };
+        return {
+          address: w.address,
+          name: getWalletName(w.address),
+          balance: getWalletBalance(w.address),
+          totalValue: getTotalWalletValue(w.address),
+          index: actualIndex,
+          privateKey: w.privateKey || ''
+        };
+      });
+
+    console.log('Multi-drag data prepared:', {
+      containerType,
+      selectedCount: selectedWalletsData.length,
+      wallets: selectedWalletsData.map(w => w.address)
     });
 
-  console.log('Multi-drag data prepared:', {
-    containerType,
-    selectedCount: selectedWalletsData.length,
-    wallets: selectedWalletsData.map(w => w.address)
-  });
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('application/json', JSON.stringify({
+      type: 'multi-drag',
+      wallets: selectedWalletsData,
+      sourceContainer: containerType,
+      count: selectedWalletsData.length,
+      timestamp: Date.now()
+    }));
+  };
+  const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverZone(null);
+    setDropPreviewLine(null);
 
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setData('application/json', JSON.stringify({
-    type: 'multi-drag',
-    wallets: selectedWalletsData,
-    sourceContainer: containerType,
-    count: selectedWalletsData.length,
-    timestamp: Date.now()
-  }));
-};
-const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination' | 'main') => {
-  e.preventDefault();
-  e.stopPropagation();
-  setDragOverZone(null);
-  setDropPreviewLine(null);
+    console.log('Multi-drop triggered for zone:', targetZone);
 
-  console.log('Multi-drop triggered for zone:', targetZone);
+    try {
+      const jsonData = e.dataTransfer.getData('application/json');
+      console.log('Drop data received:', jsonData ? 'JSON data found' : 'No JSON data');
 
-  try {
-    const jsonData = e.dataTransfer.getData('application/json');
-    console.log('Drop data received:', jsonData ? 'JSON data found' : 'No JSON data');
+      if (jsonData) {
+        const data = JSON.parse(jsonData);
+        console.log('Parsed drop data:', data);
 
-    if (jsonData) {
-      const data = JSON.parse(jsonData);
-      console.log('Parsed drop data:', data);
+        if (data.type === 'multi-drag' && data.wallets && data.wallets.length > 0) {
+          const { wallets, sourceContainer } = data;
+          console.log(`Processing multi-drop: ${wallets.length} wallets from ${sourceContainer} to ${targetZone}`);
 
-      if (data.type === 'multi-drag' && data.wallets && data.wallets.length > 0) {
-        const { wallets, sourceContainer } = data;
-        console.log(`Processing multi-drop: ${wallets.length} wallets from ${sourceContainer} to ${targetZone}`);
+          if (sourceContainer !== targetZone) {
+            if (sourceContainer === 'source') {
+              setSourceWallets(prev => {
+                const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
+                console.log('Removed from source:', prev.length - filtered.length);
+                return filtered;
+              });
+            } else if (sourceContainer === 'destination') {
+              setDestinationWallets(prev => {
+                const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
+                console.log('Removed from destination:', prev.length - filtered.length);
+                return filtered;
+              });
+            }
 
-        if (sourceContainer !== targetZone) {
-          if (sourceContainer === 'source') {
-            setSourceWallets(prev => {
-              const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
-              console.log('Removed from source:', prev.length - filtered.length);
-              return filtered;
-            });
-          } else if (sourceContainer === 'destination') {
-            setDestinationWallets(prev => {
-              const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
-              console.log('Removed from destination:', prev.length - filtered.length);
-              return filtered;
-            });
+            if (targetZone === 'source') {
+              setSourceWallets(prev => {
+                const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
+                console.log('Adding to source:', newWallets.length);
+                return [...prev, ...newWallets];
+              });
+            } else if (targetZone === 'destination') {
+              setDestinationWallets(prev => {
+                const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
+                console.log('Adding to destination:', newWallets.length);
+                return [...prev, ...newWallets];
+              });
+            }
           }
-
-          if (targetZone === 'source') {
-            setSourceWallets(prev => {
-              const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
-              console.log('Adding to source:', newWallets.length);
-              return [...prev, ...newWallets];
-            });
-          } else if (targetZone === 'destination') {
-            setDestinationWallets(prev => {
-              const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
-              console.log('Adding to destination:', newWallets.length);
-              return [...prev, ...newWallets];
-            });
-          }
+          setSelectedWalletsPerContainer({
+            main: new Set(),
+            source: new Set(),
+            destination: new Set()
+          });
+          setIsMultiDrag(false);
+          console.log('Multi-drop completed successfully');
+          return;
+        } else if (data.type === 'reorder') {
+          console.log('Handling reorder drop');
+          handleReorderDrop(e, targetZone as any);
+          return;
         }
-        setSelectedWalletsPerContainer({
-          main: new Set(),
-          source: new Set(),
-          destination: new Set()
-        });
-        setIsMultiDrag(false);
-        console.log('Multi-drop completed successfully');
-        return;
-      } else if (data.type === 'reorder') {
-        console.log('Handling reorder drop');
-        handleReorderDrop(e, targetZone as any);
+      }
+    } catch (error) {
+      console.error('Error handling multi-drop JSON:', error);
+    }
+
+    console.log('Falling back to single drop handling');
+    try {
+      const textData = e.dataTransfer.getData('text/plain');
+      if (textData) {
+        const dragData = JSON.parse(textData);
+        handleDrop(e, targetZone as any);
         return;
       }
+    } catch (error) {
+      console.error('Error handling text drop data:', error);
     }
-  } catch (error) {
-    console.error('Error handling multi-drop JSON:', error);
-  }
-
-  console.log('Falling back to single drop handling');
-  try {
-    const textData = e.dataTransfer.getData('text/plain');
-    if (textData) {
-      const dragData = JSON.parse(textData);
+    setIsMultiDrag(false);
+    if (draggedWallet?.sourceZone) {
+      handleDropBetweenZones(e, targetZone as any);
+    } else {
       handleDrop(e, targetZone as any);
-      return;
     }
-  } catch (error) {
-    console.error('Error handling text drop data:', error);
-  }
-  setIsMultiDrag(false);
-  if (draggedWallet?.sourceZone) {
-    handleDropBetweenZones(e, targetZone as any);
-  } else {
-    handleDrop(e, targetZone as any);
-  }
-};
+  };
 
   const handleReorderDragStart = (e: React.DragEvent, walletIndex: number, containerType: 'main' | 'source' | 'destination') => {
 
@@ -1473,298 +1472,305 @@ const handleMultiDrop = (e: React.DragEvent, targetZone: 'source' | 'destination
         return [];
     }
   };
-const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
-  const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
-  const isPreviewSelected = previewSelection.has(wallet.address);
-  const isDragging = dragReorderState.draggedIndex === index;
-  const isDragOver = dragReorderState.dragOverIndex === index;
+  const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
+    const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
+    const isPreviewSelected = previewSelection.has(wallet.address);
+    const isDragging = dragReorderState.draggedIndex === index;
+    const isDragOver = dragReorderState.dragOverIndex === index;
 
-  return (
-    <div
-      key={wallet.address}
-      data-wallet-address={wallet.address}
-      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
-      draggable
-      onDragStart={(e) => {
-        setDropPreviewLine(null);
-        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-
-        if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
-          console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
-          handleMultiDragStart(e, wallet, containerType);
-          return;
-        }
-
-        setSelectedWalletsPerContainer(prev => ({
-          ...prev,
-          [containerType]: new Set([wallet.address])
-        }));
-
-        if (containerType === 'main') {
-          if (e.shiftKey) {
-            handleReorderDragStart(e, index, containerType);
-          } else {
-            handleDragStart(e, wallet, index);
-          }
-        } else {
-          if (e.shiftKey) {
-            handleReorderDragStart(e, index, containerType);
-          } else {
-            handleDragStartFromZone(e, wallet, containerType);
-          }
-        }
-      }}
-      onDragEnd={(e) => {
-        setIsMultiDrag(false);
-        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-        setDropPreviewLine(null);
-        setDraggedWallet(null);
-        setDragOverZone(null);
-        console.log('Drag ended, cleaned up states');
-      }}
-      onDragOver={(e) => {
-        if (!isMultiDrag) {
-          handleReorderDragOver(e, index, containerKey);
-        }
-      }}
-      onDragLeave={(e) => {
-        const relatedTarget = e.relatedTarget as Node;
-        if (!e.currentTarget.contains(relatedTarget)) {
+    return (
+      <div
+        key={wallet.address}
+        data-wallet-address={wallet.address}
+        className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+        draggable
+        onDragStart={(e) => {
           setDropPreviewLine(null);
-          setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
-        }
-      }}
-      onDrop={(e) => {
-        return;
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
-        
-        if (e.ctrlKey || e.metaKey) {
-          setSelectedWalletsPerContainer(prev => {
-            const newContainerSet = new Set(prev[containerType]);
-            if (newContainerSet.has(wallet.address)) {
-              newContainerSet.delete(wallet.address);
+          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+
+          if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
+            console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
+            handleMultiDragStart(e, wallet, containerType);
+            return;
+          }
+
+          setSelectedWalletsPerContainer(prev => ({
+            ...prev,
+            [containerType]: new Set([wallet.address])
+          }));
+
+          if (containerType === 'main') {
+            if (e.shiftKey) {
+              handleReorderDragStart(e, index, containerType);
             } else {
-              newContainerSet.add(wallet.address);
+              handleDragStart(e, wallet, index);
             }
-            console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
-            return {
-              ...prev,
-              [containerType]: newContainerSet
-            };
-          });
-        } else {
-          setSelectedWalletsPerContainer({
-            main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
-            source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
-            destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
-          });
-          console.log(`Single selected in ${containerType}:`, wallet.address);
-        }
-      }}
-    >
-      {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
-        <div
-          className="drop-preview-line"
-          style={{
-            top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
-          }}
-        />
-      )}
-
-      <div className="wallet-drag-info">
-        <div className="wallet-name-container">
-          {editingWallet === wallet.address ? (
-            <div className="wallet-name-edit-container">
-              <input
-                type="text"
-                className="wallet-name-input"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    saveWalletName(wallet.address);
-                  } else if (e.key === 'Escape') {
-                    setEditingWallet(null);
-                    setEditingName('');
-                  }
-                }}
-                autoFocus
-                onBlur={() => saveWalletName(wallet.address)}
-              />
-            </div>
-          ) : (
-            <div className="wallet-name-display">
-              <span
-                className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
-                style={{
-                  color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
-                }}
-              >
-                {getWalletName(wallet.address, index)}
-              </span>
-              <Edit2
-                size={12}
-                className="wallet-name-edit-icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEditingWallet(wallet.address);
-                }}
-              />
-            </div>
-          )}
-        </div>
-        <div className="wallet-drag-address">
-          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-          <img
-            src={copy}
-            className="wallets-copy-icon"
-            alt="Copy"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(wallet.address);
-            }}
-            style={{ cursor: 'pointer' }}
-          />
-        </div>
-      </div>
-
-
-      <div className="wallet-drag-actions">
-        <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
-          <button
-            className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
-            onClick={() => {
-              setOneCTSigner(wallet.privateKey);
-              setpopup(25);
-              refetch();
-            }}
-          >
-            <Star
-              size={14}
-              fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-              color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
-            />
-          </button>
-        </Tooltip>
-
-        <Tooltip content="Deposit from Main Wallet">
-          <button
-            className="wallet-icon-button"
-            onClick={() => openDepositModal(wallet.address)}
-          >
-            <Plus size={14} className="wallet-action-icon" />
-          </button>
-        </Tooltip>
-
-        <Tooltip content="Export Private Key">
-          <button
-            className="wallet-icon-button key-button"
-            onClick={() => openExportModal(wallet)}
-          >
-            <img src={key} className="wallet-action-icon" alt="Export Key" />
-          </button>
-        </Tooltip>
-
-        <Tooltip content="View on Explorer">
-          <a
-            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="wallet-icon-button explorer-button"
-          >
-            <svg
-              className="wallet-action-icon-svg"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="white"
-            >
-              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-            </svg>
-          </a>
-        </Tooltip>
-
-        <Tooltip content="Delete Wallet">
-          <button
-            className="wallet-icon-button delete-button"
-            onClick={() => confirmDeleteWallet(wallet.address)}
-          >
-            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-          </button>
-        </Tooltip>
-      </div>
-
-      <div className="wallet-drag-values">
-        <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-          <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-          {getWalletBalance(wallet.address).toFixed(2)}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const renderWalletContainer = (
-  wallets: any[],
-  containerType: 'main' | 'source' | 'destination',
-  containerKey: string,
-  emptyMessage: string,
-  containerRef: React.RefObject<HTMLDivElement>
-) => {
-  const isThisContainerSelecting = activeSelectionContainer === containerType;
-
-  return (
-    <div
-      ref={containerRef}
-      className={`${containerType === 'main' ? 'drag-wallets-list' : 'drop-zone-wallets'} ${isThisContainerSelecting ? 'selecting' : ''}`}
-      onMouseDown={(e) => startSelection(e, containerType)}
-      onMouseMove={(e) => {
-        if (isThisContainerSelecting && containerRef.current) {
-          updateSelection(e, containerRef.current, containerType);
-        }
-      }}
-      onMouseUp={endSelection}
-      onMouseLeave={endSelection}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setDragOverZone(containerType);
-      }}
-      onDrop={(e) => handleUniversalDrop(e, containerType)}
-      onDragLeave={(e) => {
-        const relatedTarget = e.relatedTarget as Node;
-        if (!e.currentTarget.contains(relatedTarget)) {
+          } else {
+            if (e.shiftKey) {
+              handleReorderDragStart(e, index, containerType);
+            } else {
+              handleDragStartFromZone(e, wallet, containerType);
+            }
+          }
+        }}
+        onDragEnd={(e) => {
+          setIsMultiDrag(false);
+          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+          setDropPreviewLine(null);
+          setDraggedWallet(null);
           setDragOverZone(null);
-        }
-      }}
-      style={{ position: 'relative' }}
-    >
-      {isThisContainerSelecting && selectionRect && (
-        <div
-          className="selection-rectangle"
-          style={{
-            left: Math.min(selectionRect.startX, selectionRect.currentX),
-            top: Math.min(selectionRect.startY, selectionRect.currentY),
-            width: Math.abs(selectionRect.currentX - selectionRect.startX),
-            height: Math.abs(selectionRect.currentY - selectionRect.startY),
-          }}
-        />
-      )}
+          console.log('Drag ended, cleaned up states');
+        }}
+        onDragOver={(e) => {
+          if (!isMultiDrag) {
+            handleReorderDragOver(e, index, containerKey);
+          }
+        }}
+        onDragLeave={(e) => {
+          const relatedTarget = e.relatedTarget as Node;
+          if (!e.currentTarget.contains(relatedTarget)) {
+            setDropPreviewLine(null);
+            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+          }
+        }}
+        onDrop={(e) => {
+          return;
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
 
-      {wallets.length === 0 ? (
-        <div className="drop-zone-empty">
-          <div className="drop-zone-text">{emptyMessage}</div>
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedWalletsPerContainer(prev => {
+              const newContainerSet = new Set(prev[containerType]);
+              if (newContainerSet.has(wallet.address)) {
+                newContainerSet.delete(wallet.address);
+              } else {
+                newContainerSet.add(wallet.address);
+              }
+              console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
+              return {
+                ...prev,
+                [containerType]: newContainerSet
+              };
+            });
+          } else {
+            setSelectedWalletsPerContainer({
+              main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
+              source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
+              destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
+            });
+            console.log(`Single selected in ${containerType}:`, wallet.address);
+          }
+        }}
+      >
+        {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+          <div
+            className="drop-preview-line"
+            style={{
+              top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
+            }}
+          />
+        )}
+
+        <div className="wallet-drag-info">
+          <div className="wallet-name-container">
+            {editingWallet === wallet.address ? (
+              <div className="wallet-name-edit-container">
+                <input
+                  type="text"
+                  className="wallet-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveWalletName(wallet.address);
+                    } else if (e.key === 'Escape') {
+                      setEditingWallet(null);
+                      setEditingName('');
+                    }
+                  }}
+                  autoFocus
+                  onBlur={() => saveWalletName(wallet.address)}
+                />
+              </div>
+            ) : (
+              <div className="wallet-name-display">
+                <span
+                  className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                  style={{
+                    color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                  }}
+                >
+                  {getWalletName(wallet.address, index)}
+                </span>
+                <Edit2
+                  size={12}
+                  className="wallet-name-edit-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingWallet(wallet.address);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="wallet-drag-address">
+            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+            <img
+              src={copy}
+              className="wallets-copy-icon"
+              alt="Copy"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(wallet.address);
+              }}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
         </div>
-      ) : (
-        wallets.map((wallet, index) => renderWalletItem(wallet, index, containerType, containerKey))
-      )}
-    </div>
-  );
-};
+
+
+        <div className="wallet-drag-actions">
+          <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
+            <button
+              className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
+              onClick={() => {
+                setOneCTSigner(wallet.privateKey);
+                setpopup(25);
+                refetch();
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
+                stroke={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Deposit from Main Wallet">
+            <button
+              className="wallet-icon-button"
+              onClick={() => openDepositModal(wallet.address)}
+            >
+              <Plus size={14} className="wallet-action-icon" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="Export Private Key">
+            <button
+              className="wallet-icon-button key-button"
+              onClick={() => openExportModal(wallet)}
+            >
+              <img src={key} className="wallet-action-icon" alt="Export Key" />
+            </button>
+          </Tooltip>
+
+          <Tooltip content="View on Explorer">
+            <a
+              href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wallet-icon-button explorer-button"
+            >
+              <svg
+                className="wallet-action-icon-svg"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="white"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </a>
+          </Tooltip>
+
+          <Tooltip content="Delete Wallet">
+            <button
+              className="wallet-icon-button delete-button"
+              onClick={() => confirmDeleteWallet(wallet.address)}
+            >
+              <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className="wallet-drag-values">
+          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+            {getWalletBalance(wallet.address).toFixed(2)}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderWalletContainer = (
+    wallets: any[],
+    containerType: 'main' | 'source' | 'destination',
+    containerKey: string,
+    emptyMessage: string,
+    containerRef: React.RefObject<HTMLDivElement>
+  ) => {
+    const isThisContainerSelecting = activeSelectionContainer === containerType;
+
+    return (
+      <div
+        ref={containerRef}
+        className={`${containerType === 'main' ? 'drag-wallets-list' : 'drop-zone-wallets'} ${isThisContainerSelecting ? 'selecting' : ''}`}
+        onMouseDown={(e) => startSelection(e, containerType)}
+        onMouseMove={(e) => {
+          if (isThisContainerSelecting && containerRef.current) {
+            updateSelection(e, containerRef.current, containerType);
+          }
+        }}
+        onMouseUp={endSelection}
+        onMouseLeave={endSelection}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOverZone(containerType);
+        }}
+        onDrop={(e) => handleUniversalDrop(e, containerType)}
+        onDragLeave={(e) => {
+          const relatedTarget = e.relatedTarget as Node;
+          if (!e.currentTarget.contains(relatedTarget)) {
+            setDragOverZone(null);
+          }
+        }}
+        style={{ position: 'relative' }}
+      >
+        {isThisContainerSelecting && selectionRect && (
+          <div
+            className="selection-rectangle"
+            style={{
+              left: Math.min(selectionRect.startX, selectionRect.currentX),
+              top: Math.min(selectionRect.startY, selectionRect.currentY),
+              width: Math.abs(selectionRect.currentX - selectionRect.startX),
+              height: Math.abs(selectionRect.currentY - selectionRect.startY),
+            }}
+          />
+        )}
+
+        {wallets.length === 0 ? (
+          <div className="drop-zone-empty">
+            <div className="drop-zone-text">{emptyMessage}</div>
+          </div>
+        ) : (
+          wallets.map((wallet, index) => renderWalletItem(wallet, index, containerType, containerKey))
+        )}
+      </div>
+    );
+  };
 
   const getTotalWalletValue = (address: string) => {
     return walletTotalValues[address] || 0;
@@ -1835,30 +1841,30 @@ const renderWalletContainer = (
   const handlePercentageChange = (value: number) => {
     setPercentage(value);
   };
-useEffect(() => {
-  const totalSelected = Object.values(selectedWalletsPerContainer).reduce((sum, set) => sum + set.size, 0);
-  if (totalSelected <= 1) {
-    setIsMultiDrag(false);
-  }
-}, [selectedWalletsPerContainer]);
-
-useEffect(() => {
-  const handleGlobalKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Escape') {
-      setSelectedWalletsPerContainer({
-        main: new Set(),
-        source: new Set(),
-        destination: new Set()
-      });
+  useEffect(() => {
+    const totalSelected = Object.values(selectedWalletsPerContainer).reduce((sum, set) => sum + set.size, 0);
+    if (totalSelected <= 1) {
       setIsMultiDrag(false);
-      setDropPreviewLine(null);
-      endSelection();
     }
-  };
+  }, [selectedWalletsPerContainer]);
 
-  document.addEventListener('keydown', handleGlobalKeyDown);
-  return () => document.removeEventListener('keydown', handleGlobalKeyDown);
-}, []);
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSelectedWalletsPerContainer({
+          main: new Set(),
+          source: new Set(),
+          destination: new Set()
+        });
+        setIsMultiDrag(false);
+        setDropPreviewLine(null);
+        endSelection();
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => document.removeEventListener('keydown', handleGlobalKeyDown);
+  }, []);
   useEffect(() => {
     const now = Date.now() / 1000;
     const timeago = now - 24 * 60 * 60 * days;
@@ -2190,7 +2196,7 @@ useEffect(() => {
                 className={`drop-zone source-zone ${dragOverZone === 'source' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'source')}
                 onDragLeave={handleDragLeave}
-onDrop={(e) => handleUniversalDrop(e, 'source')}              >
+                onDrop={(e) => handleUniversalDrop(e, 'source')}              >
                 <div className="drop-zone-header">
                   <span className="drop-zone-title">Source Wallets</span>
                   <span className="drop-zone-count">{sourceWallets.length}</span>
@@ -2217,7 +2223,7 @@ onDrop={(e) => handleUniversalDrop(e, 'source')}              >
                 className={`drop-zone destination-zone ${dragOverZone === 'destination' ? 'drag-over' : ''}`}
                 onDragOver={(e) => handleDragOver(e, 'destination')}
                 onDragLeave={handleDragLeave}
-onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
+                onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
                 <div className="drop-zone-header2">
                   <div className="destination-wallets-container">
                     <span className="drop-zone-title">Destination Wallets</span>
@@ -2524,7 +2530,7 @@ onDrop={(e) => handleUniversalDrop(e, 'destination')}              >
     }
   };
 
-if (isMobile) {
+  if (isMobile) {
     return (
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
@@ -2578,7 +2584,7 @@ if (isMobile) {
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-        
+
         {/* Add wallet popup */}
         {walletPopupData && (
           <WalletOperationPopup
@@ -2597,7 +2603,7 @@ if (isMobile) {
       </div>
     );
   } else {
-   return (
+    return (
       <div className="portfolio-specific-page">
         <div className="portfolio-top-row">
           <div className="portfolio-tab-selector">
@@ -2653,7 +2659,7 @@ if (isMobile) {
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-        
+
         {/* Add wallet popup */}
         {walletPopupData && (
           <WalletOperationPopup

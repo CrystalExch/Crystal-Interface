@@ -19788,7 +19788,6 @@ function App() {
                 client={client}
                 activechain={activechain}
                 markets={markets}
-                // Subwallet props
                 subWallets={subWallets}
                 setSubWallets={saveSubWallets}
                 walletTokenBalances={walletTokenBalances}
@@ -19806,7 +19805,8 @@ function App() {
                 signTypedDataAsync={signTypedDataAsync}
                 keccak256={keccak256}
                 Wallet={Wallet}
-              />
+                activeWalletPrivateKey={oneCTSigner}
+              /> 
             }
           />
           <Route path="/swap" element={TradeLayout(swap)} />
