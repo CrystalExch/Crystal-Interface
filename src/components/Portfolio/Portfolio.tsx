@@ -1,5 +1,5 @@
 import { Eye, Search, Eye as EyeIcon, Edit2, Check, X, Star, Plus } from 'lucide-react';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
@@ -17,6 +17,95 @@ import key from '../../assets/key.svg';
 import trash from '../../assets/trash.svg';
 import WalletOperationPopup from '../MemeTransactionPopup/WalletOperationPopup';
 import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
+import { createPortal } from 'react-dom';
+
+
+const Tooltip: React.FC<{
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+    const [vis, setVis] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const updatePosition = useCallback(() => {
+        if (!containerRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        let top = 0;
+        let left = 0;
+
+        switch (position) {
+            case 'top':
+                top = rect.top + scrollY - 25;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollY + 25;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.left + scrollX - 25;
+                break;
+            case 'right':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.right + scrollX + 25;
+                break;
+        }
+
+        setTooltipPosition({ top, left });
+    }, [position]);
+
+    useEffect(() => {
+        if (vis) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition);
+            window.addEventListener('resize', updatePosition);
+            return () => {
+                window.removeEventListener('scroll', updatePosition);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [vis, updatePosition]);
+
+    return (
+        <div
+            ref={containerRef}
+            className="tooltip-container"
+            onMouseEnter={() => setVis(true)}
+            onMouseLeave={() => setVis(false)}
+        >
+            {children}
+            {vis && createPortal(
+                <div
+                    className={`tooltip tooltip-${position} fade-popup visible`}
+                    style={{
+                        position: 'absolute',
+                        top: `${tooltipPosition.top}px`,
+                        left: `${tooltipPosition.left}px`,
+                        transform: position === 'top' || position === 'bottom'
+                            ? 'translateX(-50%)'
+                            : position === 'left' || position === 'right'
+                                ? 'translateY(-50%)'
+                                : 'none',
+                        zIndex: 9999,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <div className="tooltip-content">
+                        {content}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+};
 type SortDirection = 'asc' | 'desc';
 
 interface SortConfig {
@@ -1542,65 +1631,72 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
         </div>
       </div>
 
+
       <div className="wallet-drag-actions">
-        <button
-          className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
-          onClick={() => {
-            setOneCTSigner(wallet.privateKey);
-            setpopup(25);
-            refetch();
-          }}
-        >
-          <Star
-            size={14}
-            fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-            color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
-          />
-        </button>
-
-        <button
-          className="wallet-icon-button"
-          onClick={() => openDepositModal(wallet.address)}
-          title="Deposit from Main Wallet"
-        >
-          <Plus size={14} className="wallet-action-icon" />
-        </button>
-
-        <button
-          className="wallet-icon-button key-button"
-          onClick={() => openExportModal(wallet)}
-          title="Export Private Key"
-        >
-          <img src={key} className="wallet-action-icon" alt="Export Key" />
-        </button>
-
-        <a
-          href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="wallet-icon-button explorer-button"
-          title="View on Explorer"
-        >
-          <svg
-            className="wallet-action-icon-svg"
-            xmlns="http://www.w3.org/2000/svg"
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="white"
+        <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
+          <button
+            className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
+            onClick={() => {
+              setOneCTSigner(wallet.privateKey);
+              setpopup(25);
+              refetch();
+            }}
           >
-            <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-            <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-          </svg>
-        </a>
+            <Star
+              size={14}
+              fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
+              color={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+            />
+          </button>
+        </Tooltip>
 
-        <button
-          className="wallet-icon-button delete-button"
-          onClick={() => confirmDeleteWallet(wallet.address)}
-          title="Delete Wallet"
-        >
-          <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-        </button>
+        <Tooltip content="Deposit from Main Wallet">
+          <button
+            className="wallet-icon-button"
+            onClick={() => openDepositModal(wallet.address)}
+          >
+            <Plus size={14} className="wallet-action-icon" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="Export Private Key">
+          <button
+            className="wallet-icon-button key-button"
+            onClick={() => openExportModal(wallet)}
+          >
+            <img src={key} className="wallet-action-icon" alt="Export Key" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="View on Explorer">
+          <a
+            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="wallet-icon-button explorer-button"
+          >
+            <svg
+              className="wallet-action-icon-svg"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="white"
+            >
+              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+            </svg>
+          </a>
+        </Tooltip>
+
+        <Tooltip content="Delete Wallet">
+          <button
+            className="wallet-icon-button delete-button"
+            onClick={() => confirmDeleteWallet(wallet.address)}
+          >
+            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+          </button>
+        </Tooltip>
       </div>
 
       <div className="wallet-drag-values">

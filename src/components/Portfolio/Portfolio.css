@@ -402,7 +402,7 @@
     min-width:350px;
     gap:.3rem
 }
-.portfolio-wallet-search-container-container:focus-within{
+.portfolio-wallet-search-container:focus-within{
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
@@ -421,6 +421,8 @@
     letter-spacing:-.3px;
     padding-left:25px
 }
+
+
 .vaults-search-input::placeholder{
     color:#ffffff4d
 }
