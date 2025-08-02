@@ -145,6 +145,8 @@ import LPVaults from './components/LPVaults/LPVaults.tsx';
 import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
+import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
+
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -155,7 +157,13 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 const clearlogo = '/CrystalLogo.png';
-
+export type NotifyPayload = {
+  title: string;
+  subtitle?: string;
+  amount?: string;
+  amountUnit?: string;
+  variant?: 'success' | 'error' | 'info';
+};
 function App() {
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -208,7 +216,7 @@ function App() {
     }
     return g;
   })();
-
+ 
   const [selectedVaultForAction, setSelectedVaultForAction] = useState<any | null>(null);
   const [vaultDepositAmount, setVaultDepositAmount] = useState('');
   const [vaultWithdrawAmount, setVaultWithdrawAmount] = useState('');
@@ -1074,11 +1082,6 @@ function App() {
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
   const lastRefGroupFetch = useRef(0);
   const blockNumber = useRef(0n);
-  const refRefetch = useCallback(() => {
-    lastRefGroupFetch.current = 0;
-    refetch()
-  }, [])
-
 
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
@@ -1633,7 +1636,6 @@ function App() {
     }
   }, [tokendict, activechain, tradesByMarket, findMarketForToken, calculateUSDValue]);
 
-  // Sequential refresh function to avoid rate limiting
   const forceRefreshAllWallets = useCallback(async () => {
     if (subWallets.length === 0) return;
 
@@ -1653,22 +1655,18 @@ function App() {
     }
   }, [subWallets, refreshWalletBalance]);
 
-  // Debounced effect to refresh wallet balances
   const refreshDebounceRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    // Clear any existing timeout
     if (refreshDebounceRef.current) {
       clearTimeout(refreshDebounceRef.current);
     }
 
-    // Only refresh if we have the required data
     if (subWallets.length > 0 && tokendict && Object.keys(tokendict).length > 0 && markets && Object.keys(markets).length > 0) {
-      // Debounce the refresh to avoid too many calls
       refreshDebounceRef.current = setTimeout(() => {
         console.log('Refreshing wallet balances for', subWallets.length, 'wallets');
         forceRefreshAllWallets();
-      }, 1000); // 1 second delay
+      }, 1000);
     }
 
     return () => {
@@ -2830,7 +2828,6 @@ function App() {
     }
   }, [amountsQuote]);
 
-  // update state variables when data is loaded
   useLayoutEffect(() => {
     const data = rpcQueryData?.readContractData?.mainGroup;
     const refData = rpcQueryData?.readContractData?.refGroup;
@@ -8699,7 +8696,7 @@ function App() {
                 {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
-                    {client ? t('') : t('signTransaction')}
+                    {validOneCT ? t('') : t('signTransaction')}
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
@@ -11395,26 +11392,28 @@ function App() {
               </div>
 
               <div className="edit-limit-price-actions">
-                <button
-                  className="edit-limit-price-confirm-button"
-                  onClick={handleEditLimitPriceConfirm}
-                  disabled={isEditingSigning || !hasEditedPrice}
-                  style={{
-                    opacity: isEditingSigning || !hasEditedPrice ? 0.5 : 1,
-                    cursor: isEditingSigning || !hasEditedPrice
-                      ? 'not-allowed'
-                      : 'pointer',
-                  }}
-                >
-                  {isEditingSigning ? (
-                    <div className="signing-indicator">
-                      <div className="loading-spinner" />
-                      <span>{t('signTransaction')}</span>
-                    </div>
-                  ) : (
-                    'Confirm'
-                  )}
-                </button>
+                <div className="edit-limit-price-actions">
+                  <button
+                    className="edit-limit-price-confirm-button"
+                    onClick={handleEditLimitPriceConfirm}
+                    disabled={isEditingSigning || !hasEditedPrice}
+                    style={{
+                      opacity: isEditingSigning || !hasEditedPrice ? 0.5 : 1,
+                      cursor: isEditingSigning || !hasEditedPrice
+                        ? 'not-allowed'
+                        : 'pointer',
+                    }}
+                  >
+                    {isEditingSigning ? (
+                      <div className="signing-indicator">
+                        <div className="loading-spinner" />
+                        {validOneCT ? null : <span>{t('signTransaction')}</span>}
+                      </div>
+                    ) : (
+                      'Confirm'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -12981,7 +12980,7 @@ function App() {
                 {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
-                    {client ? t('') : t('signTransaction')}
+                    {validOneCT ? t('') : t('signTransaction')}
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
@@ -14610,7 +14609,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : swapButton == 0 ? (
             t('insufficientLiquidity')
@@ -16756,7 +16755,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : limitButton == 0 ? (
             t('enterAmount')
@@ -17523,7 +17522,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : !connected ? (
             t('connectWallet')
@@ -19132,7 +19131,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : scaleButton == 0 ? (
             t('enterAmount')
@@ -19406,10 +19405,13 @@ function App() {
     </div>
   );
 
-  return (
+
+return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
+    <MemeTransactionPopupManager />
+
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
       {windowWidth <= 1020 &&
@@ -19806,7 +19808,7 @@ function App() {
                 keccak256={keccak256}
                 Wallet={Wallet}
                 activeWalletPrivateKey={oneCTSigner}
-              /> 
+              />
             }
           />
           <Route path="/swap" element={TradeLayout(swap)} />
@@ -19816,14 +19818,6 @@ function App() {
           <Route path="/scale" element={TradeLayout(scale)} />
 
         </Routes>
-        <TransactionPopupManager
-          transactions={transactions}
-          setTransactions={setTransactions}
-          tokendict={tokendict}
-          showPreview={showPreview}
-          previewPosition={previewPosition}
-          previewExiting={previewExiting}
-        />
       </div>
     </div>
   );

@@ -471,6 +471,10 @@
 }
 
 .meme-trade-action-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 35px;
     padding: 6px 12px;
     border: none;
     border-radius: 4px;
@@ -1289,4 +1293,13 @@ opacity: 1;
     width: 15px;
     opacity: 0.5;
     margin-right: 2px;
+}
+
+.meme-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid black;
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }

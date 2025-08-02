@@ -565,12 +565,9 @@ const handleTwitterOpen = (handle: string) => {
 
           <div className="meme-interface-token-header-right">
             <div className="meme-interface-token-metrics">
-              <div className="meme-interface-token-metric">
-                <span className="meme-interface-metric-label">Market Cap</span>
-                <span className="meme-interface-metric-value">
+                <span className="meme-interface-market-cap">
                   {formatPrice(memeTokenData.marketCap)}
                 </span>
-              </div>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">

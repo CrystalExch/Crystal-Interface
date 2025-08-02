@@ -7924,3 +7924,34 @@ input::-webkit-inner-spin-button {
 .delete-btn:hover {
   background: #f44336;
 }
+
+.meme-popup-manager-container{
+  z-index: 101;
+}
+
+
+.meme-popup-manager-container {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  width: 420px; /* Fixed width */
+  height: auto;
+  pointer-events: none;
+}
+
+.meme-popup-wrapper {
+  pointer-events: auto;
+  width: 100%;
+}
+
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

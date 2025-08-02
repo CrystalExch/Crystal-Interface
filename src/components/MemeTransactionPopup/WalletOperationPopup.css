@@ -1,11 +1,7 @@
-
 .wallet-popup-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
+  inset: 0;
+  z-index: 999999;
   pointer-events: none;
   display: flex;
   justify-content: center;
@@ -22,13 +18,12 @@
   border: 1px solid rgba(255, 255, 255, 0.05);
   border-radius: 12px;
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
-  height: auto;
-  opacity: 1;
-  overflow: hidden;
   pointer-events: auto;
   position: relative;
-  transition: all 0.3s ease;
-  width: 400px;
+  overflow: hidden;
+  width: 320px; /* Smaller width for single line */
+  opacity: 1;
+  min-height: 44px; /* Single line height */
 }
 
 .wallet-popup-container.slide-in {
@@ -41,38 +36,26 @@
 }
 
 @keyframes slideDownFromTop {
-  from {
-    opacity: 0;
-    transform: translateY(-100px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(-100px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @keyframes slideOutToTop {
-  0% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-100%);
-  }
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-100%); }
 }
 
+/* progress bar */
 .wallet-popup-progress-container {
-  background-color: rgb(64 64 71 / 0%);
-  bottom: 0;
-  height: 2px;
-  left: 0;
-  overflow: hidden;
   position: absolute;
-  width: 100%;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background-color: transparent;
 }
 
 .wallet-popup-progress-bar {
+  height: 100%;
   background: linear-gradient(
     90deg,
     rgb(170 174 207 / 50%) 0%,
@@ -80,82 +63,34 @@
     rgb(170 174 207 / 50%) 100%
   );
   box-shadow: 0 0 8px rgb(170 174 207 / 30%);
-  height: 100%;
+  transform-origin: left center;
+}
+
+@keyframes progressBar {
+  from { width: 100%; }
+  to { width: 0%; }
 }
 
 .wallet-popup-close {
-  align-items: center;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  height: 24px;
-  justify-content: center;
   position: absolute;
-  right: 8px;
-  top: 8px;
-  transition: all 0.2s ease;
-  width: 24px;
+  top: 8px; right: 8px;
+  width: 24px; height: 24px;
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  transition: opacity 0.2s ease;
 }
 
 .wallet-popup-close svg {
-  height: 14px;
-  opacity: 0.6;
-  width: 14px;
-  color: #ffffff;
+  width: 14px; height: 14px; color: #fff; opacity: 0.7;
+}
+
+.wallet-popup-close:hover svg {
+  opacity: 0.95;
 }
 
 .wallet-popup-content {
-  padding: 8px 6px 5px 15px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.wallet-popup-icon {
-  width: 17px;
-  height: 17px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.wallet-popup-icon.distribution {
-  background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
-  color: white;
-}
-
-.wallet-popup-icon.deposit {
-  background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
-  color: white;
-}
-
-.wallet-popup-icon.transfer,
-.wallet-popup-icon.send {
-  background: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
-  color: white;
-}
-
-.wallet-popup-icon.import {
-  background: linear-gradient(135deg, #fd79a8 0%, #e84393 100%);
-  color: white;
-}
-
-.wallet-popup-icon.create {
-  background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
-  color: white;
-}
-
-.wallet-popup-icon.default {
-  background: linear-gradient(135deg, #00b894 0%, #00a085 100%);
-  color: white;
-}
-
-.wallet-popup-icon svg {
-  width: 10px;
-  height: 10px;
+  padding: 10px 10px 12px 14px;
+  display: flex; flex-direction: column; gap: 4px;
 }
 
 .wallet-popup-header {
@@ -163,23 +98,24 @@
   align-items: center;
   gap: 6px;
   margin-bottom: 2px;
+  position: relative;
 }
 
 .wallet-popup-title {
   color: #ffffffa4;
-  font-size: 0.75rem;
-  font-weight: 300;
-  letter-spacing: -0.2px;
+  font-size: 0.82rem;
+  font-weight: 400;
   margin: 0;
+  letter-spacing: -0.2px;
+  flex: 1; /* Take up remaining space */
 }
 
 .wallet-popup-subtitle {
   color: #ffffff7d;
-  font-size: 0.7rem;
+  font-size: 0.74rem;
   font-weight: 300;
-  margin: 0;
-  line-height: 1.3;
-  margin-bottom: 4px;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
 }
 
 .wallet-popup-details {
@@ -191,7 +127,7 @@
 .wallet-popup-detail-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 6px;
   font-size: 0.8rem;
 }
 
@@ -211,5 +147,63 @@
 .wallet-popup-arrow {
   color: #ffffff7d;
   font-size: 0.75rem;
-  font-weight: 300;
+}
+
+/* variants */
+.wallet-popup-container.variant-success {
+  border-color: rgba(67, 254, 154, 0.25);
+}
+
+.wallet-popup-container.variant-error {
+  border-color: rgba(235, 112, 112, 0.25);
+}
+
+.wallet-popup-container.variant-info {
+  border-color: rgba(170, 174, 207, 0.25);
+}
+
+.wallet-popup-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px; height: 18px;
+  border-radius: 999px;
+  flex-shrink: 0; /* Don't shrink */
+}
+
+.wallet-popup-status-icon.status-success {
+  background: rgba(67, 254, 154, 0.15); color: #43fe9a;
+}
+
+.wallet-popup-status-icon.status-error {
+  background: rgba(235, 112, 112, 0.15); color: #eb7070;
+}
+
+.wallet-popup-status-icon.status-info {
+  background: rgba(170, 174, 207, 0.15); color: #aaaecf;
+}
+
+/* Inline loading spinner */
+.wallet-popup-inline-loading-spinner {
+  margin-left: auto; /* Push to right side */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.wallet-popup-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top: 2px solid #ffffff;
+  border-radius: 50%;
+  animation: walletPopupSpinnerRotate 1s linear infinite;
+}
+
+@keyframes walletPopupSpinnerRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

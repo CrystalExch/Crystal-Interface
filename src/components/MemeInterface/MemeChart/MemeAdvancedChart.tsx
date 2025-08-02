@@ -103,9 +103,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               type: 'crypto',
               session: '24x7',
               timezone: 'Etc/UTC',
-              exchange: 'meme.exchange',
+              exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: 100000000, // 8 decimal places for meme tokens
+              pricescale: 100000000, 
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],

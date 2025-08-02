@@ -396,6 +396,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
     return isSpectating ? spectatedAddress : address;
   };
 
+  const getMainWalletBalance = () => {
+  const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+  if (ethToken && tokenBalances[ethToken.address]) {
+    return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+  }
+  return 0;
+};
+
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
   };
@@ -956,36 +964,104 @@ const Portfolio: React.FC<PortfolioProps> = ({
   };
 
 
-  const handleDepositFromEOA = async () => {
-    if (!depositAmount || !depositTargetWallet) return;
+// Fixed handleDepositFromEOA with better error handling and debugging
+
+const handleDepositFromEOA = async () => {
+  if (!depositAmount || !depositTargetWallet) {
+    alert('Please enter an amount and select a target wallet');
+    return;
+  }
+
+  console.log('Starting deposit from main wallet...');
+  console.log('Amount:', depositAmount);
+  console.log('Target wallet:', depositTargetWallet);
+
+  try {
+    setIsDepositing(true);
+    
+    // Ensure we're on the correct chain
+    console.log('Setting chain...');
+    await handleSetChain();
+
+    // Convert the deposit amount to Wei
+    const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+    console.log('Amount in Wei:', ethAmount.toString());
+
+    // Send the transaction
+    console.log('Sending transaction...');
+    const result = await sendUserOperationAsync({
+      uo: {
+        target: depositTargetWallet,
+        value: ethAmount,
+        data: '0x'
+      }
+    });
+
+    console.log('Transaction result:', result);
+
+    // Handle different types of responses
+    let hash;
+    if (typeof result === 'string') {
+      hash = result;
+    } else if (result && result.hash) {
+      hash = result.hash;
+    } else if (result && result.transactionHash) {
+      hash = result.transactionHash;
+    } else {
+      console.log('Unexpected result format:', result);
+      hash = result; // Try using the result directly
+    }
+
+    console.log('Transaction hash:', hash);
+
+    // Only wait for receipt if we have a hash and waitForTxReceipt function
+    if (hash && waitForTxReceipt) {
+      console.log('Waiting for transaction receipt...');
+      try {
+        // Add timeout to prevent infinite waiting
+        const receiptPromise = waitForTxReceipt({ hash });
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Transaction timeout')), 30000)
+        );
+        
+        await Promise.race([receiptPromise, timeoutPromise]);
+        console.log('Transaction confirmed');
+      } catch (receiptError) {
+        console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
+        // Don't throw here - the transaction might still be successful
+      }
+    }
+
+    // Refresh balances - don't let these block the success flow
+    console.log('Refreshing balances...');
+    try {
+      await refreshWalletBalance(depositTargetWallet);
+      console.log('Target wallet balance refreshed');
+    } catch (refreshError) {
+      console.warn('Failed to refresh target wallet balance:', refreshError);
+    }
 
     try {
-      setIsDepositing(true);
-      await handleSetChain();
-
-      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
-
-      const hash = await sendUserOperationAsync({
-        uo: {
-          target: depositTargetWallet,
-          value: ethAmount,
-          data: '0x'
-        }
-      });
-
-      console.log('Deposit successful:', hash);
-      await refreshWalletBalance(depositTargetWallet);
       refetch();
-      closeDepositModal();
-      showDepositSuccess(depositAmount, depositTargetWallet);
-
-    } catch (error) {
-      console.error('Deposit failed:', error);
-      alert('Deposit failed. Please try again.');
-    } finally {
-      setIsDepositing(false);
+      console.log('Main account data refreshed');
+    } catch (refetchError) {
+      console.warn('Failed to refresh main account:', refetchError);
     }
-  };
+
+    // Show success and close modal
+    console.log('Deposit successful, closing modal...');
+    closeDepositModal();
+    showDepositSuccess(depositAmount, depositTargetWallet);
+
+  } catch (error) {
+    console.error('Deposit failed with error:', error);
+    
+  } finally {
+    console.log('Setting isDepositing to false');
+    setIsDepositing(false);
+  }
+};
+
   const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
   const [customAddressError, setCustomAddressError] = useState<string>('');
   const calculateMaxAmount = () => {
@@ -1646,7 +1722,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 height="14"
                 viewBox="0 0 24 24"
                 fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-                stroke={isWalletActive(wallet.privateKey) ? '#0f0f12' : 'currentColor'}
+                stroke={isWalletActive(wallet.privateKey) ? 'rgb(6,6,6)' : 'currentColor'}
                 strokeWidth="1.5"
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -2482,49 +2558,84 @@ const Portfolio: React.FC<PortfolioProps> = ({
                 </div>
               </div>
             )}
-            {showDepositModal && (
-              <div className="pk-modal-backdrop" onClick={closeDepositModal}>
-                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
-                  <div className="pk-modal-header">
-                    <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
-                    <button className="pk-modal-close" onClick={closeDepositModal}>
-                      <img src={closebutton} className="close-button-icon" />
-                    </button>
-                  </div>
-                  <div className="pk-modal-content">
+{showDepositModal && (
+  <div className="pk-modal-backdrop" onClick={closeDepositModal}>
+    <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+      <div className="pk-modal-header">
+        <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
+        <button className="pk-modal-close" onClick={closeDepositModal}>
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+      <div className="pk-modal-content">
+        
+       <div className="main-wallet-balance-section">
+          <div className="main-wallet-balance-container">
+            <span className="main-wallet-balance-label">Available Balance:</span>
+            <div className="main-wallet-balance-value">
+              <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
+              <span className={`main-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                {getMainWalletBalance().toFixed(2)} 
+              </span>
+            </div>
+          </div>
+        </div>
 
-                    <div className="pk-input-section">
-                      <label className="pk-label">Amount (MON):</label>
-                      <div className="pk-input-container">
-                        <input
-                          type="text"
-                          className="pk-input"
-                          value={depositAmount}
-                          onChange={(e) => {
-                            const value = e.target.value;
-                            if (/^\d*\.?\d{0,18}$/.test(value)) {
-                              setDepositAmount(value);
-                            }
-                          }}
-                          placeholder="0.00"
-                          autoComplete="off"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="pk-modal-actions">
-                      <button
-                        className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
-                        onClick={handleDepositFromEOA}
-                        disabled={!depositAmount || parseFloat(depositAmount) <= 0 || isDepositing}
-                      >
-                        {isDepositing ? 'Depositing...' : 'Deposit'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+        <div className="pk-input-section">
+          <label className="pk-label">Amount (MON):</label>
+          <div className="pk-input-container">
+            <div className="deposit-amount-input-container">
+              <input
+                type="text"
+                className="pk-input"
+                value={depositAmount}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*\.?\d{0,18}$/.test(value)) {
+                    setDepositAmount(value);
+                  }
+                }}
+                placeholder="0.00"
+                autoComplete="off"
+              />
+              <button
+                className="deposit-main-max-button"
+                onClick={() => {
+                  const maxBalance = getMainWalletBalance();
+                  const maxDepositAmount = Math.max(0, maxBalance - 0.01);
+                  setDepositAmount(maxDepositAmount.toFixed(2).toString());
+                }}
+                disabled={getMainWalletBalance() <= 0.001}
+              >
+                Max
+              </button>
+            </div>
+            {depositAmount && parseFloat(depositAmount) > getMainWalletBalance() && (
+              <div className="pk-error-message">
+                Insufficient balance. Available: {getMainWalletBalance().toFixed(4)} MON
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="pk-modal-actions">
+          <button
+            className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
+            onClick={handleDepositFromEOA}
+            disabled={
+              !depositAmount || 
+              parseFloat(depositAmount) <= 0 || 
+              parseFloat(depositAmount) > getMainWalletBalance() ||
+              isDepositing
+            }
+          >
+            {isDepositing ? '' : 'Deposit'}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+)}
           </div>
         );
     }
