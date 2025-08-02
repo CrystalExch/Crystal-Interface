@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import './QuickBuyWidget.css';
 import monadicon from '../../../assets/monadlogo.svg';
 import { settings } from '../../../settings';
@@ -17,11 +17,11 @@ import { encodeFunctionData } from 'viem';
 import { MaxUint256 } from 'ethers';
 
 interface PendingTransaction {
-  id: string;
-  type: 'buy' | 'sell';
-  amount: string;
-  timestamp: number;
-  status: 'pending' | 'confirming' | 'complete' | 'error';
+    id: string;
+    type: 'buy' | 'sell';
+    amount: string;
+    timestamp: number;
+    status: 'pending' | 'confirming' | 'complete' | 'error';
 }
 
 interface QuickBuyWidgetProps {
@@ -47,7 +47,6 @@ interface QuickBuyWidgetProps {
     tokenBalances?: { [key: string]: bigint };
     allowance?: bigint;
     refetch?: () => void;
-    // Wallet-related props
     subWallets?: Array<{ address: string, privateKey: string }>;
     walletTokenBalances?: { [address: string]: any };
     activeWalletPrivateKey?: string;
@@ -111,7 +110,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
-    // Load wallet names from localStorage
     useEffect(() => {
         const storedWalletNames = localStorage.getItem('crystal_wallet_names');
         if (storedWalletNames) {
@@ -125,7 +123,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     const CrystalLaunchpadRouter = [
         {
-            "inputs": [{"name": "token", "type": "address"}],
+            "inputs": [{ "name": "token", "type": "address" }],
             "name": "buy",
             "outputs": [],
             "stateMutability": "payable",
@@ -133,8 +131,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         },
         {
             "inputs": [
-                {"name": "token", "type": "address"},
-                {"name": "amount", "type": "uint256"}
+                { "name": "token", "type": "address" },
+                { "name": "amount", "type": "uint256" }
             ],
             "name": "sell",
             "outputs": [],
@@ -146,11 +144,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const CrystalLaunchpadToken = [
         {
             "inputs": [
-                {"name": "spender", "type": "address"},
-                {"name": "amount", "type": "uint256"}
+                { "name": "spender", "type": "address" },
+                { "name": "amount", "type": "uint256" }
             ],
             "name": "approve",
-            "outputs": [{"name": "", "type": "bool"}],
+            "outputs": [{ "name": "", "type": "bool" }],
             "stateMutability": "nonpayable",
             "type": "function"
         }
@@ -184,173 +182,200 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         return activeWalletPrivateKey === privateKey;
     };
 
-const handleSetActiveWallet = (privateKey: string) => {
-    if (!isWalletActive(privateKey) && setOneCTSigner) {
-        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-        setOneCTSigner(privateKey);
-        
-        if (refetch) {
-            setTimeout(() => refetch(), 100);
+    const handleSetActiveWallet = (privateKey: string) => {
+        if (!isWalletActive(privateKey) && setOneCTSigner) {
+            localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+            setOneCTSigner(privateKey);
+
+            if (refetch) {
+                setTimeout(() => refetch(), 100);
+            }
+            if (forceRefreshAllWallets) {
+                setTimeout(() => forceRefreshAllWallets(), 200);
+            }
         }
-        if (forceRefreshAllWallets) {
-            setTimeout(() => forceRefreshAllWallets(), 200);
-        }
-    }
-};
+    };
 
     const currentTokenBalance = tokenBalances[tokenAddress || ''] ?? 0n;
     const currentAllowance = allowance ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
     const allowanceBalance = Number(currentAllowance) / 1e18;
-const getCurrentWalletMONBalance = () => {
-    if (!activeWalletPrivateKey) return 0;
-    
-    const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
-    if (!currentWallet) return 0;
-    
-    return getWalletBalance(currentWallet.address);
-};
-const forceRefresh = useCallback(() => {
-    if (refetch) {
-        refetch();
-        setLastRefreshTime(Date.now());
-    }
-    
-    if (forceRefreshAllWallets) {
-        forceRefreshAllWallets();
-    }
-}, [refetch, forceRefreshAllWallets]);
+    const getCurrentWalletMONBalance = () => {
+        if (!activeWalletPrivateKey) return 0;
+
+        const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+        if (!currentWallet) return 0;
+
+        return getWalletBalance(currentWallet.address);
+    };
+    const forceRefresh = useCallback(() => {
+        if (refetch) {
+            refetch();
+            setLastRefreshTime(Date.now());
+        }
+
+        if (forceRefreshAllWallets) {
+            forceRefreshAllWallets();
+        }
+    }, [refetch, forceRefreshAllWallets]);
     useEffect(() => {
         if (isOpen && account?.connected) {
             forceRefresh();
         }
     }, [isOpen, account?.connected]);
+    const [widgetDimensions, setWidgetDimensions] = useState({ width: 330, height: 480 });
+    useEffect(() => {
+        const handleResize = () => {
+            if (!widgetRef.current) return;
 
-const handleBuyTrade = async (amount: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
-        if (setpopup) setpopup(4);
-        return;
-    }
+            const rect = widgetRef.current.getBoundingClientRect();
+            const actualWidth = rect.width || 330;
+            const actualHeight = rect.height || 480;
 
-    const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
-    const currentChainId = Number(account.chainId);
-    
-    if (currentChainId !== targetChainId) {
-        if (setChain) setChain();
-        return;
-    }
+            setWidgetDimensions({ width: actualWidth, height: actualHeight });
 
-    const requestedAmount = parseFloat(amount);
-    const currentMONBalance = getCurrentWalletMONBalance();
-    
-    if (requestedAmount > currentMONBalance) {
-        const txId = `insufficient-${Date.now()}`;
+            setPosition(prevPosition => {
+                const maxX = Math.max(0, window.innerWidth - actualWidth);
+                const maxY = Math.max(0, window.innerHeight - actualHeight);
+
+                return {
+                    x: Math.max(0, Math.min(prevPosition.x, maxX)),
+                    y: Math.max(0, Math.min(prevPosition.y, maxY))
+                };
+            });
+        };
+
+        if (isOpen) {
+            handleResize();
+            window.addEventListener('resize', handleResize);
+            return () => window.removeEventListener('resize', handleResize);
+        }
+    }, [isOpen]);
+    const handleBuyTrade = async (amount: string) => {
+        if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+            if (setpopup) setpopup(4);
+            return;
+        }
+
+        const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
+        const currentChainId = Number(account.chainId);
+
+        if (currentChainId !== targetChainId) {
+            if (setChain) setChain();
+            return;
+        }
+
+        const requestedAmount = parseFloat(amount);
+        const currentMONBalance = getCurrentWalletMONBalance();
+
+        if (requestedAmount > currentMONBalance) {
+            const txId = `insufficient-${Date.now()}`;
+            if (showLoadingPopup) {
+                showLoadingPopup(txId, {
+                    title: 'Insufficient Balance',
+                    subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
+                    amount: amount,
+                    amountUnit: 'MON'
+                });
+            }
+
+            if (updatePopup) {
+                setTimeout(() => {
+                    updatePopup(txId, {
+                        title: 'Insufficient Balance',
+                        subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
+                        variant: 'error',
+                        isLoading: false
+                    });
+                }, 100);
+            }
+            return;
+        }
+
+        const txId = `buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+        const newTx: PendingTransaction = {
+            id: txId,
+            type: 'buy',
+            amount,
+            timestamp: Date.now(),
+            status: 'pending'
+        };
+
+        setPendingTransactions(prev => {
+            const updated = [...prev, newTx];
+            return updated;
+        });
+
         if (showLoadingPopup) {
             showLoadingPopup(txId, {
-                title: 'Insufficient Balance',
-                subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
-                amount: amount,
+                title: 'Sending transaction...',
+                subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
+                amount,
                 amountUnit: 'MON'
             });
         }
-        
-        if (updatePopup) {
-            setTimeout(() => {
+
+        try {
+            const valNum = parseFloat(amount);
+            const value = BigInt(Math.round(valNum * 1e18));
+
+            const uo = {
+                target: routerAddress,
+                data: encodeFunctionData({
+                    abi: CrystalLaunchpadRouter,
+                    functionName: "buy",
+                    args: [tokenAddress as `0x${string}`],
+                }),
+                value,
+            };
+
+            if (updatePopup) {
                 updatePopup(txId, {
-                    title: 'Insufficient Balance',
-                    subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
+                    title: 'Confirming transaction...',
+                    subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
+                    variant: 'info'
+                });
+            }
+
+            const op = await sendUserOperationAsync({ uo });
+            await waitForTxReceipt(op.hash);
+
+            const expectedTokens = tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
+            if (updatePopup) {
+                updatePopup(txId, {
+                    title: 'Buy completed!',
+                    subtitle: `Bought ~${formatNumberWithCommas(expectedTokens, 4)} ${tokenSymbol}`,
+                    variant: 'success',
+                    isLoading: false
+                });
+            }
+
+            setPendingTransactions(prev => {
+                const updated = prev.filter(tx => tx.id !== txId);
+                return updated;
+            });
+
+            setTimeout(() => {
+                forceRefresh();
+            }, 1500);
+
+        } catch (error: any) {
+            if (updatePopup) {
+                updatePopup(txId, {
+                    title: 'Buy failed',
+                    subtitle: error?.message || 'Transaction was rejected',
                     variant: 'error',
                     isLoading: false
                 });
-            }, 100);
-        }
-        return;
-    }
+            }
 
-    const txId = `buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
-    const newTx: PendingTransaction = {
-        id: txId,
-        type: 'buy',
-        amount,
-        timestamp: Date.now(),
-        status: 'pending'
+            setPendingTransactions(prev => {
+                const updated = prev.filter(tx => tx.id !== txId);
+                return updated;
+            });
+        }
     };
-    
-    setPendingTransactions(prev => {
-        const updated = [...prev, newTx];
-        return updated;
-    });
-
-    if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-            amount,
-            amountUnit: 'MON'
-        });
-    }
-
-    try {
-        const valNum = parseFloat(amount);
-        const value = BigInt(Math.round(valNum * 1e18));
-
-        const uo = {
-            target: routerAddress,
-            data: encodeFunctionData({
-                abi: CrystalLaunchpadRouter,
-                functionName: "buy",
-                args: [tokenAddress as `0x${string}`],
-            }),
-            value,
-        };
-
-        if (updatePopup) {
-            updatePopup(txId, {
-                title: 'Confirming transaction...',
-                subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-                variant: 'info'
-            });
-        }
-
-        const op = await sendUserOperationAsync({ uo });
-        await waitForTxReceipt(op.hash);
-
-        const expectedTokens = tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
-        if (updatePopup) {
-            updatePopup(txId, {
-                title: 'Buy completed!',
-                subtitle: `Bought ~${formatNumberWithCommas(expectedTokens, 4)} ${tokenSymbol}`,
-                variant: 'success',
-                isLoading: false
-            });
-        }
-
-        setPendingTransactions(prev => {
-            const updated = prev.filter(tx => tx.id !== txId);
-            return updated;
-        });
-
-        setTimeout(() => {
-            forceRefresh();
-        }, 1500);
-
-    } catch (error: any) {
-        if (updatePopup) {
-            updatePopup(txId, {
-                title: 'Buy failed',
-                subtitle: error?.message || 'Transaction was rejected',
-                variant: 'error',
-                isLoading: false
-            });
-        }
-
-        setPendingTransactions(prev => {
-            const updated = prev.filter(tx => tx.id !== txId);
-            return updated;
-        });
-    }
-};
 
     const handleSellTrade = async (value: string) => {
         if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
@@ -360,14 +385,14 @@ const handleBuyTrade = async (amount: string) => {
 
         const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
         const currentChainId = Number(account.chainId);
-        
+
         if (currentChainId !== targetChainId) {
             setChain?.();
             return;
         }
 
         const txId = `sell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
+
         const newTx: PendingTransaction = {
             id: txId,
             type: 'sell',
@@ -375,7 +400,7 @@ const handleBuyTrade = async (amount: string) => {
             timestamp: Date.now(),
             status: 'pending'
         };
-        
+
         setPendingTransactions(prev => {
             const updated = [...prev, newTx];
             return updated;
@@ -529,14 +554,14 @@ const handleBuyTrade = async (amount: string) => {
         const newX = e.clientX - dragOffset.x;
         const newY = e.clientY - dragOffset.y;
 
-        const maxX = window.innerWidth - 330;
-        const maxY = window.innerHeight - 480;
+        const maxX = Math.max(0, window.innerWidth - widgetDimensions.width);
+        const maxY = Math.max(0, window.innerHeight - widgetDimensions.height);
 
         setPosition({
             x: Math.max(0, Math.min(newX, maxX)),
             y: Math.max(0, Math.min(newY, maxY))
         });
-    }, [isDragging, dragOffset]);
+    }, [isDragging, dragOffset, widgetDimensions]);
 
     const handleMouseUp = useCallback(() => {
         setIsDragging(false);
@@ -646,16 +671,25 @@ const handleBuyTrade = async (amount: string) => {
 
     const isRefreshing = lastRefreshTime > 0 && (Date.now() - lastRefreshTime < 2000);
 
-    // Calculate wallets panel position
-    const walletsPosition = {
-        x: position.x + 330 + 10, // Widget width + gap
-        y: position.y
-    };
+    const walletsPosition = useMemo(() => {
+        const baseX = position.x + widgetDimensions.width + 10;
+        const baseY = position.y;
+        const walletsPanelWidth = 280;
 
-    // Ensure wallets panel doesn't go off screen
+        const maxWalletsX = window.innerWidth - walletsPanelWidth;
+
+        if (baseX > maxWalletsX) {
+            return {
+                x: Math.max(10, position.x - walletsPanelWidth - 10),
+                y: baseY
+            };
+        }
+
+        return { x: baseX, y: baseY };
+    }, [position, widgetDimensions]);
     const maxWalletsX = window.innerWidth - 280;
     if (walletsPosition.x > maxWalletsX) {
-        walletsPosition.x = position.x - 280 - 10; // Show on left side instead
+        walletsPosition.x = position.x - 280 - 10; 
     }
 
     if (!isOpen) return null;
@@ -708,17 +742,17 @@ const handleBuyTrade = async (amount: string) => {
 
                         <div className="quickbuy-controls-right-side">
                             {subWallets.length > 0 && (
-                                <button 
+                                <button
                                     className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
                                     onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
                                     title="Toggle Wallets"
                                 >
-                                   <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
-                                   <span className="quickbuy-wallets-count">{subWallets.length}</span>
+                                    <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
+                                    <span className="quickbuy-wallets-count">{subWallets.length}</span>
 
                                 </button>
                             )}
-                         
+
                             <button className="close-btn" onClick={onClose}>
                                 <img className="quickbuy-close-icon" src={closebutton} alt="Close" />
                             </button>
@@ -880,7 +914,7 @@ const handleBuyTrade = async (amount: string) => {
 
             {/* Separate Wallets Panel */}
             {isWalletsExpanded && (
-                <div 
+                <div
                     className="quickbuy-wallets-panel"
                     style={{
                         left: `${walletsPosition.x}px`,
@@ -890,7 +924,7 @@ const handleBuyTrade = async (amount: string) => {
                     <div className="quickbuy-wallets-header">
                         <span className="quickbuy-wallets-title">Wallets</span>
                     </div>
-                    
+
                     <div className="quickbuy-wallets-list">
                         {subWallets.length === 0 ? (
                             <div className="quickbuy-wallets-empty">
@@ -901,7 +935,7 @@ const handleBuyTrade = async (amount: string) => {
                             subWallets.map((wallet, index) => {
                                 const balance = getWalletBalance(wallet.address);
                                 const isActive = isWalletActive(wallet.privateKey);
-                                
+
                                 return (
                                     <div key={wallet.address} className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`}>
                                         <div className="quickbuy-wallet-checkbox-container">
@@ -913,7 +947,7 @@ const handleBuyTrade = async (amount: string) => {
                                                 onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
-                                        
+
                                         <div className="quickbuy-wallet-info">
                                             <div className="quickbuy-wallet-name">
                                                 {getWalletName(wallet.address, index)}
@@ -922,7 +956,7 @@ const handleBuyTrade = async (amount: string) => {
                                                 {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
                                             </div>
                                         </div>
-                                        
+
                                         <div className="quickbuy-wallet-balance">
                                             <div className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
                                                 <img src={monadicon} className="quickbuy-wallet-mon-icon" alt="MON" />
