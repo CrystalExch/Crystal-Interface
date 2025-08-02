@@ -1,6 +1,8 @@
+
 import React, { useEffect, useState } from 'react';
 import './WalletOperationPopup.css';
 import closebutton from '../../assets/close_button.png';
+
 type Variant = 'success' | 'error' | 'info';
 
 interface WalletOperationPopupProps {
@@ -9,7 +11,6 @@ interface WalletOperationPopupProps {
   type?: 'distribution' | 'deposit' | 'transfer' | 'send' | 'import' | 'create';
   title: string;
   subtitle?: string;
-
   amount?: string;
   amountUnit?: string;
   sourceWallet?: string;
@@ -38,8 +39,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
 }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [exiting, setExiting] = useState(false);
-  
-
 
   useEffect(() => {
     if (isVisible) {
@@ -73,7 +72,6 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
       <div
         className={`wallet-popup-container ${exiting ? 'slide-out' : 'slide-in'} variant-${variant}`}
       >
-
         <div className="wallet-popup-content">
           <div className="wallet-popup-header">
             {isLoading && (
@@ -81,7 +79,7 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
                 <div className="wallet-popup-spinner" />
               </div>
             )}
-            
+
             {!isLoading && (
               <span className={`wallet-popup-status-icon status-${variant}`} aria-hidden="true">
                 {variant === 'success' && (
@@ -90,9 +88,8 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
                   </svg>
                 )}
                 {variant === 'error' && (
-                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 8v5M12 16h.01" />
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M18 6L6 18M6 6l12 12" />
                   </svg>
                 )}
                 {variant === 'info' && (
@@ -103,14 +100,22 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
                 )}
               </span>
             )}
-            
-            <h3 className="wallet-popup-title">
-              {isLoading ? 'Confirming transaction' : title}
-            </h3>
+
+            <div className="wallet-popup-text-content">
+              <h3 className="wallet-popup-title">
+                {isLoading ? 'Confirming transaction' : title}
+              </h3>
+              {subtitle && (
+                <p className="wallet-popup-subtitle">
+                  {subtitle}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-                <button className="wallet-popup-close" onClick={handleClose}>
-              <img src={closebutton} className="close-button-icon" />
+
+        <button className="wallet-popup-close" onClick={handleClose}>
+          <img src={closebutton} className="close-button-icon" />
         </button>
       </div>
     </div>

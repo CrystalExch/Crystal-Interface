@@ -97,6 +97,14 @@ interface MemeInterfaceProps {
   wethticker?: string;
   ethticker?: string;
   address: any;
+  subWallets?: Array<{ address: string, privateKey: string }>;
+  walletTokenBalances?: { [address: string]: any };
+  activeWalletPrivateKey?: string;
+  setOneCTSigner?: (privateKey: string) => void;
+  refetch?: () => void;
+  isBlurred?: boolean;
+  refreshWalletBalance?: (address: string) => void;
+  forceRefreshAllWallets?: () => void;
 }
 
 const MARKET_UPDATE_EVENT = "0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a";
@@ -204,6 +212,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   wethticker,
   ethticker,
   address,
+   subWallets = [],
+  walletTokenBalances = {},
+  activeWalletPrivateKey,
+  setOneCTSigner,
+  refetch,
+  isBlurred = false,
+  refreshWalletBalance,
+  forceRefreshAllWallets,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
@@ -1646,31 +1662,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </span>
         </div>
       </div>
-      <QuickBuyWidget
-        isOpen={isWidgetOpen}
-        onClose={() => setIsWidgetOpen(false)}
-        tokenSymbol={token.symbol}
-        tokenName={token.name}
-        tokenAddress={tokenAddress}
-        tokenPrice={currentPrice}
-        buySlippageValue={buySlippageValue}
-        buyPriorityFee={buyPriorityFee}
-        buyBribeValue={buyBribeValue}
-        sellSlippageValue={sellSlippageValue}
-        sellPriorityFee={sellPriorityFee}
-        sellBribeValue={sellBribeValue}
-        sendUserOperationAsync={sendUserOperationAsync}
-        waitForTxReceipt={waitForTxReceipt}
-        account={account}
-        setChain={setChain}
-        activechain={String(activechain)}
-        routerAddress={routerAddress}
-        setpopup={setpopup}
-        tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
-        allowance={rpcData?.rawAllowance ?? 0n}
-        refetch={refetchBalances}
-      />
-
+<QuickBuyWidget
+  isOpen={isWidgetOpen}
+  onClose={() => setIsWidgetOpen(false)}
+  tokenSymbol={token.symbol}
+  tokenName={token.name}
+  tokenAddress={tokenAddress}
+  tokenPrice={currentPrice}
+  buySlippageValue={buySlippageValue}
+  buyPriorityFee={buyPriorityFee}
+  buyBribeValue={buyBribeValue}
+  sellSlippageValue={sellSlippageValue}
+  sellPriorityFee={sellPriorityFee}
+  sellBribeValue={sellBribeValue}
+  sendUserOperationAsync={sendUserOperationAsync}
+  waitForTxReceipt={waitForTxReceipt}
+  account={account}
+  setChain={setChain}
+  activechain={String(activechain)}
+  routerAddress={routerAddress}
+  setpopup={setpopup}
+  tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
+  allowance={rpcData?.rawAllowance ?? 0n}
+  refetch={refetchBalances}
+  subWallets={subWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={activeWalletPrivateKey}
+  setOneCTSigner={setOneCTSigner}
+  tokenList={tokenList}
+  isBlurred={isBlurred}
+  refreshWalletBalance={refreshWalletBalance}
+  forceRefreshAllWallets={forceRefreshAllWallets}
+/>
     </div>
   );
 };

@@ -24,8 +24,8 @@
   overflow: hidden;
   width: 380px; 
   opacity: 1;
-  min-height: 40px; 
-  max-height: 40px;
+  min-height: 50px; 
+  max-height: 50px;
   padding-right: 15px;
 }
 
@@ -83,8 +83,8 @@
   width: 14px; 
   height: 14px; 
   opacity: 0.7;
-  pointer-events: none; /* Make clicks go through to the button */
-  object-fit: contain; /* Ensure image scales properly */
+  pointer-events: none;
+  object-fit: contain;
 }
 
 .wallet-popup-close:hover img {
@@ -110,11 +110,12 @@
   font-size: 0.85rem;
   font-weight: 400;
   margin: 0;
-  letter-spacing: -0.2px;
+  letter-spacing: -0.3px;
   flex: 1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: -3px;
 }
 
 .wallet-popup-subtitle {
@@ -123,6 +124,7 @@
   font-weight: 300;
   margin: 0 0 4px 0;
   line-height: 1.25;
+  margin-top: -4px;
 }
 
 .wallet-popup-details {
@@ -172,9 +174,10 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 18px; height: 18px;
+  width: 22px; height: 22px;
   border-radius: 999px;
   flex-shrink: 0;
+  margin-top: -3px;
 }
 
 .wallet-popup-status-icon.status-success {
@@ -193,14 +196,15 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
+  margin-top: -2px;
 }
 
 .wallet-popup-spinner {
-  width: 14px;
-  height: 14px;
+  width: 18px;
+  height: 18px;
   border: 2px solid rgba(255, 255, 255, 0.25);
   border-top: 2px solid #aaaecf;
   border-radius: 50%;

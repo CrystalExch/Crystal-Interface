@@ -361,25 +361,34 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const isWalletActive = (walletPrivateKey: string) => {
     return activeWalletPrivateKey === walletPrivateKey;
   };
-  const deleteWallet = (address: string) => {
-    const updatedWallets = subWallets.filter(w => w.address !== address);
-    setSubWallets(updatedWallets);
-    saveSubWalletsToStorage(updatedWallets);
+const deleteWallet = (address: string) => {
+  const walletToDelete = subWallets.find(w => w.address === address);
+  
+  // Check if we're deleting the currently active wallet
+  if (walletToDelete && isWalletActive(walletToDelete.privateKey)) {
+    // Clear the active wallet from localStorage since we're deleting it
+    localStorage.removeItem('crystal_active_wallet_private_key');
+    console.log('Cleared active wallet from localStorage - wallet being deleted');
+  }
+  
+  const updatedWallets = subWallets.filter(w => w.address !== address);
+  setSubWallets(updatedWallets);
+  saveSubWalletsToStorage(updatedWallets);
 
-    const newEnabledWallets = new Set(enabledWallets);
-    newEnabledWallets.delete(address);
-    setEnabledWallets(newEnabledWallets);
-    localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
+  const newEnabledWallets = new Set(enabledWallets);
+  newEnabledWallets.delete(address);
+  setEnabledWallets(newEnabledWallets);
+  localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
 
-    const newWalletNames = { ...walletNames };
-    delete newWalletNames[address];
-    setWalletNames(newWalletNames);
-    localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+  const newWalletNames = { ...walletNames };
+  delete newWalletNames[address];
+  setWalletNames(newWalletNames);
+  localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
 
-    setShowDeleteConfirmation(false);
-    setWalletToDelete('');
-    closeExportModal();
-  };
+  setShowDeleteConfirmation(false);
+  setWalletToDelete('');
+  closeExportModal();
+};
 
   const confirmDeleteWallet = (address: string) => {
     setWalletToDelete(address);
@@ -1548,248 +1557,254 @@ const handleDepositFromEOA = async () => {
         return [];
     }
   };
-  const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
-    const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
-    const isPreviewSelected = previewSelection.has(wallet.address);
-    const isDragging = dragReorderState.draggedIndex === index;
-    const isDragOver = dragReorderState.dragOverIndex === index;
+const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
+  const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
+  const isPreviewSelected = previewSelection.has(wallet.address);
+  const isDragging = dragReorderState.draggedIndex === index;
+  const isDragOver = dragReorderState.dragOverIndex === index;
 
-    return (
-      <div
-        key={wallet.address}
-        data-wallet-address={wallet.address}
-        className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
-        draggable
-        onDragStart={(e) => {
-          setDropPreviewLine(null);
-          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+  return (
+    <div
+      key={wallet.address}
+      data-wallet-address={wallet.address}
+      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+      draggable
+      onDragStart={(e) => {
+        setDropPreviewLine(null);
+        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
 
-          if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
-            console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
-            handleMultiDragStart(e, wallet, containerType);
-            return;
-          }
-
-          setSelectedWalletsPerContainer(prev => ({
-            ...prev,
-            [containerType]: new Set([wallet.address])
-          }));
-
-          if (containerType === 'main') {
-            if (e.shiftKey) {
-              handleReorderDragStart(e, index, containerType);
-            } else {
-              handleDragStart(e, wallet, index);
-            }
-          } else {
-            if (e.shiftKey) {
-              handleReorderDragStart(e, index, containerType);
-            } else {
-              handleDragStartFromZone(e, wallet, containerType);
-            }
-          }
-        }}
-        onDragEnd={(e) => {
-          setIsMultiDrag(false);
-          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-          setDropPreviewLine(null);
-          setDraggedWallet(null);
-          setDragOverZone(null);
-          console.log('Drag ended, cleaned up states');
-        }}
-        onDragOver={(e) => {
-          if (!isMultiDrag) {
-            handleReorderDragOver(e, index, containerKey);
-          }
-        }}
-        onDragLeave={(e) => {
-          const relatedTarget = e.relatedTarget as Node;
-          if (!e.currentTarget.contains(relatedTarget)) {
-            setDropPreviewLine(null);
-            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
-          }
-        }}
-        onDrop={(e) => {
+        if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
+          console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
+          handleMultiDragStart(e, wallet, containerType);
           return;
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-          console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
+        }
 
-          if (e.ctrlKey || e.metaKey) {
-            setSelectedWalletsPerContainer(prev => {
-              const newContainerSet = new Set(prev[containerType]);
-              if (newContainerSet.has(wallet.address)) {
-                newContainerSet.delete(wallet.address);
-              } else {
-                newContainerSet.add(wallet.address);
-              }
-              console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
-              return {
-                ...prev,
-                [containerType]: newContainerSet
-              };
-            });
+        setSelectedWalletsPerContainer(prev => ({
+          ...prev,
+          [containerType]: new Set([wallet.address])
+        }));
+
+        if (containerType === 'main') {
+          if (e.shiftKey) {
+            handleReorderDragStart(e, index, containerType);
           } else {
-            setSelectedWalletsPerContainer({
-              main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
-              source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
-              destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
-            });
-            console.log(`Single selected in ${containerType}:`, wallet.address);
+            handleDragStart(e, wallet, index);
           }
-        }}
-      >
-        {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
-          <div
-            className="drop-preview-line"
-            style={{
-              top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
-            }}
-          />
-        )}
+        } else {
+          if (e.shiftKey) {
+            handleReorderDragStart(e, index, containerType);
+          } else {
+            handleDragStartFromZone(e, wallet, containerType);
+          }
+        }
+      }}
+      onDragEnd={(e) => {
+        setIsMultiDrag(false);
+        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+        setDropPreviewLine(null);
+        setDraggedWallet(null);
+        setDragOverZone(null);
+        console.log('Drag ended, cleaned up states');
+      }}
+      onDragOver={(e) => {
+        if (!isMultiDrag) {
+          handleReorderDragOver(e, index, containerKey);
+        }
+      }}
+      onDragLeave={(e) => {
+        const relatedTarget = e.relatedTarget as Node;
+        if (!e.currentTarget.contains(relatedTarget)) {
+          setDropPreviewLine(null);
+          setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+        }
+      }}
+      onDrop={(e) => {
+        return;
+      }}
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
 
-        <div className="wallet-drag-info">
-          <div className="wallet-name-container">
-            {editingWallet === wallet.address ? (
-              <div className="wallet-name-edit-container">
-                <input
-                  type="text"
-                  className="wallet-name-input"
-                  value={editingName}
-                  onChange={(e) => setEditingName(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter') {
-                      saveWalletName(wallet.address);
-                    } else if (e.key === 'Escape') {
-                      setEditingWallet(null);
-                      setEditingName('');
-                    }
-                  }}
-                  autoFocus
-                  onBlur={() => saveWalletName(wallet.address)}
-                />
-              </div>
-            ) : (
-              <div className="wallet-name-display">
-                <span
-                  className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
-                  style={{
-                    color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
-                  }}
-                >
-                  {getWalletName(wallet.address, index)}
-                </span>
-                <Edit2
-                  size={12}
-                  className="wallet-name-edit-icon"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    startEditingWallet(wallet.address);
-                  }}
-                />
-              </div>
-            )}
-          </div>
-          <div className="wallet-drag-address">
-            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-            <img
-              src={copy}
-              className="wallets-copy-icon"
-              alt="Copy"
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(wallet.address);
-              }}
-              style={{ cursor: 'pointer' }}
-            />
-          </div>
-        </div>
+        if (e.ctrlKey || e.metaKey) {
+          setSelectedWalletsPerContainer(prev => {
+            const newContainerSet = new Set(prev[containerType]);
+            if (newContainerSet.has(wallet.address)) {
+              newContainerSet.delete(wallet.address);
+            } else {
+              newContainerSet.add(wallet.address);
+            }
+            console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
+            return {
+              ...prev,
+              [containerType]: newContainerSet
+            };
+          });
+        } else {
+          setSelectedWalletsPerContainer({
+            main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
+            source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
+            destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
+          });
+          console.log(`Single selected in ${containerType}:`, wallet.address);
+        }
+      }}
+    >
+      {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+        <div
+          className="drop-preview-line"
+          style={{
+            top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
+          }}
+        />
+      )}
 
-
-        <div className="wallet-drag-actions">
-          <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
-            <button
-              className={`wallet-action-button ${isWalletActive(wallet.privateKey) ? 'primary' : ''}`}
-              onClick={() => {
+      {/* Active Wallet Checkbox */}
+      <div className="wallet-active-checkbox-container">
+        <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
+          <input
+            type="checkbox"
+            className="wallet-active-checkbox"
+            checked={isWalletActive(wallet.privateKey)}
+            onChange={(e) => {
+              e.stopPropagation();
+              if (!isWalletActive(wallet.privateKey)) {
+                localStorage.setItem('crystal_active_wallet_private_key', wallet.privateKey);
                 setOneCTSigner(wallet.privateKey);
-                setpopup(25);
                 refetch();
-              }}
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill={isWalletActive(wallet.privateKey) ? '#aaaecf' : 'none'}
-                stroke={isWalletActive(wallet.privateKey) ? 'rgb(6,6,6)' : 'currentColor'}
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                console.log('Set active wallet and saved to localStorage:', wallet.address);
+              }
+            }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </Tooltip>
+      </div>
+
+      <div className="wallet-drag-info">
+        <div className="wallet-name-container">
+          {editingWallet === wallet.address ? (
+            <div className="wallet-name-edit-container">
+              <input
+                type="text"
+                className="wallet-name-input"
+                value={editingName}
+                onChange={(e) => setEditingName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    saveWalletName(wallet.address);
+                  } else if (e.key === 'Escape') {
+                    setEditingWallet(null);
+                    setEditingName('');
+                  }
+                }}
+                autoFocus
+                onBlur={() => saveWalletName(wallet.address)}
+              />
+            </div>
+          ) : (
+            <div className="wallet-name-display">
+              <span
+                className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                style={{
+                  color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                }}
               >
-                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
-              </svg>
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Deposit from Main Wallet">
-            <button
-              className="wallet-icon-button"
-              onClick={() => openDepositModal(wallet.address)}
-            >
-              <Plus size={14} className="wallet-action-icon" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="Export Private Key">
-            <button
-              className="wallet-icon-button key-button"
-              onClick={() => openExportModal(wallet)}
-            >
-              <img src={key} className="wallet-action-icon" alt="Export Key" />
-            </button>
-          </Tooltip>
-
-          <Tooltip content="View on Explorer">
-            <a
-              href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="wallet-icon-button explorer-button"
-            >
-              <svg
-                className="wallet-action-icon-svg"
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="white"
-              >
-                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-              </svg>
-            </a>
-          </Tooltip>
-
-          <Tooltip content="Delete Wallet">
-            <button
-              className="wallet-icon-button delete-button"
-              onClick={() => confirmDeleteWallet(wallet.address)}
-            >
-              <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-            </button>
-          </Tooltip>
+                {getWalletName(wallet.address, index)}
+              </span>
+              <Edit2
+                size={12}
+                className="wallet-name-edit-icon"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  startEditingWallet(wallet.address);
+                }}
+              />
+            </div>
+          )}
         </div>
-
-        <div className="wallet-drag-values">
-          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-            {getWalletBalance(wallet.address).toFixed(2)}
-          </div>
+        <div className="wallet-drag-address">
+          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+          <img
+            src={copy}
+            className="wallets-copy-icon"
+            alt="Copy"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigator.clipboard.writeText(wallet.address);
+            }}
+            style={{ cursor: 'pointer' }}
+          />
         </div>
       </div>
-    );
-  };
+
+      <div className="wallet-drag-actions">
+        <Tooltip content="Deposit from Main Wallet">
+          <button
+            className="wallet-icon-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openDepositModal(wallet.address);
+            }}
+          >
+            <Plus size={14} className="wallet-action-icon" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="Export Private Key">
+          <button
+            className="wallet-icon-button key-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              openExportModal(wallet);
+            }}
+          >
+            <img src={key} className="wallet-action-icon" alt="Export Key" />
+          </button>
+        </Tooltip>
+
+        <Tooltip content="View on Explorer">
+          <a
+            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="wallet-icon-button explorer-button"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <svg
+              className="wallet-action-icon-svg"
+              xmlns="http://www.w3.org/2000/svg"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="white"
+            >
+              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+            </svg>
+          </a>
+        </Tooltip>
+
+        <Tooltip content="Delete Wallet">
+          <button
+            className="wallet-icon-button delete-button"
+            onClick={(e) => {
+              e.stopPropagation();
+              confirmDeleteWallet(wallet.address);
+            }}
+          >
+            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+          </button>
+        </Tooltip>
+      </div>
+
+      <div className="wallet-drag-values">
+        <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+          <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+          {getWalletBalance(wallet.address).toFixed(2)}
+        </div>
+      </div>
+    </div>
+  );
+};
 
   const renderWalletContainer = (
     wallets: any[],
@@ -1941,6 +1956,38 @@ const handleDepositFromEOA = async () => {
     document.addEventListener('keydown', handleGlobalKeyDown);
     return () => document.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
+
+  useEffect(() => {
+  if (activeWalletPrivateKey) {
+    localStorage.setItem('crystal_active_wallet_private_key', activeWalletPrivateKey);
+  }
+}, [activeWalletPrivateKey]);
+
+useEffect(() => {
+  const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+  
+  if (savedActivePrivateKey && subWallets.length > 0) {
+    const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
+    
+    if (savedWalletExists && activeWalletPrivateKey !== savedActivePrivateKey) {
+      setOneCTSigner(savedActivePrivateKey);
+      console.log('Restored active wallet from localStorage');
+    }
+  }
+}, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
+
+useEffect(() => {
+  const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+  
+  if (savedActivePrivateKey && subWallets.length > 0) {
+    const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
+    
+    if (!savedWalletExists) {
+      localStorage.removeItem('crystal_active_wallet_private_key');
+      console.log('Cleared deleted active wallet from localStorage');
+    }
+  }
+}, [subWallets]);
   useEffect(() => {
     const now = Date.now() / 1000;
     const timeago = now - 24 * 60 * 60 * days;

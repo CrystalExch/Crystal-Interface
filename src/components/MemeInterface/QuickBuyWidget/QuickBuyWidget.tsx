@@ -7,7 +7,7 @@ import squares from '../../../assets/squares.svg';
 import editicon from '../../../assets/edit.svg';
 import switchicon from '../../../assets/switch.svg';
 import { showLoadingPopup, updatePopup } from '../../MemeTransactionPopup/MemeTransactionPopupManager';
-
+import walleticon from '../../../assets/wallet_icon.png';
 import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
 import bribe from '../../../assets/bribe.svg';
@@ -47,8 +47,16 @@ interface QuickBuyWidgetProps {
     tokenBalances?: { [key: string]: bigint };
     allowance?: bigint;
     refetch?: () => void;
+    // Wallet-related props
+    subWallets?: Array<{ address: string, privateKey: string }>;
+    walletTokenBalances?: { [address: string]: any };
+    activeWalletPrivateKey?: string;
+    setOneCTSigner?: (privateKey: string) => void;
+    tokenList?: any[];
+    isBlurred?: boolean;
+    refreshWalletBalance?: (address: string) => void;
+    forceRefreshAllWallets?: () => void;
 }
-
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     isOpen,
     onClose,
@@ -72,7 +80,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     tokenBalances = {},
     allowance = BigInt(0),
     refetch,
+    subWallets = [],
+    walletTokenBalances = {},
+    activeWalletPrivateKey,
+    setOneCTSigner,
+    tokenList = [],
+    isBlurred = false,
+    refreshWalletBalance,
+    forceRefreshAllWallets,
 }) => {
+
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
@@ -88,9 +105,23 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
     const [lastRefreshTime, setLastRefreshTime] = useState(0);
     const [quickBuyPreset, setQuickBuyPreset] = useState(1);
+    const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
+    const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
 
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+
+    // Load wallet names from localStorage
+    useEffect(() => {
+        const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+        if (storedWalletNames) {
+            try {
+                setWalletNames(JSON.parse(storedWalletNames));
+            } catch (error) {
+                console.error('Error loading wallet names:', error);
+            }
+        }
+    }, []);
 
     const CrystalLaunchpadRouter = [
         {
@@ -134,122 +165,192 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         return num.toFixed(Math.min(decimals, 8));
     };
 
+    const getWalletBalance = (address: string) => {
+        const balances = walletTokenBalances[address];
+        if (!balances) return 0;
+
+        const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain || '']?.eth);
+        if (ethToken && balances[ethToken.address]) {
+            return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+        }
+        return 0;
+    };
+
+    const getWalletName = (address: string, index: number) => {
+        return walletNames[address] || `Wallet ${index + 1}`;
+    };
+
+    const isWalletActive = (privateKey: string) => {
+        return activeWalletPrivateKey === privateKey;
+    };
+
+const handleSetActiveWallet = (privateKey: string) => {
+    if (!isWalletActive(privateKey) && setOneCTSigner) {
+        localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+        setOneCTSigner(privateKey);
+        
+        if (refetch) {
+            setTimeout(() => refetch(), 100);
+        }
+        if (forceRefreshAllWallets) {
+            setTimeout(() => forceRefreshAllWallets(), 200);
+        }
+    }
+};
+
     const currentTokenBalance = tokenBalances[tokenAddress || ''] ?? 0n;
     const currentAllowance = allowance ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
     const allowanceBalance = Number(currentAllowance) / 1e18;
-
-    const forceRefresh = useCallback(() => {
-        if (refetch) {
-            refetch();
-            setLastRefreshTime(Date.now());
-        }
-    }, [refetch]);
-
+const getCurrentWalletMONBalance = () => {
+    if (!activeWalletPrivateKey) return 0;
+    
+    const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+    if (!currentWallet) return 0;
+    
+    return getWalletBalance(currentWallet.address);
+};
+const forceRefresh = useCallback(() => {
+    if (refetch) {
+        refetch();
+        setLastRefreshTime(Date.now());
+    }
+    
+    if (forceRefreshAllWallets) {
+        forceRefreshAllWallets();
+    }
+}, [refetch, forceRefreshAllWallets]);
     useEffect(() => {
         if (isOpen && account?.connected) {
             forceRefresh();
         }
     }, [isOpen, account?.connected]);
 
-    const handleBuyTrade = async (amount: string) => {
-        if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
-            if (setpopup) setpopup(4);
-            return;
-        }
+const handleBuyTrade = async (amount: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+        if (setpopup) setpopup(4);
+        return;
+    }
 
-        const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
-        const currentChainId = Number(account.chainId);
-        
-        if (currentChainId !== targetChainId) {
-            if (setChain) setChain();
-            return;
-        }
+    const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
+    const currentChainId = Number(account.chainId);
+    
+    if (currentChainId !== targetChainId) {
+        if (setChain) setChain();
+        return;
+    }
 
-        const txId = `buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-        
-        const newTx: PendingTransaction = {
-            id: txId,
-            type: 'buy',
-            amount,
-            timestamp: Date.now(),
-            status: 'pending'
-        };
-        
-        setPendingTransactions(prev => {
-            const updated = [...prev, newTx];
-            return updated;
-        });
-
+    const requestedAmount = parseFloat(amount);
+    const currentMONBalance = getCurrentWalletMONBalance();
+    
+    if (requestedAmount > currentMONBalance) {
+        const txId = `insufficient-${Date.now()}`;
         if (showLoadingPopup) {
             showLoadingPopup(txId, {
-                title: 'Sending transaction...',
-                subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-                amount,
+                title: 'Insufficient Balance',
+                subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
+                amount: amount,
                 amountUnit: 'MON'
             });
         }
-
-        try {
-            const valNum = parseFloat(amount);
-            const value = BigInt(Math.round(valNum * 1e18));
-
-            const uo = {
-                target: routerAddress,
-                data: encodeFunctionData({
-                    abi: CrystalLaunchpadRouter,
-                    functionName: "buy",
-                    args: [tokenAddress as `0x${string}`],
-                }),
-                value,
-            };
-
-            if (updatePopup) {
-                updatePopup(txId, {
-                    title: 'Confirming transaction...',
-                    subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
-                    variant: 'info'
-                });
-            }
-
-            const op = await sendUserOperationAsync({ uo });
-            await waitForTxReceipt(op.hash);
-
-            const expectedTokens = tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
-            if (updatePopup) {
-                updatePopup(txId, {
-                    title: 'Buy completed!',
-                    subtitle: `Bought ~${formatNumberWithCommas(expectedTokens, 4)} ${tokenSymbol}`,
-                    variant: 'success',
-                    isLoading: false
-                });
-            }
-
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
-            });
-
+        
+        if (updatePopup) {
             setTimeout(() => {
-                forceRefresh();
-            }, 1500);
-
-        } catch (error: any) {
-            if (updatePopup) {
                 updatePopup(txId, {
-                    title: 'Buy failed',
-                    subtitle: error?.message || 'Transaction was rejected',
+                    title: 'Insufficient Balance',
+                    subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
                     variant: 'error',
                     isLoading: false
                 });
-            }
+            }, 100);
+        }
+        return;
+    }
 
-            setPendingTransactions(prev => {
-                const updated = prev.filter(tx => tx.id !== txId);
-                return updated;
+    const txId = `buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    const newTx: PendingTransaction = {
+        id: txId,
+        type: 'buy',
+        amount,
+        timestamp: Date.now(),
+        status: 'pending'
+    };
+    
+    setPendingTransactions(prev => {
+        const updated = [...prev, newTx];
+        return updated;
+    });
+
+    if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+            title: 'Sending transaction...',
+            subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
+            amount,
+            amountUnit: 'MON'
+        });
+    }
+
+    try {
+        const valNum = parseFloat(amount);
+        const value = BigInt(Math.round(valNum * 1e18));
+
+        const uo = {
+            target: routerAddress,
+            data: encodeFunctionData({
+                abi: CrystalLaunchpadRouter,
+                functionName: "buy",
+                args: [tokenAddress as `0x${string}`],
+            }),
+            value,
+        };
+
+        if (updatePopup) {
+            updatePopup(txId, {
+                title: 'Confirming transaction...',
+                subtitle: `Buying ${amount} MON worth of ${tokenSymbol}`,
+                variant: 'info'
             });
         }
-    };
+
+        const op = await sendUserOperationAsync({ uo });
+        await waitForTxReceipt(op.hash);
+
+        const expectedTokens = tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
+        if (updatePopup) {
+            updatePopup(txId, {
+                title: 'Buy completed!',
+                subtitle: `Bought ~${formatNumberWithCommas(expectedTokens, 4)} ${tokenSymbol}`,
+                variant: 'success',
+                isLoading: false
+            });
+        }
+
+        setPendingTransactions(prev => {
+            const updated = prev.filter(tx => tx.id !== txId);
+            return updated;
+        });
+
+        setTimeout(() => {
+            forceRefresh();
+        }, 1500);
+
+    } catch (error: any) {
+        if (updatePopup) {
+            updatePopup(txId, {
+                title: 'Buy failed',
+                subtitle: error?.message || 'Transaction was rejected',
+                variant: 'error',
+                isLoading: false
+            });
+        }
+
+        setPendingTransactions(prev => {
+            const updated = prev.filter(tx => tx.id !== txId);
+            return updated;
+        });
+    }
+};
 
     const handleSellTrade = async (value: string) => {
         if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
@@ -428,7 +529,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const newX = e.clientX - dragOffset.x;
         const newY = e.clientY - dragOffset.y;
 
-        const maxX = window.innerWidth - 300;
+        const maxX = window.innerWidth - 330;
         const maxY = window.innerHeight - 480;
 
         setPosition({
@@ -545,159 +646,108 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     const isRefreshing = lastRefreshTime > 0 && (Date.now() - lastRefreshTime < 2000);
 
+    // Calculate wallets panel position
+    const walletsPosition = {
+        x: position.x + 330 + 10, // Widget width + gap
+        y: position.y
+    };
+
+    // Ensure wallets panel doesn't go off screen
+    const maxWalletsX = window.innerWidth - 280;
+    if (walletsPosition.x > maxWalletsX) {
+        walletsPosition.x = position.x - 280 - 10; // Show on left side instead
+    }
+
     if (!isOpen) return null;
 
     return (
-        <div
-            ref={widgetRef}
-            className={`quickbuy-widget ${isDragging ? 'dragging' : ''}`}
-            style={{
-                left: `${position.x}px`,
-                top: `${position.y}px`,
-            }}
-        >
+        <>
+            {/* Main QuickBuy Widget */}
             <div
-                className="quickbuy-header"
-                onMouseDown={handleMouseDown}
+                ref={widgetRef}
+                className={`quickbuy-widget ${isDragging ? 'dragging' : ''}`}
+                style={{
+                    left: `${position.x}px`,
+                    top: `${position.y}px`,
+                }}
             >
-                <div className="quickbuy-controls">
-                    <div className="quickbuy-controls-left">
-                        <img
-                            src={editicon}
-                            alt="Edit"
-                            className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
-                            onClick={handleEditToggle}
-                        />
+                <div
+                    className="quickbuy-header"
+                    onMouseDown={handleMouseDown}
+                >
+                    <div className="quickbuy-controls">
+                        <div className="quickbuy-controls-left">
+                            <img
+                                src={editicon}
+                                alt="Edit"
+                                className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
+                                onClick={handleEditToggle}
+                            />
 
-                        <div className="quickbuy-preset-controls">
-                            <button
-                                className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
-                                onClick={() => setQuickBuyPreset(1)}
-                            >
-                                P1
-                            </button>
-                            <button
-                                className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
-                                onClick={() => setQuickBuyPreset(2)}
-                            >
-                                P2
-                            </button>
-                            <button
-                                className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
-                                onClick={() => setQuickBuyPreset(3)}
-                            >
-                                P3
-                            </button>
+                            <div className="quickbuy-preset-controls">
+                                <button
+                                    className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
+                                    onClick={() => setQuickBuyPreset(1)}
+                                >
+                                    P1
+                                </button>
+                                <button
+                                    className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
+                                    onClick={() => setQuickBuyPreset(2)}
+                                >
+                                    P2
+                                </button>
+                                <button
+                                    className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
+                                    onClick={() => setQuickBuyPreset(3)}
+                                >
+                                    P3
+                                </button>
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="quickbuy-controls-right-side">
-                        <button
-                            className="refresh-btn"
-                            onClick={forceRefresh}
-                            disabled={isRefreshing}
-                            title="Refresh balance"
-                        >
-                            <div className={`refresh-icon ${isRefreshing ? 'spinning' : ''}`}>↻</div>
-                        </button>
-                        <button className="close-btn" onClick={onClose}>
-                            <img className="quickbuy-close-icon" src={closebutton} alt="Close" />
-                        </button>
-                    </div>
-                </div>
-                <div className="quickbuy-drag-handle">
-                    <img src={squares} alt="Squares" className="quickbuy-squares-icon" />
-                    <img src={squares} alt="Squares" className="quickbuy-squares-icon" />
-                </div>
-            </div>
+                        <div className="quickbuy-controls-right-side">
+                            {subWallets.length > 0 && (
+                                <button 
+                                    className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
+                                    onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
+                                    title="Toggle Wallets"
+                                >
+                                   <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
+                                   <span className="quickbuy-wallets-count">{subWallets.length}</span>
 
-            <div className="quickbuy-content">
-                <div className="buy-section">
-                    <div className="section-header">
-                        <span>Buy</span>
-                        <div className="quickbuy-order-indicator">
-                            <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
-                            {pendingBuyCount > 0 ? (
-                                <div className="quickbuy-spinner" />
-                            ) : (
-                                pendingBuyCount
+                                </button>
                             )}
+                         
+                            <button className="close-btn" onClick={onClose}>
+                                <img className="quickbuy-close-icon" src={closebutton} alt="Close" />
+                            </button>
                         </div>
                     </div>
+                    <div className="quickbuy-drag-handle">
+                        <img src={squares} alt="Squares" className="quickbuy-squares-icon" />
+                        <img src={squares} alt="Squares" className="quickbuy-squares-icon" />
+                    </div>
+                </div>
 
-                    <div className="amount-buttons">
-                        {buyAmounts.map((amount, index) => (
-                            <div key={index} className="button-container">
-                                {editingIndex === index ? (
-                                    <input
-                                        ref={inputRef}
-                                        type="text"
-                                        value={tempValue}
-                                        onChange={(e) => setTempValue(e.target.value)}
-                                        onKeyDown={handleInputKeyDown}
-                                        onBlur={handleInputSubmit}
-                                        className="edit-input"
-                                    />
+                <div className="quickbuy-content">
+                    <div className="buy-section">
+                        <div className="section-header">
+                            <span>Buy</span>
+                            <div className="quickbuy-order-indicator">
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
+                                {pendingBuyCount > 0 ? (
+                                    <div className="quickbuy-spinner" />
                                 ) : (
-                                    <button
-                                        className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''}`}
-                                        onClick={() => handleBuyButtonClick(amount, index)}
-                                        disabled={!account?.connected}
-                                    >
-                                        {amount}
-                                    </button>
+                                    pendingBuyCount
                                 )}
                             </div>
-                        ))}
-                    </div>
+                        </div>
 
-                    <div className="quickbuy-settings-display">
-                        <div className="quickbuy-settings-item">
-                            <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
-                            <span className="quickbuy-settings-value">{buySlippageValue}%</span>
-                        </div>
-                        <div className="quickbuy-settings-item">
-                            <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
-                            <span className="quickbuy-settings-value">{buyPriorityFee}</span>
-                        </div>
-                        <div className="quickbuy-settings-item">
-                            <img src={bribe} alt="Bribe" className="quickbuy-settings-icon-bribe" />
-                            <span className="quickbuy-settings-value">{buyBribeValue}</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div className="sell-section">
-                    <div className="section-header">
-                        <div className="sell-header-left">
-                            <span>Sell </span>
-                            <span className="quickbuy-percent">
-                                {sellMode === 'percent' ? '%' : 'MON'}
-                            </span>
-                            <button
-                                className="sell-mode-toggle"
-                                onClick={handleSellModeToggle}
-                                title={`Switch to ${sellMode === 'percent' ? 'MON' : '%'} mode`}
-                            >
-                                <img className="quickbuy-switch-icon" src={switchicon} alt="Switch" />
-                            </button>
-                        </div>
-                        <div className="quickbuy-order-indicator">
-                            <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
-                            {pendingSellCount > 0 ? (
-                                <div className="quickbuy-spinner" />
-                            ) : (
-                                pendingSellCount
-                            )}
-                        </div>
-                    </div>
-
-                    <div className="percent-buttons">
-                        {currentSellValues.map((value, index) => {
-                            const isDisabled = getSellButtonStatus(value);
-                            return (
+                        <div className="amount-buttons">
+                            {buyAmounts.map((amount, index) => (
                                 <div key={index} className="button-container">
-                                    {editingIndex === index + 100 ? (
+                                    {editingIndex === index ? (
                                         <input
                                             ref={inputRef}
                                             type="text"
@@ -709,55 +759,184 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                         />
                                     ) : (
                                         <button
-                                            className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''}`}
-                                            onClick={() => handleSellButtonClick(value, index)}
-                                            disabled={!account?.connected || isDisabled}
-                                            title={isDisabled ? `Insufficient balance for ${value}` : ''}
+                                            className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''}`}
+                                            onClick={() => handleBuyButtonClick(amount, index)}
+                                            disabled={!account?.connected}
                                         >
-                                            {value}
+                                            {amount}
                                         </button>
                                     )}
                                 </div>
-                            );
-                        })}
+                            ))}
+                        </div>
+
+                        <div className="quickbuy-settings-display">
+                            <div className="quickbuy-settings-item">
+                                <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
+                                <span className="quickbuy-settings-value">{buySlippageValue}%</span>
+                            </div>
+                            <div className="quickbuy-settings-item">
+                                <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
+                                <span className="quickbuy-settings-value">{buyPriorityFee}</span>
+                            </div>
+                            <div className="quickbuy-settings-item">
+                                <img src={bribe} alt="Bribe" className="quickbuy-settings-icon-bribe" />
+                                <span className="quickbuy-settings-value">{buyBribeValue}</span>
+                            </div>
+                        </div>
                     </div>
 
-                    <div className="quickbuy-settings-display">
-                        <div className="quickbuy-settings-item">
-                            <img src={slippage} alt="Slippage" className="quickbuy-settings-icon" />
-                            <span className="quickbuy-settings-value">{sellSlippageValue}%</span>
+                    <div className="sell-section">
+                        <div className="section-header">
+                            <div className="sell-header-left">
+                                <span>Sell </span>
+                                <span className="quickbuy-percent">
+                                    {sellMode === 'percent' ? '%' : 'MON'}
+                                </span>
+                                <button
+                                    className="sell-mode-toggle"
+                                    onClick={handleSellModeToggle}
+                                    title={`Switch to ${sellMode === 'percent' ? 'MON' : '%'} mode`}
+                                >
+                                    <img className="quickbuy-switch-icon" src={switchicon} alt="Switch" />
+                                </button>
+                            </div>
+                            <div className="quickbuy-order-indicator">
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
+                                {pendingSellCount > 0 ? (
+                                    <div className="quickbuy-spinner" />
+                                ) : (
+                                    pendingSellCount
+                                )}
+                            </div>
                         </div>
-                        <div className="quickbuy-settings-item">
-                            <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
-                            <span className="quickbuy-settings-value">{sellPriorityFee}</span>
-                        </div>
-                        <div className="quickbuy-settings-item">
-                            <img src={bribe} alt="Bribe" className="quickbuy-settings-icon" />
-                            <span className="quickbuy-settings-value">{sellBribeValue}</span>
-                        </div>
-                    </div>
-                </div>
 
-                <div className="quickbuy-portfolio-section">
-                    <div className="quickbuy-portfolio-item">
-                        <span className="value green">
-                            {formatNumberWithCommas(portfolioValue)} MON
-                        </span>
+                        <div className="percent-buttons">
+                            {currentSellValues.map((value, index) => {
+                                const isDisabled = getSellButtonStatus(value);
+                                return (
+                                    <div key={index} className="button-container">
+                                        {editingIndex === index + 100 ? (
+                                            <input
+                                                ref={inputRef}
+                                                type="text"
+                                                value={tempValue}
+                                                onChange={(e) => setTempValue(e.target.value)}
+                                                onKeyDown={handleInputKeyDown}
+                                                onBlur={handleInputSubmit}
+                                                className="edit-input"
+                                            />
+                                        ) : (
+                                            <button
+                                                className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''}`}
+                                                onClick={() => handleSellButtonClick(value, index)}
+                                                disabled={!account?.connected || isDisabled}
+                                                title={isDisabled ? `Insufficient balance for ${value}` : ''}
+                                            >
+                                                {value}
+                                            </button>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+
+                        <div className="quickbuy-settings-display">
+                            <div className="quickbuy-settings-item">
+                                <img src={slippage} alt="Slippage" className="quickbuy-settings-icon" />
+                                <span className="quickbuy-settings-value">{sellSlippageValue}%</span>
+                            </div>
+                            <div className="quickbuy-settings-item">
+                                <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
+                                <span className="quickbuy-settings-value">{sellPriorityFee}</span>
+                            </div>
+                            <div className="quickbuy-settings-item">
+                                <img src={bribe} alt="Bribe" className="quickbuy-settings-icon" />
+                                <span className="quickbuy-settings-value">{sellBribeValue}</span>
+                            </div>
+                        </div>
                     </div>
-                    <div className="quickbuy-portfolio-item">
-                        <span className="value">
-                            {formatNumberWithCommas(tokenBalance, 3)}
-                        </span>
-                    </div>
-                    <div className="quickbuy-portfolio-item">
-                        <span className="value">${formatNumberWithCommas(tokenPrice, 6)}</span>
-                    </div>
-                    <div className="quickbuy-portfolio-item">
-                        <span className="value">{pendingBuyCount + pendingSellCount}</span>
+
+                    <div className="quickbuy-portfolio-section">
+                        <div className="quickbuy-portfolio-item">
+                            <span className="value green">
+                                {formatNumberWithCommas(portfolioValue)} MON
+                            </span>
+                        </div>
+                        <div className="quickbuy-portfolio-item">
+                            <span className="value">
+                                {formatNumberWithCommas(tokenBalance, 3)}
+                            </span>
+                        </div>
+                        <div className="quickbuy-portfolio-item">
+                            <span className="value">${formatNumberWithCommas(tokenPrice, 6)}</span>
+                        </div>
+                        <div className="quickbuy-portfolio-item">
+                            <span className="value">{pendingBuyCount + pendingSellCount}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+
+            {/* Separate Wallets Panel */}
+            {isWalletsExpanded && (
+                <div 
+                    className="quickbuy-wallets-panel"
+                    style={{
+                        left: `${walletsPosition.x}px`,
+                        top: `${walletsPosition.y}px`,
+                    }}
+                >
+                    <div className="quickbuy-wallets-header">
+                        <span className="quickbuy-wallets-title">Wallets</span>
+                    </div>
+                    
+                    <div className="quickbuy-wallets-list">
+                        {subWallets.length === 0 ? (
+                            <div className="quickbuy-wallets-empty">
+                                <div className="quickbuy-wallets-empty-text">No wallets</div>
+                                <div className="quickbuy-wallets-empty-subtitle">Create in Portfolio</div>
+                            </div>
+                        ) : (
+                            subWallets.map((wallet, index) => {
+                                const balance = getWalletBalance(wallet.address);
+                                const isActive = isWalletActive(wallet.privateKey);
+                                
+                                return (
+                                    <div key={wallet.address} className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`}>
+                                        <div className="quickbuy-wallet-checkbox-container">
+                                            <input
+                                                type="checkbox"
+                                                className="quickbuy-wallet-checkbox"
+                                                checked={isActive}
+                                                onChange={() => handleSetActiveWallet(wallet.privateKey)}
+                                                onClick={(e) => e.stopPropagation()}
+                                            />
+                                        </div>
+                                        
+                                        <div className="quickbuy-wallet-info">
+                                            <div className="quickbuy-wallet-name">
+                                                {getWalletName(wallet.address, index)}
+                                            </div>
+                                            <div className="quickbuy-wallet-address">
+                                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="quickbuy-wallet-balance">
+                                            <div className={`quickbuy-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                                <img src={monadicon} className="quickbuy-wallet-mon-icon" alt="MON" />
+                                                {formatNumberWithCommas(balance, 2)}
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
+                        )}
+                    </div>
+                </div>
+            )}
+        </>
     );
 };
 

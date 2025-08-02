@@ -216,7 +216,7 @@ function App() {
     }
     return g;
   })();
- 
+
   const [selectedVaultForAction, setSelectedVaultForAction] = useState<any | null>(null);
   const [vaultDepositAmount, setVaultDepositAmount] = useState('');
   const [vaultWithdrawAmount, setVaultWithdrawAmount] = useState('');
@@ -19407,420 +19407,438 @@ function App() {
 
 
   return (
-      <div className="app-wrapper" key={language}>
-        <NavigationProgress location={location} />
-        <FullScreenOverlay isVisible={loading} />
+    <div className="app-wrapper" key={language}>
+      <NavigationProgress location={location} />
+      <FullScreenOverlay isVisible={loading} />
       <MemeTransactionPopupManager />
 
-        {Modals}
-        <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
-        {windowWidth <= 1020 &&
-          !simpleView &&
-          ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
-            <>
-              <div
-                className={`right-column ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
-                style={{
-                  transform: showTrade && isMobileDragging
-                    ? `translateY(${mobileDragY}px)`
-                    : showTrade
-                      ? 'translateY(0)'
-                      : 'translateY(calc(100% - 91px))'
-                }}
-                onTouchStart={(e: React.TouchEvent) => {
-                  if (windowWidth <= 1020 && showTrade) {
-                    setMobileStartY(e.touches[0].clientY);
-                    setIsMobileDragging(true);
-                  }
-                }}
-                onTouchMove={(e: React.TouchEvent) => {
-                  if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
-
-                  const currentY = e.touches[0].clientY;
-                  const deltaY = currentY - mobileStartY;
-
-                  if (deltaY > 0) {
-                    setMobileDragY(deltaY);
-                  }
-                }}
-                onTouchEnd={() => {
-                  if (!isMobileDragging || windowWidth > 1020) return;
-
-                  setIsMobileDragging(false);
-
-                  if (mobileDragY > 100) {
-                    setShowTrade(false);
-                    document.body.style.overflow = 'auto';
-                    document.querySelector('.right-column')?.classList.add('hide');
-                    document.querySelector('.right-column')?.classList.remove('show');
-                    document.querySelector('.trade-mobile-switch')?.classList.remove('open');
-                  }
-                  setMobileDragY(0);
-                }}
-              >
-                <div className="mobile-drag-handle">
-                  <div className="drag-indicator"></div>
-                </div>
-
-                {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
-              </div>
-            </>
-          )}
-        {
+      {Modals}
+      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
+      {windowWidth <= 1020 &&
+        !simpleView &&
+        ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
           <>
-            <Header
-              setTokenIn={setTokenIn}
-              setTokenOut={setTokenOut}
-              setorders={setorders}
-              settradehistory={settradehistory}
-              settradesByMarket={settradesByMarket}
-              setcanceledorders={setcanceledorders}
+            <div
+              className={`right-column ${showTrade ? 'show' : ''} ${isMobileDragging ? 'dragging' : ''}`}
+              style={{
+                transform: showTrade && isMobileDragging
+                  ? `translateY(${mobileDragY}px)`
+                  : showTrade
+                    ? 'translateY(0)'
+                    : 'translateY(calc(100% - 91px))'
+              }}
+              onTouchStart={(e: React.TouchEvent) => {
+                if (windowWidth <= 1020 && showTrade) {
+                  setMobileStartY(e.touches[0].clientY);
+                  setIsMobileDragging(true);
+                }
+              }}
+              onTouchMove={(e: React.TouchEvent) => {
+                if (!isMobileDragging || windowWidth > 1020 || !showTrade) return;
+
+                const currentY = e.touches[0].clientY;
+                const deltaY = currentY - mobileStartY;
+
+                if (deltaY > 0) {
+                  setMobileDragY(deltaY);
+                }
+              }}
+              onTouchEnd={() => {
+                if (!isMobileDragging || windowWidth > 1020) return;
+
+                setIsMobileDragging(false);
+
+                if (mobileDragY > 100) {
+                  setShowTrade(false);
+                  document.body.style.overflow = 'auto';
+                  document.querySelector('.right-column')?.classList.add('hide');
+                  document.querySelector('.right-column')?.classList.remove('show');
+                  document.querySelector('.trade-mobile-switch')?.classList.remove('open');
+                }
+                setMobileDragY(0);
+              }}
+            >
+              <div className="mobile-drag-handle">
+                <div className="drag-indicator"></div>
+              </div>
+
+              {location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market' ? swap : location.pathname.slice(1) == 'limit' ? limit : location.pathname.slice(1) == 'send' ? send : scale}
+            </div>
+          </>
+        )}
+      {
+        <>
+          <Header
+            setTokenIn={setTokenIn}
+            setTokenOut={setTokenOut}
+            setorders={setorders}
+            settradehistory={settradehistory}
+            settradesByMarket={settradesByMarket}
+            setcanceledorders={setcanceledorders}
+            setpopup={setpopup}
+            setChain={handleSetChain}
+            account={{
+              connected: connected,
+              address: address,
+              chainId: userchain,
+            }}
+            activechain={activechain}
+            tokenIn={tokenIn}
+            setShowTrade={setShowTrade}
+            simpleView={simpleView}
+            setSimpleView={setSimpleView}
+            tokendict={tokendict}
+            transactions={transactions}
+            activeMarket={activeMarket}
+            orderdata={{
+              liquidityBuyOrders,
+              liquiditySellOrders,
+            }}
+            onMarketSelect={onMarketSelect}
+            marketsData={sortedMarkets}
+            tradesloading={tradesloading}
+            tradesByMarket={tradesByMarket}
+          />
+          <div className="headerfiller"></div>
+        </>
+      }
+      <div className="app-container">
+        <Routes>
+          <Route path="/" element={<Navigate to="/market" replace />} />
+          <Route path="*" element={<Navigate to="/market" replace />} />
+          <Route
+            path="/leaderboard"
+            element={
+              <Leaderboard
+                setpopup={setpopup}
+                orders={orders}
+                address={address}
+                username={username}
+                setIsTransitioning={setIsTransitioning}
+                setTransitionDirection={setTransitionDirection}
+              />
+            }
+          />
+          <Route path="/lending" element={
+            <EarnVaults
               setpopup={setpopup}
-              setChain={handleSetChain}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              selectedToken={selectedToken}
+              tokenBalances={tokenBalances}
+              tokendict={tokendict}
+              address={address}
+              connected={connected}
+              refetch={refetch}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
               account={{
                 connected: connected,
                 address: address,
                 chainId: userchain,
               }}
+              sendUserOperationAsync={sendUserOperationAsync}
+              waitForTxReceipt={waitForTxReceipt}
               activechain={activechain}
-              tokenIn={tokenIn}
-              setShowTrade={setShowTrade}
-              simpleView={simpleView}
-              setSimpleView={setSimpleView}
-              tokendict={tokendict}
-              transactions={transactions}
-              activeMarket={activeMarket}
-              orderdata={{
-                liquidityBuyOrders,
-                liquiditySellOrders,
+              setChain={handleSetChain}
+            />} />
+          <Route path="/earn" element={<Navigate to="/earn/liquidity-pools" replace />} />
+
+          <Route path="/earn/liquidity-pools" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
               }}
-              onMarketSelect={onMarketSelect}
-              marketsData={sortedMarkets}
-              tradesloading={tradesloading}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
               tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute="/earn/liquidity-pools"
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
             />
-            <div className="headerfiller"></div>
-          </>
-        }
-        <div className="app-container">
-          <Routes>
-            <Route path="/" element={<Navigate to="/market" replace />} />
-            <Route path="*" element={<Navigate to="/market" replace />} />
-            <Route
-              path="/leaderboard"
-              element={
-                <Leaderboard
-                  setpopup={setpopup}
-                  orders={orders}
-                  address={address}
-                  username={username}
-                  setIsTransitioning={setIsTransitioning}
-                  setTransitionDirection={setTransitionDirection}
-                />
-              }
+          } />
+
+          <Route path="/earn/liquidity-pools/:poolId" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute={location.pathname}
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
             />
-            <Route path="/lending" element={
-              <EarnVaults
-                setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                selectedToken={selectedToken}
-                tokenBalances={tokenBalances}
-                tokendict={tokendict}
+          } />
+
+          <Route path="/earn/vaults" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute="/earn/vaults"
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+
+          <Route path="/earn/vaults/:vaultAddress" element={
+            <LPVaults
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              tokendict={tokendict}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokenBalances={tokenBalances}
+              currentRoute={location.pathname}
+              onRouteChange={(route) => navigate(route)}
+              connected={connected}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              selectedVaultForAction={selectedVaultForAction}
+              setSelectedVaultForAction={setSelectedVaultForAction}
+              vaultDepositAmount={vaultDepositAmount}
+              setVaultDepositAmount={setVaultDepositAmount}
+              vaultWithdrawAmount={vaultWithdrawAmount}
+              setVaultWithdrawAmount={setVaultWithdrawAmount}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+            />
+          } />
+          <Route
+            path="/launchpad"
+            element={
+              <Launchpad
                 address={address}
-                connected={connected}
-                refetch={refetch}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                usdc={usdc}
-                wethticker={wethticker}
-                ethticker={ethticker}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
                 sendUserOperationAsync={sendUserOperationAsync}
                 waitForTxReceipt={waitForTxReceipt}
-                activechain={activechain}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                  logout: logout,
+                }}
                 setChain={handleSetChain}
-              />} />
-            <Route path="/earn" element={<Navigate to="/earn/liquidity-pools" replace />} />
-
-            <Route path="/earn/liquidity-pools" element={
-              <LPVaults
                 setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                tokendict={tokendict}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokenBalances={tokenBalances}
-                currentRoute="/earn/liquidity-pools"
-                onRouteChange={(route) => navigate(route)}
-                connected={connected}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                selectedVaultForAction={selectedVaultForAction}
-                setSelectedVaultForAction={setSelectedVaultForAction}
-                vaultDepositAmount={vaultDepositAmount}
-                setVaultDepositAmount={setVaultDepositAmount}
-                vaultWithdrawAmount={vaultWithdrawAmount}
-                setVaultWithdrawAmount={setVaultWithdrawAmount}
-                isVaultDepositSigning={isVaultDepositSigning}
-                setIsVaultDepositSigning={setIsVaultDepositSigning}
-                isVaultWithdrawSigning={isVaultWithdrawSigning}
-                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
               />
-            } />
-
-            <Route path="/earn/liquidity-pools/:poolId" element={
-              <LPVaults
-                setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                tokendict={tokendict}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokenBalances={tokenBalances}
-                currentRoute={location.pathname}
-                onRouteChange={(route) => navigate(route)}
-                connected={connected}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                selectedVaultForAction={selectedVaultForAction}
-                setSelectedVaultForAction={setSelectedVaultForAction}
-                vaultDepositAmount={vaultDepositAmount}
-                setVaultDepositAmount={setVaultDepositAmount}
-                vaultWithdrawAmount={vaultWithdrawAmount}
-                setVaultWithdrawAmount={setVaultWithdrawAmount}
-                isVaultDepositSigning={isVaultDepositSigning}
-                setIsVaultDepositSigning={setIsVaultDepositSigning}
-                isVaultWithdrawSigning={isVaultWithdrawSigning}
-                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              />
-            } />
-
-            <Route path="/earn/vaults" element={
-              <LPVaults
-                setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                tokendict={tokendict}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokenBalances={tokenBalances}
-                currentRoute="/earn/vaults"
-                onRouteChange={(route) => navigate(route)}
-                connected={connected}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                selectedVaultForAction={selectedVaultForAction}
-                setSelectedVaultForAction={setSelectedVaultForAction}
-                vaultDepositAmount={vaultDepositAmount}
-                setVaultDepositAmount={setVaultDepositAmount}
-                vaultWithdrawAmount={vaultWithdrawAmount}
-                setVaultWithdrawAmount={setVaultWithdrawAmount}
-                isVaultDepositSigning={isVaultDepositSigning}
-                setIsVaultDepositSigning={setIsVaultDepositSigning}
-                isVaultWithdrawSigning={isVaultWithdrawSigning}
-                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              />
-            } />
-
-            <Route path="/earn/vaults/:vaultAddress" element={
-              <LPVaults
-                setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                tokendict={tokendict}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokenBalances={tokenBalances}
-                currentRoute={location.pathname}
-                onRouteChange={(route) => navigate(route)}
-                connected={connected}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                selectedVaultForAction={selectedVaultForAction}
-                setSelectedVaultForAction={setSelectedVaultForAction}
-                vaultDepositAmount={vaultDepositAmount}
-                setVaultDepositAmount={setVaultDepositAmount}
-                vaultWithdrawAmount={vaultWithdrawAmount}
-                setVaultWithdrawAmount={setVaultWithdrawAmount}
-                isVaultDepositSigning={isVaultDepositSigning}
-                setIsVaultDepositSigning={setIsVaultDepositSigning}
-                isVaultWithdrawSigning={isVaultWithdrawSigning}
-                setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              />
-            } />
-            <Route
-              path="/launchpad"
-              element={
-                <Launchpad
-                  address={address}
-                  sendUserOperationAsync={sendUserOperationAsync}
-                  waitForTxReceipt={waitForTxReceipt}
-                  account={{
-                    connected: connected,
-                    address: address,
-                    chainId: userchain,
-                    logout: logout,
-                  }}
-                  setChain={handleSetChain}
-                  setpopup={setpopup}
-                />
-              }
+            }
+          />
+          <Route path="/meme/:tokenAddress" element={
+            <MemeInterface
+              tradingMode={tradingMode}
+              sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
+              sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+              sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+              marketsData={marketsData}
+              onMarketSelect={onMarketSelect}
+              setSendTokenIn={setSendTokenIn}
+              setpopup={setpopup}
+              tokenList={memoizedTokenList}
+              sendUserOperationAsync={sendUserOperationAsync}
+              waitForTxReceipt={waitForTxReceipt}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              setChain={handleSetChain}
+              address={address}
+              // Add wallet-related props
+              subWallets={subWallets}
+              walletTokenBalances={walletTokenBalances}
+              activeWalletPrivateKey={oneCTSigner}
+              setOneCTSigner={setOneCTSigner}
+              refetch={refetch}
+              isBlurred={isBlurred}
+              // Add wallet balance refresh functions for live updates
+              refreshWalletBalance={refreshWalletBalance}
+              forceRefreshAllWallets={forceRefreshAllWallets}
+              // Add missing props that MemeInterface needs
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokendict={tokendict}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
             />
-            <Route path="/meme/:tokenAddress" element={
-              <MemeInterface
-                tradingMode={tradingMode}
-                sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
-                sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-                sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
-                marketsData={marketsData}
+          } />
+
+          <Route
+            path="/explorer"
+            element={
+              <TokenExplorer
+                setpopup={setpopup}
+                appliedFilters={appliedExplorerFilters}
+                activeFilterTab={activeExplorerFilterTab}
+                onOpenFiltersForColumn={handleOpenFiltersForColumn}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={waitForTxReceipt}
+              />
+            }
+          />
+          <Route
+            path="/portfolio"
+            element={
+              <Portfolio
+                orders={orders}
+                tradehistory={tradehistory}
+                trades={tradesByMarket}
+                canceledorders={canceledorders}
+                tokenList={memoizedTokenList}
+                router={router}
+                address={address ?? ''}
+                isBlurred={isBlurred}
+                setIsBlurred={setIsBlurred}
                 onMarketSelect={onMarketSelect}
                 setSendTokenIn={setSendTokenIn}
                 setpopup={setpopup}
-                tokenList={memoizedTokenList}
-                sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
+                tokenBalances={tokenBalances}
+                totalAccountValue={totalAccountValue}
+                setTotalVolume={setTotalVolume}
+                totalVolume={totalVolume}
+                chartData={typeof totalAccountValue === 'number' ? [
+                  ...chartData.slice(0, -1),
+                  {
+                    ...chartData[chartData.length - 1],
+                    value: totalAccountValue,
+                  },
+                ] : chartData}
+                portChartLoading={portChartLoading}
+                chartDays={chartDays}
+                setChartDays={setChartDays}
+                totalClaimableFees={totalClaimableFees}
+                claimableFees={claimableFees}
+                refLink={refLink}
+                setRefLink={setRefLink}
+                filter={filter}
+                setFilter={setFilter}
+                onlyThisMarket={onlyThisMarket}
+                setOnlyThisMarket={setOnlyThisMarket}
                 account={{
                   connected: connected,
                   address: address,
                   chainId: userchain,
+                  logout: logout,
                 }}
+                refetch={refetch}
+                sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
-                address={address}
+                waitForTxReceipt={waitForTxReceipt}
+                marketsData={marketsData}
+                usedRefLink={usedRefLink}
+                setUsedRefLink={setUsedRefLink}
+                usedRefAddress={usedRefAddress}
+                setUsedRefAddress={setUsedRefAddress}
+                client={client}
+                activechain={activechain}
+                markets={markets}
+                subWallets={subWallets}
+                setSubWallets={saveSubWallets}
+                walletTokenBalances={walletTokenBalances}
+                walletTotalValues={walletTotalValues}
+                walletsLoading={walletsLoading}
+                subwalletBalanceLoading={subwalletBalanceLoading}
+                refreshWalletBalance={refreshWalletBalance}
+                forceRefreshAllWallets={forceRefreshAllWallets}
+                setOneCTSigner={setOneCTSigner}
+                isVaultDepositSigning={isVaultDepositSigning}
+                setIsVaultDepositSigning={setIsVaultDepositSigning}
+                handleSetChain={handleSetChain}
+                handleSubwalletTransfer={handleSubwalletTransfer}
+                createSubWallet={createSubWallet}
+                signTypedDataAsync={signTypedDataAsync}
+                keccak256={keccak256}
+                Wallet={Wallet}
+                activeWalletPrivateKey={oneCTSigner}
               />
-            } />
-            <Route
-              path="/explorer"
-              element={
-                <TokenExplorer
-                  setpopup={setpopup}
-                  appliedFilters={appliedExplorerFilters}
-                  activeFilterTab={activeExplorerFilterTab}
-                  onOpenFiltersForColumn={handleOpenFiltersForColumn}
-                  sendUserOperationAsync={sendUserOperationAsync}
-                  waitForTxReceipt={waitForTxReceipt}
-                />
-              }
-            />
-            <Route
-              path="/portfolio"
-              element={
-                <Portfolio
-                  orders={orders}
-                  tradehistory={tradehistory}
-                  trades={tradesByMarket}
-                  canceledorders={canceledorders}
-                  tokenList={memoizedTokenList}
-                  router={router}
-                  address={address ?? ''}
-                  isBlurred={isBlurred}
-                  setIsBlurred={setIsBlurred}
-                  onMarketSelect={onMarketSelect}
-                  setSendTokenIn={setSendTokenIn}
-                  setpopup={setpopup}
-                  tokenBalances={tokenBalances}
-                  totalAccountValue={totalAccountValue}
-                  setTotalVolume={setTotalVolume}
-                  totalVolume={totalVolume}
-                  chartData={typeof totalAccountValue === 'number' ? [
-                    ...chartData.slice(0, -1),
-                    {
-                      ...chartData[chartData.length - 1],
-                      value: totalAccountValue,
-                    },
-                  ] : chartData}
-                  portChartLoading={portChartLoading}
-                  chartDays={chartDays}
-                  setChartDays={setChartDays}
-                  totalClaimableFees={totalClaimableFees}
-                  claimableFees={claimableFees}
-                  refLink={refLink}
-                  setRefLink={setRefLink}
-                  filter={filter}
-                  setFilter={setFilter}
-                  onlyThisMarket={onlyThisMarket}
-                  setOnlyThisMarket={setOnlyThisMarket}
-                  account={{
-                    connected: connected,
-                    address: address,
-                    chainId: userchain,
-                    logout: logout,
-                  }}
-                  refetch={refetch}
-                  sendUserOperationAsync={sendUserOperationAsync}
-                  setChain={handleSetChain}
-                  waitForTxReceipt={waitForTxReceipt}
-                  marketsData={marketsData}
-                  usedRefLink={usedRefLink}
-                  setUsedRefLink={setUsedRefLink}
-                  usedRefAddress={usedRefAddress}
-                  setUsedRefAddress={setUsedRefAddress}
-                  client={client}
-                  activechain={activechain}
-                  markets={markets}
-                  subWallets={subWallets}
-                  setSubWallets={saveSubWallets}
-                  walletTokenBalances={walletTokenBalances}
-                  walletTotalValues={walletTotalValues}
-                  walletsLoading={walletsLoading}
-                  subwalletBalanceLoading={subwalletBalanceLoading}
-                  refreshWalletBalance={refreshWalletBalance}
-                  forceRefreshAllWallets={forceRefreshAllWallets}
-                  setOneCTSigner={setOneCTSigner}
-                  isVaultDepositSigning={isVaultDepositSigning}
-                  setIsVaultDepositSigning={setIsVaultDepositSigning}
-                  handleSetChain={handleSetChain}
-                  handleSubwalletTransfer={handleSubwalletTransfer}
-                  createSubWallet={createSubWallet}
-                  signTypedDataAsync={signTypedDataAsync}
-                  keccak256={keccak256}
-                  Wallet={Wallet}
-                  activeWalletPrivateKey={oneCTSigner}
-                />
-              }
-            />
-            <Route path="/swap" element={TradeLayout(swap)} />
-            <Route path="/market" element={TradeLayout(swap)} />
-            <Route path="/limit" element={TradeLayout(limit)} />
-            <Route path="/send" element={TradeLayout(send)} />
-            <Route path="/scale" element={TradeLayout(scale)} />
+            }
+          />
+          <Route path="/swap" element={TradeLayout(swap)} />
+          <Route path="/market" element={TradeLayout(swap)} />
+          <Route path="/limit" element={TradeLayout(limit)} />
+          <Route path="/send" element={TradeLayout(send)} />
+          <Route path="/scale" element={TradeLayout(scale)} />
 
-          </Routes>
-        </div>
+        </Routes>
       </div>
-    );
+    </div>
+  );
 }
 
 export default App;

@@ -491,7 +491,6 @@
 .draggable-wallet-item{
     display:flex;
     align-items:center;
-    gap:12px;
     padding: 4px 12px;
     cursor:grab;
     transition:all.2s ease
@@ -532,6 +531,7 @@
     gap:4px;
     align-items:center;
     height: 30px;
+    padding-left: 10px;
 }
 .wallet-drag-balance{
     display: flex;
@@ -3214,4 +3214,94 @@
 
 .pk-input-container .pk-error-message {
   margin-top: 8px;
+}
+
+/* Add these new styles to Portfolio.css */
+
+.wallet-active-checkbox-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.wallet-active-checkbox {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 1.5px solid rgba(170, 174, 207, 0.3);
+  border-radius: 3px;
+  background: transparent;
+  position: relative;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.wallet-active-checkbox:hover {
+  border-color: rgba(170, 174, 207, 0.6);
+  background: rgba(170, 174, 207, 0.05);
+}
+
+.wallet-active-checkbox:checked {
+  background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+  border: none;
+}
+
+.wallet-active-checkbox:checked::after {
+  content: '';
+  position: absolute;
+  left: 5.5px;
+  top: 1.5px;
+  width: 6px;
+  height: 10px;
+  border: solid #0f0f12;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+
+.draggable-wallet-item {
+  display: flex;
+  align-items: center;
+  gap: 0px;
+  padding: 4px 12px;
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+
+.wallet-drag-actions .wallet-action-button:has(svg[viewBox="0 0 24 24"]:not([xmlns])) {
+  display: none;
+}
+
+.wallet-drag-info {
+  display: flex;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.wallet-active-checkbox-container {
+  pointer-events: auto;
+}
+
+.draggable-wallet-item.dragging .wallet-active-checkbox-container {
+  pointer-events: none;
+}
+
+.wallet-active-checkbox:checked ~ .wallet-drag-info .wallet-drag-name,
+.wallet-drag-name.active {
+  color: #d8dcff !important;
+  font-weight: 500;
+}
+
+.wallet-active-checkbox-container .tooltip-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }

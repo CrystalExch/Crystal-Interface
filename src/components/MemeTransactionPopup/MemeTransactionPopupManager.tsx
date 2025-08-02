@@ -111,7 +111,7 @@ const MemeTransactionPopupManager: React.FC = () => {
     <div className="meme-transaction-popup-manager">
       {visiblePopups.map((popup, index) => {
         const isNew = newPopupIds.has(popup.id);
-        const y = index * 50; // row height
+        const y = index * 60; 
 
         return (
           <div

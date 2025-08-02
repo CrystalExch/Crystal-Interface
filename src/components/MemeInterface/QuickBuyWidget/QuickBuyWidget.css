@@ -527,3 +527,264 @@
     }
 }
 
+.quickbuy-wallets-panel {
+    position: fixed;
+    width: 280px;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    border-top-right-radius: 8px;
+    border-bottom-right-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(20px);
+    z-index: 99;
+    display: flex;
+    flex-direction: column;
+    animation: slideInFromRight 0.3s ease;
+    color: #fff;
+    height: 250px;
+    margin-left: -14px;
+    margin-top: 5px;
+}
+
+@keyframes slideInFromRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.quickbuy-wallets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 16px;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+    border-radius: 8px 8px 0 0;
+}
+
+.quickbuy-wallets-title {
+    color: #eceefd;
+    font-size: 0.9rem;
+    letter-spacing: -0.3px;
+}
+
+.quickbuy-wallets-count {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+}
+
+.quickbuy-wallets-list {
+    flex: 1;
+    overflow-y: auto;
+    max-height: 400px;
+}
+
+.quickbuy-wallets-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.quickbuy-wallets-list::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+}
+
+.quickbuy-wallets-list::-webkit-scrollbar-thumb {
+    background: rgba(179, 184, 249, 0.2);
+    border-radius: 2px;
+}
+
+.quickbuy-wallets-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.quickbuy-wallets-empty-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+}
+
+.quickbuy-wallets-empty-subtitle {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
+}
+
+.quickbuy-wallet-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 12px;
+    padding-bottom: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+    margin-bottom: 4px;
+}
+
+.quickbuy-wallet-item:hover {
+    background: rgba(179, 184, 249, 0.05);
+}
+
+
+.quickbuy-wallet-checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.quickbuy-wallet-checkbox {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1.5px solid rgba(170, 174, 207, 0.3);
+    border-radius: 3px;
+    background: transparent;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.quickbuy-wallet-checkbox:hover {
+    border-color: rgba(170, 174, 207, 0.6);
+    background: rgba(170, 174, 207, 0.05);
+}
+
+.quickbuy-wallet-checkbox:checked {
+    background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+    border:none;
+    box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+}
+
+.quickbuy-wallet-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 4.5px;
+    top: 1px;
+    width: 5px;
+    height: 8px;
+    border: solid #0f0f12;
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+
+.quickbuy-wallet-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.quickbuy-wallet-name {
+    color: #fff;
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.quickbuy-wallet-item.active .quickbuy-wallet-name {
+    color: #d8dcff;
+}
+
+.quickbuy-wallet-address {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.75rem;
+    letter-spacing: -0.2px;
+    line-height: 1;
+}
+
+.quickbuy-wallet-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.quickbuy-wallet-balance-amount {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+}
+
+.quickbuy-wallet-balance-amount.blurred {
+    filter: blur(6px);
+    user-select: none;
+}
+
+.quickbuy-wallet-mon-icon {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+}
+
+.quickbuy-controls-right-side {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.quickbuy-wallets-button {
+    border: 1.5px solid rgba(209, 211, 238, 0.114);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 24px;
+    height: 24px;
+    gap: 5px;
+}
+
+.quickbuy-wallets-button:hover {
+    background: rgba(179, 184, 249, 0.15);
+    border-color: rgba(179, 184, 249, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+
+.quickbuy-wallets-button.active:hover {
+    filter: brightness(1.1);
+}
+
+.quickbuy-wallets-button svg {
+    width: 14px;
+    height: 14px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .quickbuy-wallets-panel {
+        width: calc(100vw - 320px);
+        min-width: 250px;
+    }
+}
+
+
+.quickbuy-wallets-icon{
+    width: 14px;
+    height: 14px;
+}
