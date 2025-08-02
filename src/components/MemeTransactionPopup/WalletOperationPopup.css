@@ -1,12 +1,11 @@
 .wallet-popup-overlay {
   position: fixed;
   inset: 0;
-  z-index: 999999;
+  z-index: 101;
   pointer-events: none;
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  padding-top: 40px;
 }
 
 .wallet-popup-overlay.exiting {
@@ -14,16 +13,20 @@
 }
 
 .wallet-popup-container {
-  background: rgb(10, 10, 10);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  display: flex;
+  justify-content: space-between;
+  background: rgb(8, 8, 8);
+  border: 1px solid rgba(205, 217, 243, 0.15);
+  border-radius: 6px;
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   position: relative;
   overflow: hidden;
-  width: 320px; /* Smaller width for single line */
+  width: 380px; 
   opacity: 1;
-  min-height: 44px; /* Single line height */
+  min-height: 40px; 
+  max-height: 40px;
+  padding-right: 15px;
 }
 
 .wallet-popup-container.slide-in {
@@ -45,8 +48,7 @@
   to { opacity: 0; transform: translateY(-100%); }
 }
 
-/* progress bar */
-.wallet-popup-progress-container {
+/* .wallet-popup-progress-container {
   position: absolute;
   left: 0; right: 0; bottom: 0;
   height: 2px;
@@ -69,45 +71,50 @@
 @keyframes progressBar {
   from { width: 100%; }
   to { width: 0%; }
-}
+} */
 
 .wallet-popup-close {
-  position: absolute;
-  top: 8px; right: 8px;
-  width: 24px; height: 24px;
   display: flex; align-items: center; justify-content: center;
   background: none; border: none; cursor: pointer;
   transition: opacity 0.2s ease;
+  padding: 0;
+}
+.wallet-popup-close img {
+  width: 14px; 
+  height: 14px; 
+  opacity: 0.7;
+  pointer-events: none; /* Make clicks go through to the button */
+  object-fit: contain; /* Ensure image scales properly */
 }
 
-.wallet-popup-close svg {
-  width: 14px; height: 14px; color: #fff; opacity: 0.7;
-}
-
-.wallet-popup-close:hover svg {
+.wallet-popup-close:hover img {
   opacity: 0.95;
 }
-
 .wallet-popup-content {
-  padding: 10px 10px 12px 14px;
-  display: flex; flex-direction: column; gap: 4px;
+  padding: 10px 12px 10px 12px;
+  display: flex;
+  align-items: center;
+  height: 100%;
 }
 
 .wallet-popup-header {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 2px;
+  gap: 8px;
+  flex: 1;
   position: relative;
 }
 
 .wallet-popup-title {
-  color: #ffffffa4;
-  font-size: 0.82rem;
+  color: #f6f8fffb;
+  font-size: 0.85rem;
   font-weight: 400;
   margin: 0;
   letter-spacing: -0.2px;
-  flex: 1; /* Take up remaining space */
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .wallet-popup-subtitle {
@@ -149,18 +156,17 @@
   font-size: 0.75rem;
 }
 
-/* variants */
-.wallet-popup-container.variant-success {
+/* .wallet-popup-container.variant-success {
   border-color: rgba(67, 254, 154, 0.25);
-}
-
+} */
+/* 
 .wallet-popup-container.variant-error {
   border-color: rgba(235, 112, 112, 0.25);
 }
 
 .wallet-popup-container.variant-info {
   border-color: rgba(170, 174, 207, 0.25);
-}
+} */
 
 .wallet-popup-status-icon {
   display: inline-flex;
@@ -168,7 +174,7 @@
   justify-content: center;
   width: 18px; height: 18px;
   border-radius: 999px;
-  flex-shrink: 0; /* Don't shrink */
+  flex-shrink: 0;
 }
 
 .wallet-popup-status-icon.status-success {
@@ -183,22 +189,20 @@
   background: rgba(170, 174, 207, 0.15); color: #aaaecf;
 }
 
-/* Inline loading spinner */
-.wallet-popup-inline-loading-spinner {
-  margin-left: auto; /* Push to right side */
+.wallet-popup-left-spinner {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
 }
 
 .wallet-popup-spinner {
   width: 14px;
   height: 14px;
-  border: 2px solid rgba(255, 255, 255, 0.2);
-  border-top: 2px solid #ffffff;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top: 2px solid #aaaecf;
   border-radius: 50%;
   animation: walletPopupSpinnerRotate 1s linear infinite;
 }
