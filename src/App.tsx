@@ -11931,249 +11931,379 @@ function App() {
             </div>
           </div>
         ) : null}
-        {popup === 22 ? (
-          <div className="modal-overlay">
-            <div className="modal-content vault-action-modal" ref={popupref}>
-              <div className="modal-header">
-                <h2>Deposit to {selectedVaultForAction?.name}</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setpopup(0);
-                    setSelectedVaultForAction(null);
-                    setVaultDepositAmount('');
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
+{popup === 22 ? (
+  <div className="modal-overlay">
+    <div className="modal-content vault-action-modal" ref={popupref}>
+      <div className="modal-header">
+        <h2>Deposit to {selectedVaultForAction?.name}</h2>
+        <button
+          className="modal-close"
+          onClick={() => {
+            setpopup(0);
+            setSelectedVaultForAction(null);
+            setVaultDepositAmount('');
+            setVaultWithdrawAmount('');
+          }}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+
+      <div className="modal-body">
+        <div className="vault-deposit-form">
+
+          <div className="deposit-amounts-section">
+            <div className="deposit-input-group">
+              <div className="deposit-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="0.0"
+                  className="deposit-amount-input"
+                  value={vaultDepositAmount}
+                  onChange={(e) => setVaultDepositAmount(e.target.value)}
+                />
+                <div className="deposit-token-badge">
+                  <img 
+                    src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image} 
+                    alt={selectedVaultForAction?.quoteToken || 'USDC'} 
+                    className="deposit-token-icon" 
+                  />
+                  <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
+                </div>
               </div>
-
-              <div className="modal-body">
-                {/* <div className="vault-action-info">
-                  <div className="vault-action-header">
-                    <h3>{selectedVaultForAction?.name}</h3>
-                    <span className="vault-action-type">{selectedVaultForAction?.type} Vault</span>
-                  </div>
-                  <div className="vault-action-stats">
-                    <div className="vault-stat-item">
-                      <span className="stat-label">APR</span>
-                      <span className="stat-value">{selectedVaultForAction?.apy}%</span>
+              <div className="lp-deposit-balance-wrapper">
+                <div className="lp-deposit-usd-value">
+                  ${((parseFloat(vaultDepositAmount) || 0) * ((selectedVaultForAction?.quoteToken || 'USDC') === 'USDC' ? 1 : 1)).toFixed(2)}
+                </div>
+                <div className="deposit-balance">
+                  <div className="deposit-balance-value">
+                  <img src={walleticon} className="balance-wallet-icon" />
+                  {customRound(
+                    Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.address] ?? 0) /
+                    10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.decimals ?? 18),
+                    3,
+                  )
+                    .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                    .replace(/\.0+$/, '')} {selectedVaultForAction?.quoteToken || 'USDC'}
                     </div>
-                    <div className="vault-stat-item">
-                      <span className="stat-label">TVL</span>
-                      <span className="stat-value">{selectedVaultForAction?.totalDeposits}</span>
-                    </div>
-                    <div className="vault-stat-item">
-                      <span className="stat-label">Your Balance</span>
-                      <span className="stat-value">${selectedVaultForAction?.userBalance || '0.00'}</span>
-                    </div>
-                  </div>
-                </div> */}
-
-                <div className="vault-deposit-form">
-                  <div className="deposit-form-group">
-                    <div className="vault-input-container">
-                      <input
-                        type="number"
-                        value={vaultDepositAmount}
-                        onChange={(e) => setVaultDepositAmount(e.target.value)}
-                        placeholder="0.00"
-                        className="vault-amount-input"
-                        min="0"
-                        step="0.01"
-                      />
-                      <div className="vault-input-token">
-                        <img src={Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.image} alt="USDC" className="vault-token-icon" />
-                        <span>USDC</span>
-                      </div>
-                    </div>
-                    <div className="vault-balance-info">
-                      <span>
-                        <img src={walleticon} className="balance-wallet-icon" />{' '}
-                        {customRound(
-                          Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.address] ?? 0) /
-                          10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === 'USDC')?.decimals ?? 18),
+                  <button
+                    className="vault-max-button"
+                    onClick={() => {
+                      const token = Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'));
+                      if (token) {
+                        const maxAmount = customRound(
+                          Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
                           3,
                         )
                           .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                          .replace(/\.0+$/, '')} USDC</span>
-                      <button
-                        className="vault-max-button"
-                        onClick={() => {
-                          const usdcToken = Object.values(tokendict).find((t: any) => t.ticker === 'USDC');
-                          if (usdcToken) {
-                            const maxAmount = customRound(
-                              Number(tokenBalances[usdcToken.address] ?? 0) / 10 ** Number(usdcToken.decimals ?? 18),
-                              3,
-                            )
-                              .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                              .replace(/\.0+$/, '');
-                            setVaultDepositAmount(maxAmount);
-                          }
-                        }}
-                      >
-                        MAX
-                      </button>
-                    </div>
-                  </div>
+                          .replace(/\.0+$/, '');
+                        setVaultDepositAmount(maxAmount);
+                      }
+                    }}
+                  >
+                    MAX
+                  </button>
                 </div>
               </div>
-
-              <div className="modal-footer">
-                <button
-                  className={`vault-confirm-button ${(!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning) ? 'disabled' : ''}`}
-                  onClick={async () => {
-                    if (!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0) return;
-
-                    setIsVaultDepositSigning(true);
-                    try {
-                      console.log('Depositing:', vaultDepositAmount, 'to vault:', selectedVaultForAction?.id);
-                      await new Promise(resolve => setTimeout(resolve, 2000));
-                      setpopup(0);
-                      setSelectedVaultForAction(null);
-                      setVaultDepositAmount('');
-                    } catch (error) {
-                      console.error('Deposit failed:', error);
-                    } finally {
-                      setIsVaultDepositSigning(false);
-                    }
-                  }}
-                  disabled={!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning}
-                >
-                  {isVaultDepositSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Depositing...
-                    </div>
-                  ) : (
-                    'Deposit'
-                  )}
-                </button>
-              </div>
             </div>
-          </div>
-        ) : null}
-        {popup === 23 ? (
-          <div className="modal-overlay">
-            <div className="modal-content vault-action-modal" ref={popupref}>
-              <div className="modal-header">
-                <h2>Withdraw from {selectedVaultForAction?.name}</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setpopup(0);
-                    setSelectedVaultForAction(null);
-                    setVaultWithdrawAmount('');
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
-              </div>
 
-              <div className="modal-body">
-                {/* <div className="vault-action-info">
-                  <div className="vault-action-header">
-                    <h3>{selectedVaultForAction?.name}</h3>
-                    <span className="vault-action-type">{selectedVaultForAction?.type} Vault</span>
+            {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
+              <div className="deposit-input-group">
+                <div className="deposit-input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="0.0"
+                    className="deposit-amount-input"
+                    value={vaultWithdrawAmount}
+                    onChange={(e) => setVaultWithdrawAmount(e.target.value)}
+                  />
+                  <div className="deposit-token-badge">
+                    <img 
+                      src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image} 
+                      alt={selectedVaultForAction.tradableTokens[0]} 
+                      className="deposit-token-icon" 
+                    />
+                    <span>{selectedVaultForAction.tradableTokens[0]}</span>
                   </div>
-                  <div className="vault-action-stats">
-                    <div className="vault-stat-item">
-                      <span className="stat-label">Your Balance</span>
-                      <span className="stat-value">${selectedVaultForAction?.userBalance || '0.00'}</span>
-                    </div>
-                    <div className="vault-stat-item">
-                      <span className="stat-label">Total Earned</span>
-                      <span className="stat-value positive">${selectedVaultForAction?.userEarnings || '0.00'}</span>
-                    </div>
+                </div>
+                <div className="lp-deposit-balance-wrapper">
+                  <div className="lp-deposit-usd-value">
+                    ${((parseFloat(vaultWithdrawAmount) || 0) * 1).toFixed(2)}
                   </div>
-                </div> */}
+                  <div className="deposit-balance">
+                                      <div className="deposit-balance-value">
 
-                <div className="vault-withdraw-form">
-                  <div className="withdrawal-form-group">
-                    <div className="vault-input-container">
-                      <input
-                        type="number"
-                        value={vaultWithdrawAmount}
-                        onChange={(e) => setVaultWithdrawAmount(e.target.value)}
-                        placeholder="0.00"
-                        className="vault-amount-input"
-                        min="0"
-                        max={selectedVaultForAction?.userBalance || '0'}
-                        step="0.01"
-                      />
-                      <div className="vault-input-token">
-                        <span>USDC</span>
+                    <img src={walleticon} className="balance-wallet-icon" />
+                    {customRound(
+                      Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.address] ?? 0) /
+                      10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.decimals ?? 18),
+                      3,
+                    )
+                      .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                      .replace(/\.0+$/, '')} {selectedVaultForAction.tradableTokens[0]}
                       </div>
-                    </div>
-                    <div className="vault-balance-info">
-                      <span>              <img src={walleticon} className="balance-wallet-icon" />{' '}
-                        {selectedVaultForAction?.userBalance || '0.00'}</span>
-                      <button
-                        className="vault-max-button"
-                        onClick={() => {
-                          setVaultWithdrawAmount(selectedVaultForAction?.userBalance || '0');
-                        }}
-                      >
-                        MAX
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* <div className="vault-withdraw-warning">
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                    <button
+                      className="vault-max-button"
+                      onClick={() => {
+                        const token = Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0]);
+                        if (token) {
+                          const maxAmount = customRound(
+                            Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
+                            3,
+                          )
+                            .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                            .replace(/\.0+$/, '');
+                          setVaultWithdrawAmount(maxAmount);
+                        }
+                      }}
                     >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="12" y1="8" x2="12" y2="12" />
-                      <line x1="12" y1="16" x2="12.01" y2="16" />
-                    </svg>
-                    <span>Withdrawals may take up to 24 hours to process depending on vault strategy.</span>
-                  </div> */}
+                      MAX
+                    </button>
+                  </div>
                 </div>
               </div>
+            )}
+          </div>
 
-              <div className="modal-footer">
-                <button
-                  className={`vault-confirm-button withdraw ${(!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning) ? 'disabled' : ''}`}
-                  onClick={async () => {
-                    if (!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0) return;
+          <div className="deposit-summary">
+            <div className="deposit-summary-row">
+              <span>Vault Type:</span>
+              <span>{selectedVaultForAction?.type}</span>
+            </div>
+            <div className="deposit-summary-row">
+              <span>Total Value:</span>
+              <span>
+                {(() => {
+                  const firstValue = parseFloat(vaultDepositAmount) || 0;
+                  const secondValue = parseFloat(vaultWithdrawAmount) || 0;
+                  const total = firstValue + secondValue;
+                  return `${total.toFixed(2)}`;
+                })()}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                    setIsVaultWithdrawSigning(true);
-                    try {
-                      console.log('Withdrawing:', vaultWithdrawAmount, 'from vault:', selectedVaultForAction?.id);
-                      await new Promise(resolve => setTimeout(resolve, 2000));
+      <div className="modal-footer">
+        <button
+          className={`vault-confirm-button ${(!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning) ? 'disabled' : ''}`}
+          onClick={async () => {
+            if (!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0) return;
 
-                      setpopup(0);
-                      setSelectedVaultForAction(null);
-                      setVaultWithdrawAmount('');
-                    } catch (error) {
-                      console.error('Withdrawal failed:', error);
-                    } finally {
-                      setIsVaultWithdrawSigning(false);
-                    }
-                  }}
-                  disabled={!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning}
-                >
-                  {isVaultWithdrawSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Withdrawing...
-                    </div>
-                  ) : (
-                    'Withdraw'
-                  )}
-                </button>
+            setIsVaultDepositSigning(true);
+            try {
+              console.log('Depositing:', vaultDepositAmount, 'and', vaultWithdrawAmount, 'to vault:', selectedVaultForAction?.id);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+              setpopup(0);
+              setSelectedVaultForAction(null);
+              setVaultDepositAmount('');
+              setVaultWithdrawAmount('');
+            } catch (error) {
+              console.error('Deposit failed:', error);
+            } finally {
+              setIsVaultDepositSigning(false);
+            }
+          }}
+          disabled={!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning}
+        >
+          {isVaultDepositSigning ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              Depositing...
+            </div>
+          ) : (
+            'Deposit'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
+
+{popup === 23 ? (
+  <div className="modal-overlay">
+    <div className="modal-content vault-action-modal" ref={popupref}>
+      <div className="modal-header">
+        <h2>Withdraw from {selectedVaultForAction?.name}</h2>
+        <button
+          className="modal-close"
+          onClick={() => {
+            setpopup(0);
+            setSelectedVaultForAction(null);
+            setVaultWithdrawAmount('');
+            setVaultDepositAmount('');
+          }}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+
+      <div className="modal-body">
+        <div className="vault-withdraw-form">
+
+          <div className="withdraw-section">
+            <div className="deposit-input-group">
+              <div className="deposit-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="0.0"
+                  className="deposit-amount-input"
+                  value={vaultWithdrawAmount}
+                  onChange={(e) => setVaultWithdrawAmount(e.target.value)}
+                />
+                <div className="deposit-token-badge">
+                  <img 
+                    src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image} 
+                    alt={selectedVaultForAction?.quoteToken || 'USDC'} 
+                    className="deposit-token-icon" 
+                  />
+                  <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
+                </div>
+              </div>
+              <div className="lp-deposit-balance-wrapper">
+                <div className="lp-deposit-usd-value">
+                  ${((parseFloat(vaultWithdrawAmount) || 0) * ((selectedVaultForAction?.quoteToken || 'USDC') === 'USDC' ? 1 : 1)).toFixed(2)}
+                </div>
+                <div className="deposit-balance">
+                  <img src={walleticon} className="balance-wallet-icon" />
+                  Your Balance: {selectedVaultForAction?.userBalance || '0.00'} {selectedVaultForAction?.quoteToken || 'USDC'}
+                  <button
+                    className="vault-max-button"
+                    onClick={() => {
+                      setVaultWithdrawAmount(selectedVaultForAction?.userBalance || '0');
+                    }}
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Tradable Token Withdrawal */}
+            {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
+              <div className="deposit-input-group">
+                <div className="deposit-input-wrapper">
+                  <input
+                    type="text"
+                    placeholder="0.0"
+                    className="deposit-amount-input"
+                    value={vaultDepositAmount}
+                    onChange={(e) => setVaultDepositAmount(e.target.value)}
+                  />
+                  <div className="deposit-token-badge">
+                    <img 
+                      src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image} 
+                      alt={selectedVaultForAction.tradableTokens[0]} 
+                      className="deposit-token-icon" 
+                    />
+                    <span>{selectedVaultForAction.tradableTokens[0]}</span>
+                  </div>
+                </div>
+                <div className="lp-deposit-balance-wrapper">
+                  <div className="lp-deposit-usd-value">
+                    ${((parseFloat(vaultDepositAmount) || 0) * 1).toFixed(2)}
+                  </div>
+                  <div className="deposit-balance">
+                    <img src={walleticon} className="balance-wallet-icon" />
+                    Your Balance: {customRound(
+                      Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.address] ?? 0) /
+                      10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.decimals ?? 18),
+                      3,
+                    )
+                      .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                      .replace(/\.0+$/, '')} {selectedVaultForAction.tradableTokens[0]}
+                    <button
+                      className="vault-max-button"
+                      onClick={() => {
+                        const token = Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0]);
+                        if (token) {
+                          const maxAmount = customRound(
+                            Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
+                            3,
+                          )
+                            .replace(/(\.\d*?[1-9])0+$/g, '$1')
+                            .replace(/\.0+$/, '');
+                          setVaultDepositAmount(maxAmount);
+                        }
+                      }}
+                    >
+                      MAX
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="withdraw-preview">
+              <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Withdrawal Summary:</h5>
+              <div className="withdraw-token-preview">
+                <div className="withdraw-token-item">
+                  <img 
+                    src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image} 
+                    alt={selectedVaultForAction?.quoteToken || 'USDC'} 
+                    className="withdraw-token-icon" 
+                  />
+                  <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
+                  <span style={{ marginLeft: 'auto', color: '#fff' }}>
+                    {parseFloat(vaultWithdrawAmount || '0').toFixed(4)}
+                  </span>
+                </div>
+                {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
+                  <div className="withdraw-token-item">
+                    <img 
+                      src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image} 
+                      alt={selectedVaultForAction.tradableTokens[0]} 
+                      className="withdraw-token-icon" 
+                    />
+                    <span>{selectedVaultForAction.tradableTokens[0]}</span>
+                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
+                      {parseFloat(vaultDepositAmount || '0').toFixed(4)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-        ) : null}
+        </div>
+      </div>
+
+      <div className="modal-footer">
+        <button
+          className={`vault-confirm-button withdraw ${(!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning) ? 'disabled' : ''}`}
+          onClick={async () => {
+            if (!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0) return;
+
+            setIsVaultWithdrawSigning(true);
+            try {
+              console.log('Withdrawing:', vaultWithdrawAmount, 'and', vaultDepositAmount, 'from vault:', selectedVaultForAction?.id);
+              await new Promise(resolve => setTimeout(resolve, 2000));
+
+              setpopup(0);
+              setSelectedVaultForAction(null);
+              setVaultWithdrawAmount('');
+              setVaultDepositAmount('');
+            } catch (error) {
+              console.error('Withdrawal failed:', error);
+            } finally {
+              setIsVaultWithdrawSigning(false);
+            }
+          }}
+          disabled={!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning}
+        >
+          {isVaultWithdrawSigning ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              Withdrawing...
+            </div>
+          ) : (
+            'Withdraw'
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
         {popup === 24 ? (
           <div className="explorer-filters-popup" ref={popupref}>
             <div className="explorer-filters-header">

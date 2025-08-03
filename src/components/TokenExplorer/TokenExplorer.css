@@ -1320,7 +1320,7 @@
   opacity: 0;
   padding: 4px;
   transition: all 0.2s ease;
-  z-index: 1000;
+  z-index: 11;
   backdrop-filter: blur(4px);
   filter: brightness(0.7);
 }
