@@ -2235,7 +2235,7 @@ useEffect(() => {
           </div>
         );
 
-      case 'wallets':
+      case 'wallets':    
         return (
           <div className="wallets-drag-drop-layout">
             <div className="wallets-left-panel">
@@ -2684,6 +2684,12 @@ useEffect(() => {
   </div>
 )}
           </div>
+        );
+      case 'trenches':
+        return (
+          <div className="trenches-container">
+            <button onClick={() => setpopup(27)}>View PNL</button>
+            </div>
         );
     }
   };
