@@ -6,12 +6,14 @@ import NetworkSelector from './NetworkSelector/NetworkSelector';
 import SideMenuOverlay from './SideMenuOverlay/SideMenuOverlay';
 import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistoryMenu';
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
+
+import { formatCommas } from '../../utils/numberDisplayFormat';
+
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
 
 import './Header.css';
-import { formatCommas } from '../../utils/numberDisplayFormat';
 
 interface Language {
   code: string;
@@ -48,14 +50,6 @@ interface HeaderProps {
   tradesByMarket: any;
 }
 
-// Translation function - replace with your actual i18n solution
-const t = (key: string) => {
-  const translations: Record<string, string> = {
-    'connectWallet': 'Connect Wallet',
-  };
-  return translations[key] || key;
-};
-
 const Header: React.FC<HeaderProps> = ({
   setTokenIn,
   setTokenOut,
@@ -90,7 +84,7 @@ const Header: React.FC<HeaderProps> = ({
     { code: 'KR', name: '한국어' },
     { code: 'RU', name: 'русский' },
     { code: 'ID', name: 'Indonesia' },
-    { code: 'VN', name: 'Tiếng Việt'},
+    { code: 'VN', name: 'Tiếng Việt' },
     { code: 'PH', name: 'Filipino' },
   ];
 
@@ -100,21 +94,16 @@ const Header: React.FC<HeaderProps> = ({
   const [outPic, setOutPic] = useState('');
   const backgroundlesslogo = '/CrystalLogo.png';
 
-  // WebSocket constants for live updates
   const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
   const TOTAL_SUPPLY = 1e9;
-  
-  // WebSocket refs
+
   const wsRef = useRef<WebSocket | null>(null);
   const marketSubRef = useRef<string | null>(null);
-  
-  // State for live meme token data updates
+
   const [liveTokenData, setLiveTokenData] = useState<any>({});
 
-  // Check if we're on a meme token page
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
 
-  // WebSocket subscription helper
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     const reqId = Date.now();
     ws.send(JSON.stringify({
@@ -134,12 +123,11 @@ const Header: React.FC<HeaderProps> = ({
     ws.addEventListener('message', handler);
   }, []);
 
-  // Handle market updates from WebSocket
   const updateMarketData = useCallback((log: any, tokenId: string) => {
     if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
-    
+
     const market = log.address.toLowerCase();
-    if (market !== tokenId.toLowerCase()) return; // Only update if it's our token's market
+    if (market !== tokenId.toLowerCase()) return;
 
     const hex = log.data.replace(/^0x/, '');
     const words: string[] = [];
@@ -149,7 +137,7 @@ const Header: React.FC<HeaderProps> = ({
     const isBuy = BigInt('0x' + words[1]);
     const priceRaw = BigInt('0x' + words[2]);
     const counts = BigInt('0x' + words[3]);
-    
+
     const priceEth = Number(priceRaw) / 1e18;
     const buys = Number(counts >> 128n);
     const sells = Number(counts & ((1n << 128n) - 1n));
@@ -165,18 +153,12 @@ const Header: React.FC<HeaderProps> = ({
       volume24h: (prev.volume24h || 0) + (isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18),
     }));
   }, []);
-
-  // Get initial meme token data from navigation state, then merge with live updates
-  const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
-    const token = location.state.tokenData; // Initial Token object from TokenExplorer
-    
-    // Merge initial data with live updates
+const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
+    const token = location.state.tokenData;
     const mergedData = { ...token, ...liveTokenData };
-    
-    // Calculate bonding percentage using live or initial market cap
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
     const bondingPercentage = Math.min((currentMarketCap / 25000) * 100, 100);
-    
+
     return {
       symbol: token.symbol,
       name: token.name,
@@ -189,14 +171,14 @@ const Header: React.FC<HeaderProps> = ({
       created: token.created,
       website: token.website || '',
       twitterHandle: token.twitterHandle || '',
-      // Include live data
+      telegramHandle: token.telegramHandle || '',
+      discordHandle: token.discordHandle || '',
       price: liveTokenData.price || token.price,
       buyTransactions: liveTokenData.buyTransactions || token.buyTransactions,
       sellTransactions: liveTokenData.sellTransactions || token.sellTransactions,
       volume24h: liveTokenData.volume24h || token.volume24h,
     };
   })() : undefined;
-
   useEffect(() => {
     if (activeMarket && tokendict) {
       if (tokendict[activeMarket.baseAddress]) {
@@ -208,7 +190,6 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [activeMarket, tokendict]);
 
-  // Setup WebSocket connection for live meme token updates
   useEffect(() => {
     if (!isMemeTokenPage || !location.state?.tokenData) return;
 
@@ -218,7 +199,6 @@ const Header: React.FC<HeaderProps> = ({
 
     ws.onopen = () => {
       console.log('WebSocket connected for meme token:', token.symbol);
-      // Subscribe to market updates for this specific token
       subscribe(ws, ['logs', { address: token.id }], (subId) => {
         marketSubRef.current = subId;
         console.log('Subscribed to market updates:', subId);
@@ -240,9 +220,8 @@ const Header: React.FC<HeaderProps> = ({
         ws.close();
       }
     };
-  }, [isMemeTokenPage, location.state?.tokenData, subscribe, updateMarketData]);
+  }, [isMemeTokenPage, subscribe, updateMarketData]);
 
-  // Cleanup WebSocket on component unmount
   useEffect(() => {
     return () => {
       if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
@@ -257,7 +236,6 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-  // Fixed the header class logic to prevent layout issues
   const rightHeaderClass = isTradeRoute && !simpleView ? 'right-header-trade' : 'right-header';
   const marketHeader = marketsData?.find(
     (market: any) => market?.address === activeMarket?.address
@@ -266,18 +244,18 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <>
       <header className="app-header">
-        <div className="mobile-left-header"> 
+        <div className="mobile-left-header">
           <div className="extitle">
             <img src={backgroundlesslogo} className="extitle-logo" />
             <span className="crystal-name">CRYSTAL</span>
           </div>
-        </div> 
+        </div>
         <div className="left-header">
           <ChartHeader
             in_icon={inPic}
             out_icon={outPic}
-            price={isMemeTokenPage && memeTokenData ? 
-              memeTokenData.price?.toString() || 'n/a' : 
+            price={isMemeTokenPage && memeTokenData ?
+              memeTokenData.price?.toString() || 'n/a' :
               marketHeader?.currentPrice || 'n/a'
             }
             priceChangeAmount={isMemeTokenPage && memeTokenData ?

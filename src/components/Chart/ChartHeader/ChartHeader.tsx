@@ -31,9 +31,8 @@ interface ChartHeaderProps {
   marketsData: any;
   simpleView: boolean;
   tradesByMarket: any;
-  // Add missing props for meme token support
   isMemeToken?: boolean;
-  memeTokenData?: {
+ memeTokenData?: {
     symbol: string;
     name: string;
     image: string;
@@ -45,6 +44,8 @@ interface ChartHeaderProps {
     created: string;
     website?: string;
     twitterHandle?: string;
+    telegramHandle?: string;
+    discordHandle?: string;
   };
 }
 
@@ -65,7 +66,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
   marketsData,
   simpleView,
   tradesByMarket,
-  // Destructure the missing props
   isMemeToken = false,
   memeTokenData,
 }) => {
@@ -244,7 +244,6 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
         isLoading={isLoading}
         isTradeRoute={isTradeRoute}
         simpleView={simpleView}
-        // Pass the missing props to TokenInfo
         isMemeToken={isMemeToken}
         memeTokenData={memeTokenData}
       />

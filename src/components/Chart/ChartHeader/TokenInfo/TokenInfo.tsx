@@ -8,7 +8,8 @@ import MiniChart from './MiniChart/MiniChart';
 import SortArrow from '../../../OrderCenter/SortArrow/SortArrow';
 import PriceDisplay from '../PriceDisplay/PriceDisplay';
 import TokenIcons from '../TokenIcons/TokenIcons';
-
+import telegram from '../../../../assets/telegram.png';
+import discord from '../../../../assets/discord1.svg';
 import { useSharedContext } from '../../../../contexts/SharedContext';
 import {
   formatCommas,
@@ -60,7 +61,7 @@ interface TokenInfoProps {
   isTradeRoute?: boolean;
   simpleView?: boolean;
   isMemeToken?: boolean;
-  memeTokenData?: {
+ memeTokenData?: {
     symbol: string;
     name: string;
     image: string;
@@ -72,6 +73,8 @@ interface TokenInfoProps {
     created: string;
     website?: string;
     twitterHandle?: string;
+    telegramHandle?: string;
+    discordHandle?: string;
   };
 }
 
@@ -152,9 +155,17 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     window.open(fullUrl, '_blank', 'noopener,noreferrer');
   };
 
-  const handleTwitterOpen = (handle: string) => {
+const handleTwitterOpen = (handle: string) => {
     const cleanHandle = handle.replace('@', '');
     window.open(`https://twitter.com/${cleanHandle}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleTelegramOpen = (handle: string) => {
+    window.open(`https://${handle}`, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleDiscordOpen = (handle: string) => {
+    window.open(`https://${handle}`, '_blank', 'noopener,noreferrer');
   };
 
   const handleImageSearch = (imageUrl: string) => {
@@ -164,7 +175,6 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
       'noopener,noreferrer'
     );
   };
-
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent): void => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
@@ -519,6 +529,25 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
                     </button>
                   )}
 
+                  {memeTokenData.telegramHandle && (
+                    <button
+                      className="meme-interface-social-btn-png"
+                      onClick={() => handleTelegramOpen(memeTokenData.telegramHandle!)}
+                      title="Visit Telegram"
+                    >
+                      <img src={telegram} alt="telegram" width="14" height="14" />
+                    </button>
+                  )}
+
+                  {memeTokenData.discordHandle && (
+                    <button
+                      className="meme-interface-social-btn-png"
+                      onClick={() => handleDiscordOpen(memeTokenData.discordHandle!)}
+                      title="Visit Discord"
+                    >
+                      <img src={discord} alt="discord" width="14" height="14" />
+                    </button>
+                  )}
 
                   <button
                     className="meme-interface-social-btn"
@@ -536,12 +565,9 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
 
           <div className="meme-interface-token-header-right">
             <div className="meme-interface-token-metrics">
-              <div className="meme-interface-token-metric">
-                <span className="meme-interface-metric-label">Market Cap</span>
-                <span className="meme-interface-metric-value">
+                <span className="meme-interface-market-cap">
                   {formatPrice(memeTokenData.marketCap)}
                 </span>
-              </div>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">

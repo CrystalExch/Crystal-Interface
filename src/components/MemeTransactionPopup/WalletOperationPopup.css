@@ -1,0 +1,217 @@
+.wallet-popup-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 101;
+  pointer-events: none;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.wallet-popup-overlay.exiting {
+  pointer-events: none;
+}
+
+.wallet-popup-container {
+  display: flex;
+  justify-content: space-between;
+  background: rgb(8, 8, 8);
+  border: 1px solid rgba(205, 217, 243, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
+  pointer-events: auto;
+  position: relative;
+  overflow: hidden;
+  width: 380px; 
+  opacity: 1;
+  min-height: 50px; 
+  max-height: 50px;
+  padding-right: 15px;
+}
+
+.wallet-popup-container.slide-in {
+  animation: slideDownFromTop 0.3s cubic-bezier(0.2, 0, 0.1, 1);
+}
+
+.wallet-popup-container.slide-out {
+  animation: slideOutToTop 0.3s cubic-bezier(0.2, 0, 0.1, 1) forwards;
+  pointer-events: none;
+}
+
+@keyframes slideDownFromTop {
+  from { opacity: 0; transform: translateY(-100px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideOutToTop {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-100%); }
+}
+
+/* .wallet-popup-progress-container {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 2px;
+  overflow: hidden;
+  background-color: transparent;
+}
+
+.wallet-popup-progress-bar {
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgb(170 174 207 / 50%) 0%,
+    rgb(170 174 207 / 80%) 50%,
+    rgb(170 174 207 / 50%) 100%
+  );
+  box-shadow: 0 0 8px rgb(170 174 207 / 30%);
+  transform-origin: left center;
+}
+
+@keyframes progressBar {
+  from { width: 100%; }
+  to { width: 0%; }
+} */
+
+.wallet-popup-close {
+  display: flex; align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  transition: opacity 0.2s ease;
+  padding: 0;
+}
+.wallet-popup-close img {
+  width: 14px; 
+  height: 14px; 
+  opacity: 0.7;
+  pointer-events: none;
+  object-fit: contain;
+}
+
+.wallet-popup-close:hover img {
+  opacity: 0.95;
+}
+.wallet-popup-content {
+  padding: 10px 12px 10px 12px;
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.wallet-popup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  position: relative;
+}
+
+.wallet-popup-title {
+  color: #f6f8fffb;
+  font-size: 0.85rem;
+  font-weight: 400;
+  margin: 0;
+  letter-spacing: -0.3px;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: -3px;
+}
+
+.wallet-popup-subtitle {
+  color: #ffffff7d;
+  font-size: 0.74rem;
+  font-weight: 300;
+  margin: 0 0 4px 0;
+  line-height: 1.25;
+  margin-top: -4px;
+}
+
+.wallet-popup-details {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.wallet-popup-detail-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+}
+
+.wallet-popup-detail-label {
+  color: #ffffff7d;
+  font-size: 0.75rem;
+  font-weight: 300;
+}
+
+.wallet-popup-detail-value {
+  color: #ffffffcf;
+  font-size: 0.8rem;
+  font-weight: 400;
+  text-wrap: nowrap;
+}
+
+.wallet-popup-arrow {
+  color: #ffffff7d;
+  font-size: 0.75rem;
+}
+
+/* .wallet-popup-container.variant-success {
+  border-color: rgba(67, 254, 154, 0.25);
+} */
+/* 
+.wallet-popup-container.variant-error {
+  border-color: rgba(235, 112, 112, 0.25);
+}
+
+.wallet-popup-container.variant-info {
+  border-color: rgba(170, 174, 207, 0.25);
+} */
+
+.wallet-popup-status-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px; height: 22px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  margin-top: -3px;
+}
+
+.wallet-popup-status-icon.status-success {
+  background: rgba(67, 254, 154, 0.15); color: #43fe9a;
+}
+
+.wallet-popup-status-icon.status-error {
+  background: rgba(235, 112, 112, 0.15); color: #eb7070;
+}
+
+.wallet-popup-status-icon.status-info {
+  background: rgba(170, 174, 207, 0.15); color: #aaaecf;
+}
+
+.wallet-popup-left-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.wallet-popup-spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top: 2px solid #aaaecf;
+  border-radius: 50%;
+  animation: walletPopupSpinnerRotate 1s linear infinite;
+}
+
+@keyframes walletPopupSpinnerRotate {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}

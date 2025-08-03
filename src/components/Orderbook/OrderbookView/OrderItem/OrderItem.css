@@ -31,6 +31,7 @@
     background-color 0.2s ease;
   user-select: none;
   z-index: 1;
+  
 }
 
 .buyOrder.boundary {
@@ -73,6 +74,7 @@
   top: 0;
   z-index: 0;
   transition: width 1s ease;
+  
 }
 
 .order-content {
@@ -96,6 +98,7 @@
 
 .total-size {
   text-align: right;
+  
 }
 
 .order-price,

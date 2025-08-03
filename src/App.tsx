@@ -3,8 +3,7 @@ import {
   getBlockNumber,
   readContracts,
   waitForTransactionReceipt,
-  getTransactionCount,
-  signTypedData
+  getTransactionCount
 } from '@wagmi/core';
 import React, {
   KeyboardEvent as ReactKeyboardEvent,
@@ -25,7 +24,6 @@ import {
   useSearchParams,
 } from 'react-router-dom';
 import { TransactionExecutionError, encodeFunctionData, maxUint256, decodeFunctionResult } from 'viem';
-import { useReadContracts } from 'wagmi';
 import { useLanguage } from './contexts/LanguageContext';
 import getAddress from './utils/getAddress.ts';
 import { config } from './wagmi.ts';
@@ -36,6 +34,7 @@ import {
   useAlchemyAccountContext,
   useUser,
   AuthCard,
+  useSignTypedData,
 } from "@account-kit/react";
 import { Wallet, keccak256 } from 'ethers'
 import { useQuery } from '@tanstack/react-query';
@@ -120,7 +119,6 @@ import backaudio from './assets/back_audio.mp3';
 
 // import routes
 import Portfolio from './components/Portfolio/Portfolio.tsx';
-import Referrals from './components/Referrals/Referrals.tsx';
 
 // import main app components
 import ChartComponent from './components/Chart/Chart.tsx';
@@ -147,6 +145,8 @@ import LPVaults from './components/LPVaults/LPVaults.tsx';
 import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
+import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
+
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -157,7 +157,13 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 const clearlogo = '/CrystalLogo.png';
-
+export type NotifyPayload = {
+  title: string;
+  subtitle?: string;
+  amount?: string;
+  amountUnit?: string;
+  variant?: 'success' | 'error' | 'info';
+};
 function App() {
   useEffect(() => {
     if (!localStorage.getItem("noSSR")) {
@@ -171,6 +177,7 @@ function App() {
     client,
     waitForTxn: true,
   });
+  const { signTypedDataAsync } = useSignTypedData({ client })
   const user = useUser();
   const { logout } = useLogout();
   const { t, language, setLanguage } = useLanguage();
@@ -181,6 +188,7 @@ function App() {
   const navigate = useNavigate();
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const HTTP_URL = settings.chainConfig[activechain].httpurl;
+  const WS_URL = settings.chainConfig[activechain].wssurl;
   const eth = settings.chainConfig[activechain].eth as `0x${string}`;
   const weth = settings.chainConfig[activechain].weth as `0x${string}`;
   const usdc = settings.chainConfig[activechain].usdc as `0x${string}`;
@@ -315,6 +323,75 @@ function App() {
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
   const connected = address != undefined
+  const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
+  useEffect(() => {
+    const storedSubWallets = localStorage.getItem('crystal_sub_wallets');
+    if (storedSubWallets) {
+      try {
+        setSubWallets(JSON.parse(storedSubWallets));
+      } catch (error) {
+        console.error('Error loading stored subwallets:', error);
+      }
+    }
+  }, []);
+  const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
+    localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
+  };
+
+
+  const createSubWallet = async () => {
+    try {
+      const privateKey = keccak256(await signTypedDataAsync({
+        typedData: {
+          types: {
+            createCrystalOneCT: [
+              { name: 'version', type: 'string' },
+              { name: 'account', type: 'uint256' },
+            ],
+          },
+          primaryType: 'createCrystalOneCT',
+          message: {
+            version: 'Crystal v0.0.1 Testnet',
+            account: BigInt(subWallets.length + 1),
+          }
+        }
+      }));
+
+      const tempWallet = new Wallet(privateKey);
+      const walletAddress = tempWallet.address as string;
+
+      const newWallet = {
+        address: walletAddress,
+        privateKey: privateKey
+      };
+
+      const updatedWallets = [...subWallets, newWallet];
+      setSubWallets(updatedWallets);
+      saveSubWalletsToStorage(updatedWallets);
+
+      console.log('New Subwallet Created:', newWallet);
+
+      if (!validOneCT && updatedWallets.length === 1) {
+        setOneCTSigner(privateKey);
+        setpopup(25);
+        refetch();
+      }
+    } catch (error) {
+      console.error('Error creating subwallet:', error);
+    }
+  };
+
+  const deleteSubWallet = (index: number) => {
+    const updatedWallets = subWallets.filter((_, i) => i !== index);
+    setSubWallets(updatedWallets);
+    saveSubWalletsToStorage(updatedWallets);
+  };
+
+  const setActiveSubWallet = (privateKey: string) => {
+    setOneCTSigner(privateKey);
+    setpopup(25);
+    refetch();
+  };
 
   const sendUserOperationAsync = useCallback(
     async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
@@ -340,7 +417,7 @@ function App() {
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
         ];
-        
+
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
@@ -1003,9 +1080,12 @@ function App() {
   const [mobileDragY, setMobileDragY] = useState(0);
   const [mobileStartY, setMobileStartY] = useState(0);
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
-  const handleLimitPriceUpdate = (price: number) => {
-    setCurrentLimitPrice(price);
-  };
+  const lastRefGroupFetch = useRef(0);
+  const blockNumber = useRef(0n);
+
+  const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<any>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
@@ -1037,7 +1117,7 @@ function App() {
 
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
-
+  const [mainWalletBalances, setMainWalletBalances] = useState<any>({})
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
 
   const scrollToToken = (index: number) => {
@@ -1290,12 +1370,12 @@ function App() {
   const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
     if (!client) {
       return await Promise.race([
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.set(hash, resolve);
+        }),
         waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
           txReceiptResolvers.delete(hash);
           return r.transactionHash;
-        }),
-        new Promise<void>((resolve) => {
-          txReceiptResolvers.set(hash, resolve);
         }),
       ]);
     }
@@ -1396,6 +1476,263 @@ function App() {
       ),
     );
   };
+
+  const [walletTokenBalances, setWalletTokenBalances] = useState({});
+  const [walletTotalValues, setWalletTotalValues] = useState({});
+  const [walletsLoading, setWalletsLoading] = useState(false);
+  const [subwalletBalanceLoading, setSubwalletBalanceLoading] = useState({});
+
+  const findMarketForToken = useCallback((tokenAddress: string) => {
+    for (const [marketKey, marketData] of Object.entries(markets)) {
+      if (marketData.baseAddress === tokenAddress || marketData.quoteAddress === tokenAddress) {
+        return { marketKey, marketData, trades: tradesByMarket[marketKey] };
+      }
+    }
+    return null;
+  }, [markets, tradesByMarket]);
+
+  const refreshWalletBalance = useCallback(async (walletAddress: string) => {
+    if (!walletAddress || !tokendict || Object.keys(tokendict).length === 0) return;
+
+    setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: true }));
+
+    try {
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const tokenAddresses = Object.values(tokendict).map((t) => t.address);
+
+      const callData = {
+        target: balancegetter,
+        callData: encodeFunctionData({
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [walletAddress as `0x${string}`, tokenAddresses]
+        })
+      };
+
+      const multicallData = encodeFunctionData({
+        abi: [{
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'tryBlockAndAggregate',
+        args: [false, [callData]]
+      });
+
+      const response = await fetch(HTTP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          jsonrpc: '2.0',
+          id: Math.random(),
+          method: 'eth_call',
+          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const json = await response.json();
+
+      if (json.error) {
+        throw new Error(json.error.message || 'RPC Error');
+      }
+
+      if (json.result) {
+        const returnData = decodeFunctionResult({
+          abi: [{
+            inputs: [
+              { name: 'requireSuccess', type: 'bool' },
+              {
+                components: [
+                  { name: 'target', type: 'address' },
+                  { name: 'callData', type: 'bytes' }
+                ], name: 'calls', type: 'tuple[]'
+              }
+            ],
+            name: 'tryBlockAndAggregate',
+            outputs: [
+              { name: 'blockNumber', type: 'uint256' },
+              { name: 'blockHash', type: 'bytes32' },
+              {
+                components: [
+                  { name: 'success', type: 'bool' },
+                  { name: 'returnData', type: 'bytes' }
+                ], name: 'returnData', type: 'tuple[]'
+              }
+            ],
+            stateMutability: 'view',
+            type: 'function'
+          }],
+          functionName: 'tryBlockAndAggregate',
+          data: json.result
+        });
+
+        if (returnData[2] && returnData[2][0] && returnData[2][0].success) {
+          const balances = decodeFunctionResult({
+            abi: CrystalDataHelperAbi,
+            functionName: 'batchBalanceOf',
+            data: returnData[2][0].returnData
+          });
+
+          const balanceMap: { [key: string]: bigint } = {};
+          let totalValue = 0;
+
+          tokenAddresses.forEach((tokenAddress, index) => {
+            if (balances[index]) {
+              balanceMap[tokenAddress] = balances[index];
+
+              try {
+                const marketInfo = findMarketForToken(tokenAddress);
+                if (marketInfo && marketInfo.trades) {
+                  const usdValue = calculateUSDValue(
+                    balances[index],
+                    marketInfo.trades,
+                    tokenAddress,
+                    marketInfo.marketData
+                  );
+                  totalValue += usdValue;
+                }
+              } catch (error) {
+                console.warn('Error calculating USD value for', tokenAddress, error);
+              }
+            }
+          });
+
+          setWalletTokenBalances(prev => ({
+            ...prev,
+            [walletAddress]: balanceMap
+          }));
+
+          setWalletTotalValues(prev => ({
+            ...prev,
+            [walletAddress]: totalValue
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing wallet balance:', error);
+      // Don't throw the error, just log it and continue
+    } finally {
+      setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: false }));
+    }
+  }, [tokendict, activechain, tradesByMarket, findMarketForToken, calculateUSDValue]);
+
+  const forceRefreshAllWallets = useCallback(async () => {
+    if (subWallets.length === 0) return;
+
+    setWalletsLoading(true);
+
+    try {
+      // Refresh wallets one by one with delays to avoid rate limiting
+      for (const wallet of subWallets) {
+        await refreshWalletBalance(wallet.address);
+        // Add delay between requests
+        await new Promise(resolve => setTimeout(resolve, 200));
+      }
+    } catch (error) {
+      console.error('Error refreshing all wallets:', error);
+    } finally {
+      setWalletsLoading(false);
+    }
+  }, [subWallets, refreshWalletBalance]);
+
+  const refreshDebounceRef = useRef<NodeJS.Timeout>();
+
+  useEffect(() => {
+    if (refreshDebounceRef.current) {
+      clearTimeout(refreshDebounceRef.current);
+    }
+
+    if (subWallets.length > 0 && tokendict && Object.keys(tokendict).length > 0 && markets && Object.keys(markets).length > 0) {
+      refreshDebounceRef.current = setTimeout(() => {
+        console.log('Refreshing wallet balances for', subWallets.length, 'wallets');
+        forceRefreshAllWallets();
+      }, 1000);
+    }
+
+    return () => {
+      if (refreshDebounceRef.current) {
+        clearTimeout(refreshDebounceRef.current);
+      }
+    };
+  }, [subWallets.length, Object.keys(tokendict).length, Object.keys(markets).length]);
+
+  const handleSubwalletTransfer = useCallback(async (fromAddress: string, toAddress: string, amount: string, fromPrivateKey: string) => {
+    try {
+      setIsVaultDepositSigning(true);
+      const originalSigner = oneCTSigner;
+      setOneCTSigner(fromPrivateKey);
+
+      const ethAmount = BigInt(Math.round(parseFloat(amount) * 1e18));
+
+      const hash = await sendUserOperationAsync({
+        uo: {
+          target: toAddress as `0x${string}`,
+          value: ethAmount,
+          data: '0x'
+        }
+      });
+
+      console.log('Subwallet transfer successful:', hash);
+
+      // Restore original signer
+      setOneCTSigner(originalSigner);
+
+      // Refresh both wallet balances after a delay
+      setTimeout(() => {
+        refreshWalletBalance(fromAddress);
+        refreshWalletBalance(toAddress);
+      }, 2000);
+
+    } catch (error) {
+      console.error('Subwallet transfer failed:', error);
+      throw error;
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  }, [refreshWalletBalance, sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
+
+  const saveSubWallets = useCallback((wallets) => {
+    setSubWallets(wallets);
+    saveSubWalletsToStorage(wallets);
+  }, [saveSubWalletsToStorage]);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
@@ -1569,44 +1906,7 @@ function App() {
     }, 300);
   };
 
-  const { data: refData, isLoading: refDataLoading, refetch: refRefetch } = useReadContracts({
-    batchSize: 0,
-    contracts: [
-      {
-        address: settings.chainConfig[activechain].referralManager,
-        abi: CrystalReferralAbi as any,
-        functionName: 'addressToReferrer',
-        args: [address ?? '0x0000000000000000000000000000000000000000'],
-      },
-      ...Array.from(
-        new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        )
-      ).flatMap((marketAddress: any) => ({
-        address: marketAddress as `0x${string}`,
-        abi: CrystalMarketAbi,
-        functionName: 'accumulatedFeeQuote',
-        args: [address ?? undefined],
-      })),
-      ...Array.from(
-        new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        )
-      ).flatMap((marketAddress: any) => ({
-        address: marketAddress as `0x${string}`,
-        abi: CrystalMarketAbi,
-        functionName: 'accumulatedFeeBase',
-        args: [address ?? undefined],
-      })),
-    ],
-    query: { refetchInterval: 10000 },
-  });
-
-  // data loop, reuse to eventually have every single call method in this loop
+  // data loop, reuse to have every single rpc call method in this loop
   const { data: rpcQueryData, isLoading, dataUpdatedAt, refetch } = useQuery({
     queryKey: [
       'crystal_rpc_reads',
@@ -1623,78 +1923,81 @@ function App() {
       let gasEstimateCall: any = null;
       let gasEstimate: bigint = 0n;
 
-      try {
-        const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+      if (address && (amountIn || amountOutSwap)) {
+        try {
+          const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
 
-        const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
+          const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
 
-        let tx: any = null;
+          let tx: any = null;
 
-        if (tokenIn === eth && tokenOut === weth) {
-          tx = wrapeth(amountIn, weth);
-        } else if (tokenIn === weth && tokenOut === eth) {
-          tx = unwrapeth(amountIn, weth);
-        } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
-          tx = stake(tokenOut, address, amountIn);
-        } else if (orderType === 1 || multihop) {
-          const slippageAmount = !switched 
-            ? (amountOutSwap * slippage + 5000n) / 10000n
-            : (amountIn * 10000n + slippage / 2n) / slippage;
+          if (tokenIn === eth && tokenOut === weth) {
+            tx = wrapeth(amountIn, weth);
+          } else if (tokenIn === weth && tokenOut === eth) {
+            tx = unwrapeth(amountIn, weth);
+          } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
+            tx = stake(tokenOut, address, amountIn);
+          } else if (orderType === 1 || multihop) {
+            const slippageAmount = !switched
+              ? (amountOutSwap * slippage + 5000n) / 10000n
+              : (amountIn * 10000n + slippage / 2n) / slippage;
 
-          if (tokenIn === eth && tokenOut !== eth) {
-            tx = !switched
-              ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
-          } else if (tokenIn !== eth && tokenOut === eth) {
-            tx = !switched
-              ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            if (tokenIn === eth && tokenOut !== eth) {
+              tx = !switched
+                ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else if (tokenIn !== eth && tokenOut === eth) {
+              tx = !switched
+                ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else {
+              tx = !switched
+                ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            }
           } else {
-            tx = !switched
-              ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
-              : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            const amount = !switched ? amountIn : amountOutSwap;
+            const limitPrice = tokenIn === activeMarket.quoteAddress
+              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+              : (highestBid * slippage + 5000n) / 10000n;
+
+            tx = _swap(
+              router,
+              tokenIn === eth
+                ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
+                : BigInt(0),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+              !switched,
+              BigInt(0),
+              amount,
+              limitPrice,
+              deadline,
+              usedRefAddress
+            );
           }
-        } else {
-          const amount = !switched ? amountIn : amountOutSwap;
-          const limitPrice = tokenIn === activeMarket.quoteAddress
-            ? (lowestAsk * 10000n + slippage / 2n) / slippage
-            : (highestBid * slippage + 5000n) / 10000n;
 
-          tx = _swap(
-            router,
-            tokenIn === eth
-              ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
-              : BigInt(0),
-            activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
-            activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
-            !switched,
-            BigInt(0),
-            amount,
-            limitPrice,
-            deadline,
-            usedRefAddress
-          );
+          if (tx) {
+            gasEstimateCall = {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_estimateGas',
+              params: [{
+                from: address as `0x${string}`,
+                to: tx.target,
+                data: tx.data,
+                value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
+              }]
+            };
+          }
+        } catch (e) {
+          gasEstimateCall = null;
         }
-
-        if (tx) {
-          gasEstimateCall = {
-            jsonrpc: '2.0',
-            id: 1,
-            method: 'eth_estimateGas',
-            params: [{
-              from: address,
-              to: tx.target,
-              data: tx.data,
-              value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
-            }]
-          };
-        }
-      } catch (e) {
-        gasEstimateCall = null;
       }
 
-      const calls: any = [
+      const mainGroup: any = [
         {
+          disabled: (switched ? amountOutSwap : amountIn) > maxUint256,
           to: router,
           abi: CrystalRouterAbi,
           functionName: switched ? 'getAmountsIn' : 'getAmountsOut',
@@ -1704,20 +2007,22 @@ function App() {
           ]
         },
         {
+          disabled: !address,
           to: tokenIn === eth ? weth : tokenIn,
           abi: TokenAbi,
           functionName: 'allowance',
           args: [
-            address,
+            address as `0x${string}`,
             (getMarket(activeMarket.path.at(0) as any, activeMarket.path.at(1) as any) as any).address
           ]
         },
         {
+          disabled: !address,
           to: balancegetter,
           abi: CrystalDataHelperAbi,
           functionName: 'batchBalanceOf',
           args: [
-            address,
+            address as `0x${string}`,
             Object.values(tokendict).map((t: any) => t.address)
           ]
         },
@@ -1735,31 +2040,144 @@ function App() {
             Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
           ]
         },
-        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst
+        ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
           ? [{
-              to: tokenOut,
-              abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
-              functionName: switched ? 'convertToAssets' : 'convertToShares',
-              args: [switched ? amountOutSwap : amountIn]
-            }]
+            to: tokenOut,
+            abi: tokenOut === '0xe1d2439b75fb9746E7Bc6cB777Ae10AA7f7ef9c5' ? sMonAbi : shMonadAbi,
+            functionName: switched ? 'convertToAssets' : 'convertToShares',
+            args: [switched ? amountOutSwap : amountIn]
+          }]
           : [])
+      ];
+
+      const refGroup: any = [
+        {
+          disabled: !address,
+          to: settings.chainConfig[activechain].referralManager,
+          abi: CrystalReferralAbi as any,
+          functionName: 'addressToReferrer',
+          args: [address],
+        },
+        ...Array.from(
+          new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          )
+        ).flatMap((marketAddress: any) => ({
+          to: marketAddress as `0x${string}`,
+          abi: CrystalMarketAbi,
+          functionName: 'accumulatedFeeQuote',
+          args: [address],
+        })),
+        ...Array.from(
+          new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          )
+        ).flatMap((marketAddress: any) => ({
+          to: marketAddress as `0x${string}`,
+          abi: CrystalMarketAbi,
+          functionName: 'accumulatedFeeBase',
+          args: [address],
+        }))
       ]
-  
-      const callData: any = calls.map(({ to, abi, functionName, args }: any) => ({
-        target: to,
-        callData: encodeFunctionData({ abi, functionName, args })
-      }))
-  
+
+      const oneCTDepositGroup: any = [
+        {
+          disabled: !scaAddress,
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [
+            scaAddress as `0x${string}`,
+            Object.values(tokendict).map((t: any) => t.address)
+          ]
+        },
+      ]
+
+      const groups: any = {
+        mainGroup
+      };
+
+      if (address && Date.now() - lastRefGroupFetch.current >= 9500) {
+        lastRefGroupFetch.current = Date.now();
+        groups.refGroup = refGroup;
+      }
+
+      if (popup == 25) {
+        groups.oneCTDepositGroup = oneCTDepositGroup;
+      }
+
+      const callData: any = []
+      const callMapping: any = []
+
+      const groupResults: any = {};
+      Object.keys(groups).forEach(groupKey => {
+        groupResults[groupKey] = [];
+      });
+
+      Object.entries(groups).forEach(([groupKey, group]: [string, any]) => {
+        group.forEach((call: any, callIndex: number) => {
+          if (!call.disabled) {
+            try {
+              callData.push({
+                target: call.to || call.address,
+                callData: encodeFunctionData({
+                  abi: call.abi,
+                  functionName: call.functionName,
+                  args: call.args
+                })
+              });
+
+              callMapping.push({
+                groupKey,
+                callIndex
+              });
+            } catch (e: any) {
+              while (groupResults[groupKey].length < callIndex) {
+                groupResults[groupKey].push(null);
+              }
+              groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
+            }
+          }
+          else {
+            while (groupResults[groupKey].length < callIndex) {
+              groupResults[groupKey].push(null);
+            }
+            groupResults[groupKey][callIndex] = { error: "param missing", result: undefined, status: "failure" };
+          }
+        });
+      });
+
       const multicallData: any = encodeFunctionData({
         abi: [{
-          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
-          name: 'aggregate',
-          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
           stateMutability: 'view',
           type: 'function'
         }],
-        functionName: 'aggregate',
-        args: [callData]
+        functionName: 'tryBlockAndAggregate',
+        args: [false, callData]
       })
 
       const response: any = await fetch(HTTP_URL, {
@@ -1769,37 +2187,72 @@ function App() {
           jsonrpc: '2.0',
           id: 1,
           method: 'eth_call',
-          params: [{ to: '0xcA11bde05977b3631167028862bE2a173976CA11', data: multicallData }, 'latest']
-        },  ...(gasEstimateCall ? [gasEstimateCall] : [])])
+          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
+        }, ...(gasEstimateCall ? [gasEstimateCall] : [])])
       })
 
       const json: any = await response.json()
-  
+
+
       const returnData: any = decodeFunctionResult({
         abi: [{
-          inputs: [{ components: [{ name: 'target', type: 'address' }, { name: 'callData', type: 'bytes' }], name: 'calls', type: 'tuple[]' }],
-          name: 'aggregate',
-          outputs: [{ name: 'blockNumber', type: 'uint256' }, { name: 'returnData', type: 'bytes[]' }],
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
           stateMutability: 'view',
           type: 'function'
         }],
-        functionName: 'aggregate',
+        functionName: 'tryBlockAndAggregate',
         data: json[0].result
       })
-  
-      const decoded: any = returnData?.[1]?.map((data: any, i: number) => ({
-        result: decodeFunctionResult({
-          abi: calls[i].abi,
-          functionName: calls[i].functionName,
-          data
-        })
-      }))
 
-      if (json?.[1].result) {
+      blockNumber.current = returnData?.[0]
+      returnData?.[2]?.forEach((data: any, responseIndex: number) => {
+        const { groupKey, callIndex } = callMapping[responseIndex] || {};
+        if (groupKey === undefined) return;
+        const originalCall = groups[groupKey][callIndex];
+        while (groupResults[groupKey].length <= callIndex) {
+          groupResults[groupKey].push(null);
+        }
+        if (data?.success == true) {
+          try {
+            const decodedResult = decodeFunctionResult({
+              abi: originalCall.abi,
+              functionName: originalCall.functionName,
+              data: data?.returnData
+            });
+            groupResults[groupKey][callIndex] = { result: decodedResult, status: "success" };
+          } catch (e: any) {
+            groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
+          }
+        }
+        else {
+          groupResults[groupKey][callIndex] = { error: 'call reverted', result: undefined, status: "failure" };
+        }
+      });
+
+      if (json?.[1]?.result) {
         gasEstimate = BigInt(json[1].result)
       }
-      
-      return {readContractData: decoded, gasEstimate: gasEstimate}
+
+      return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
@@ -1807,7 +2260,6 @@ function App() {
   })
 
   const data = rpcQueryData?.readContractData;
-  console.log(rpcQueryData);
   const gasLimitData = rpcQueryData?.gasEstimate;
 
   const handleSearchKeyDown = (
@@ -2319,80 +2771,6 @@ function App() {
     document.title = title;
   }, [trades, location.pathname, activeMarket]);
 
-
-  // referral data
-  useEffect(() => {
-    if (!refDataLoading && refData) {
-      setUsedRefAddress(
-        refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
-      );
-      setClaimableFees(() => {
-        let newFees = {};
-        let totalFees = 0;
-        const baseOffset = new Set(
-          Object.values(markets).map(
-            (market) => market.address as `0x${string}`
-          )
-        ).size
-        Array.from(
-          Object.values(markets).reduce((acc, market: any) => {
-            if (!acc.has(market.address)) acc.set(market.address, market);
-            return acc;
-          }, new Map<string, any>()).values()
-        ).forEach((market: any, index) => {
-          if (
-            mids !== null &&
-            market !== null
-          ) {
-            const quoteIndex = index;
-            const baseIndex = index + baseOffset;
-            const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
-              / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-            const midValue = Number(
-              (mids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
-            ) * quotePrice;
-            if (!(newFees as any)[market.quoteAsset]) {
-              (newFees as any)[market.quoteAsset] =
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-              totalFees +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-            } else {
-              (newFees as any)[market.quoteAsset] +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-              totalFees +=
-                Number(refData[quoteIndex + 1].result) /
-                10 ** Number(market.quoteDecimals);
-            }
-
-            if (!(newFees as any)[market.baseAsset]) {
-              (newFees as any)[market.baseAsset] =
-                Number(refData[baseIndex + 1].result) /
-                10 ** Number(market.baseDecimals);
-              totalFees +=
-                (Number(refData[baseIndex + 1].result) * midValue) /
-                Number(market.scaleFactor) /
-                10 ** Number(market.quoteDecimals);
-            } else {
-              (newFees as any)[market.baseAsset] +=
-                Number(refData[baseIndex + 1].result) /
-                10 ** Number(market.baseDecimals);
-              totalFees +=
-                (Number(refData[baseIndex + 1].result) * midValue) /
-                Number(market.scaleFactor) /
-                10 ** Number(market.quoteDecimals);
-            }
-          }
-        });
-        setTotalClaimableFees(totalFees || 0);
-
-        return newFees;
-      });
-    }
-  }, [refData, mids]);
-
   useEffect(() => {
     if (prevOrderData && Array.isArray(prevOrderData) && prevOrderData.length >= 4) {
       try {
@@ -2457,8 +2835,10 @@ function App() {
     }
   }, [amountsQuote]);
 
-  // update state variables when data is loaded
   useLayoutEffect(() => {
+    const data = rpcQueryData?.readContractData?.mainGroup;
+    const refData = rpcQueryData?.readContractData?.refGroup;
+    const oneCTDepositData = rpcQueryData?.readContractData?.oneCTDepositGroup;
     if (!isLoading && data) {
       if (!txPending.current && !debounceTimerRef.current) {
         if (data?.[1]?.result != null) {
@@ -2491,7 +2871,6 @@ function App() {
           }
           setTokenBalances(tempbalances);
         }
-
         if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
           setStateIsLoading(false);
           setstateloading(false);
@@ -2537,7 +2916,7 @@ function App() {
               }
             }
           }
-        } else if (data?.[0]?.result || ((data?.[0]?.error as any)?.cause?.name as any) == 'ContractFunctionRevertedError') {
+        } else if (data?.[0]?.result || (data?.[0]?.error == 'call reverted') || (data?.[0]?.error == 'param missing')) {
           setStateIsLoading(false);
           setstateloading(false);
           if (switched == false && !isWrap && (location.pathname.slice(1) == 'swap' || location.pathname.slice(1) == 'market')) {
@@ -2717,10 +3096,88 @@ function App() {
           }
         }
       }
+      if (refData && Object.keys(tempmids).length > 0) {
+        setUsedRefAddress(
+          refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
+        );
+        setClaimableFees(() => {
+          let newFees = {};
+          let totalFees = 0;
+          const baseOffset = new Set(
+            Object.values(markets).map(
+              (market) => market.address as `0x${string}`
+            )
+          ).size
+          Array.from(
+            Object.values(markets).reduce((acc, market: any) => {
+              if (!acc.has(market.address)) acc.set(market.address, market);
+              return acc;
+            }, new Map<string, any>()).values()
+          ).forEach((market: any, index) => {
+            if (
+              tempmids !== null &&
+              market !== null
+            ) {
+              const quoteIndex = index;
+              const baseIndex = index + baseOffset;
+              const quotePrice = market.quoteAsset == 'USDC' ? 1 : Number(tempmids[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0])
+                / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+              const midValue = Number(
+                (tempmids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
+              ) * quotePrice;
+
+              if (!(newFees as any)[market.quoteAsset]) {
+                (newFees as any)[market.quoteAsset] =
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+                totalFees +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+              } else {
+                (newFees as any)[market.quoteAsset] +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+                totalFees +=
+                  Number(refData[quoteIndex + 1].result) /
+                  10 ** Number(market.quoteDecimals);
+              }
+
+              if (!(newFees as any)[market.baseAsset]) {
+                (newFees as any)[market.baseAsset] =
+                  Number(refData[baseIndex + 1].result) /
+                  10 ** Number(market.baseDecimals);
+                totalFees +=
+                  (Number(refData[baseIndex + 1].result) * midValue) /
+                  Number(market.scaleFactor) /
+                  10 ** Number(market.quoteDecimals);
+              } else {
+                (newFees as any)[market.baseAsset] +=
+                  Number(refData[baseIndex + 1].result) /
+                  10 ** Number(market.baseDecimals);
+                totalFees +=
+                  (Number(refData[baseIndex + 1].result) * midValue) /
+                  Number(market.scaleFactor) /
+                  10 ** Number(market.quoteDecimals);
+              }
+            }
+          });
+          setTotalClaimableFees(totalFees || 0);
+          return newFees;
+        });
+      }
+      if (oneCTDepositData?.[0]?.result || !scaAddress) {
+        let tempbalances = mainWalletBalances;
+        tempbalances = Object.values(tokendict).reduce((acc, token, i) => {
+          const balance = oneCTDepositData?.[0]?.result?.[i] || BigInt(0);
+          acc[token.address] = balance;
+          return acc;
+        }, {});
+        setMainWalletBalances(tempbalances);
+      }
     } else {
       setStateIsLoading(true);
     }
-  }, [data, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
+  }, [rpcQueryData?.readContractData, activechain, isLoading, dataUpdatedAt, location.pathname.slice(1)]);
 
   // update display values when loading is finished
   useLayoutEffect(() => {
@@ -2847,7 +3304,7 @@ function App() {
               amountIn > tokenBalances[tokenIn] ||
               ((orderType == 1 || multihop) &&
                 !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
+                BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)) &&
             connected &&
             userchain == activechain,
           );
@@ -2858,7 +3315,7 @@ function App() {
                 amountIn == BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
                   !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
-                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn)
+                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn)
                 ? 0
                 : amountIn === BigInt(0)
                   ? 1
@@ -2875,7 +3332,7 @@ function App() {
             !isWrap && !((tokenIn == eth && tokendict[tokenOut]?.lst == true) && isStake) &&
               ((amountIn == BigInt(0) && amountOutSwap != BigInt(0)) ||
                 ((orderType == 1 || multihop) &&
-                  BigInt(data?.[0].result?.at(0) || BigInt(0)) != amountIn))
+                  BigInt(rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0) || BigInt(0)) != amountIn))
               ? multihop
                 ? 3
                 : 2
@@ -3079,7 +3536,7 @@ function App() {
     userchain,
     tokenBalances[tokenIn],
     multihop,
-    data?.[0].result?.at(0),
+    rpcQueryData?.readContractData?.mainGroup?.[0].result?.at(0),
     recipient,
     mids,
     scaleStart,
@@ -3116,23 +3573,12 @@ function App() {
     setTrades(processed);
   }, [tradesByMarket?.[activeMarketKey]?.[0]])
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const WS_URL = 'wss://testnet-rpc2.monad.xyz'
-
   // fetch initial address info and event stream
   useEffect(() => {
     let liveStreamCancelled = false;
+    let isAddressInfoFetching = false;
     let startBlockNumber = '';
     let endBlockNumber = '';
-    let worker: any;
-    let isAddressInfoFetching = false;
-
-    const workerCode = `
-      setInterval(() => {
-        self.postMessage('fetch');
-      }, 800);
-    `;
 
     const fetchData = async () => {
       try {
@@ -3970,30 +4416,20 @@ function App() {
         setcanceledorders([]);
         setaddressinfoloading(false);
       }
-      let firstBlockNumber = await getBlockNumber(config);
-      startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
-      endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
-
-      fetchData();
     })()
 
     const connectWebSocket = () => {
-      if (wsRef.current && wsRef.current.readyState !== WebSocket.CLOSED) {
-        return;
-      }
+      if (liveStreamCancelled) return;
       wsRef.current = new WebSocket(WS_URL);
-      wsRef.current.onopen = () => {
-        if (reconnectIntervalRef.current) {
-          clearTimeout(reconnectIntervalRef.current);
-          reconnectIntervalRef.current = null;
-        }
+
+      wsRef.current.onopen = async () => {
         const subscriptionMessages = [
           JSON.stringify({
             jsonrpc: '2.0',
-            id: 2,
+            id: 'sub1',
             method: 'eth_subscribe',
             params: [
-              'logs',
+              'monadLogs',
               {
                 address: Object.values(markets).map(
                   (market: { address: string }) => market.address,
@@ -4007,10 +4443,10 @@ function App() {
             ],
           }), ...(address?.slice(2) ? [JSON.stringify({
             jsonrpc: '2.0',
-            id: 0,
+            id: 'sub2',
             method: 'eth_subscribe',
             params: [
-              'logs',
+              'monadLogs',
               {
                 address: Object.values(markets).map(
                   (market: { address: string }) => market.address,
@@ -4028,22 +4464,609 @@ function App() {
           })] : [])
         ];
 
+        pingIntervalRef.current = setInterval(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'ping',
+              method: 'eth_syncing'
+            }));
+          }
+        }, 15000);
+
         subscriptionMessages.forEach((message) => {
           wsRef.current?.send(message);
         });
+
+        if (blockNumber.current) {
+          startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
+        }
+        else {
+          let firstBlockNumber = await getBlockNumber(config);
+          startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
+        }
+        fetchData();
       };
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
         if (message?.params?.result) {
-          console.log(message)
+          const log = message?.params?.result;
+          let ordersChanged = false;
+          let canceledOrdersChanged = false;
+          let tradesByMarketChanged = false;
+          let tradeHistoryChanged = false;
+          let temporders: any;
+          let tempcanceledorders: any;
+          let temptradesByMarket: any;
+          let temptradehistory: any;
+          setorders((orders) => {
+            temporders = [...orders];
+            return orders;
+          })
+          setcanceledorders((canceledorders) => {
+            tempcanceledorders = [...canceledorders];
+            return canceledorders;
+          })
+          settradesByMarket((tradesByMarket: any) => {
+            temptradesByMarket = { ...tradesByMarket };
+            return tradesByMarket;
+          })
+          settradehistory((tradehistory: any) => {
+            temptradehistory = [...tradehistory];
+            return tradehistory;
+          })
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            let temptrades: any = {};
+            if (log['topics']?.[0] == '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4') {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket[log['address']];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
+                address?.slice(2).toLowerCase()) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(130);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                  if (_isplace) {
+                    let buy = parseInt(chunk.slice(0, 1), 16);
+                    let price = parseInt(chunk.slice(1, 20), 16);
+                    let id = parseInt(chunk.slice(20, 32), 16);
+                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let alreadyExist = tempcanceledorders.some(
+                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+                    );
+                    if (!alreadyExist) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let order = [
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ];
+                      temporders.push(order)
+                      tempcanceledorders.push([
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ])
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'limit',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  } else {
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 3;
+                    let price = parseInt(chunk.slice(1, 20), 16);
+                    let id = parseInt(chunk.slice(20, 32), 16);
+                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let index = temporders.findIndex(
+                      (o: any) =>
+                        o[0] == price &&
+                        o[1] == id &&
+                        o[4] == marketKey,
+                    );
+                    if (index != -1) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let canceledOrderIndex: number;
+                      canceledOrderIndex = tempcanceledorders.findIndex(
+                        (canceledOrder: any) =>
+                          canceledOrder[0] ==
+                          price &&
+                          canceledOrder[1] ==
+                          id &&
+                          canceledOrder[4] ==
+                          marketKey,
+                      );
+                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                        tempcanceledorders[canceledOrderIndex][9] = 0;
+                        tempcanceledorders[canceledOrderIndex][8] =
+                          tempcanceledorders[canceledOrderIndex][8] -
+                          size;
+                        tempcanceledorders[canceledOrderIndex][6] =
+                          _timestamp;
+                      }
+                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                        temporders[index] = [...temporders[index]]
+                        try {
+                          temporders[index][10].remove();
+                        }
+                        catch { }
+                        temporders[index].splice(10, 1)
+                      }
+                      temporders.splice(index, 1);
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'cancel',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            else {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket[log['address']];
+              if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
+                trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
+                trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
+                trade[5] == log['transactionHash'])) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(258);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let price = parseInt(chunk.slice(1, 20), 16);
+                  let id = parseInt(chunk.slice(20, 32), 16);
+                  let size = parseInt(chunk.slice(32, 64), 16);
+                  let orderIndex = temporders.findIndex(
+                    (sublist: any) =>
+                      sublist[0] ==
+                      price &&
+                      sublist[1] ==
+                      id &&
+                      sublist[4] == marketKey,
+                  );
+                  let canceledOrderIndex = tempcanceledorders.findIndex(
+                    (sublist: any) =>
+                      sublist[0] ==
+                      price &&
+                      sublist[1] ==
+                      id &&
+                      sublist[4] == marketKey,
+                  );
+                  if (orderIndex != -1 && canceledOrderIndex != -1) {
+                    ordersChanged = true;
+                    canceledOrdersChanged = true;
+                    temporders[orderIndex] = [...temporders[orderIndex]]
+                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                    let order = [...temporders[orderIndex]];
+                    let buy = order[3];
+                    let quoteasset =
+                      markets[marketKey]
+                        .quoteAddress;
+                    let baseasset =
+                      markets[marketKey]
+                        .baseAddress;
+                    let amountquote = (
+                      ((order[2] - order[7] - size / order[0]) *
+                        order[0]) /
+                      (Number(
+                        markets[marketKey]
+                          .scaleFactor,
+                      ) *
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .quoteDecimals,
+                        ))
+                    ).toFixed(2);
+                    let amountbase = customRound(
+                      (order[2] - order[7] - size / order[0]) /
+                      10 **
+                      Number(
+                        markets[marketKey]
+                          .baseDecimals,
+                      ),
+                      3,
+                    );
+                    newTxPopup(
+                      log['transactionHash'],
+                      'fill',
+                      buy ? quoteasset : baseasset,
+                      buy ? baseasset : quoteasset,
+                      buy ? amountquote : amountbase,
+                      buy ? amountbase : amountquote,
+                      `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                      '',
+                    );
+                    if (size == 0) {
+                      tradeHistoryChanged = true;
+                      temptradehistory.push([
+                        order[3] == 1
+                          ? (order[2] * order[0]) /
+                          Number(markets[order[4]].scaleFactor)
+                          : order[2],
+                        order[3] == 1
+                          ? order[2]
+                          : (order[2] * order[0]) /
+                          Number(markets[order[4]].scaleFactor),
+                        order[3],
+                        order[0],
+                        order[4],
+                        order[5],
+                        _timestamp,
+                        0,
+                      ]);
+                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                        try {
+                          temporders[orderIndex][10].remove();
+                        }
+                        catch { }
+                        temporders[orderIndex].splice(10, 1)
+                      }
+                      temporders.splice(orderIndex, 1);
+                      tempcanceledorders[canceledOrderIndex][9] =
+                        1;
+                      tempcanceledorders[canceledOrderIndex][7] = order[2]
+                      tempcanceledorders[canceledOrderIndex][8] = order[8];
+                    } else {
+                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                        try {
+                          temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                        }
+                        catch { }
+                      }
+                      temporders[orderIndex][7] =
+                        order[2] - size / order[0];
+                      tempcanceledorders[canceledOrderIndex][7] =
+                        order[2] - size / order[0];
+                    }
+                  }
+                }
+                tradesByMarketChanged = true;
+                if (!Array.isArray(temptradesByMarket[marketKey])) {
+                  temptradesByMarket[marketKey] = [];
+                }
+                let amountIn = parseInt(log['data'].slice(2, 34), 16);
+                let amountOut = parseInt(log['data'].slice(34, 66), 16);
+                let buy = parseInt(log['data'].slice(66, 67), 16);
+                let price = parseInt(log['data'].slice(98, 130), 16);
+                temptradesByMarket[marketKey].unshift([
+                  amountIn,
+                  amountOut,
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
+                ]);
+                if (!Array.isArray(temptrades[marketKey])) {
+                  temptrades[marketKey] = [];
+                }
+                temptrades[marketKey].unshift([
+                  amountIn,
+                  amountOut,
+                  buy,
+                  price,
+                  marketKey,
+                  log['transactionHash'],
+                  _timestamp,
+                  parseInt(log['data'].slice(67, 98), 16),
+                ])
+                if (
+                  log['topics'][1].slice(26) ==
+                  address?.slice(2).toLowerCase()
+                ) {
+                  tradeHistoryChanged = true;
+                  temptradehistory.push([
+                    amountIn,
+                    amountOut,
+                    buy,
+                    price,
+                    marketKey,
+                    log['transactionHash'],
+                    _timestamp,
+                    1,
+                  ])
+                  let quoteasset =
+                    markets[marketKey].quoteAddress;
+                  let baseasset =
+                    markets[marketKey].baseAddress;
+                  let popupAmountIn = customRound(
+                    amountIn /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .quoteDecimals
+                        : markets[marketKey]
+                          .baseDecimals,
+                    ),
+                    3,
+                  );
+                  let popupAmountOut = customRound(
+                    amountOut /
+                    10 **
+                    Number(
+                      buy
+                        ? markets[marketKey]
+                          .baseDecimals
+                        : markets[marketKey]
+                          .quoteDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'swap',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    popupAmountIn,
+                    popupAmountOut,
+                    '',
+                    '',
+                  );
+                }
+              }
+              if (tradesByMarketChanged) {
+                setChartData(([existingBars, existingIntervalLabel, existingShowOutliers]) => {
+                  const marketKey = existingIntervalLabel?.match(/^\D*/)?.[0];
+                  const updatedBars = [...existingBars];
+                  let rawVolume;
+                  if (marketKey && Array.isArray(temptrades?.[marketKey])) {
+                    const barSizeSec =
+                      existingIntervalLabel?.match(/\d.*/)?.[0] === '1' ? 60 :
+                        existingIntervalLabel?.match(/\d.*/)?.[0] === '5' ? 5 * 60 :
+                          existingIntervalLabel?.match(/\d.*/)?.[0] === '15' ? 15 * 60 :
+                            existingIntervalLabel?.match(/\d.*/)?.[0] === '30' ? 30 * 60 :
+                              existingIntervalLabel?.match(/\d.*/)?.[0] === '60' ? 60 * 60 :
+                                existingIntervalLabel?.match(/\d.*/)?.[0] === '240' ? 4 * 60 * 60 :
+                                  existingIntervalLabel?.match(/\d.*/)?.[0] === '1D' ? 24 * 60 * 60 :
+                                    5 * 60;
+                    const priceFactor = Number(markets[marketKey].priceFactor);
+                    for (const lastTrade of temptrades[marketKey]) {
+                      const lastBarIndex = updatedBars.length - 1;
+                      const lastBar = updatedBars[lastBarIndex];
+
+                      let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
+                      rawVolume =
+                        (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
+                        10 ** Number(markets[marketKey].quoteDecimals);
+
+                      const tradeTimeSec = lastTrade[6];
+                      const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
+                      const lastBarTimeSec = Math.floor(new Date(lastBar?.time).getTime() / 1000);
+                      if (flooredTradeTimeSec === lastBarTimeSec) {
+                        updatedBars[lastBarIndex] = {
+                          ...lastBar,
+                          high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                          low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                          close: closePrice,
+                          volume: lastBar.volume + rawVolume,
+                        };
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            ...lastBar,
+                            high: Math.max(lastBar.high, Math.max(openPrice, closePrice)),
+                            low: Math.min(lastBar.low, Math.min(openPrice, closePrice)),
+                            close: closePrice,
+                            volume: lastBar.volume + rawVolume,
+                          });
+                        }
+                      } else {
+                        updatedBars.push({
+                          time: flooredTradeTimeSec * 1000,
+                          open: lastBar.close ?? openPrice,
+                          high: Math.max(lastBar.close ?? openPrice, closePrice),
+                          low: Math.min(lastBar.close ?? openPrice, closePrice),
+                          close: closePrice,
+                          volume: rawVolume,
+                        });
+                        if (realtimeCallbackRef.current[existingIntervalLabel]) {
+                          realtimeCallbackRef.current[existingIntervalLabel]({
+                            time: flooredTradeTimeSec * 1000,
+                            open: lastBar.close ?? openPrice,
+                            high: Math.max(lastBar.close ?? openPrice, closePrice),
+                            low: Math.min(lastBar.close ?? openPrice, closePrice),
+                            close: closePrice,
+                            volume: rawVolume,
+                          });
+                        }
+                      }
+                    }
+                  }
+                  setMarketsData((marketsData) =>
+                    marketsData.map((market) => {
+                      if (!market) return;
+                      const marketKey = market?.marketKey.replace(
+                        new RegExp(`^${wethticker}|${wethticker}$`, 'g'),
+                        ethticker
+                      );
+                      const newTrades = temptrades?.[marketKey]
+                      if (!Array.isArray(newTrades) || newTrades.length < 1) return market;
+                      const firstKlineOpen: number =
+                        market?.series && Array.isArray(market?.series) && market?.series.length > 0
+                          ? Number(market?.series[0].open)
+                          : 0;
+                      const currentPriceRaw = Number(newTrades[newTrades.length - 1][3]);
+                      const percentageChange = firstKlineOpen === 0 ? 0 : ((currentPriceRaw - firstKlineOpen) / firstKlineOpen) * 100;
+                      const quotePrice = market.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
+                        / Number(markets[(market.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
+                      let high = market.high24h ? Number(market.high24h.replace(/,/g, '')) : null;
+                      let low = market.low24h ? Number(market.low24h.replace(/,/g, '')) : null;
+                      const volume = newTrades.reduce((sum: number, trade: any) => {
+                        if (high && trade[3] / Number(market.priceFactor) > high) {
+                          high = trade[3] / Number(market.priceFactor)
+                        }
+                        if (low && trade[3] / Number(market.priceFactor) < low) {
+                          low = trade[3] / Number(market.priceFactor)
+                        }
+                        const amount = Number(trade[2] === 1 ? trade[0] : trade[1]);
+                        return sum + amount;
+                      }, 0) / 10 ** Number(market?.quoteDecimals) * quotePrice;
+
+                      return {
+                        ...market,
+                        volume: formatCommas(
+                          (parseFloat(market.volume.replace(/,/g, '')) + volume).toFixed(2)
+                        ),
+                        currentPrice: formatSubscript(
+                          (currentPriceRaw / Number(market.priceFactor)).toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                        ),
+                        priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
+                        priceChangeAmount: currentPriceRaw - firstKlineOpen,
+                        ...(high != null && {
+                          high24h: formatSubscript(
+                            high.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          )
+                        }),
+                        ...(low != null && {
+                          low24h: formatSubscript(
+                            low.toFixed(Math.floor(Math.log10(Number(market.priceFactor))))
+                          )
+                        })
+                      };
+                    })
+                  );
+                  return [updatedBars, existingIntervalLabel, existingShowOutliers];
+                });
+              }
+            }
+            if (tradeHistoryChanged) {
+              settradehistory(temptradehistory)
+            }
+            if (tradesByMarketChanged) {
+              settradesByMarket(temptradesByMarket)
+            }
+            if (canceledOrdersChanged) {
+              setcanceledorders(tempcanceledorders)
+            }
+            if (ordersChanged) {
+              setorders(temporders)
+            }
+            return tempset;
+          })
         }
       }
 
       wsRef.current.onclose = () => {
-        reconnectIntervalRef.current = setTimeout(() => {
-          connectWebSocket();
-        }, 100);
+        if (pingIntervalRef.current) {
+          clearInterval(pingIntervalRef.current);
+          pingIntervalRef.current = null;
+        }
+        if (liveStreamCancelled) {
+          reconnectIntervalRef.current = setTimeout(() => {
+            connectWebSocket();
+          }, 500);
+        }
       };
 
       wsRef.current.onerror = (error) => {
@@ -4051,16 +5074,22 @@ function App() {
       };
     };
 
-    // connectWebSocket();
+    connectWebSocket();
 
     return () => {
       liveStreamCancelled = true;
       isAddressInfoFetching = false;
+      if (pingIntervalRef.current) {
+        clearInterval(pingIntervalRef.current);
+        pingIntervalRef.current = null;
+      }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
       if (reconnectIntervalRef.current) {
         clearTimeout(reconnectIntervalRef.current);
+        reconnectIntervalRef.current = null;
       }
     };
   }, [activechain, address]);
@@ -7587,10 +8616,12 @@ function App() {
                     }
                     try {
                       if (sendTokenIn == eth) {
-                        hash = await sendUserOperationAsync({ uo: sendeth(
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendeth(
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -7608,11 +8639,13 @@ function App() {
                           recipient,
                         );
                       } else {
-                        hash = await sendUserOperationAsync({ uo: sendtokens(
-                          sendTokenIn as `0x${string}`,
-                          recipient as `0x${string}`,
-                          sendAmountIn,
-                        )});
+                        hash = await sendUserOperationAsync({
+                          uo: sendtokens(
+                            sendTokenIn as `0x${string}`,
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
                         if (!client) {
                           txPending.current = true
                         }
@@ -7670,7 +8703,7 @@ function App() {
                 {isSigning ? (
                   <div className="button-content">
                     <div className="loading-spinner" />
-                    {client ? t('') : t('signTransaction')}
+                    {validOneCT ? t('') : t('signTransaction')}
                   </div>
                 ) : !connected ? (
                   t('connectWallet')
@@ -8179,7 +9212,6 @@ function App() {
                           </div>
                         </div>
 
-                        {/* Presets section - now checks the correct mode */}
                         {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'presets' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('presetPercentages')}</div>
@@ -8226,7 +9258,6 @@ function App() {
                           </div>
                         )}
 
-                        {/* Increment section - now checks the correct mode */}
                         {(tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode) === 'increment' && (
                           <div className="settings-subsection">
                             <div className="layout-section-title">{t('incrementAmount')}</div>
@@ -8602,29 +9633,74 @@ function App() {
                           }}
                         />
                       </div>
-                      {useOneCT && (validOneCT ?
-                        <div className="onect-address-box">
-                          <span className="onect-address">{address}</span>
-                          <CopyButton textToCopy={address as string} />
-                        </div> : <button
-                        className="reset-tab-button"
-                        onClick={async () => {
-                          setOneCTSigner(keccak256(await signTypedData(config, {types: {
-                            createCrystalOneCT: [
-                              { name: 'version', type: 'string' },
-                              { name: 'account', type: 'uint256' },
-                            ],
-                          },
-                          primaryType: 'createCrystalOneCT',
-                          message: {
-                            version: 'Crystal v0.0.1 Testnet',
-                            account: 1n,
-                          }})))
-                          setpopup(3);
-                        }}
-                      >
-                        {t('createWallet')}
-                      </button>)}
+
+                      {useOneCT && (
+                        <div className="subwallets-section">
+                          {/* Current Active Wallet Display */}
+                          {validOneCT && (
+                            <div className="active-wallet-section">
+                              <div className="layout-section-title">{t('activeWallet')}</div>
+                              <div className="onect-address-box">
+                                <span className="onect-address">{address}</span>
+                                <CopyButton textToCopy={address as string} />
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Create New Subwallet Button */}
+                          <div className="create-wallet-section">
+                            <div className="layout-section-title">{t('subWallets')}</div>
+                            <div className="settings-section-subtitle">
+                              {t('createAndManageSubWallets')}
+                            </div>
+                            <button
+                              className="reset-tab-button create-subwallet-btn"
+                              onClick={createSubWallet}
+                            >
+                              {t('createNewWallet')}
+                            </button>
+                          </div>
+
+                          {/* Subwallets List */}
+                          {subWallets.length > 0 && (
+                            <div className="subwallets-list">
+                              <div className="layout-section-title">{t('savedSubWallets')}</div>
+                              <div className="subwallets-container">
+                                {subWallets.map((wallet, index) => (
+                                  <div key={index} className="subwallet-item">
+                                    <div className="subwallet-info">
+                                      <div className="subwallet-address">
+                                        <span className="subwallet-label">{t('wallet')} {index + 1}:</span>
+                                        <span className="subwallet-address-text">{wallet.address}</span>
+                                        <CopyButton textToCopy={wallet.address} />
+                                      </div>
+                                      <div className="subwallet-private-key">
+                                        <span className="subwallet-label">{t('privateKey')}:</span>
+                                        <span className="subwallet-key-text">{wallet.privateKey.slice(0, 10)}...{wallet.privateKey.slice(-6)}</span>
+                                        <CopyButton textToCopy={wallet.privateKey} />
+                                      </div>
+                                    </div>
+                                    <div className="subwallet-actions">
+                                      <button
+                                        className="subwallet-action-btn activate-btn"
+                                        onClick={() => setActiveSubWallet(wallet.privateKey)}
+                                      >
+                                        {t('setActive')}
+                                      </button>
+                                      <button
+                                        className="subwallet-action-btn delete-btn"
+                                        onClick={() => deleteSubWallet(index)}
+                                      >
+                                        {t('delete')}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
 
@@ -10323,26 +11399,28 @@ function App() {
               </div>
 
               <div className="edit-limit-price-actions">
-                <button
-                  className="edit-limit-price-confirm-button"
-                  onClick={handleEditLimitPriceConfirm}
-                  disabled={isEditingSigning || !hasEditedPrice}
-                  style={{
-                    opacity: isEditingSigning || !hasEditedPrice ? 0.5 : 1,
-                    cursor: isEditingSigning || !hasEditedPrice
-                      ? 'not-allowed'
-                      : 'pointer',
-                  }}
-                >
-                  {isEditingSigning ? (
-                    <div className="signing-indicator">
-                      <div className="loading-spinner" />
-                      <span>{t('signTransaction')}</span>
-                    </div>
-                  ) : (
-                    'Confirm'
-                  )}
-                </button>
+                <div className="edit-limit-price-actions">
+                  <button
+                    className="edit-limit-price-confirm-button"
+                    onClick={handleEditLimitPriceConfirm}
+                    disabled={isEditingSigning || !hasEditedPrice}
+                    style={{
+                      opacity: isEditingSigning || !hasEditedPrice ? 0.5 : 1,
+                      cursor: isEditingSigning || !hasEditedPrice
+                        ? 'not-allowed'
+                        : 'pointer',
+                    }}
+                  >
+                    {isEditingSigning ? (
+                      <div className="signing-indicator">
+                        <div className="loading-spinner" />
+                        {validOneCT ? null : <span>{t('signTransaction')}</span>}
+                      </div>
+                    ) : (
+                      'Confirm'
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -10499,7 +11577,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgba(17, 17, 20, 1) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
@@ -10982,7 +12060,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
         {popup === 23 ? (
           <div className="modal-overlay">
             <div className="modal-content vault-action-modal" ref={popupref}>
@@ -11553,7 +12630,436 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 25 ? ( // send popup
+          <div ref={popupref} className="send-popup-container">
+            <div className="send-popup-background">
+              <div className={`sendbg ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}>
 
+                <div className="sendbutton1container">
+                  <div className="send-Send">{t('send')}</div>
+                  <button
+                    className="send-button1"
+                    onClick={() => {
+                      setpopup(10);
+                    }}
+                  >
+                    <img className="send-button1pic" src={tokendict[sendTokenIn].image} />
+                    <span>{tokendict[sendTokenIn].ticker || '?'}</span>
+                  </button>
+
+                </div>
+                <div className="sendinputcontainer">
+                  <input
+                    inputMode="decimal"
+                    className={`send-input ${connected && sendAmountIn > mainWalletBalances[sendTokenIn] ? 'exceed-balance' : ''}`}
+                    onCompositionStart={() => {
+                      setIsComposing(true);
+                    }}
+                    onCompositionEnd={(
+                      e: React.CompositionEvent<HTMLInputElement>,
+                    ) => {
+                      setIsComposing(false);
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.currentTarget.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.currentTarget.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.currentTarget.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.currentTarget.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.currentTarget.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.currentTarget.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    onChange={(e) => {
+                      if (isComposing) {
+                        setSendInputAmount(e.target.value);
+                        return;
+                      }
+                      if (/^\$?\d*\.?\d{0,18}$/.test(e.target.value)) {
+                        if (displayMode == 'usd') {
+                          if (e.target.value == '$') {
+                            setSendUsdValue('');
+                            setSendInputAmount('');
+                            setSendAmountIn(BigInt(0));
+                          } else {
+                            setSendUsdValue(`$${e.target.value.replace(/^\$/, '')}`);
+                            const calculatedAmount = calculateTokenAmount(
+                              e.target.value.replace(/^\$/, ''),
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            );
+                            setSendAmountIn(calculatedAmount);
+                            setSendInputAmount(
+                              customRound(
+                                Number(calculatedAmount) / 10 ** Number(tokendict[sendTokenIn].decimals),
+                                3,
+                              ).toString()
+                            );
+                          }
+                        } else {
+                          const inputValue = BigInt(
+                            Math.round((parseFloat(e.target.value || '0') || 0) * 10 ** Number(tokendict[sendTokenIn].decimals))
+                          );
+                          setSendAmountIn(inputValue);
+                          setSendInputAmount(e.target.value);
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              inputValue,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }
+                    }}
+                    placeholder={displayMode == 'usd' ? '$0.00' : '0.00'}
+                    value={displayMode == 'usd' ? sendUsdValue : sendInputAmount}
+                    autoFocus={!(windowWidth <= 1020)}
+                  />
+                </div>
+                <div className="send-balance-wrapper">
+                  <div className="send-balance-max-container">
+                    <div className="send-balance1">
+                      <img src={walleticon} className="send-balance-wallet-icon" />{' '}
+                      {formatDisplayValue(mainWalletBalances[sendTokenIn], Number(tokendict[sendTokenIn].decimals))}
+                    </div>
+                    <div
+                      className="send-max-button"
+                      onClick={() => {
+                        if (mainWalletBalances[sendTokenIn] != BigInt(0)) {
+                          let amount =
+                            (sendTokenIn == eth && !client)
+                              ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount > BigInt(0)
+                                ? mainWalletBalances[sendTokenIn] - settings.chainConfig[activechain].gasamount
+                                : BigInt(0)
+                              : mainWalletBalances[sendTokenIn];
+                          setSendAmountIn(amount);
+                          setSendInputAmount(
+                            customRound(Number(amount) / 10 ** Number(tokendict[sendTokenIn].decimals), 3).toString()
+                          );
+                          setSendUsdValue(
+                            `$${calculateUSDValue(
+                              amount,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            ).toFixed(2)}`
+                          );
+                        }
+                      }}
+                    >
+                      {t('max')}
+                    </div>
+                  </div>
+                  <div
+                    className="send-usd-switch-wrapper"
+                    onClick={() => {
+                      if (displayMode === 'usd') {
+                        setDisplayMode('token');
+                        if (parseFloat(sendUsdValue.replace(/^\$|,/g, '')) == 0) {
+                          setSendInputAmount('');
+                        }
+                      } else {
+                        setDisplayMode('usd');
+                        if (parseFloat(sendInputAmount) == 0) {
+                          setSendUsdValue('');
+                        }
+                      }
+                    }}
+                  >
+                    <div className="send-usd-value">
+                      {displayMode === 'usd'
+                        ? `${customRound(Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn].decimals), 3)} ${tokendict[sendTokenIn].ticker}`
+                        : sendAmountIn === BigInt(0)
+                          ? '$0.00'
+                          : formatUSDDisplay(
+                            calculateUSDValue(
+                              sendAmountIn,
+                              tradesByMarket[
+                              (({ baseAsset, quoteAsset }) =>
+                                (baseAsset === wethticker ? ethticker : baseAsset) +
+                                (quoteAsset === wethticker ? ethticker : quoteAsset)
+                              )(getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc))
+                              ],
+                              sendTokenIn,
+                              getMarket(sendTokenIn, sendTokenIn == usdc ? eth : usdc),
+                            )
+                          )}
+                    </div>
+                    <img src={sendSwitch} className="send-arrow" />
+                  </div>
+                </div>
+              </div>
+              <div className="sendaddressbg">
+                <div className="send-To">{t('to')}</div>
+                <div className="send-address-input-container">
+                  <input
+                    className="send-output"
+                    onChange={(e) => {
+                      if (e.target.value === '' || /^(0x[0-9a-fA-F]{0,40}|0)$/.test(e.target.value)) {
+                        setrecipient(e.target.value);
+                      }
+                    }}
+                    value={recipient}
+                    placeholder={t('enterWalletAddress')}
+                  />
+                  <button
+                    className="address-paste-button"
+                    onClick={async () => {
+                      try {
+                        const text = await navigator.clipboard.readText();
+                        if (/^(0x[0-9a-fA-F]{40})$/.test(text)) {
+                          setrecipient(text);
+                        }
+                      } catch (err) {
+                      }
+                    }}
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                      <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <button
+                className={`send-swap-button ${isSigning ? 'signing' : ''}`}
+                onClick={async () => {
+                  if (
+                    connected &&
+                    userchain === activechain
+                  ) {
+                    let hash: any;
+                    setIsSigning(true)
+                    if (client) {
+                      txPending.current = true
+                    }
+                    try {
+                      if (sendTokenIn == eth) {
+                        hash = await sendUserOperationAsync({
+                          uo: sendeth(
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          eth,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[eth].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      } else {
+                        hash = await sendUserOperationAsync({
+                          uo: sendtokens(
+                            sendTokenIn as `0x${string}`,
+                            recipient as `0x${string}`,
+                            sendAmountIn,
+                          )
+                        });
+                        if (!client) {
+                          txPending.current = true
+                        }
+                        newTxPopup(
+                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          'send',
+                          sendTokenIn,
+                          '',
+                          customRound(
+                            Number(sendAmountIn) /
+                            10 ** Number(tokendict[sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          '',
+                          recipient,
+                        );
+                      }
+                      setSendUsdValue('')
+                      setSendInputAmount('');
+                      setSendAmountIn(BigInt(0));
+                      setSendPopupButton(0);
+                      setSendPopupButtonDisabled(true);
+                      setIsSigning(false)
+                      await refetch()
+                      txPending.current = false
+                    } catch (error) {
+                      if (!(error instanceof TransactionExecutionError)) {
+                        newTxPopup(
+                          hash.hash,
+                          "sendFailed",
+                          sendTokenIn === eth ? eth : sendTokenIn,
+                          "",
+                          customRound(
+                            Number(sendAmountIn) / 10 ** Number(tokendict[sendTokenIn === eth ? eth : sendTokenIn].decimals),
+                            3,
+                          ),
+                          0,
+                          "",
+                          recipient,
+                        );
+                      }
+                    } finally {
+                      txPending.current = false
+                      setIsSigning(false)
+                    }
+                  } else {
+                    !connected
+                      ? setpopup(4)
+                      : handleSetChain()
+                  }
+                }}
+                disabled={sendPopupButtonDisabled || isSigning}
+              >
+                {isSigning ? (
+                  <div className="button-content">
+                    <div className="loading-spinner" />
+                    {validOneCT ? t('') : t('signTransaction')}
+                  </div>
+                ) : !connected ? (
+                  t('connectWallet')
+                ) : sendPopupButton == 0 ? (
+                  t('enterAmount')
+                ) : sendPopupButton == 1 ? (
+                  t('enterWalletAddress')
+                ) : sendPopupButton == 2 ? (
+                  t('send')
+                ) : sendPopupButton == 3 ? (
+                  t('insufficient') +
+                  (tokendict[sendTokenIn].ticker || '?') +
+                  ' ' +
+                  t('bal')
+                ) : sendPopupButton == 4 ? (
+                  `${t('switchto')} ${t(settings.chainConfig[activechain].name)}`
+                ) : (
+                  t('connectWallet')
+                )}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {popup === 26 ? ( // Import Wallet Popup
+          <div
+            className="layout-settings-background"
+            ref={popupref}
+          >
+            <div className="layout-settings-header">
+              <button
+                className="layout-settings-close-button"
+                onClick={() => setpopup(0)}
+              >
+                <img src={closebutton} className="close-button-icon" />
+              </button>
+              <div className="layout-settings-title">Import Wallet</div>
+            </div>
+
+            <div className="settings-main-container">
+              <div className="import-wallet-content">
+                <div className="import-wallet-section">
+                  <div className="layout-section-title">Import Existing Wallet</div>
+                  <div className="settings-section-subtitle">
+                    Enter the private key of an existing wallet to import it
+                  </div>
+
+                  <div className="input-group">
+                    <label className="input-label">Private Key</label>
+                    <input
+                      type="text"
+                      className="input-field"
+                      placeholder="0x... or without 0x prefix"
+                      style={{ fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div className="import-actions">
+                    <button
+                      className="reset-tab-button"
+                      onClick={() => {
+                        setpopup(0);
+                      }}
+                    >
+                      Import Wallet
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -12499,7 +14005,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -12628,7 +14134,7 @@ function App() {
               }
               try {
                 if (tokenIn == eth && tokenOut == weth) {
-                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
+                  hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12642,7 +14148,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == weth && tokenOut == eth) {
-                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (gasLimitData ?? 0n));
+                  hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12656,7 +14162,7 @@ function App() {
                     ''
                   );
                 } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
-                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (gasLimitData ?? 0n) * 1100n / 1000n);
+                  hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (rpcQueryData?.gasEstimate ?? 0n) * 1100n / 1000n);
                   newTxPopup(
                     (client
                       ? hash.hash
@@ -12683,7 +14189,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12700,7 +14206,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -12813,7 +14319,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12830,7 +14336,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -12844,7 +14350,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -12861,7 +14367,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -12879,7 +14385,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       } else {
                         hash = await sendUserOperationAsync({
                           uo: _swap(
@@ -12896,7 +14402,7 @@ function App() {
                             BigInt(Math.floor(Date.now() / 1000) + 900),
                             usedRefAddress as `0x${string}`
                           )
-                        }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                        }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                       }
                     } else {
                       if (allowance < amountIn) {
@@ -13009,7 +14515,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -13026,7 +14532,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         } else {
                           if (orderType == 1 || multihop) {
@@ -13040,7 +14546,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           } else {
                             hash = await sendUserOperationAsync({
                               uo: _swap(
@@ -13057,7 +14563,7 @@ function App() {
                                 BigInt(Math.floor(Date.now() / 1000) + 900),
                                 usedRefAddress as `0x${string}`
                               )
-                            }, (gasLimitData ?? 0n) * 1500n / 1000n)
+                            }, (rpcQueryData?.gasEstimate ?? 0n) * 1500n / 1000n)
                           }
                         }
                       }
@@ -13110,7 +14616,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : swapButton == 0 ? (
             t('insufficientLiquidity')
@@ -14969,7 +16475,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -15256,7 +16762,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : limitButton == 0 ? (
             t('enterAmount')
@@ -15928,10 +17434,12 @@ function App() {
               }
               try {
                 if (tokenIn == eth) {
-                  hash = await sendUserOperationAsync({ uo: sendeth(
-                    recipient as `0x${string}`,
-                    amountIn,
-                  )});
+                  hash = await sendUserOperationAsync({
+                    uo: sendeth(
+                      recipient as `0x${string}`,
+                      amountIn,
+                    )
+                  });
                   if (!client) {
                     txPending.current = true
                   }
@@ -15949,11 +17457,13 @@ function App() {
                     recipient,
                   );
                 } else {
-                  hash = await sendUserOperationAsync({ uo: sendtokens(
-                    tokenIn as `0x${string}`,
-                    recipient as `0x${string}`,
-                    amountIn,
-                  )});
+                  hash = await sendUserOperationAsync({
+                    uo: sendtokens(
+                      tokenIn as `0x${string}`,
+                      recipient as `0x${string}`,
+                      amountIn,
+                    )
+                  });
                   if (!client) {
                     txPending.current = true
                   }
@@ -16019,7 +17529,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : !connected ? (
             t('connectWallet')
@@ -17343,7 +18853,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -17628,7 +19138,7 @@ function App() {
           {isSigning ? (
             <div className="button-content">
               <div className="loading-spinner" />
-              {client ? t('') : t('signTransaction')}
+              {validOneCT ? t('') : t('signTransaction')}
             </div>
           ) : scaleButton == 0 ? (
             t('enterAmount')
@@ -17887,7 +19397,7 @@ function App() {
                 waitForTxReceipt={waitForTxReceipt}
                 isVertDragging={isVertDragging}
                 isOrderCenterVisible={isOrderCenterVisible}
-                onLimitPriceUpdate={handleLimitPriceUpdate}
+                onLimitPriceUpdate={setCurrentLimitPrice}
                 openEditOrderPopup={openEditOrderPopup}
                 openEditOrderSizePopup={openEditOrderSizePopup}
                 marketsData={marketsData}
@@ -17902,10 +19412,13 @@ function App() {
     </div>
   );
 
+
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />
       <FullScreenOverlay isVisible={loading} />
+      <MemeTransactionPopupManager />
+
       {Modals}
       <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
       {windowWidth <= 1020 &&
@@ -18000,38 +19513,6 @@ function App() {
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
-          <Route
-            path="/referrals"
-            element={
-              <Referrals
-                tokenList={Object.values(tokendict)}
-                markets={markets}
-                router={router}
-                address={address ?? undefined}
-                usedRefLink={usedRefLink}
-                usedRefAddress={usedRefAddress}
-                setUsedRefAddress={setUsedRefAddress}
-                setUsedRefLink={setUsedRefLink}
-                totalClaimableFees={totalClaimableFees}
-                claimableFees={claimableFees}
-                refLink={refLink}
-                setRefLink={setRefLink}
-                showModal={showReferralsModal}
-                setShowModal={setShowReferralsModal}
-                setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
-                setpopup={setpopup}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                refetch={refRefetch}
-                sendUserOperationAsync={sendUserOperationAsync}
-                client={client}
-              />
-            }
-          />
           <Route
             path="/leaderboard"
             element={
@@ -18244,8 +19725,27 @@ function App() {
                 chainId: userchain,
               }}
               setChain={handleSetChain}
+              address={address}
+              // Add wallet-related props
+              subWallets={subWallets}
+              walletTokenBalances={walletTokenBalances}
+              activeWalletPrivateKey={oneCTSigner}
+              setOneCTSigner={setOneCTSigner}
+              refetch={refetch}
+              isBlurred={isBlurred}
+              // Add wallet balance refresh functions for live updates
+              refreshWalletBalance={refreshWalletBalance}
+              forceRefreshAllWallets={forceRefreshAllWallets}
+              // Add missing props that MemeInterface needs
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokendict={tokendict}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
             />
           } />
+
           <Route
             path="/explorer"
             element={
@@ -18290,8 +19790,9 @@ function App() {
                 chartDays={chartDays}
                 setChartDays={setChartDays}
                 totalClaimableFees={totalClaimableFees}
+                claimableFees={claimableFees}
                 refLink={refLink}
-                setShowRefModal={setShowReferralsModal}
+                setRefLink={setRefLink}
                 filter={filter}
                 setFilter={setFilter}
                 onlyThisMarket={onlyThisMarket}
@@ -18307,6 +19808,31 @@ function App() {
                 setChain={handleSetChain}
                 waitForTxReceipt={waitForTxReceipt}
                 marketsData={marketsData}
+                usedRefLink={usedRefLink}
+                setUsedRefLink={setUsedRefLink}
+                usedRefAddress={usedRefAddress}
+                setUsedRefAddress={setUsedRefAddress}
+                client={client}
+                activechain={activechain}
+                markets={markets}
+                subWallets={subWallets}
+                setSubWallets={saveSubWallets}
+                walletTokenBalances={walletTokenBalances}
+                walletTotalValues={walletTotalValues}
+                walletsLoading={walletsLoading}
+                subwalletBalanceLoading={subwalletBalanceLoading}
+                refreshWalletBalance={refreshWalletBalance}
+                forceRefreshAllWallets={forceRefreshAllWallets}
+                setOneCTSigner={setOneCTSigner}
+                isVaultDepositSigning={isVaultDepositSigning}
+                setIsVaultDepositSigning={setIsVaultDepositSigning}
+                handleSetChain={handleSetChain}
+                handleSubwalletTransfer={handleSubwalletTransfer}
+                createSubWallet={createSubWallet}
+                signTypedDataAsync={signTypedDataAsync}
+                keccak256={keccak256}
+                Wallet={Wallet}
+                activeWalletPrivateKey={oneCTSigner}
               />
             }
           />
@@ -18317,14 +19843,6 @@ function App() {
           <Route path="/scale" element={TradeLayout(scale)} />
 
         </Routes>
-        <TransactionPopupManager
-          transactions={transactions}
-          setTransactions={setTransactions}
-          tokendict={tokendict}
-          showPreview={showPreview}
-          previewPosition={previewPosition}
-          previewExiting={previewExiting}
-        />
       </div>
     </div>
   );

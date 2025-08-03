@@ -12,8 +12,8 @@ type SavedDrawings = Record<string, LayoutDrawings>;
  * only uses charts and drawings, will fix if indicators arent part of the chart but tv says they are
  */
 const storageKeys = {
-  charts: 'MemeChart_LocalStorageSaveLoadAdapter_charts',
-  drawings: 'MemeChart_LocalStorageSaveLoadAdapter_drawings',
+  charts: 'LocalStorageSaveLoadAdapter_charts',
+  drawings: 'LocalStorageSaveLoadAdapter_drawings',
 } as const;
 
 export class LocalStorageSaveLoadAdapter {
@@ -258,7 +258,7 @@ export class LocalStorageSaveLoadAdapter {
    */
   public async saveChart(chartData: any): Promise<string | number> {
     const marketId = (chartData.symbol || 'UnnamedSymbol').replace('/', '_');
-    const finalId = `meme_layout_${marketId}`;
+    const finalId = `layout_${marketId}`;
 
     await this.removeChart(finalId).catch(() => {});
 

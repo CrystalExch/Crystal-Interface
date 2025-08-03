@@ -15,7 +15,8 @@ export interface RawTrade {
   price: number
   tokenAmount: number
   nativeAmount: number
-  tokenAddress?: string 
+  tokenAddress?: string
+  caller: string
 }
 
 interface ViewTrade {
@@ -35,11 +36,11 @@ type MCMode = 'MC' | 'Price'
 interface Props {
   trades: RawTrade[]
   tokenList?: any[]
-  market?: any 
-  tradesByMarket?: any 
-  markets?: any 
-  tokendict?: any 
-  usdc?: string 
+  market?: any
+  tradesByMarket?: any
+  markets?: any
+  tokendict?: any
+  usdc?: string
   wethticker?: string
   ethticker?: string
   onMarketSelect?: (m: any) => void
@@ -61,22 +62,18 @@ export default function MemeTradesComponent({
   setSendTokenIn,
   setpopup
 }: Props) {
-
   const [amountMode, setAmountMode] = useState<AmountMode>('USDC')
   const [mcMode, setMcMode] = useState<MCMode>('MC')
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
 
-  // Add the fetchLatestPrice function (you'll need to import or define this)
   const fetchLatestPrice = (trades: any[], market: any): number | null => {
-    // Your fetchLatestPrice implementation here
     if (!trades || trades.length === 0) return null;
     const sortedTrades = [...trades].sort((a, b) => b.timestamp - a.timestamp);
     const latestTrade = sortedTrades[0];
     return latestTrade ? latestTrade.price : null;
   }
 
-  // Add the calculateUSDValue function
   const calculateUSDValue = (
     amount: bigint,
     trades: any[],
@@ -84,11 +81,11 @@ export default function MemeTradesComponent({
     market: any,
   ) => {
     if (!market || !tradesByMarket || !markets || !tokendict || !usdc || !wethticker || !ethticker) {
-      return 0; // Return 0 if required data is missing
+      return 0;
     }
 
     if (amount === BigInt(0)) return 0;
-    
+
     if (tokenAddress == market.quoteAddress && tokenAddress == usdc) {
       return Number(amount) / 10 ** 6;
     }
@@ -96,74 +93,68 @@ export default function MemeTradesComponent({
       return Number(amount) * tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
         / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
     }
-    
+
     const latestPrice = fetchLatestPrice(trades, market);
     if (!latestPrice) return 0;
-    
+
     const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]
       / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-    
+
     const usdValue = (Number(amount) * latestPrice * quotePrice / 10 ** Number(tokendict[tokenAddress].decimals));
     return Number(usdValue);
   };
 
   const viewTrades: ViewTrade[] = useMemo(() => {
     return trades.slice(0, 40).map(r => {
-      const short = r.id.slice(0, 6)
-      
-      // Calculate proper USD amount using calculateUSDValue
+      const short = r.caller.slice(0, 6)
+
       let usdAmount = 0;
       if (market && r.tokenAddress) {
-        const tokenAmount = BigInt(Math.floor(r.tokenAmount * 10 ** 18)); // Convert to proper bigint format
+        const tokenAmount = BigInt(Math.floor(r.tokenAmount * 10 ** 18));
         usdAmount = calculateUSDValue(tokenAmount, trades, r.tokenAddress, market);
-        // Make negative for sells
         if (!r.isBuy) {
           usdAmount = -usdAmount;
         }
       } else {
-        // Fallback to original logic if data is missing
         usdAmount = r.isBuy ? r.nativeAmount : -r.nativeAmount;
       }
 
       return {
         id: r.id,
         timestamp: r.timestamp,
-        amount: usdAmount, // Now using calculated USD value
+        amount: usdAmount,
         mc: r.price * 1000000000,
         price: r.price,
         trader: short,
         fullAddress: r.id,
-        tags: []                         
+        tags: []
       }
     })
   }, [trades, market, tradesByMarket, markets, tokendict, usdc, wethticker, ethticker])
 
-const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
-  if (formatted.type === 'simple') {
-    return <span>{formatted.text}</span>;
-  }
-  
-  return (
-    <span>
-      {formatted.beforeSubscript}
-      <span className="subscript">{formatted.subscriptValue}</span>
-      {formatted.afterSubscript}
-    </span>
-  );
-};
+  const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
+    if (formatted.type === 'simple') {
+      return <span>{formatted.text}</span>;
+    }
+
+    return (
+      <span>
+        {formatted.beforeSubscript}
+        <span className="subscript">{formatted.subscriptValue}</span>
+        {formatted.afterSubscript}
+      </span>
+    );
+  };
 
   const fmtAmount = (v: number) =>
     amountMode === 'USDC'
       ? `$${Math.abs(v).toFixed(2)}`
       : `${Math.abs(v).toFixed(1)}`
 
-  const fmtMC = (mc: number, price: number) =>
-    mcMode === 'MC' ? `$${mc.toFixed(1)}K` : `$${formatSubscript(price.toFixed(8))}`
-
   const fmtTime = (ts: number) =>
     new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })
 
-  const getTagIcon = () => null   
+  const getTagIcon = () => null
 
   return (
     <>
@@ -203,7 +194,7 @@ const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) =
                 ) : (
                   <span>$<FormattedNumberDisplay formatted={formatSubscript(t.price.toFixed(8))} /></span>
                 )}
-              </div>              
+              </div>
               <div
                 className="meme-trade-trader clickable"
                 onClick={() => setPopupAddr(t.fullAddress)}
@@ -228,7 +219,7 @@ const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) =
           traderAddress={popupAddr}
           onClose={() => setPopupAddr(null)}
           tokenList={tokenList}
-          marketsData={[]} 
+          marketsData={[]}
           onMarketSelect={onMarketSelect}
           setSendTokenIn={setSendTokenIn}
           setpopup={setpopup}

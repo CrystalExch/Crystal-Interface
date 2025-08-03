@@ -1,0 +1,23 @@
+.meme-transaction-popup-manager {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 999999;
+  pointer-events: none;
+  width: 100%;
+}
+
+.meme-transaction-popup-wrapper {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%) translateY(0);
+  pointer-events: auto;
+  width: 400px;
+  transition: transform 0.35s cubic-bezier(0.25, 0.8, 0.25, 1),
+              opacity 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  will-change: transform;
+}
+
+

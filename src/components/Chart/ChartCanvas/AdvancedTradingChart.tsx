@@ -8,6 +8,7 @@ import { overrides } from './overrides';
 import customRound from '../../../utils/customRound';
 import { formatDisplay } from '../../OrderCenter/utils';
 import { settings } from '../../../settings';
+
 import './AdvancedTradingChart.css';
 
 interface ChartCanvasProps {

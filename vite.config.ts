@@ -11,6 +11,13 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: path => path.replace(/^\/api/, ''),
       },
+      '/ws': {
+        target: 'wss://testnet-rpc.monad.xyz',
+        ws: true,
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/ws/, ''),
+        secure: true
+      }
     },
   },
   publicDir: 'public', 

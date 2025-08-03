@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { LocalStorageSaveLoadAdapter } from '../../Chart/ChartCanvas/LocalStorageSaveLoadAdapter';
+import { LocalStorageSaveLoadAdapter } from './LocalStorageSaveLoadAdapter';
 import { memeOverrides } from './memeOverrides';
 
 interface MemeAdvancedChartProps {
@@ -84,9 +84,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
               exchanges: [
                 {
-                  value: 'meme.exchange',
-                  name: 'Meme Exchange',
-                  desc: 'Meme Exchange',
+                  value: 'crystal.exchange',
+                  name: 'Crystal Exchange',
+                  desc: 'Crystal Exchange',
                 },
               ],
               supports_marks: false,
@@ -103,9 +103,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               type: 'crypto',
               session: '24x7',
               timezone: 'Etc/UTC',
-              exchange: 'meme.exchange',
+              exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: 100000000, // 8 decimal places for meme tokens
+              pricescale: 100000000, 
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -143,7 +143,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   resolve();
                 }
               };
-            
+
               const intervalCheck = setInterval(check, 50);
               check();
             });
@@ -153,7 +153,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
-            
+
             setTimeout(() => {
               if (bars && bars.length) {
                 onHistoryCallback(bars, { noData: false });
@@ -176,14 +176,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           realtimeCallbackRef.current[key] = onRealtimeCallback;
         },
 
-        unsubscribeBars: () => {},
+        unsubscribeBars: () => { },
       },
     });
 
     widgetRef.current.onChartReady(() => {
       setChartReady(true);
       const chartId = `meme_layout_${token.symbol}`;
-      
+
       localAdapterRef.current
         ?.getChartContent(chartId)
         .then((content) => {
@@ -249,7 +249,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           : selectedInterval === '1h'
             ? '60'
             : selectedInterval.slice(0, -1));
-            
+
       widgetRef.current.setSymbol(
         `${token.symbol}/MON`,
         selectedInterval === '1d'
@@ -264,7 +264,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
       );
     }
-  }, [token.symbol, selectedInterval, chartReady]);
+  }, [token.symbol, selectedInterval]);
 
   return (
     <div className="advanced-chart-container">
