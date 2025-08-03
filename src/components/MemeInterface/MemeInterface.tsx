@@ -4,7 +4,7 @@ import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { settings } from "../../settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
-import "./MemeInterface.css";
+
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
@@ -16,7 +16,6 @@ import { CrystalLaunchpadRouter } from "../../abis/CrystalLaunchpadRouter";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { CrystalLaunchpadToken } from "../../abis/CrystalLaunchpadToken";
 import { useSharedContext } from "../../contexts/SharedContext";
-import approve from '../../scripts/approve';
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -25,6 +24,8 @@ import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
+
+import "./MemeInterface.css";
 
 interface Token {
   id: string;
@@ -67,13 +68,17 @@ interface Trade {
   nativeAmount: number;
   caller: string;
 }
-type NotifyPayload = {
-  title: string;
-  subtitle?: string;
-  amount?: string;
-  amountUnit?: string;
-  variant?: 'success' | 'error' | 'info';
-};
+
+interface Holder {
+  address: string;
+  balance: number;
+  tokenNet: number;
+  valueNet: number;
+  amountBought: number;
+  amountSold: number;
+  valueBought: number;
+  valueSold: number;
+}
 
 interface MemeInterfaceProps {
   tradingMode: "spot" | "trenches";
@@ -109,11 +114,9 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
-const TRANSFER_TOPIC =
-  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-const APPROVAL_TOPIC =
-  "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925";
+// const SUBGRAPH_URL = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.0.10';
+const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 
 const queryCache = new Map();
 const lastRequestTime = { value: 0 };
@@ -212,7 +215,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   wethticker,
   ethticker,
   address,
-   subWallets = [],
+  subWallets = [],
   walletTokenBalances = {},
   activeWalletPrivateKey,
   setOneCTSigner,
@@ -657,19 +660,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const closeNotif = useCallback(() => {
     setNotif((prev) => (prev ? { ...prev, visible: false } : prev));
-    setTimeout(() => setNotif(null), 300); // allow slide-out
+    setTimeout(() => setNotif(null), 300);
   }, []);
 
-  // Local notify fallback if not provided
-  const notifyPopup = useCallback((n: NotifyPayload) => {
-    setNotif({ ...n, visible: true });
-    setTimeout(() => closeNotif(), 3500);
-  }, [closeNotif]);
-
-
-
   useEffect(() => {
-    if (!token.id) return; // market address required
+    if (!token.id) return;
     const ws = new WebSocket("wss://testnet-rpc.monad.xyz");
     wsRef.current = ws;
 
@@ -1662,38 +1657,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </span>
         </div>
       </div>
-<QuickBuyWidget
-  isOpen={isWidgetOpen}
-  onClose={() => setIsWidgetOpen(false)}
-  tokenSymbol={token.symbol}
-  tokenName={token.name}
-  tokenAddress={tokenAddress}
-  tokenPrice={currentPrice}
-  buySlippageValue={buySlippageValue}
-  buyPriorityFee={buyPriorityFee}
-  buyBribeValue={buyBribeValue}
-  sellSlippageValue={sellSlippageValue}
-  sellPriorityFee={sellPriorityFee}
-  sellBribeValue={sellBribeValue}
-  sendUserOperationAsync={sendUserOperationAsync}
-  waitForTxReceipt={waitForTxReceipt}
-  account={account}
-  setChain={setChain}
-  activechain={String(activechain)}
-  routerAddress={routerAddress}
-  setpopup={setpopup}
-  tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
-  allowance={rpcData?.rawAllowance ?? 0n}
-  refetch={refetchBalances}
-  subWallets={subWallets}
-  walletTokenBalances={walletTokenBalances}
-  activeWalletPrivateKey={activeWalletPrivateKey}
-  setOneCTSigner={setOneCTSigner}
-  tokenList={tokenList}
-  isBlurred={isBlurred}
-  refreshWalletBalance={refreshWalletBalance}
-  forceRefreshAllWallets={forceRefreshAllWallets}
-/>
+      <QuickBuyWidget
+        isOpen={isWidgetOpen}
+        onClose={() => setIsWidgetOpen(false)}
+        tokenSymbol={token.symbol}
+        tokenName={token.name}
+        tokenAddress={tokenAddress}
+        tokenPrice={currentPrice}
+        buySlippageValue={buySlippageValue}
+        buyPriorityFee={buyPriorityFee}
+        buyBribeValue={buyBribeValue}
+        sellSlippageValue={sellSlippageValue}
+        sellPriorityFee={sellPriorityFee}
+        sellBribeValue={sellBribeValue}
+        sendUserOperationAsync={sendUserOperationAsync}
+        waitForTxReceipt={waitForTxReceipt}
+        account={account}
+        setChain={setChain}
+        activechain={String(activechain)}
+        routerAddress={routerAddress}
+        setpopup={setpopup}
+        tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
+        allowance={rpcData?.rawAllowance ?? 0n}
+        refetch={refetchBalances}
+        subWallets={subWallets}
+        walletTokenBalances={walletTokenBalances}
+        activeWalletPrivateKey={activeWalletPrivateKey}
+        setOneCTSigner={setOneCTSigner}
+        tokenList={tokenList}
+        isBlurred={isBlurred}
+        refreshWalletBalance={refreshWalletBalance}
+        forceRefreshAllWallets={forceRefreshAllWallets}
+      />
     </div>
   );
 };

@@ -1,5 +1,6 @@
 .earn-vaults-grid{
-    width:100%
+    width:100%;
+    overflow-x: auto;
 }
 .vaults-title{
     font-size:2.5rem;
@@ -14,13 +15,16 @@
     color:#ffffff8b;
     font-size:.75rem;
     letter-spacing:-.3px;
-    font-weight:300
+    font-weight:300;
+    min-width: 780px;
+    gap: 1rem;
 }
 .earn-card{
     transition:background-color .2s ease;
     cursor:pointer;
     margin-bottom:2px;
-    padding:.2rem
+    padding:.2rem;
+    min-width: 780px;
 }
 .earn-card:hover{
     background-color:#2d2d3124
@@ -34,17 +38,20 @@
     justify-content:center;
     padding:.2rem .8rem;
     border-radius:4px
+    
 }
 .earn-col{
     display:flex;
-    flex:1
+    flex:1;
+    min-width: 0;
 }
 .earn-asset-col{
     flex:1;
     display:flex;
     align-items:center;
     gap:.25rem;
-    min-width:225px
+    min-width: 160px;
+    margin-right: 40px;
 }
 .earn-token-pair-icons{
     display:flex;
@@ -52,7 +59,8 @@
     justify-content:center;
     align-items:center;
     width:26px;
-    height:26px
+    height:26px;
+    flex-shrink: 0
 }
 .earn-token-icon{
     width:26px;
@@ -61,7 +69,8 @@
     position:absolute;
     top:0;
     object-fit:cover;
-    border:1.5px solid #131317
+    border:1.5px solid #131317;
+    flex-shrink: 0
 }
 .earn-token-icon-first{
     left:0;
