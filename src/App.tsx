@@ -1192,6 +1192,10 @@ function App() {
     stateloading ||
     tradesloading ||
     addressinfoloading;
+    console.log(loading);
+    console.log(stateloading);
+    console.log(tradesloading);
+    console.log(addressinfoloading);
 
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
   const [sendInputAmount, setSendInputAmount] = useState('');
@@ -1797,12 +1801,13 @@ function App() {
       
       return {readContractData: decoded, gasEstimate: gasEstimate}
     },
-    enabled: !!address && !!activeMarket && !!tokendict && !!markets,
+    enabled: !!activeMarket && !!tokendict && !!markets,
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
     gcTime: 0,
   })
 
   const data = rpcQueryData?.readContractData;
+  console.log(rpcQueryData);
   const gasLimitData = rpcQueryData?.gasEstimate;
 
   const handleSearchKeyDown = (
