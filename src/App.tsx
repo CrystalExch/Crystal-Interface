@@ -20503,7 +20503,7 @@ function App() {
               />
             }
           />
-          <Route
+  <Route
             path="/portfolio"
             element={
               <Portfolio

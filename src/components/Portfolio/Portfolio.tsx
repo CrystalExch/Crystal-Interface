@@ -15,10 +15,10 @@ import closebutton from '../../assets/close_button.png'
 import monadicon from '../../assets/monadlogo.svg';
 import key from '../../assets/key.svg';
 import trash from '../../assets/trash.svg';
-import WalletOperationPopup from '../MemeTransactionPopup/WalletOperationPopup';
-import { useWalletPopup } from '../MemeTransactionPopup/useWalletPopup';
 import { createPortal } from 'react-dom';
+import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import './Portfolio.css'
+
 const Tooltip: React.FC<{
   content: string;
   children: React.ReactNode;
@@ -312,17 +312,126 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
 
-  const {
-    isVisible: isWalletPopupVisible,
-    popupData: walletPopupData,
-    hidePopup: hideWalletPopup,
-    showDistributionSuccess,
-    showDepositSuccess,
-    showTransferSuccess,
-    showWalletCreated,
-    showWalletImported,
-    showSendBackSuccess,
-  } = useWalletPopup();
+  // Utility functions for showing success popups
+  const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
+    const txId = `distribution-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Distribution Complete',
+        subtitle: `Distributed ${amount} MON across ${destCount} wallets from ${sourceCount} sources`,
+        amount: amount,
+        amountUnit: 'MON'
+      });
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Distribution Complete',
+        subtitle: `Distributed ${amount} MON across ${destCount} wallets from ${sourceCount} sources`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
+
+  const showDepositSuccess = useCallback((amount: string, targetWallet: string) => {
+    const txId = `deposit-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Deposit Complete',
+        subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
+        amount: amount,
+        amountUnit: 'MON'
+      });
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Deposit Complete', 
+        subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
+
+  const showTransferSuccess = useCallback((amount: string, fromWallet: string, toWallet: string) => {
+    const txId = `transfer-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Transfer Complete',
+        subtitle: `Transferred ${amount} MON from ${fromWallet.slice(0, 6)}... to ${toWallet.slice(0, 6)}...`,
+        amount: amount,
+        amountUnit: 'MON'
+      });
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Transfer Complete',
+        subtitle: `Transferred ${amount} MON from ${fromWallet.slice(0, 6)}... to ${toWallet.slice(0, 6)}...`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
+
+  const showWalletCreated = useCallback(() => {
+    const txId = `wallet-created-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Subwallet Created',
+        subtitle: 'New subwallet has been successfully created'
+      });
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Subwallet Created',
+        subtitle: 'New subwallet has been successfully created',
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
+
+  const showWalletImported = useCallback((walletAddress: string) => {
+    const txId = `wallet-imported-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Wallet Imported',
+        subtitle: `Successfully imported ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+      });
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Wallet Imported',
+        subtitle: `Successfully imported ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
+
+  const showSendBackSuccess = useCallback((walletCount: number) => {
+    const txId = `send-back-${Date.now()}`;
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Send Back Complete',
+        subtitle: `Successfully sent funds back from ${walletCount} wallets to main wallet`
+      });  
+    }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Send Back Complete',
+        subtitle: `Successfully sent funds back from ${walletCount} wallets to main wallet`,
+        variant: 'success',
+        confirmed: true,
+        isLoading: false
+      });
+    }
+  }, []);
 
   const handleResize = () => {
     setIsMobile(window.innerWidth <= 1020);
@@ -2215,7 +2324,7 @@ useEffect(() => {
                       {portChartLoading ? (
                         <div className="port-loading" style={{ width: 80 }} />
                       ) : (
-                        `$${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
+                        `${formatCommas(getActiveAddress() ? low.toFixed(2) : '0.00')}`
                       )}
                     </span>
                   </div>
@@ -2255,7 +2364,7 @@ useEffect(() => {
                       {walletsLoading ? (
                         <div className="port-loading" style={{ width: 100 }} />
                       ) : (
-                        `$${subWallets.reduce((total, wallet) => total + getTotalWalletValue(wallet.address), 0).toFixed(2)}`
+                        `${subWallets.reduce((total, wallet) => total + getTotalWalletValue(wallet.address), 0).toFixed(2)}`
                       )}
                     </span>
                   </div>
@@ -2748,22 +2857,6 @@ useEffect(() => {
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-
-        {/* Add wallet popup */}
-        {walletPopupData && (
-          <WalletOperationPopup
-            isVisible={isWalletPopupVisible}
-            type={walletPopupData.type}
-            title={walletPopupData.title}
-            subtitle={walletPopupData.subtitle}
-            amount={walletPopupData.amount}
-            sourceWallet={walletPopupData.sourceWallet}
-            destinationWallet={walletPopupData.destinationWallet}
-            walletCount={walletPopupData.walletCount}
-            onClose={hideWalletPopup}
-            autoCloseDelay={walletPopupData.autoCloseDelay}
-          />
-        )}
       </div>
     );
   } else {
@@ -2823,22 +2916,6 @@ useEffect(() => {
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
-
-        {/* Add wallet popup */}
-        {walletPopupData && (
-          <WalletOperationPopup
-            isVisible={isWalletPopupVisible}
-            type={walletPopupData.type}
-            title={walletPopupData.title}
-            subtitle={walletPopupData.subtitle}
-            amount={walletPopupData.amount}
-            sourceWallet={walletPopupData.sourceWallet}
-            destinationWallet={walletPopupData.destinationWallet}
-            walletCount={walletPopupData.walletCount}
-            onClose={hideWalletPopup}
-            autoCloseDelay={walletPopupData.autoCloseDelay}
-          />
-        )}
       </div>
     );
   }
