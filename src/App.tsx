@@ -171,11 +171,6 @@ export type NotifyPayload = {
   variant?: 'success' | 'error' | 'info';
 };
 function App() {
-  useEffect(() => {
-    if (!localStorage.getItem("noSSR")) {
-      localStorage.setItem("noSSR", "true");
-    }
-  }, []);
   // constants
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address: scaAddress } = useSmartAccountClient({});
