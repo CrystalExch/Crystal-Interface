@@ -20587,6 +20587,14 @@ function App() {
           <Route path="/scale" element={TradeLayout(scale)} />
 
         </Routes>
+         <TransactionPopupManager
+          transactions={transactions}
+          setTransactions={setTransactions}
+          tokendict={tokendict}
+          showPreview={showPreview}
+          previewPosition={previewPosition}
+          previewExiting={previewExiting}
+        />
       </div>
     </div>
   );

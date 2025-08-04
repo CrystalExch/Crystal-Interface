@@ -2085,18 +2085,6 @@ useEffect(() => {
   }
 }, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
 
-useEffect(() => {
-  const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
-  
-  if (savedActivePrivateKey && subWallets.length > 0) {
-    const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
-    
-    if (!savedWalletExists) {
-      localStorage.removeItem('crystal_active_wallet_private_key');
-      console.log('Cleared deleted active wallet from localStorage');
-    }
-  }
-}, [subWallets]);
   useEffect(() => {
     const now = Date.now() / 1000;
     const timeago = now - 24 * 60 * 60 * days;
