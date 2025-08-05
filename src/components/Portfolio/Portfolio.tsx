@@ -1082,17 +1082,11 @@ const deleteWallet = (address: string) => {
   };
 
 
-// Fixed handleDepositFromEOA with better error handling and debugging
 
 const handleDepositFromEOA = async () => {
   if (!depositAmount || !depositTargetWallet) {
-    alert('Please enter an amount and select a target wallet');
-    return;
+          return;
   }
-
-  console.log('Starting deposit from main wallet...');
-  console.log('Amount:', depositAmount);
-  console.log('Target wallet:', depositTargetWallet);
 
   try {
     setIsDepositing(true);
@@ -1117,7 +1111,6 @@ const handleDepositFromEOA = async () => {
 
     console.log('Transaction result:', result);
 
-    // Handle different types of responses
     let hash;
     if (typeof result === 'string') {
       hash = result;
@@ -1165,9 +1158,6 @@ const handleDepositFromEOA = async () => {
     } catch (refetchError) {
       console.warn('Failed to refresh main account:', refetchError);
     }
-
-    // Show success and close modal
-    console.log('Deposit successful, closing modal...');
     closeDepositModal();
     showDepositSuccess(depositAmount, depositTargetWallet);
 

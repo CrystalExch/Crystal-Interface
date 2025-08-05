@@ -24,7 +24,7 @@ import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
-
+import filtercup from "../../assets/filtercup.svg";
 import "./MemeInterface.css";
 
 interface Token {
@@ -1134,23 +1134,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               realtimeCallbackRef={realtimeCallbackRef}
             />
           </div>
-          <div className="meme-trades-container">
-            <span className="meme-trades-title">Trades</span>
-            <MemeTradesComponent
-              tokenList={tokenList}
-              trades={trades}
-              market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokendict={tokendict}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              onMarketSelect={onMarketSelect}
-              setSendTokenIn={setSendTokenIn}
-              setpopup={setpopup}
-            />
-          </div>
+        <div className="meme-trades-container">
+  <MemeTradesComponent
+    tokenList={tokenList}
+    trades={trades}
+    market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
+    tradesByMarket={tradesByMarket}
+    markets={markets}
+    tokendict={tokendict}
+    usdc={usdc}
+    wethticker={wethticker}
+    ethticker={ethticker}
+    onMarketSelect={onMarketSelect}
+    setSendTokenIn={setSendTokenIn}
+    setpopup={setpopup}
+  />
+</div>
         </div>
         <div className="meme-ordercenter">
           <MemeOrderCenter

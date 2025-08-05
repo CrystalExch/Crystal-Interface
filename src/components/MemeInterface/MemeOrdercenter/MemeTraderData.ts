@@ -210,7 +210,6 @@ export const mockTopTraders: TopTrader[] = Array.from({ length: 30 }, (_, i) => 
   };
 }).sort((a, b) => b.pnl.amount - a.pnl.amount);
 
-// Generate dev tokens data
 export const mockDevTokens: DevToken[] = Array.from({ length: 10 }, (_, i) => {
   const marketCap = Math.random() * 10000000 + 100000;
   return {

@@ -14,8 +14,14 @@ import iconusdt from '../../assets/iconusdt.png';
 import iconsmon from '../../assets/iconsmon.png';
 import verified from '../../assets/verified.png';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+
+import { encodeFunctionData, decodeFunctionResult } from "viem";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
+import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
+import { settings } from "../../settings";
 import './LPVaults.css';
 
 interface Vault {
@@ -157,8 +163,12 @@ interface LPVaultsProps {
   setIsVaultDepositSigning: (signing: boolean) => void;
   isVaultWithdrawSigning: boolean;
   setIsVaultWithdrawSigning: (signing: boolean) => void;
+  sendUserOperationAsync: any;
+  waitForTxReceipt: any;
+  setChain: () => void;
+  address: string;
+  refetch?: () => void;
 }
-
 const performanceData = [
   { name: 'Jan', value: 12.4 },
   { name: 'Feb', value: 14.8 },
@@ -387,11 +397,41 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   isVaultWithdrawSigning,
-  setIsVaultWithdrawSigning
+  setIsVaultWithdrawSigning,
+  sendUserOperationAsync,
+  waitForTxReceipt,
+  setChain,
+  address,
+  refetch,
 }) => {
-  const [activePageTab, setActivePageTab] = useState<'liquidity' | 'vaults'>(
+ const [activePageTab, setActivePageTab] = useState<'liquidity' | 'vaults'>(
     currentRoute.includes('/earn/vaults') ? 'vaults' : 'liquidity'
   );
+
+  const { activechain } = useSharedContext();
+  const queryClient = useQueryClient();
+
+  const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+  const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
+  const multicallAddress = settings.chainConfig[activechain]?.multicall3;
+
+  // Balance fetching for vault tokens
+  const { data: vaultBalances, refetch: refetchVaultBalances } = useQuery({
+    queryKey: ["vault-balances", address, crystalVaultsAddress],
+    queryFn: async () => {
+      if (!address || !crystalVaultsAddress) return {};
+      
+      const allVaultsCall = encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "allVaults",
+        args: [0n], 
+      });
+
+      return {};
+    },
+    enabled: !!address && !!crystalVaultsAddress,
+    staleTime: 30_000,
+  });
 
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
   const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
@@ -1217,10 +1257,185 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       !vaultFirstTokenExceedsBalance && !vaultSecondTokenExceedsBalance;
   };
 
-  const isWithdrawEnabled = () => {
-    return withdrawAmount !== '' && parseFloat(withdrawAmount) > 0 && !withdrawExceedsBalance;
-  };
+const isWithdrawEnabled = () => {
+  return withdrawAmount !== '' && parseFloat(withdrawAmount) > 0 && !withdrawExceedsBalance;
+};
 
+const handleVaultDeposit = async () => {
+  if (!selectedVaultData || !account.connected) return;
+  
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    setChain();
+    return;
+  }
+
+  try {
+    setIsVaultDepositSigning(true);
+
+    const firstTokenAddress = Object.values(tokendict).find(
+      (t: any) => t.ticker === selectedVaultData.tokens.first.symbol
+    )?.address;
+    
+    const secondTokenAddress = Object.values(tokendict).find(
+      (t: any) => t.ticker === selectedVaultData.tokens.second.symbol
+    )?.address;
+
+    if (!firstTokenAddress || !secondTokenAddress) {
+      throw new Error('Token addresses not found');
+    }
+
+    const firstTokenDecimals = Number(
+      Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.first.symbol)?.decimals || 18
+    );
+    
+    const secondTokenDecimals = Number(
+      Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.second.symbol)?.decimals || 18
+    );
+
+    const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.first) * 10 ** firstTokenDecimals));
+    const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.second) * 10 ** secondTokenDecimals));
+    
+    // Use 95% of desired amounts as minimum (5% slippage)
+    const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
+    const amountBaseMin = (amountBaseDesired * 95n) / 100n;
+
+    // Approve tokens if needed (similar to MemeInterface)
+    const firstTokenBalance = getTokenBalance(selectedVaultData.tokens.first.symbol);
+    const secondTokenBalance = getTokenBalance(selectedVaultData.tokens.second.symbol);
+    
+    if (firstTokenBalance < amountQuoteDesired) {
+      const approveFirstUo = {
+        target: firstTokenAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+        }),
+        value: 0n,
+      };
+      const approveFirstOp = await sendUserOperationAsync({ uo: approveFirstUo });
+      await waitForTxReceipt(approveFirstOp.hash);
+    }
+
+    if (secondTokenBalance < amountBaseDesired) {
+      const approveSecondUo = {
+        target: secondTokenAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+        }),
+        value: 0n,
+      };
+      const approveSecondOp = await sendUserOperationAsync({ uo: approveSecondUo });
+      await waitForTxReceipt(approveSecondOp.hash);
+    }
+
+    // Deposit into vault
+    const depositUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "deposit",
+        args: [
+          selectedVaultData.id as `0x${string}`, // vault address
+          amountQuoteDesired,
+          amountBaseDesired,
+          amountQuoteMin,
+          amountBaseMin,
+        ],
+      }),
+      value: 0n,
+    };
+
+    const depositOp = await sendUserOperationAsync({ uo: depositUo });
+    await waitForTxReceipt(depositOp.hash);
+
+    // Reset form
+    setVaultDepositAmounts({ first: '', second: '' });
+    setVaultFirstTokenExceedsBalance(false);
+    setVaultSecondTokenExceedsBalance(false);
+    
+    // Refresh balances
+    refetch?.();
+    refetchVaultBalances();
+
+  } catch (e: any) {
+    console.error('Vault deposit error:', e);
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
+
+const handleVaultWithdraw = async () => {
+  if (!selectedVaultData || !account.connected) return;
+  
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    setChain();
+    return;
+  }
+
+  try {
+    setIsVaultWithdrawSigning(true);
+
+    const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawAmount) * 1e18));
+    
+    // Use 95% of expected amounts as minimum (5% slippage)
+    const amountQuoteMin = 0n; // You'd want to calculate this properly
+    const amountBaseMin = 0n; // You'd want to calculate this properly
+
+    const withdrawUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "withdraw",
+        args: [
+          selectedVaultData.id as `0x${string}`, // vault address
+          sharesToWithdraw,
+          amountQuoteMin,
+          amountBaseMin,
+        ],
+      }),
+      value: 0n,
+    };
+
+    const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
+    await waitForTxReceipt(withdrawOp.hash);
+
+    // Reset form
+    setWithdrawAmount('');
+    setWithdrawExceedsBalance(false);
+    
+    // Refresh balances
+    refetch?.();
+    refetchVaultBalances();
+
+  } catch (e: any) {
+    console.error('Vault withdraw error:', e);
+  } finally {
+    setIsVaultWithdrawSigning(false);
+  }
+};
   const getAddLiquidityButtonText = () => {
     if (firstTokenExceedsBalance || secondTokenExceedsBalance) {
       return 'Insufficient Balance';
@@ -2322,12 +2537,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                               </div>
                             </div>
 
-                            <button
-                              className={`continue-button ${isVaultDepositEnabled() ? 'enabled' : ''} ${(vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
-                              disabled={!isVaultDepositEnabled()}
-                            >
-                              {getVaultDepositButtonText()}
-                            </button>
+                          <button
+  className={`continue-button ${isVaultDepositEnabled() ? 'enabled' : ''} ${(vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
+  disabled={!isVaultDepositEnabled()}
+  onClick={handleVaultDeposit}
+>
+  {getVaultDepositButtonText()}
+</button>
                           </div>
                         ) : (
                           <div className="vault-withdraw-form">
@@ -2395,12 +2611,13 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                               </div>
                             </div>
 
-                            <button
-                              className={`continue-button ${isWithdrawEnabled() ? 'enabled' : ''} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
-                              disabled={!isWithdrawEnabled()}
-                            >
-                              {getWithdrawButtonText()}
-                            </button>
+                          <button
+  className={`continue-button ${isWithdrawEnabled() ? 'enabled' : ''} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
+  disabled={!isWithdrawEnabled()}
+  onClick={handleVaultWithdraw}
+>
+  {getWithdrawButtonText()}
+</button>
                           </div>
                         )}
                       </div>

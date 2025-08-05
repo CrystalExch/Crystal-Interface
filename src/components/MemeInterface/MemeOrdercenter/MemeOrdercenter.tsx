@@ -3,9 +3,10 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
 
 import monadicon from '../../../assets/monadlogo.svg';
+import filtercup from "../../../assets/filtercup.svg";
 
 import './MemeOrderCenter.css';
-import { formatSubscript } from '../../../utils/numberDisplayFormat';
+import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
 
 interface LiveHolder {
   address: string;
@@ -339,7 +340,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       if (resizeObserver) resizeObserver.disconnect();
     };
   }, [activeSection]);
+  const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
+    if (formatted.type === 'simple') {
+      return <span>{formatted.text}</span>;
+    }
 
+    return (
+      <span>
+        {formatted.beforeSubscript}
+        <span className="subscript">{formatted.subscriptValue}</span>
+        {formatted.afterSubscript}
+      </span>
+    );
+  };
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -443,7 +456,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
               <div className="meme-oc-header-cell">Remaining</div>
-              <div className="meme-oc-header-cell">Edit</div>
+              <div className="meme-oc-header-cell">Filter</div>
             </div>
             <div className="meme-oc-items">
               {holderRows.map(row => (
@@ -465,7 +478,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-usd-amount buy">{fmt(row.valueBought)} MON</span>
                     </div>
                     <span className="meme-avg-price">
-                      {formatSubscript((row.valueBought / (row.bought || 1)).toFixed(10))} MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))}/> MON
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -474,7 +487,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-usd-amount sell">{fmt(row.valueSold)} MON</span>
                     </div>
                     <span className="meme-avg-price">
-                      {formatSubscript((row.valueSold / (row.sold || 1)).toFixed(10))} MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))}/> MON
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -493,7 +506,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="meme-oc-cell"><button className="meme-action-btn">Edit</button></div>
+                  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
+                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                    </button></div>
                 </div>
               ))}
 
@@ -510,7 +525,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
               <div className="meme-oc-header-cell">Remaining</div>
-              <div className="meme-oc-header-cell">Edit</div>
+              <div className="meme-oc-header-cell">Filter</div>
             </div>
             <div className="meme-oc-items">
               {mockTopTraders.slice(0, 15).map((trader, index) => (
@@ -561,9 +576,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                   </div>
-                  <div className="meme-oc-cell">
-                    <button className="meme-action-btn">Edit</button>
-                  </div>
+  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
+                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                    </button></div>
                 </div>
               ))}
             </div>

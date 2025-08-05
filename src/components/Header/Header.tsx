@@ -48,6 +48,7 @@ interface HeaderProps {
   isChartLoading?: boolean;
   tradesloading?: boolean;
   tradesByMarket: any;
+   style?: React.CSSProperties; 
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -71,6 +72,7 @@ const Header: React.FC<HeaderProps> = ({
   onMarketSelect,
   marketsData,
   tradesByMarket,
+  style, 
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -243,8 +245,7 @@ const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
 
   return (
     <>
-      <header className="app-header">
-        <div className="mobile-left-header">
+<header className="app-header" style={style}>        <div className="mobile-left-header">
           <div className="extitle">
             <img src={backgroundlesslogo} className="extitle-logo" />
             <span className="crystal-name">CRYSTAL</span>

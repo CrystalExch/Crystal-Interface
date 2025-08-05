@@ -7,7 +7,8 @@
     min-height: 650px;
 }
 .meme-trade-panel{
-    width:300px;
+    min-width:300px;
+    width: 300px;
     border-left:1px solid rgba(179,184,249,.09)
 }
 .memechartandtradesandordercenter {
@@ -70,6 +71,7 @@
     cursor:pointer;
     font-size:.9rem;
     transition: 0.3s ease;
+    border: 1.5px solid transparent;
 }
 
 .meme-order-types{
@@ -364,7 +366,8 @@
 }
 
 .meme-buy-button.inactive {
-   background-color: #111113;
+   background-color: #11111328;
+    border: 1.5px solid rgba(179, 184, 249, 0.09);
     color: #666;
 }
 
@@ -374,19 +377,22 @@
 }
 
 .meme-sell-button.inactive {
-    background-color: #111113;
+    background-color: #11111328;
     color: #666;
+    border: 1.5px solid rgba(179, 184, 249, 0.09);
 }
 
 .meme-buy-button:hover{
-     background-color: #326e4051;
+    background-color: #326e4051;
     color: rgb(67 254 154);
+    border-color: transparent;
+
 }
-
-
 .meme-sell-button:hover {
     background-color: #6e324051;
     color: rgb(235, 112, 112);
+        border-color: transparent;
+
 }
 .meme-trade-input-container {
     padding: 12px;
@@ -479,32 +485,52 @@
     border: none;
     border-radius: 4px;
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 400;
     cursor: pointer;
     transition: all 0.2s ease;
-    letter-spacing: -0.5px;
+    letter-spacing: -0.3px;
     border: none;
     border-radius: 8px;
     margin: 0 12px;
 }
 
 .meme-trade-action-button.buy {
-    background: linear-gradient(135deg, #8cf1a4, rgb(67 254 154));
-    color: #1a1a1a;
+       background-color: #326e4051;
+    color: rgb(67 254 154);
 }
+
+.meme-trade-action-button.buy .meme-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(67 254 154);
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+
 
 .meme-trade-action-button.buy:hover:not(:disabled) {
     filter: brightness(1.1)
 }
 
 .meme-trade-action-button.sell {
-    background: linear-gradient(135deg, rgb(235, 112, 112), #d63b3b);
-    color: #000;
+        background-color: #6e324051;
+    color: rgb(235, 112, 112);
+}
+
+
+.meme-trade-action-button.sell .meme-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(235, 112, 112);
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .meme-trade-action-button.sell:hover:not(:disabled) {
     filter: brightness(1.1)
-
 }
 
 .meme-trade-action-button:disabled {
@@ -1199,13 +1225,6 @@ opacity: 1;
 }
 
 
-.meme-trades-title{
-    padding-left: 10px;
-    padding-top: 5px;
-    padding-bottom: 10px;
-}
-
-
 
 
 
@@ -1298,8 +1317,9 @@ opacity: 1;
 .meme-button-spinner {
   width: 16px;
   height: 16px;
-  border: 2px solid black;
+  border: 2px solid rgb(0, 0, 0);
   border-top: 2px solid transparent;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
+

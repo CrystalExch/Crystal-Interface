@@ -14,6 +14,7 @@
   position: sticky;
   top: 0;
   z-index: 10;
+  align-items: center;
 }
 
 .meme-trades-header-item {
@@ -45,8 +46,50 @@
 
 .meme-trades-header-age {
   flex: 1;
-    display: flex;
-    justify-content: flex-end;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.meme-trades-header-filters {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+}
+
+.meme-trades-filter-icon {
+  width: 14px;
+  height: 14px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.meme-trades-filter-icon:hover {
+  opacity: 0.8;
+}
+
+.meme-trades-filter-tag {
+  padding: 3px 8px;
+  border-radius: 12px;
+  font-size: 0.65rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.meme-trades-filter-tag:hover {
+  color: rgba(255, 255, 255, 0.8);
+  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.meme-trades-filter-tag.active {
+  color: rgb(67, 254, 154);
+  border-color: rgb(67, 254, 154);
+  background: rgba(67, 254, 154, 0.1);
 }
 
 .meme-header-switch-indicator {
@@ -55,23 +98,16 @@
 }
 
 .meme-trades-list {
+  display: flex;
+  flex-direction: column;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  gap: 2px;
 }
 
 .meme-trades-list::-webkit-scrollbar {
   width: 4px;
-}
-
-
-
-.meme-trade-row {
-  display: flex;
-  align-items: center;
-  padding: 3px 8px;
-  font-size: 0.8rem;
-  transition: background-color 0.2s ease;
 }
 
 .meme-trade-row:hover {
@@ -127,8 +163,6 @@
   text-decoration: underline;
 }
 
-
-
 .meme-trade-tags {
   display: flex;
   gap: 2px;
@@ -172,8 +206,6 @@
   width: 11px;
   height: 11px;
 }
-
-
 
 .meme-trades-container {
   position: relative;
@@ -232,9 +264,116 @@
   letter-spacing: -0.5px;
 }
 
-
 .subscript {
   font-size: 0.8em;
   vertical-align: sub;
   line-height: 0;
+}
+
+.meme-trade-row {
+  display: flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 0.8rem;
+  transition: background-color 0.2s ease;
+  position: relative; 
+}
+
+.meme-trade-volume-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 1;
+  transition: width 0.3s ease;
+  pointer-events: none;
+  border-radius: 0 4px 4px 0;
+}
+
+.meme-trade-volume-bar.positive {
+  background: linear-gradient(90deg, 
+    rgba(67, 254, 154, 0.15) 0%, 
+    rgba(67, 254, 154, 0.08) 70%, 
+    rgba(67, 254, 154, 0.02) 100%
+  );
+}
+
+.meme-trade-volume-bar.negative {
+  background: linear-gradient(90deg, 
+    rgba(235, 112, 112, 0.15) 0%, 
+    rgba(235, 112, 112, 0.08) 70%, 
+    rgba(235, 112, 112, 0.02) 100%
+  );
+}
+
+/* Ensure all content appears above the volume bar */
+.meme-trade-amount,
+.meme-trade-mc,
+.meme-trade-trader,
+.meme-trade-age-container {
+  position: relative;
+  z-index: 2;
+}
+
+/* Optional: Add a subtle animation when bars appear */
+@keyframes barSlideIn {
+  from {
+    width: 0;
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.meme-trade-volume-bar {
+  animation: barSlideIn 0.4s ease-out;
+}
+
+.meme-trades-title{
+  font-size: 1.1rem;
+  letter-spacing: -0.3px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-trades-title-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .25rem 1rem;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  margin-bottom: 3px;
+}
+
+.meme-trades-filters {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.meme-trade-filter-btn {
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.meme-trade-filter-btn:hover,
+.meme-trade-filter-btn.active {
+  color: #d9dbf6;
+}
+
+.meme-trade-filter-container{
+  display: flex;
+  align-items: center;
+}
+
+.filter-cup{
+  width: 14px;
+  height: 14px;
+  margin-right: 4px;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
 }

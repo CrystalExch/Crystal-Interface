@@ -15,11 +15,13 @@ import launchpad from '../../assets/launchpad.png';
 import earn from '../../assets/earn.png';
 import explorer from '../../assets/explorer.png';
 interface SidebarNavProps {
-  simpleView: boolean;
+ simpleView: boolean;
   setSimpleView: (value: boolean) => void;
+  onOpenWidgetExplorer?: () => void;
+  isWidgetExplorerOpen?: boolean;
 }
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOpenWidgetExplorer, isWidgetExplorerOpen }) => {
   const location = useLocation();
   const path = location.pathname;
   const { t } = useLanguage();
@@ -29,6 +31,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const backgroundlesslogo = '/CrystalLogo.png';
 
 
+  const handleWidgetExplorerToggle = () => {
+    if (onOpenWidgetExplorer) {
+      onOpenWidgetExplorer();
+    }
+  };
   const isMobile = windowWidth <= 1020;
 
 
@@ -216,6 +223,26 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <img src={twitter} className="sidebar-icon" />
                 <span className="sidebar-label">{'X / ' + t('twitter')}</span>
               </a>
+
+               {/* <div className="sidebar-section">
+          <div className="sidebar-section-title">Tools</div>
+          
+          <div 
+            className={`sidebar-item sidebar-tool-item ${isWidgetExplorerOpen ? 'active' : ''}`}
+            onClick={handleWidgetExplorerToggle}
+            title="Open floating explorer widget"
+          >
+            <div className="sidebar-item-icon">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            </div>
+            <span>Widget Explorer</span>
+            <div className={`sidebar-item-badge ${isWidgetExplorerOpen ? 'active' : ''}`}>
+              {isWidgetExplorerOpen ? '●' : '○'}
+            </div>
+          </div>
+        </div> */}
             </div>
           )}
         </div>

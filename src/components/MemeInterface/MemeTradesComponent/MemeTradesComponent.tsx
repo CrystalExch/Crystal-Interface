@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import switchicon from '../../../assets/switch.svg'
 import monadlogo from '../../../assets/monadlogo.svg'
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup'
+import filtercup from "../../../assets/filtercup.svg";
 
 import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript'
 
@@ -66,6 +67,8 @@ export default function MemeTradesComponent({
   const [mcMode, setMcMode] = useState<MCMode>('MC')
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
+  const [devFilter, setDevFilter] = useState(false)
+  const [trackedFilter, setTrackedFilter] = useState(false)
 
   const fetchLatestPrice = (trades: any[], market: any): number | null => {
     if (!trades || trades.length === 0) return null;
@@ -132,6 +135,16 @@ export default function MemeTradesComponent({
     })
   }, [trades, market, tradesByMarket, markets, tokendict, usdc, wethticker, ethticker])
 
+  const maxTradeAmount = useMemo(() => {
+    if (viewTrades.length === 0) return 0;
+    return Math.max(...viewTrades.map(t => Math.abs(t.amount)));
+  }, [viewTrades]);
+
+  const getBarWidth = (amount: number): number => {
+    if (maxTradeAmount === 0) return 0;
+    return (Math.abs(amount) / maxTradeAmount) * 100;
+  };
+
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
@@ -156,75 +169,97 @@ export default function MemeTradesComponent({
 
   const getTagIcon = () => null
 
-  return (
-    <>
-      <div
-        className="meme-trades-container"
-        onMouseEnter={() => setHover(true)}
-        onMouseLeave={() => setHover(false)}
-      >
-        <div className="meme-trades-header">
-          <div
-            className="meme-trades-header-item meme-trades-header-amount"
-            onClick={() => setAmountMode(p => (p === 'USDC' ? 'MON' : 'USDC'))}
-          >
-            Amount
+return (
+  <>
+    <div
+      className="meme-trades-container"
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+    >
+      {/* New title header with separate filter containers */}
+      <div className="meme-trades-title-header">
+        <span className="meme-trades-title">Trades</span>
+        <div className="meme-trades-filters">
+          <div className="meme-trade-filter-container">
+            <img src={filtercup} alt="Filter"  className="filter-cup"/>
+            <button className="meme-trade-filter-btn">DEV</button>
           </div>
-          <div
-            className="meme-trades-header-item meme-trades-header-mc"
-            onClick={() => setMcMode(p => (p === 'MC' ? 'Price' : 'MC'))}
-          >
-            {mcMode}
-            <img src={switchicon} className="meme-header-switch-icon" alt="" />
+          <div className="meme-trade-filter-container">
+            <img src={filtercup} alt="Filter" className="filter-cup" />
+            <button className="meme-trade-filter-btn">TRACKED</button>
           </div>
-          <div className="meme-trades-header-item meme-trades-header-trader">Trader</div>
-          <div className="meme-trades-header-item meme-trades-header-age">Time</div>
-        </div>
-
-        <div className="meme-trades-list">
-          {viewTrades.map(t => (
-            <div key={t.id} className="meme-trade-row">
-              <div className={`meme-trade-amount ${t.amount >= 0 ? 'positive' : 'negative'}`}>
-                {amountMode === 'MON' && <img src={monadlogo} alt="" className="meme-trade-mon-logo" />}
-                {fmtAmount(t.amount)}
-              </div>
-              <div className="meme-trade-mc">
-                {mcMode === 'MC' ? (
-                  <span>${(t.mc / 1000).toFixed(1)}K</span>
-                ) : (
-                  <span>$<FormattedNumberDisplay formatted={formatSubscript(t.price.toFixed(8))} /></span>
-                )}
-              </div>
-              <div
-                className="meme-trade-trader clickable"
-                onClick={() => setPopupAddr(t.fullAddress)}
-              >
-                {t.trader}
-              </div>
-              <div className="meme-trade-age-container">
-                <div className="meme-trade-tags">{t.tags.map(getTagIcon)}</div>
-                <span className="meme-trade-age">{fmtTime(t.timestamp)}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className={`pause-indicator ${hover ? 'visible' : ''}`}>
-          <div className="pause-content"><span className="pause-text">Paused</span></div>
         </div>
       </div>
 
-      {popupAddr && (
-        <TraderPortfolioPopup
-          traderAddress={popupAddr}
-          onClose={() => setPopupAddr(null)}
-          tokenList={tokenList}
-          marketsData={[]}
-          onMarketSelect={onMarketSelect}
-          setSendTokenIn={setSendTokenIn}
-          setpopup={setpopup}
-        />
-      )}
-    </>
-  )
+      {/* Keep the original header with MC and Amount toggles */}
+      <div className="meme-trades-header">
+        <div
+          className="meme-trades-header-item meme-trades-header-amount"
+          onClick={() => setAmountMode(p => (p === 'USDC' ? 'MON' : 'USDC'))}
+        >
+          Amount
+        </div>
+        <div
+          className="meme-trades-header-item meme-trades-header-mc"
+          onClick={() => setMcMode(p => (p === 'MC' ? 'Price' : 'MC'))}
+        >
+          {mcMode}
+          <img src={switchicon} className="meme-header-switch-icon" alt="" />
+        </div>
+        <div className="meme-trades-header-item meme-trades-header-trader">Trader</div>
+        <div className="meme-trades-header-item meme-trades-header-age">Time</div>
+      </div>
+
+      <div className="meme-trades-list">
+        {viewTrades.map(t => (
+          <div key={t.id} className="meme-trade-row">
+            {/* Volume bar background */}
+            <div
+              className={`meme-trade-volume-bar ${t.amount >= 0 ? 'positive' : 'negative'}`}
+              style={{ width: `${getBarWidth(t.amount)}%` }}
+            />
+            
+            <div className={`meme-trade-amount ${t.amount >= 0 ? 'positive' : 'negative'}`}>
+              {amountMode === 'MON' && <img src={monadlogo} alt="" className="meme-trade-mon-logo" />}
+              {fmtAmount(t.amount)}
+            </div>
+            <div className="meme-trade-mc">
+              {mcMode === 'MC' ? (
+                <span>${(t.mc / 1000).toFixed(1)}K</span>
+              ) : (
+                <span>$<FormattedNumberDisplay formatted={formatSubscript(t.price.toFixed(8))} /></span>
+              )}
+            </div>
+            <div
+              className="meme-trade-trader clickable"
+              onClick={() => setPopupAddr(t.fullAddress)}
+            >
+              {t.trader}
+            </div>
+            <div className="meme-trade-age-container">
+              <div className="meme-trade-tags">{t.tags.map(getTagIcon)}</div>
+              <span className="meme-trade-age">{fmtTime(t.timestamp)}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className={`pause-indicator ${hover ? 'visible' : ''}`}>
+        <div className="pause-content"><span className="pause-text">Paused</span></div>
+      </div>
+    </div>
+
+    {popupAddr && (
+      <TraderPortfolioPopup
+        traderAddress={popupAddr}
+        onClose={() => setPopupAddr(null)}
+        tokenList={tokenList}
+        marketsData={[]}
+        onMarketSelect={onMarketSelect}
+        setSendTokenIn={setSendTokenIn}
+        setpopup={setpopup}
+      />
+    )}
+  </>
+)
 }

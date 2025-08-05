@@ -113,7 +113,7 @@ import secondPlacePfp from './assets/leaderboard_second.png';
 import thirdPlacePfp from './assets/leaderboard_third.png';
 import defaultPfp from './assets/leaderboard_default.png';
 import LogoText from './assets/LogoText.png';
- 
+
 import PNLBG from './assets/PNLBG.png';
 import PNLBG2 from './assets/PNLBG2.png'
 
@@ -150,6 +150,7 @@ import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
 import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
+import WidgetExplorer from './components/TokenExplorer/WidgetExplorer.tsx';
 import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
 
@@ -313,6 +314,84 @@ function App() {
     }
     return null;
   };
+ const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
+const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
+const [widgetWidth, setWidgetWidth] = useState(400);
+
+// Widget Explorer Handlers
+const handleOpenWidgetExplorer = useCallback(() => {
+  setIsWidgetExplorerOpen(true);
+}, []);
+
+const handleCloseWidgetExplorer = useCallback(() => {
+  setIsWidgetExplorerOpen(false);
+  setWidgetExplorerSnapSide('none');
+  setWidgetWidth(400); // Reset to default width when closing
+}, []);
+
+const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
+  console.log('Widget snapped to:', side); // Debug log
+  setWidgetExplorerSnapSide(side);
+}, []);
+
+const handleWidgetExplorerResize = useCallback((width) => {
+  console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); // Debug log
+  setWidgetWidth(width);
+}, [widgetExplorerSnapSide]); // Add widgetExplorerSnapSide as dependency for debugging
+
+// Style Functions
+const getAppContainerStyle = () => {
+  const style = {};
+  
+  if (widgetExplorerSnapSide === 'left') {
+    style.marginLeft = `${widgetWidth}px`;
+    console.log('Applying left margin:', widgetWidth); // Debug log
+  } else if (widgetExplorerSnapSide === 'right') {
+    style.marginRight = `${widgetWidth}px`;
+    console.log('Applying right margin:', widgetWidth); // Debug log
+  }
+  
+  // Add transition for smooth margin changes
+  style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
+  
+  return style;
+};
+
+const getHeaderStyle = () => {
+  const style = {};
+  
+  // Default left position (accounting for sidebar)
+  let leftPosition = 55;
+  
+  if (widgetExplorerSnapSide === 'left') {
+    // When widget is snapped to left, push header further right
+    leftPosition = 55 + widgetWidth;
+    console.log('Header left position:', leftPosition); // Debug log
+  }
+  // When snapped to right, header stays in normal position (55px)
+  
+  style.left = `${leftPosition}px`;
+  style.transition = 'left 0.3s ease';
+  
+  return style;
+};
+
+const getHeaderClassName = () => {
+  let className = 'app-header';
+  
+  if (widgetExplorerSnapSide === 'left') {
+    className += ' widget-left';
+  } else if (widgetExplorerSnapSide === 'right') {
+    className += ' widget-right';
+  }
+  
+  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
+  if (isTradeRoute && !simpleView) {
+  }
+  
+  return className;
+};
+
 
   const [useOneCT, setUseOneCT] = useState(true);
   const [oneCTSigner, setOneCTSigner] = useState('');
@@ -20159,7 +20238,7 @@ function App() {
       <MemeTransactionPopupManager />
 
       {Modals}
-      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} />
+      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} onOpenWidgetExplorer={handleOpenWidgetExplorer} isWidgetExplorerOpen={isWidgetExplorerOpen} />
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
@@ -20214,41 +20293,46 @@ function App() {
         )}
       {
         <>
-          <Header
-            setTokenIn={setTokenIn}
-            setTokenOut={setTokenOut}
-            setorders={setorders}
-            settradehistory={settradehistory}
-            settradesByMarket={settradesByMarket}
-            setcanceledorders={setcanceledorders}
-            setpopup={setpopup}
-            setChain={handleSetChain}
-            account={{
-              connected: connected,
-              address: address,
-              chainId: userchain,
-            }}
-            activechain={activechain}
-            tokenIn={tokenIn}
-            setShowTrade={setShowTrade}
-            simpleView={simpleView}
-            setSimpleView={setSimpleView}
-            tokendict={tokendict}
-            transactions={transactions}
-            activeMarket={activeMarket}
-            orderdata={{
-              liquidityBuyOrders,
-              liquiditySellOrders,
-            }}
-            onMarketSelect={onMarketSelect}
-            marketsData={sortedMarkets}
-            tradesloading={tradesloading}
-            tradesByMarket={tradesByMarket}
-          />
+          <div
+            style={getAppContainerStyle()} 
+          >
+            <Header
+              setTokenIn={setTokenIn}
+              setTokenOut={setTokenOut}
+              setorders={setorders}
+              settradehistory={settradehistory}
+              settradesByMarket={settradesByMarket}
+              setcanceledorders={setcanceledorders}
+              setpopup={setpopup}
+              setChain={handleSetChain}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              activechain={activechain}
+              tokenIn={tokenIn}
+              setShowTrade={setShowTrade}
+              simpleView={simpleView}
+              setSimpleView={setSimpleView}
+              tokendict={tokendict}
+              transactions={transactions}
+              activeMarket={activeMarket}
+              orderdata={{
+                liquidityBuyOrders,
+                liquiditySellOrders,
+              }}
+              onMarketSelect={onMarketSelect}
+              marketsData={sortedMarkets}
+              tradesloading={tradesloading}
+              tradesByMarket={tradesByMarket}
+              style={getHeaderStyle()}
+            />
+          </div>
           <div className="headerfiller"></div>
         </>
       }
-      <div className="app-container">
+      <div className="app-container" style={getAppContainerStyle()}>
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
@@ -20326,9 +20410,13 @@ function App() {
               setIsVaultDepositSigning={setIsVaultDepositSigning}
               isVaultWithdrawSigning={isVaultWithdrawSigning}
               setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+              sendUserOperationAsync={sendUserOperationAsync}
+              waitForTxReceipt={waitForTxReceipt}
+              setChain={handleSetChain}
+              address={address}
+              refetch={refetch}
             />
           } />
-
           <Route path="/earn/liquidity-pools/:poolId" element={
             <LPVaults
               setpopup={setpopup}
@@ -20498,7 +20586,7 @@ function App() {
               />
             }
           />
-  <Route
+          <Route
             path="/portfolio"
             element={
               <Portfolio
@@ -20582,7 +20670,7 @@ function App() {
           <Route path="/scale" element={TradeLayout(scale)} />
 
         </Routes>
-         <TransactionPopupManager
+        <TransactionPopupManager
           transactions={transactions}
           setTransactions={setTransactions}
           tokendict={tokendict}
@@ -20590,6 +20678,19 @@ function App() {
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
+<WidgetExplorer
+  isOpen={isWidgetExplorerOpen}
+  onClose={handleCloseWidgetExplorer}
+  setpopup={setpopup}
+  appliedFilters={appliedExplorerFilters}
+  activeFilterTab={activeExplorerFilterTab}
+  onOpenFiltersForColumn={handleOpenFiltersForColumn}
+  sendUserOperationAsync={sendUserOperationAsync}
+  waitForTxReceipt={waitForTxReceipt}
+  onSnapToSide={handleWidgetExplorerSnapToSide}
+  currentSnapSide={widgetExplorerSnapSide}
+  onWidgetResize={handleWidgetExplorerResize} 
+/>
       </div>
     </div>
   );
