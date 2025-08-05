@@ -672,7 +672,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const isRefreshing = lastRefreshTime > 0 && (Date.now() - lastRefreshTime < 2000);
 
     const walletsPosition = useMemo(() => {
-        const baseX = position.x + widgetDimensions.width + 10;
+        const baseX = position.x + widgetDimensions.width - 4;
         const baseY = position.y;
         const walletsPanelWidth = 280;
 
@@ -680,13 +680,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         if (baseX > maxWalletsX) {
             return {
-                x: Math.max(10, position.x - walletsPanelWidth - 10),
+                x: Math.max(10, position.x - walletsPanelWidth + 4),
                 y: baseY
             };
         }
 
         return { x: baseX, y: baseY };
     }, [position, widgetDimensions]);
+
+
+    const isPanelLeft = walletsPosition.x < position.x;
     const maxWalletsX = window.innerWidth - 280;
     if (walletsPosition.x > maxWalletsX) {
         walletsPosition.x = position.x - 280 - 10; 
@@ -912,15 +915,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 </div>
             </div>
 
-            {/* Separate Wallets Panel */}
             {isWalletsExpanded && (
-                <div
-                    className="quickbuy-wallets-panel"
-                    style={{
-                        left: `${walletsPosition.x}px`,
-                        top: `${walletsPosition.y}px`,
-                    }}
-                >
+  <div
+    className={`quickbuy-wallets-panel ${isPanelLeft ? 'left' : 'right'}`}
+    style={{ left: `${walletsPosition.x}px`, top: `${walletsPosition.y}px` }}
+  >
                     <div className="quickbuy-wallets-header">
                         <span className="quickbuy-wallets-title">Wallets</span>
                     </div>

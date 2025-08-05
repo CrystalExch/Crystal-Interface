@@ -16,7 +16,7 @@ export const alchemyconfig = createConfig({
   transport: alchemy({ apiKey: "SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng" }),
   policyId: "3333f9e7-1a5d-4306-ae3a-8f358a07e8ab",
   chain: settings.chains[0],
-  ssr: localStorage.getItem("noSSR") ? false : true,
+  ssr: true,
   enablePopupOauth: true,
   sessionConfig: {
     expirationTimeMs: 1000 * 60 * 60 * 24 * 7 * 365

@@ -21,8 +21,7 @@
   box-shadow: 0 5px 8px rgba(0, 0, 0, 0.3);
   pointer-events: auto;
   position: relative;
-  overflow: hidden;
-  width: 380px; 
+  overflow: hidden; 
   opacity: 1;
   min-height: 50px; 
   max-height: 50px;
