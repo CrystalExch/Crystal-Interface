@@ -312,7 +312,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     };
   }, [activeSection]);
 
-  const holderRows = (liveHolders.length
+  const holderRows = (liveHolders.length 
     ? liveHolders.map((h, i) => ({
       rank: page * pageSize + i + 1,
       wallet: h.address,
@@ -340,20 +340,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
-            <div className="meme-oc-holder-controls">
-              <button onClick={() => onPageChange?.(page - 1)} disabled={page === 0}>Prev</button>
-              <span style={{ margin: '0 8px' }}>page {page + 1}</span>
-              <button onClick={() => onPageChange?.(page + 1)} disabled={!hasNext}>Next</button>
-            </div>
-            {userStats && (
-              <div className="meme-oc-wallet-stats">
-                <b>Your Position</b>{" "}
-                Balance {fmt(userStats.balance, 3)} •
-                Bought {fmt(userStats.amountBought, 3)} •
-                Sold {fmt(userStats.amountSold, 3)} •
-                Realized {fmt(userStats.valueNet, 4)} MON
-              </div>
-            )}
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
               <div className="meme-oc-header-cell">Bought</div>
