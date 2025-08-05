@@ -82,12 +82,12 @@ export interface DevToken {
 const generateWallet = () => {
   const chars = '0123456789abcdef';
   let fullAddress = '0x';
-  
+
   // Generate 40 hex characters for a full EVM address
   for (let i = 0; i < 40; i++) {
     fullAddress += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
+
   // Return in format: 0x + first 6 + ... + last 4
   return fullAddress.slice(0, 8) + '...' + fullAddress.slice(-4);
 };
@@ -183,7 +183,7 @@ export const mockTopTraders: TopTrader[] = Array.from({ length: 30 }, (_, i) => 
   const soldUSD = Math.random() * 60000 + 500;
   const pnlAmount = soldUSD - boughtUSD;
   const pnlPercentage = (pnlAmount / boughtUSD) * 100;
-  
+
   return {
     id: (i + 1).toString(),
     wallet: generateWallet(),

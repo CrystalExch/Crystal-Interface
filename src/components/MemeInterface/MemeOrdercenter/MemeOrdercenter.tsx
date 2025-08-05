@@ -1,7 +1,21 @@
-import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import './MemeOrderCenter.css';
-import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens, Position, Order, Holder, TopTrader, DevToken } from './MemeTraderData';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
+
+import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
+
 import monadicon from '../../../assets/monadlogo.svg';
+
+import './MemeOrderCenter.css';
+
+interface LiveHolder {
+  address: string;
+  balance: number;
+  amountBought: number;
+  amountSold: number;
+  valueBought: number;
+  valueSold: number;
+  valueNet: number;
+  tokenNet: number;
+}
 
 interface MemeOrderCenterProps {
   orderCenterHeight?: number;
@@ -12,7 +26,25 @@ interface MemeOrderCenterProps {
   onDragEnd?: () => void;
   isWidgetOpen?: boolean;
   onToggleWidget?: () => void;
+  holders?: LiveHolder[];
+  page?: number;
+  pageSize?: number;
+  hasNext?: boolean;
+  onPageChange?: (p: number) => void;
+  userStats?: {
+    balance: number; amountBought: number; amountSold: number;
+    valueBought: number; valueSold: number; valueNet: number;
+  };
+  currentPrice?: number;
 }
+
+const fmt = (v: number, d = 3) => {
+  if (v === 0) return '0';
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+  return v.toLocaleString('en-US', { maximumFractionDigits: d });
+};
 
 const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   orderCenterHeight = 300,
@@ -23,6 +55,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   onDragEnd,
   isWidgetOpen = false,
   onToggleWidget,
+  holders: liveHolders = [],
+  page = 0,
+  pageSize = 100,
+  hasNext = false,
+  onPageChange,
+  userStats,
+  currentPrice = 0,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
   const [windowWidth, setWindowWidth] = useState<number>(
@@ -32,7 +71,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [dragStartY, setDragStartY] = useState(0);
   const [dragStartHeight, setDragStartHeight] = useState(0);
 
-  // Auto resizer - similar to OrderCenter
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
@@ -48,7 +86,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     };
 
-    // Set initial height
     handleResize();
 
     window.addEventListener('resize', handleResize);
@@ -57,13 +94,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, [onHeightChange]);
-
-  const heightPresets = {
-    small: 200,
-    medium: 350,
-    large: 500,
-    xlarge: 650
-  };
 
   interface TooltipProps {
     content: string;
@@ -112,15 +142,13 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     { key: 'devTokens', label: `Dev Tokens (${mockDevTokens.length})` }
   ];
 
-  // Fixed drag handle functionality
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    
-    // Store the starting position and height
+
     const startY = e.clientY;
     const startHeight = orderCenterHeight;
-    
+
     setIsDragging(true);
     setDragStartY(startY);
     setDragStartHeight(startHeight);
@@ -128,7 +156,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       moveEvent.preventDefault();
-      const deltaY = startY - moveEvent.clientY; // Inverted for intuitive dragging
+      const deltaY = startY - moveEvent.clientY;
       const newHeight = Math.max(150, Math.min(800, startHeight + deltaY));
       onHeightChange?.(newHeight);
     };
@@ -139,23 +167,17 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       onDragEnd?.();
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
-      
-      // Reset cursor
+
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
 
-    // Set cursor for dragging
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   }, [orderCenterHeight, onHeightChange, onDragStart, onDragEnd]);
-
-  const handlePresetClick = useCallback((preset: keyof typeof heightPresets) => {
-    onHeightChange?.(heightPresets[preset]);
-  }, [onHeightChange]);
 
   const renderTagIcon = (tag: string) => {
     switch (tag.toLowerCase()) {
@@ -290,11 +312,48 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     };
   }, [activeSection]);
 
+  const holderRows = (liveHolders.length
+    ? liveHolders.map((h, i) => ({
+      rank: page * pageSize + i + 1,
+      wallet: h.address,
+      balance: h.balance,
+      bought: h.amountBought,
+      sold: h.amountSold,
+      pnl: h.valueNet + currentPrice * h.balance,
+      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.tokenNet, 1e-9)) * 100,
+      tags: []
+    }))
+    : mockHolders.slice(0, 20).map((h, i) => ({
+      rank: i + 1,
+      wallet: h.wallet,
+      balance: h.balance,
+      bought: Math.random() * 10,
+      sold: Math.random() * 8,
+      pnl: (Math.random() - .5) * 20,
+      remainingPct: h.percentage,
+      tags: h.tags
+    }))
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
+            <div className="meme-oc-holder-controls">
+              <button onClick={() => onPageChange?.(page - 1)} disabled={page === 0}>Prev</button>
+              <span style={{ margin: '0 8px' }}>page {page + 1}</span>
+              <button onClick={() => onPageChange?.(page + 1)} disabled={!hasNext}>Next</button>
+            </div>
+            {userStats && (
+              <div className="meme-oc-wallet-stats">
+                <b>Your Position</b>{" "}
+                Balance {fmt(userStats.balance, 3)} •
+                Bought {fmt(userStats.amountBought, 3)} •
+                Sold {fmt(userStats.amountSold, 3)} •
+                Realized {fmt(userStats.valueNet, 4)} MON
+              </div>
+            )}
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
               <div className="meme-oc-header-cell">Bought</div>
@@ -388,7 +447,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <div className="meme-oc-section-content" data-section="holders">
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Wallet</div>
-              <div className="meme-oc-header-cell">MON Balance</div>
+              <div className="meme-oc-header-cell">Balance</div>
               <div className="meme-oc-header-cell">Bought (Avg Buy)</div>
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
@@ -396,59 +455,49 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Edit</div>
             </div>
             <div className="meme-oc-items">
-              {mockHolders.slice(0, 20).map((holder, index) => (
-                <div key={holder.id} className="meme-oc-item">
+              {holderRows.map(row => (
+                <div key={row.wallet} className="meme-oc-item">
                   <div className="meme-oc-cell">
                     <div className="meme-wallet-info">
-                      <span className="meme-wallet-index">{index + 1}</span>
-                      <span className="meme-wallet-address">{holder.wallet}</span>
-                      <div className="meme-wallet-tags">
-                        {holder.tags.map(tag => (
-                          <Tooltip key={tag} content={tag}>
-                            <span className={`meme-tag meme-tag-${tag.toLowerCase().replace(' ', '')}`}>
-                              {renderTagIcon(tag)}
-                            </span>
-                          </Tooltip>
-                        ))}
-                      </div>
+                      <span className="meme-wallet-index">{row.rank}</span>
+                      <span className="meme-wallet-address">
+                        {row.wallet.slice(0, 8)}…{row.wallet.slice(-4)}
+                      </span>
                     </div>
                   </div>
                   <div className="meme-oc-cell">
-                    <span className="meme-mon-balance"> <img className="meme-oc-monad-icon" src={monadicon} />{(Math.random() * 100).toFixed(3)}</span>
+                    <span className="meme-mon-balance">{fmt(row.balance, 3)}</span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
-                      <span className="meme-usd-amount buy">${(Math.random() * 10000).toFixed(2)}</span>
-                      <span className="meme-token-amount">{(Math.random() * 1000).toFixed(0)}M</span>
+                      <span className="meme-usd-amount buy">{fmt(row.bought, 3)}</span>
                     </div>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
-                      <span className="meme-usd-amount sell">${(Math.random() * 8000).toFixed(2)}</span>
-                      <span className="meme-token-amount">{(Math.random() * 800).toFixed(0)}M</span>
+                      <span className="meme-usd-amount sell">{fmt(row.sold, 3)}</span>
                     </div>
                   </div>
                   <div className="meme-oc-cell">
-                    <span className={`meme-pnl ${Math.random() > 0.5 ? 'positive' : 'negative'}`}>
-                      {Math.random() > 0.5 ? '+' : '-'}${(Math.random() * 5000).toFixed(0)}
+                    <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
+                      {row.pnl >= 0 ? '+' : ''}{fmt(row.pnl, 3)} MON
                     </span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-remaining-info">
                       <div>
-                        <span className="meme-remaining">${(Math.random() * 100).toFixed(0)}</span>
-                        <span className="meme-remaining-percentage">{(Math.random() * 100).toFixed(0)}%</span>
+                        <span className="meme-remaining">{row.remainingPct.toFixed(1)}%</span>
                       </div>
                       <div className="meme-remaining-bar">
-                        <div className="meme-remaining-bar-fill" style={{ width: `${(Math.random() * 100).toFixed(0)}%` }} />
+                        <div className="meme-remaining-bar-fill"
+                          style={{ width: `${row.remainingPct.toFixed(0)}%` }} />
                       </div>
                     </div>
                   </div>
-                  <div className="meme-oc-cell">
-                    <button className="meme-action-btn">Edit</button>
-                  </div>
+                  <div className="meme-oc-cell"><button className="meme-action-btn">Edit</button></div>
                 </div>
               ))}
+
             </div>
           </div>
         );
@@ -540,7 +589,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
         overflow: 'visible',
       }}
     >
-      {/* Drag Handle */}
       <div className={`meme-oc-drag-spacer ${!isOrderCenterVisible ? 'meme-oc-collapsed' : ''}`}>
         <div
           className="meme-oc-drag-handle"
@@ -585,7 +633,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
           )}
         </div>
-        
+
         {onToggleWidget && (
           <div className="meme-oc-right-controls">
             <button

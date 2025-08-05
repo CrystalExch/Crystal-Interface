@@ -117,6 +117,30 @@ const TOTAL_SUPPLY = 1e9;
 // const SUBGRAPH_URL = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.0.10';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+const PAGE_SIZE = 100;
+
+const HOLDER_FIELDS = `
+  address balance amountBought amountSold
+  valueBought valueSold valueNet tokenNet
+`;
+
+const HOLDERS_QUERY = `
+  query ($m: Bytes!, $skip: Int!, $first: Int!) {
+    holders(where:{market:$m},
+    orderBy: balance,
+    orderDirection: desc,
+    skip:$skip,
+    first:$first) {
+      ${HOLDER_FIELDS}
+    }
+  }
+`;
+
+const USER_HOLDER_QUERY = `
+  query ($id: ID!){
+    holder(id:$id){ ${HOLDER_FIELDS} }
+  }
+`;
 
 const queryCache = new Map();
 const lastRequestTime = { value: 0 };
@@ -264,7 +288,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [sellBribeValue, setSellBribeValue] = useState('0.03');
   const [tokenBalance, setTokenBalance] = useState(0);
   const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
-
+  const [holders, setHolders] = useState<Holder[]>([]);
+  const [page, setPage] = useState(0);
+  const [userStats, setUserStats] = useState({
+    balance:0, amountBought:0, amountSold:0,
+    valueBought:0, valueSold:0, valueNet:0,
+  });
+    
   const { activechain } = useSharedContext();
 
   const balancegetter = settings.chainConfig[activechain].balancegetter;
@@ -278,14 +308,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     3: { slippage: '10', priority: '0.05', bribe: '0.2' }
   };
   const queryClient = useQueryClient();
-
-
   const sellPresets = {
     1: { slippage: '15', priority: '0.005', bribe: '0.03' },
     2: { slippage: '12', priority: '0.01', bribe: '0.07' },
     3: { slippage: '8', priority: '0.03', bribe: '0.15' }
   };
-
 
   const userAddr = (address ?? account?.address ?? "").toLowerCase();
   const tokAddr = (tokenAddress ?? "").toLowerCase();
@@ -504,12 +531,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       ...defaultMetrics,
     } as Token;
   })();
+
   const refetchBalances = useCallback(() => {
     if (!userAddr || !tokAddr) return;
     const key = ["balance-and-allowance", userAddr, tokAddr] as const;
     queryClient.invalidateQueries({ queryKey: key });
     queryClient.refetchQueries({ queryKey: key, type: "active" });
   }, [queryClient, userAddr, tokAddr]);
+
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
@@ -537,6 +566,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       callback(bar);
     }
   }, [trades, selectedInterval, token.symbol]);
+
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
@@ -655,8 +685,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     fetchMemeTokenData();
     return () => { isCancelled = true; };
   }, [token.id, selectedInterval]);
-  const lastInvalidateRef = useRef(0);
 
+  const lastInvalidateRef = useRef(0);
 
   const closeNotif = useCallback(() => {
     setNotif((prev) => (prev ? { ...prev, visible: false } : prev));
@@ -678,10 +708,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
 
     ws.onopen = () => {
-      // 1) Market events (price/volume/trade counts)
       sendSub(["logs", { address: token.id }]);
 
-      // 2) ERC-20 Transfer logs for balance updates (no Approval)
       if (tokenAddress) {
         sendSub(["logs", { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
       }
@@ -693,7 +721,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const log = msg.params?.result;
       if (!log?.topics?.length) return;
 
-      // Market event -> update price/trades
       if (log.topics[0] === MARKET_UPDATE_EVENT) {
         const caller = `0x${log.topics[1].slice(26)}`;
         const hex = log.data.slice(2);
@@ -728,6 +755,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           },
           ...prev.slice(0, 99),
         ]);
+
+        setHolders(prev=>{
+          const idx = prev.findIndex(r => r.address.toLowerCase() === caller.toLowerCase());
+          if(idx === -1) return prev;
+          const row = { ...prev[idx] };
+
+          if (isBuy) {
+            row.amountBought += amountOut;
+            row.valueBought += amountIn;
+            row.balance += amountOut;
+          } else {
+            row.amountSold += amountIn;
+            row.valueSold += amountOut;
+            row.balance -= amountIn;
+          }
+          row.tokenNet = row.amountBought - row.amountSold;
+          row.valueNet = row.valueSold  - row.valueBought;
+
+          const copy = [...prev];
+          copy[idx]  = row;
+          return copy;
+        });
+
         return;
       }
 
@@ -754,6 +804,55 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
   }, [token.id, tokenAddress, address, refetchBalances]);
 
+  useEffect(() => {
+    if (!token.id) return;
+
+    (async () => {
+      const data = await gqWithRateLimit(
+        HOLDERS_QUERY,
+        { m: token.id.toLowerCase(), skip: page*PAGE_SIZE, first: PAGE_SIZE },
+        `holders-${token.id}-${page}`
+      );
+      if (!data?.holders) return;
+
+      setHolders(
+        data.holders.map((h:any)=>({
+          address: h.address,
+          balance: Number(h.balance) / 1e18,
+          amountBought: Number(h.amountBought) / 1e18,
+          amountSold: Number(h.amountSold) / 1e18,
+          valueBought: Number(h.valueBought) / 1e18,
+          valueSold: Number(h.valueSold) / 1e18,
+          valueNet: Number(h.valueNet) / 1e18,
+          tokenNet: Number(h.tokenNet) / 1e18,
+        }))
+      );
+    })();
+  }, [token.id, page]);
+
+  useEffect(() => {
+    if(!userAddr || !token.id) return;
+
+    (async () => {
+      const id = `${token.id.toLowerCase()}-${userAddr}`;
+      const data = await gqWithRateLimit(
+        USER_HOLDER_QUERY, { id }, `userHolder-${id}`
+      );
+      if(!data?.holder) {
+        setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
+        return;
+      }
+      const h = data.holder;
+      setUserStats({
+        balance: Number(h.balance) / 1e18,
+        amountBought: Number(h.amountBought) / 1e18,
+        amountSold: Number(h.amountSold) / 1e18,
+        valueBought: Number(h.valueBought) / 1e18,
+        valueSold: Number(h.valueSold) / 1e18,
+        valueNet: Number(h.valueNet) / 1e18,
+      });
+    })();
+  },[userAddr, token.id]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
@@ -798,8 +897,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return () => clearTimeout(id);
   }, [tradeAmount, currentPrice, activeTradeType, inputCurrency]);
 
-
-
   useEffect(() => {
     if (activeTradeType === 'sell') {
       setInputCurrency('TOKEN')
@@ -823,14 +920,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return;
     }
 
-    // Create unique transaction ID
     const txId = `meme-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     try {
       setIsSigning(true);
 
       if (activeTradeType === "buy") {
-        // Show instant loading popup
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
             title: 'Sending transaction...',
@@ -840,7 +935,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
-        // compute value in MON (wei)
         const valNum =
           inputCurrency === "MON"
             ? parseFloat(tradeAmount)
@@ -857,7 +951,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           value,
         };
 
-        // Update to confirming
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming transaction...',
@@ -869,7 +962,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const op = await sendUserOperationAsync({ uo });
         await waitForTxReceipt(op.hash);
 
-        // Update to success
         if (updatePopup) {
           updatePopup(txId, {
             title: `Bought ~${Number(quoteValue ?? 0).toFixed(4)} ${token.symbol}`,
@@ -881,8 +973,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
 
       } else {
-        // SELL
-        // Show instant loading popup
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
             title: 'Sending transaction...',
@@ -894,7 +984,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
 
-        // approve if needed
         if (allowance < parseFloat(tradeAmount)) {
           if (updatePopup) {
             updatePopup(txId, {
@@ -917,7 +1006,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           await waitForTxReceipt(approveOp.hash);
         }
 
-        // Update to confirming sell
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming sell...',
@@ -939,7 +1027,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const sellOp = await sendUserOperationAsync({ uo: sellUo });
         await waitForTxReceipt(sellOp.hash);
 
-        // Update to success
         if (updatePopup) {
           updatePopup(txId, {
             title: `Sold ${Number(tradeAmount).toFixed(4)} ${token.symbol}`,
@@ -957,7 +1044,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       console.error(e);
       const msg = String(e?.message ?? '');
 
-      // Update to error
       if (updatePopup) {
         updatePopup(txId, {
           title: msg.toLowerCase().includes('insufficient') ? 'Insufficient balance' : 'Transaction failed',
@@ -980,7 +1066,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
     return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
   };
-
   const isTradeDisabled = () => {
     if (!account.connected) return false;
     const targetChainId =
@@ -1028,7 +1113,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   return (
     <div className="meme-interface-container">
-      {/* Notification Popup */}
       {notif && (
         <div className={`meme-notif-popup ${notif.variant || 'info'}${notif.visible === false ? ' hide' : ''}`}
           style={{ position: 'fixed', top: 24, right: 24, zIndex: 9999, minWidth: 260 }}>
@@ -1086,6 +1170,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
+            holders={holders}
+            page={page}
+            pageSize={PAGE_SIZE}
+            hasNext={holders.length === PAGE_SIZE}
+            onPageChange={setPage}
+            userStats={userStats}
+            currentPrice={currentPrice}
           />
         </div>
       </div>
@@ -1642,7 +1733,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <span className="meme-address">
             <img className="meme-contract-icon" src={contract} />
             <span className="meme-address-title">CA:</span>{" "}
-            {token.tokenAddress.slice(0, 16)}...{token.tokenAddress.slice(-8)}
+              {token.id.slice(0, 16)}...{token.id.slice(-8)}
             <svg
               className="meme-address-link"
               xmlns="http://www.w3.org/2000/svg"
