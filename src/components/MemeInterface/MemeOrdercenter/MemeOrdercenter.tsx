@@ -5,6 +5,7 @@ import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens }
 import monadicon from '../../../assets/monadlogo.svg';
 
 import './MemeOrderCenter.css';
+import { formatSubscript } from '../../../utils/numberDisplayFormat';
 
 interface LiveHolder {
   address: string;
@@ -134,10 +135,37 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const holderRows = (liveHolders.length
+    ? liveHolders.map((h, i) => ({
+      rank: page * pageSize + i + 1,
+      wallet: h.address,
+      balance: h.balance,
+      bought: h.amountBought,
+      sold: h.amountSold,
+      valueBought: h.valueBought,
+      valueSold: h.valueSold,
+      pnl: h.valueNet + currentPrice * h.balance,
+      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.tokenNet, 1e-9)) * 100,
+      tags: []
+    }))
+    : mockHolders.slice(0, 20).map((h, i) => ({
+      rank: i + 1,
+      wallet: h.wallet,
+      balance: h.balance,
+      bought: Math.random() * 10,
+      sold: Math.random() * 8,
+      valueBought: Math.random() * 1000,
+      valueSold: Math.random() * 800,
+      pnl: (Math.random() - .5) * 20,
+      remainingPct: h.percentage,
+      tags: h.tags
+    }))
+  );
+
   const availableTabs = [
     { key: 'positions', label: 'Positions' },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
-    { key: 'holders', label: `Holders (${mockHolders.length})` },
+    { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: 'Top Traders' },
     { key: 'devTokens', label: `Dev Tokens (${mockDevTokens.length})` }
   ];
@@ -312,29 +340,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     };
   }, [activeSection]);
 
-  const holderRows = (liveHolders.length 
-    ? liveHolders.map((h, i) => ({
-      rank: page * pageSize + i + 1,
-      wallet: h.address,
-      balance: h.balance,
-      bought: h.amountBought,
-      sold: h.amountSold,
-      pnl: h.valueNet + currentPrice * h.balance,
-      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.tokenNet, 1e-9)) * 100,
-      tags: []
-    }))
-    : mockHolders.slice(0, 20).map((h, i) => ({
-      rank: i + 1,
-      wallet: h.wallet,
-      balance: h.balance,
-      bought: Math.random() * 10,
-      sold: Math.random() * 8,
-      pnl: (Math.random() - .5) * 20,
-      remainingPct: h.percentage,
-      tags: h.tags
-    }))
-  );
-
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -456,13 +461,21 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
-                      <span className="meme-usd-amount buy">{fmt(row.bought, 3)}</span>
+                      <span className="meme-token-amount">{fmt(row.bought)}</span>
+                      <span className="meme-usd-amount buy">{fmt(row.valueBought)} MON</span>
                     </div>
+                    <span className="meme-avg-price">
+                      {formatSubscript((row.valueBought / (row.bought || 1)).toFixed(10))} MON
+                    </span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
-                      <span className="meme-usd-amount sell">{fmt(row.sold, 3)}</span>
+                      <span className="meme-token-amount">{fmt(row.sold)}</span>
+                      <span className="meme-usd-amount sell">{fmt(row.valueSold)} MON</span>
                     </div>
+                    <span className="meme-avg-price">
+                      {formatSubscript((row.valueSold / (row.sold || 1)).toFixed(10))} MON
+                    </span>
                   </div>
                   <div className="meme-oc-cell">
                     <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>

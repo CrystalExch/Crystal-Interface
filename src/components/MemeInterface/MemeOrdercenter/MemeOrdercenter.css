@@ -14,11 +14,11 @@
   position: relative;
   width: 100%;
   border-top: 1px solid rgba(179, 184, 249, 0.09);
-  background-color: rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
 }
 
-@media(max-width: 1020px){
-  .meme-oc-rectangle{
+@media(max-width: 1020px) {
+  .meme-oc-rectangle {
     border-top: none;
   }
 }
@@ -32,8 +32,8 @@
   min-height: 35px;
 }
 
-@media(max-width: 1020px){
-  .meme-oc-top-bar{
+@media(max-width: 1020px) {
+  .meme-oc-top-bar {
     border-top: 1px solid rgba(179, 184, 249, 0.09);
     height: 35px;
   }
@@ -78,7 +78,7 @@
   position: relative;
   right: 0;
   width: 100%;
-  background-color: rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
 }
 
 .meme-oc-no-data-container {
@@ -241,8 +241,8 @@
 
 .meme-wallet-index,
 .meme-token-index {
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
   color: #ffffff73;
   font-size: 0.8rem;
   min-width: 20px;
@@ -310,7 +310,6 @@
 }
 
 .meme-usd-amount {
-  
   font-size: 0.8rem;
 }
 
@@ -330,7 +329,7 @@
 
 /* PnL styling */
 .meme-pnl {
-  
+
   font-size: 0.8rem;
   text-align: center;
 }
@@ -368,7 +367,7 @@
 }
 
 .meme-migrated {
-  
+
   font-size: 0.8rem;
   text-align: center;
 }
@@ -386,7 +385,7 @@
   padding: 2px 8px;
   border-radius: 3px;
   font-size: 0.7rem;
-  
+
   display: inline-block;
 }
 
@@ -472,12 +471,13 @@
 
 /* Mobile adjustments */
 @media (max-width: 1200px) {
+
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
   .meme-oc-section-content[data-section="positions"] .meme-oc-item {
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr 60px;
     gap: 10px;
   }
-  
+
   .meme-oc-section-content[data-section="holders"] .meme-oc-header,
   .meme-oc-section-content[data-section="holders"] .meme-oc-item,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
@@ -488,18 +488,19 @@
 }
 
 @media (max-width: 768px) {
+
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
   .meme-oc-section-content[data-section="positions"] .meme-oc-item {
     grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
   }
-  
+
   .meme-oc-section-content[data-section="orders"] .meme-oc-header,
   .meme-oc-section-content[data-section="orders"] .meme-oc-item {
     grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
   }
-  
+
   .meme-oc-section-content[data-section="holders"] .meme-oc-header,
   .meme-oc-section-content[data-section="holders"] .meme-oc-item,
   .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
@@ -507,22 +508,22 @@
     grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
   }
-  
+
   .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
   .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
     grid-template-columns: 2fr 1fr 1fr;
     gap: 10px;
   }
-  
+
   .meme-wallet-tags,
   .meme-token-tags {
     display: none;
   }
-  
+
   .meme-trade-info {
     font-size: 0.7rem;
   }
-  
+
   /* Hide columns on mobile */
   .meme-oc-section-content .meme-oc-header-cell:nth-child(n+4),
   .meme-oc-section-content .meme-oc-cell:nth-child(n+4) {
@@ -677,7 +678,7 @@
 
 
 .meme-remaining-bar-fill {
-  width: 0; 
+  width: 0;
   transition: width 0.3s ease;
 }
 
@@ -792,18 +793,18 @@
   .meme-oc-height-presets {
     gap: 4px;
   }
-  
+
   .meme-oc-preset-btn {
     width: 24px;
     height: 24px;
     font-size: 0.7rem;
   }
-  
+
   .meme-oc-drag-spacer {
     padding: 0 8px;
     height: 30px;
   }
-  
+
   .meme-oc-drag-handle {
     padding: 6px 8px;
   }
@@ -813,13 +814,13 @@
   .meme-oc-height-presets {
     gap: 2px;
   }
-  
+
   .meme-oc-preset-btn {
     width: 20px;
     height: 20px;
     font-size: 0.65rem;
   }
-  
+
   .meme-oc-drag-dot {
     width: 3px;
     height: 3px;
@@ -900,5 +901,36 @@
   letter-spacing: -0.5px;
 }
 
+.meme-oc-section-content[data-section="holders"] .meme-trade-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
 
+.meme-token-amount {
+  font-size: 12px;
+  color: #e5e7eb;
+}
 
+.meme-avg-price {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.meme-oc-section-content[data-section="holders"] .meme-oc-header-cell {
+  white-space: nowrap;
+}
+
+.meme-oc-section-content[data-section="holders"] .meme-oc-cell {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+@media (max-width: 1020px) {
+  .meme-token-amount,
+  .meme-usd-amount,
+  .meme-avg-price {
+    font-size: 10px;
+  }
+}
