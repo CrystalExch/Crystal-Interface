@@ -480,7 +480,7 @@ export const settings: any = {
         },
         '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea': {
           ticker: 'USDC',
-          name: 'USDC',
+          name: 'USD Coin',
           address: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
           decimals: BigInt(6),
           image: iconusdc,

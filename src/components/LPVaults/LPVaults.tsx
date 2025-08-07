@@ -171,15 +171,15 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
   const [searchTerm, setSearchTerm] = useState('');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const selectedToken = Object.values(tokendict).find((t: any) => 
+  const selectedToken = Object.values(tokendict).find((t: any) =>
     t.address.toLowerCase() === value.toLowerCase()
   );
 
   const filteredTokens = Object.values(tokendict).filter((token: any) => {
     if (!searchTerm) return true;
     return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-           token.address.toLowerCase().includes(searchTerm.toLowerCase());
+      token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      token.address.toLowerCase().includes(searchTerm.toLowerCase());
   }).slice(0, 10);
 
   useEffect(() => {
@@ -218,7 +218,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
           className="form-input token-selector-input"
           placeholder={placeholder}
         />
-        
+
         {selectedToken && (
           <div className="selected-token-indicator">
             <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
@@ -247,7 +247,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
               className="token-search-input"
             />
           </div>
-          
+
           <div className="token-list">
             {filteredTokens.map((token: any) => (
               <div
@@ -263,7 +263,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
                 <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
               </div>
             ))}
-            
+
             {filteredTokens.length === 0 && searchTerm && (
               <div className="no-tokens-found">No tokens found</div>
             )}
@@ -339,7 +339,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   });
 
   useEffect(() => {
-    
+
     (async () => {
       try {
         const [vaultDetails] = (await readContracts(config, {
@@ -372,201 +372,260 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     })();
   }, [activeVault]);
 
-const handleCreateVault = async () => {
-  if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset || 
+  const handleCreateVault = async () => {
+    if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset ||
       !createForm.amountQuote || !createForm.amountBase) {
-    return;
-  }
-
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    setChain();
-    return;
-  }
-
-  try {
-    setIsVaultDepositSigning(true);
-
-
-    if (!createForm.quoteAsset.startsWith('0x') || !createForm.baseAsset.startsWith('0x')) {
-      throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+      return;
     }
 
-
-    const quoteAssetData = Object.values(tokendict).find((t: any) => 
-      t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
-    );
-    const baseAssetData = Object.values(tokendict).find((t: any) => 
-      t.address.toLowerCase() === createForm.baseAsset.toLowerCase()
-    );
-
-    if (!quoteAssetData || !baseAssetData) {
-      throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain();
+      return;
     }
 
-    const quoteDecimals = Number(quoteAssetData.decimals || 18);
-    const baseDecimals = Number(baseAssetData.decimals || 18);
-
-    const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
-    const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
+    try {
+      setIsVaultDepositSigning(true);
 
 
-    const quoteBalance = getTokenBalance(createForm.quoteAsset);
-    const baseBalance = getTokenBalance(createForm.baseAsset);
+      if (!createForm.quoteAsset.startsWith('0x') || !createForm.baseAsset.startsWith('0x')) {
+        throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+      }
 
-    if (quoteBalance < amountQuote) {
-      throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
-    }
 
-    if (baseBalance < amountBase) {
-      throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
-    }
+      const quoteAssetData = Object.values(tokendict).find((t: any) =>
+        t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
+      );
+      const baseAssetData = Object.values(tokendict).find((t: any) =>
+        t.address.toLowerCase() === createForm.baseAsset.toLowerCase()
+      );
 
-    console.log('Creating vault with:', {
-      quoteAsset: createForm.quoteAsset,
-      baseAsset: createForm.baseAsset,
-      amountQuote: amountQuote.toString(),
-      amountBase: amountBase.toString(),
-      name: createForm.name
-    });
+      if (!quoteAssetData || !baseAssetData) {
+        throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+      }
 
-    if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-      console.log('Approving quote token...');
-      const approveQuoteUo = {
-        target: createForm.quoteAsset as `0x${string}`,
+      const quoteDecimals = Number(quoteAssetData.decimals || 18);
+      const baseDecimals = Number(baseAssetData.decimals || 18);
+
+      const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
+      const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
+
+
+      const quoteBalance = getTokenBalance(createForm.quoteAsset);
+      const baseBalance = getTokenBalance(createForm.baseAsset);
+
+      if (quoteBalance < amountQuote) {
+        throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
+      }
+
+      if (baseBalance < amountBase) {
+        throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
+      }
+
+      console.log('Creating vault with:', {
+        quoteAsset: createForm.quoteAsset,
+        baseAsset: createForm.baseAsset,
+        amountQuote: amountQuote.toString(),
+        amountBase: amountBase.toString(),
+        name: createForm.name
+      });
+
+      if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+        console.log('Approving quote token...');
+        const approveQuoteUo = {
+          target: createForm.quoteAsset as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, amountQuote],
+          }),
+          value: 0n,
+        };
+        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+        await waitForTxReceipt(approveQuoteOp.hash);
+        console.log('Quote token approved');
+      }
+
+      if (createForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+        console.log('Approving base token...');
+        const approveBaseUo = {
+          target: createForm.baseAsset as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, amountBase],
+          }),
+          value: 0n,
+        };
+        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+        await waitForTxReceipt(approveBaseOp.hash);
+        console.log('Base token approved');
+      }
+
+      const ethValue =
+        createForm.quoteAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountQuote :
+          createForm.baseAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountBase : 0n;
+
+      console.log('Deploying vault with ETH value:', ethValue.toString());
+
+      const deployUo = {
+        target: crystalVaultsAddress as `0x${string}`,
         data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, amountQuote],
+          abi: CrystalVaultsAbi,
+          functionName: "deploy",
+          args: [
+            createForm.quoteAsset as `0x${string}`,
+            createForm.baseAsset as `0x${string}`,
+            amountQuote,
+            amountBase,
+            createForm.name || 'Unnamed Vault',
+            createForm.description || 'No description provided',
+            createForm.social1 || '',
+            createForm.social2 || '',
+          ],
         }),
-        value: 0n,
+        value: ethValue,
       };
-      const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-      await waitForTxReceipt(approveQuoteOp.hash);
-      console.log('Quote token approved');
+
+      console.log('Sending deploy transaction...');
+      const deployOp = await sendUserOperationAsync({ uo: deployUo });
+      console.log('Deploy transaction sent, waiting for receipt...');
+      await waitForTxReceipt(deployOp.hash);
+      console.log('Vault deployed successfully!');
+
+      setCreateForm({
+        name: '',
+        description: '',
+        quoteAsset: '',
+        baseAsset: '',
+        amountQuote: '',
+        amountBase: '',
+        social1: '',
+        social2: ''
+      });
+      setShowCreateModal(false);
+
+      refetch?.();
+      alert('Vault created successfully!');
+
+    } catch (e: any) {
+      console.error('Vault creation error:', e);
+
+      let errorMessage = 'Failed to create vault';
+
+      if (e.message?.includes('insufficient')) {
+        errorMessage = 'Insufficient balance for one or more tokens';
+      } else if (e.message?.includes('allowance')) {
+        errorMessage = 'Token approval failed. Please try again.';
+      } else if (e.message?.includes('execution reverted')) {
+        errorMessage = 'Transaction failed. This might be due to:\n• Minimum deposit requirements not met\n• Invalid token pair\n• Contract restrictions\n• Network congestion';
+      } else if (e.message) {
+        errorMessage = e.message;
+      }
+
+      alert(errorMessage);
+    } finally {
+      setIsVaultDepositSigning(false);
     }
-
-    if (createForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-      console.log('Approving base token...');
-      const approveBaseUo = {
-        target: createForm.baseAsset as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, amountBase], 
-        }),
-        value: 0n,
-      };
-      const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-      await waitForTxReceipt(approveBaseOp.hash);
-      console.log('Base token approved');
-    }
-
-    const ethValue = 
-      createForm.quoteAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountQuote :
-      createForm.baseAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountBase : 0n;
-
-    console.log('Deploying vault with ETH value:', ethValue.toString());
-
-    const deployUo = {
-      target: crystalVaultsAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "deploy",
-        args: [
-          createForm.quoteAsset as `0x${string}`,
-          createForm.baseAsset as `0x${string}`,
-          amountQuote,
-          amountBase,
-          createForm.name || 'Unnamed Vault',
-          createForm.description || 'No description provided',
-          createForm.social1 || '',
-          createForm.social2 || '',
-        ],
-      }),
-      value: ethValue,
-    };
-
-    console.log('Sending deploy transaction...');
-    const deployOp = await sendUserOperationAsync({ uo: deployUo });
-    console.log('Deploy transaction sent, waiting for receipt...');
-    await waitForTxReceipt(deployOp.hash);
-    console.log('Vault deployed successfully!');
-
-    setCreateForm({
-      name: '',
-      description: '',
-      quoteAsset: '',
-      baseAsset: '',
-      amountQuote: '',
-      amountBase: '',
-      social1: '',
-      social2: ''
-    });
-    setShowCreateModal(false);
-
-    refetch?.();
-    alert('Vault created successfully!');
-
-  } catch (e: any) {
-    console.error('Vault creation error:', e);
-    
-    let errorMessage = 'Failed to create vault';
-    
-    if (e.message?.includes('insufficient')) {
-      errorMessage = 'Insufficient balance for one or more tokens';
-    } else if (e.message?.includes('allowance')) {
-      errorMessage = 'Token approval failed. Please try again.';
-    } else if (e.message?.includes('execution reverted')) {
-      errorMessage = 'Transaction failed. This might be due to:\n• Minimum deposit requirements not met\n• Invalid token pair\n• Contract restrictions\n• Network congestion';
-    } else if (e.message) {
-      errorMessage = e.message;
-    }
-    
-    alert(errorMessage);
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
+  };
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-const getTokenIcon = (tokenIdentifier: string) => {
+
+  const getTokenIcon = (tokenIdentifier: string) => {
+    if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
+      const lowerAddress = tokenIdentifier.toLowerCase();
+      let tokenByAddress = tokendict[lowerAddress];
+
+      if (!tokenByAddress) {
+        const foundEntry = Object.entries(tokendict).find(([key, value]) =>
+          key.toLowerCase() === lowerAddress
+        );
+        if (foundEntry) {
+          tokenByAddress = foundEntry[1];
+        }
+      }
+      if (tokenByAddress) {
+        return tokenByAddress.image;
+      }
+    }
+
+    const tokenByTicker = Object.values(tokendict).find((t: any) =>
+      t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
+    );
+    console.log('Found token by ticker:', tokenByTicker);
+    return tokenByTicker?.image || '/api/placeholder/24/24';
+  };
+
+
+const getTokenName = (tokenIdentifier: string) => {
+  // Handle address inputs (0x...)
   if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
-    const tokenByAddress = tokendict[tokenIdentifier.toLowerCase()];
+    const lowerAddress = tokenIdentifier.toLowerCase();
+    let tokenByAddress = tokendict[lowerAddress];
+
+    if (!tokenByAddress) {
+      const foundEntry = Object.entries(tokendict).find(([key, value]) =>
+        key.toLowerCase() === lowerAddress
+      );
+      if (foundEntry) {
+        tokenByAddress = foundEntry[1];
+      }
+    }
     if (tokenByAddress) {
-      return tokenByAddress.image;
+      return tokenByAddress.name;
     }
   }
-  
-  const tokenByTicker = Object.values(tokendict).find((t: any) => 
+
+  // Handle ticker/symbol inputs
+  const tokenByTicker = Object.values(tokendict).find((t: any) =>
     t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
   );
-  return tokenByTicker?.image || '/api/placeholder/24/24';
+  return tokenByTicker?.name || tokenIdentifier;
 };
-  const getTokenName = (symbol: string) => {
-    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
-    return tokenEntry?.name || symbol;
-  };
+
+const getTokenTicker = (tokenIdentifier: string) => {
+ if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
+    const lowerAddress = tokenIdentifier.toLowerCase();
+    let tokenByAddress = tokendict[lowerAddress];
+
+    if (!tokenByAddress) {
+      const foundEntry = Object.entries(tokendict).find(([key, value]) =>
+        key.toLowerCase() === lowerAddress
+      );
+      if (foundEntry) {
+        tokenByAddress = foundEntry[1];
+      }
+    }
+    if (tokenByAddress) {
+      return tokenByAddress.ticker;
+    }
+  }
+
+  const tokenByTicker = Object.values(tokendict).find((t: any) =>
+    t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
+  );
+  return tokenByTicker?.ticker || tokenIdentifier;
+};
 
   const formatDisplayValue = (rawAmount: bigint, decimals = 18): string => {
     let amount = Number(rawAmount) / 10 ** decimals;
@@ -582,18 +641,16 @@ const getTokenIcon = (tokenIdentifier: string) => {
   const getTokenBalance = (tokenAddress: string): bigint => {
     return tokenBalances[tokenAddress] || 0n;
   };
+const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
+  const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
+  const myVaultsMatch = activeVaultTab === 'all' ||
+    (activeVaultTab === 'my-vaults' && address && vault.owner.toLowerCase() === address.toLowerCase());
+  const searchMatch = searchQuery === '' ||
+    vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
-    const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
-    const myVaultsMatch = activeVaultTab === 'all' ||
-      (activeVaultTab === 'my-vaults' && (vault.isCreator || parseFloat(vault.userBalance || '0') > 0));
-    const searchMatch = searchQuery === '' ||
-      vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return typeMatch && myVaultsMatch && searchMatch;
-  });
-
+  return typeMatch && myVaultsMatch && searchMatch;
+});
   const showVaultStrategyDetail = (vaultAddress: string) => {
     setSelectedVaultStrategy(vaultAddress);
     setActiveVaultStrategyTab('balances');
@@ -605,7 +662,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
     onRouteChange?.('/earn/vaults');
   };
 
-  const selectedVaultStrategyData = selectedVaultStrategy ? 
+  const selectedVaultStrategyData = selectedVaultStrategy ?
     filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
 
   const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
@@ -663,7 +720,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
       try {
         const quoteDecimals = Number(selectedVaultForAction.quoteAssetData?.decimals || 18);
         const baseDecimals = Number(selectedVaultForAction.baseAssetData?.decimals || 18);
-        
+
         const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
         const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
@@ -699,7 +756,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
 
   const handleVaultDeposit = async () => {
     if (!selectedVaultForAction || !account.connected || !depositPreview) return;
-    
+
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
       setChain();
@@ -721,13 +778,13 @@ const getTokenIcon = (tokenIdentifier: string) => {
 
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
-      
+
       const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
       const amountBaseMin = (amountBaseDesired * 95n) / 100n;
 
       const quoteBalance = getTokenBalance(quoteAssetAddress);
       const baseBalance = getTokenBalance(baseAssetAddress);
-      
+
       if (quoteBalance < amountQuoteDesired) {
         throw new Error(`Insufficient ${selectedVaultForAction.quoteAsset} balance`);
       }
@@ -782,9 +839,9 @@ const getTokenIcon = (tokenIdentifier: string) => {
         await waitForTxReceipt(approveBaseOp.hash);
       }
 
-      const ethValue = 
+      const ethValue =
         quoteAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
-        baseAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+          baseAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
 
       const depositUo = {
         target: crystalVaultsAddress as `0x${string}`,
@@ -809,7 +866,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
       setVaultQuoteExceedsBalance(false);
       setVaultBaseExceedsBalance(false);
       setDepositPreview(null);
-      
+
       refetch?.();
 
       setpopup(0);
@@ -825,7 +882,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
 
   const handleVaultWithdraw = async () => {
     if (!selectedVaultForAction || !account.connected || !withdrawPreview) return;
-    
+
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
       setChain();
@@ -836,7 +893,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
       setIsVaultWithdrawSigning(true);
 
       const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
-      
+
       const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
       const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
 
@@ -861,7 +918,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
       setWithdrawShares('');
       setWithdrawExceedsBalance(false);
       setWithdrawPreview(null);
-      
+
       refetch?.();
 
       setpopup(0);
@@ -875,24 +932,24 @@ const getTokenIcon = (tokenIdentifier: string) => {
     }
   };
 
-  const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
-    if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
-      return;
+
+const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
+  if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
+    return;
+  }
+
+  const availableTabs = ['balances', 'deposits', 'withdrawals', 'depositors'];
+  const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
+
+  if (activeTabIndex !== -1) {
+    const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
+    if (activeTabElement && activeTabElement.parentElement) {
+      const indicator = vaultStrategyIndicatorRef.current;
+      indicator.style.width = `${activeTabElement.offsetWidth}px`;
+      indicator.style.left = `${activeTabElement.offsetLeft}px`;
     }
-
-    const availableTabs = ['balances', ...(selectedVaultStrategyData?.type === 'Margin' ? ['positions'] : []), 'trades', 'deposits', 'withdrawals', 'depositors'];
-    const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
-
-    if (activeTabIndex !== -1) {
-      const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
-      if (activeTabElement && activeTabElement.parentElement) {
-        const indicator = vaultStrategyIndicatorRef.current;
-        indicator.style.width = `${activeTabElement.offsetWidth}px`;
-        indicator.style.left = `${activeTabElement.offsetLeft}px`;
-      }
-    }
-  }, [selectedVaultStrategyData?.type]);
-
+  }
+}, [selectedVaultStrategyData?.type]);
   useEffect(() => {
     if (selectedVaultStrategy && selectedVaultStrategyData) {
       setTimeout(() => {
@@ -935,7 +992,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
   };
 
   const isWithdrawEnabled = () => {
-    return withdrawShares !== '' && parseFloat(withdrawShares) > 0 && 
+    return withdrawShares !== '' && parseFloat(withdrawShares) > 0 &&
       !withdrawExceedsBalance && withdrawPreview;
   };
 
@@ -1004,8 +1061,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('my-vaults')}
                 >
-                  My Vaults ({filteredVaultStrategies.filter((v: any) => v.isCreator || parseFloat(v.userBalance || '0') > 0).length})
-                </button>
+                My Vaults ({(vaultList || []).filter((v: any) => address && v.owner.toLowerCase() === address.toLowerCase()).length})                </button>
               </div>
 
               <div className="filter-controls">
@@ -1072,12 +1128,10 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   <div className="col vault-tokens-col">
                     <div className="vault-tokens">
                       <div className="quote-token">
-                        <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="token-icon" />
-                        <span>{vault.quoteAsset}</span>
+                        <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="vault-token-icon" />
                       </div>
                       <div className="base-token">
-                        <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="token-icon" />
-                        <span>{vault.baseAsset}</span>
+                        <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="vault-token-icon" />
                       </div>
                     </div>
                   </div>
@@ -1333,7 +1387,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                               <img src={getTokenIcon(selectedVaultStrategyData.quoteAsset)} alt={selectedVaultStrategyData.quoteAsset} className="vault-holding-icon" />
                               <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.quoteAsset}</div>
+                            <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.quoteAsset)}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
                             <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>
@@ -1342,7 +1396,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                               <img src={getTokenIcon(selectedVaultStrategyData.baseAsset)} alt={selectedVaultStrategyData.baseAsset} className="vault-holding-icon" />
                               <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.baseAsset}</div>
+                            <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.baseAsset)}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
                             <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>
@@ -1381,7 +1435,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   <input
                     type="text"
                     value={createForm.name}
-                    onChange={(e) => setCreateForm(prev => ({...prev, name: e.target.value}))}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
                     className="form-input"
                     placeholder="Enter vault name"
                   />
@@ -1391,7 +1445,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   <label>Description</label>
                   <textarea
                     value={createForm.description}
-                    onChange={(e) => setCreateForm(prev => ({...prev, description: e.target.value}))}
+                    onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
                     className="form-textarea"
                     rows={4}
                     placeholder="Describe your vault strategy"
@@ -1402,7 +1456,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   <div className="form-group">
                     <TokenSelector
                       value={createForm.quoteAsset}
-                      onChange={(value) => setCreateForm(prev => ({...prev, quoteAsset: value}))}
+                      onChange={(value) => setCreateForm(prev => ({ ...prev, quoteAsset: value }))}
                       tokendict={tokendict}
                       placeholder="Select quote token..."
                       label="Quote Asset"
@@ -1411,7 +1465,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                   <div className="form-group">
                     <TokenSelector
                       value={createForm.baseAsset}
-                      onChange={(value) => setCreateForm(prev => ({...prev, baseAsset: value}))}
+                      onChange={(value) => setCreateForm(prev => ({ ...prev, baseAsset: value }))}
                       tokendict={tokendict}
                       placeholder="Select base token..."
                       label="Base Asset"
@@ -1425,7 +1479,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                     <input
                       type="number"
                       value={createForm.amountQuote}
-                      onChange={(e) => setCreateForm(prev => ({...prev, amountQuote: e.target.value}))}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, amountQuote: e.target.value }))}
                       className="form-input"
                       placeholder="0.0"
                     />
@@ -1435,7 +1489,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                     <input
                       type="number"
                       value={createForm.amountBase}
-                      onChange={(e) => setCreateForm(prev => ({...prev, amountBase: e.target.value}))}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, amountBase: e.target.value }))}
                       className="form-input"
                       placeholder="0.0"
                     />
@@ -1448,7 +1502,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                     <input
                       type="text"
                       value={createForm.social1}
-                      onChange={(e) => setCreateForm(prev => ({...prev, social1: e.target.value}))}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, social1: e.target.value }))}
                       className="form-input"
                       placeholder="https://twitter.com/..."
                     />
@@ -1458,7 +1512,7 @@ const getTokenIcon = (tokenIdentifier: string) => {
                     <input
                       type="text"
                       value={createForm.social2}
-                      onChange={(e) => setCreateForm(prev => ({...prev, social2: e.target.value}))}
+                      onChange={(e) => setCreateForm(prev => ({ ...prev, social2: e.target.value }))}
                       className="form-input"
                       placeholder="https://telegram.me/..."
                     />

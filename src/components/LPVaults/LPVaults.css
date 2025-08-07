@@ -3759,6 +3759,7 @@
     transition:left .2s ease,width .2s ease
 }
 .vault-tab-content{
+    display: flex;
     min-height:400px
 }
     
@@ -4210,189 +4211,6 @@
   overflow-y: auto;
 }
 
-.token-option {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-  border-bottom: 1px solid #2a2a2a;
-}
-
-.token-option:hover {
-  background-color: #2a2a2a;
-}
-
-.token-option:last-child {
-  border-bottom: none;
-}
-
-.token-icon {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.token-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.token-symbol {
-  font-weight: 600;
-  color: #fff;
-  font-size: 14px;
-}
-
-.token-name {
-  font-size: 12px;
-  color: #ffffff79;
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.token-address {
-  font-size: 12px;
-  color: #ffffff79;
-  font-family: monospace;
-  flex-shrink: 0;
-}
-
-.no-tokens-found {
-  padding: 20px;
-  text-align: center;
-  color: #ffffff79;
-  font-size: 14px;
-}
-
-/* Additional styles for better form layout */
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.form-input {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 12px;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-.form-input:focus {
-  border-color: #aaaecf;
-}
-
-.form-textarea {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 12px;
-  color: #fff;
-  font-size: 14px;
-  outline: none;
-  transition: border-color 0.2s;
-  resize: vertical;
-  min-height: 80px;
-}
-
-.form-textarea:focus {
-  border-color: #aaaecf;
-}
-
-/* Status indicators */
-.status-success {
-  color: #4ade80;
-}
-
-.status-warning {
-  color: #fbbf24;
-}
-
-.status-error {
-  color: #ef4444;
-}
-
-/* Metric indicators */
-.metric-positive {
-  color: #4ade80;
-}
-
-.metric-warning {
-  color: #fbbf24;
-}
-
-.metric-negative {
-  color: #ef4444;
-}
-
-/* Preview section styles */
-.deposit-preview, .withdraw-preview {
-  background: #2a2a2a;
-  border: 1px solid #444;
-  border-radius: 8px;
-  padding: 16px;
-  margin-top: 16px;
-}
-
-.preview-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 0;
-  border-bottom: 1px solid #444;
-}
-
-.preview-item:last-child {
-  border-bottom: none;
-}
-
-.preview-item span:first-child {
-  color: #ffffff79;
-  font-size: 14px;
-}
-
-.preview-item span:last-child {
-  color: #fff;
-  font-weight: 500;
-  font-size: 14px;
-}
-
-/* Loading spinner for buttons */
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid transparent;
-  border-top: 2px solid #fff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-.button-content {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-/* No vaults message */
 .no-vaults-message {
   text-align: center;
   padding: 3rem 1rem;
@@ -4402,4 +4220,34 @@
 .no-vaults-message p {
   font-size: .85rem;
   margin: 0;
+}
+
+.form-row{
+    display: flex;
+    width: 100%;
+    gap: 0.5rem
+}
+
+
+.form-input{
+    width: 100%;
+}
+
+.form-group{
+    width: 100%;
+}
+
+
+
+.vault-data-tab{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    color: rgb(255,255,255,0.6);
+    width: 100%;
+}
+
+.balances-tab{
+    width: 100%;
 }
