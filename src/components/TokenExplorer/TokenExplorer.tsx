@@ -1466,7 +1466,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           </div>
                         </div>
                         <div className="explorer-second-row">
-                          <span className="explorer-time-created">0h</span>
                           <div className="explorer-stat-item">
                             <span className="explorer-stat-value">0</span>
                           </div>
@@ -1477,10 +1476,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     </div>
                     <div className="explorer-third-row">
                       <div className="explorer-market-cap">
-                        <span className="mc-label">MC</span>
-                        <span>$0</span>
-                      </div>
-                      <div className="explorer-third-row-section">
+                        <span className="mc-label"></span>
+                        <span className="mc-label"></span>
                       </div>
                       <div className="explorer-actions-section">
                         <button className="explorer-quick-buy-btn">Loading</button>
@@ -1582,7 +1579,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           </div>
                         </div>
                         <div className="explorer-second-row">
-                          <span className="explorer-time-created">0h</span>
                           <div className="explorer-stat-item">
                             <span className="explorer-stat-value">0</span>
                           </div>
@@ -1593,10 +1589,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     </div>
                     <div className="explorer-third-row">
                       <div className="explorer-market-cap">
-                        <span className="mc-label">MC</span>
-                        <span>$0</span>
-                      </div>
-                      <div className="explorer-third-row-section">
+                        <span className="mc-label"></span>
+                        <span className="mc-label"></span>
                       </div>
                       <div className="explorer-actions-section">
                         <button className="explorer-quick-buy-btn">Loading</button>
@@ -1698,7 +1692,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                           </div>
                         </div>
                         <div className="explorer-second-row">
-                          <span className="explorer-time-created">0h</span>
                           <div className="explorer-stat-item">
                             <span className="explorer-stat-value">0</span>
                           </div>
@@ -1709,10 +1702,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                     </div>
                     <div className="explorer-third-row">
                       <div className="explorer-market-cap">
-                        <span className="mc-label">MC</span>
-                        <span>$0</span>
-                      </div>
-                      <div className="explorer-third-row-section">
+                        <span className="mc-label"></span>
+                        <span className="mc-label"></span>
                       </div>
                       <div className="explorer-actions-section">
                         <button className="explorer-quick-buy-btn">Loading</button>
