@@ -1,9 +1,8 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
-
+import { readContracts } from '@wagmi/core';
 import { encodeFunctionData, decodeFunctionResult } from "viem";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
@@ -11,6 +10,7 @@ import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
 import { settings } from "../../settings";
 import walleticon from "../../assets/wallet_icon.png";
 import closebutton from "../../assets/close_button.svg";
+import { config } from '../../wagmi';
 import './LPVaults.css';
 
 interface VaultData {
@@ -35,10 +35,10 @@ interface VaultStrategy {
   name: string;
   description: string;
   type: 'Spot' | 'Margin';
-  quoteToken: string;
-  baseToken: string;
-  quoteTokenData?: any;
-  baseTokenData?: any;
+  quoteAsset: string;
+  baseAsset: string;
+  quoteAssetData?: any;
+  baseAssetData?: any;
   totalShares: string;
   maxShares: string;
   userShares: string;
@@ -82,6 +82,8 @@ interface LPVaultsProps {
   setChain: () => void;
   address: string;
   refetch?: () => void;
+  activechain: number;
+  crystalVaultsAddress: any;
 }
 
 const performanceData = [
@@ -299,16 +301,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   setChain,
   address,
   refetch,
+  activechain,
+  crystalVaultsAddress,
 }) => {
-  const { activechain } = useSharedContext();
-  const queryClient = useQueryClient();
-
-  const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-  const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
-  const multicallAddress = settings.chainConfig[activechain]?.multicall3;
 
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeVault, setActiveVault] = useState('0x6A6a20102070A58ac8bC21a12B29832CEe2a638e' as `0x${string}`);
+  const [vaultList, setVaultList] = useState<any>([]);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -338,7 +338,39 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     social2: ''
   });
 
-
+  useEffect(() => {
+    
+    (async () => {
+      try {
+        const [vaultDetails] = (await readContracts(config, {
+          contracts: [
+            { abi: CrystalVaultsAbi, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault] },
+          ],
+        })) as any[];
+        if (vaultDetails?.status === "success") {
+          const vaultDict = {
+            address: vaultDetails.result[0],
+            quoteAsset: vaultDetails.result[1],
+            baseAsset: vaultDetails.result[2],
+            owner: vaultDetails.result[3],
+            name: vaultDetails.result[4],
+            desc: vaultDetails.result[5],
+            social1: vaultDetails.result[6],
+            social2: vaultDetails.result[7],
+            totalShares: vaultDetails.result[8],
+            maxShares: vaultDetails.result[9],
+            lockup: vaultDetails.result[10],
+            locked: vaultDetails.result[11],
+            closed: vaultDetails.result[12],
+            type: 'Spot',
+          }
+          vaultList.push(vaultDict)
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [activeVault]);
 
 const handleCreateVault = async () => {
   if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset || 
@@ -361,19 +393,19 @@ const handleCreateVault = async () => {
     }
 
 
-    const quoteTokenData = Object.values(tokendict).find((t: any) => 
+    const quoteAssetData = Object.values(tokendict).find((t: any) => 
       t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
     );
-    const baseTokenData = Object.values(tokendict).find((t: any) => 
+    const baseAssetData = Object.values(tokendict).find((t: any) => 
       t.address.toLowerCase() === createForm.baseAsset.toLowerCase()
     );
 
-    if (!quoteTokenData || !baseTokenData) {
+    if (!quoteAssetData || !baseAssetData) {
       throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
     }
 
-    const quoteDecimals = Number(quoteTokenData.decimals || 18);
-    const baseDecimals = Number(baseTokenData.decimals || 18);
+    const quoteDecimals = Number(quoteAssetData.decimals || 18);
+    const baseDecimals = Number(baseAssetData.decimals || 18);
 
     const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
     const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
@@ -383,11 +415,11 @@ const handleCreateVault = async () => {
     const baseBalance = getTokenBalance(createForm.baseAsset);
 
     if (quoteBalance < amountQuote) {
-      throw new Error(`Insufficient ${quoteTokenData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
+      throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
     }
 
     if (baseBalance < amountBase) {
-      throw new Error(`Insufficient ${baseTokenData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
+      throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
     }
 
     console.log('Creating vault with:', {
@@ -492,10 +524,6 @@ const handleCreateVault = async () => {
     setShowCreateModal(false);
 
     refetch?.();
-    queryClient.invalidateQueries({ queryKey: ["vault-count"] });
-    queryClient.invalidateQueries({ queryKey: ["vault-addresses"] });
-    queryClient.invalidateQueries({ queryKey: ["vault-details"] });
-
     alert('Vault created successfully!');
 
   } catch (e: any) {
@@ -522,310 +550,6 @@ const handleCreateVault = async () => {
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const { data: vaultCount } = useQuery({
-    queryKey: ["vault-count", crystalVaultsAddress],
-    queryFn: async () => {
-      if (!crystalVaultsAddress) return 0;
-
-      const calldata = encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "allVaultsLength",
-        args: [],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: crystalVaultsAddress, data: calldata },
-            "latest",
-          ],
-        }),
-      });
-
-      const { result } = await res.json();
-      const count = decodeFunctionResult({
-        abi: CrystalVaultsAbi,
-        functionName: "allVaultsLength",
-        data: result,
-      });
-
-      return Number(count);
-    },
-    enabled: !!crystalVaultsAddress,
-    staleTime: 30_000,
-  });
-
-  const { data: vaultAddresses } = useQuery({
-    queryKey: ["vault-addresses", crystalVaultsAddress, vaultCount],
-    queryFn: async () => {
-      if (!crystalVaultsAddress || !vaultCount) return [];
-
-      const calls = Array.from({ length: vaultCount }, (_, i) => ({
-        target: crystalVaultsAddress,
-        callData: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "allVaults",
-          args: [BigInt(i)],
-        }),
-      }));
-
-      const multiCalldata = encodeFunctionData({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        args: [false, calls],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: multicallAddress, data: multiCalldata },
-            "latest",
-          ],
-        }),
-      });
-
-      const { result } = await res.json();
-      const [, , returnData] = decodeFunctionResult({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        data: result,
-      });
-
-      const addresses: string[] = [];
-      returnData.forEach((call: any) => {
-        if (call.success) {
-          const [vaultAddress] = decodeFunctionResult({
-            abi: CrystalVaultsAbi,
-            functionName: "allVaults",
-            data: call.returnData,
-          });
-          addresses.push(vaultAddress);
-        }
-      });
-
-      return addresses;
-    },
-    enabled: !!crystalVaultsAddress && !!vaultCount && vaultCount > 0,
-    staleTime: 30_000,
-  });
-
-  const { data: vaultDetails } = useQuery({
-    queryKey: ["vault-details", crystalVaultsAddress, vaultAddresses],
-    queryFn: async () => {
-      if (!crystalVaultsAddress || !vaultAddresses || vaultAddresses.length === 0) return [];
-
-      const calls = vaultAddresses.map(vaultAddress => ({
-        target: crystalVaultsAddress,
-        callData: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "getVault",
-          args: [vaultAddress as `0x${string}`],
-        }),
-      }));
-
-      const multiCalldata = encodeFunctionData({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        args: [false, calls],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: multicallAddress, data: multiCalldata },
-            "latest",
-          ],
-        }),
-      });
-
-      const { result } = await res.json();
-      const [, , returnData] = decodeFunctionResult({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        data: result,
-      });
-
-      const vaults: VaultStrategy[] = [];
-      returnData.forEach((call: any, index: number) => {
-        if (call.success) {
-          const vaultData = decodeFunctionResult({
-            abi: CrystalVaultsAbi,
-            functionName: "getVault",
-            data: call.returnData,
-          }) as any;
-
-          const [vault, quoteAsset, baseAsset, owner, name, desc, social1, social2, totalShares, maxShares, lockup, locked, closed] = vaultData;
-
-          const quoteTokenData = Object.values(tokendict).find((t: any) => t.address.toLowerCase() === quoteAsset.toLowerCase());
-          const baseTokenData = Object.values(tokendict).find((t: any) => t.address.toLowerCase() === baseAsset.toLowerCase());
-
-          vaults.push({
-            id: vault,
-            address: vault,
-            name: name || `Vault ${index + 1}`,
-            description: desc || 'No description available',
-            type: 'Spot',
-            quoteToken: quoteTokenData?.ticker || 'UNKNOWN',
-            baseToken: baseTokenData?.ticker || 'UNKNOWN',
-            quoteTokenData,
-            baseTokenData,
-            totalShares: totalShares.toString(),
-            maxShares: maxShares.toString(),
-            userShares: '0',
-            userBalance: '0.00',
-            userEarnings: '0.00',
-            isCreator: owner.toLowerCase() === address?.toLowerCase(),
-            createdAt: new Date(),
-            lockup: Number(lockup),
-            locked,
-            closed,
-            owner,
-            social1: social1 || '',
-            social2: social2 || '',
-            age: Math.floor(Math.random() * 365) + 1,
-          });
-        }
-      });
-
-      return vaults;
-    },
-    enabled: !!crystalVaultsAddress && !!vaultAddresses && vaultAddresses.length > 0,
-    staleTime: 30_000,
-  });
-
-  const { data: userVaultBalances } = useQuery({
-    queryKey: ["user-vault-balances", address, vaultAddresses],
-    queryFn: async () => {
-      if (!address || !vaultAddresses || vaultAddresses.length === 0) return {};
-      return {};
-    },
-    enabled: !!address && !!vaultAddresses && vaultAddresses.length > 0,
-    staleTime: 30_000,
-  });
-
   const getTokenIcon = (symbol: string) => {
     const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
     return tokenEntry?.image || '/api/placeholder/24/24';
@@ -851,7 +575,7 @@ const handleCreateVault = async () => {
     return tokenBalances[tokenAddress] || 0n;
   };
 
-  const filteredVaultStrategies = (vaultDetails || []).filter(vault => {
+  const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
     const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
     const myVaultsMatch = activeVaultTab === 'all' ||
       (activeVaultTab === 'my-vaults' && (vault.isCreator || parseFloat(vault.userBalance || '0') > 0));
@@ -874,7 +598,7 @@ const handleCreateVault = async () => {
   };
 
   const selectedVaultStrategyData = selectedVaultStrategy ? 
-    filteredVaultStrategies.find(vault => vault.address === selectedVaultStrategy) : null;
+    filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
 
   const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
@@ -884,7 +608,7 @@ const handleCreateVault = async () => {
       }));
 
       if (value !== '' && selectedVaultForAction) {
-        const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
+        const tokenData = type === 'quote' ? selectedVaultForAction.quoteAssetData : selectedVaultForAction.baseAssetData;
         if (tokenData) {
           const userBalance = getTokenBalance(tokenData.address);
           const tokenDecimals = Number(tokenData.decimals || 18);
@@ -929,44 +653,12 @@ const handleCreateVault = async () => {
 
     const previewDeposit = async () => {
       try {
-        const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
-        const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+        const quoteDecimals = Number(selectedVaultForAction.quoteAssetData?.decimals || 18);
+        const baseDecimals = Number(selectedVaultForAction.baseAssetData?.decimals || 18);
         
         const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
         const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
-        const calldata = encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "previewDeposit",
-          args: [
-            selectedVaultForAction.address as `0x${string}`,
-            amountQuoteDesired,
-            amountBaseDesired,
-          ],
-        });
-
-        const res = await fetch(HTTP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "eth_call",
-            params: [
-              { to: crystalVaultsAddress, data: calldata },
-              "latest",
-            ],
-          }),
-        });
-
-        const { result } = await res.json();
-        const [shares, amountQuote, amountBase] = decodeFunctionResult({
-          abi: CrystalVaultsAbi,
-          functionName: "previewDeposit",
-          data: result,
-        });
-
-        setDepositPreview({ shares, amountQuote, amountBase });
       } catch (error) {
         console.error('Error previewing deposit:', error);
         setDepositPreview(null);
@@ -975,7 +667,7 @@ const handleCreateVault = async () => {
 
     const timeoutId = setTimeout(previewDeposit, 500);
     return () => clearTimeout(timeoutId);
-  }, [vaultDepositAmounts, selectedVaultForAction, crystalVaultsAddress, HTTP_URL]);
+  }, [vaultDepositAmounts, selectedVaultForAction, crystalVaultsAddress]);
 
   useEffect(() => {
     if (!selectedVaultForAction || !withdrawShares) {
@@ -987,37 +679,6 @@ const handleCreateVault = async () => {
       try {
         const shares = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
 
-        const calldata = encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "previewWithdrawal",
-          args: [
-            selectedVaultForAction.address as `0x${string}`,
-            shares,
-          ],
-        });
-
-        const res = await fetch(HTTP_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            id: 1,
-            method: "eth_call",
-            params: [
-              { to: crystalVaultsAddress, data: calldata },
-              "latest",
-            ],
-          }),
-        });
-
-        const { result } = await res.json();
-        const [amountQuote, amountBase] = decodeFunctionResult({
-          abi: CrystalVaultsAbi,
-          functionName: "previewWithdrawal",
-          data: result,
-        });
-
-        setWithdrawPreview({ amountQuote, amountBase });
       } catch (error) {
         console.error('Error previewing withdrawal:', error);
         setWithdrawPreview(null);
@@ -1026,7 +687,7 @@ const handleCreateVault = async () => {
 
     const timeoutId = setTimeout(previewWithdrawal, 500);
     return () => clearTimeout(timeoutId);
-  }, [withdrawShares, selectedVaultForAction, crystalVaultsAddress, HTTP_URL]);
+  }, [withdrawShares, selectedVaultForAction, crystalVaultsAddress]);
 
   const handleVaultDeposit = async () => {
     if (!selectedVaultForAction || !account.connected || !depositPreview) return;
@@ -1040,15 +701,15 @@ const handleCreateVault = async () => {
     try {
       setIsVaultDepositSigning(true);
 
-      const quoteTokenAddress = selectedVaultForAction.quoteTokenData?.address;
-      const baseTokenAddress = selectedVaultForAction.baseTokenData?.address;
+      const quoteAssetAddress = selectedVaultForAction.quoteAssetData?.address;
+      const baseAssetAddress = selectedVaultForAction.baseAssetData?.address;
 
-      if (!quoteTokenAddress || !baseTokenAddress) {
+      if (!quoteAssetAddress || !baseAssetAddress) {
         throw new Error('Token addresses not found');
       }
 
-      const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
-      const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+      const quoteDecimals = Number(selectedVaultForAction.quoteAssetData?.decimals || 18);
+      const baseDecimals = Number(selectedVaultForAction.baseAssetData?.decimals || 18);
 
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
@@ -1056,20 +717,20 @@ const handleCreateVault = async () => {
       const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
       const amountBaseMin = (amountBaseDesired * 95n) / 100n;
 
-      const quoteBalance = getTokenBalance(quoteTokenAddress);
-      const baseBalance = getTokenBalance(baseTokenAddress);
+      const quoteBalance = getTokenBalance(quoteAssetAddress);
+      const baseBalance = getTokenBalance(baseAssetAddress);
       
       if (quoteBalance < amountQuoteDesired) {
-        throw new Error(`Insufficient ${selectedVaultForAction.quoteToken} balance`);
+        throw new Error(`Insufficient ${selectedVaultForAction.quoteAsset} balance`);
       }
 
       if (baseBalance < amountBaseDesired) {
-        throw new Error(`Insufficient ${selectedVaultForAction.baseToken} balance`);
+        throw new Error(`Insufficient ${selectedVaultForAction.baseAsset} balance`);
       }
 
-      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      if (quoteAssetAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
         const approveQuoteUo = {
-          target: quoteTokenAddress as `0x${string}`,
+          target: quoteAssetAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: [{
               inputs: [
@@ -1090,9 +751,9 @@ const handleCreateVault = async () => {
         await waitForTxReceipt(approveQuoteOp.hash);
       }
 
-      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      if (baseAssetAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
         const approveBaseUo = {
-          target: baseTokenAddress as `0x${string}`,
+          target: baseAssetAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: [{
               inputs: [
@@ -1114,8 +775,8 @@ const handleCreateVault = async () => {
       }
 
       const ethValue = 
-        quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
-        baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+        quoteAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
+        baseAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
 
       const depositUo = {
         target: crystalVaultsAddress as `0x${string}`,
@@ -1142,8 +803,6 @@ const handleCreateVault = async () => {
       setDepositPreview(null);
       
       refetch?.();
-      queryClient.invalidateQueries({ queryKey: ["user-vault-balances"] });
-      queryClient.invalidateQueries({ queryKey: ["vault-details"] });
 
       setpopup(0);
       setSelectedVaultForAction(null);
@@ -1196,8 +855,6 @@ const handleCreateVault = async () => {
       setWithdrawPreview(null);
       
       refetch?.();
-      queryClient.invalidateQueries({ queryKey: ["user-vault-balances"] });
-      queryClient.invalidateQueries({ queryKey: ["vault-details"] });
 
       setpopup(0);
       setSelectedVaultForAction(null);
@@ -1252,7 +909,7 @@ const handleCreateVault = async () => {
       const pathParts = currentRoute.split('/');
       if (pathParts.length >= 4 && pathParts[3]) {
         const vaultAddress = pathParts[3];
-        const vault = filteredVaultStrategies.find(v => v.address === vaultAddress);
+        const vault = filteredVaultStrategies.find((v: any) => v.address === vaultAddress);
         if (vault && selectedVaultStrategy !== vault.address) {
           setSelectedVaultStrategy(vault.address);
           setActiveVaultStrategyTab('balances');
@@ -1303,7 +960,7 @@ const handleCreateVault = async () => {
               <div className="vaults-stats">
                 <div className="vault-stat">
                   <span className="stat-label">Total Vaults</span>
-                  <span className="stat-value">{vaultCount || 0}</span>
+                  <span className="stat-value">{vaultList.length || 0}</span>
                 </div>
                 <div className="vault-stat">
                   <span className="stat-label">Total Value Locked</span>
@@ -1339,7 +996,7 @@ const handleCreateVault = async () => {
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('my-vaults')}
                 >
-                  My Vaults ({filteredVaultStrategies.filter(v => v.isCreator || parseFloat(v.userBalance || '0') > 0).length})
+                  My Vaults ({filteredVaultStrategies.filter((v: any) => v.isCreator || parseFloat(v.userBalance || '0') > 0).length})
                 </button>
               </div>
 
@@ -1382,7 +1039,7 @@ const handleCreateVault = async () => {
                 <div className="col vault-actions-col">Snapshot</div>
               </div>
 
-              {filteredVaultStrategies.map((vault) => (
+              {filteredVaultStrategies.map((vault: any) => (
                 <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
                   <div className="col vault-name-col">
                     <div className="vault-name-container">
@@ -1407,12 +1064,12 @@ const handleCreateVault = async () => {
                   <div className="col vault-tokens-col">
                     <div className="vault-tokens">
                       <div className="quote-token">
-                        <img src={getTokenIcon(vault.quoteToken)} alt={vault.quoteToken} className="token-icon" />
-                        <span>{vault.quoteToken}</span>
+                        <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="token-icon" />
+                        <span>{vault.quoteAsset}</span>
                       </div>
                       <div className="base-token">
-                        <img src={getTokenIcon(vault.baseToken)} alt={vault.baseToken} className="token-icon" />
-                        <span>{vault.baseToken}</span>
+                        <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="token-icon" />
+                        <span>{vault.baseAsset}</span>
                       </div>
                     </div>
                   </div>
@@ -1665,19 +1322,19 @@ const handleCreateVault = async () => {
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.quoteToken)} alt={selectedVaultStrategyData.quoteToken} className="vault-holding-icon" />
-                              <span>{getTokenName(selectedVaultStrategyData.quoteToken)}</span>
+                              <img src={getTokenIcon(selectedVaultStrategyData.quoteAsset)} alt={selectedVaultStrategyData.quoteAsset} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.quoteToken}</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.quoteAsset}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
                             <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.baseToken)} alt={selectedVaultStrategyData.baseToken} className="vault-holding-icon" />
-                              <span>{getTokenName(selectedVaultStrategyData.baseToken)}</span>
+                              <img src={getTokenIcon(selectedVaultStrategyData.baseAsset)} alt={selectedVaultStrategyData.baseAsset} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.baseToken}</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.baseAsset}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
                             <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>

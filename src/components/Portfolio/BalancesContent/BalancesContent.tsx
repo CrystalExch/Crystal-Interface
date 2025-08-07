@@ -36,7 +36,7 @@ const PortfolioContent: React.FC<PortfolioContentProps> = ({
 }) => {
 
   const marketsDataDict = marketsData.reduce((acc: any, market: any) => {
-    acc[market.marketKey] = market;
+    acc[market?.marketKey] = market;
     return acc;
   }, {} as any);
 

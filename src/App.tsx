@@ -199,6 +199,7 @@ function App() {
   const wethticker = settings.chainConfig[activechain].wethticker;
   const balancegetter = settings.chainConfig[activechain].balancegetter;
   const router = settings.chainConfig[activechain].router;
+  const crystalVaults = settings.chainConfig[activechain].crystalVaults;
   const markets: { [key: string]: any } =
     settings.chainConfig[activechain].markets;
   const tokendict: { [key: string]: any } =
@@ -1748,9 +1749,9 @@ const handleVaultWithdraw = async () => {
     (tokenIn == weth && tokenOut == eth);
 
   const loading =
-    stateloading ||
+    (stateloading ||
     tradesloading ||
-    addressinfoloading;
+    addressinfoloading) && false;
 
 
   const [sendAmountIn, setSendAmountIn] = useState(BigInt(0));
@@ -2196,20 +2197,6 @@ const handleVaultWithdraw = async () => {
     saveSubWalletsToStorage(wallets);
   }, [saveSubWalletsToStorage]);
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   // on market select
   const onMarketSelect = useCallback((market: { quoteAddress: any; baseAddress: any; }) => {
     if (!['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1))) {
@@ -2393,7 +2380,7 @@ const handleVaultWithdraw = async () => {
       tokenOut,
       address,
       activeMarketKey,
-      isStake
+      isStake,
     ],
     queryFn: async () => {
       let gasEstimateCall: any = null;
@@ -2503,10 +2490,10 @@ const handleVaultWithdraw = async () => {
           ]
         },
         {
-          to: activeMarket?.address,
+          to: router,
           abi: CrystalMarketAbi,
           functionName: 'getPriceLevelsFromMid',
-          args: [BigInt(1000000)]
+          args: [activeMarket?.address, BigInt(1000000), BigInt(100)]
         },
         {
           to: balancegetter,
@@ -2734,9 +2721,6 @@ const handleVaultWithdraw = async () => {
     refetchInterval: ['market', 'limit', 'send', 'scale'].includes(location.pathname.slice(1)) && !simpleView ? 800 : 5000,
     gcTime: 0,
   })
-
-  const data = rpcQueryData?.readContractData;
-  const gasLimitData = rpcQueryData?.gasEstimate;
 
   const handleSearchKeyDown = (
     e: ReactKeyboardEvent<HTMLInputElement>,
@@ -20743,12 +20727,9 @@ const handleVaultWithdraw = async () => {
       waitForTxReceipt={waitForTxReceipt}
       activechain={activechain}
       setChain={handleSetChain}
-    />} />
-  
-  {/* Redirect /earn to /earn/vaults */}
+    />}
+  />
   <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
-
-  {/* Main vaults route */}
   <Route path="/earn/vaults" element={
     <LPVaults
       setpopup={setpopup}
@@ -20784,6 +20765,8 @@ const handleVaultWithdraw = async () => {
       setChain={handleSetChain}
       address={address}
       refetch={refetch}
+      activechain={activechain}
+      crystalVaultsAddress={crystalVaults}
     />
   } />
 
@@ -20823,6 +20806,8 @@ const handleVaultWithdraw = async () => {
       setChain={handleSetChain}
       address={address}
       refetch={refetch}
+      activechain={activechain}
+      crystalVaultsAddress={crystalVaults}
     />
   } />
 
