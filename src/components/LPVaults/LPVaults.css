@@ -4102,3 +4102,304 @@
         margin-top: 0.5rem;
     }
 }
+
+
+/* Add these styles to your LPVaults.css file */
+
+.token-selector-container {
+  position: relative;
+}
+
+.token-selector-label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.token-selector-input-wrapper {
+  position: relative;
+}
+
+.token-selector-input {
+  width: 100%;
+  padding-right: 80px;
+}
+
+.selected-token-indicator {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.token-icon-small {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+}
+
+.token-dropdown-button {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #ffffff79;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.token-dropdown-button:hover {
+  color: #fff;
+}
+
+.token-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: #1a1a1a;
+  border: 1px solid #333;
+  border-radius: 8px;
+  z-index: 1000;
+  max-height: 300px;
+  overflow: hidden;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.token-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 12px;
+  border-bottom: 1px solid #333;
+}
+
+.token-search svg {
+  color: #ffffff79;
+}
+
+.token-search-input {
+  flex: 1;
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+}
+
+.token-search-input:focus {
+  border-color: #aaaecf;
+}
+
+.token-list {
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.token-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  border-bottom: 1px solid #2a2a2a;
+}
+
+.token-option:hover {
+  background-color: #2a2a2a;
+}
+
+.token-option:last-child {
+  border-bottom: none;
+}
+
+.token-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.token-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.token-symbol {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.token-name {
+  font-size: 12px;
+  color: #ffffff79;
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.token-address {
+  font-size: 12px;
+  color: #ffffff79;
+  font-family: monospace;
+  flex-shrink: 0;
+}
+
+.no-tokens-found {
+  padding: 20px;
+  text-align: center;
+  color: #ffffff79;
+  font-size: 14px;
+}
+
+/* Additional styles for better form layout */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-input {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.form-input:focus {
+  border-color: #aaaecf;
+}
+
+.form-textarea {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 12px;
+  color: #fff;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+  resize: vertical;
+  min-height: 80px;
+}
+
+.form-textarea:focus {
+  border-color: #aaaecf;
+}
+
+/* Status indicators */
+.status-success {
+  color: #4ade80;
+}
+
+.status-warning {
+  color: #fbbf24;
+}
+
+.status-error {
+  color: #ef4444;
+}
+
+/* Metric indicators */
+.metric-positive {
+  color: #4ade80;
+}
+
+.metric-warning {
+  color: #fbbf24;
+}
+
+.metric-negative {
+  color: #ef4444;
+}
+
+/* Preview section styles */
+.deposit-preview, .withdraw-preview {
+  background: #2a2a2a;
+  border: 1px solid #444;
+  border-radius: 8px;
+  padding: 16px;
+  margin-top: 16px;
+}
+
+.preview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #444;
+}
+
+.preview-item:last-child {
+  border-bottom: none;
+}
+
+.preview-item span:first-child {
+  color: #ffffff79;
+  font-size: 14px;
+}
+
+.preview-item span:last-child {
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* Loading spinner for buttons */
+.loading-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top: 2px solid #fff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.button-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* No vaults message */
+.no-vaults-message {
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #ffffff79;
+}
+
+.no-vaults-message p {
+  font-size: 1.1rem;
+  margin: 0;
+}

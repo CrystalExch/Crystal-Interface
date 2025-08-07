@@ -8,6 +8,8 @@ interface MemeAdvancedChartProps {
   selectedInterval: string;
   setSelectedInterval: (interval: string) => void;
   setOverlayVisible: (visible: boolean) => void;
+  tradehistory?: any[]; // Array of user trades
+  isMarksVisible?: boolean; // Toggle for showing/hiding marks
   realtimeCallbackRef: any;
 }
 
@@ -17,12 +19,17 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   selectedInterval,
   setSelectedInterval,
   setOverlayVisible,
+  tradehistory = [],
+  isMarksVisible = true,
   realtimeCallbackRef,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
   const dataRef = useRef<any>({});
   const tokenRef = useRef(token);
+  const tradeHistoryRef = useRef(tradehistory);
+  const marksRef = useRef<any>();
+  const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
@@ -31,6 +38,77 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       dataRef.current[data[1]] = data[0];
     }
   }, [data]);
+
+  // Handle trade history changes and marks visibility
+  useEffect(() => {
+    try {
+      const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
+      const becameVisible = !isMarksVisibleRef.current && isMarksVisible;
+      isMarksVisibleRef.current = isMarksVisible;
+      tradeHistoryRef.current = [...tradehistory];
+
+      if (tradehistory.length > 0 && becameVisible) {
+        // Show all marks when toggled on
+        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
+          const marks = tradehistory.map((trade: any) => ({
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            time: trade.timestamp || trade[6], // Support both formats
+            hoveredBorderWidth: 0,
+            borderWidth: 0,
+            color: (trade.isBuy || trade[2] == 1) 
+              ? {background: 'rgb(131, 251, 155)', border: ''} 
+              : {background: 'rgb(210, 82, 82)', border: ''},
+            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+              new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23',
+              }).replace(/, \d{2}$/, ''),
+            label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
+            labelFontColor: 'black',
+            minSize: 17,
+          }));
+          marksRef.current(marks);
+        }
+      } else if (tradehistory.length > 0 && isMarksVisible) {
+        // Add new marks for new trades
+        if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
+          const marks = diff.map((trade: any) => ({
+            id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            time: trade.timestamp || trade[6],
+            hoveredBorderWidth: 0,
+            borderWidth: 0,
+            color: (trade.isBuy || trade[2] == 1) 
+              ? {background: 'rgb(131, 251, 155)', border: ''} 
+              : {background: 'rgb(210, 82, 82)', border: ''},
+            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+              new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hourCycle: 'h23',
+              }).replace(/, \d{2}$/, ''),
+            label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
+            labelFontColor: 'black',
+            minSize: 17,
+          }));
+          marksRef.current(marks);
+        }
+      } else {
+        // Clear marks when hidden
+        if (chartReady) {
+          widgetRef.current?.activeChart()?.clearMarks();
+        }
+      }
+    } catch(e) {
+      console.error('Error updating trade marks:', e);
+    }
+  }, [tradehistory.length, isMarksVisible, token.symbol]);
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
@@ -89,7 +167,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   desc: 'Crystal Exchange',
                 },
               ],
-              supports_marks: false,
+              supports_marks: true, // Enable marks support
             });
           }, 0);
         },
@@ -165,6 +243,45 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             console.error('Error fetching meme chart bars:', error);
             onErrorCallback(error);
           }
+        },
+
+        getMarks: async (
+          symbolInfo: any,
+          from: number,
+          to: number,
+          onDataCallback: (marks: any[]) => void,
+        ) => {
+          const marks = isMarksVisibleRef.current === false ? [] : tradeHistoryRef.current
+            .filter((trade: any) => {
+              const tradeTime = trade.timestamp || trade[6];
+              return tradeTime >= from && tradeTime <= to;
+            })
+            .map((trade: any) => ({
+              id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              time: trade.timestamp || trade[6],
+              hoveredBorderWidth: 0,
+              borderWidth: 0,
+              color: (trade.isBuy || trade[2] == 1) 
+                ? {background: 'rgb(131, 251, 155)', border: ''} 
+                : {background: 'rgb(210, 82, 82)', border: ''},
+              text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+                new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hourCycle: 'h23',
+                }).replace(/, \d{2}$/, ''),
+              label: (trade.isBuy || trade[2] == 1) ? 'B' : 'S',
+              labelFontColor: 'black',
+              minSize: 17,
+            }));
+          
+          marksRef.current = onDataCallback;
+          setTimeout(() => {
+            onDataCallback(marks);
+          }, 0);
         },
 
         subscribeBars: (
@@ -272,5 +389,15 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     </div>
   );
 };
+
+// Helper function for formatting display values
+function formatDisplay(value: number): string {
+  if (Math.abs(value) >= 1000000) {
+    return (value / 1000000).toFixed(2) + 'M';
+  } else if (Math.abs(value) >= 1000) {
+    return (value / 1000).toFixed(2) + 'K';
+  }
+  return value.toFixed(3);
+}
 
 export default MemeAdvancedChart;

@@ -569,10 +569,10 @@ const TokenRow = React.memo<{
     className="explorer-token-name"
     onClick={(e) => {
       e.stopPropagation();
-      onCopyToClipboard(token.name);
+      onCopyToClipboard(token.tokenAddress); // Changed from token.name to token.tokenAddress
     }}
     style={{ cursor: 'pointer' }}
-    title="Click to copy token name"
+    title="Click to copy token address" // Updated title text
   >
     {token.name}
   </p>

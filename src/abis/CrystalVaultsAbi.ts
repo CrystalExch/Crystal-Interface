@@ -1,5 +1,4 @@
 export const CrystalVaultsAbi = [
-
 	{
 		"inputs": [
 			{
@@ -26,6 +25,11 @@ export const CrystalVaultsAbi = [
 				"internalType": "uint256",
 				"name": "_maxOrderCap",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_lockup",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -35,15 +39,123 @@ export const CrystalVaultsAbi = [
 		"anonymous": false,
 		"inputs": [
 			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			}
+		],
+		"name": "Closed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
 				"indexed": false,
+				"internalType": "uint256",
+				"name": "shares",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "quoteAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "baseAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "Deposit",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			}
+		],
+		"name": "Locked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
 				"internalType": "address",
 				"name": "vault",
 				"type": "address"
 			},
 			{
 				"indexed": false,
+				"internalType": "uint256",
+				"name": "lockup",
+				"type": "uint256"
+			}
+		],
+		"name": "LockupChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
 				"internalType": "address",
-				"name": "owner",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "maxShares",
+				"type": "uint256"
+			}
+		],
+		"name": "MaxSharesChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			}
+		],
+		"name": "Unlocked",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
 				"type": "address"
 			},
 			{
@@ -57,9 +169,76 @@ export const CrystalVaultsAbi = [
 				"internalType": "address",
 				"name": "baseAsset",
 				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "desc",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "social1",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "social2",
+				"type": "string"
 			}
 		],
 		"name": "VaultDeployed",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "shares",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "quoteAmount",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "baseAmount",
+				"type": "uint256"
+			}
+		],
+		"name": "Withdraw",
 		"type": "event"
 	},
 	{
@@ -82,6 +261,68 @@ export const CrystalVaultsAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "allVaultsLength",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"internalType": "uint40",
+				"name": "newLockup",
+				"type": "uint40"
+			}
+		],
+		"name": "changeLockup",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "newMarket",
+				"type": "address"
+			}
+		],
+		"name": "changeMarket",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "newLockup",
+				"type": "uint256"
+			}
+		],
+		"name": "changeMaxLockup",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -100,9 +341,86 @@ export const CrystalVaultsAbi = [
 				"internalType": "address",
 				"name": "vault",
 				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newMaxShares",
+				"type": "uint256"
+			}
+		],
+		"name": "changeMaxShares",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"internalType": "uint16",
+				"name": "newCap",
+				"type": "uint16"
+			}
+		],
+		"name": "changeOrderCap",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newMinSize",
+				"type": "uint256"
+			}
+		],
+		"name": "changeTokenMinSize",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
 			}
 		],
 		"name": "claimFees",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "userId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			}
+		],
+		"name": "clearCloidSlots",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -190,6 +508,16 @@ export const CrystalVaultsAbi = [
 				"internalType": "string",
 				"name": "description",
 				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social1",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social2",
+				"type": "string"
 			}
 		],
 		"name": "deploy",
@@ -253,6 +581,85 @@ export const CrystalVaultsAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "getVault",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "vault",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "quoteAsset",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "baseAsset",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "owner",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "desc",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social1",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social2",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "totalShares",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "maxShares",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint40",
+				"name": "lockup",
+				"type": "uint40"
+			},
+			{
+				"internalType": "bool",
+				"name": "locked",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "closed",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "gov",
 		"outputs": [
@@ -280,12 +687,25 @@ export const CrystalVaultsAbi = [
 	},
 	{
 		"inputs": [],
+		"name": "maxLockup",
+		"outputs": [
+			{
+				"internalType": "uint40",
+				"name": "",
+				"type": "uint40"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "maxOrderCap",
 		"outputs": [
 			{
-				"internalType": "uint256",
+				"internalType": "uint16",
 				"name": "",
-				"type": "uint256"
+				"type": "uint16"
 			}
 		],
 		"stateMutability": "view",
@@ -384,24 +804,6 @@ export const CrystalVaultsAbi = [
 				"internalType": "address",
 				"name": "vault",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_maxShares",
-				"type": "uint256"
-			}
-		],
-		"name": "setMaxShares",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "vault",
-				"type": "address"
 			}
 		],
 		"name": "unlock",
@@ -448,4 +850,5 @@ export const CrystalVaultsAbi = [
 		"stateMutability": "payable",
 		"type": "function"
 	}
+
 ] as const;

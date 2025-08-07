@@ -1,18 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star,  X, ExternalLink } from 'lucide-react';
-import iconmonad from '../../assets/iconmonad.png';
-import iconusdc from '../../assets/iconusdc.png';
-import iconshmonad from '../../assets/iconshmon.png';
-import iconaprmonad from '../../assets/iconaprmon.png';
-import iconchog from '../../assets/iconchog.png';
-import iconweth from '../../assets/iconweth.png';
-import iconwbtc from '../../assets/iconwbtc.png';
-import iconsol from '../../assets/iconsol.png';
-import icondak from '../../assets/icondak.png';
-import iconyaki from '../../assets/iconyaki.png';
-import iconusdt from '../../assets/iconusdt.png';
-import iconsmon from '../../assets/iconsmon.png';
-import verified from '../../assets/verified.png';
+import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
 
 import { encodeFunctionData, decodeFunctionResult } from "viem";
@@ -22,123 +9,50 @@ import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
 import { settings } from "../../settings";
+import walleticon from "../../assets/wallet_icon.png";
+import closebutton from "../../assets/close_button.svg";
 import './LPVaults.css';
 
-interface Vault {
-  id: string;
+interface VaultData {
+  vault: string;
+  quoteAsset: string;
+  baseAsset: string;
+  owner: string;
   name: string;
-  tokens: {
-    first: {
-      symbol: string;
-      icon: string;
-      feeAmount?: string;
-    };
-    second: {
-      symbol: string;
-      icon: string;
-      feeAmount?: string;
-    };
-  };
-  apy: number;
-  tvl: string;
-  description: string;
-  userBalance: string;
-  tags: string[];
-  dailyYield?: string;
-  protocolFee?: string;
-  withdrawalTime?: string;
-  depositRatio?: string;
-  totalSupply: string;
-  supplyApy: number;
-  totalBorrowed: string;
-  borrowApy: number;
-  verified?: boolean;
-  category?: 'LST' | 'Stable' | 'Regular';
+  desc: string;
+  social1: string;
+  social2: string;
+  totalShares: bigint;
+  maxShares: bigint;
+  lockup: number;
+  locked: boolean;
+  closed: boolean;
 }
 
 interface VaultStrategy {
   id: string;
+  address: string;
   name: string;
   description: string;
   type: 'Spot' | 'Margin';
-  contractAddress: string;
   quoteToken: string;
-  tradableTokens: string[];
-  apy: number;
-  totalDeposits: string;
-  pastMonthReturn: number;
-  allTimeReturn: number;
-  curator: {
-    name: string;
-    address: string;
-  };
-  twitterHandle?: string;
-  userBalance?: string;
-  userEarnings?: string;
+  baseToken: string;
+  quoteTokenData?: any;
+  baseTokenData?: any;
+  totalShares: string;
+  maxShares: string;
+  userShares: string;
+  userBalance: string;
+  userEarnings: string;
   isCreator?: boolean;
   createdAt: Date;
-  positions?: Position[];
-  trades?: Trade[];
-  deposits?: DepositWithdrawal[];
-  depositors?: Depositor[];
+  lockup: number;
+  locked: boolean;
+  closed: boolean;
+  owner: string;
+  social1: string;
+  social2: string;
   age: number;
-}
-
-interface Position {
-  id: string;
-  coin: string;
-  leverage: number;
-  positionSize: string;
-  positionValue: string;
-  entryPrice: number;
-  markPrice: number;
-  pnl: number;
-  pnlPercent: number;
-  liquidationPrice: number;
-  marginType: 'Cross' | 'Isolated';
-  fundingFee: number;
-}
-
-interface Trade {
-  id: string;
-  timestamp: Date;
-  coin: string;
-  side: 'Buy' | 'Sell';
-  size: string;
-  price: number;
-  fee: string;
-  pnl?: number;
-}
-
-interface DepositWithdrawal {
-  id: string;
-  timestamp: Date;
-  type: 'Deposit' | 'Withdrawal';
-  amount: string;
-  txHash: string;
-  status: 'Completed' | 'Pending' | 'Failed';
-}
-
-interface Depositor {
-  address: string;
-  amount: string;
-  percentage: number;
-  joinDate: Date;
-}
-
-interface TokenDeposit {
-  symbol: string;
-  icon: string;
-  amount: string;
-  usdValue: string;
-  selected: boolean;
-}
-
-interface Token {
-  symbol: string;
-  icon: string;
-  name: string;
-  address: string;
 }
 
 interface LPVaultsProps {
@@ -169,6 +83,7 @@ interface LPVaultsProps {
   address: string;
   refetch?: () => void;
 }
+
 const performanceData = [
   { name: 'Jan', value: 12.4 },
   { name: 'Feb', value: 14.8 },
@@ -178,39 +93,16 @@ const performanceData = [
   { name: 'Jun', value: 22.7 },
   { name: 'Jul', value: 24.5 },
 ];
+
 interface VaultSnapshotProps {
   vaultId: string;
   performance?: any;
   className?: string;
 }
+
 const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, performance, className = '' }) => {
-  type VaultPerformanceData = {
-    [key: string]: Array<{ day: number; value: number }>;
-  };
-
-  const vaultPerformanceData: VaultPerformanceData = {
-    'growi-hf': [
-      { day: 1, value: 100 },
-      { day: 2, value: 102 },
-      { day: 3, value: 105 },
-      { day: 4, value: 103 },
-      { day: 5, value: 108 },
-      { day: 6, value: 112 },
-      { day: 7, value: 119 },
-    ],
-    'defi-growth': [
-      { day: 1, value: 100 },
-      { day: 2, value: 101 },
-      { day: 3, value: 103 },
-      { day: 4, value: 105 },
-      { day: 5, value: 107 },
-      { day: 6, value: 110 },
-      { day: 7, value: 112 },
-    ]
-  };
-
   const generateMockPerformance = (trend = 'up', volatility = 0.5): { day: number; value: number }[] => {
-    const data = (vaultPerformanceData as any)[vaultId] || generateMockPerformance('up', 0.8);
+    const data: { day: number; value: number }[] = [];
     let value = 100;
 
     for (let i = 1; i <= 7; i++) {
@@ -223,7 +115,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, performance, cla
     return data;
   };
 
-  const data = vaultPerformanceData[vaultId] || generateMockPerformance('up', 0.8);
+  const data = generateMockPerformance('up', 0.8);
   const firstValue = data[0]?.value || 100;
   const lastValue = data[data.length - 1]?.value || 100;
   const percentChange = ((lastValue - firstValue) / firstValue) * 100;
@@ -263,118 +155,122 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, performance, cla
     </div>
   );
 };
-const tvlData = [
-  { date: 'Mar 20', tvl: 45 },
-  { date: 'Mar 21', tvl: 48 },
-  { date: 'Mar 22', tvl: 52 },
-  { date: 'Mar 23', tvl: 55 },
-  { date: 'Mar 24', tvl: 58 },
-  { date: 'Mar 25', tvl: 62 },
-  { date: 'Mar 26', tvl: 65 },
-  { date: 'Mar 27', tvl: 68 },
-  { date: 'Mar 28', tvl: 72 },
-  { date: 'Mar 29', tvl: 75 },
-  { date: 'Mar 30', tvl: 78 },
-  { date: 'Mar 31', tvl: 82 },
-  { date: 'Apr 1', tvl: 85 },
-  { date: 'Apr 2', tvl: 88 },
-  { date: 'Apr 3', tvl: 92 },
-  { date: 'Apr 4', tvl: 95 },
-  { date: 'Apr 5', tvl: 98 },
-  { date: 'Apr 6', tvl: 102 },
-  { date: 'Apr 7', tvl: 105 },
-  { date: 'Apr 8', tvl: 108 },
-  { date: 'Apr 9', tvl: 112 },
-  { date: 'Apr 10', tvl: 115 },
-  { date: 'Apr 11', tvl: 118 },
-  { date: 'Apr 12', tvl: 122 },
-  { date: 'Apr 13', tvl: 125 },
-  { date: 'Apr 14', tvl: 128 },
-  { date: 'Apr 15', tvl: 132 },
-  { date: 'Apr 16', tvl: 135 },
-  { date: 'Apr 17', tvl: 138 },
-  { date: 'Apr 18', tvl: 142 },
-  { date: 'Apr 19', tvl: 145 },
-  { date: 'Apr 20', tvl: 148 },
-  { date: 'Apr 21', tvl: 152 },
-  { date: 'Apr 22', tvl: 155 },
-  { date: 'Apr 23', tvl: 158 },
-  { date: 'Apr 24', tvl: 162 },
-  { date: 'Apr 25', tvl: 165 },
-  { date: 'Apr 26', tvl: 168 },
-  { date: 'Apr 27', tvl: 172 },
-  { date: 'Apr 28', tvl: 175 },
-  { date: 'Apr 29', tvl: 178 },
-  { date: 'Apr 30', tvl: 182 },
-  { date: 'May 1', tvl: 185 },
-  { date: 'May 2', tvl: 188 },
-  { date: 'May 3', tvl: 192 },
-  { date: 'May 4', tvl: 195 },
-  { date: 'May 5', tvl: 198 },
-  { date: 'May 6', tvl: 202 },
-  { date: 'May 7', tvl: 205 },
-  { date: 'May 8', tvl: 208 },
-  { date: 'May 9', tvl: 212 },
-  { date: 'May 10', tvl: 215 },
-  { date: 'May 11', tvl: 218 },
-  { date: 'May 12', tvl: 222 },
-  { date: 'May 13', tvl: 225 },
-  { date: 'May 14', tvl: 228 },
-  { date: 'May 15', tvl: 195 },
-  { date: 'May 16', tvl: 202 },
-  { date: 'May 17', tvl: 208 },
-  { date: 'May 18', tvl: 215 },
-  { date: 'May 19', tvl: 222 },
-  { date: 'May 20', tvl: 228 },
-  { date: 'May 21', tvl: 235 },
-  { date: 'May 22', tvl: 242 },
-  { date: 'May 23', tvl: 248 },
-  { date: 'May 24', tvl: 255 },
-  { date: 'Jun 1', tvl: 262 },
-  { date: 'Jun 8', tvl: 268 },
-  { date: 'Jun 16', tvl: 275 },
-  { date: 'Jun 25', tvl: 282 },
-  { date: 'Jul 3', tvl: 288 },
-  { date: 'Jul 11', tvl: 295 },
-  { date: 'Jul 19', tvl: 302 },
-  { date: 'Jul 27', tvl: 308 },
-  { date: 'Aug 4', tvl: 315 },
-  { date: 'Aug 12', tvl: 322 },
-];
 
-const crystalVolumeData = [
-  { date: 'Feb 1', volume: 2.1 },
-  { date: 'Feb 8', volume: 1.8 },
-  { date: 'Feb 15', volume: 3.2 },
-  { date: 'Feb 22', volume: 2.9 },
-  { date: 'Mar 1', volume: 4.5 },
-  { date: 'Mar 8', volume: 3.8 },
-  { date: 'Mar 15', volume: 5.1 },
-  { date: 'Mar 22', volume: 4.2 },
-  { date: 'Mar 29', volume: 6.3 },
-  { date: 'Apr 5', volume: 5.9 },
-  { date: 'Apr 12', volume: 7.2 },
-  { date: 'Apr 19', volume: 6.8 },
-  { date: 'Apr 26', volume: 8.4 },
-  { date: 'May 3', volume: 9.1 },
-  { date: 'May 10', volume: 7.6 },
-  { date: 'May 17', volume: 10.2 },
-  { date: 'May 24', volume: 11.8 },
-  { date: 'May 31', volume: 9.5 },
-  { date: 'Jun 7', volume: 12.3 },
-  { date: 'Jun 14', volume: 11.1 },
-  { date: 'Jun 21', volume: 13.7 },
-  { date: 'Jun 28', volume: 15.2 },
-  { date: 'Jul 5', volume: 14.8 },
-  { date: 'Jul 12', volume: 16.4 },
-  { date: 'Jul 19', volume: 15.9 },
-  { date: 'Jul 26', volume: 17.5 },
-  { date: 'Aug 2', volume: 18.1 },
-  { date: 'Aug 9', volume: 19.3 },
-  { date: 'Aug 16', volume: 20.5 },
-  { date: 'Aug 23', volume: 21.7 },
-  { date: 'Aug 30', volume: 22.9 },
-];
+interface TokenSelectorProps {
+  value: string;
+  onChange: (value: string) => void;
+  tokendict: { [address: string]: any };
+  placeholder: string;
+  label: string;
+}
+
+const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendict, placeholder, label }) => {
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const selectedToken = Object.values(tokendict).find((t: any) => 
+    t.address.toLowerCase() === value.toLowerCase()
+  );
+
+  const filteredTokens = Object.values(tokendict).filter((token: any) => {
+    if (!searchTerm) return true;
+    return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           token.address.toLowerCase().includes(searchTerm.toLowerCase());
+  }).slice(0, 10);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleTokenSelect = (token: any) => {
+    onChange(token.address);
+    setShowDropdown(false);
+    setSearchTerm('');
+  };
+
+  const handleInputChange = (inputValue: string) => {
+    onChange(inputValue);
+    if (inputValue.startsWith('0x') && inputValue.length === 42) {
+      setShowDropdown(false);
+    }
+  };
+
+  return (
+    <div className="token-selector-container" ref={dropdownRef}>
+      <label className="token-selector-label">{label}</label>
+      <div className="token-selector-input-wrapper">
+        <input
+          type="text"
+          value={value}
+          onChange={(e) => handleInputChange(e.target.value)}
+          onFocus={() => setShowDropdown(true)}
+          className="form-input token-selector-input"
+          placeholder={placeholder}
+        />
+        
+        {selectedToken && (
+          <div className="selected-token-indicator">
+            <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
+            <span className="token-symbol">{selectedToken.ticker}</span>
+          </div>
+        )}
+
+        <button
+          type="button"
+          className="token-dropdown-button"
+          onClick={() => setShowDropdown(!showDropdown)}
+        >
+          <ChevronDown size={16} />
+        </button>
+      </div>
+
+      {showDropdown && (
+        <div className="token-dropdown">
+          <div className="token-search">
+            <Search size={14} />
+            <input
+              type="text"
+              placeholder="Search tokens..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="token-search-input"
+            />
+          </div>
+          
+          <div className="token-list">
+            {filteredTokens.map((token: any) => (
+              <div
+                key={token.address}
+                className="token-option"
+                onClick={() => handleTokenSelect(token)}
+              >
+                <img src={token.image} alt={token.ticker} className="token-icon" />
+                <div className="token-info">
+                  <div className="token-symbol">{token.ticker}</div>
+                  <div className="token-name">{token.name}</div>
+                </div>
+                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
+              </div>
+            ))}
+            
+            {filteredTokens.length === 0 && searchTerm && (
+              <div className="no-tokens-found">No tokens found</div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
@@ -384,7 +280,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   tradesByMarket,
   markets,
   tokenBalances,
-  currentRoute = '/earn/liquidity-pools',
+  currentRoute = '/earn/vaults',
   onRouteChange,
   connected,
   account,
@@ -404,10 +300,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   address,
   refetch,
 }) => {
- const [activePageTab, setActivePageTab] = useState<'liquidity' | 'vaults'>(
-    currentRoute.includes('/earn/vaults') ? 'vaults' : 'liquidity'
-  );
-
   const { activechain } = useSharedContext();
   const queryClient = useQueryClient();
 
@@ -415,63 +307,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
   const multicallAddress = settings.chainConfig[activechain]?.multicall3;
 
-  // Balance fetching for vault tokens
-  const { data: vaultBalances, refetch: refetchVaultBalances } = useQuery({
-    queryKey: ["vault-balances", address, crystalVaultsAddress],
-    queryFn: async () => {
-      if (!address || !crystalVaultsAddress) return {};
-      
-      const allVaultsCall = encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "allVaults",
-        args: [0n], 
-      });
-
-      return {};
-    },
-    enabled: !!address && !!crystalVaultsAddress,
-    staleTime: 30_000,
-  });
-
-  const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
-  const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
-  const [hoveredTvl, setHoveredTvl] = useState<number | null>(null);
-  const [selectedVault, setSelectedVault] = useState<string | null>(null);
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [selectedTokens, setSelectedTokens] = useState<Token[]>([]);
-  const [activeFilter, setActiveFilter] = useState<'All' | 'LSTs' | 'Stables' | 'Unverified' | 'Verified'>('All');
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
-  const [firstTokenExceedsBalance, setFirstTokenExceedsBalance] = useState(false);
-  const [secondTokenExceedsBalance, setSecondTokenExceedsBalance] = useState(false);
-  const [showAddLiquidity, setShowAddLiquidity] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingVault, setEditingVault] = useState<VaultStrategy | null>(null);
-  const [currentStep, setCurrentStep] = useState(1);
-  const [activeTokenSelection, setActiveTokenSelection] = useState<'first' | 'second' | null>(null);
-  const [addLiquidityTokens, setAddLiquidityTokens] = useState<{ first: string, second: string }>({
-    first: '',
-    second: ''
+  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
+    quote: '',
+    base: ''
   });
-  const [selectedFeeTier, setSelectedFeeTier] = useState('0.05%');
-  const [depositAmounts, setDepositAmounts] = useState<{ first: string, second: string }>({
-    first: '',
-    second: ''
-  });
-  const [duplicateTokenWarning, setDuplicateTokenWarning] = useState('');
-
-  const [activeVaultDetailTab, setActiveVaultDetailTab] = useState<'deposit' | 'withdraw'>('deposit');
-  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ first: string, second: string }>({
-    first: '',
-    second: ''
-  });
-  const [vaultFirstTokenExceedsBalance, setVaultFirstTokenExceedsBalance] = useState(false);
-  const [vaultSecondTokenExceedsBalance, setVaultSecondTokenExceedsBalance] = useState(false);
-  const [withdrawAmount, setWithdrawAmount] = useState('');
+  const [vaultQuoteExceedsBalance, setVaultQuoteExceedsBalance] = useState(false);
+  const [vaultBaseExceedsBalance, setVaultBaseExceedsBalance] = useState(false);
+  const [withdrawShares, setWithdrawShares] = useState('');
   const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
+  const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
+  const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'balances' | 'positions' | 'trades' | 'deposits' | 'withdrawals' | 'depositors'>('balances');
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
@@ -480,507 +330,510 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
-    depositAmount: '',
-    type: 'Spot' as 'Spot' | 'Margin',
-    tradableTokens: [] as string[]
+    quoteAsset: '',
+    baseAsset: '',
+    amountQuote: '',
+    amountBase: '',
+    social1: '',
+    social2: ''
   });
 
-  const searchRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
+
+
+const handleCreateVault = async () => {
+  if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset || 
+      !createForm.amountQuote || !createForm.amountBase) {
+    return;
+  }
+
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    setChain();
+    return;
+  }
+
+  try {
+    setIsVaultDepositSigning(true);
+
+
+    if (!createForm.quoteAsset.startsWith('0x') || !createForm.baseAsset.startsWith('0x')) {
+      throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+    }
+
+
+    const quoteTokenData = Object.values(tokendict).find((t: any) => 
+      t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
+    );
+    const baseTokenData = Object.values(tokendict).find((t: any) => 
+      t.address.toLowerCase() === createForm.baseAsset.toLowerCase()
+    );
+
+    if (!quoteTokenData || !baseTokenData) {
+      throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+    }
+
+    const quoteDecimals = Number(quoteTokenData.decimals || 18);
+    const baseDecimals = Number(baseTokenData.decimals || 18);
+
+    const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
+    const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
+
+
+    const quoteBalance = getTokenBalance(createForm.quoteAsset);
+    const baseBalance = getTokenBalance(createForm.baseAsset);
+
+    if (quoteBalance < amountQuote) {
+      throw new Error(`Insufficient ${quoteTokenData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
+    }
+
+    if (baseBalance < amountBase) {
+      throw new Error(`Insufficient ${baseTokenData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
+    }
+
+    console.log('Creating vault with:', {
+      quoteAsset: createForm.quoteAsset,
+      baseAsset: createForm.baseAsset,
+      amountQuote: amountQuote.toString(),
+      amountBase: amountBase.toString(),
+      name: createForm.name
+    });
+
+    if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+      console.log('Approving quote token...');
+      const approveQuoteUo = {
+        target: createForm.quoteAsset as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, amountQuote],
+        }),
+        value: 0n,
+      };
+      const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+      await waitForTxReceipt(approveQuoteOp.hash);
+      console.log('Quote token approved');
+    }
+
+    if (createForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+      console.log('Approving base token...');
+      const approveBaseUo = {
+        target: createForm.baseAsset as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, amountBase], 
+        }),
+        value: 0n,
+      };
+      const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+      await waitForTxReceipt(approveBaseOp.hash);
+      console.log('Base token approved');
+    }
+
+    const ethValue = 
+      createForm.quoteAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountQuote :
+      createForm.baseAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountBase : 0n;
+
+    console.log('Deploying vault with ETH value:', ethValue.toString());
+
+    const deployUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "deploy",
+        args: [
+          createForm.quoteAsset as `0x${string}`,
+          createForm.baseAsset as `0x${string}`,
+          amountQuote,
+          amountBase,
+          createForm.name || 'Unnamed Vault',
+          createForm.description || 'No description provided',
+          createForm.social1 || '',
+          createForm.social2 || '',
+        ],
+      }),
+      value: ethValue,
+    };
+
+    console.log('Sending deploy transaction...');
+    const deployOp = await sendUserOperationAsync({ uo: deployUo });
+    console.log('Deploy transaction sent, waiting for receipt...');
+    await waitForTxReceipt(deployOp.hash);
+    console.log('Vault deployed successfully!');
+
+    setCreateForm({
+      name: '',
+      description: '',
+      quoteAsset: '',
+      baseAsset: '',
+      amountQuote: '',
+      amountBase: '',
+      social1: '',
+      social2: ''
+    });
+    setShowCreateModal(false);
+
+    refetch?.();
+    queryClient.invalidateQueries({ queryKey: ["vault-count"] });
+    queryClient.invalidateQueries({ queryKey: ["vault-addresses"] });
+    queryClient.invalidateQueries({ queryKey: ["vault-details"] });
+
+    alert('Vault created successfully!');
+
+  } catch (e: any) {
+    console.error('Vault creation error:', e);
+    
+    let errorMessage = 'Failed to create vault';
+    
+    if (e.message?.includes('insufficient')) {
+      errorMessage = 'Insufficient balance for one or more tokens';
+    } else if (e.message?.includes('allowance')) {
+      errorMessage = 'Token approval failed. Please try again.';
+    } else if (e.message?.includes('execution reverted')) {
+      errorMessage = 'Transaction failed. This might be due to:\n• Minimum deposit requirements not met\n• Invalid token pair\n• Contract restrictions\n• Network congestion';
+    } else if (e.message) {
+      errorMessage = e.message;
+    }
+    
+    alert(errorMessage);
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
+
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const { favorites, toggleFavorite } = useSharedContext();
+  const { data: vaultCount } = useQuery({
+    queryKey: ["vault-count", crystalVaultsAddress],
+    queryFn: async () => {
+      if (!crystalVaultsAddress) return 0;
 
-  const userUSDCBalance = 5000;
-  const minDeposit = 900;
-  const creationFee = 100;
+      const calldata = encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "allVaultsLength",
+        args: [],
+      });
 
-  const availableTokens: Token[] = React.useMemo(() => {
-    if (!tokendict || Object.keys(tokendict).length === 0) {
-      return [];
-    }
-    return Object.values(tokendict).map((token: any) => ({
-      symbol: token.ticker,
-      icon: token.image,
-      name: token.name,
-      address: token.address
-    }));
-  }, [tokendict]);
+      const res = await fetch(HTTP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [
+            { to: crystalVaultsAddress, data: calldata },
+            "latest",
+          ],
+        }),
+      });
 
-  const defaultTokens = ['MON', 'WMON', 'USDC'];
+      const { result } = await res.json();
+      const count = decodeFunctionResult({
+        abi: CrystalVaultsAbi,
+        functionName: "allVaultsLength",
+        data: result,
+      });
 
-  const [depositTokens, setDepositTokens] = useState<TokenDeposit[]>([
-    {
-      symbol: 'SUI',
-      icon: iconmonad,
-      amount: '0.00',
-      usdValue: '0.00',
-      selected: true
+      return Number(count);
     },
-    {
-      symbol: 'USDC',
-      icon: iconusdc,
-      amount: '0.00',
-      usdValue: '0.00',
-      selected: false
-    }
-  ]);
+    enabled: !!crystalVaultsAddress,
+    staleTime: 30_000,
+  });
 
-  const vaults: Vault[] = [
-    {
-      id: 'mon-usdc-lp-vault',
-      name: 'MON-USDC',
-      tokens: {
-        first: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 24.5,
-      tvl: '$3.7M',
-      description: 'Earn yield by providing liquidity to the MON-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '1234.56',
-      tags: ['Popular', 'High APY'],
-      dailyYield: '0.0671%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '49.35%/50.65%',
-      totalSupply: '$2.8M',
-      supplyApy: 22.1,
-      totalBorrowed: '$0.9M',
-      borrowApy: 28.3,
-      verified: true,
-      category: 'Regular',
-    },
-    {
-      id: 'weth-usdc-lp-vault',
-      name: 'WETH-USDC',
-      tokens: {
-        first: {
-          symbol: 'WETH',
-          icon: iconweth,
-          feeAmount: '0.05%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.05%'
-        }
-      },
-      apy: 8.2,
-      tvl: '$12.5M',
-      description: 'Earn yield by providing liquidity to the ETH-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Stable', 'Low Risk'],
-      dailyYield: '0.0224%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$9.8M',
-      supplyApy: 7.5,
-      totalBorrowed: '$2.7M',
-      borrowApy: 9.8,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'wbtc-usdc-lp-vault',
-      name: 'WBTC-USDC',
-      tokens: {
-        first: {
-          symbol: 'WBTC',
-          icon: iconwbtc,
-          feeAmount: '0.05%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.05%'
-        }
-      },
-      apy: 6.7,
-      tvl: '$18.9M',
-      description: 'Earn yield by providing liquidity to the BTC-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Stable'],
-      dailyYield: '0.0183%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '48.50%/51.50%',
-      totalSupply: '$15.2M',
-      supplyApy: 6.2,
-      totalBorrowed: '$3.7M',
-      borrowApy: 8.1,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'shmon-mon-lp-vault',
-      name: 'shMON-MON',
-      tokens: {
-        first: {
-          symbol: 'shMON',
-          icon: iconshmonad,
-          feeAmount: '1.00%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '1.00%'
-        }
-      },
-      apy: 32.8,
-      tvl: '$2.2M',
-      description: 'Earn yield by providing liquidity to the shMON-MON pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High Yield', 'New'],
-      dailyYield: '0.0898%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '52.10%/47.90%',
-      totalSupply: '$1.6M',
-      supplyApy: 30.2,
-      totalBorrowed: '$0.6M',
-      borrowApy: 38.5,
-      category: 'LST'
-    },
-    {
-      id: 'sol-usdc-lp-vault',
-      name: 'SOL-USDC',
-      tokens: {
-        first: {
-          symbol: 'SOL',
-          icon: iconsol,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 7.5,
-      tvl: '$8.7M',
-      description: 'Earn yield by providing liquidity to the SOL-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Popular'],
-      dailyYield: '0.0205%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$6.9M',
-      supplyApy: 7.1,
-      totalBorrowed: '$1.8M',
-      borrowApy: 8.9,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'aprmon-mon-lp-vault',
-      name: 'APRMON-MON',
-      tokens: {
-        first: {
-          symbol: 'APRMON',
-          icon: iconaprmonad,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 9.1,
-      tvl: '$5.3M',
-      description: 'Earn yield by providing liquidity to the AVAX-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0249%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$4.2M',
-      supplyApy: 8.6,
-      totalBorrowed: '$1.1M',
-      borrowApy: 10.8,
-      category: 'LST'
-    },
-    {
-      id: 'dak-monad-lp-vault',
-      name: 'DAK-MON',
-      tokens: {
-        first: {
-          symbol: 'DAK',
-          icon: icondak,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 11.2,
-      tvl: '$3.9M',
-      description: 'Earn yield by providing liquidity to the ARB-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High Volume'],
-      dailyYield: '0.0307%',
-      protocolFee: '0.75%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.1M',
-      supplyApy: 10.5,
-      totalBorrowed: '$0.8M',
-      borrowApy: 13.2,
-      category: 'Regular'
-    },
-    {
-      id: 'yaki-mon-lp-vault',
-      name: 'YAKI-MON',
-      tokens: {
-        first: {
-          symbol: 'YAKI',
-          icon: iconyaki,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 15.3,
-      tvl: '$1.8M',
-      description: 'Earn yield by providing liquidity to the CHZ-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High APY'],
-      dailyYield: '0.0419%',
-      protocolFee: '0.75%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$1.4M',
-      supplyApy: 14.2,
-      totalBorrowed: '$0.4M',
-      borrowApy: 18.1,
-      category: 'Regular'
-    },
-    {
-      id: 'chog-usdc-lp-vault',
-      name: 'CHOG-USDC',
-      tokens: {
-        first: {
-          symbol: 'CHOG',
-          icon: iconchog,
-          feeAmount: '1.00%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '1.00%'
-        }
-      },
-      apy: 42.7,
-      tvl: '$0.9M',
-      description: 'Earn yield by providing liquidity to the CHOG-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High APY', 'High Risk'],
-      dailyYield: '0.1170%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '47.25%/52.75%',
-      totalSupply: '$0.7M',
-      supplyApy: 39.8,
-      totalBorrowed: '$0.2M',
-      borrowApy: 48.5,
-      category: 'Regular'
-    },
-    {
-      id: 'smon-mon-lp-vault',
-      name: 'sMON-MON',
-      tokens: {
-        first: {
-          symbol: 'sMON',
-          icon: iconsmon,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 8.9,
-      tvl: '$4.3M',
-      description: 'Earn yield by providing liquidity to the XRP-USDT pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0244%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.4M',
-      supplyApy: 8.3,
-      totalBorrowed: '$0.9M',
-      borrowApy: 10.5,
-      category: 'LST'
-    },
-    {
-      id: 'usdt-usdc-lp-vault',
-      name: 'USDT-USDC',
-      tokens: {
-        first: {
-          symbol: 'USDT',
-          icon: iconusdt,
-          feeAmount: '0.01%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.01%'
-        }
-      },
-      apy: 8.9,
-      tvl: '$4.3M',
-      description: 'Earn yield by providing liquidity to the XRP-USDT pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0244%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.4M',
-      supplyApy: 8.3,
-      totalBorrowed: '$0.9M',
-      borrowApy: 10.5,
-      verified: true,
-      category: 'Stable'
-    },
-  ];
+  const { data: vaultAddresses } = useQuery({
+    queryKey: ["vault-addresses", crystalVaultsAddress, vaultCount],
+    queryFn: async () => {
+      if (!crystalVaultsAddress || !vaultCount) return [];
 
-  const vaultStrategies: VaultStrategy[] = [
-    {
-      id: 'growi-hf',
-      name: 'Growi HF',
-      description: 'Employs a quantitative, mean-reversion strategy, trades all available cryptos. Fully automated with advanced risk control, targeting over 50% annual returns. Results from 5 months of live trading align with 7 years of backtesting. twitter.com/growihf',
-      type: 'Margin',
-      contractAddress: '0x1234567890abcdef1234567890abcdef12345678',
-      quoteToken: 'USDC',
-      tradableTokens: ['WETH', 'WBTC', 'WSOL', 'MON'],
-      apy: 19.0,
-      totalDeposits: '$5,024,834',
-      pastMonthReturn: 19.0,
-      allTimeReturn: 42.5,
-      curator: {
-        name: 'CryptoAlpha',
-        address: '0xabcd...5678'
-      },
-      twitterHandle: '@growihf',
-      userBalance: '2,456.78',
-      userEarnings: '456.23',
-      isCreator: false,
-      createdAt: new Date('2024-01-15'),
-      positions: [
-        {
-          id: 'pos-1',
-          coin: 'TRX',
-          leverage: 10,
-          positionSize: '50,000',
-          positionValue: '$4,250',
-          entryPrice: 0.085,
-          markPrice: 0.087,
-          pnl: 125.50,
-          pnlPercent: 2.95,
-          liquidationPrice: 0.077,
-          marginType: 'Cross',
-          fundingFee: -2.45
-        },
-        {
-          id: 'pos-2',
-          coin: 'WETH',
-          leverage: 5,
-          positionSize: '12.5',
-          positionValue: '$31,250',
-          entryPrice: 2480.00,
-          markPrice: 2500.00,
-          pnl: 250.00,
-          pnlPercent: 0.81,
-          liquidationPrice: 1984.00,
-          marginType: 'Cross',
-          fundingFee: 8.34
-        }
-      ],
-      age: 45,
-    },
-    {
-      id: 'defi-growth',
-      name: 'DeFi Growth Fund',
-      description: 'Conservative spot trading vault focused on major cryptocurrencies with low-risk strategies and steady yield generation.',
-      type: 'Spot',
-      contractAddress: '0x9876543210fedcba9876543210fedcba98765432',
-      quoteToken: 'USDC',
-      tradableTokens: ['WETH', 'WBTC'],
-      apy: 12.5,
-      totalDeposits: '$2,834,567',
-      pastMonthReturn: 12.5,
-      allTimeReturn: 28.3,
-      curator: {
-        name: 'DeFiMaster',
-        address: '0x1234...abcd'
-      },
-      userBalance: '0.00',
-      userEarnings: '0.00',
-      isCreator: true,
-      createdAt: new Date('2024-02-01'),
-      age: 30,
-    }
-  ];
+      const calls = Array.from({ length: vaultCount }, (_, i) => ({
+        target: crystalVaultsAddress,
+        callData: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "allVaults",
+          args: [BigInt(i)],
+        }),
+      }));
 
-  const handlePageTabChange = (tab: 'liquidity' | 'vaults') => {
-    setActivePageTab(tab);
-    const newRoute = tab === 'liquidity' ? '/earn/liquidity-pools' : '/earn/vaults';
-    onRouteChange?.(newRoute);
-    setSelectedVault(null);
-    setSelectedVaultStrategy(null);
-    setShowAddLiquidity(false);
-    setShowCreateModal(false);
+      const multiCalldata = encodeFunctionData({
+        abi: [{
+          inputs: [
+            { name: "requireSuccess", type: "bool" },
+            {
+              components: [
+                { name: "target", type: "address" },
+                { name: "callData", type: "bytes" },
+              ],
+              name: "calls",
+              type: "tuple[]",
+            },
+          ],
+          name: "tryBlockAndAggregate",
+          outputs: [
+            { name: "blockNumber", type: "uint256" },
+            { name: "blockHash", type: "bytes32" },
+            {
+              components: [
+                { name: "success", type: "bool" },
+                { name: "returnData", type: "bytes" },
+              ],
+              name: "returnData",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        }],
+        functionName: "tryBlockAndAggregate",
+        args: [false, calls],
+      });
+
+      const res = await fetch(HTTP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [
+            { to: multicallAddress, data: multiCalldata },
+            "latest",
+          ],
+        }),
+      });
+
+      const { result } = await res.json();
+      const [, , returnData] = decodeFunctionResult({
+        abi: [{
+          inputs: [
+            { name: "requireSuccess", type: "bool" },
+            {
+              components: [
+                { name: "target", type: "address" },
+                { name: "callData", type: "bytes" },
+              ],
+              name: "calls",
+              type: "tuple[]",
+            },
+          ],
+          name: "tryBlockAndAggregate",
+          outputs: [
+            { name: "blockNumber", type: "uint256" },
+            { name: "blockHash", type: "bytes32" },
+            {
+              components: [
+                { name: "success", type: "bool" },
+                { name: "returnData", type: "bytes" },
+              ],
+              name: "returnData",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        }],
+        functionName: "tryBlockAndAggregate",
+        data: result,
+      });
+
+      const addresses: string[] = [];
+      returnData.forEach((call: any) => {
+        if (call.success) {
+          const [vaultAddress] = decodeFunctionResult({
+            abi: CrystalVaultsAbi,
+            functionName: "allVaults",
+            data: call.returnData,
+          });
+          addresses.push(vaultAddress);
+        }
+      });
+
+      return addresses;
+    },
+    enabled: !!crystalVaultsAddress && !!vaultCount && vaultCount > 0,
+    staleTime: 30_000,
+  });
+
+  const { data: vaultDetails } = useQuery({
+    queryKey: ["vault-details", crystalVaultsAddress, vaultAddresses],
+    queryFn: async () => {
+      if (!crystalVaultsAddress || !vaultAddresses || vaultAddresses.length === 0) return [];
+
+      const calls = vaultAddresses.map(vaultAddress => ({
+        target: crystalVaultsAddress,
+        callData: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "getVault",
+          args: [vaultAddress as `0x${string}`],
+        }),
+      }));
+
+      const multiCalldata = encodeFunctionData({
+        abi: [{
+          inputs: [
+            { name: "requireSuccess", type: "bool" },
+            {
+              components: [
+                { name: "target", type: "address" },
+                { name: "callData", type: "bytes" },
+              ],
+              name: "calls",
+              type: "tuple[]",
+            },
+          ],
+          name: "tryBlockAndAggregate",
+          outputs: [
+            { name: "blockNumber", type: "uint256" },
+            { name: "blockHash", type: "bytes32" },
+            {
+              components: [
+                { name: "success", type: "bool" },
+                { name: "returnData", type: "bytes" },
+              ],
+              name: "returnData",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        }],
+        functionName: "tryBlockAndAggregate",
+        args: [false, calls],
+      });
+
+      const res = await fetch(HTTP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [
+            { to: multicallAddress, data: multiCalldata },
+            "latest",
+          ],
+        }),
+      });
+
+      const { result } = await res.json();
+      const [, , returnData] = decodeFunctionResult({
+        abi: [{
+          inputs: [
+            { name: "requireSuccess", type: "bool" },
+            {
+              components: [
+                { name: "target", type: "address" },
+                { name: "callData", type: "bytes" },
+              ],
+              name: "calls",
+              type: "tuple[]",
+            },
+          ],
+          name: "tryBlockAndAggregate",
+          outputs: [
+            { name: "blockNumber", type: "uint256" },
+            { name: "blockHash", type: "bytes32" },
+            {
+              components: [
+                { name: "success", type: "bool" },
+                { name: "returnData", type: "bytes" },
+              ],
+              name: "returnData",
+              type: "tuple[]",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        }],
+        functionName: "tryBlockAndAggregate",
+        data: result,
+      });
+
+      const vaults: VaultStrategy[] = [];
+      returnData.forEach((call: any, index: number) => {
+        if (call.success) {
+          const vaultData = decodeFunctionResult({
+            abi: CrystalVaultsAbi,
+            functionName: "getVault",
+            data: call.returnData,
+          }) as any;
+
+          const [vault, quoteAsset, baseAsset, owner, name, desc, social1, social2, totalShares, maxShares, lockup, locked, closed] = vaultData;
+
+          const quoteTokenData = Object.values(tokendict).find((t: any) => t.address.toLowerCase() === quoteAsset.toLowerCase());
+          const baseTokenData = Object.values(tokendict).find((t: any) => t.address.toLowerCase() === baseAsset.toLowerCase());
+
+          vaults.push({
+            id: vault,
+            address: vault,
+            name: name || `Vault ${index + 1}`,
+            description: desc || 'No description available',
+            type: 'Spot',
+            quoteToken: quoteTokenData?.ticker || 'UNKNOWN',
+            baseToken: baseTokenData?.ticker || 'UNKNOWN',
+            quoteTokenData,
+            baseTokenData,
+            totalShares: totalShares.toString(),
+            maxShares: maxShares.toString(),
+            userShares: '0',
+            userBalance: '0.00',
+            userEarnings: '0.00',
+            isCreator: owner.toLowerCase() === address?.toLowerCase(),
+            createdAt: new Date(),
+            lockup: Number(lockup),
+            locked,
+            closed,
+            owner,
+            social1: social1 || '',
+            social2: social2 || '',
+            age: Math.floor(Math.random() * 365) + 1,
+          });
+        }
+      });
+
+      return vaults;
+    },
+    enabled: !!crystalVaultsAddress && !!vaultAddresses && vaultAddresses.length > 0,
+    staleTime: 30_000,
+  });
+
+  const { data: userVaultBalances } = useQuery({
+    queryKey: ["user-vault-balances", address, vaultAddresses],
+    queryFn: async () => {
+      if (!address || !vaultAddresses || vaultAddresses.length === 0) return {};
+      return {};
+    },
+    enabled: !!address && !!vaultAddresses && vaultAddresses.length > 0,
+    staleTime: 30_000,
+  });
+
+  const getTokenIcon = (symbol: string) => {
+    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
+    return tokenEntry?.image || '/api/placeholder/24/24';
   };
 
-  const showVaultDetail = (vaultId: string) => {
-    setSelectedVault(vaultId);
-    setActiveVaultDetailTab('deposit');
-    setVaultDepositAmounts({ first: '', second: '' });
-    setWithdrawAmount('');
-    setVaultFirstTokenExceedsBalance(false);
-    setVaultSecondTokenExceedsBalance(false);
-    setWithdrawExceedsBalance(false);
-
-    const vault = vaults.find(v => v.id === vaultId);
-    if (vault) {
-      const poolIdentifier = `${vault.tokens.first.symbol.toLowerCase()}-${vault.tokens.second.symbol.toLowerCase()}`;
-      onRouteChange?.(`/earn/liquidity-pools/${poolIdentifier}`);
-    }
-  };
-
-
-  const getTokenBySymbol = (symbol: string) => {
-    if (availableTokens.length === 0) {
-      return { symbol, icon: '', name: symbol, address: '' };
-    }
-    const token = availableTokens.find(t => t.symbol === symbol);
-    return token || availableTokens[0];
-  };
-
-  const getTokenBalance = (symbol: string): bigint => {
-    const entry = Object.values(tokendict).find((t: any) => t.ticker === symbol);
-    return entry ? (tokenBalances[entry.address] || 0n) : 0n;
+  const getTokenName = (symbol: string) => {
+    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
+    return tokenEntry?.name || symbol;
   };
 
   const formatDisplayValue = (rawAmount: bigint, decimals = 18): string => {
@@ -994,651 +847,369 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     return `${formattedInteger}.${decimalPart}`;
   };
 
-  const calculateUSD = (
-    amountRaw: string,
-    symbol: string
-  ): string => {
-    if (!amountRaw || parseFloat(amountRaw) === 0) return '$0.00';
-    const entry = Object.values(tokendict).find((t: any) => t.ticker === symbol);
-    if (!entry) return '$0.00';
-    const decimals = Number(entry.decimals);
-    const amount = parseFloat(amountRaw) * Math.pow(10, decimals);
-
-    const directKey = `${symbol}USDC`;
-    let market = markets[directKey];
-    let trades = tradesByMarket[directKey];
-    if (!market || !trades) {
-      const viaMON = `${symbol}MON`;
-      market = markets[viaMON];
-      trades = tradesByMarket[viaMON];
-    }
-    if (!market || !trades) return '$0.00';
-
-    const price = fetchLatestPrice(trades, market);
-    if (!price) return '$0.00';
-
-    let usd = 0;
-    if (market.quoteAsset === 'USDC') {
-      usd = (amount / Math.pow(10, decimals)) * price;
-    } else {
-      const monKey = `MONUSDC`;
-      const monMarket = markets[monKey];
-      const monTrades = tradesByMarket[monKey];
-      const monPrice = monTrades && fetchLatestPrice(monTrades, monMarket);
-      if (!monPrice) return '$0.00';
-      usd = (amount / Math.pow(10, decimals)) * price * monPrice;
-    }
-
-    if (usd >= 1e12) return `$${(usd / 1e12).toFixed(2)}T`;
-    if (usd >= 1e9) return `$${(usd / 1e9).toFixed(2)}B`;
-    if (usd >= 1e6) return `$${(usd / 1e6).toFixed(2)}M`;
-    return `$${usd.toFixed(2)}`;
+  const getTokenBalance = (tokenAddress: string): bigint => {
+    return tokenBalances[tokenAddress] || 0n;
   };
 
-  const getTokenIcon = (symbol: string) => {
-    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
-    return tokenEntry?.image || '/api/placeholder/24/24';
-  };
-
-  const getTokenName = (symbol: string) => {
-    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
-    return tokenEntry?.name || symbol;
-  };
-
-  const filteredVaults = vaults.filter(vault => {
-    const tokenMatch =
-      selectedTokens.length === 0 ||
-      selectedTokens.every(token =>
-        vault.tokens.first.symbol === token.symbol ||
-        vault.tokens.second.symbol === token.symbol
-      );
-
-    const isDeposited = activeTab === 'deposited'
-      ? parseFloat(vault.userBalance) > 0
-      : true;
-
-    let categoryMatch = true;
-    if (activeFilter === 'LSTs') {
-      categoryMatch = vault.category === 'LST';
-    } else if (activeFilter === 'Stables') {
-      categoryMatch = vault.category === 'Stable';
-    } else if (activeFilter === 'Verified') {
-      categoryMatch = vault.verified === true;
-    } else if (activeFilter === 'Unverified') {
-      categoryMatch = vault.verified === false;
-    }
-
-    return tokenMatch && isDeposited && categoryMatch;
-  });
-
-  const filteredVaultStrategies = vaultStrategies.filter(vault => {
+  const filteredVaultStrategies = (vaultDetails || []).filter(vault => {
     const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
     const myVaultsMatch = activeVaultTab === 'all' ||
       (activeVaultTab === 'my-vaults' && (vault.isCreator || parseFloat(vault.userBalance || '0') > 0));
     const searchMatch = searchQuery === '' ||
       vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vault.curator.name.toLowerCase().includes(searchQuery.toLowerCase());
+      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
 
     return typeMatch && myVaultsMatch && searchMatch;
   });
 
-  const isCreateFormValid = () => {
-    const depositValid = parseFloat(createForm.depositAmount) >= minDeposit;
-    const balanceValid = parseFloat(createForm.depositAmount) <= (userUSDCBalance - creationFee);
-    return createForm.name.trim() !== '' &&
-      createForm.description.trim() !== '' &&
-      depositValid &&
-      balanceValid &&
-      createForm.tradableTokens.length >= (createForm.type === 'Spot' ? 2 : 1);
+  const showVaultStrategyDetail = (vaultAddress: string) => {
+    setSelectedVaultStrategy(vaultAddress);
+    setActiveVaultStrategyTab('balances');
+    onRouteChange?.(`/earn/vaults/${vaultAddress}`);
   };
 
-  const handleCreateVault = () => {
-    if (isCreateFormValid()) {
-      console.log('Creating vault:', createForm);
-      setShowCreateModal(false);
-      setCreateForm({
-        name: '',
-        description: '',
-        depositAmount: '',
-        type: 'Spot',
-        tradableTokens: []
-      });
-    }
+  const backToList = () => {
+    setSelectedVaultStrategy(null);
+    onRouteChange?.('/earn/vaults');
   };
 
-  const handleEditDescription = (vault: VaultStrategy) => {
-    setEditingVault(vault);
-    setShowEditModal(true);
-  };
+  const selectedVaultStrategyData = selectedVaultStrategy ? 
+    filteredVaultStrategies.find(vault => vault.address === selectedVaultStrategy) : null;
 
-  const handleShareVault = (vault: VaultStrategy) => {
-    const url = `${window.location.origin}/vaults/${vault.id}`;
-    navigator.clipboard.writeText(url);
-  };
-
-  const handleReset = () => {
-    setAddLiquidityTokens({ first: '', second: '' });
-    setSelectedFeeTier('0.05%');
-    setCurrentStep(1);
-    setDepositAmounts({ first: '', second: '' });
-    setDuplicateTokenWarning('');
-    setFirstTokenExceedsBalance(false);
-    setSecondTokenExceedsBalance(false);
-  };
-
-  const handleContinue = () => {
-    if (addLiquidityTokens.first && addLiquidityTokens.second) {
-      setCurrentStep(2);
-    }
-  };
-
-  const openTokenSelection = (position: 'first' | 'second') => {
-    setActiveTokenSelection(position);
-    setpopup(1);
-  };
-
-  const handleAddLiquidityTokenSelect = (token: { symbol: string; icon: string }) => {
-    if (activeTokenSelection === 'first') {
-      if (addLiquidityTokens.second === token.symbol) {
-        setDuplicateTokenWarning(`Cannot select ${token.symbol} for both tokens`);
-        setTimeout(() => setDuplicateTokenWarning(''), 3000);
-        setpopup(0);
-        return;
-      }
-      setAddLiquidityTokens(prev => ({
-        ...prev,
-        first: token.symbol
-      }));
-      setFirstTokenExceedsBalance(false);
-      setDepositAmounts(prev => ({ ...prev, first: '' }));
-    } else if (activeTokenSelection === 'second') {
-      if (addLiquidityTokens.first === token.symbol) {
-        setDuplicateTokenWarning(`Cannot select ${token.symbol} for both tokens`);
-        setTimeout(() => setDuplicateTokenWarning(''), 3000);
-        setpopup(0);
-        return;
-      }
-      setAddLiquidityTokens(prev => ({
-        ...prev,
-        second: token.symbol
-      }));
-      setSecondTokenExceedsBalance(false);
-      setDepositAmounts(prev => ({ ...prev, second: '' }));
-    }
-    setActiveTokenSelection(null);
-    setpopup(0);
-  };
-
-  const handleDepositAmountChange = (position: 'first' | 'second', value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setDepositAmounts(prev => ({
-        ...prev,
-        [position]: value
-      }));
-
-      if (value !== '') {
-        const tokenSymbol = position === 'first' ? addLiquidityTokens.first : addLiquidityTokens.second;
-        const userBalance = getTokenBalance(tokenSymbol);
-        const tokenDecimals = Number(
-          (Object.values(tokendict).find(t => t.ticker === tokenSymbol)?.decimals) || 18
-        );
-        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
-        const enteredAmount = parseFloat(value);
-
-        if (position === 'first') {
-          setFirstTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        } else {
-          setSecondTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        }
-      } else {
-        if (position === 'first') {
-          setFirstTokenExceedsBalance(false);
-        } else {
-          setSecondTokenExceedsBalance(false);
-        }
-      }
-    }
-  };
-
-  const handleVaultDepositAmountChange = (position: 'first' | 'second', value: string) => {
+  const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setVaultDepositAmounts(prev => ({
         ...prev,
-        [position]: value
+        [type]: value
       }));
 
-      if (value !== '' && selectedVaultData) {
-        const tokenSymbol = position === 'first' ? selectedVaultData.tokens.first.symbol : selectedVaultData.tokens.second.symbol;
-        const userBalance = getTokenBalance(tokenSymbol);
-        const tokenDecimals = Number(
-          (Object.values(tokendict).find(t => t.ticker === tokenSymbol)?.decimals) || 18
-        );
-        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
-        const enteredAmount = parseFloat(value);
+      if (value !== '' && selectedVaultForAction) {
+        const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
+        if (tokenData) {
+          const userBalance = getTokenBalance(tokenData.address);
+          const tokenDecimals = Number(tokenData.decimals || 18);
+          const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
+          const enteredAmount = parseFloat(value);
 
-        if (position === 'first') {
-          setVaultFirstTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        } else {
-          setVaultSecondTokenExceedsBalance(enteredAmount > maxAllowedAmount);
+          if (type === 'quote') {
+            setVaultQuoteExceedsBalance(enteredAmount > maxAllowedAmount);
+          } else {
+            setVaultBaseExceedsBalance(enteredAmount > maxAllowedAmount);
+          }
         }
       } else {
-        if (position === 'first') {
-          setVaultFirstTokenExceedsBalance(false);
+        if (type === 'quote') {
+          setVaultQuoteExceedsBalance(false);
         } else {
-          setVaultSecondTokenExceedsBalance(false);
+          setVaultBaseExceedsBalance(false);
         }
       }
     }
   };
 
-  const handleWithdrawAmountChange = (value: string) => {
+  const handleWithdrawSharesChange = (value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setWithdrawAmount(value);
+      setWithdrawShares(value);
 
-      if (value !== '' && selectedVaultData) {
-        const userLPBalance = parseFloat(selectedVaultData.userBalance);
+      if (value !== '' && selectedVaultForAction) {
+        const userSharesBalance = parseFloat(selectedVaultForAction.userShares || '0');
         const enteredAmount = parseFloat(value);
-        setWithdrawExceedsBalance(enteredAmount > userLPBalance);
+        setWithdrawExceedsBalance(enteredAmount > userSharesBalance);
       } else {
         setWithdrawExceedsBalance(false);
       }
     }
   };
 
-  const isAddLiquidityEnabled = () => {
-    return depositAmounts.first !== '' && depositAmounts.second !== '' &&
-      parseFloat(depositAmounts.first) > 0 && parseFloat(depositAmounts.second) > 0 &&
-      !firstTokenExceedsBalance && !secondTokenExceedsBalance;
-  };
-
-  const isVaultDepositEnabled = () => {
-    return vaultDepositAmounts.first !== '' && vaultDepositAmounts.second !== '' &&
-      parseFloat(vaultDepositAmounts.first) > 0 && parseFloat(vaultDepositAmounts.second) > 0 &&
-      !vaultFirstTokenExceedsBalance && !vaultSecondTokenExceedsBalance;
-  };
-
-const isWithdrawEnabled = () => {
-  return withdrawAmount !== '' && parseFloat(withdrawAmount) > 0 && !withdrawExceedsBalance;
-};
-
-const handleVaultDeposit = async () => {
-  if (!selectedVaultData || !account.connected) return;
-  
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    setChain();
-    return;
-  }
-
-  try {
-    setIsVaultDepositSigning(true);
-
-    const firstTokenAddress = Object.values(tokendict).find(
-      (t: any) => t.ticker === selectedVaultData.tokens.first.symbol
-    )?.address;
-    
-    const secondTokenAddress = Object.values(tokendict).find(
-      (t: any) => t.ticker === selectedVaultData.tokens.second.symbol
-    )?.address;
-
-    if (!firstTokenAddress || !secondTokenAddress) {
-      throw new Error('Token addresses not found');
+  useEffect(() => {
+    if (!selectedVaultForAction || !vaultDepositAmounts.quote || !vaultDepositAmounts.base) {
+      setDepositPreview(null);
+      return;
     }
 
-    const firstTokenDecimals = Number(
-      Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.first.symbol)?.decimals || 18
-    );
-    
-    const secondTokenDecimals = Number(
-      Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.second.symbol)?.decimals || 18
-    );
+    const previewDeposit = async () => {
+      try {
+        const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
+        const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+        
+        const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
+        const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
-    const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.first) * 10 ** firstTokenDecimals));
-    const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.second) * 10 ** secondTokenDecimals));
-    
-    // Use 95% of desired amounts as minimum (5% slippage)
-    const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
-    const amountBaseMin = (amountBaseDesired * 95n) / 100n;
+        const calldata = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "previewDeposit",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            amountQuoteDesired,
+            amountBaseDesired,
+          ],
+        });
 
-    // Approve tokens if needed (similar to MemeInterface)
-    const firstTokenBalance = getTokenBalance(selectedVaultData.tokens.first.symbol);
-    const secondTokenBalance = getTokenBalance(selectedVaultData.tokens.second.symbol);
-    
-    if (firstTokenBalance < amountQuoteDesired) {
-      const approveFirstUo = {
-        target: firstTokenAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
+        const res = await fetch(HTTP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_call",
+            params: [
+              { to: crystalVaultsAddress, data: calldata },
+              "latest",
             ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+          }),
+        });
+
+        const { result } = await res.json();
+        const [shares, amountQuote, amountBase] = decodeFunctionResult({
+          abi: CrystalVaultsAbi,
+          functionName: "previewDeposit",
+          data: result,
+        });
+
+        setDepositPreview({ shares, amountQuote, amountBase });
+      } catch (error) {
+        console.error('Error previewing deposit:', error);
+        setDepositPreview(null);
+      }
+    };
+
+    const timeoutId = setTimeout(previewDeposit, 500);
+    return () => clearTimeout(timeoutId);
+  }, [vaultDepositAmounts, selectedVaultForAction, crystalVaultsAddress, HTTP_URL]);
+
+  useEffect(() => {
+    if (!selectedVaultForAction || !withdrawShares) {
+      setWithdrawPreview(null);
+      return;
+    }
+
+    const previewWithdrawal = async () => {
+      try {
+        const shares = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
+
+        const calldata = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "previewWithdrawal",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            shares,
+          ],
+        });
+
+        const res = await fetch(HTTP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_call",
+            params: [
+              { to: crystalVaultsAddress, data: calldata },
+              "latest",
+            ],
+          }),
+        });
+
+        const { result } = await res.json();
+        const [amountQuote, amountBase] = decodeFunctionResult({
+          abi: CrystalVaultsAbi,
+          functionName: "previewWithdrawal",
+          data: result,
+        });
+
+        setWithdrawPreview({ amountQuote, amountBase });
+      } catch (error) {
+        console.error('Error previewing withdrawal:', error);
+        setWithdrawPreview(null);
+      }
+    };
+
+    const timeoutId = setTimeout(previewWithdrawal, 500);
+    return () => clearTimeout(timeoutId);
+  }, [withdrawShares, selectedVaultForAction, crystalVaultsAddress, HTTP_URL]);
+
+  const handleVaultDeposit = async () => {
+    if (!selectedVaultForAction || !account.connected || !depositPreview) return;
+    
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain();
+      return;
+    }
+
+    try {
+      setIsVaultDepositSigning(true);
+
+      const quoteTokenAddress = selectedVaultForAction.quoteTokenData?.address;
+      const baseTokenAddress = selectedVaultForAction.baseTokenData?.address;
+
+      if (!quoteTokenAddress || !baseTokenAddress) {
+        throw new Error('Token addresses not found');
+      }
+
+      const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
+      const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+
+      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
+      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
+      
+      const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
+      const amountBaseMin = (amountBaseDesired * 95n) / 100n;
+
+      const quoteBalance = getTokenBalance(quoteTokenAddress);
+      const baseBalance = getTokenBalance(baseTokenAddress);
+      
+      if (quoteBalance < amountQuoteDesired) {
+        throw new Error(`Insufficient ${selectedVaultForAction.quoteToken} balance`);
+      }
+
+      if (baseBalance < amountBaseDesired) {
+        throw new Error(`Insufficient ${selectedVaultForAction.baseToken} balance`);
+      }
+
+      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        const approveQuoteUo = {
+          target: quoteTokenAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+          }),
+          value: 0n,
+        };
+        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+        await waitForTxReceipt(approveQuoteOp.hash);
+      }
+
+      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        const approveBaseUo = {
+          target: baseTokenAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+          }),
+          value: 0n,
+        };
+        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+        await waitForTxReceipt(approveBaseOp.hash);
+      }
+
+      const ethValue = 
+        quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
+        baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+
+      const depositUo = {
+        target: crystalVaultsAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "deposit",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            amountQuoteDesired,
+            amountBaseDesired,
+            amountQuoteMin,
+            amountBaseMin,
+          ],
+        }),
+        value: ethValue,
+      };
+
+      const depositOp = await sendUserOperationAsync({ uo: depositUo });
+      await waitForTxReceipt(depositOp.hash);
+
+      setVaultDepositAmounts({ quote: '', base: '' });
+      setVaultQuoteExceedsBalance(false);
+      setVaultBaseExceedsBalance(false);
+      setDepositPreview(null);
+      
+      refetch?.();
+      queryClient.invalidateQueries({ queryKey: ["user-vault-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["vault-details"] });
+
+      setpopup(0);
+      setSelectedVaultForAction(null);
+
+    } catch (e: any) {
+      console.error('Vault deposit error:', e);
+      alert(e.message || 'Deposit failed');
+    } finally {
+      setIsVaultDepositSigning(false);
+    }
+  };
+
+  const handleVaultWithdraw = async () => {
+    if (!selectedVaultForAction || !account.connected || !withdrawPreview) return;
+    
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain();
+      return;
+    }
+
+    try {
+      setIsVaultWithdrawSigning(true);
+
+      const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
+      
+      const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
+      const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
+
+      const withdrawUo = {
+        target: crystalVaultsAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "withdraw",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            sharesToWithdraw,
+            amountQuoteMin,
+            amountBaseMin,
+          ],
         }),
         value: 0n,
       };
-      const approveFirstOp = await sendUserOperationAsync({ uo: approveFirstUo });
-      await waitForTxReceipt(approveFirstOp.hash);
-    }
 
-    if (secondTokenBalance < amountBaseDesired) {
-      const approveSecondUo = {
-        target: secondTokenAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
-        }),
-        value: 0n,
-      };
-      const approveSecondOp = await sendUserOperationAsync({ uo: approveSecondUo });
-      await waitForTxReceipt(approveSecondOp.hash);
-    }
+      const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
+      await waitForTxReceipt(withdrawOp.hash);
 
-    // Deposit into vault
-    const depositUo = {
-      target: crystalVaultsAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "deposit",
-        args: [
-          selectedVaultData.id as `0x${string}`, // vault address
-          amountQuoteDesired,
-          amountBaseDesired,
-          amountQuoteMin,
-          amountBaseMin,
-        ],
-      }),
-      value: 0n,
-    };
+      setWithdrawShares('');
+      setWithdrawExceedsBalance(false);
+      setWithdrawPreview(null);
+      
+      refetch?.();
+      queryClient.invalidateQueries({ queryKey: ["user-vault-balances"] });
+      queryClient.invalidateQueries({ queryKey: ["vault-details"] });
 
-    const depositOp = await sendUserOperationAsync({ uo: depositUo });
-    await waitForTxReceipt(depositOp.hash);
+      setpopup(0);
+      setSelectedVaultForAction(null);
 
-    // Reset form
-    setVaultDepositAmounts({ first: '', second: '' });
-    setVaultFirstTokenExceedsBalance(false);
-    setVaultSecondTokenExceedsBalance(false);
-    
-    // Refresh balances
-    refetch?.();
-    refetchVaultBalances();
-
-  } catch (e: any) {
-    console.error('Vault deposit error:', e);
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
-
-const handleVaultWithdraw = async () => {
-  if (!selectedVaultData || !account.connected) return;
-  
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    setChain();
-    return;
-  }
-
-  try {
-    setIsVaultWithdrawSigning(true);
-
-    const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawAmount) * 1e18));
-    
-    // Use 95% of expected amounts as minimum (5% slippage)
-    const amountQuoteMin = 0n; // You'd want to calculate this properly
-    const amountBaseMin = 0n; // You'd want to calculate this properly
-
-    const withdrawUo = {
-      target: crystalVaultsAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "withdraw",
-        args: [
-          selectedVaultData.id as `0x${string}`, // vault address
-          sharesToWithdraw,
-          amountQuoteMin,
-          amountBaseMin,
-        ],
-      }),
-      value: 0n,
-    };
-
-    const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
-    await waitForTxReceipt(withdrawOp.hash);
-
-    // Reset form
-    setWithdrawAmount('');
-    setWithdrawExceedsBalance(false);
-    
-    // Refresh balances
-    refetch?.();
-    refetchVaultBalances();
-
-  } catch (e: any) {
-    console.error('Vault withdraw error:', e);
-  } finally {
-    setIsVaultWithdrawSigning(false);
-  }
-};
-  const getAddLiquidityButtonText = () => {
-    if (firstTokenExceedsBalance || secondTokenExceedsBalance) {
-      return 'Insufficient Balance';
-    }
-    return 'Add Liquidity';
-  };
-
-  const getVaultDepositButtonText = () => {
-    if (vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) {
-      return 'Insufficient Balance';
-    }
-    return 'Deposit';
-  };
-
-  const getWithdrawButtonText = () => {
-    if (withdrawExceedsBalance) {
-      return 'Insufficient Balance';
-    }
-    return 'Withdraw';
-  };
-
-  const getFavoriteTokens = () => {
-    return availableTokens.filter(token =>
-      favorites.includes(token.address)
-    );
-  };
-
-  const filteredTokens = searchQuery.length > 0
-    ? availableTokens.filter(token => {
-      const isAlreadySelected = selectedTokens.some(t => t.symbol === token.symbol);
-      if (isAlreadySelected) return false;
-      return token.symbol.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        token.name.toLowerCase().includes(searchQuery.toLowerCase());
-    })
-    : [];
-
-  const getRemainingTokens = () => {
-    return availableTokens.filter(token =>
-      !selectedTokens.some(t => t.symbol === token.symbol)
-    );
-  };
-
-  const handleTokenToggle = (token: Token) => {
-    setSelectedTokens(prev => {
-      if (prev.length >= 2) return prev;
-      if (prev.some(t => t.symbol === token.symbol)) return prev;
-      return [...prev, token];
-    });
-    setSearchQuery('');
-    searchInputRef.current?.focus();
-  };
-
-  const removeSelectedToken = (tokenSymbol: string) => {
-    setSelectedTokens(prev => prev.filter(t => t.symbol !== tokenSymbol));
-  };
-
-  const handleFavoriteToggle = (token: Token, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (defaultTokens.includes(token.symbol)) return;
-    toggleFavorite(token.address);
-  };
-
-  const isTokenFavorited = (token: Token) => {
-    return favorites.includes(token.address);
-  };
-  const showVaultStrategyDetail = (vaultId: string) => {
-    setSelectedVaultStrategy(vaultId);
-    setActiveVaultStrategyTab('balances');
-
-    const vault = vaultStrategies.find(v => v.id === vaultId);
-    if (vault) {
-      onRouteChange?.(`/earn/vaults/${vault.contractAddress}`);
-    }
-  };
-  const backToList = () => {
-    setSelectedVault(null);
-    setSelectedVaultStrategy(null);
-
-    if (activePageTab === 'liquidity') {
-      onRouteChange?.('/earn/liquidity-pools');
-    } else {
-      onRouteChange?.('/earn/vaults');
+    } catch (e: any) {
+      console.error('Vault withdraw error:', e);
+      alert(e.message || 'Withdrawal failed');
+    } finally {
+      setIsVaultWithdrawSigning(false);
     }
   };
 
-  const selectedVaultData = selectedVault ? vaults.find(vault => vault.id === selectedVault) : null;
-  const selectedVaultStrategyData = selectedVaultStrategy ? vaultStrategies.find(vault => vault.id === selectedVaultStrategy) : null;
-
-  const hasInitializedFavorites = useRef(false);
-
-  useEffect(() => {
-    if (hasInitializedFavorites.current || availableTokens.length === 0) return;
-
-    const autoFavoriteDefaults = () => {
-      defaultTokens.forEach(symbol => {
-        const token = availableTokens.find(t => t.symbol === symbol);
-        if (token && !favorites.includes(token.address)) {
-          toggleFavorite(token.address);
-        }
-      });
-    };
-
-    autoFavoriteDefaults();
-    hasInitializedFavorites.current = true;
-  }, [availableTokens]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
-        setIsSearchOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (setOnSelectTokenCallback) {
-      const tokenSelectCallback = (token: { symbol: string; icon: string }) => {
-        try {
-          if (showAddLiquidity && activeTokenSelection) {
-            handleAddLiquidityTokenSelect(token);
-          } else {
-            const fullToken = availableTokens.find(t => t.symbol === token.symbol);
-            if (fullToken) {
-              onSelectToken(fullToken);
-            } else {
-              const completeToken = {
-                name: token.symbol,
-                address: '',
-                baseAsset: token.symbol,
-                ...token
-              };
-              onSelectToken(completeToken);
-            }
-          }
-        } catch (error) {
-          console.error('Error in token selection:', error);
-          onSelectToken(token);
-        }
-      };
-
-      setOnSelectTokenCallback(() => tokenSelectCallback);
-    }
-
-    return () => {
-      if (setOnSelectTokenCallback) {
-        setOnSelectTokenCallback(null);
-      }
-    };
-  }, [showAddLiquidity, activeTokenSelection]);
-
-  useEffect(() => {
-    if (currentRoute.startsWith('/earn/vaults')) {
-      if (activePageTab !== 'vaults') {
-        setActivePageTab('vaults');
-      }
-
-      const pathParts = currentRoute.split('/');
-      if (pathParts.length >= 4 && pathParts[3]) {
-        const vaultAddress = pathParts[3];
-        const vault = vaultStrategies.find(v => v.contractAddress === vaultAddress);
-        if (vault && selectedVaultStrategy !== vault.id) {
-          setSelectedVaultStrategy(vault.id);
-          setActiveVaultStrategyTab('balances');
-        }
-      } else {
-        setSelectedVaultStrategy(null);
-      }
-    } else if (currentRoute.startsWith('/earn/liquidity-pools')) {
-      if (activePageTab !== 'liquidity') {
-        setActivePageTab('liquidity');
-      }
-
-      const pathParts = currentRoute.split('/');
-      if (pathParts.length >= 4 && pathParts[3]) {
-        const poolIdentifier = pathParts[3];
-        const [firstToken, secondToken] = poolIdentifier.split('-');
-
-        const vault = vaults.find(v =>
-          (v.tokens.first.symbol.toLowerCase() === firstToken &&
-            v.tokens.second.symbol.toLowerCase() === secondToken) ||
-          (v.tokens.first.symbol.toLowerCase() === secondToken &&
-            v.tokens.second.symbol.toLowerCase() === firstToken)
-        );
-
-        if (vault && selectedVault !== vault.id) {
-          setSelectedVault(vault.id);
-          setActiveVaultDetailTab('deposit');
-          setVaultDepositAmounts({ first: '', second: '' });
-          setWithdrawAmount('');
-          setVaultFirstTokenExceedsBalance(false);
-          setVaultSecondTokenExceedsBalance(false);
-          setWithdrawExceedsBalance(false);
-        }
-      } else {
-        setSelectedVault(null);
-      }
-    }
-  }, [currentRoute, activePageTab, selectedVault, selectedVaultStrategy, vaults, vaultStrategies]);
   const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
     if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
       return;
@@ -1657,17 +1228,14 @@ const handleVaultWithdraw = async () => {
     }
   }, [selectedVaultStrategyData?.type]);
 
-  // Add this useEffect to handle indicator updates
   useEffect(() => {
     if (selectedVaultStrategy && selectedVaultStrategyData) {
-      // Small delay to ensure DOM is rendered
       setTimeout(() => {
         updateVaultStrategyIndicatorPosition(activeVaultStrategyTab);
       }, 0);
     }
   }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition]);
 
-  // Add window resize listener
   useEffect(() => {
     const handleResize = () => {
       if (selectedVaultStrategy && selectedVaultStrategyData) {
@@ -1679,967 +1247,67 @@ const handleVaultWithdraw = async () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition]);
 
-  if (showAddLiquidity) {
-    return (
-      <div className="add-liquidity-container">
-        <div className="add-liquidity-content">
-          <div className="add-liquidity-breadcrumb">
-            <button onClick={() => setShowAddLiquidity(false)} className="breadcrumb-link">Liquidity Pools</button>
-            <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
-            <span className="breadcrumb-current">New position</span>
-          </div>
+  useEffect(() => {
+    if (currentRoute.startsWith('/earn/vaults')) {
+      const pathParts = currentRoute.split('/');
+      if (pathParts.length >= 4 && pathParts[3]) {
+        const vaultAddress = pathParts[3];
+        const vault = filteredVaultStrategies.find(v => v.address === vaultAddress);
+        if (vault && selectedVaultStrategy !== vault.address) {
+          setSelectedVaultStrategy(vault.address);
+          setActiveVaultStrategyTab('balances');
+        }
+      } else {
+        setSelectedVaultStrategy(null);
+      }
+    }
+  }, [currentRoute, filteredVaultStrategies, selectedVaultStrategy]);
 
-          <div className="add-liquidity-header">
-            <h1>New position</h1>
-            <div className="header-controls">
-              <button className="reset-button" onClick={handleReset}>
-                Reset
-              </button>
-            </div>
-          </div>
+  const isVaultDepositEnabled = () => {
+    return vaultDepositAmounts.quote !== '' && vaultDepositAmounts.base !== '' &&
+      parseFloat(vaultDepositAmounts.quote) > 0 && parseFloat(vaultDepositAmounts.base) > 0 &&
+      !vaultQuoteExceedsBalance && !vaultBaseExceedsBalance && depositPreview;
+  };
 
-          <div className="add-liquidity-main">
-            <div className="steps-sidebar">
-              <div
-                className={`step ${currentStep === 1 ? 'active' : ''}`}
-                onClick={() => setCurrentStep(1)}
-                style={{ cursor: 'pointer' }}
-              >
-                <div className="step-number">1</div>
-                <div className="step-content">
-                  <h3>Step 1</h3>
-                  <p>Select token pair and fees</p>
-                </div>
-              </div>
-              <div
-                className={`step ${currentStep === 2 ? 'active' : ''}`}
-                onClick={() => {
-                  if (addLiquidityTokens.first && addLiquidityTokens.second) {
-                    setCurrentStep(2);
-                  }
-                }}
-                style={{
-                  cursor: (addLiquidityTokens.first && addLiquidityTokens.second) ? 'pointer' : 'not-allowed',
-                  opacity: (addLiquidityTokens.first && addLiquidityTokens.second) ? 1 : 0.6
-                }}
-              >
-                <div className="step-number">2</div>
-                <div className="step-content">
-                  <h3>Step 2</h3>
-                  <p>Enter deposit amounts</p>
-                </div>
-              </div>
-            </div>
+  const isWithdrawEnabled = () => {
+    return withdrawShares !== '' && parseFloat(withdrawShares) > 0 && 
+      !withdrawExceedsBalance && withdrawPreview;
+  };
 
-            <div className="add-liquidity-form">
-              {currentStep === 1 ? (
-                <>
-                  <div className="form-section">
-                    <h2>Select pair</h2>
-                    <p className="section-description">
-                      Choose the tokens you want to provide liquidity for. You can select tokens on all supported networks.
-                    </p>
+  const getVaultDepositButtonText = () => {
+    if (vaultQuoteExceedsBalance || vaultBaseExceedsBalance) {
+      return 'Insufficient Balance';
+    }
+    if (!depositPreview) {
+      return 'Enter Amounts';
+    }
+    return 'Deposit';
+  };
 
-                    <div className="token-pair-selection">
-                      <div className="lp-token-dropdown-wrapper">
-                        <button
-                          className="lp-token-dropdown"
-                          onClick={() => openTokenSelection('first')}
-                        >
-                          {addLiquidityTokens.first ? (
-                            <>
-                              <div className="lp-token-icon-wrapper">
-                                <img
-                                  src={getTokenBySymbol(addLiquidityTokens.first).icon}
-                                  alt=""
-                                  className="liquidity-token-icon"
-                                />
-                                <span>{addLiquidityTokens.first}</span>
-                              </div>
-                              <ChevronDown size={16} />
-                            </>
-                          ) : (
-                            <>
-                              <span>Select a Token</span>
-                              <ChevronDown size={16} />
-                            </>
-                          )}
-                        </button>
-                      </div>
-
-                      <div className="lp-token-dropdown-wrapper">
-                        <button
-                          className="lp-token-dropdown"
-                          onClick={() => openTokenSelection('second')}
-                        >
-                          {addLiquidityTokens.second ? (
-                            <>
-                              <div className="lp-token-icon-wrapper">
-                                <img
-                                  src={getTokenBySymbol(addLiquidityTokens.second).icon}
-                                  alt=""
-                                  className="liquidity-token-icon"
-                                />
-                                <span>{addLiquidityTokens.second}</span>
-                              </div>
-                              <ChevronDown size={16} />
-                            </>
-                          ) : (
-                            <>
-                              <span>Select a Token</span>
-                              <ChevronDown size={16} />
-                            </>
-                          )}
-                        </button>
-                      </div>
-                    </div>
-
-                    {duplicateTokenWarning && (
-                      <div className="duplicate-token-warning">
-                        <div className="duplicate-token-warning-text">
-                          {duplicateTokenWarning}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="form-section">
-                    <h2>Fee tier</h2>
-                    <p className="section-description">
-                      The fee tier determines the trading fee collected on swaps. Higher fee tiers are typically used for more volatile token pairs.
-                    </p>
-
-                    <div className="fee-tier-options">
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '0.05%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('0.05%')}
-                      >
-                        <div className="fee-tier-percentage">0.05%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for stable pairs</span>
-                          <span className="fee-tier-subtitle">Very stable pairs like USDC/USDT</span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '0.30%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('0.30%')}
-                      >
-                        <div className="fee-tier-percentage">0.30%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for most pairs</span>
-                          <span className="fee-tier-subtitle">Most liquid for majority of pairs</span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '1.00%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('1.00%')}
-                      >
-                        <div className="fee-tier-percentage">1.00%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for exotic pairs</span>
-                          <span className="fee-tier-subtitle">Rare or highly volatile pairs</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <button
-                    className={`continue-button ${addLiquidityTokens.first && addLiquidityTokens.second ? 'enabled' : ''}`}
-                    disabled={!addLiquidityTokens.first || !addLiquidityTokens.second}
-                    onClick={handleContinue}
-                  >
-                    Continue
-                  </button>
-                </>
-              ) : (
-                <div className="form-section">
-                  <h2>Enter deposit amounts</h2>
-                  <p className="section-description">
-                    Enter the amounts you want to deposit for each token. The ratio will be automatically calculated based on the current pool ratio.
-                  </p>
-
-                  <div className="deposit-amounts-section">
-                    <div className={`deposit-input-group ${firstTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${firstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={depositAmounts.first}
-                          onChange={(e) => handleDepositAmountChange('first', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img src={getTokenBySymbol(addLiquidityTokens.first).icon} alt="" className="deposit-token-icon" />
-                          <span>{addLiquidityTokens.first}</span>
-                        </div>
-                      </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${firstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {calculateUSD(depositAmounts.first, addLiquidityTokens.first)}
-                        </div>
-                        <div className="deposit-balance">
-                          Balance: {formatDisplayValue(
-                            getTokenBalance(addLiquidityTokens.first),
-                            Number(
-                              (Object.values(tokendict).find(t => t.ticker === addLiquidityTokens.first)?.decimals) || 18
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className={`deposit-input-group ${secondTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className={`deposit-amount-input ${secondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                          value={depositAmounts.second}
-                          onChange={(e) => handleDepositAmountChange('second', e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img src={getTokenBySymbol(addLiquidityTokens.second).icon} alt="" className="deposit-token-icon" />
-                          <span>{addLiquidityTokens.second}</span>
-                        </div>
-                      </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className={`lp-deposit-usd-value ${secondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                          {calculateUSD(depositAmounts.second, addLiquidityTokens.second)}
-                        </div>
-                        <div className="deposit-balance">
-                          Balance: {formatDisplayValue(
-                            getTokenBalance(addLiquidityTokens.second),
-                            Number(
-                              (Object.values(tokendict).find(t => t.ticker === addLiquidityTokens.second)?.decimals) || 18
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="deposit-summary">
-                    <div className="deposit-summary-row">
-                      <span>Selected Fee Tier:</span>
-                      <span>{selectedFeeTier}</span>
-                    </div>
-                    <div className="deposit-summary-row">
-                      <span>Total Value:</span>
-                      <span>
-                        {(() => {
-                          const firstUSD = calculateUSD(depositAmounts.first, addLiquidityTokens.first);
-                          const secondUSD = calculateUSD(depositAmounts.second, addLiquidityTokens.second);
-                          const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
-                          const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
-                          const total = firstValue + secondValue;
-                          return `$${total.toFixed(2)}`;
-                        })()}
-                      </span>
-                    </div>
-                    <div className="deposit-summary-row">
-                      <span>Pool Share:</span>
-                      <span>~0.01%</span>
-                    </div>
-                  </div>
-
-                  <button
-                    className={`continue-button ${isAddLiquidityEnabled() ? 'enabled' : ''} ${(firstTokenExceedsBalance || secondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
-                    disabled={!isAddLiquidityEnabled()}
-                  >
-                    {getAddLiquidityButtonText()}
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const getWithdrawButtonText = () => {
+    if (withdrawExceedsBalance) {
+      return 'Insufficient Shares';
+    }
+    if (!withdrawPreview) {
+      return 'Enter Amount';
+    }
+    return 'Withdraw';
+  };
 
   return (
     <div className="vaults-page-container">
-      <div className="page-toggle-container">
-        <div className="page-toggle" data-active={activePageTab}>
-          <button
-            className={`page-toggle-tab ${activePageTab === 'liquidity' ? 'active' : ''}`}
-            onClick={() => handlePageTabChange('liquidity')}
-          >
-            Liquidity Provision
-          </button>
-          <button
-            className={`page-toggle-tab ${activePageTab === 'vaults' ? 'active' : ''}`}
-            onClick={() => handlePageTabChange('vaults')}
-          >
-            Vaults
-          </button>
-        </div>
-      </div>
-
       <div className="lp-content-wrapper">
-        {activePageTab === 'liquidity' && (
-          <>
-            {!selectedVault && (
-              <div className="lp-overview-charts">
-                <div className="lp-overview-chart">
-                  <div className="lp-total-value-locked-container">
-                    <span className="lp-total-tvl-subtitle">Total Value Locked</span>
-                    <span className="lp-total-tvl">
-                      ${hoveredTvl !== null ? hoveredTvl.toLocaleString() + 'M' : '192.42M'}
-                    </span>
-                  </div>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart
-                      data={tvlData}
-                      onMouseMove={(e) => {
-                        if (e.isTooltipActive && e.activePayload) {
-                          setHoveredTvl(e.activePayload[0].payload.tvl);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredTvl(null);
-                      }}
-                    >
-                      <defs>
-                        <linearGradient id="tvlGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
-                          <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                          <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis
-                        dataKey="date"
-                        axisLine={false}
-                        tickLine={false}
-                        tick={{ fill: '#ffffff79', fontSize: 12 }}
-                      />
-                      <Tooltip
-                        contentStyle={{ display: 'none' }}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="tvl"
-                        stroke="#aaaecf"
-                        strokeWidth={2}
-                        fill="url(#tvlGrad)"
-                        dot={false}
-                        activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
-                      />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="lp-overview-chart">
-                  <div className="lp-total-value-locked-container">
-                    <span className="lp-total-tvl-subtitle">Crystal Volume</span>
-                    <span className="lp-total-tvl">
-                      ${hoveredVolume !== null ? hoveredVolume.toLocaleString() + 'M' : '16.4M'}
-                    </span>
-                  </div>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      data={crystalVolumeData}
-                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
-                      onMouseMove={(e) => {
-                        if (e.isTooltipActive && e.activePayload) {
-                          setHoveredVolume(e.activePayload[0].payload.volume);
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredVolume(null);
-                      }}
-                    >
-                      <defs>
-                        <linearGradient id="volumeGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#aaaecf" stopOpacity={1} />
-                          <stop offset="100%" stopColor="#aaaecf" stopOpacity={0.2} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid vertical={false} horizontal={false} />
-                      <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#888', fontSize: 12 }} />
-                      <YAxis hide />
-                      <Tooltip
-                        contentStyle={{
-                          display: 'none'
-                        }}
-                        cursor={{ fill: 'rgba(170, 174, 207, 0.1)' }}
-                      />
-                      <Bar
-                        dataKey="volume"
-                        name="Volume"
-                        barSize={14}
-                        radius={[2, 2, 0, 0]}
-                        fill="url(#volumeGrad)"
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {!selectedVault && (
-              <div className="lp-filter-row">
-                <div className="lp-filter-buttons">
-                  {(['All', 'LSTs', 'Stables', 'Unverified', 'Verified'] as const).map((filter) => (
-                    <button
-                      key={filter}
-                      className={`lp-filter-button ${activeFilter === filter ? 'active' : ''}`}
-                      onClick={() => setActiveFilter(filter)}
-                    >
-                      {filter}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  className="add-liquidity-button"
-                  onClick={() => setShowAddLiquidity(true)}
-                >
-                  <Plus size={16} />
-                  Add Liquidity
-                </button>
-              </div>
-            )}
-
-            <div className={`lp-rectangle ${selectedVault ? 'no-border' : ''}`}>
-              {!selectedVault ? (
-                <>
-                  <div className="lp-header">
-                    <div className="lp-filter">
-                      <div className="lp-tabs" data-active={activeTab}>
-                        <button
-                          className={`lp-tab ${activeTab === 'all' ? 'active' : ''}`}
-                          onClick={() => setActiveTab('all')}
-                        >
-                          All LP Vaults
-                        </button>
-                        <button
-                          className={`lp-tab ${activeTab === 'deposited' ? 'active' : ''}`}
-                          onClick={() => setActiveTab('deposited')}
-                        >
-                          My Positions (1)
-                        </button>
-                      </div>
-
-                      <div className="lp-search-container" ref={searchRef}>
-                        <div
-                          className="lp-search-input"
-                          onClick={() => setIsSearchOpen(true)}
-                        >
-                          <Search size={16} className="lp-search-icon" />
-
-                          {selectedTokens.map((token) => (
-                            <div key={token.symbol} className="lp-search-selected-token">
-                              <img src={token.icon} alt={token.symbol} className="lp-search-selected-icon" />
-                              <span>{token.symbol}</span>
-                              <button
-                                className="lp-search-remove-token"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  removeSelectedToken(token.symbol);
-                                }}
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-
-                          <input
-                            ref={searchInputRef}
-                            type="text"
-                            placeholder={selectedTokens.length === 0 ? "Search" : ""}
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            className="lp-search-field"
-                          />
-                        </div>
-
-                        {isSearchOpen && (
-                          <div className="lp-search-dropdown">
-                            <div className="lp-search-tokens">
-                              <div className="lp-favorites-container">
-                                {getFavoriteTokens().map((token) => (
-                                  <div
-                                    key={`favorite-${token.symbol}`}
-                                    className="lp-search-token-favorites"
-                                    onClick={() => handleTokenToggle(token)}
-                                  >
-                                    <img src={token.icon} alt={token.symbol} className="lp-search-token-icon-favorite" />
-                                    {!defaultTokens.includes(token.symbol) && (
-                                      <div className="lp-token-favorites">
-                                        <span className="lp-search-token-symbol-favorite">{token.symbol}</span>
-                                      </div>
-                                    )}
-                                    {!defaultTokens.includes(token.symbol) && (
-                                      <button
-                                        className="lp-favorite-close-button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          toggleFavorite(token.address);
-                                        }}
-                                      >
-                                        ×
-                                      </button>
-                                    )}
-                                  </div>
-                                ))}
-                              </div>
-                              <div className="lp-trending-header">
-                                <span className="lp-trending-title"> Default tokens</span>
-                                <div className="lp-trending-line"> </div>
-                              </div>
-                              {searchQuery.length > 0 && (
-                                <>
-                                  {filteredTokens.length > 0 ? (
-                                    filteredTokens.map((token) => (
-                                      <div
-                                        key={`search-${token.symbol}`}
-                                        className="lp-search-token"
-                                        onClick={() => handleTokenToggle(token)}
-                                      >
-                                        <Star
-                                          size={18}
-                                          className="lp-search-token-star"
-                                          onClick={(e) => handleFavoriteToggle(token, e)}
-                                          fill="none"
-                                          color="#ffffff79"
-                                        />
-                                        <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
-                                        <div className="lp-token-details">
-                                          <span className="lp-search-token-symbol">{token.symbol}</span>
-                                          <span className="lp-search-token-name">{token.name}</span>
-                                        </div>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="lp-search-empty">No tokens found</div>
-                                  )}
-                                </>
-                              )}
-
-                              {searchQuery.length === 0 && getRemainingTokens().map((token) => (
-                                <div
-                                  key={`remaining-${token.symbol}`}
-                                  className="lp-search-token"
-                                  onClick={() => handleTokenToggle(token)}
-                                >
-                                  <Star
-                                    size={18}
-                                    className={`lp-search-token-star ${isTokenFavorited(token) ? 'favorited' : ''}`}
-                                    onClick={(e) => handleFavoriteToggle(token, e)}
-                                    fill={isTokenFavorited(token) ? '#aaaecf' : 'none'}
-                                    color={isTokenFavorited(token) ? '#aaaecf' : '#ffffff79'}
-                                  />
-
-                                  <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
-                                  <div className="lp-token-details">
-                                    <span className="lp-search-token-symbol">{token.symbol}</span>
-                                    <span className="lp-search-token-name">{token.name}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="lp-vaults-grid">
-                    <div className="lp-vaults-list-header">
-                      <div className="lp-col lp-asset-col">Pool</div>
-                      <div className="lp-col lp-supply-col">TVL</div>
-                      <div className="lp-col lp-supply-apy-col">24h Volume</div>
-                      <div className="lp-col lp-borrowed-col">24h Fees</div>
-                      <div className="lp-col lp-borrow-apy-col">24h APY</div>
-                    </div>
-
-                    {filteredVaults.map((vault) => (
-                      <div
-                        key={vault.id}
-                        className="lp-card"
-                        onClick={() => showVaultDetail(vault.id)}
-                      >
-                        <div className="lp-summary">
-                          <div className="lp-col lp-asset-col">
-                            <div className="lp-token-pair-icons">
-                              <img
-                                src={vault.tokens.first.icon}
-                                alt={vault.tokens.first.symbol}
-                                className="lp-token-icon lp-token-icon-first"
-                              />
-                              <img
-                                src={vault.tokens.second.icon}
-                                alt={vault.tokens.second.symbol}
-                                className="lp-token-icon lp-token-icon-second"
-                              />
-                            </div>
-                            <div className="lp-asset-info">
-                              <h3 className="lp-listname">{vault.name}</h3>
-                              <div className="lp-fee-amounts">
-                                {vault.tokens.first.feeAmount && (
-                                  <span className="lp-fee-amount">{vault.tokens.first.feeAmount}</span>
-                                )}
-                              </div>
-                              {vault.verified && (
-                                <img src={verified} alt="Verified" className="lp-verified-badge" />
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="lp-col lp-supply-col">
-                            <div className="lp-supply-value lp-supply-tooltip-wrapper">
-                              <span className="lp-apy-value-text"> $2.8M </span>
-                            </div>
-                          </div>
-
-                          <div className="lp-col lp-supply-apy-col">
-                            <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
-                          </div>
-
-                          <div className="lp-col lp-borrowed-col">
-                            <div className="lp-borrowed-value">{vault.totalBorrowed}</div>
-                          </div>
-
-                          <div className="lp-col lp-borrow-apy-col">
-                            <div className="lp-borrow-apy-value">{vault.borrowApy}%</div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <div className="lp-detail-view">
-                  <div className="lp-detail-header">
-                    <div className="add-liquidity-breadcrumb">
-                      <button onClick={backToList} className="breadcrumb-link">
-                        Liquidity Pools
-                      </button>
-                      <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
-                      <span className="breadcrumb-current">{selectedVaultData?.name} Pool</span>
-                    </div>
-                  </div>
-
-                  {selectedVaultData && (
-                    <div className="vault-detail-layout">
-                      <div className="vault-info-section">
-                        <div className="lp-detail-summary">
-                          <div className="lp-detail-top">
-                            <div className="lp-detail-asset">
-                              <div className="lp-detail-token-pair">
-                                <img
-                                  src={selectedVaultData.tokens.first.icon}
-                                  alt={selectedVaultData.tokens.first.symbol}
-                                  className="lp-detail-token-icon lp-first-token"
-                                />
-                                <img
-                                  src={selectedVaultData.tokens.second.icon}
-                                  alt={selectedVaultData.tokens.second.symbol}
-                                  className="lp-detail-token-icon lp-second-token"
-                                />
-                              </div>
-                              <div>
-                                <h2 className="lp-detail-name">{selectedVaultData.name}</h2>
-                                <div className="lp-fee-amounts-detail">
-                                  {selectedVaultData.tokens.first.feeAmount && (
-                                    <span className="lp-fee-amount">{selectedVaultData.tokens.first.feeAmount}</span>
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="lp-detail-stats">
-                              <div className="lp-detail-stat">
-                                <span className="lp-stat-label">APY</span>
-                                <span className="lp-stat-value">{selectedVaultData.apy}%</span>
-                              </div>
-                              <div className="lp-detail-stat">
-                                <span className="lp-stat-label">TVL</span>
-                                <span className="lp-stat-value">{selectedVaultData.tvl}</span>
-                              </div>
-                              <div className="lp-detail-stat">
-                                <span className="lp-stat-label">Daily Yield</span>
-                                <span className="lp-stat-value">{selectedVaultData.dailyYield}</span>
-                              </div>
-                              <div className="lp-detail-stat">
-                                <span className="lp-stat-label">Your Balance</span>
-                                <span className="lp-stat-value">{selectedVaultData.userBalance} LP</span>
-                              </div>
-                            </div>
-                          </div>
-
-                          <div className="lp-performance-chart-container">
-                            <h4 className="lp-performance-chart-header">
-                              PERFORMANCE
-                            </h4>
-                            <ResponsiveContainer width="100%" height="100%">
-                              <AreaChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
-                                <defs>
-                                  <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
-                                    <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                                    <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <XAxis
-                                  dataKey="name"
-                                  axisLine={false}
-                                  tickLine={false}
-                                  tick={{ fill: '#ffffff79', fontSize: 12 }}
-                                />
-                                <YAxis hide />
-                                <Tooltip
-                                  contentStyle={{ display: 'none' }}
-                                />
-                                <Area
-                                  type="monotone"
-                                  dataKey="value"
-                                  stroke="#aaaecf"
-                                  strokeWidth={2}
-                                  fill="url(#performanceGrad)"
-                                  dot={false}
-                                  activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
-                                />
-                              </AreaChart>
-                            </ResponsiveContainer>
-                          </div>
-
-                          <div className="lp-detail-description">
-                            <h4>About {selectedVaultData.name}</h4>
-                            <p>{selectedVaultData.description}</p>
-                            <a href="#" className="lp-learn-more">
-                              Learn more <ArrowUpRight size={14} />
-                            </a>
-                          </div>
-
-                          <div className="lp-trade-info-rectangle">
-                            <div className="lp-info-row">
-                              <div className="lp-label-container">Protocol Fee</div>
-                              <div className="lp-value-container">{selectedVaultData.protocolFee}</div>
-                            </div>
-                            <div className="lp-info-row">
-                              <div className="lp-label-container">Withdrawal Time</div>
-                              <div className="lp-value-container">{selectedVaultData.withdrawalTime}</div>
-                            </div>
-                            <div className="lp-info-row">
-                              <div className="lp-label-container">Total Supply</div>
-                              <div className="lp-value-container">{selectedVaultData.totalSupply}</div>
-                            </div>
-                            <div className="lp-info-row">
-                              <div className="lp-label-container">Total Borrowed</div>
-                              <div className="lp-value-container">{selectedVaultData.totalBorrowed}</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="vault-actions-section">
-                        <div className="vault-tabs">
-                          <button
-                            className={`vault-tab ${activeVaultDetailTab === 'deposit' ? 'active' : ''}`}
-                            onClick={() => setActiveVaultDetailTab('deposit')}
-                          >
-                            Deposit
-                          </button>
-                          <button
-                            className={`vault-tab ${activeVaultDetailTab === 'withdraw' ? 'active' : ''}`}
-                            onClick={() => setActiveVaultDetailTab('withdraw')}
-                          >
-                            Withdraw
-                          </button>
-                        </div>
-
-                        {activeVaultDetailTab === 'deposit' ? (
-                          <div className="vault-deposit-form">
-                            <h4 className="vault-form-title">Add Liquidity to {selectedVaultData.name}</h4>
-                            <p className="vault-form-description">
-                              Enter the amounts you want to deposit for each token. The ratio will be maintained automatically.
-                            </p>
-
-                            <div className="deposit-amounts-section">
-                              <div className={`deposit-input-group ${vaultFirstTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                                <div className="deposit-input-wrapper">
-                                  <input
-                                    type="text"
-                                    placeholder="0.0"
-                                    className={`deposit-amount-input ${vaultFirstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                                    value={vaultDepositAmounts.first}
-                                    onChange={(e) => handleVaultDepositAmountChange('first', e.target.value)}
-                                  />
-                                  <div className="deposit-token-badge">
-                                    <img src={selectedVaultData.tokens.first.icon} alt="" className="deposit-token-icon" />
-                                    <span>{selectedVaultData.tokens.first.symbol}</span>
-                                  </div>
-                                </div>
-                                <div className="lp-deposit-balance-wrapper">
-                                  <div className={`lp-deposit-usd-value ${vaultFirstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                                    {calculateUSD(vaultDepositAmounts.first, selectedVaultData.tokens.first.symbol)}
-                                  </div>
-                                  <div className="deposit-balance">
-                                    Balance: {formatDisplayValue(
-                                      getTokenBalance(selectedVaultData.tokens.first.symbol),
-                                      Number(
-                                        (Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.first.symbol)?.decimals) || 18
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className={`deposit-input-group ${vaultSecondTokenExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                                <div className="deposit-input-wrapper">
-                                  <input
-                                    type="text"
-                                    placeholder="0.0"
-                                    className={`deposit-amount-input ${vaultSecondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                                    value={vaultDepositAmounts.second}
-                                    onChange={(e) => handleVaultDepositAmountChange('second', e.target.value)}
-                                  />
-                                  <div className="deposit-token-badge">
-                                    <img src={selectedVaultData.tokens.second.icon} alt="" className="deposit-token-icon" />
-                                    <span>{selectedVaultData.tokens.second.symbol}</span>
-                                  </div>
-                                </div>
-                                <div className="lp-deposit-balance-wrapper">
-                                  <div className={`lp-deposit-usd-value ${vaultSecondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                                    {calculateUSD(vaultDepositAmounts.second, selectedVaultData.tokens.second.symbol)}
-                                  </div>
-                                  <div className="deposit-balance">
-                                    Balance: {formatDisplayValue(
-                                      getTokenBalance(selectedVaultData.tokens.second.symbol),
-                                      Number(
-                                        (Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.second.symbol)?.decimals) || 18
-                                      )
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="deposit-summary">
-                              <div className="deposit-summary-row">
-                                <span>Pool Share:</span>
-                                <span>~0.01%</span>
-                              </div>
-                              <div className="deposit-summary-row">
-                                <span>Total Value:</span>
-                                <span>
-                                  {(() => {
-                                    const firstUSD = calculateUSD(vaultDepositAmounts.first, selectedVaultData.tokens.first.symbol);
-                                    const secondUSD = calculateUSD(vaultDepositAmounts.second, selectedVaultData.tokens.second.symbol);
-                                    const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
-                                    const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
-                                    const total = firstValue + secondValue;
-                                    return `${total.toFixed(2)}`;
-                                  })()}
-                                </span>
-                              </div>
-                            </div>
-
-                          <button
-  className={`continue-button ${isVaultDepositEnabled() ? 'enabled' : ''} ${(vaultFirstTokenExceedsBalance || vaultSecondTokenExceedsBalance) ? 'lp-button-balance-error' : ''}`}
-  disabled={!isVaultDepositEnabled()}
-  onClick={handleVaultDeposit}
->
-  {getVaultDepositButtonText()}
-</button>
-                          </div>
-                        ) : (
-                          <div className="vault-withdraw-form">
-                            <h4 className="vault-form-title">Withdraw from {selectedVaultData.name}</h4>
-                            <p className="vault-form-description">
-                              Enter the amount of LP tokens you want to withdraw. You'll receive both tokens proportionally.
-                            </p>
-
-                            <div className="withdraw-section">
-                              <div className={`deposit-input-group ${withdrawExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                                <div className="deposit-input-wrapper">
-                                  <input
-                                    type="text"
-                                    placeholder="0.0"
-                                    className={`deposit-amount-input ${withdrawExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                                    value={withdrawAmount}
-                                    onChange={(e) => handleWithdrawAmountChange(e.target.value)}
-                                  />
-                                  <div className="deposit-token-badge">
-                                    <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
-                                      <img
-                                        src={selectedVaultData.tokens.first.icon}
-                                        alt=""
-                                        className="lp-token-icon lp-token-icon-first"
-                                        style={{ width: '20px', height: '20px' }}
-                                      />
-                                      <img
-                                        src={selectedVaultData.tokens.second.icon}
-                                        alt=""
-                                        className="lp-token-icon lp-token-icon-second"
-                                        style={{ width: '20px', height: '20px', left: '15px' }}
-                                      />
-                                    </div>
-                                    <span>LP Tokens</span>
-                                  </div>
-                                </div>
-                                <div className="lp-deposit-balance-wrapper">
-                                  <div className={`lp-deposit-usd-value ${withdrawExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                                    ${(parseFloat(withdrawAmount || '0') * 1.5).toFixed(2)}
-                                  </div>
-                                  <div className="deposit-balance">
-                                    Balance: {selectedVaultData.userBalance} LP
-                                  </div>
-                                </div>
-                              </div>
-
-                              <div className="withdraw-preview">
-                                <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
-                                <div className="withdraw-token-preview">
-                                  <div className="withdraw-token-item">
-                                    <img src={selectedVaultData.tokens.first.icon} alt="" className="withdraw-token-icon" />
-                                    <span>{selectedVaultData.tokens.first.symbol}</span>
-                                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                                      {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
-                                    </span>
-                                  </div>
-                                  <div className="withdraw-token-item">
-                                    <img src={selectedVaultData.tokens.second.icon} alt="" className="withdraw-token-icon" />
-                                    <span>{selectedVaultData.tokens.second.symbol}</span>
-                                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                                      {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-
-                          <button
-  className={`continue-button ${isWithdrawEnabled() ? 'enabled' : ''} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
-  disabled={!isWithdrawEnabled()}
-  onClick={handleVaultWithdraw}
->
-  {getWithdrawButtonText()}
-</button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </>
-        )}
-
-        {activePageTab === 'vaults' && !selectedVaultStrategy && (
+        {!selectedVaultStrategy && (
           <>
             <div className="vaults-header">
               <div className="vaults-stats">
                 <div className="vault-stat">
                   <span className="stat-label">Total Vaults</span>
-                  <span className="stat-value">{vaultStrategies.length}</span>
+                  <span className="stat-value">{vaultCount || 0}</span>
                 </div>
                 <div className="vault-stat">
                   <span className="stat-label">Total Value Locked</span>
-                  <span className="stat-value">$9.1M</span>
+                  <span className="stat-value">$0.0M</span>
                 </div>
               </div>
 
@@ -2649,7 +1317,7 @@ const handleVaultWithdraw = async () => {
                   if (!account.connected) {
                     setpopup(4);
                   } else {
-                    setpopup(21);
+                    setShowCreateModal(true);
                   }
                 }}
                 disabled={!account.connected}
@@ -2658,19 +1326,20 @@ const handleVaultWithdraw = async () => {
                 Create Vault
               </button>
             </div>
+
             <div className="vaults-filters">
               <div className="vault-tabs" data-active={activeVaultTab}>
                 <button
                   className={`vault-tab ${activeVaultTab === 'all' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('all')}
                 >
-                  All Vaults ({vaultStrategies.length})
+                  All Vaults ({filteredVaultStrategies.length})
                 </button>
                 <button
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('my-vaults')}
                 >
-                  My Vaults (1)
+                  My Vaults ({filteredVaultStrategies.filter(v => v.isCreator || parseFloat(v.userBalance || '0') > 0).length})
                 </button>
               </div>
 
@@ -2705,16 +1374,16 @@ const handleVaultWithdraw = async () => {
                 <div className="col vault-name-col">Vault</div>
                 <div className="col vault-leader-col">Leader</div>
                 <div className="col vault-type-col">Type</div>
-                <div className="col vault-tokens-col">Tradable Tokens</div>
-                <div className="col vault-apy-col">APR</div>
-                <div className="col vault-deposits-col">TVL</div>
-                <div className="col vault-your-deposits-col">Your Deposits</div>
-                <div className="col vault-age-col">Age (days)</div>
+                <div className="col vault-tokens-col">Assets</div>
+                <div className="col vault-apy-col">TVL</div>
+                <div className="col vault-deposits-col">Max Shares</div>
+                <div className="col vault-your-deposits-col">Your Shares</div>
+                <div className="col vault-age-col">Status</div>
                 <div className="col vault-actions-col">Snapshot</div>
               </div>
 
               {filteredVaultStrategies.map((vault) => (
-                <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.id)}>
+                <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
                   <div className="col vault-name-col">
                     <div className="vault-name-container">
                       <h3 className="vault-name">{vault.name}</h3>
@@ -2725,7 +1394,7 @@ const handleVaultWithdraw = async () => {
                   </div>
                   <div className="col vault-leader-col">
                     <div className="vault-leader">
-                      <span className="leader-token-name">0x7789...f60d</span>
+                      <span className="leader-token-name">{vault.owner.slice(0, 6)}...{vault.owner.slice(-4)}</span>
                     </div>
                   </div>
 
@@ -2739,51 +1408,49 @@ const handleVaultWithdraw = async () => {
                     <div className="vault-tokens">
                       <div className="quote-token">
                         <img src={getTokenIcon(vault.quoteToken)} alt={vault.quoteToken} className="token-icon" />
+                        <span>{vault.quoteToken}</span>
                       </div>
-                      <div className="tradable-tokens">
-                        {vault.tradableTokens.slice(0, 4).map((token, index) => (
-                          <img
-                            key={token}
-                            src={getTokenIcon(token)}
-                            alt={token}
-                            className="tradable-token-icon"
-                            title={getTokenName(token)}
-                            style={{ zIndex: 10 - index }}
-                          />
-                        ))}
-                        {vault.tradableTokens.length > 4 && (
-                          <span className="more-tokens">+{vault.tradableTokens.length - 4}</span>
-                        )}
+                      <div className="base-token">
+                        <img src={getTokenIcon(vault.baseToken)} alt={vault.baseToken} className="token-icon" />
+                        <span>{vault.baseToken}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="col vault-apy-col">
-                    <span className="apy-value">{vault.apy}%</span>
+                    <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 18)}</span>
                   </div>
 
                   <div className="col vault-deposits-col">
-                    <span className="deposits-value">{vault.totalDeposits}</span>
+                    <span className="deposits-value">{formatDisplayValue(BigInt(vault.maxShares), 18)}</span>
                   </div>
 
                   <div className="col vault-your-deposits-col">
-                    <span className="deposits-value">$0.00</span>
-                  </div>
-                  <div className="col vault-age-col">
-                    <span className="age-value">{vault.age} days</span>
+                    <span className="deposits-value">{vault.userShares}</span>
                   </div>
 
+                  <div className="col vault-age-col">
+                    <span className={`age-value ${vault.closed ? 'closed' : vault.locked ? 'locked' : 'active'}`}>
+                      {vault.closed ? 'Closed' : vault.locked ? 'Locked' : 'Active'}
+                    </span>
+                  </div>
 
                   <div className="col vault-snapshot-col">
                     <VaultSnapshot vaultId={vault.id} />
                   </div>
                 </div>
               ))}
+
+              {filteredVaultStrategies.length === 0 && (
+                <div className="no-vaults-message">
+                  <p>No vaults found matching your criteria.</p>
+                </div>
+              )}
             </div>
           </>
         )}
 
-        {activePageTab === 'vaults' && selectedVaultStrategy && selectedVaultStrategyData && (
+        {selectedVaultStrategy && selectedVaultStrategyData && (
           <div className="vault-strategy-detail">
             <div className="vault-strategy-header">
               <div className="vault-strategy-breadcrumb-container">
@@ -2797,33 +1464,32 @@ const handleVaultWithdraw = async () => {
 
                 <div className="vault-detail-action-buttons">
                   <button
-                    className={`vault-detail-deposit-btn ${!connected ? 'disabled' : ''}`}
+                    className={`vault-detail-deposit-btn ${!connected || selectedVaultStrategyData.closed ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
-                      } else {
+                      } else if (!selectedVaultStrategyData.closed) {
                         setSelectedVaultForAction(selectedVaultStrategyData);
                         setpopup(22);
                       }
                     }}
-                    disabled={!connected}
+                    disabled={!connected || selectedVaultStrategyData.closed}
                   >
                     Deposit
                   </button>
 
                   <button
-                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(selectedVaultStrategyData.userBalance || '0') === 0 ? 'disabled' : ''}`}
+                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(selectedVaultStrategyData.userShares || '0') === 0 ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
-                      } else if (parseFloat(selectedVaultStrategyData.userBalance || '0') > 0) {
+                      } else if (parseFloat(selectedVaultStrategyData.userShares || '0') > 0) {
                         setSelectedVaultForAction(selectedVaultStrategyData);
                         setpopup(23);
                       }
                     }}
-                    disabled={!connected || parseFloat(selectedVaultStrategyData.userBalance || '0') === 0}
+                    disabled={!connected || parseFloat(selectedVaultStrategyData.userShares || '0') === 0}
                   >
-
                     Withdraw
                   </button>
                 </div>
@@ -2834,7 +1500,7 @@ const handleVaultWithdraw = async () => {
                   <h1 className="vault-strategy-name">{selectedVaultStrategyData.name}</h1>
                   <div className="vault-strategy-contract">
                     <span className="contract-label">Contract:</span>
-                    <span className="contract-address">{selectedVaultStrategyData.contractAddress}</span>
+                    <span className="contract-address">{selectedVaultStrategyData.address}</span>
                     <button className="copy-address-btn" title="Copy address">
                       <ExternalLink size={14} />
                     </button>
@@ -2843,20 +1509,22 @@ const handleVaultWithdraw = async () => {
 
                 <div className="vault-strategy-metrics">
                   <div className="vault-metric">
-                    <span className="vault-metric-label">TVL</span>
-                    <span className="vault-metric-value">{selectedVaultStrategyData.totalDeposits}</span>
+                    <span className="vault-metric-label">Total Shares</span>
+                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</span>
                   </div>
                   <div className="vault-metric">
-                    <span className="vault-metric-label">Past Month Return</span>
-                    <span className="vault-metric-value metric-positive">{selectedVaultStrategyData.pastMonthReturn}% APR</span>
+                    <span className="vault-metric-label">Max Shares</span>
+                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 18)}</span>
                   </div>
                   <div className="vault-metric">
-                    <span className="vault-metric-label">Your Deposits</span>
-                    <span className="vault-metric-value">${selectedVaultStrategyData.userBalance || '0.00'}</span>
+                    <span className="vault-metric-label">Your Shares</span>
+                    <span className="vault-metric-value">{selectedVaultStrategyData.userShares || '0.00'}</span>
                   </div>
                   <div className="vault-metric">
-                    <span className="vault-metric-label">All-time Earned</span>
-                    <span className="vault-metric-value metric-positive">${selectedVaultStrategyData.userEarnings || '0.00'}</span>
+                    <span className="vault-metric-label">Status</span>
+                    <span className={`vault-metric-value ${selectedVaultStrategyData.closed ? 'metric-negative' : selectedVaultStrategyData.locked ? 'metric-warning' : 'metric-positive'}`}>
+                      {selectedVaultStrategyData.closed ? 'Closed' : selectedVaultStrategyData.locked ? 'Locked' : 'Active'}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -2866,22 +1534,33 @@ const handleVaultWithdraw = async () => {
               <div className="vault-strategy-overview">
                 <div className="vault-strategy-description">
                   <div className="description-header">
-                    <span className="leader-label">Vault Leader:</span>
-                    <span className="leader-address">{selectedVaultStrategyData.curator.address}</span>
+                    <span className="leader-label">Vault Owner:</span>
+                    <span className="leader-address">{selectedVaultStrategyData.owner}</span>
                   </div>
                   <span className="vault-description">Description:</span>
                   <p className="description-text">{selectedVaultStrategyData.description}</p>
                   <div className="vault-socials">
                     <span className="vault-description">Socials:</span>
-                    {selectedVaultStrategyData.twitterHandle && (
+                    {selectedVaultStrategyData.social1 && (
                       <a
-                        href={`https://twitter.com/${selectedVaultStrategyData.twitterHandle.replace('@', '')}`}
+                        href={selectedVaultStrategyData.social1}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
-                        <span>Twitter:</span>
-                        {selectedVaultStrategyData.twitterHandle}
+                        <span>Social 1:</span>
+                        {selectedVaultStrategyData.social1}
+                      </a>
+                    )}
+                    {selectedVaultStrategyData.social2 && (
+                      <a
+                        href={selectedVaultStrategyData.social2}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="twitter-link-description"
+                      >
+                        <span>Social 2:</span>
+                        {selectedVaultStrategyData.social2}
                       </a>
                     )}
                   </div>
@@ -2959,12 +1638,12 @@ const handleVaultWithdraw = async () => {
               <div className="vault-strategy-tabs">
                 <div className="vault-strategy-tabs-container">
                   <div className="vault-strategy-types-rectangle">
-                    {(['balances', ...(selectedVaultStrategyData.type === 'Margin' ? ['positions'] : []), 'trades', 'deposits', 'withdrawals', 'depositors'] as const).map((tab, index) => (
+                    {(['balances', 'deposits', 'withdrawals', 'depositors'] as const).map((tab, index) => (
                       <div
                         key={tab}
                         ref={(el) => (vaultStrategyTabsRef.current[index] = el)}
                         className={`vault-strategy-type ${activeVaultStrategyTab === tab ? 'active' : ''}`}
-                        onClick={() => setActiveVaultStrategyTab(tab as 'balances' | 'positions' | 'trades' | 'deposits' | 'withdrawals' | 'depositors')}
+                        onClick={() => setActiveVaultStrategyTab(tab as any)}
                       >
                         {tab.charAt(0).toUpperCase() + tab.slice(1)}
                       </div>
@@ -2980,376 +1659,36 @@ const handleVaultWithdraw = async () => {
                         <div className="vault-holdings-table">
                           <div className="vault-holdings-header">
                             <div className="vault-holdings-col-header">Asset</div>
-                            <div className="vault-holdings-col-header">Amount</div>
-                            <div className="vault-holdings-col-header">Value (USD)</div>
-                            <div className="vault-holdings-col-header">Allocation</div>
+                            <div className="vault-holdings-col-header">Symbol</div>
+                            <div className="vault-holdings-col-header">Total Shares</div>
+                            <div className="vault-holdings-col-header">Your Shares</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon('WETH')} alt="WETH" className="vault-holding-icon" />
-                              <span>WETH</span>
+                              <img src={getTokenIcon(selectedVaultStrategyData.quoteToken)} alt={selectedVaultStrategyData.quoteToken} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVaultStrategyData.quoteToken)}</span>
                             </div>
-                            <div className="vault-holdings-col">1,245.67</div>
-                            <div className="vault-holdings-col">$3,108,925</div>
-                            <div className="vault-holdings-col">62.1%</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.quoteToken}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon('WBTC')} alt="WBTC" className="vault-holding-icon" />
-                              <span>WBTC</span>
+                              <img src={getTokenIcon(selectedVaultStrategyData.baseToken)} alt={selectedVaultStrategyData.baseToken} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVaultStrategyData.baseToken)}</span>
                             </div>
-                            <div className="vault-holdings-col">45.23</div>
-                            <div className="vault-holdings-col">$1,915,909</div>
-                            <div className="vault-holdings-col">37.9%</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.baseToken}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
+                            <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
                           </div>
                         </div>
                       </div>
                     </div>
                   )}
 
-                  {activeVaultStrategyTab === 'positions' && selectedVaultStrategyData.type === 'Margin' && (
-                    <div className="positions-tab">
-                      <div className="vault-data-table">
-                        <div className="vault-data-table-header">
-                          <div className="vault-data-col-header">Asset</div>
-                          <div className="vault-data-col-header">Position Size</div>
-                          <div className="vault-data-col-header">Position Value</div>
-                          <div className="vault-data-col-header">Entry Price</div>
-                          <div className="vault-data-col-header">Mark Price</div>
-                          <div className="vault-data-col-header">PnL</div>
-                          <div className="vault-data-col-header">Margin Used</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-trade-asset">
-                              <img src={getTokenIcon('WETH')} alt="WETH" className="vault-trade-icon" />
-                              <span>WETH</span>
-                              <span className="vault-leverage">3x</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">125.45</div>
-                          <div className="vault-data-col">$311,892</div>
-                          <div className="vault-data-col">$2,485.67</div>
-                          <div className="vault-data-col">$2,500.00</div>
-                          <div className="vault-data-col">
-                            <span className="vault-pnl-positive">+$1,812.50 (+0.58%)</span>
-                          </div>
-                          <div className="vault-data-col">$103,964</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-trade-asset">
-                              <img src={getTokenIcon('WBTC')} alt="WBTC" className="vault-trade-icon" />
-                              <span>WBTC</span>
-                              <span className="vault-leverage">2x</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">2.34</div>
-                          <div className="vault-data-col">$99,099</div>
-                          <div className="vault-data-col">$42,350.25</div>
-                          <div className="vault-data-col">$42,400.00</div>
-                          <div className="vault-data-col">
-                            <span className="vault-pnl-positive">+$116.45 (+0.12%)</span>
-                          </div>
-                          <div className="vault-data-col">$49,550</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeVaultStrategyTab === 'trades' && (
-                    <div className="trades-tab">
-                      <div className="vault-data-table">
-                        <div className="vault-data-table-header">
-                          <div className="vault-data-col-header">Time</div>
-                          <div className="vault-data-col-header">Asset</div>
-                          <div className="vault-data-col-header">Side</div>
-                          <div className="vault-data-col-header">Size</div>
-                          <div className="vault-data-col-header">Price</div>
-                          <div className="vault-data-col-header">Value</div>
-                          <div className="vault-data-col-header">Fee</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 14:23:15
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <div className="vault-trade-asset">
-                              <img src={getTokenIcon('WETH')} alt="WETH" className="vault-trade-icon" />
-                              <span>WETH</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-trade-side buy">BUY</span>
-                          </div>
-                          <div className="vault-data-col">125.45</div>
-                          <div className="vault-data-col">$2,485.67</div>
-                          <div className="vault-data-col">$311,892</div>
-                          <div className="vault-data-col">$15.59</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 13:45:22
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <div className="vault-trade-asset">
-                              <img src={getTokenIcon('WBTC')} alt="WBTC" className="vault-trade-icon" />
-                              <span>WBTC</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-trade-side sell">SELL</span>
-                          </div>
-                          <div className="vault-data-col">2.34</div>
-                          <div className="vault-data-col">$42,350.25</div>
-                          <div className="vault-data-col">$99,099</div>
-                          <div className="vault-data-col">$49.55</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 12:30:18
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <div className="vault-trade-asset">
-                              <img src={getTokenIcon('WETH')} alt="WETH" className="vault-trade-icon" />
-                              <span>WETH</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-trade-side buy">BUY</span>
-                          </div>
-                          <div className="vault-data-col">67.89</div>
-                          <div className="vault-data-col">$2,478.33</div>
-                          <div className="vault-data-col">$168,234</div>
-                          <div className="vault-data-col">$8.41</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeVaultStrategyTab === 'deposits' && (
-                    <div className="deposits-tab">
-                      <div className="vault-data-table">
-                        <div className="vault-data-table-header">
-                          <div className="vault-data-col-header">Time</div>
-                          <div className="vault-data-col-header">Status</div>
-                          <div className="vault-data-col-header">Network</div>
-                          <div className="vault-data-col-header">Action</div>
-                          <div className="vault-data-col-header">Account Value Change</div>
-                          <div className="vault-data-col-header">Fee</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 14:23:15
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Deposit</div>
-                          <div className="vault-data-col vault-deposit-positive">+5,000 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              14/07/2025 - 09:15:42
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Deposit</div>
-                          <div className="vault-data-col vault-deposit-positive">+2,500 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              13/07/2025 - 16:45:12
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Deposit</div>
-                          <div className="vault-data-col vault-deposit-positive">+10,000 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeVaultStrategyTab === 'withdrawals' && (
-                    <div className="withdrawals-tab">
-                      <div className="vault-data-table">
-                        <div className="vault-data-table-header">
-                          <div className="vault-data-col-header">Time</div>
-                          <div className="vault-data-col-header">Status</div>
-                          <div className="vault-data-col-header">Network</div>
-                          <div className="vault-data-col-header">Action</div>
-                          <div className="vault-data-col-header">Account Value Change</div>
-                          <div className="vault-data-col-header">Fee</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 06:49:27
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Withdrawal</div>
-                          <div className="vault-data-col vault-withdrawal-negative">-51,999.999999 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 00:50:50
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Withdrawal</div>
-                          <div className="vault-data-col vault-withdrawal-negative">-30,000 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-time-cell">
-                              15/07/2025 - 05:00:02
-                              <ExternalLink size={12} className="vault-external-link" />
-                            </div>
-                          </div>
-                          <div className="vault-data-col">
-                            <span className="vault-status-badge completed">Completed</span>
-                          </div>
-                          <div className="vault-data-col">Monad</div>
-                          <div className="vault-data-col">Vault Withdrawal</div>
-                          <div className="vault-data-col vault-withdrawal-negative">-2,870.647097 USDC</div>
-                          <div className="vault-data-col">--</div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {activeVaultStrategyTab === 'depositors' && (
-                    <div className="depositors-tab">
-                      <div className="vault-data-table">
-                        <div className="vault-data-table-header">
-                          <div className="vault-data-col-header">Depositor</div>
-                          <div className="vault-data-col-header">Vault Amount</div>
-                          <div className="vault-data-col-header">Unrealized PnL</div>
-                          <div className="vault-data-col-header">All-time PnL</div>
-                          <div className="vault-data-col-header">Days Following</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label">0xd5c...137c</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$1,204,833.91</div>
-                          <div className="vault-data-col">$49,301.29</div>
-                          <div className="vault-data-col vault-pnl-positive">$49,703.93</div>
-                          <div className="vault-data-col">119</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label vault-leader-badge">Leader</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$252,278.99</div>
-                          <div className="vault-data-col">$24,841.99</div>
-                          <div className="vault-data-col vault-pnl-positive">$37,105.76</div>
-                          <div className="vault-data-col">372</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label">0xd9e8...fc2c</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$516,586.18</div>
-                          <div className="vault-data-col">$23,014.05</div>
-                          <div className="vault-data-col vault-pnl-positive">$29,172.80</div>
-                          <div className="vault-data-col">90</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label">0xb61...b4d9</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$281,758.91</div>
-                          <div className="vault-data-col">$4,030.02</div>
-                          <div className="vault-data-col vault-pnl-positive">$9,858.40</div>
-                          <div className="vault-data-col">111</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label">0x6504...2eb6</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$100,478.83</div>
-                          <div className="vault-data-col">$1,300.91</div>
-                          <div className="vault-data-col vault-pnl-positive">$5,669.58</div>
-                          <div className="vault-data-col">122</div>
-                        </div>
-
-                        <div className="vault-data-table-row">
-                          <div className="vault-data-col">
-                            <div className="vault-depositor-address">
-                              <span className="vault-depositor-label">0x5e63...adb2</span>
-                            </div>
-                          </div>
-                          <div className="vault-data-col">$393,691.94</div>
-                          <div className="vault-data-col">$2,701.03</div>
-                          <div className="vault-data-col vault-pnl-positive">$3,592.85</div>
-                          <div className="vault-data-col">9</div>
-                        </div>
-                      </div>
+                  {(activeVaultStrategyTab === 'deposits' || activeVaultStrategyTab === 'withdrawals' || activeVaultStrategyTab === 'depositors') && (
+                    <div className="vault-data-tab">
+                      <p>No data available for {activeVaultStrategyTab}.</p>
                     </div>
                   )}
                 </div>
@@ -3358,15 +1697,14 @@ const handleVaultWithdraw = async () => {
           </div>
         )}
 
-
-        {showEditModal && editingVault && (
+        {showCreateModal && (
           <div className="modal-overlay">
             <div className="modal-content">
               <div className="modal-header">
-                <h2>Edit Vault Description</h2>
+                <h2>Create New Vault</h2>
                 <button
                   className="modal-close"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => setShowCreateModal(false)}
                 >
                   <X size={20} />
                 </button>
@@ -3374,24 +1712,115 @@ const handleVaultWithdraw = async () => {
 
               <div className="modal-body">
                 <div className="form-group">
+                  <label>Vault Name</label>
+                  <input
+                    type="text"
+                    value={createForm.name}
+                    onChange={(e) => setCreateForm(prev => ({...prev, name: e.target.value}))}
+                    className="form-input"
+                    placeholder="Enter vault name"
+                  />
+                </div>
+
+                <div className="form-group">
                   <label>Description</label>
                   <textarea
-                    defaultValue={editingVault.description}
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm(prev => ({...prev, description: e.target.value}))}
                     className="form-textarea"
                     rows={4}
+                    placeholder="Describe your vault strategy"
                   />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <TokenSelector
+                      value={createForm.quoteAsset}
+                      onChange={(value) => setCreateForm(prev => ({...prev, quoteAsset: value}))}
+                      tokendict={tokendict}
+                      placeholder="Select quote token..."
+                      label="Quote Asset"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <TokenSelector
+                      value={createForm.baseAsset}
+                      onChange={(value) => setCreateForm(prev => ({...prev, baseAsset: value}))}
+                      tokendict={tokendict}
+                      placeholder="Select base token..."
+                      label="Base Asset"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Initial Quote Amount</label>
+                    <input
+                      type="number"
+                      value={createForm.amountQuote}
+                      onChange={(e) => setCreateForm(prev => ({...prev, amountQuote: e.target.value}))}
+                      className="form-input"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Initial Base Amount</label>
+                    <input
+                      type="number"
+                      value={createForm.amountBase}
+                      onChange={(e) => setCreateForm(prev => ({...prev, amountBase: e.target.value}))}
+                      className="form-input"
+                      placeholder="0.0"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Social Link 1 (Optional)</label>
+                    <input
+                      type="text"
+                      value={createForm.social1}
+                      onChange={(e) => setCreateForm(prev => ({...prev, social1: e.target.value}))}
+                      className="form-input"
+                      placeholder="https://twitter.com/..."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Social Link 2 (Optional)</label>
+                    <input
+                      type="text"
+                      value={createForm.social2}
+                      onChange={(e) => setCreateForm(prev => ({...prev, social2: e.target.value}))}
+                      className="form-input"
+                      placeholder="https://telegram.me/..."
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="modal-footer">
                 <button
                   className="vault-cancel-button"
-                  onClick={() => setShowEditModal(false)}
+                  onClick={() => setShowCreateModal(false)}
                 >
                   Cancel
                 </button>
-                <button className="save-button">
-                  Save Changes
+                <button
+                  className={`save-button ${(!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase) ? 'disabled' : ''}`}
+                  disabled={!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase || isVaultDepositSigning}
+                  onClick={handleCreateVault}
+                >
+                  {isVaultDepositSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Creating...
+                    </div>
+                  ) : (
+                    'Create Vault'
+                  )}
                 </button>
               </div>
             </div>

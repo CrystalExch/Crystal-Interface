@@ -61,7 +61,7 @@ export const settings: any = {
       router: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
       referralManager: '0x4e77071D619Aa164cA6427547aefA41AC51BE7A0' as `0x${string}`,
       launchpadRouter: '0x051Ec86723958C34c097C9923FecFEBab83E0fA2' as `0x${string}`,
-      crystalVaults: "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee" as `0x${string}`,
+      crystalVaults: "0xDa93E04ef26132DF3FCB82DE0580491031A9E62C" as `0x${string}`,
       multicall3: '0xb092ef5Eba57357112E8BbD5be2b6CfE984D6838' as `0x${string}`,
       firstblock: 17536756,
       ethticker: 'MON',

@@ -75,6 +75,7 @@ import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
 import { shMonadAbi } from './abis/shMonadAbi.ts';
+import { CrystalVaultsAbi } from "./abis/CrystalVaultsAbi";
 
 // import types
 import { DataPoint } from './components/Chart/utils/chartDataGenerator.ts';
@@ -318,79 +319,73 @@ function App() {
 const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
 const [widgetWidth, setWidgetWidth] = useState(400);
 
-// Widget Explorer Handlers
-const handleOpenWidgetExplorer = useCallback(() => {
-  setIsWidgetExplorerOpen(true);
-}, []);
+// const handleOpenWidgetExplorer = useCallback(() => {
+//   setIsWidgetExplorerOpen(true);
+// }, []);
 
-const handleCloseWidgetExplorer = useCallback(() => {
-  setIsWidgetExplorerOpen(false);
-  setWidgetExplorerSnapSide('none');
-  setWidgetWidth(400); // Reset to default width when closing
-}, []);
+// const handleCloseWidgetExplorer = useCallback(() => {
+//   setIsWidgetExplorerOpen(false);
+//   setWidgetExplorerSnapSide('none');
+//   setWidgetWidth(400); 
+// }, []);
 
-const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
-  console.log('Widget snapped to:', side); // Debug log
-  setWidgetExplorerSnapSide(side);
-}, []);
+// const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
+//   console.log('Widget snapped to:', side); // Debug log
+//   setWidgetExplorerSnapSide(side);
+// }, []);
 
-const handleWidgetExplorerResize = useCallback((width) => {
-  console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); // Debug log
-  setWidgetWidth(width);
-}, [widgetExplorerSnapSide]); // Add widgetExplorerSnapSide as dependency for debugging
+// const handleWidgetExplorerResize = useCallback((width) => {
+//   console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); 
+//   setWidgetWidth(width);
+// }, [widgetExplorerSnapSide]);
 
-// Style Functions
-const getAppContainerStyle = () => {
-  const style = {};
+// const getAppContainerStyle = () => {
+//   const style = {};
   
-  if (widgetExplorerSnapSide === 'left') {
-    style.marginLeft = `${widgetWidth}px`;
-    console.log('Applying left margin:', widgetWidth); // Debug log
-  } else if (widgetExplorerSnapSide === 'right') {
-    style.marginRight = `${widgetWidth}px`;
-    console.log('Applying right margin:', widgetWidth); // Debug log
-  }
+//   if (widgetExplorerSnapSide === 'left') {
+//     style.marginLeft = `${widgetWidth}px`;
+//     console.log('Applying left margin:', widgetWidth);
+//   } else if (widgetExplorerSnapSide === 'right') {
+//     style.marginRight = `${widgetWidth}px`;
+//     console.log('Applying right margin:', widgetWidth); 
+//   }
   
-  // Add transition for smooth margin changes
-  style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
+//   style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
   
-  return style;
-};
+//   return style;
+// };
 
-const getHeaderStyle = () => {
-  const style = {};
+// const getHeaderStyle = () => {
+//   const style = {};
   
-  // Default left position (accounting for sidebar)
-  let leftPosition = 55;
+//   let leftPosition = 55;
   
-  if (widgetExplorerSnapSide === 'left') {
-    // When widget is snapped to left, push header further right
-    leftPosition = 55 + widgetWidth;
-    console.log('Header left position:', leftPosition); // Debug log
-  }
-  // When snapped to right, header stays in normal position (55px)
+//   if (widgetExplorerSnapSide === 'left') {
+//     leftPosition = 55 + widgetWidth;
+//     console.log('Header left position:', leftPosition);
+//   }
   
-  style.left = `${leftPosition}px`;
-  style.transition = 'left 0.3s ease';
+//   style.left = `${leftPosition}px`;
+//   style.transition = 'left 0.3s ease';
   
-  return style;
-};
+//   return style;
+// };
 
-const getHeaderClassName = () => {
-  let className = 'app-header';
+// const getHeaderClassName = () => {
+//   let className = 'app-header';
   
-  if (widgetExplorerSnapSide === 'left') {
-    className += ' widget-left';
-  } else if (widgetExplorerSnapSide === 'right') {
-    className += ' widget-right';
-  }
+//   if (widgetExplorerSnapSide === 'left') {
+//     className += ' widget-left';
+//   } else if (widgetExplorerSnapSide === 'right') {
+//     className += ' widget-right';
+//   }
   
-  const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-  if (isTradeRoute && !simpleView) {
-  }
+//   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
+//   if (isTradeRoute && !simpleView) {
+//   }
   
-  return className;
-};
+//   return className;
+// };
 
 
   const [useOneCT, setUseOneCT] = useState(true);
@@ -683,6 +678,410 @@ const getHeaderClassName = () => {
 
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
+
+
+
+const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
+  quote: '',
+  base: ''
+});
+const [vaultQuoteExceedsBalance, setVaultQuoteExceedsBalance] = useState(false);
+const [vaultBaseExceedsBalance, setVaultBaseExceedsBalance] = useState(false);
+const [withdrawShares, setWithdrawShares] = useState('');
+const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
+const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
+const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
+
+const getTokenBalance = (tokenAddress: string): bigint => {
+  return tokenBalances[tokenAddress] || 0n;
+};
+
+
+const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
+  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+    setVaultDepositAmounts(prev => ({
+      ...prev,
+      [type]: value
+    }));
+
+    if (value !== '' && selectedVaultForAction) {
+      const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
+      if (tokenData) {
+        const userBalance = getTokenBalance(tokenData.address);
+        const tokenDecimals = Number(tokenData.decimals || 18);
+        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
+        const enteredAmount = parseFloat(value);
+
+        if (type === 'quote') {
+          setVaultQuoteExceedsBalance(enteredAmount > maxAllowedAmount);
+        } else {
+          setVaultBaseExceedsBalance(enteredAmount > maxAllowedAmount);
+        }
+      }
+    } else {
+      if (type === 'quote') {
+        setVaultQuoteExceedsBalance(false);
+      } else {
+        setVaultBaseExceedsBalance(false);
+      }
+    }
+  }
+};
+
+const handleWithdrawSharesChange = (value: string) => {
+  if (value === '' || /^\d*\.?\d*$/.test(value)) {
+    setWithdrawShares(value);
+
+    if (value !== '' && selectedVaultForAction) {
+      const userSharesBalance = parseFloat(selectedVaultForAction.userShares || '0');
+      const enteredAmount = parseFloat(value);
+      setWithdrawExceedsBalance(enteredAmount > userSharesBalance);
+    } else {
+      setWithdrawExceedsBalance(false);
+    }
+  }
+};
+
+const isVaultDepositEnabled = () => {
+  return vaultDepositAmounts.quote !== '' && vaultDepositAmounts.base !== '' &&
+    parseFloat(vaultDepositAmounts.quote) > 0 && parseFloat(vaultDepositAmounts.base) > 0 &&
+    !vaultQuoteExceedsBalance && !vaultBaseExceedsBalance && depositPreview;
+};
+
+const isWithdrawEnabled = () => {
+  return withdrawShares !== '' && parseFloat(withdrawShares) > 0 && 
+    !withdrawExceedsBalance && withdrawPreview;
+};
+
+const getVaultDepositButtonText = () => {
+  if (vaultQuoteExceedsBalance || vaultBaseExceedsBalance) {
+    return 'Insufficient Balance';
+  }
+  if (!depositPreview) {
+    return 'Enter Amounts';
+  }
+  return 'Deposit';
+};
+
+const getWithdrawButtonText = () => {
+  if (withdrawExceedsBalance) {
+    return 'Insufficient Shares';
+  }
+  if (!withdrawPreview) {
+    return 'Enter Amount';
+  }
+  return 'Withdraw';
+};
+
+// Preview deposit effect
+useEffect(() => {
+  if (!selectedVaultForAction || !vaultDepositAmounts.quote || !vaultDepositAmounts.base) {
+    setDepositPreview(null);
+    return;
+  }
+
+  const previewDeposit = async () => {
+    try {
+      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+      const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
+      
+      if (!crystalVaultsAddress || !HTTP_URL) return;
+
+      const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
+      const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+      
+      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
+      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
+
+      const calldata = encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "previewDeposit",
+        args: [
+          selectedVaultForAction.address as `0x${string}`,
+          amountQuoteDesired,
+          amountBaseDesired,
+        ],
+      });
+
+      const res = await fetch(HTTP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [
+            { to: crystalVaultsAddress, data: calldata },
+            "latest",
+          ],
+        }),
+      });
+
+      const { result } = await res.json();
+      const [shares, amountQuote, amountBase] = decodeFunctionResult({
+        abi: CrystalVaultsAbi,
+        functionName: "previewDeposit",
+        data: result,
+      });
+
+      setDepositPreview({ shares, amountQuote, amountBase });
+    } catch (error) {
+      console.error('Error previewing deposit:', error);
+      setDepositPreview(null);
+    }
+  };
+
+  const timeoutId = setTimeout(previewDeposit, 500);
+  return () => clearTimeout(timeoutId);
+}, [vaultDepositAmounts, selectedVaultForAction, activechain]);
+
+// Preview withdrawal effect
+useEffect(() => {
+  if (!selectedVaultForAction || !withdrawShares) {
+    setWithdrawPreview(null);
+    return;
+  }
+
+  const previewWithdrawal = async () => {
+    try {
+      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+      const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
+      
+      if (!crystalVaultsAddress || !HTTP_URL) return;
+
+      const shares = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
+
+      const calldata = encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "previewWithdrawal",
+        args: [
+          selectedVaultForAction.address as `0x${string}`,
+          shares,
+        ],
+      });
+
+      const res = await fetch(HTTP_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          id: 1,
+          method: "eth_call",
+          params: [
+            { to: crystalVaultsAddress, data: calldata },
+            "latest",
+          ],
+        }),
+      });
+
+      const { result } = await res.json();
+      const [amountQuote, amountBase] = decodeFunctionResult({
+        abi: CrystalVaultsAbi,
+        functionName: "previewWithdrawal",
+        data: result,
+      });
+
+      setWithdrawPreview({ amountQuote, amountBase });
+    } catch (error) {
+      console.error('Error previewing withdrawal:', error);
+      setWithdrawPreview(null);
+    }
+  };
+
+  const timeoutId = setTimeout(previewWithdrawal, 500);
+  return () => clearTimeout(timeoutId);
+}, [withdrawShares, selectedVaultForAction, activechain]);
+
+// Handle vault deposit function
+const handleVaultDeposit = async () => {
+  if (!selectedVaultForAction || !connected || !depositPreview) return;
+  
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (userchain !== targetChainId) {
+    handleSetChain();
+    return;
+  }
+
+  try {
+    setIsVaultDepositSigning(true);
+
+    const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+    const quoteTokenAddress = selectedVaultForAction.quoteTokenData?.address;
+    const baseTokenAddress = selectedVaultForAction.baseTokenData?.address;
+
+    if (!quoteTokenAddress || !baseTokenAddress) {
+      throw new Error('Token addresses not found');
+    }
+
+    const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
+    const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+
+    const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
+    const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
+    
+    const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
+    const amountBaseMin = (amountBaseDesired * 95n) / 100n;
+
+    // Check balances
+    const quoteBalance = getTokenBalance(quoteTokenAddress);
+    const baseBalance = getTokenBalance(baseTokenAddress);
+    
+    if (quoteBalance < amountQuoteDesired) {
+      throw new Error(`Insufficient ${selectedVaultForAction.quoteToken} balance`);
+    }
+
+    if (baseBalance < amountBaseDesired) {
+      throw new Error(`Insufficient ${selectedVaultForAction.baseToken} balance`);
+    }
+
+    // Approve tokens if needed
+    if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      const approveQuoteUo = {
+        target: quoteTokenAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+        }),
+        value: 0n,
+      };
+      const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+      await waitForTxReceipt(approveQuoteOp.hash);
+    }
+
+    if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+      const approveBaseUo = {
+        target: baseTokenAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: [{
+            inputs: [
+              { name: "spender", type: "address" },
+              { name: "amount", type: "uint256" }
+            ],
+            name: "approve",
+            outputs: [{ name: "", type: "bool" }],
+            stateMutability: "nonpayable",
+            type: "function",
+          }],
+          functionName: "approve",
+          args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+        }),
+        value: 0n,
+      };
+      const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+      await waitForTxReceipt(approveBaseOp.hash);
+    }
+
+    // Deposit into vault
+    const ethValue = 
+      quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
+      baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+
+    const depositUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "deposit",
+        args: [
+          selectedVaultForAction.address as `0x${string}`,
+          amountQuoteDesired,
+          amountBaseDesired,
+          amountQuoteMin,
+          amountBaseMin,
+        ],
+      }),
+      value: ethValue,
+    };
+
+    const depositOp = await sendUserOperationAsync({ uo: depositUo });
+    await waitForTxReceipt(depositOp.hash);
+
+    // Reset form
+    setVaultDepositAmounts({ quote: '', base: '' });
+    setVaultQuoteExceedsBalance(false);
+    setVaultBaseExceedsBalance(false);
+    setDepositPreview(null);
+    
+    refetch?.();
+    setpopup(0);
+    setSelectedVaultForAction(null);
+
+  } catch (e: any) {
+    console.error('Vault deposit error:', e);
+    alert(e.message || 'Deposit failed');
+  } finally {
+    setIsVaultDepositSigning(false);
+  }
+};
+
+// Handle vault withdrawal function
+const handleVaultWithdraw = async () => {
+  if (!selectedVaultForAction || !connected || !withdrawPreview) return;
+  
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (userchain !== targetChainId) {
+    handleSetChain();
+    return;
+  }
+
+  try {
+    setIsVaultWithdrawSigning(true);
+
+    const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+    const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
+    
+    const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
+    const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
+
+    const withdrawUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalVaultsAbi,
+        functionName: "withdraw",
+        args: [
+          selectedVaultForAction.address as `0x${string}`,
+          sharesToWithdraw,
+          amountQuoteMin,
+          amountBaseMin,
+        ],
+      }),
+      value: 0n,
+    };
+
+    const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
+    await waitForTxReceipt(withdrawOp.hash);
+
+    // Reset form
+    setWithdrawShares('');
+    setWithdrawExceedsBalance(false);
+    setWithdrawPreview(null);
+    
+    refetch?.();
+    setpopup(0);
+    setSelectedVaultForAction(null);
+
+  } catch (e: any) {
+    console.error('Vault withdraw error:', e);
+    alert(e.message || 'Withdrawal failed');
+  } finally {
+    setIsVaultWithdrawSigning(false);
+  }
+};
+
+
+
+
+
+
 
   const updateNotificationPosition = (position: string) => {
     if (previewTimer) {
@@ -12382,379 +12781,345 @@ const getHeaderClassName = () => {
             </div>
           </div>
         ) : null}
-        {popup === 22 ? (
-          <div className="modal-overlay">
-            <div className="modal-content vault-action-modal" ref={popupref}>
-              <div className="modal-header">
-                <h2>Deposit to {selectedVaultForAction?.name}</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setpopup(0);
-                    setSelectedVaultForAction(null);
-                    setVaultDepositAmount('');
-                    setVaultWithdrawAmount('');
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
-              </div>
 
-              <div className="modal-body">
-                <div className="vault-deposit-form">
+{popup === 22 ? (
+  <div className="modal-overlay">
+    <div className="modal-content vault-action-modal" ref={popupref}>
+      <div className="modal-header">
+        <h2>Deposit to {selectedVaultForAction?.name}</h2>
+        <button
+          className="modal-close"
+          onClick={() => {
+            setpopup(0);
+            setSelectedVaultForAction(null);
+            setVaultDepositAmounts({ quote: '', base: '' });
+            setVaultQuoteExceedsBalance(false);
+            setVaultBaseExceedsBalance(false);
+            setDepositPreview(null);
+          }}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
 
-                  <div className="deposit-amounts-section">
-                    <div className="deposit-input-group">
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className="deposit-amount-input"
-                          value={vaultDepositAmount}
-                          onChange={(e) => setVaultDepositAmount(e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img
-                            src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image}
-                            alt={selectedVaultForAction?.quoteToken || 'USDC'}
-                            className="deposit-token-icon"
-                          />
-                          <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
-                        </div>
-                      </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className="lp-deposit-usd-value">
-                          ${((parseFloat(vaultDepositAmount) || 0) * ((selectedVaultForAction?.quoteToken || 'USDC') === 'USDC' ? 1 : 1)).toFixed(2)}
-                        </div>
-                        <div className="deposit-balance">
-                          <div className="deposit-balance-value">
-                            <img src={walleticon} className="balance-wallet-icon" />
-                            {customRound(
-                              Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.address] ?? 0) /
-                              10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.decimals ?? 18),
-                              3,
-                            )
-                              .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                              .replace(/\.0+$/, '')} {selectedVaultForAction?.quoteToken || 'USDC'}
-                          </div>
-                          <button
-                            className="vault-max-button"
-                            onClick={() => {
-                              const token = Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'));
-                              if (token) {
-                                const maxAmount = customRound(
-                                  Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
-                                  3,
-                                )
-                                  .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                                  .replace(/\.0+$/, '');
-                                setVaultDepositAmount(maxAmount);
-                              }
-                            }}
-                          >
-                            MAX
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
-                      <div className="deposit-input-group">
-                        <div className="deposit-input-wrapper">
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            className="deposit-amount-input"
-                            value={vaultWithdrawAmount}
-                            onChange={(e) => setVaultWithdrawAmount(e.target.value)}
-                          />
-                          <div className="deposit-token-badge">
-                            <img
-                              src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image}
-                              alt={selectedVaultForAction.tradableTokens[0]}
-                              className="deposit-token-icon"
-                            />
-                            <span>{selectedVaultForAction.tradableTokens[0]}</span>
-                          </div>
-                        </div>
-                        <div className="lp-deposit-balance-wrapper">
-                          <div className="lp-deposit-usd-value">
-                            ${((parseFloat(vaultWithdrawAmount) || 0) * 1).toFixed(2)}
-                          </div>
-                          <div className="deposit-balance">
-                            <div className="deposit-balance-value">
-
-                              <img src={walleticon} className="balance-wallet-icon" />
-                              {customRound(
-                                Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.address] ?? 0) /
-                                10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.decimals ?? 18),
-                                3,
-                              )
-                                .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                                .replace(/\.0+$/, '')} {selectedVaultForAction.tradableTokens[0]}
-                            </div>
-                            <button
-                              className="vault-max-button"
-                              onClick={() => {
-                                const token = Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0]);
-                                if (token) {
-                                  const maxAmount = customRound(
-                                    Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
-                                    3,
-                                  )
-                                    .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                                    .replace(/\.0+$/, '');
-                                  setVaultWithdrawAmount(maxAmount);
-                                }
-                              }}
-                            >
-                              MAX
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="deposit-summary">
-                    <div className="deposit-summary-row">
-                      <span>Vault Type:</span>
-                      <span>{selectedVaultForAction?.type}</span>
-                    </div>
-                    <div className="deposit-summary-row">
-                      <span>Total Value:</span>
-                      <span>
-                        {(() => {
-                          const firstValue = parseFloat(vaultDepositAmount) || 0;
-                          const secondValue = parseFloat(vaultWithdrawAmount) || 0;
-                          const total = firstValue + secondValue;
-                          return `${total.toFixed(2)}`;
-                        })()}
-                      </span>
-                    </div>
-                  </div>
+      <div className="modal-body">
+        <div className="vault-deposit-form">
+          <div className="deposit-amounts-section">
+            {/* Quote Token Input */}
+            <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+              <div className="deposit-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="0.0"
+                  className={`deposit-amount-input ${vaultQuoteExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                  value={vaultDepositAmounts.quote}
+                  onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
+                />
+                <div className="deposit-token-badge">
+                  <img
+                    src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'}
+                    alt={selectedVaultForAction?.quoteToken || 'Token'}
+                    className="deposit-token-icon"
+                  />
+                  <span>{selectedVaultForAction?.quoteToken || 'QUOTE'}</span>
                 </div>
               </div>
+              <div className="lp-deposit-balance-wrapper">
+                <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                  ${((parseFloat(vaultDepositAmounts.quote) || 0) * 1).toFixed(2)}
+                </div>
+                <div className="deposit-balance">
+                  <div className="deposit-balance-value">
+                    <img src={walleticon} className="balance-wallet-icon" />
+                    {selectedVaultForAction?.quoteTokenData ? formatDisplayValue(
+                      getTokenBalance(selectedVaultForAction.quoteTokenData.address),
+                      Number(selectedVaultForAction.quoteTokenData.decimals || 18)
+                    ) : '0.00'} {selectedVaultForAction?.quoteToken || 'QUOTE'}
+                  </div>
+                  <button
+                    className="vault-max-button"
+                    onClick={() => {
+                      if (selectedVaultForAction?.quoteTokenData) {
+                        const maxAmount = formatDisplayValue(
+                          getTokenBalance(selectedVaultForAction.quoteTokenData.address),
+                          Number(selectedVaultForAction.quoteTokenData.decimals || 18)
+                        ).replace(/,/g, '');
+                        handleVaultDepositAmountChange('quote', maxAmount);
+                      }
+                    }}
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+            </div>
 
-              <div className="modal-footer">
-                <button
-                  className={`vault-confirm-button ${(!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning) ? 'disabled' : ''}`}
-                  onClick={async () => {
-                    if (!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0) return;
-
-                    setIsVaultDepositSigning(true);
-                    try {
-                      console.log('Depositing:', vaultDepositAmount, 'and', vaultWithdrawAmount, 'to vault:', selectedVaultForAction?.id);
-                      await new Promise(resolve => setTimeout(resolve, 2000));
-                      setpopup(0);
-                      setSelectedVaultForAction(null);
-                      setVaultDepositAmount('');
-                      setVaultWithdrawAmount('');
-                    } catch (error) {
-                      console.error('Deposit failed:', error);
-                    } finally {
-                      setIsVaultDepositSigning(false);
-                    }
-                  }}
-                  disabled={!vaultDepositAmount || parseFloat(vaultDepositAmount) <= 0 || isVaultDepositSigning}
-                >
-                  {isVaultDepositSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Depositing...
-                    </div>
-                  ) : (
-                    'Deposit'
-                  )}
-                </button>
+            {/* Base Token Input */}
+            <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+              <div className="deposit-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="0.0"
+                  className={`deposit-amount-input ${vaultBaseExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                  value={vaultDepositAmounts.base}
+                  onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
+                />
+                <div className="deposit-token-badge">
+                  <img
+                    src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'}
+                    alt={selectedVaultForAction?.baseToken || 'Token'}
+                    className="deposit-token-icon"
+                  />
+                  <span>{selectedVaultForAction?.baseToken || 'BASE'}</span>
+                </div>
+              </div>
+              <div className="lp-deposit-balance-wrapper">
+                <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                  ${((parseFloat(vaultDepositAmounts.base) || 0) * 1).toFixed(2)}
+                </div>
+                <div className="deposit-balance">
+                  <div className="deposit-balance-value">
+                    <img src={walleticon} className="balance-wallet-icon" />
+                    {selectedVaultForAction?.baseTokenData ? formatDisplayValue(
+                      getTokenBalance(selectedVaultForAction.baseTokenData.address),
+                      Number(selectedVaultForAction.baseTokenData.decimals || 18)
+                    ) : '0.00'} {selectedVaultForAction?.baseToken || 'BASE'}
+                  </div>
+                  <button
+                    className="vault-max-button"
+                    onClick={() => {
+                      if (selectedVaultForAction?.baseTokenData) {
+                        const maxAmount = formatDisplayValue(
+                          getTokenBalance(selectedVaultForAction.baseTokenData.address),
+                          Number(selectedVaultForAction.baseTokenData.decimals || 18)
+                        ).replace(/,/g, '');
+                        handleVaultDepositAmountChange('base', maxAmount);
+                      }
+                    }}
+                  >
+                    MAX
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        ) : null}
 
-        {popup === 23 ? (
-          <div className="modal-overlay">
-            <div className="modal-content vault-action-modal" ref={popupref}>
-              <div className="modal-header">
-                <h2>Withdraw from {selectedVaultForAction?.name}</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => {
-                    setpopup(0);
-                    setSelectedVaultForAction(null);
-                    setVaultWithdrawAmount('');
-                    setVaultDepositAmount('');
-                  }}
-                >
-                  <img src={closebutton} className="close-button-icon" />
-                </button>
+          {/* Deposit Preview */}
+          {depositPreview && (
+            <div className="deposit-preview">
+              <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Deposit Preview:</h5>
+              <div className="preview-item">
+                <span>Shares to receive:</span>
+                <span>{formatDisplayValue(depositPreview.shares, 18)}</span>
               </div>
+              <div className="preview-item">
+                <span>Quote amount:</span>
+                <span>{formatDisplayValue(depositPreview.amountQuote, Number(selectedVaultForAction?.quoteTokenData?.decimals || 18))} {selectedVaultForAction?.quoteToken}</span>
+              </div>
+              <div className="preview-item">
+                <span>Base amount:</span>
+                <span>{formatDisplayValue(depositPreview.amountBase, Number(selectedVaultForAction?.baseTokenData?.decimals || 18))} {selectedVaultForAction?.baseToken}</span>
+              </div>
+            </div>
+          )}
 
-              <div className="modal-body">
-                <div className="vault-withdraw-form">
+          <div className="deposit-summary">
+            <div className="deposit-summary-row">
+              <span>Vault Type:</span>
+              <span>{selectedVaultForAction?.type || 'Spot'}</span>
+            </div>
+            <div className="deposit-summary-row">
+              <span>Total Value:</span>
+              <span>
+                {(() => {
+                  const quoteValue = parseFloat(vaultDepositAmounts.quote) || 0;
+                  const baseValue = parseFloat(vaultDepositAmounts.base) || 0;
+                  const total = quoteValue + baseValue;
+                  return `${total.toFixed(2)}`;
+                })()}
+              </span>
+            </div>
+            <div className="deposit-summary-row">
+              <span>Status:</span>
+              <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
+                {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-                  <div className="withdraw-section">
-                    <div className="deposit-input-group">
-                      <div className="deposit-input-wrapper">
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          className="deposit-amount-input"
-                          value={vaultWithdrawAmount}
-                          onChange={(e) => setVaultWithdrawAmount(e.target.value)}
-                        />
-                        <div className="deposit-token-badge">
-                          <img
-                            src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image}
-                            alt={selectedVaultForAction?.quoteToken || 'USDC'}
-                            className="deposit-token-icon"
-                          />
-                          <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
-                        </div>
-                      </div>
-                      <div className="lp-deposit-balance-wrapper">
-                        <div className="lp-deposit-usd-value">
-                          ${((parseFloat(vaultWithdrawAmount) || 0) * ((selectedVaultForAction?.quoteToken || 'USDC') === 'USDC' ? 1 : 1)).toFixed(2)}
-                        </div>
-                        <div className="deposit-balance">
-                          <img src={walleticon} className="balance-wallet-icon" />
-                          Your Balance: {selectedVaultForAction?.userBalance || '0.00'} {selectedVaultForAction?.quoteToken || 'USDC'}
-                          <button
-                            className="vault-max-button"
-                            onClick={() => {
-                              setVaultWithdrawAmount(selectedVaultForAction?.userBalance || '0');
-                            }}
-                          >
-                            MAX
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+      <div className="modal-footer">
+        <button
+          className={`vault-confirm-button ${(!isVaultDepositEnabled() || isVaultDepositSigning) ? 'disabled' : ''}`}
+          onClick={handleVaultDeposit}
+          disabled={!isVaultDepositEnabled() || isVaultDepositSigning}
+        >
+          {isVaultDepositSigning ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              Depositing...
+            </div>
+          ) : (
+            getVaultDepositButtonText()
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
 
-                    {/* Tradable Token Withdrawal */}
-                    {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
-                      <div className="deposit-input-group">
-                        <div className="deposit-input-wrapper">
-                          <input
-                            type="text"
-                            placeholder="0.0"
-                            className="deposit-amount-input"
-                            value={vaultDepositAmount}
-                            onChange={(e) => setVaultDepositAmount(e.target.value)}
-                          />
-                          <div className="deposit-token-badge">
-                            <img
-                              src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image}
-                              alt={selectedVaultForAction.tradableTokens[0]}
-                              className="deposit-token-icon"
-                            />
-                            <span>{selectedVaultForAction.tradableTokens[0]}</span>
-                          </div>
-                        </div>
-                        <div className="lp-deposit-balance-wrapper">
-                          <div className="lp-deposit-usd-value">
-                            ${((parseFloat(vaultDepositAmount) || 0) * 1).toFixed(2)}
-                          </div>
-                          <div className="deposit-balance">
-                            <img src={walleticon} className="balance-wallet-icon" />
-                            Your Balance: {customRound(
-                              Number(tokenBalances[Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.address] ?? 0) /
-                              10 ** Number(Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.decimals ?? 18),
-                              3,
-                            )
-                              .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                              .replace(/\.0+$/, '')} {selectedVaultForAction.tradableTokens[0]}
-                            <button
-                              className="vault-max-button"
-                              onClick={() => {
-                                const token = Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0]);
-                                if (token) {
-                                  const maxAmount = customRound(
-                                    Number(tokenBalances[token.address] ?? 0) / 10 ** Number(token.decimals ?? 18),
-                                    3,
-                                  )
-                                    .replace(/(\.\d*?[1-9])0+$/g, '$1')
-                                    .replace(/\.0+$/, '');
-                                  setVaultDepositAmount(maxAmount);
-                                }
-                              }}
-                            >
-                              MAX
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
 
-                    <div className="withdraw-preview">
-                      <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Withdrawal Summary:</h5>
-                      <div className="withdraw-token-preview">
-                        <div className="withdraw-token-item">
-                          <img
-                            src={Object.values(tokendict).find((t: any) => t.ticker === (selectedVaultForAction?.quoteToken || 'USDC'))?.image}
-                            alt={selectedVaultForAction?.quoteToken || 'USDC'}
-                            className="withdraw-token-icon"
-                          />
-                          <span>{selectedVaultForAction?.quoteToken || 'USDC'}</span>
-                          <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                            {parseFloat(vaultWithdrawAmount || '0').toFixed(4)}
-                          </span>
-                        </div>
-                        {selectedVaultForAction?.tradableTokens && selectedVaultForAction.tradableTokens.length > 0 && (
-                          <div className="withdraw-token-item">
-                            <img
-                              src={Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction.tradableTokens[0])?.image}
-                              alt={selectedVaultForAction.tradableTokens[0]}
-                              className="withdraw-token-icon"
-                            />
-                            <span>{selectedVaultForAction.tradableTokens[0]}</span>
-                            <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                              {parseFloat(vaultDepositAmount || '0').toFixed(4)}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
+{popup === 23 ? (
+  <div className="modal-overlay">
+    <div className="modal-content vault-action-modal" ref={popupref}>
+      <div className="modal-header">
+        <h2>Withdraw from {selectedVaultForAction?.name}</h2>
+        <button
+          className="modal-close"
+          onClick={() => {
+            setpopup(0);
+            setSelectedVaultForAction(null);
+            setWithdrawShares('');
+            setWithdrawExceedsBalance(false);
+            setWithdrawPreview(null);
+          }}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+
+      <div className="modal-body">
+        <div className="vault-withdraw-form">
+          <div className="withdraw-section">
+            {/* Shares Input */}
+            <div className={`deposit-input-group ${withdrawExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+              <div className="deposit-input-wrapper">
+                <input
+                  type="text"
+                  placeholder="0.0"
+                  className={`deposit-amount-input ${withdrawExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                  value={withdrawShares}
+                  onChange={(e) => handleWithdrawSharesChange(e.target.value)}
+                />
+                <div className="deposit-token-badge">
+                  <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
+                    <img
+                      src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'}
+                      alt=""
+                      className="lp-token-icon lp-token-icon-first"
+                      style={{ width: '20px', height: '20px' }}
+                    />
+                    <img
+                      src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'}
+                      alt=""
+                      className="lp-token-icon lp-token-icon-second"
+                      style={{ width: '20px', height: '20px', left: '15px' }}
+                    />
+                  </div>
+                  <span>Shares</span>
+                </div>
+              </div>
+              <div className="lp-deposit-balance-wrapper">
+                <div className={`lp-deposit-usd-value ${withdrawExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                  {withdrawPreview ? `${(
+                    (Number(withdrawPreview.amountQuote) / 10 ** Number(selectedVaultForAction?.quoteTokenData?.decimals || 18)) +
+                    (Number(withdrawPreview.amountBase) / 10 ** Number(selectedVaultForAction?.baseTokenData?.decimals || 18))
+                  ).toFixed(2)}` : '$0.00'}
+                </div>
+                <div className="deposit-balance">
+                  <img src={walleticon} className="balance-wallet-icon" />
+                  Your Shares: {selectedVaultForAction?.userShares || '0.00'}
+                  <button
+                    className="vault-max-button"
+                    onClick={() => {
+                      handleWithdrawSharesChange(selectedVaultForAction?.userShares || '0');
+                    }}
+                  >
+                    MAX
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Withdrawal Preview */}
+            {withdrawPreview && (
+              <div className="withdraw-preview">
+                <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
+                <div className="withdraw-token-preview">
+                  <div className="withdraw-token-item">
+                    <img 
+                      src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'} 
+                      alt="" 
+                      className="withdraw-token-icon" 
+                    />
+                    <span>{selectedVaultForAction?.quoteToken}</span>
+                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
+                      {formatDisplayValue(
+                        withdrawPreview.amountQuote,
+                        Number(selectedVaultForAction?.quoteTokenData?.decimals || 18)
+                      )}
+                    </span>
+                  </div>
+                  <div className="withdraw-token-item">
+                    <img 
+                      src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'} 
+                      alt="" 
+                      className="withdraw-token-icon" 
+                    />
+                    <span>{selectedVaultForAction?.baseToken}</span>
+                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
+                      {formatDisplayValue(
+                        withdrawPreview.amountBase,
+                        Number(selectedVaultForAction?.baseTokenData?.decimals || 18)
+                      )}
+                    </span>
                   </div>
                 </div>
               </div>
+            )}
 
-              <div className="modal-footer">
-                <button
-                  className={`vault-confirm-button withdraw ${(!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning) ? 'disabled' : ''}`}
-                  onClick={async () => {
-                    if (!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0) return;
-
-                    setIsVaultWithdrawSigning(true);
-                    try {
-                      console.log('Withdrawing:', vaultWithdrawAmount, 'and', vaultDepositAmount, 'from vault:', selectedVaultForAction?.id);
-                      await new Promise(resolve => setTimeout(resolve, 2000));
-
-                      setpopup(0);
-                      setSelectedVaultForAction(null);
-                      setVaultWithdrawAmount('');
-                      setVaultDepositAmount('');
-                    } catch (error) {
-                      console.error('Withdrawal failed:', error);
-                    } finally {
-                      setIsVaultWithdrawSigning(false);
-                    }
-                  }}
-                  disabled={!vaultWithdrawAmount || parseFloat(vaultWithdrawAmount) <= 0 || isVaultWithdrawSigning}
-                >
-                  {isVaultWithdrawSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Withdrawing...
-                    </div>
-                  ) : (
-                    'Withdraw'
-                  )}
-                </button>
+            <div className="withdraw-summary">
+              <div className="deposit-summary-row">
+                <span>Shares to withdraw:</span>
+                <span>{withdrawShares || '0.00'}</span>
               </div>
+              <div className="deposit-summary-row">
+                <span>Vault Status:</span>
+                <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
+                  {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
+                </span>
+              </div>
+              {selectedVaultForAction?.lockup && selectedVaultForAction.lockup > 0 && (
+                <div className="deposit-summary-row">
+                  <span>Lockup Period:</span>
+                  <span>{selectedVaultForAction.lockup} seconds</span>
+                </div>
+              )}
             </div>
           </div>
-        ) : null}
+        </div>
+      </div>
+
+      <div className="modal-footer">
+        <button
+          className={`vault-confirm-button withdraw ${(!isWithdrawEnabled() || isVaultWithdrawSigning) ? 'disabled' : ''}`}
+          onClick={handleVaultWithdraw}
+          disabled={!isWithdrawEnabled() || isVaultWithdrawSigning}
+        >
+          {isVaultWithdrawSigning ? (
+            <div className="button-content">
+              <div className="loading-spinner" />
+              Withdrawing...
+            </div>
+          ) : (
+            getWithdrawButtonText()
+          )}
+        </button>
+      </div>
+    </div>
+  </div>
+) : null}
         {popup === 24 ? (
           <div className="explorer-filters-popup" ref={popupref}>
             <div className="explorer-filters-header">
@@ -20238,7 +20603,7 @@ const getHeaderClassName = () => {
       <MemeTransactionPopupManager />
 
       {Modals}
-      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} onOpenWidgetExplorer={handleOpenWidgetExplorer} isWidgetExplorerOpen={isWidgetExplorerOpen} />
+      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} isWidgetExplorerOpen={isWidgetExplorerOpen} />
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
@@ -20294,7 +20659,7 @@ const getHeaderClassName = () => {
       {
         <>
           <div
-            style={getAppContainerStyle()} 
+            // style={getAppContainerStyle()} 
           >
             <Header
               setTokenIn={setTokenIn}
@@ -20326,350 +20691,295 @@ const getHeaderClassName = () => {
               marketsData={sortedMarkets}
               tradesloading={tradesloading}
               tradesByMarket={tradesByMarket}
-              style={getHeaderStyle()}
+              // style={getHeaderStyle()}
             />
           </div>
           <div className="headerfiller"></div>
         </>
       }
-      <div className="app-container" style={getAppContainerStyle()}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/market" replace />} />
-          <Route path="*" element={<Navigate to="/market" replace />} />
-          <Route
-            path="/leaderboard"
-            element={
-              <Leaderboard
-                setpopup={setpopup}
-                orders={orders}
-                address={address}
-                username={username}
-                setIsTransitioning={setIsTransitioning}
-                setTransitionDirection={setTransitionDirection}
-              />
-            }
-          />
-          <Route path="/lending" element={
-            <EarnVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              selectedToken={selectedToken}
-              tokenBalances={tokenBalances}
-              tokendict={tokendict}
-              address={address}
-              connected={connected}
-              refetch={refetch}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
-              activechain={activechain}
-              setChain={handleSetChain}
-            />} />
-          <Route path="/earn" element={<Navigate to="/earn/liquidity-pools" replace />} />
+      <div className="app-container">
 
-          <Route path="/earn/liquidity-pools" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokenBalances={tokenBalances}
-              currentRoute="/earn/liquidity-pools"
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              selectedVaultForAction={selectedVaultForAction}
-              setSelectedVaultForAction={setSelectedVaultForAction}
-              vaultDepositAmount={vaultDepositAmount}
-              setVaultDepositAmount={setVaultDepositAmount}
-              vaultWithdrawAmount={vaultWithdrawAmount}
-              setVaultWithdrawAmount={setVaultWithdrawAmount}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
-              setChain={handleSetChain}
-              address={address}
-              refetch={refetch}
-            />
-          } />
-          <Route path="/earn/liquidity-pools/:poolId" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokenBalances={tokenBalances}
-              currentRoute={location.pathname}
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              selectedVaultForAction={selectedVaultForAction}
-              setSelectedVaultForAction={setSelectedVaultForAction}
-              vaultDepositAmount={vaultDepositAmount}
-              setVaultDepositAmount={setVaultDepositAmount}
-              vaultWithdrawAmount={vaultWithdrawAmount}
-              setVaultWithdrawAmount={setVaultWithdrawAmount}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-            />
-          } />
+<Routes>
+  <Route path="/" element={<Navigate to="/market" replace />} />
+  <Route path="*" element={<Navigate to="/market" replace />} />
+  <Route
+    path="/leaderboard"
+    element={
+      <Leaderboard
+        setpopup={setpopup}
+        orders={orders}
+        address={address}
+        username={username}
+        setIsTransitioning={setIsTransitioning}
+        setTransitionDirection={setTransitionDirection}
+      />
+    }
+  />
+  <Route path="/lending" element={
+    <EarnVaults
+      setpopup={setpopup}
+      onSelectToken={(token) => {
+        setSelectedToken(token);
+        setTimeout(() => setSelectedToken(null), 100);
+      }}
+      setOnSelectTokenCallback={setOnSelectTokenCallback}
+      selectedToken={selectedToken}
+      tokenBalances={tokenBalances}
+      tokendict={tokendict}
+      address={address}
+      connected={connected}
+      refetch={refetch}
+      tradesByMarket={tradesByMarket}
+      markets={markets}
+      usdc={usdc}
+      wethticker={wethticker}
+      ethticker={ethticker}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      activechain={activechain}
+      setChain={handleSetChain}
+    />} />
+  
+  {/* Redirect /earn to /earn/vaults */}
+  <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
 
-          <Route path="/earn/vaults" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokenBalances={tokenBalances}
-              currentRoute="/earn/vaults"
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              selectedVaultForAction={selectedVaultForAction}
-              setSelectedVaultForAction={setSelectedVaultForAction}
-              vaultDepositAmount={vaultDepositAmount}
-              setVaultDepositAmount={setVaultDepositAmount}
-              vaultWithdrawAmount={vaultWithdrawAmount}
-              setVaultWithdrawAmount={setVaultWithdrawAmount}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-            />
-          } />
+  {/* Main vaults route */}
+  <Route path="/earn/vaults" element={
+    <LPVaults
+      setpopup={setpopup}
+      onSelectToken={(token) => {
+        setSelectedToken(token);
+        setTimeout(() => setSelectedToken(null), 100);
+      }}
+      setOnSelectTokenCallback={setOnSelectTokenCallback}
+      tokendict={tokendict}
+      tradesByMarket={tradesByMarket}
+      markets={markets}
+      tokenBalances={tokenBalances}
+      currentRoute="/earn/vaults"
+      onRouteChange={(route) => navigate(route)}
+      connected={connected}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      selectedVaultForAction={selectedVaultForAction}
+      setSelectedVaultForAction={setSelectedVaultForAction}
+      vaultDepositAmount={vaultDepositAmount}
+      setVaultDepositAmount={setVaultDepositAmount}
+      vaultWithdrawAmount={vaultWithdrawAmount}
+      setVaultWithdrawAmount={setVaultWithdrawAmount}
+      isVaultDepositSigning={isVaultDepositSigning}
+      setIsVaultDepositSigning={setIsVaultDepositSigning}
+      isVaultWithdrawSigning={isVaultWithdrawSigning}
+      setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      setChain={handleSetChain}
+      address={address}
+      refetch={refetch}
+    />
+  } />
 
-          <Route path="/earn/vaults/:vaultAddress" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokenBalances={tokenBalances}
-              currentRoute={location.pathname}
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              selectedVaultForAction={selectedVaultForAction}
-              setSelectedVaultForAction={setSelectedVaultForAction}
-              vaultDepositAmount={vaultDepositAmount}
-              setVaultDepositAmount={setVaultDepositAmount}
-              vaultWithdrawAmount={vaultWithdrawAmount}
-              setVaultWithdrawAmount={setVaultWithdrawAmount}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-            />
-          } />
-          <Route
-            path="/launchpad"
-            element={
-              <Launchpad
-                address={address}
-                sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                  logout: logout,
-                }}
-                setChain={handleSetChain}
-                setpopup={setpopup}
-              />
-            }
-          />
-          <Route path="/meme/:tokenAddress" element={
-            <MemeInterface
-              tradingMode={tradingMode}
-              sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
-              sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
-              sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
-              marketsData={marketsData}
-              onMarketSelect={onMarketSelect}
-              setSendTokenIn={setSendTokenIn}
-              setpopup={setpopup}
-              tokenList={memoizedTokenList}
-              sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              setChain={handleSetChain}
-              address={address}
-              // Add wallet-related props
-              subWallets={subWallets}
-              walletTokenBalances={walletTokenBalances}
-              activeWalletPrivateKey={oneCTSigner}
-              setOneCTSigner={setOneCTSigner}
-              refetch={refetch}
-              isBlurred={isBlurred}
-              // Add wallet balance refresh functions for live updates
-              refreshWalletBalance={refreshWalletBalance}
-              forceRefreshAllWallets={forceRefreshAllWallets}
-              // Add missing props that MemeInterface needs
-              tradesByMarket={tradesByMarket}
-              markets={markets}
-              tokendict={tokendict}
-              usdc={usdc}
-              wethticker={wethticker}
-              ethticker={ethticker}
-            />
-          } />
+  {/* Individual vault detail route */}
+  <Route path="/earn/vaults/:vaultAddress" element={
+    <LPVaults
+      setpopup={setpopup}
+      onSelectToken={(token) => {
+        setSelectedToken(token);
+        setTimeout(() => setSelectedToken(null), 100);
+      }}
+      setOnSelectTokenCallback={setOnSelectTokenCallback}
+      tokendict={tokendict}
+      tradesByMarket={tradesByMarket}
+      markets={markets}
+      tokenBalances={tokenBalances}
+      currentRoute={location.pathname}
+      onRouteChange={(route) => navigate(route)}
+      connected={connected}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      selectedVaultForAction={selectedVaultForAction}
+      setSelectedVaultForAction={setSelectedVaultForAction}
+      vaultDepositAmount={vaultDepositAmount}
+      setVaultDepositAmount={setVaultDepositAmount}
+      vaultWithdrawAmount={vaultWithdrawAmount}
+      setVaultWithdrawAmount={setVaultWithdrawAmount}
+      isVaultDepositSigning={isVaultDepositSigning}
+      setIsVaultDepositSigning={setIsVaultDepositSigning}
+      isVaultWithdrawSigning={isVaultWithdrawSigning}
+      setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      setChain={handleSetChain}
+      address={address}
+      refetch={refetch}
+    />
+  } />
 
-          <Route
-            path="/explorer"
-            element={
-              <TokenExplorer
-                setpopup={setpopup}
-                appliedFilters={appliedExplorerFilters}
-                activeFilterTab={activeExplorerFilterTab}
-                onOpenFiltersForColumn={handleOpenFiltersForColumn}
-                sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
-              />
-            }
-          />
-          <Route
-            path="/portfolio"
-            element={
-              <Portfolio
-                orders={orders}
-                tradehistory={tradehistory}
-                trades={tradesByMarket}
-                canceledorders={canceledorders}
-                tokenList={memoizedTokenList}
-                router={router}
-                address={address ?? ''}
-                isBlurred={isBlurred}
-                setIsBlurred={setIsBlurred}
-                onMarketSelect={onMarketSelect}
-                setSendTokenIn={setSendTokenIn}
-                setpopup={setpopup}
-                tokenBalances={tokenBalances}
-                totalAccountValue={totalAccountValue}
-                setTotalVolume={setTotalVolume}
-                totalVolume={totalVolume}
-                chartData={typeof totalAccountValue === 'number' ? [
-                  ...chartData.slice(0, -1),
-                  {
-                    ...chartData[chartData.length - 1],
-                    value: totalAccountValue,
-                  },
-                ] : chartData}
-                portChartLoading={portChartLoading}
-                chartDays={chartDays}
-                setChartDays={setChartDays}
-                totalClaimableFees={totalClaimableFees}
-                claimableFees={claimableFees}
-                refLink={refLink}
-                setRefLink={setRefLink}
-                filter={filter}
-                setFilter={setFilter}
-                onlyThisMarket={onlyThisMarket}
-                setOnlyThisMarket={setOnlyThisMarket}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                  logout: logout,
-                }}
-                refetch={refetch}
-                sendUserOperationAsync={sendUserOperationAsync}
-                setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
-                marketsData={marketsData}
-                usedRefLink={usedRefLink}
-                setUsedRefLink={setUsedRefLink}
-                usedRefAddress={usedRefAddress}
-                setUsedRefAddress={setUsedRefAddress}
-                client={client}
-                activechain={activechain}
-                markets={markets}
-                subWallets={subWallets}
-                setSubWallets={saveSubWallets}
-                walletTokenBalances={walletTokenBalances}
-                walletTotalValues={walletTotalValues}
-                walletsLoading={walletsLoading}
-                subwalletBalanceLoading={subwalletBalanceLoading}
-                refreshWalletBalance={refreshWalletBalance}
-                forceRefreshAllWallets={forceRefreshAllWallets}
-                setOneCTSigner={setOneCTSigner}
-                isVaultDepositSigning={isVaultDepositSigning}
-                setIsVaultDepositSigning={setIsVaultDepositSigning}
-                handleSetChain={handleSetChain}
-                handleSubwalletTransfer={handleSubwalletTransfer}
-                createSubWallet={createSubWallet}
-                signTypedDataAsync={signTypedDataAsync}
-                keccak256={keccak256}
-                Wallet={Wallet}
-                activeWalletPrivateKey={oneCTSigner}
-              />
-            }
-          />
-          <Route path="/swap" element={TradeLayout(swap)} />
-          <Route path="/market" element={TradeLayout(swap)} />
-          <Route path="/limit" element={TradeLayout(limit)} />
-          <Route path="/send" element={TradeLayout(send)} />
-          <Route path="/scale" element={TradeLayout(scale)} />
+  <Route
+    path="/launchpad"
+    element={
+      <Launchpad
+        address={address}
+        sendUserOperationAsync={sendUserOperationAsync}
+        waitForTxReceipt={waitForTxReceipt}
+        account={{
+          connected: connected,
+          address: address,
+          chainId: userchain,
+          logout: logout,
+        }}
+        setChain={handleSetChain}
+        setpopup={setpopup}
+      />
+    }
+  />
+  <Route path="/meme/:tokenAddress" element={
+    <MemeInterface
+      tradingMode={tradingMode}
+      sliderMode={tradingMode === 'spot' ? spotSliderMode : trenchesSliderMode}
+      sliderPresets={tradingMode === 'spot' ? spotSliderPresets : trenchesSliderPresets}
+      sliderIncrement={tradingMode === 'spot' ? spotSliderIncrement : trenchesSliderIncrement}
+      marketsData={marketsData}
+      onMarketSelect={onMarketSelect}
+      setSendTokenIn={setSendTokenIn}
+      setpopup={setpopup}
+      tokenList={memoizedTokenList}
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      setChain={handleSetChain}
+      address={address}
+      // Add wallet-related props
+      subWallets={subWallets}
+      walletTokenBalances={walletTokenBalances}
+      activeWalletPrivateKey={oneCTSigner}
+      setOneCTSigner={setOneCTSigner}
+      refetch={refetch}
+      isBlurred={isBlurred}
+      // Add wallet balance refresh functions for live updates
+      refreshWalletBalance={refreshWalletBalance}
+      forceRefreshAllWallets={forceRefreshAllWallets}
+      // Add missing props that MemeInterface needs
+      tradesByMarket={tradesByMarket}
+      markets={markets}
+      tokendict={tokendict}
+      usdc={usdc}
+      wethticker={wethticker}
+      ethticker={ethticker}
+    />
+  } />
 
-        </Routes>
+  <Route
+    path="/explorer"
+    element={
+      <TokenExplorer
+        setpopup={setpopup}
+        appliedFilters={appliedExplorerFilters}
+        activeFilterTab={activeExplorerFilterTab}
+        onOpenFiltersForColumn={handleOpenFiltersForColumn}
+        sendUserOperationAsync={sendUserOperationAsync}
+        waitForTxReceipt={waitForTxReceipt}
+      />
+    }
+  />
+  <Route
+    path="/portfolio"
+    element={
+      <Portfolio
+        orders={orders}
+        tradehistory={tradehistory}
+        trades={tradesByMarket}
+        canceledorders={canceledorders}
+        tokenList={memoizedTokenList}
+        router={router}
+        address={address ?? ''}
+        isBlurred={isBlurred}
+        setIsBlurred={setIsBlurred}
+        onMarketSelect={onMarketSelect}
+        setSendTokenIn={setSendTokenIn}
+        setpopup={setpopup}
+        tokenBalances={tokenBalances}
+        totalAccountValue={totalAccountValue}
+        setTotalVolume={setTotalVolume}
+        totalVolume={totalVolume}
+        chartData={typeof totalAccountValue === 'number' ? [
+          ...chartData.slice(0, -1),
+          {
+            ...chartData[chartData.length - 1],
+            value: totalAccountValue,
+          },
+        ] : chartData}
+        portChartLoading={portChartLoading}
+        chartDays={chartDays}
+        setChartDays={setChartDays}
+        totalClaimableFees={totalClaimableFees}
+        claimableFees={claimableFees}
+        refLink={refLink}
+        setRefLink={setRefLink}
+        filter={filter}
+        setFilter={setFilter}
+        onlyThisMarket={onlyThisMarket}
+        setOnlyThisMarket={setOnlyThisMarket}
+        account={{
+          connected: connected,
+          address: address,
+          chainId: userchain,
+          logout: logout,
+        }}
+        refetch={refetch}
+        sendUserOperationAsync={sendUserOperationAsync}
+        setChain={handleSetChain}
+        waitForTxReceipt={waitForTxReceipt}
+        marketsData={marketsData}
+        usedRefLink={usedRefLink}
+        setUsedRefLink={setUsedRefLink}
+        usedRefAddress={usedRefAddress}
+        setUsedRefAddress={setUsedRefAddress}
+        client={client}
+        activechain={activechain}
+        markets={markets}
+        subWallets={subWallets}
+        setSubWallets={saveSubWallets}
+        walletTokenBalances={walletTokenBalances}
+        walletTotalValues={walletTotalValues}
+        walletsLoading={walletsLoading}
+        subwalletBalanceLoading={subwalletBalanceLoading}
+        refreshWalletBalance={refreshWalletBalance}
+        forceRefreshAllWallets={forceRefreshAllWallets}
+        setOneCTSigner={setOneCTSigner}
+        isVaultDepositSigning={isVaultDepositSigning}
+        setIsVaultDepositSigning={setIsVaultDepositSigning}
+        handleSetChain={handleSetChain}
+        handleSubwalletTransfer={handleSubwalletTransfer}
+        createSubWallet={createSubWallet}
+        signTypedDataAsync={signTypedDataAsync}
+        keccak256={keccak256}
+        Wallet={Wallet}
+        activeWalletPrivateKey={oneCTSigner}
+      />
+    }
+  />
+  <Route path="/swap" element={TradeLayout(swap)} />
+  <Route path="/market" element={TradeLayout(swap)} />
+  <Route path="/limit" element={TradeLayout(limit)} />
+  <Route path="/send" element={TradeLayout(send)} />
+  <Route path="/scale" element={TradeLayout(scale)} />
+</Routes>
         <TransactionPopupManager
           transactions={transactions}
           setTransactions={setTransactions}
@@ -20678,7 +20988,7 @@ const getHeaderClassName = () => {
           previewPosition={previewPosition}
           previewExiting={previewExiting}
         />
-<WidgetExplorer
+{/* <WidgetExplorer
   isOpen={isWidgetExplorerOpen}
   onClose={handleCloseWidgetExplorer}
   setpopup={setpopup}
@@ -20690,7 +21000,7 @@ const getHeaderClassName = () => {
   onSnapToSide={handleWidgetExplorerSnapToSide}
   currentSnapSide={widgetExplorerSnapSide}
   onWidgetResize={handleWidgetExplorerResize} 
-/>
+/> */}
       </div>
     </div>
   );

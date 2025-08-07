@@ -459,7 +459,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTokenBalance(bal);
     setAllowance(alw);
   }, [rpcData]);
-
+  const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
   const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
     const presetValues = buyPresets[preset as keyof typeof buyPresets];
@@ -804,19 +804,32 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
   }, [token.id, tokenAddress, address, refetchBalances]);
 
-  useEffect(() => {
-    if (!token.id) return;
+useEffect(() => {
+  if (!token.id) return;
 
-    (async () => {
-      const data = await gqWithRateLimit(
-        HOLDERS_QUERY,
-        { m: token.id.toLowerCase(), skip: page*PAGE_SIZE, first: PAGE_SIZE },
-        `holders-${token.id}-${page}`
-      );
-      if (!data?.holders) return;
+  (async () => {
+    // Always fetch the top 10 holders first (page 0)
+    const data = await gqWithRateLimit(
+      HOLDERS_QUERY,
+      { m: token.id.toLowerCase(), skip: 0, first: 10 }, // Always get top 10 first
+      `holders-top10-${token.id}`
+    );
+    
+    if (data?.holders) {
+      // Calculate top 10 holding percentage
+      const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
+        return sum + (Number(holder.balance) / 1e18);
+      }, 0);
+      
+      // Calculate percentage of total supply held by top 10
+      const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
+      setTop10HoldingPercentage(top10Percentage);
+    }
 
+    // Now fetch the current page data for display
+    if (page === 0) {
       setHolders(
-        data.holders.map((h:any)=>({
+        data.holders.map((h: any) => ({
           address: h.address,
           balance: Number(h.balance) / 1e18,
           amountBought: Number(h.amountBought) / 1e18,
@@ -827,9 +840,30 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           tokenNet: Number(h.tokenNet) / 1e18,
         }))
       );
-    })();
-  }, [token.id, page]);
-
+    } else {
+      const pageData = await gqWithRateLimit(
+        HOLDERS_QUERY,
+        { m: token.id.toLowerCase(), skip: page * PAGE_SIZE, first: PAGE_SIZE },
+        `holders-${token.id}-${page}`
+      );
+      
+      if (pageData?.holders) {
+        setHolders(
+          pageData.holders.map((h: any) => ({
+            address: h.address,
+            balance: Number(h.balance) / 1e18,
+            amountBought: Number(h.amountBought) / 1e18,
+            amountSold: Number(h.amountSold) / 1e18,
+            valueBought: Number(h.valueBought) / 1e18,
+            valueSold: Number(h.valueSold) / 1e18,
+            valueNet: Number(h.valueNet) / 1e18,
+            tokenNet: Number(h.tokenNet) / 1e18,
+          }))
+        );
+      }
+    }
+  })();
+}, [token.id, page]);
   useEffect(() => {
     if(!userAddr || !token.id) return;
 
@@ -1693,40 +1727,44 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </svg>
             </button>
           </div>
-          {tokenInfoExpanded && (
-            <div className="meme-token-info-grid">
-              <div className="meme-token-info-item">
-                <div className="meme-token-info-icon-container">
-                  <svg
-                    className="meme-token-info-icon"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 32 32"
-                    fill={
-                      (token.top10Holding || 0) > 5
-                        ? "#eb7070ff"
-                        : "rgb(67 254 154)"
-                    }
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-                  </svg>
-                  <span
-                    className="meme-token-info-value"
-                    style={{
-                      color:
-                        (token.top10Holding || 0) > 5
-                          ? "#eb7070ff"
-                          : "rgb(67 254 154)",
-                    }}
-                  >
-                    {(token.top10Holding || 0).toFixed(2)}%
-                  </span>
-                </div>
-                <span className="meme-token-info-label">Top 10 H.</span>
-              </div>
-            </div>
-          )}
+{tokenInfoExpanded && (
+  <div className="meme-token-info-grid">
+    <div className="meme-token-info-item">
+      <div className="meme-token-info-icon-container">
+        <svg
+          className="meme-token-info-icon"
+          width="16"
+          height="16"
+          viewBox="0 0 32 32"
+          fill={
+            top10HoldingPercentage > 50
+              ? "#eb7070ff"
+              : top10HoldingPercentage > 30
+              ? "#fbbf24"
+              : "rgb(67 254 154)"
+          }
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+        </svg>
+        <span
+          className="meme-token-info-value"
+          style={{
+            color:
+              top10HoldingPercentage > 50
+                ? "#eb7070ff"
+                : top10HoldingPercentage > 30
+                ? "#fbbf24"
+                : "rgb(67 254 154)",
+          }}
+        >
+          {top10HoldingPercentage.toFixed(2)}%
+        </span>
+      </div>
+      <span className="meme-token-info-label">Top 10 H.</span>
+    </div>
+  </div>
+)}
         </div>
         <div className="meme-token-info-footer">
           <span className="meme-address">
