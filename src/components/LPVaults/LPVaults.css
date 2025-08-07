@@ -1853,7 +1853,8 @@
     align-items:center;
     padding:.35rem 1rem;
     transition:background-color .2s ease;
-    cursor:pointer
+    cursor:pointer;
+    height: 4   0px;
 }
 .vault-row:hover{
     background-color:#2d2d3124
@@ -3097,13 +3098,6 @@
     border-bottom:1px solid rgba(179,184,249,.1);
     margin-bottom:.3rem
 }
-.vault-row{
-    display:flex;
-    align-items:center;
-    padding:.35rem 1rem;
-    transition:background-color .2s ease;
-    cursor:pointer
-}
 .vault-row:hover{
     background-color:#2d2d3124
 }
@@ -4063,9 +4057,7 @@
         overflow-y: visible;
         -webkit-overflow-scrolling: touch;
     }
-    
-    /* Ensure the container can grow vertically */
-    .lp-rectangle {
+        .lp-rectangle {
         height: auto;
         max-height: none;
         overflow: visible;
@@ -4103,9 +4095,6 @@
         margin-top: 0.5rem;
     }
 }
-
-
-/* Add these styles to your LPVaults.css file */
 
 .token-selector-container {
   position: relative;
@@ -4250,4 +4239,182 @@
 
 .balances-tab{
     width: 100%;
+}
+
+/* Vault Loading Skeleton Styles */
+:root {
+  --vault-skeleton-bg: rgba(189, 189, 235, 0.08);        
+  --vault-skeleton-shimmer: rgba(226, 230, 247, 0.1);  
+}
+
+/* Vault shimmer animation */
+@keyframes vault-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* Base vault loading row */
+.vault-row.vault-loading {
+  pointer-events: none;
+  cursor: default;
+  height: 40px;
+  background: transparent;
+}
+
+.vault-row.vault-loading:hover {
+  background: transparent;
+}
+
+.vault-row.vault-loading * {
+  visibility: hidden;
+}
+
+/* Base skeleton style */
+.vault-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--vault-skeleton-bg);
+  border-radius: 4px;
+  visibility: visible !important;
+}
+
+.vault-skeleton::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--vault-skeleton-shimmer),
+    transparent
+  );
+  animation: vault-shimmer 1.5s ease-in-out infinite;
+}
+
+/* Vault name skeleton */
+.vault-skeleton-name {
+  width: 120px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+/* Leader skeleton */
+.vault-skeleton-leader {
+  width: 80px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+/* Type skeleton */
+.vault-skeleton-type {
+  width: 60px;
+  height: 20px;
+  border-radius: 12px;
+}
+
+/* Token icon skeletons */
+.vault-skeleton-token-icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  margin-left: -6px;
+}
+
+.vault-skeleton-token-icon:first-child {
+  margin-left: 0;
+}
+
+/* Value skeletons */
+.vault-skeleton-value {
+  width: 70px;
+  height: 14px;
+  border-radius: 4px;
+}
+
+/* Status skeleton */
+.vault-skeleton-status {
+  width: 50px;
+  height: 16px;
+  border-radius: 8px;
+}
+
+/* Chart skeleton */
+.vault-skeleton-chart {
+  width: 60px;
+  height: 32px;
+  border-radius: 4px;
+}
+
+/* Container overrides for loading state */
+.vault-row.vault-loading .vault-name-container {
+  position: relative;
+  height: 20px;
+}
+
+.vault-row.vault-loading .vault-tokens {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  position: relative;
+}
+
+.vault-row.vault-loading .col {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.vault-row.vault-loading .vault-skeleton {
+  z-index: 2;
+}
+
+.vault-row.vault-loading .vault-skeleton:nth-child(1)::before { animation-delay: 0s; }
+.vault-row.vault-loading .vault-skeleton:nth-child(2)::before { animation-delay: 0.1s; }
+.vault-row.vault-loading .vault-skeleton:nth-child(3)::before { animation-delay: 0.2s; }
+.vault-row.vault-loading .vault-skeleton:nth-child(4)::before { animation-delay: 0.3s; }
+.vault-row.vault-loading .vault-skeleton:nth-child(5)::before { animation-delay: 0.4s; }
+
+@media (max-width: 768px) {
+  .vault-row.vault-loading {
+    height: auto;
+    min-height: 80px;
+    padding: 1rem;
+  }
+  
+  .vault-skeleton-name {
+    width: 100px;
+    height: 14px;
+  }
+  
+  .vault-skeleton-leader {
+    width: 70px;
+    height: 12px;
+  }
+  
+  .vault-skeleton-value {
+    width: 60px;
+    height: 12px;
+  }
+}
+
+.loading-spinner {
+  width: 14px;
+  height: 14px;
+  margin: 2px;
+  border: 2px solid rgba(15, 15, 18, 0.3);
+  border-top: 2px solid #0f0f12;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

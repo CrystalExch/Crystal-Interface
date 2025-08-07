@@ -309,6 +309,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [activeVault, setActiveVault] = useState('0x6A6a20102070A58ac8bC21a12B29832CEe2a638e' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
+  const [isLoading, setIsLoading] = useState(true); 
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -339,6 +340,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   });
 
   useEffect(() => {
+    setIsLoading(true); 
 
     (async () => {
       try {
@@ -364,10 +366,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
             closed: vaultDetails.result[12],
             type: 'Spot',
           }
-          vaultList.push(vaultDict)
+          setVaultList([vaultDict]);
         }
       } catch (e) {
         console.error(e);
+      } finally {
+        setIsLoading(false); 
       }
     })();
   }, [activeVault]);
@@ -578,7 +582,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
 
 const getTokenName = (tokenIdentifier: string) => {
-  // Handle address inputs (0x...)
   if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
     const lowerAddress = tokenIdentifier.toLowerCase();
     let tokenByAddress = tokendict[lowerAddress];
@@ -596,7 +599,6 @@ const getTokenName = (tokenIdentifier: string) => {
     }
   }
 
-  // Handle ticker/symbol inputs
   const tokenByTicker = Object.values(tokendict).find((t: any) =>
     t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
   );
@@ -1103,64 +1105,101 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                 <div className="col vault-actions-col">Snapshot</div>
               </div>
 
-              {filteredVaultStrategies.map((vault: any) => (
-                <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
-                  <div className="col vault-name-col">
-                    <div className="vault-name-container">
-                      <h3 className="vault-name">{vault.name}</h3>
-                      {vault.isCreator && (
-                        <span className="creator-badge">Creator</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="col vault-leader-col">
-                    <div className="vault-leader">
-                      <span className="leader-token-name">{vault.owner.slice(0, 6)}...{vault.owner.slice(-4)}</span>
-                    </div>
-                  </div>
-
-                  <div className="col vault-type-col">
-                    <span className={`vault-type-badge ${vault.type.toLowerCase()}`}>
-                      {vault.type}
-                    </span>
-                  </div>
-
-                  <div className="col vault-tokens-col">
-                    <div className="vault-tokens">
-                      <div className="quote-token">
-                        <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="vault-token-icon" />
-                      </div>
-                      <div className="base-token">
-                        <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="vault-token-icon" />
+              {isLoading ? (
+                Array.from({ length: 8 }).map((_, index) => (
+                  <div key={`skeleton-vault-${index}`} className="vault-row vault-loading">
+                    <div className="col vault-name-col">
+                      <div className="vault-name-container">
+                        <div className="vault-skeleton vault-skeleton-name"></div>
                       </div>
                     </div>
+                    <div className="col vault-leader-col">
+                      <div className="vault-skeleton vault-skeleton-leader"></div>
+                    </div>
+                    <div className="col vault-type-col">
+                      <div className="vault-skeleton vault-skeleton-type"></div>
+                    </div>
+                    <div className="col vault-tokens-col">
+                      <div className="vault-tokens">
+                        <div className="vault-skeleton vault-skeleton-token-icon"></div>
+                        <div className="vault-skeleton vault-skeleton-token-icon"></div>
+                      </div>
+                    </div>
+                    <div className="col vault-apy-col">
+                      <div className="vault-skeleton vault-skeleton-value"></div>
+                    </div>
+                    <div className="col vault-deposits-col">
+                      <div className="vault-skeleton vault-skeleton-value"></div>
+                    </div>
+                    <div className="col vault-your-deposits-col">
+                      <div className="vault-skeleton vault-skeleton-value"></div>
+                    </div>
+                    <div className="col vault-age-col">
+                      <div className="vault-skeleton vault-skeleton-status"></div>
+                    </div>
+                    <div className="col vault-snapshot-col">
+                      <div className="vault-skeleton vault-skeleton-chart"></div>
+                    </div>
                   </div>
+                ))
+              ) : filteredVaultStrategies.length > 0 ? (
+                filteredVaultStrategies.map((vault: any) => (
+                  <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
+                    <div className="col vault-name-col">
+                      <div className="vault-name-container">
+                        <h3 className="vault-name">{vault.name}</h3>
+                        {vault.isCreator && (
+                          <span className="creator-badge">Creator</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="col vault-leader-col">
+                      <div className="vault-leader">
+                        <span className="leader-token-name">{vault.owner.slice(0, 6)}...{vault.owner.slice(-4)}</span>
+                      </div>
+                    </div>
 
-                  <div className="col vault-apy-col">
-                    <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 18)}</span>
+                    <div className="col vault-type-col">
+                      <span className={`vault-type-badge ${vault.type.toLowerCase()}`}>
+                        {vault.type}
+                      </span>
+                    </div>
+
+                    <div className="col vault-tokens-col">
+                      <div className="vault-tokens">
+                        <div className="quote-token">
+                          <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="vault-token-icon" />
+                        </div>
+                        <div className="base-token">
+                          <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="vault-token-icon" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="col vault-apy-col">
+                      <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 18)}</span>
+                    </div>
+
+                    <div className="col vault-deposits-col">
+                      <span className="deposits-value">{formatDisplayValue(BigInt(vault.maxShares), 18)}</span>
+                    </div>
+
+                    <div className="col vault-your-deposits-col">
+                      <span className="deposits-value">{vault.userShares}</span>
+                    </div>
+
+                    <div className="col vault-age-col">
+                      <span className={`age-value ${vault.closed ? 'closed' : vault.locked ? 'locked' : 'active'}`}>
+                        {vault.closed ? 'Closed' : vault.locked ? 'Locked' : 'Active'}
+                      </span>
+                    </div>
+
+                    <div className="col vault-snapshot-col">
+                      <VaultSnapshot vaultId={vault.id} />
+                    </div>
                   </div>
-
-                  <div className="col vault-deposits-col">
-                    <span className="deposits-value">{formatDisplayValue(BigInt(vault.maxShares), 18)}</span>
-                  </div>
-
-                  <div className="col vault-your-deposits-col">
-                    <span className="deposits-value">{vault.userShares}</span>
-                  </div>
-
-                  <div className="col vault-age-col">
-                    <span className={`age-value ${vault.closed ? 'closed' : vault.locked ? 'locked' : 'active'}`}>
-                      {vault.closed ? 'Closed' : vault.locked ? 'Locked' : 'Active'}
-                    </span>
-                  </div>
-
-                  <div className="col vault-snapshot-col">
-                    <VaultSnapshot vaultId={vault.id} />
-                  </div>
-                </div>
-              ))}
-
-              {filteredVaultStrategies.length === 0 && (
+                ))
+              ) : (
                 <div className="no-vaults-message">
                   <p>No vaults found matching your criteria.</p>
                 </div>
