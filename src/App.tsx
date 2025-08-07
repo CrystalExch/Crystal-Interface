@@ -20770,7 +20770,6 @@ const handleVaultWithdraw = async () => {
     />
   } />
 
-  {/* Individual vault detail route */}
   <Route path="/earn/vaults/:vaultAddress" element={
     <LPVaults
       setpopup={setpopup}

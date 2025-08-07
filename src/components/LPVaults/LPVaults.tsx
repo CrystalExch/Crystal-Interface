@@ -550,11 +550,19 @@ const handleCreateVault = async () => {
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-  const getTokenIcon = (symbol: string) => {
-    const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
-    return tokenEntry?.image || '/api/placeholder/24/24';
-  };
-
+const getTokenIcon = (tokenIdentifier: string) => {
+  if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
+    const tokenByAddress = tokendict[tokenIdentifier.toLowerCase()];
+    if (tokenByAddress) {
+      return tokenByAddress.image;
+    }
+  }
+  
+  const tokenByTicker = Object.values(tokendict).find((t: any) => 
+    t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
+  );
+  return tokenByTicker?.image || '/api/placeholder/24/24';
+};
   const getTokenName = (symbol: string) => {
     const tokenEntry = Object.values(tokendict).find((t: any) => t.ticker === symbol.toUpperCase());
     return tokenEntry?.name || symbol;
