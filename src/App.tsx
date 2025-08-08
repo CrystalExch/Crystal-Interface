@@ -693,10 +693,6 @@ const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
 const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
 const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
-const getTokenBalance = (tokenAddress: string): bigint => {
-  return tokenBalances[tokenAddress] || 0n;
-};
-
 
 const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
   if (value === '' || /^\d*\.?\d*$/.test(value)) {
@@ -708,9 +704,8 @@ const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) =
     if (value !== '' && selectedVaultForAction) {
       const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
       if (tokenData) {
-        const userBalance = getTokenBalance(tokenData.address);
         const tokenDecimals = Number(tokenData.decimals || 18);
-        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
+        const maxAllowedAmount = Number(tokenBalances[tokenData.address]) / 10 ** tokenDecimals;
         const enteredAmount = parseFloat(value);
 
         if (type === 'quote') {
@@ -850,7 +845,7 @@ useEffect(() => {
       
       if (!crystalVaultsAddress || !HTTP_URL) return;
 
-      const shares = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
+      const shares = BigInt(withdrawShares);
 
       const calldata = encodeFunctionData({
         abi: CrystalVaultsAbi,
@@ -893,7 +888,6 @@ useEffect(() => {
   return () => clearTimeout(timeoutId);
 }, [withdrawShares, selectedVaultForAction, activechain]);
 
-// Handle vault deposit function
 const handleVaultDeposit = async () => {
   if (!selectedVaultForAction || !connected || !depositPreview) return;
   
@@ -907,33 +901,18 @@ const handleVaultDeposit = async () => {
     setIsVaultDepositSigning(true);
 
     const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-    const quoteTokenAddress = selectedVaultForAction.quoteTokenData?.address;
-    const baseTokenAddress = selectedVaultForAction.baseTokenData?.address;
+    const quoteTokenAddress = selectedVaultForAction.quoteAsset;
+    const baseTokenAddress = selectedVaultForAction.baseAsset;
 
-    if (!quoteTokenAddress || !baseTokenAddress) {
-      throw new Error('Token addresses not found');
-    }
 
-    const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
-    const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+    const quoteDecimals = Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18);
+    const baseDecimals = Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18);
 
     const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
     const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
-    
+
     const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
     const amountBaseMin = (amountBaseDesired * 95n) / 100n;
-
-    // Check balances
-    const quoteBalance = getTokenBalance(quoteTokenAddress);
-    const baseBalance = getTokenBalance(baseTokenAddress);
-    
-    if (quoteBalance < amountQuoteDesired) {
-      throw new Error(`Insufficient ${selectedVaultForAction.quoteToken} balance`);
-    }
-
-    if (baseBalance < amountBaseDesired) {
-      throw new Error(`Insufficient ${selectedVaultForAction.baseToken} balance`);
-    }
 
     // Approve tokens if needed
     if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
@@ -1012,13 +991,12 @@ const handleVaultDeposit = async () => {
     setVaultBaseExceedsBalance(false);
     setDepositPreview(null);
     
-    refetch?.();
+    refetch();
     setpopup(0);
     setSelectedVaultForAction(null);
 
   } catch (e: any) {
     console.error('Vault deposit error:', e);
-    alert(e.message || 'Deposit failed');
   } finally {
     setIsVaultDepositSigning(false);
   }
@@ -1038,7 +1016,6 @@ const handleVaultWithdraw = async () => {
     setIsVaultWithdrawSigning(true);
 
     const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-    const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
     
     const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
     const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
@@ -1050,7 +1027,7 @@ const handleVaultWithdraw = async () => {
         functionName: "withdraw",
         args: [
           selectedVaultForAction.address as `0x${string}`,
-          sharesToWithdraw,
+          BigInt(withdrawShares),
           amountQuoteMin,
           amountBaseMin,
         ],
@@ -1066,13 +1043,12 @@ const handleVaultWithdraw = async () => {
     setWithdrawExceedsBalance(false);
     setWithdrawPreview(null);
     
-    refetch?.();
+    refetch();
     setpopup(0);
     setSelectedVaultForAction(null);
 
   } catch (e: any) {
     console.error('Vault withdraw error:', e);
-    alert(e.message || 'Withdrawal failed');
   } finally {
     setIsVaultWithdrawSigning(false);
   }
@@ -12789,7 +12765,6 @@ const handleVaultWithdraw = async () => {
       <div className="modal-body">
         <div className="vault-deposit-form">
           <div className="deposit-amounts-section">
-            {/* Quote Token Input */}
             <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
               <div className="deposit-input-wrapper">
                 <input
@@ -12801,11 +12776,10 @@ const handleVaultWithdraw = async () => {
                 />
                 <div className="deposit-token-badge">
                   <img
-                    src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'}
-                    alt={selectedVaultForAction?.quoteToken || 'Token'}
+                    src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
                     className="deposit-token-icon"
                   />
-                  <span>{selectedVaultForAction?.quoteToken || 'QUOTE'}</span>
+                  <span>{tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
                 </div>
               </div>
               <div className="lp-deposit-balance-wrapper">
@@ -12815,18 +12789,18 @@ const handleVaultWithdraw = async () => {
                 <div className="deposit-balance">
                   <div className="deposit-balance-value">
                     <img src={walleticon} className="balance-wallet-icon" />
-                    {selectedVaultForAction?.quoteTokenData ? formatDisplayValue(
-                      getTokenBalance(selectedVaultForAction.quoteTokenData.address),
-                      Number(selectedVaultForAction.quoteTokenData.decimals || 18)
-                    ) : '0.00'} {selectedVaultForAction?.quoteToken || 'QUOTE'}
+                    {selectedVaultForAction?.quoteAsset ? formatDisplayValue(
+                      tokenBalances[selectedVaultForAction?.quoteAsset],
+                      Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
+                    ) : '0.00'} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
                   </div>
                   <button
                     className="vault-max-button"
                     onClick={() => {
-                      if (selectedVaultForAction?.quoteTokenData) {
+                      if (selectedVaultForAction?.quoteAsset) {
                         const maxAmount = formatDisplayValue(
-                          getTokenBalance(selectedVaultForAction.quoteTokenData.address),
-                          Number(selectedVaultForAction.quoteTokenData.decimals || 18)
+                          tokenBalances[selectedVaultForAction?.quoteAsset],
+                          Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
                         ).replace(/,/g, '');
                         handleVaultDepositAmountChange('quote', maxAmount);
                       }
@@ -12837,8 +12811,6 @@ const handleVaultWithdraw = async () => {
                 </div>
               </div>
             </div>
-
-            {/* Base Token Input */}
             <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
               <div className="deposit-input-wrapper">
                 <input
@@ -12850,11 +12822,10 @@ const handleVaultWithdraw = async () => {
                 />
                 <div className="deposit-token-badge">
                   <img
-                    src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'}
-                    alt={selectedVaultForAction?.baseToken || 'Token'}
+                    src={tokendict[selectedVaultForAction?.baseAsset]?.image}
                     className="deposit-token-icon"
                   />
-                  <span>{selectedVaultForAction?.baseToken || 'BASE'}</span>
+                  <span>{tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
                 </div>
               </div>
               <div className="lp-deposit-balance-wrapper">
@@ -12864,18 +12835,18 @@ const handleVaultWithdraw = async () => {
                 <div className="deposit-balance">
                   <div className="deposit-balance-value">
                     <img src={walleticon} className="balance-wallet-icon" />
-                    {selectedVaultForAction?.baseTokenData ? formatDisplayValue(
-                      getTokenBalance(selectedVaultForAction.baseTokenData.address),
-                      Number(selectedVaultForAction.baseTokenData.decimals || 18)
-                    ) : '0.00'} {selectedVaultForAction?.baseToken || 'BASE'}
+                    {selectedVaultForAction?.baseAsset ? formatDisplayValue(
+                      tokenBalances[selectedVaultForAction?.baseAsset],
+                      Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
+                    ) : '0.00'} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
                   </div>
                   <button
                     className="vault-max-button"
                     onClick={() => {
-                      if (selectedVaultForAction?.baseTokenData) {
+                      if (selectedVaultForAction?.baseAsset) {
                         const maxAmount = formatDisplayValue(
-                          getTokenBalance(selectedVaultForAction.baseTokenData.address),
-                          Number(selectedVaultForAction.baseTokenData.decimals || 18)
+                          tokenBalances[selectedVaultForAction?.baseAsset],
+                          Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
                         ).replace(/,/g, '');
                         handleVaultDepositAmountChange('base', maxAmount);
                       }
@@ -12888,21 +12859,20 @@ const handleVaultWithdraw = async () => {
             </div>
           </div>
 
-          {/* Deposit Preview */}
           {depositPreview && (
             <div className="deposit-preview">
               <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Deposit Preview:</h5>
               <div className="preview-item">
                 <span>Shares to receive:</span>
-                <span>{formatDisplayValue(depositPreview.shares, 18)}</span>
+                <span>{formatDisplayValue(depositPreview.shares, 0)}</span>
               </div>
               <div className="preview-item">
                 <span>Quote amount:</span>
-                <span>{formatDisplayValue(depositPreview.amountQuote, Number(selectedVaultForAction?.quoteTokenData?.decimals || 18))} {selectedVaultForAction?.quoteToken}</span>
+                <span>{formatDisplayValue(depositPreview.amountQuote, Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
               </div>
               <div className="preview-item">
                 <span>Base amount:</span>
-                <span>{formatDisplayValue(depositPreview.amountBase, Number(selectedVaultForAction?.baseTokenData?.decimals || 18))} {selectedVaultForAction?.baseToken}</span>
+                <span>{formatDisplayValue(depositPreview.amountBase, Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
               </div>
             </div>
           )}
@@ -12989,35 +12959,32 @@ const handleVaultWithdraw = async () => {
                 <div className="deposit-token-badge">
                   <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
                     <img
-                      src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'}
-                      alt=""
+                      src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
                       className="lp-token-icon lp-token-icon-first"
                       style={{ width: '20px', height: '20px' }}
                     />
                     <img
-                      src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'}
-                      alt=""
+                      src={tokendict[selectedVaultForAction?.baseAsset]?.image}
                       className="lp-token-icon lp-token-icon-second"
                       style={{ width: '20px', height: '20px', left: '15px' }}
                     />
                   </div>
-                  <span>Shares</span>
                 </div>
               </div>
               <div className="lp-deposit-balance-wrapper">
                 <div className={`lp-deposit-usd-value ${withdrawExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                   {withdrawPreview ? `${(
-                    (Number(withdrawPreview.amountQuote) / 10 ** Number(selectedVaultForAction?.quoteTokenData?.decimals || 18)) +
-                    (Number(withdrawPreview.amountBase) / 10 ** Number(selectedVaultForAction?.baseTokenData?.decimals || 18))
+                    (Number(withdrawPreview.amountQuote) / 10 ** Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)) +
+                    (Number(withdrawPreview.amountBase) / 10 ** Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18))
                   ).toFixed(2)}` : '$0.00'}
                 </div>
                 <div className="deposit-balance">
                   <img src={walleticon} className="balance-wallet-icon" />
-                  Your Shares: {selectedVaultForAction?.userShares || '0.00'}
+                  Your Shares: {formatDisplayValue(BigInt(selectedVaultForAction.userShares), 0)}
                   <button
                     className="vault-max-button"
                     onClick={() => {
-                      handleWithdrawSharesChange(selectedVaultForAction?.userShares || '0');
+                      handleWithdrawSharesChange(selectedVaultForAction.userShares.toString());
                     }}
                   >
                     MAX
@@ -13026,36 +12993,33 @@ const handleVaultWithdraw = async () => {
               </div>
             </div>
 
-            {/* Withdrawal Preview */}
             {withdrawPreview && (
               <div className="withdraw-preview">
                 <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
                 <div className="withdraw-token-preview">
                   <div className="withdraw-token-item">
                     <img 
-                      src={selectedVaultForAction?.quoteTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.quoteToken)?.image || '/api/placeholder/24/24'} 
-                      alt="" 
+                      src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
                       className="withdraw-token-icon" 
                     />
                     <span>{selectedVaultForAction?.quoteToken}</span>
                     <span style={{ marginLeft: 'auto', color: '#fff' }}>
                       {formatDisplayValue(
                         withdrawPreview.amountQuote,
-                        Number(selectedVaultForAction?.quoteTokenData?.decimals || 18)
+                        Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
                       )}
                     </span>
                   </div>
                   <div className="withdraw-token-item">
                     <img 
-                      src={selectedVaultForAction?.baseTokenData?.image || Object.values(tokendict).find((t: any) => t.ticker === selectedVaultForAction?.baseToken)?.image || '/api/placeholder/24/24'} 
-                      alt="" 
+                      src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
                       className="withdraw-token-icon" 
                     />
                     <span>{selectedVaultForAction?.baseToken}</span>
                     <span style={{ marginLeft: 'auto', color: '#fff' }}>
                       {formatDisplayValue(
                         withdrawPreview.amountBase,
-                        Number(selectedVaultForAction?.baseTokenData?.decimals || 18)
+                        Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
                       )}
                     </span>
                   </div>

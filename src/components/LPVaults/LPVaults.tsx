@@ -7,6 +7,7 @@ import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
+import { TokenAbi } from '../../abis/TokenAbi';
 import { settings } from "../../settings";
 import walleticon from "../../assets/wallet_icon.png";
 import closebutton from "../../assets/close_button.svg";
@@ -344,10 +345,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     (async () => {
       try {
-        const [vaultDetails] = (await readContracts(config, {
+        const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
           contracts: [
-            { abi: CrystalVaultsAbi, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault] },
-          ],
+            { abi: CrystalVaultsAbi as any, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault] },
+            ...(address ? [{
+              abi: TokenAbi,
+              address: activeVault,
+              functionName: 'balanceOf',
+              args: [address as `0x${string}`],
+            }] : [])],
         })) as any[];
         if (vaultDetails?.status === "success") {
           const vaultDict = {
@@ -365,6 +371,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
             locked: vaultDetails.result[11],
             closed: vaultDetails.result[12],
             type: 'Spot',
+            userShares: 0n,
+          }
+          if (address) {
+            vaultDict.userShares = vaultUserBalance.result
           }
           setVaultList([vaultDict]);
         }
@@ -374,7 +384,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         setIsLoading(false); 
       }
     })();
-  }, [activeVault]);
+  }, [activeVault, address]);
 
   const handleCreateVault = async () => {
     if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset ||
@@ -556,78 +566,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
 
   const getTokenIcon = (tokenIdentifier: string) => {
-    if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
-      const lowerAddress = tokenIdentifier.toLowerCase();
-      let tokenByAddress = tokendict[lowerAddress];
-
-      if (!tokenByAddress) {
-        const foundEntry = Object.entries(tokendict).find(([key, value]) =>
-          key.toLowerCase() === lowerAddress
-        );
-        if (foundEntry) {
-          tokenByAddress = foundEntry[1];
-        }
-      }
-      if (tokenByAddress) {
-        return tokenByAddress.image;
-      }
-    }
-
-    const tokenByTicker = Object.values(tokendict).find((t: any) =>
-      t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
-    );
-    console.log('Found token by ticker:', tokenByTicker);
-    return tokenByTicker?.image || '/api/placeholder/24/24';
+    return tokendict[tokenIdentifier]?.image
   };
 
+  const getTokenName = (tokenIdentifier: string) => {
+    return tokendict[tokenIdentifier]?.name
+  };
 
-const getTokenName = (tokenIdentifier: string) => {
-  if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
-    const lowerAddress = tokenIdentifier.toLowerCase();
-    let tokenByAddress = tokendict[lowerAddress];
-
-    if (!tokenByAddress) {
-      const foundEntry = Object.entries(tokendict).find(([key, value]) =>
-        key.toLowerCase() === lowerAddress
-      );
-      if (foundEntry) {
-        tokenByAddress = foundEntry[1];
-      }
-    }
-    if (tokenByAddress) {
-      return tokenByAddress.name;
-    }
-  }
-
-  const tokenByTicker = Object.values(tokendict).find((t: any) =>
-    t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
-  );
-  return tokenByTicker?.name || tokenIdentifier;
-};
-
-const getTokenTicker = (tokenIdentifier: string) => {
- if (tokenIdentifier.startsWith('0x') && tokenIdentifier.length === 42) {
-    const lowerAddress = tokenIdentifier.toLowerCase();
-    let tokenByAddress = tokendict[lowerAddress];
-
-    if (!tokenByAddress) {
-      const foundEntry = Object.entries(tokendict).find(([key, value]) =>
-        key.toLowerCase() === lowerAddress
-      );
-      if (foundEntry) {
-        tokenByAddress = foundEntry[1];
-      }
-    }
-    if (tokenByAddress) {
-      return tokenByAddress.ticker;
-    }
-  }
-
-  const tokenByTicker = Object.values(tokendict).find((t: any) =>
-    t.ticker.toLowerCase() === tokenIdentifier.toLowerCase()
-  );
-  return tokenByTicker?.ticker || tokenIdentifier;
-};
+  const getTokenTicker = (tokenIdentifier: string) => {
+    return tokendict[tokenIdentifier]?.ticker
+  };
 
   const formatDisplayValue = (rawAmount: bigint, decimals = 18): string => {
     let amount = Number(rawAmount) / 10 ** decimals;
@@ -694,20 +642,6 @@ const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
         } else {
           setVaultBaseExceedsBalance(false);
         }
-      }
-    }
-  };
-
-  const handleWithdrawSharesChange = (value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setWithdrawShares(value);
-
-      if (value !== '' && selectedVaultForAction) {
-        const userSharesBalance = parseFloat(selectedVaultForAction.userShares || '0');
-        const enteredAmount = parseFloat(value);
-        setWithdrawExceedsBalance(enteredAmount > userSharesBalance);
-      } else {
-        setWithdrawExceedsBalance(false);
       }
     }
   };
@@ -1099,7 +1033,7 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                 <div className="col vault-type-col">Type</div>
                 <div className="col vault-tokens-col">Assets</div>
                 <div className="col vault-apy-col">TVL</div>
-                <div className="col vault-deposits-col">Max Shares</div>
+                <div className="col vault-deposits-col">Deposit Cap</div>
                 <div className="col vault-your-deposits-col">Your Shares</div>
                 <div className="col vault-age-col">Status</div>
                 <div className="col vault-actions-col">Snapshot</div>
@@ -1168,24 +1102,26 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                     <div className="col vault-tokens-col">
                       <div className="vault-tokens">
                         <div className="quote-token">
-                          <img src={getTokenIcon(vault.quoteAsset)} alt={vault.quoteAsset} className="vault-token-icon" />
+                          <img src={getTokenIcon(vault.quoteAsset)} className="vault-token-icon" />
                         </div>
                         <div className="base-token">
-                          <img src={getTokenIcon(vault.baseAsset)} alt={vault.baseAsset} className="vault-token-icon" />
+                          <img src={getTokenIcon(vault.baseAsset)} className="vault-token-icon" />
                         </div>
                       </div>
                     </div>
 
                     <div className="col vault-apy-col">
-                      <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 18)}</span>
+                      <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 0)}</span>
                     </div>
 
                     <div className="col vault-deposits-col">
-                      <span className="deposits-value">{formatDisplayValue(BigInt(vault.maxShares), 18)}</span>
+                      <span className="deposits-value">{BigInt(vault.maxShares) === 0n 
+    ? <span>&#8734;</span> 
+    : formatDisplayValue(BigInt(vault.maxShares), 0)}</span>
                     </div>
 
                     <div className="col vault-your-deposits-col">
-                      <span className="deposits-value">{vault.userShares}</span>
+                      <span className="deposits-value">{formatDisplayValue(BigInt(vault.userShares), 0)}</span>
                     </div>
 
                     <div className="col vault-age-col">
@@ -1268,15 +1204,17 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                 <div className="vault-strategy-metrics">
                   <div className="vault-metric">
                     <span className="vault-metric-label">Total Shares</span>
-                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</span>
+                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</span>
                   </div>
                   <div className="vault-metric">
-                    <span className="vault-metric-label">Max Shares</span>
-                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 18)}</span>
+                    <span className="vault-metric-label">Deposit Cap</span>
+                    <span className="vault-metric-value">{BigInt(selectedVaultStrategyData.maxShares) === 0n 
+    ? <span>&#8734;</span> 
+    : formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 0)}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Your Shares</span>
-                    <span className="vault-metric-value">{selectedVaultStrategyData.userShares || '0.00'}</span>
+                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Status</span>
@@ -1427,8 +1365,8 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                               <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.quoteAsset)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
@@ -1436,8 +1374,8 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                               <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.baseAsset)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 18)}</div>
-                            <div className="vault-holdings-col">{selectedVaultStrategyData.userShares || '0.00'}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</div>
                           </div>
                         </div>
                       </div>
