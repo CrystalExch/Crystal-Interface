@@ -421,6 +421,18 @@ const TokenRow = React.memo<{
     setPreviewPosition({ top, left, placement });
   }, []);
 
+
+
+
+
+
+
+
+
+
+
+
+  
   useEffect(() => {
     if (hoveredImage === token.id) {
       setPositionCalculated(false);

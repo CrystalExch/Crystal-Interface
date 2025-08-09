@@ -1168,7 +1168,7 @@ useEffect(() => {
               realtimeCallbackRef={realtimeCallbackRef}
             />
           </div>
-        <div className="meme-trades-container">
+<div className="meme-trades-container">
   <MemeTradesComponent
     tokenList={tokenList}
     trades={trades}
@@ -1182,6 +1182,8 @@ useEffect(() => {
     onMarketSelect={onMarketSelect}
     setSendTokenIn={setSendTokenIn}
     setpopup={setpopup}
+    holders={holders}
+    currentUserAddress={userAddr}
   />
 </div>
         </div>

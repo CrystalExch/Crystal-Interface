@@ -513,9 +513,10 @@ const deleteWallet = (address: string) => {
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
-
-  const getMainWalletBalance = () => {
+const getMainWalletBalance = () => {
+  const mainWalletAddress = originalAddress || address;
   const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+  
   if (ethToken && tokenBalances[ethToken.address]) {
     return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
   }
@@ -891,8 +892,6 @@ const deleteWallet = (address: string) => {
   const createPortfolioSubWallet = async () => {
     try {
       if (!signTypedDataAsync || !keccak256 || !Wallet) {
-        console.error('Required wallet functions not available');
-        alert('Wallet creation functionality not available');
         return;
       }
 
@@ -908,7 +907,7 @@ const deleteWallet = (address: string) => {
           },
           primaryType: 'createCrystalOneCT',
           message: {
-            version: 'Crystal v0.0.1 Testnet',
+            version: 'Crystal Testnet',
             account: BigInt(randomAccountNumber),
           }
         }
@@ -928,8 +927,6 @@ const deleteWallet = (address: string) => {
 
       showWalletCreated();
     } catch (error) {
-      console.error('Error creating portfolio subwallet:', error);
-      alert('Failed to create subwallet. Please try again.');
     }
   };
 
@@ -1085,7 +1082,7 @@ const deleteWallet = (address: string) => {
 
 const handleDepositFromEOA = async () => {
   if (!depositAmount || !depositTargetWallet) {
-          return;
+    return;
   }
 
   try {
@@ -1099,8 +1096,14 @@ const handleDepositFromEOA = async () => {
     const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
     console.log('Amount in Wei:', ethAmount.toString());
 
-    // Send the transaction
-    console.log('Sending transaction...');
+    // Get the main wallet balance to verify we have enough funds
+    const mainWalletBalance = getMainWalletBalance();
+    if (parseFloat(depositAmount) > mainWalletBalance) {
+      throw new Error(`Insufficient balance in main wallet. Available: ${mainWalletBalance.toFixed(4)} MON`);
+    }
+
+    // Send the transaction from the main wallet (the one that signs transactions)
+    console.log('Sending transaction from main wallet...');
     const result = await sendUserOperationAsync({
       uo: {
         target: depositTargetWallet,
@@ -1120,16 +1123,15 @@ const handleDepositFromEOA = async () => {
       hash = result.transactionHash;
     } else {
       console.log('Unexpected result format:', result);
-      hash = result; // Try using the result directly
+      hash = result;
     }
 
     console.log('Transaction hash:', hash);
 
-    // Only wait for receipt if we have a hash and waitForTxReceipt function
+    // Wait for transaction confirmation
     if (hash && waitForTxReceipt) {
       console.log('Waiting for transaction receipt...');
       try {
-        // Add timeout to prevent infinite waiting
         const receiptPromise = waitForTxReceipt({ hash });
         const timeoutPromise = new Promise((_, reject) => 
           setTimeout(() => reject(new Error('Transaction timeout')), 30000)
@@ -1139,11 +1141,10 @@ const handleDepositFromEOA = async () => {
         console.log('Transaction confirmed');
       } catch (receiptError) {
         console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
-        // Don't throw here - the transaction might still be successful
       }
     }
 
-    // Refresh balances - don't let these block the success flow
+    // Refresh balances
     console.log('Refreshing balances...');
     try {
       await refreshWalletBalance(depositTargetWallet);
@@ -1153,17 +1154,19 @@ const handleDepositFromEOA = async () => {
     }
 
     try {
+      // Refresh main wallet balance
       refetch();
       console.log('Main account data refreshed');
     } catch (refetchError) {
       console.warn('Failed to refresh main account:', refetchError);
     }
+    
     closeDepositModal();
     showDepositSuccess(depositAmount, depositTargetWallet);
 
   } catch (error) {
     console.error('Deposit failed with error:', error);
-    
+    alert(`Deposit failed: ${error.message || 'Please try again.'}`);
   } finally {
     console.log('Setting isDepositing to false');
     setIsDepositing(false);

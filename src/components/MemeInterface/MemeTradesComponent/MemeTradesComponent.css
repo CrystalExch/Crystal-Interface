@@ -144,12 +144,28 @@
   font-size: 0.8rem;
 }
 
+.meme-trade-trader.current-user {
+  color: rgb(209, 209, 250);
+  font-weight: 600;
+  cursor: default;
+}
+
+.meme-trade-trader.clickable {
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.meme-trade-trader.clickable:hover {
+  color: #d8dcff;
+  text-decoration: underline;
+}
+
 .meme-trade-age-container {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 2px;
 }
 
 .meme-trade-age {
@@ -194,6 +210,16 @@
   color: #dc143c;
 }
 
+.meme-top-holder-icon {
+  color: #ffd97a;
+  opacity: 0.9;
+  transition: opacity 0.2s ease;
+}
+
+.meme-top-holder-icon:hover {
+  opacity: 1;
+}
+
 .meme-header-switch-icon{
   width: 14px;
   height: 14px;
@@ -209,17 +235,6 @@
 
 .meme-trades-container {
   position: relative;
-}
-
-/* Add clickable cursor for trader elements */
-.meme-trade-trader.clickable {
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.meme-trade-trader.clickable:hover {
-  color: #d8dcff;
-  text-decoration: underline;
 }
 
 .pause-indicator {

@@ -1620,9 +1620,6 @@
         align-items:center;
         text-align:center
     }
-    .vault-tabs{
-        margin-bottom:1rem
-    }
     .vault-form-title{
         font-size:1rem
     }
@@ -1636,6 +1633,38 @@
 }
 
 
+@media(max-width:650px){
+    .vaults-filters{
+        flex-direction:column;
+        gap: 0.5rem;
+    }
+    .vault-tabs{
+        width: 100%;
+    }
+    .filter-controls{
+        width: 100%;
+        gap: 0.5rem;
+    }
+    .vaults-search-container{
+        width: 100%;
+        min-width: 0 !important;
+    }
+}
+
+
+@media(max-width: 400px) {
+    .filter-controls{
+        flex-direction: column;
+        gap: 0.5rem !important;
+    }
+    .filter-button{
+        width: 100%;
+        text-align: center;
+    }
+    .type-filters{
+        width: 100%;
+    }
+}
 .vaults-page-container{
     display:flex;
     flex-direction:column;
@@ -2525,17 +2554,9 @@
     border-radius:4px;
     font-size:.7rem
 }
-@media (max-width:1024px){
-    .vaults-filters{
-        flex-direction:column;
-        gap:1rem;
-        align-items:stretch
-    }
+@media (max-width:1020px){
     .filter-controls{
         justify-content:space-between
-    }
-    .vaults-search-container{
-        min-width:180px;
     }
     .vault-strategy-sticky-bar{
         flex-direction:column;
@@ -2588,10 +2609,6 @@
     .vaults-filters{
         padding:0
     }
-    .type-filters{
-        justify-content:center;
-        flex-wrap:wrap
-    }
     .search-container{
         width:100%;
         min-width:auto
@@ -2602,7 +2619,7 @@
     .vault-row{
         flex-direction:column;
         align-items:stretch;
-        gap:1rem;
+        gap:.25rem;
         padding:1.5rem 1rem
     }
     .col{
@@ -4066,13 +4083,7 @@
 
 @media (max-width: 450px) {
     .vaults-header{
-        flex-direction:column;
-        gap:1rem;
-        align-items: center;
-    }
-    .filter-controls{
-        flex-direction:column;
-        gap:.75rem
+        margin-bottom: 1rem;
     }
 }
 
@@ -4257,7 +4268,6 @@
   }
 }
 
-/* Base vault loading row */
 .vault-row.vault-loading {
   pointer-events: none;
   cursor: default;
