@@ -48,7 +48,8 @@ interface HeaderProps {
   isChartLoading?: boolean;
   tradesloading?: boolean;
   tradesByMarket: any;
-   style?: React.CSSProperties; 
+  style?: React.CSSProperties; 
+  currentWalletIcon?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -73,6 +74,7 @@ const Header: React.FC<HeaderProps> = ({
   marketsData,
   tradesByMarket,
   style, 
+  currentWalletIcon,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -352,7 +354,10 @@ const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
                 t('connectWallet')
               ) : (
                 <span className="transparent-button-container">
-                  <img src={walleticon} className="wallet-icon" />
+<img 
+  src={currentWalletIcon || walleticon} 
+  className="wallet-icon" 
+/>
                   <span className="header-wallet-address">{`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}</span>
                 </span>
               )}

@@ -28,10 +28,10 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
 }) => {
     const [totalAccountValue, setTotalAccountValue] = useState<number | null>(null);
     const [chartDays, setChartDays] = useState(7);
-    const [isBlurred, setIsBlurred] = useState(false);
+    const [isBlurred, _setIsBlurred] = useState(false);
     const [portfolioColorValue, setPortfolioColorValue] = useState('#00b894');
     const [percentage, setPercentage] = useState(0);
-    const [sortConfig, setSortConfig] = useState({
+    const [sortConfig, _setSortConfig] = useState({
         column: 'balance',
         direction: 'desc'
     });
@@ -136,20 +136,6 @@ const TraderPortfolioPopup: React.FC<TraderPortfolioPopupProps> = ({
         return () => document.removeEventListener('keydown', handleEscape);
     }, [onClose]);
 
-    const getTimeRangeText = (days: number) => {
-        switch (days) {
-            case 1:
-                return 'day';
-            case 7:
-                return 'week';
-            case 14:
-                return '2 weeks';
-            case 30:
-                return 'month';
-            default:
-                return 'week';
-        }
-    };
 
     // Loading skeleton components
     const ValueSkeleton = () => (

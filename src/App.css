@@ -631,6 +631,7 @@ html {
 .port-popup-wallet-icon {
   height: 18px;
   width: 18px;
+  border-radius: 4px;
 }
 
 .slippage-input-container,
@@ -3803,6 +3804,10 @@ body:has(.popup-blur) {
   font-size: 1rem !important;
 }
 
+
+.bg-btn-secondary{
+  background: none !important;
+}
 .hover\:bg-btn-secondary:hover {
   background: transparent !important;
 }

@@ -4,12 +4,10 @@ import './TokenIcons.css';
 
 interface TokenIconsProps {
   inIcon: string;
-  outIcon: string;
 }
 
-const TokenIcons: React.FC<TokenIconsProps> = ({ inIcon, outIcon }) => {
+const TokenIcons: React.FC<TokenIconsProps> = ({ inIcon }) => {
   const [inLoaded, setInLoaded] = useState(false);
-  const [outLoaded, setOutLoaded] = useState(false);
 
   return (
     <div className="token-icons">

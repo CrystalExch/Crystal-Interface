@@ -410,6 +410,67 @@ function App() {
       }
     }
   }, []);
+const getCurrentConnector = () => {
+  const connection = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1];
+  return connection?.connector;
+};
+const getConnectorName = () => {
+  const connector = getCurrentConnector();
+  return connector?.name || 'Unknown';
+};
+
+const getWalletIcon = () => {
+  const connectorName = getConnectorName();
+  
+  switch (connectorName) {
+    case 'MetaMask':
+      return walletmetamask;
+    case 'Coinbase Wallet':
+      return walletcoinbase;
+    case 'WalletConnect':
+      return walletconnect;
+    case 'Safe':
+      return walletsafe;
+    case 'Rabby Wallet':
+    case 'Rabby':
+      return walletrabby;
+    case 'Backpack':
+      return walletbackpack;
+    case 'Phantom':
+      return walletphantom;
+    case 'Tomo':
+      return wallettomo;
+    case 'HaHa Wallet':
+      return wallethaha;
+    default:
+      return walletinjected; 
+  }
+};
+  useEffect(() => {
+  if (connected) {
+    const connector = getCurrentConnector();
+    console.log('Connector details:', {
+      name: connector?.name,
+      type: connector?.type,
+      id: connector?.id
+    });
+  }
+}, [connected]);
+
+const [withdrawPercentage, setWithdrawPercentage] = useState('');
+const [currentWalletType, setCurrentWalletType] = useState('');
+const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
+
+useEffect(() => {
+  if (connected) {
+    const connectorName = getConnectorName();
+    setCurrentWalletType(connectorName);
+    setCurrentWalletIcon(getWalletIcon());
+  } else {
+    setCurrentWalletType('');
+    setCurrentWalletIcon(walleticon);
+  }
+}, [connected, alchemyconfig]);
   const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
@@ -693,6 +754,32 @@ const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
 const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
 const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
+const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
+  if (!percentage || !userShares) return '0';
+  const percentageDecimal = parseFloat(percentage) / 100;
+  const sharesToWithdraw = BigInt(Math.floor(Number(userShares) * percentageDecimal));
+  return sharesToWithdraw.toString();
+};
+
+const handleWithdrawPercentageChange = (value: string) => {
+  const cleanValue = value.replace(/[^\d.]/g, '');
+  
+  const numericValue = parseFloat(cleanValue);
+  if (numericValue > 100) {
+    setWithdrawPercentage('100');
+  } else {
+    setWithdrawPercentage(cleanValue);
+  }
+  
+  setWithdrawExceedsBalance(false);
+  
+  const sharesToWithdraw = calculateSharesFromPercentage(cleanValue, selectedVaultForAction?.userShares);
+  const userSharesBalance = BigInt(selectedVaultForAction?.userShares || 0);
+  
+  if (BigInt(sharesToWithdraw) > userSharesBalance) {
+    setWithdrawExceedsBalance(true);
+  }
+};
 
 const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
   if (value === '' || /^\d*\.?\d*$/.test(value)) {
@@ -9568,7 +9655,7 @@ const handleVaultWithdraw = async () => {
                             className={`wallet-popup-address`}
                           >
                             <img
-                              src={walleticon}
+                              src={getWalletIcon()}
                               className="port-popup-wallet-icon"
                             />
                             {`${address.slice(0, 6)}...${address.slice(-4)}`}
@@ -12936,7 +13023,7 @@ const handleVaultWithdraw = async () => {
           onClick={() => {
             setpopup(0);
             setSelectedVaultForAction(null);
-            setWithdrawShares('');
+            setWithdrawPercentage('');
             setWithdrawExceedsBalance(false);
             setWithdrawPreview(null);
           }}
@@ -12948,92 +13035,171 @@ const handleVaultWithdraw = async () => {
       <div className="modal-body">
         <div className="vault-withdraw-form">
           <div className="withdraw-section">
-            {/* Shares Input */}
-            <div className={`deposit-input-group ${withdrawExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-              <div className="deposit-input-wrapper">
-                <input
-                  type="text"
-                  placeholder="0.0"
-                  className={`deposit-amount-input ${withdrawExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                  value={withdrawShares}
-                  onChange={(e) => handleWithdrawSharesChange(e.target.value)}
-                />
-                <div className="deposit-token-badge">
-                  <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
-                    <img
-                      src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
-                      className="lp-token-icon lp-token-icon-first"
-                      style={{ width: '20px', height: '20px' }}
-                    />
-                    <img
-                      src={tokendict[selectedVaultForAction?.baseAsset]?.image}
-                      className="lp-token-icon lp-token-icon-second"
-                      style={{ width: '20px', height: '20px', left: '15px' }}
-                    />
-                  </div>
+            <div className="withdraw-amount-section">
+              <h4 className="withdraw-section-title">Amount to withdraw</h4>
+              
+              <div className="withdraw-percentage-input-container">
+                <div className="withdraw-percentage-display">
+                  <input
+                    type="text"
+                    placeholder="0"
+                    className="withdraw-percentage-input"
+                    value={withdrawPercentage}
+                    onChange={(e) => handleWithdrawPercentageChange(e.target.value)}
+                  />
+                  <span className="withdraw-percentage-symbol">%</span>
                 </div>
               </div>
-              <div className="lp-deposit-balance-wrapper">
-                <div className={`lp-deposit-usd-value ${withdrawExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                  {withdrawPreview ? `${(
-                    (Number(withdrawPreview.amountQuote) / 10 ** Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)) +
-                    (Number(withdrawPreview.amountBase) / 10 ** Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18))
-                  ).toFixed(2)}` : '$0.00'}
+
+              <div className="percentage-buttons">
+                <button
+                  className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
+                  onClick={() => handleWithdrawPercentageChange('25')}
+                >
+                  25%
+                </button>
+                <button
+                  className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
+                  onClick={() => handleWithdrawPercentageChange('50')}
+                >
+                  50%
+                </button>
+                <button
+                  className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
+                  onClick={() => handleWithdrawPercentageChange('75')}
+                >
+                  75%
+                </button>
+                <button
+                  className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
+                  onClick={() => handleWithdrawPercentageChange('100')}
+                >
+                  Max
+                </button>
+              </div>
+
+              {/* Position Overview */}
+              <div className="position-overview">
+                <div className="position-header">
+                  <div className="position-pair">
+                    <div className="lp-token-pair-icons">
+                      <img
+                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
+                        className="lp-token-icon lp-token-icon-first"
+                      />
+                      <img
+                        src={tokendict[selectedVaultForAction?.baseAsset]?.image}
+                        className="lp-token-icon lp-token-icon-second"
+                      />
+                    </div>
+                    <span className="pair-name">
+                      {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}/
+                      {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                    </span>
+                  </div>
+                  <div className="position-balance">
+                    Your Position
+                  </div>
                 </div>
-                <div className="deposit-balance">
-                  <img src={walleticon} className="balance-wallet-icon" />
-                  Your Shares: {formatDisplayValue(BigInt(selectedVaultForAction.userShares), 0)}
-                  <button
-                    className="vault-max-button"
-                    onClick={() => {
-                      handleWithdrawSharesChange(selectedVaultForAction.userShares.toString());
-                    }}
-                  >
-                    MAX
-                  </button>
+
+                {/* Token Positions */}
+                <div className="token-positions">
+                  <div className="token-position">
+                    <div className="token-info">
+                      <img 
+                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
+                        className="token-position-icon" 
+                      />
+                      <span className="token-symbol">
+                        {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                      </span>
+                    </div>
+                    <div className="token-amount">
+                      {(() => {
+                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                        const userPercentage = userSharesNumber / totalSharesNumber;
+                        const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                        return estimatedQuoteAmount.toFixed(4);
+                      })()}
+                    </div>
+                  </div>
+                  
+                  <div className="token-position">
+                    <div className="token-info">
+                      <img 
+                        src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
+                        className="token-position-icon" 
+                      />
+                      <span className="token-symbol">
+                        {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                      </span>
+                    </div>
+                    <div className="token-amount">
+                      {(() => {
+                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                        const userPercentage = userSharesNumber / totalSharesNumber;
+                        const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                        return estimatedBaseAmount.toFixed(4);
+                      })()}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-
-            {withdrawPreview && (
+{/* 
+            {withdrawPercentage && parseFloat(withdrawPercentage) > 0 && (
               <div className="withdraw-preview">
-                <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
+                <h5 className="preview-title">You will receive</h5>
                 <div className="withdraw-token-preview">
                   <div className="withdraw-token-item">
-                    <img 
-                      src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
-                      className="withdraw-token-icon" 
-                    />
-                    <span>{selectedVaultForAction?.quoteToken}</span>
-                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                      {formatDisplayValue(
-                        withdrawPreview.amountQuote,
-                        Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
-                      )}
+                    <div className="token-info">
+                      <img 
+                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
+                        className="withdraw-token-icon" 
+                      />
+                      <span className="token-symbol">
+                        {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                      </span>
+                    </div>
+                    <span className="token-amount">
+                      {(() => {
+                        const percentage = parseFloat(withdrawPercentage) / 100;
+                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                        const userPercentage = userSharesNumber / totalSharesNumber;
+                        const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                        return (estimatedQuoteAmount * percentage).toFixed(4);
+                      })()}
                     </span>
                   </div>
                   <div className="withdraw-token-item">
-                    <img 
-                      src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
-                      className="withdraw-token-icon" 
-                    />
-                    <span>{selectedVaultForAction?.baseToken}</span>
-                    <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                      {formatDisplayValue(
-                        withdrawPreview.amountBase,
-                        Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
-                      )}
+                    <div className="token-info">
+                      <img 
+                        src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
+                        className="withdraw-token-icon" 
+                      />
+                      <span className="token-symbol">
+                        {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                      </span>
+                    </div>
+                    <span className="token-amount">
+                      {(() => {
+                        const percentage = parseFloat(withdrawPercentage) / 100;
+                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                        const userPercentage = userSharesNumber / totalSharesNumber;
+                        const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                        return (estimatedBaseAmount * percentage).toFixed(4);
+                      })()}
                     </span>
                   </div>
                 </div>
               </div>
-            )}
+            )} */}
 
             <div className="withdraw-summary">
-              <div className="deposit-summary-row">
-                <span>Shares to withdraw:</span>
-                <span>{withdrawShares || '0.00'}</span>
-              </div>
               <div className="deposit-summary-row">
                 <span>Vault Status:</span>
                 <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
@@ -20641,6 +20807,7 @@ const handleVaultWithdraw = async () => {
               marketsData={sortedMarkets}
               tradesloading={tradesloading}
               tradesByMarket={tradesByMarket}
+               currentWalletIcon={currentWalletIcon} 
               // style={getHeaderStyle()}
             />
           </div>
@@ -20814,17 +20981,13 @@ const handleVaultWithdraw = async () => {
       }}
       setChain={handleSetChain}
       address={address}
-      // Add wallet-related props
       subWallets={subWallets}
       walletTokenBalances={walletTokenBalances}
       activeWalletPrivateKey={oneCTSigner}
       setOneCTSigner={setOneCTSigner}
       refetch={refetch}
       isBlurred={isBlurred}
-      // Add wallet balance refresh functions for live updates
-      refreshWalletBalance={refreshWalletBalance}
       forceRefreshAllWallets={forceRefreshAllWallets}
-      // Add missing props that MemeInterface needs
       tradesByMarket={tradesByMarket}
       markets={markets}
       tokendict={tokendict}
@@ -20919,6 +21082,7 @@ const handleVaultWithdraw = async () => {
         signTypedDataAsync={signTypedDataAsync}
         keccak256={keccak256}
         Wallet={Wallet}
+        refreshWalletBalance={refreshWalletBalance}
         activeWalletPrivateKey={oneCTSigner} setShowRefModal={undefined}      />
     }
   />

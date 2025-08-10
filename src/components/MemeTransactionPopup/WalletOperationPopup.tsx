@@ -7,7 +7,6 @@ type Variant = 'success' | 'error' | 'info';
 
 interface WalletOperationPopupProps {
   isVisible: boolean;
-  /** semantic operation type (not used for styling, but keep for future) */
   type?: 'distribution' | 'deposit' | 'transfer' | 'send' | 'import' | 'create';
   title: string;
   subtitle?: string;
@@ -24,14 +23,8 @@ interface WalletOperationPopupProps {
 
 const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   isVisible,
-  type = 'transfer',
   title,
   subtitle,
-  amount,
-  amountUnit = 'MON',
-  sourceWallet,
-  destinationWallet,
-  walletCount,
   onClose,
   autoCloseDelay = 4000,
   variant = 'info',

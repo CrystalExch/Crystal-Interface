@@ -1,34 +1,15 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X, ExternalLink } from 'lucide-react';
-import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
+import { ChevronDown, ChevronLeft, Plus, Search, X, ExternalLink } from 'lucide-react';
+import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { readContracts } from '@wagmi/core';
-import { encodeFunctionData, decodeFunctionResult } from "viem";
-import { MaxUint256 } from "ethers";
-import { useSharedContext } from '../../contexts/SharedContext';
-import { fetchLatestPrice } from '../../utils/getPrice.ts';
+import { encodeFunctionData } from "viem";
 import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
 import { TokenAbi } from '../../abis/TokenAbi';
 import { settings } from "../../settings";
-import walleticon from "../../assets/wallet_icon.png";
-import closebutton from "../../assets/close_button.svg";
 import { config } from '../../wagmi';
 import './LPVaults.css';
-
-interface VaultData {
-  vault: string;
-  quoteAsset: string;
-  baseAsset: string;
-  owner: string;
-  name: string;
-  desc: string;
-  social1: string;
-  social2: string;
-  totalShares: bigint;
-  maxShares: bigint;
-  lockup: number;
-  locked: boolean;
-  closed: boolean;
-}
+import { createPortal } from 'react-dom';
+import './LPVaults.css'
 
 interface VaultStrategy {
   id: string;
@@ -103,7 +84,7 @@ interface VaultSnapshotProps {
   className?: string;
 }
 
-const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, performance, className = '' }) => {
+const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }) => {
   const generateMockPerformance = (trend = 'up', volatility = 0.5): { day: number; value: number }[] => {
     const data: { day: number; value: number }[] = [];
     let value = 100;
@@ -275,13 +256,105 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
   );
 };
 
+interface VaultManagementDropdownProps {
+  onAction: (action: string) => void;
+  show: boolean;
+  onToggle: (show: boolean) => void;
+}
+
+const VaultManagementDropdown: React.FC<VaultManagementDropdownProps> = ({ onAction, show, onToggle }) => {
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
+
+  useEffect(() => {
+    if (show && triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      setDropdownPosition({
+        top: rect.bottom + window.scrollY + 8,
+        left: rect.right + window.scrollX - 200
+      });
+    }
+  }, [show]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (show && triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
+        const dropdownElement = document.querySelector('.vault-management-menu-portal');
+        if (!dropdownElement?.contains(event.target as Node)) {
+          onToggle(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [show, onToggle]);
+
+  const handleAction = (action: string) => {
+    onAction(action);
+    onToggle(false);
+  };
+
+  return (
+    <>
+      <button 
+        ref={triggerRef}
+        className="vault-management-trigger"
+        onClick={() => onToggle(!show)}
+      >
+        Vault Actions
+        <ChevronDown size={14} />
+      </button>
+      
+      {show && createPortal(
+        <div 
+          className="vault-management-menu-portal"
+          style={{
+            position: 'absolute',
+            top: dropdownPosition.top,
+            left: dropdownPosition.left,
+          }}
+        >
+          <button 
+            className="vault-management-option"
+            onClick={() => handleAction('trade')}
+          >
+            Trade for Vault
+          </button>
+          <button 
+            className="vault-management-option"
+            onClick={() => handleAction('disable-deposits')}
+          >
+            Disable Deposits
+          </button>
+          <button 
+            className="vault-management-option"
+            onClick={() => handleAction('auto-close')}
+          >
+            Enable Auto-Close on Withdraw
+          </button>
+          <button 
+            className="vault-management-option"
+            onClick={() => handleAction('distribute')}
+          >
+            Distribute
+          </button>
+          <button 
+            className="vault-management-option vault-close-option"
+            onClick={() => handleAction('close')}
+          >
+            Close Vault
+          </button>
+        </div>,
+        document.body
+      )}
+    </>
+  );
+};
+
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
-  onSelectToken,
-  setOnSelectTokenCallback,
   tokendict,
-  tradesByMarket,
-  markets,
   tokenBalances,
   currentRoute = '/earn/vaults',
   onRouteChange,
@@ -289,14 +362,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   account,
   selectedVaultForAction,
   setSelectedVaultForAction,
-  vaultDepositAmount,
-  setVaultDepositAmount,
-  vaultWithdrawAmount,
-  setVaultWithdrawAmount,
   isVaultDepositSigning,
   setIsVaultDepositSigning,
-  isVaultWithdrawSigning,
-  setIsVaultWithdrawSigning,
   sendUserOperationAsync,
   waitForTxReceipt,
   setChain,
@@ -308,22 +375,23 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, setActiveVault] = useState('0x6A6a20102070A58ac8bC21a12B29832CEe2a638e' as `0x${string}`);
+  const [activeVault, _setActiveVault] = useState('0x6A6a20102070A58ac8bC21a12B29832CEe2a638e' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true); 
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
+  const [showManagementMenu, setShowManagementMenu] = useState(false);
+  const [vaultDepositAmounts, _setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
     quote: '',
     base: ''
   });
-  const [vaultQuoteExceedsBalance, setVaultQuoteExceedsBalance] = useState(false);
-  const [vaultBaseExceedsBalance, setVaultBaseExceedsBalance] = useState(false);
-  const [withdrawShares, setWithdrawShares] = useState('');
-  const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
-  const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
-  const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
+  const [_vaultQuoteExceedsBalance, _setVaultQuoteExceedsBalance] = useState(false);
+  const [_vaultBaseExceedsBalance, _setVaultBaseExceedsBalance] = useState(false);
+  const [withdrawShares, _setWithdrawShares] = useState('');
+  const [_withdrawExceedsBalance, _setWithdrawExceedsBalance] = useState(false);
+  const [_depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
+  const [_withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'balances' | 'positions' | 'trades' | 'deposits' | 'withdrawals' | 'depositors'>('balances');
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
@@ -401,11 +469,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     try {
       setIsVaultDepositSigning(true);
 
-
       if (!createForm.quoteAsset.startsWith('0x') || !createForm.baseAsset.startsWith('0x')) {
         throw new Error('Invalid token addresses. Please provide valid contract addresses.');
       }
-
 
       const quoteAssetData = Object.values(tokendict).find((t: any) =>
         t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
@@ -423,7 +489,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
       const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
       const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
-
 
       const quoteBalance = getTokenBalance(createForm.quoteAsset);
       const baseBalance = getTokenBalance(createForm.baseAsset);
@@ -564,7 +629,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
-
   const getTokenIcon = (tokenIdentifier: string) => {
     return tokendict[tokenIdentifier]?.image
   };
@@ -591,16 +655,28 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const getTokenBalance = (tokenAddress: string): bigint => {
     return tokenBalances[tokenAddress] || 0n;
   };
-const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
-  const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
-  const myVaultsMatch = activeVaultTab === 'all' ||
-    (activeVaultTab === 'my-vaults' && address && vault.owner.toLowerCase() === address.toLowerCase());
-  const searchMatch = searchQuery === '' ||
-    vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
 
-  return typeMatch && myVaultsMatch && searchMatch;
-});
+  const calculateTVL = (vault: any): string => {
+    const tvl = vault.totalShares;
+    return tvl;
+  };
+
+  const calculateUserPositionValue = (vault: any): string => {
+    const positionValue = vault.userShares;
+    return positionValue;
+  };
+
+  const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
+    const typeMatch = vaultFilter === 'All' || vault.type === vaultFilter;
+    const myVaultsMatch = activeVaultTab === 'all' ||
+      (activeVaultTab === 'my-vaults' && address && vault.owner.toLowerCase() === address.toLowerCase());
+    const searchMatch = searchQuery === '' ||
+      vault.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vault.owner.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return typeMatch && myVaultsMatch && searchMatch;
+  });
+
   const showVaultStrategyDetail = (vaultAddress: string) => {
     setSelectedVaultStrategy(vaultAddress);
     setActiveVaultStrategyTab('balances');
@@ -609,40 +685,34 @@ const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
 
   const backToList = () => {
     setSelectedVaultStrategy(null);
+    setShowManagementMenu(false);
     onRouteChange?.('/earn/vaults');
   };
 
   const selectedVaultStrategyData = selectedVaultStrategy ?
     filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
 
-  const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setVaultDepositAmounts(prev => ({
-        ...prev,
-        [type]: value
-      }));
-
-      if (value !== '' && selectedVaultForAction) {
-        const tokenData = type === 'quote' ? selectedVaultForAction.quoteAssetData : selectedVaultForAction.baseAssetData;
-        if (tokenData) {
-          const userBalance = getTokenBalance(tokenData.address);
-          const tokenDecimals = Number(tokenData.decimals || 18);
-          const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
-          const enteredAmount = parseFloat(value);
-
-          if (type === 'quote') {
-            setVaultQuoteExceedsBalance(enteredAmount > maxAllowedAmount);
-          } else {
-            setVaultBaseExceedsBalance(enteredAmount > maxAllowedAmount);
-          }
+  const handleVaultManagement = (action: string) => {
+    setShowManagementMenu(false);
+    
+    switch (action) {
+      case 'trade':
+        console.log('Trade for vault');
+        break;
+      case 'disable-deposits':
+        console.log('Disable deposits');
+        break;
+      case 'auto-close':
+        console.log('Enable auto-close');
+        break;
+      case 'distribute':
+        console.log('Distribute');
+        break;
+      case 'close':
+        if (confirm('Are you sure you want to close this vault? This action cannot be undone.')) {
+          console.log('Close vault');
         }
-      } else {
-        if (type === 'quote') {
-          setVaultQuoteExceedsBalance(false);
-        } else {
-          setVaultBaseExceedsBalance(false);
-        }
-      }
+        break;
     }
   };
 
@@ -654,12 +724,6 @@ const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
 
     const previewDeposit = async () => {
       try {
-        const quoteDecimals = Number(selectedVaultForAction.quoteAssetData?.decimals || 18);
-        const baseDecimals = Number(selectedVaultForAction.baseAssetData?.decimals || 18);
-
-        const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
-        const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
-
       } catch (error) {
         console.error('Error previewing deposit:', error);
         setDepositPreview(null);
@@ -678,7 +742,6 @@ const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
 
     const previewWithdrawal = async () => {
       try {
-        const shares = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
 
       } catch (error) {
         console.error('Error previewing withdrawal:', error);
@@ -690,202 +753,24 @@ const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
     return () => clearTimeout(timeoutId);
   }, [withdrawShares, selectedVaultForAction, crystalVaultsAddress]);
 
-  const handleVaultDeposit = async () => {
-    if (!selectedVaultForAction || !account.connected || !depositPreview) return;
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain();
+  const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
+    if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
       return;
     }
 
-    try {
-      setIsVaultDepositSigning(true);
+    const availableTabs = ['balances', 'deposits', 'withdrawals', 'depositors'];
+    const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
 
-      const quoteAssetAddress = selectedVaultForAction.quoteAssetData?.address;
-      const baseAssetAddress = selectedVaultForAction.baseAssetData?.address;
-
-      if (!quoteAssetAddress || !baseAssetAddress) {
-        throw new Error('Token addresses not found');
+    if (activeTabIndex !== -1) {
+      const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
+      if (activeTabElement && activeTabElement.parentElement) {
+        const indicator = vaultStrategyIndicatorRef.current;
+        indicator.style.width = `${activeTabElement.offsetWidth}px`;
+        indicator.style.left = `${activeTabElement.offsetLeft}px`;
       }
-
-      const quoteDecimals = Number(selectedVaultForAction.quoteAssetData?.decimals || 18);
-      const baseDecimals = Number(selectedVaultForAction.baseAssetData?.decimals || 18);
-
-      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
-      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
-
-      const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
-      const amountBaseMin = (amountBaseDesired * 95n) / 100n;
-
-      const quoteBalance = getTokenBalance(quoteAssetAddress);
-      const baseBalance = getTokenBalance(baseAssetAddress);
-
-      if (quoteBalance < amountQuoteDesired) {
-        throw new Error(`Insufficient ${selectedVaultForAction.quoteAsset} balance`);
-      }
-
-      if (baseBalance < amountBaseDesired) {
-        throw new Error(`Insufficient ${selectedVaultForAction.baseAsset} balance`);
-      }
-
-      if (quoteAssetAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
-        const approveQuoteUo = {
-          target: quoteAssetAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: [{
-              inputs: [
-                { name: "spender", type: "address" },
-                { name: "amount", type: "uint256" }
-              ],
-              name: "approve",
-              outputs: [{ name: "", type: "bool" }],
-              stateMutability: "nonpayable",
-              type: "function",
-            }],
-            functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
-          }),
-          value: 0n,
-        };
-        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-        await waitForTxReceipt(approveQuoteOp.hash);
-      }
-
-      if (baseAssetAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
-        const approveBaseUo = {
-          target: baseAssetAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: [{
-              inputs: [
-                { name: "spender", type: "address" },
-                { name: "amount", type: "uint256" }
-              ],
-              name: "approve",
-              outputs: [{ name: "", type: "bool" }],
-              stateMutability: "nonpayable",
-              type: "function",
-            }],
-            functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
-          }),
-          value: 0n,
-        };
-        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-        await waitForTxReceipt(approveBaseOp.hash);
-      }
-
-      const ethValue =
-        quoteAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
-          baseAssetAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
-
-      const depositUo = {
-        target: crystalVaultsAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "deposit",
-          args: [
-            selectedVaultForAction.address as `0x${string}`,
-            amountQuoteDesired,
-            amountBaseDesired,
-            amountQuoteMin,
-            amountBaseMin,
-          ],
-        }),
-        value: ethValue,
-      };
-
-      const depositOp = await sendUserOperationAsync({ uo: depositUo });
-      await waitForTxReceipt(depositOp.hash);
-
-      setVaultDepositAmounts({ quote: '', base: '' });
-      setVaultQuoteExceedsBalance(false);
-      setVaultBaseExceedsBalance(false);
-      setDepositPreview(null);
-
-      refetch?.();
-
-      setpopup(0);
-      setSelectedVaultForAction(null);
-
-    } catch (e: any) {
-      console.error('Vault deposit error:', e);
-      alert(e.message || 'Deposit failed');
-    } finally {
-      setIsVaultDepositSigning(false);
     }
-  };
+  }, [selectedVaultStrategyData?.type]);
 
-  const handleVaultWithdraw = async () => {
-    if (!selectedVaultForAction || !account.connected || !withdrawPreview) return;
-
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain();
-      return;
-    }
-
-    try {
-      setIsVaultWithdrawSigning(true);
-
-      const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawShares) * 1e18));
-
-      const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
-      const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
-
-      const withdrawUo = {
-        target: crystalVaultsAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "withdraw",
-          args: [
-            selectedVaultForAction.address as `0x${string}`,
-            sharesToWithdraw,
-            amountQuoteMin,
-            amountBaseMin,
-          ],
-        }),
-        value: 0n,
-      };
-
-      const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
-      await waitForTxReceipt(withdrawOp.hash);
-
-      setWithdrawShares('');
-      setWithdrawExceedsBalance(false);
-      setWithdrawPreview(null);
-
-      refetch?.();
-
-      setpopup(0);
-      setSelectedVaultForAction(null);
-
-    } catch (e: any) {
-      console.error('Vault withdraw error:', e);
-      alert(e.message || 'Withdrawal failed');
-    } finally {
-      setIsVaultWithdrawSigning(false);
-    }
-  };
-
-
-const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
-  if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
-    return;
-  }
-
-  const availableTabs = ['balances', 'deposits', 'withdrawals', 'depositors'];
-  const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
-
-  if (activeTabIndex !== -1) {
-    const activeTabElement = vaultStrategyTabsRef.current[activeTabIndex];
-    if (activeTabElement && activeTabElement.parentElement) {
-      const indicator = vaultStrategyIndicatorRef.current;
-      indicator.style.width = `${activeTabElement.offsetWidth}px`;
-      indicator.style.left = `${activeTabElement.offsetLeft}px`;
-    }
-  }
-}, [selectedVaultStrategyData?.type]);
   useEffect(() => {
     if (selectedVaultStrategy && selectedVaultStrategyData) {
       setTimeout(() => {
@@ -901,9 +786,20 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
       }
     };
 
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showManagementMenu && !(event.target as Element).closest('.vault-management-dropdown')) {
+        setShowManagementMenu(false);
+      }
+    };
+
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition]);
+    document.addEventListener('mousedown', handleClickOutside);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition, showManagementMenu]);
 
   useEffect(() => {
     if (currentRoute.startsWith('/earn/vaults')) {
@@ -921,37 +817,6 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
     }
   }, [currentRoute, filteredVaultStrategies, selectedVaultStrategy]);
 
-  const isVaultDepositEnabled = () => {
-    return vaultDepositAmounts.quote !== '' && vaultDepositAmounts.base !== '' &&
-      parseFloat(vaultDepositAmounts.quote) > 0 && parseFloat(vaultDepositAmounts.base) > 0 &&
-      !vaultQuoteExceedsBalance && !vaultBaseExceedsBalance && depositPreview;
-  };
-
-  const isWithdrawEnabled = () => {
-    return withdrawShares !== '' && parseFloat(withdrawShares) > 0 &&
-      !withdrawExceedsBalance && withdrawPreview;
-  };
-
-  const getVaultDepositButtonText = () => {
-    if (vaultQuoteExceedsBalance || vaultBaseExceedsBalance) {
-      return 'Insufficient Balance';
-    }
-    if (!depositPreview) {
-      return 'Enter Amounts';
-    }
-    return 'Deposit';
-  };
-
-  const getWithdrawButtonText = () => {
-    if (withdrawExceedsBalance) {
-      return 'Insufficient Shares';
-    }
-    if (!withdrawPreview) {
-      return 'Enter Amount';
-    }
-    return 'Withdraw';
-  };
-
   return (
     <div className="vaults-page-container">
       <div className="lp-content-wrapper">
@@ -965,7 +830,9 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                 </div>
                 <div className="vault-stat">
                   <span className="stat-label">Total Value Locked</span>
-                  <span className="stat-value">$0.0M</span>
+                  <span className="stat-value">
+                    ${vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0).toFixed(2)}M
+                  </span>
                 </div>
               </div>
 
@@ -997,7 +864,8 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                   className={`vault-tab ${activeVaultTab === 'my-vaults' ? 'active' : ''}`}
                   onClick={() => setActiveVaultTab('my-vaults')}
                 >
-                My Vaults ({(vaultList || []).filter((v: any) => address && v.owner.toLowerCase() === address.toLowerCase()).length})                </button>
+                  My Vaults ({(vaultList || []).filter((v: any) => address && v.owner.toLowerCase() === address.toLowerCase()).length})
+                </button>
               </div>
 
               <div className="filter-controls">
@@ -1034,7 +902,7 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                 <div className="col vault-tokens-col">Assets</div>
                 <div className="col vault-apy-col">TVL</div>
                 <div className="col vault-deposits-col">Deposit Cap</div>
-                <div className="col vault-your-deposits-col">Your Shares</div>
+                <div className="col vault-your-deposits-col">Your Position</div>
                 <div className="col vault-age-col">Status</div>
                 <div className="col vault-actions-col">Snapshot</div>
               </div>
@@ -1111,17 +979,17 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                     </div>
 
                     <div className="col vault-apy-col">
-                      <span className="apy-value">${formatDisplayValue(BigInt(vault.totalShares), 0)}</span>
+                      <span className="apy-value">${calculateTVL(vault)}</span>
                     </div>
 
                     <div className="col vault-deposits-col">
                       <span className="deposits-value">{BigInt(vault.maxShares) === 0n 
-    ? <span>&#8734;</span> 
-    : formatDisplayValue(BigInt(vault.maxShares), 0)}</span>
+                        ? <span>&#8734;</span> 
+                        : `$${formatDisplayValue(BigInt(vault.maxShares), 0)}`}</span>
                     </div>
 
                     <div className="col vault-your-deposits-col">
-                      <span className="deposits-value">{formatDisplayValue(BigInt(vault.userShares), 0)}</span>
+                      <span className="deposits-value">${calculateUserPositionValue(vault)}</span>
                     </div>
 
                     <div className="col vault-age-col">
@@ -1186,6 +1054,14 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                   >
                     Withdraw
                   </button>
+
+                 {address && selectedVaultStrategyData.owner.toLowerCase() === address.toLowerCase() && (
+  <VaultManagementDropdown 
+    show={showManagementMenu}
+    onToggle={setShowManagementMenu}
+    onAction={handleVaultManagement}
+  />
+)}
                 </div>
               </div>
 
@@ -1203,18 +1079,18 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
 
                 <div className="vault-strategy-metrics">
                   <div className="vault-metric">
-                    <span className="vault-metric-label">Total Shares</span>
-                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</span>
+                    <span className="vault-metric-label">Total Value Locked</span>
+                    <span className="vault-metric-value">${calculateTVL(selectedVaultStrategyData)}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Deposit Cap</span>
                     <span className="vault-metric-value">{BigInt(selectedVaultStrategyData.maxShares) === 0n 
-    ? <span>&#8734;</span> 
-    : formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 0)}</span>
+                      ? <span>&#8734;</span> 
+                      : `$${formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 0)}`}</span>
                   </div>
                   <div className="vault-metric">
-                    <span className="vault-metric-label">Your Shares</span>
-                    <span className="vault-metric-value">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</span>
+                    <span className="vault-metric-label">Your Position Value</span>
+                    <span className="vault-metric-value">${calculateUserPositionValue(selectedVaultStrategyData)}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Status</span>
@@ -1356,8 +1232,8 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                           <div className="vault-holdings-header">
                             <div className="vault-holdings-col-header">Asset</div>
                             <div className="vault-holdings-col-header">Symbol</div>
-                            <div className="vault-holdings-col-header">Total Shares</div>
-                            <div className="vault-holdings-col-header">Your Shares</div>
+                            <div className="vault-holdings-col-header">Vault Balance</div>
+                            <div className="vault-holdings-col-header">Your Balance</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
@@ -1365,8 +1241,8 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                               <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.quoteAsset)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</div>
+                            <div className="vault-holdings-col">${(parseFloat(calculateTVL(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
+                            <div className="vault-holdings-col">${(parseFloat(calculateUserPositionValue(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
@@ -1374,10 +1250,11 @@ const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => 
                               <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.baseAsset)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.totalShares), 0)}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVaultStrategyData.userShares), 0)}</div>
+                            <div className="vault-holdings-col">${(parseFloat(calculateTVL(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
+                            <div className="vault-holdings-col">${(parseFloat(calculateUserPositionValue(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
                           </div>
                         </div>
+
                       </div>
                     </div>
                   )}

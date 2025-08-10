@@ -66,10 +66,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [launchStatus, setLaunchStatus] = useState('');
-  const [error, setError] = useState('');
-  const [deployedTokenAddress, setDeployedTokenAddress] = useState('');
-  const [deployedMarketAddress, setDeployedMarketAddress] = useState('');
+  const [_error, setError] = useState('');
+  const [_deployedTokenAddress, setDeployedTokenAddress] = useState('');
+  const [_deployedMarketAddress, setDeployedMarketAddress] = useState('');
 
   useEffect(() => {
     const ws = new WebSocket('wss://testnet-rpc.monad.xyz');

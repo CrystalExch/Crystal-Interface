@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Share2, Users, Gem, Eye, EyeOff } from 'lucide-react';
+import { Share2, Eye, EyeOff } from 'lucide-react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 import { config } from '../../../wagmi';
@@ -12,7 +12,6 @@ import closebutton from '../../../assets/close_button.png';
 import './ReferralSidebar.css';
 
 interface ReferralSidebarProps {
-  tokenList: any;
   markets: { [key: string]: any };
   router: `0x${string}`;
   address: `0x${string}` | undefined;
@@ -35,7 +34,6 @@ interface ReferralSidebarProps {
 }
 
 const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
-  tokenList,
   markets,
   router,
   address,
@@ -300,15 +298,13 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'claimFees',
-              args: [
-                Array.from(
-                  new Set(
-                    Object.values(markets).map(
-                      (market) => market.address as `0x${string}`,
-                    ),
+              args: Array.from(
+                new Set(
+                  Object.values(markets).map(
+                    (market) => market.address as `0x${string}`,
                   ),
                 ),
-              ],
+              ),
             }),
             value: 0n,
           },

@@ -136,7 +136,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     markets,
     usdc,
     wethticker,
-    ethticker,
     account,
     sendUserOperationAsync,
     waitForTxReceipt,
@@ -181,7 +180,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     }));
 
     const lendingAddress = null as `0x${string}` | null;
-    const { data: lendingData, isLoading: lendingLoading, refetch: lendingRefetch } = useReadContracts({
+    const {  refetch: lendingRefetch } = useReadContracts({
         batchSize: 0,
         contracts: [
             ...(lendingAddress ? [
@@ -239,15 +238,7 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     const [isSigning, setIsSigning] = useState(false);
 
 
-    const govAddress = lendingData?.[0]?.result;
-    const accountHealth0 = lendingData?.[1]?.result;
-    const accountHealth1 = lendingData?.[2]?.result;
-    const accountHealth2 = lendingData?.[3]?.result;
-
-
-
-
-    const handleApproval = async (tokenAddress: `0x${string}`, amount: string) => {
+    const handleApproval = async (tokenAddress: `0x${string}`) => {
   if (!account.connected || !address || !lendingAddress) {
     return false;
   }
@@ -255,8 +246,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
   try {
     setIsSigning(true);
     
-    const decimals = Number(tokendict[tokenAddress].decimals);
-    const amountBigInt = BigInt(Math.floor(parseFloat(amount) * (10 ** decimals)));
     
     const maxApproval = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
     
@@ -311,7 +300,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
     if (!tokenData || !tokendict[tokenAddress]) return false;
 
     if (tokenAddress !== wethticker) {
-      const approvalSuccess = await handleApproval(tokenAddress, amount);
+      const approvalSuccess = await handleApproval(tokenAddress);
       if (!approvalSuccess) return false;
     }
 
@@ -524,7 +513,7 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
         },
         {
             id: 'earn-weth-usdc-vault',
-            name: 'WETH',
+            name: 'Wrapped Ethereum',
             tokens: {
                 first: {
                     symbol: 'WETH',
@@ -768,7 +757,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
 
         let market = null;
         let trades = null;
-        let marketKey = '';
 
         const directUSDCKeys = [
             `${tokenSymbol}USDC`,
@@ -779,7 +767,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
             if (chainMarkets[key] && tradesByMarket[key]) {
                 market = chainMarkets[key];
                 trades = tradesByMarket[key];
-                marketKey = key;
                 break;
             }
         }
@@ -796,7 +783,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                 if (chainMarkets[key] && tradesByMarket[key]) {
                     market = chainMarkets[key];
                     trades = tradesByMarket[key];
-                    marketKey = key;
                     break;
                 }
             }
@@ -806,7 +792,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
             if (chainMarkets['MONUSDC'] && tradesByMarket['MONUSDC']) {
                 market = chainMarkets['MONUSDC'];
                 trades = tradesByMarket['MONUSDC'];
-                marketKey = 'MONUSDC';
             }
         }
 
@@ -814,7 +799,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
             if (chainMarkets['WMONUSDC'] && tradesByMarket['WMONUSDC']) {
                 market = chainMarkets['WMONUSDC'];
                 trades = tradesByMarket['WMONUSDC'];
-                marketKey = 'WMONUSDC';
             }
         }
 

@@ -1,4 +1,4 @@
-import { Eye, Search, Eye as EyeIcon, Edit2, Check, X, Star, Plus } from 'lucide-react';
+import { Eye, Search, Eye as EyeIcon, Edit2, Plus } from 'lucide-react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
@@ -258,15 +258,12 @@ const Portfolio: React.FC<PortfolioProps> = ({
   walletTokenBalances,
   walletTotalValues,
   walletsLoading,
-  subwalletBalanceLoading,
   refreshWalletBalance,
-  forceRefreshAllWallets,
   setOneCTSigner,
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   handleSetChain,
   handleSubwalletTransfer,
-  createSubWallet,
   signTypedDataAsync,
   keccak256,
   Wallet,
@@ -297,9 +294,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositTargetWallet, setDepositTargetWallet] = useState<string>('');
-  const [depositMode, setDepositMode] = useState<'main' | 'subwallet'>('main');
   const [depositAmount, setDepositAmount] = useState<string>('');
-  const [depositFromWallet, setDepositFromWallet] = useState<string>('');
 
   const [showImportModal, setShowImportModal] = useState(false);
   const [importPrivateKey, setImportPrivateKey] = useState<string>('');
@@ -348,27 +343,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       updatePopup(txId, {
         title: 'Deposit Complete', 
         subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
-        variant: 'success',
-        confirmed: true,
-        isLoading: false
-      });
-    }
-  }, []);
-
-  const showTransferSuccess = useCallback((amount: string, fromWallet: string, toWallet: string) => {
-    const txId = `transfer-${Date.now()}`;
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Transfer Complete',
-        subtitle: `Transferred ${amount} MON from ${fromWallet.slice(0, 6)}... to ${toWallet.slice(0, 6)}...`,
-        amount: amount,
-        amountUnit: 'MON'
-      });
-    }
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Transfer Complete',
-        subtitle: `Transferred ${amount} MON from ${fromWallet.slice(0, 6)}... to ${toWallet.slice(0, 6)}...`,
         variant: 'success',
         confirmed: true,
         isLoading: false
@@ -514,7 +488,6 @@ const deleteWallet = (address: string) => {
     return isSpectating ? spectatedAddress : address;
   };
 const getMainWalletBalance = () => {
-  const mainWalletAddress = originalAddress || address;
   const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
   
   if (ethToken && tokenBalances[ethToken.address]) {
@@ -674,15 +647,13 @@ const getMainWalletBalance = () => {
 
         case 'single-main-drag':
           if (targetZone !== 'main') {
-            handleSingleMainDrop(data, targetZone);
+            handleSingleMainDrop(data, targetZone as 'source' | 'destination');
           }
           break;
 
         default:
           if (data.sourceZone) {
             handleSingleZoneDrop(data, targetZone);
-          } else {
-            handleSingleMainDrop(data, targetZone);
           }
       }
 
@@ -761,61 +732,6 @@ const getMainWalletBalance = () => {
   };
 
 
-
-  const handleDropOnMainContainer = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOverZone(null);
-    setDropPreviewLine(null);
-
-    console.log('Drop on main container triggered');
-
-    try {
-      const jsonData = e.dataTransfer.getData('application/json');
-      if (jsonData) {
-        const data = JSON.parse(jsonData);
-
-        if (data.type === 'multi-drag') {
-          const { wallets, sourceContainer } = data;
-          console.log(`Multi-drop on main: ${wallets.length} wallets from ${sourceContainer}`);
-
-          if (sourceContainer === 'source') {
-            setSourceWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-          } else if (sourceContainer === 'destination') {
-            setDestinationWallets(prev => prev.filter(w => !wallets.some((sw: any) => sw.address === w.address)));
-          }
-          setSelectedWalletsPerContainer({
-            main: new Set(),
-            source: new Set(),
-            destination: new Set()
-          });
-          setIsMultiDrag(false);
-          return;
-        }
-      }
-    } catch (error) {
-      console.error('Error handling JSON drop on main:', error);
-    }
-
-    try {
-      const textData = e.dataTransfer.getData('text/plain');
-      if (textData) {
-        const dragData = JSON.parse(textData);
-
-        if (dragData.sourceZone) {
-          console.log('Single wallet drop back to main from:', dragData.sourceZone);
-
-          if (dragData.sourceZone === 'source') {
-            setSourceWallets(prev => prev.filter(w => w.address !== dragData.address));
-          } else if (dragData.sourceZone === 'destination') {
-            setDestinationWallets(prev => prev.filter(w => w.address !== dragData.address));
-          }
-        }
-      }
-    } catch (error) {
-      console.error('Error handling text drop on main:', error);
-    }
-    setDraggedWallet(null);
-  };
   const clearAllZones = () => {
     setSourceWallets([]);
     setDestinationWallets([]);
@@ -837,14 +753,8 @@ const getMainWalletBalance = () => {
       setIsVaultDepositSigning(true);
       await handleSetChain();
 
-      let amountPerDestination: number;
       if (distributionMode === 'equal') {
-        amountPerDestination = amount / destinationWallets.length;
-      } else {
-        const totalDestinationValue = destinationWallets.reduce((sum, w) => sum + w.totalValue, 0);
-        amountPerDestination = amount;
       }
-
       for (const sourceWallet of sourceWallets) {
         const sourceWalletData = subWallets.find(w => w.address === sourceWallet.address);
         if (!sourceWalletData) continue;
@@ -948,12 +858,6 @@ const getMainWalletBalance = () => {
     setPrivateKeyRevealed(true);
   };
 
-  const copyPrivateKey = () => {
-    if (exportingWallet) {
-      navigator.clipboard.writeText(exportingWallet.privateKey);
-      alert('Private key copied to clipboard!');
-    }
-  };
 
   const handleImportWallet = async () => {
     setImportError('');
@@ -1033,16 +937,6 @@ const getMainWalletBalance = () => {
     setImportError('');
   };
 
-  const toggleWalletEnabled = (address: string) => {
-    const newEnabledWallets = new Set(enabledWallets);
-    if (newEnabledWallets.has(address)) {
-      newEnabledWallets.delete(address);
-    } else {
-      newEnabledWallets.add(address);
-    }
-    setEnabledWallets(newEnabledWallets);
-    localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
-  };
 
   const startEditingWallet = (address: string) => {
     setEditingWallet(address);
@@ -1165,10 +1059,7 @@ const handleDepositFromEOA = async () => {
     showDepositSuccess(depositAmount, depositTargetWallet);
 
   } catch (error) {
-    console.error('Deposit failed with error:', error);
-    alert(`Deposit failed: ${error.message || 'Please try again.'}`);
   } finally {
-    console.log('Setting isDepositing to false');
     setIsDepositing(false);
   }
 };
@@ -1288,10 +1179,10 @@ const handleDepositFromEOA = async () => {
     dragOverPosition: 'top' | 'bottom' | null;
   }
 
-  const [selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
+  const [_selectedWallets, setSelectedWallets] = useState<Set<string>>(new Set());
   const [activeSelectionContainer, setActiveSelectionContainer] = useState<'main' | 'source' | 'destination' | null>(null);
   const [selectionRect, setSelectionRect] = useState<SelectionRect | null>(null);
-  const [dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
+  const [_dragStartPoint, setDragStartPoint] = useState<{ x: number; y: number } | null>(null);
   const [isMultiDrag, setIsMultiDrag] = useState(false);
 
   const [dragReorderState, setDragReorderState] = useState<DragReorderState>({
@@ -1403,7 +1294,7 @@ const handleDepositFromEOA = async () => {
   };
 
 
-  const handleMultiDragStart = (e: React.DragEvent, wallet: any, containerType: 'main' | 'source' | 'destination') => {
+  const handleMultiDragStart = (e: React.DragEvent, containerType: 'main' | 'source' | 'destination') => {
     e.stopPropagation();
     setIsMultiDrag(true);
 
@@ -1423,7 +1314,6 @@ const handleDepositFromEOA = async () => {
           balance: getWalletBalance(w.address),
           totalValue: getTotalWalletValue(w.address),
           index: actualIndex,
-          privateKey: w.privateKey || ''
         };
       });
 
@@ -1513,7 +1403,6 @@ const handleDepositFromEOA = async () => {
     try {
       const textData = e.dataTransfer.getData('text/plain');
       if (textData) {
-        const dragData = JSON.parse(textData);
         handleDrop(e, targetZone as any);
         return;
       }
@@ -1677,7 +1566,7 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
 
         if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
           console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
-          handleMultiDragStart(e, wallet, containerType);
+          handleMultiDragStart(e, containerType);
           return;
         }
 
@@ -1700,7 +1589,7 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
           }
         }
       }}
-      onDragEnd={(e) => {
+      onDragEnd={() => {
         setIsMultiDrag(false);
         setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
         setDropPreviewLine(null);
@@ -1720,7 +1609,7 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
           setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
         }
       }}
-      onDrop={(e) => {
+      onDrop={() => {
         return;
       }}
       onClick={(e) => {
@@ -2110,7 +1999,6 @@ useEffect(() => {
         return (
           <div className="portfolio-layout-with-referrals">
             <ReferralSidebar
-              tokenList={tokenList}
               markets={markets}
               router={router}
               usedRefAddress={usedRefAddress as `0x${string}`}

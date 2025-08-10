@@ -144,6 +144,7 @@
   object-fit: contain;
   opacity: 0.7;
   width: 20px;
+  border-radius: 4px;
 }
 
 .app-settings-button {
@@ -311,9 +312,11 @@
 }
 
 .wallet-icon {
-  height: 16px;
-  margin-right: 4px;
-  width: 16px;
+  height: 18px;
+  margin-right: 6px;
+  width: 18px;
+    border-radius: 4px;
+
 }
 
 .transparent-button-container,

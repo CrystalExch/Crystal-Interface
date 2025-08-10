@@ -193,7 +193,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getBars: async (
-          symbolInfo: any,
           resolution: string,
           periodParams: any,
           onHistoryCallback: Function,
@@ -246,7 +245,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getMarks: async (
-          symbolInfo: any,
           from: number,
           to: number,
           onDataCallback: (marks: any[]) => void,
@@ -285,7 +283,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         subscribeBars: (
-          symbolInfo: any,
           resolution: any,
           onRealtimeCallback: any,
         ) => {
