@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
@@ -14,6 +14,7 @@ import vaults from '../../assets/yeildvaults.png';
 import launchpad from '../../assets/launchpad.png';
 import earn from '../../assets/earn.png';
 import explorer from '../../assets/explorer.png';
+
 interface SidebarNavProps {
  simpleView: boolean;
   setSimpleView: (value: boolean) => void;
@@ -28,26 +29,27 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   const [expanded, setExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
+  const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backgroundlesslogo = '/CrystalLogo.png';
-
 
   const handleWidgetExplorerToggle = () => {
     if (onOpenWidgetExplorer) {
       onOpenWidgetExplorer();
     }
   };
+  
   const isMobile = windowWidth <= 1020;
 
-
   const handleSidebarMouseEnter = () => {
-    if (!isMobile) {
+    if (!isMobile && !isResizing) {
       setExpanded(true);
       document.body.classList.add('sidebar-hover-overlay');
     }
   };
 
   const handleSidebarMouseLeave = () => {
-    if (!isMobile) {
+    if (!isMobile && !isResizing) {
       setExpanded(false);
       document.body.classList.remove('sidebar-hover-overlay');
     }
@@ -55,18 +57,33 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
 
   useEffect(() => {
     const handleResize = () => {
+      setIsResizing(true);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+
       const newWidth = window.innerWidth;
       setWindowWidth(newWidth);
+      
       if (newWidth <= 1020) {
         setExpanded(false);
       }
       if (newWidth > 1020 && mobileMenuOpen) {
         setMobileMenuOpen(false);
       }
+      resizeTimeoutRef.current = setTimeout(() => {
+        setIsResizing(false);
+      }, 100);
     };
 
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      if (resizeTimeoutRef.current) {
+        clearTimeout(resizeTimeoutRef.current);
+      }
+    };
   }, [expanded, mobileMenuOpen]);
 
   useEffect(() => {
@@ -93,22 +110,22 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
   return (
     <>
       <div 
-        className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'}`}
+        className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'} ${isResizing ? 'no-transition' : ''}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
       >
-        <div className="sidebar-nav-inner">
+        <div className={`sidebar-nav-inner ${isResizing ? 'no-transition' : ''}`}>
           {!isMobile && (
             <Link to="/" className="sidebar-logo">
               <img src={backgroundlesslogo} className="sidebar-logo-image" />
-              <span className="sidebar-logo-text">CRYSTAL</span>
+              <span className={`sidebar-logo-text ${isResizing ? 'no-transition' : ''}`}>CRYSTAL</span>
             </Link>
           )}
 
           <div className="sidebar-links">
             <Link
               to="/market"
-              className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''}`}
+              className={`view-mode-button ${path === '/market' || (isTradingPage && !simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={(e) => {
                 if (location.pathname === '/market') {
                   e.preventDefault();
@@ -118,12 +135,12 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
               }}
             >
               <img src={candlestick} className="sidebar-icon" />
-              <span className="sidebar-label">{t('advancedView')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('advancedView')}</span>
             </Link>
 
             <Link
               to="/swap"
-              className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''}`}
+              className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={(e) => {
                 if (location.pathname === '/swap') {
                   e.preventDefault();
@@ -133,65 +150,68 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
               }}
             >
               <img src={swap} className="sidebar-icon" />
-              <span className="sidebar-label">{t('simpleView')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('simpleView')}</span>
             </Link>
 
             <Link
               to="/portfolio"
-              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''}`}
+              className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
             >
               <img src={portfolio} className="sidebar-icon" />
-              <span className="sidebar-label">{t('portfolio')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
             </Link>
 
             <Link
               to="/leaderboard"
-              className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''}`}
+              className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
             >
               <img src={leaderboard} className="sidebar-icon" />
-              <span className="sidebar-label">{t('leaderboard')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
             </Link>
-             <Link
-            to="/lending"
-            className={`page-mode-button ${path === '/lending' ? 'active' : ''}`}
-          >
-            <img src={vaults} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Lending')}</span>
-          </Link>
-          <Link
-            to="/earn/vaults"
-            className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''}`}
-          >
-            <img src={earn} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Vaults')}</span>
-          </Link>
-          <Link
-            to="/explorer"
-            className={`page-mode-button ${path === '/explorer' ? 'active' : ''}`}
-          >
-            <img src={explorer} className="sidebar-icon" />
-            <span className="sidebar-label">{t('Explorer')}</span>
-          </Link>
-                    
-        {isMobile && (
-          <button
-            onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
-            className="mobile-hamburger-button"
-          >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
+            
+            <Link
+              to="/lending"
+              className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
             >
-              <line x1="3" y1="12" x2="21" y2="12"></line>
-              <line x1="3" y1="6" x2="21" y2="6"></line>
-              <line x1="3" y1="18" x2="21" y2="18"></line>
-            </svg>
-          </button>
-        )}
+              <img src={vaults} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Lending')}</span>
+            </Link>
+            
+            <Link
+              to="/earn/vaults"
+              className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+            >
+              <img src={earn} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Vaults')}</span>
+            </Link>
+            
+            <Link
+              to="/explorer"
+              className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+            >
+              <img src={explorer} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Explorer')}</span>
+            </Link>
+                    
+            {isMobile && (
+              <button
+                onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
+                className="mobile-hamburger-button"
+              >
+                <svg
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <line x1="3" y1="12" x2="21" y2="12"></line>
+                  <line x1="3" y1="6" x2="21" y2="6"></line>
+                  <line x1="3" y1="18" x2="21" y2="18"></line>
+                </svg>
+              </button>
+            )}
           </div>
 
           {!isMobile && (
@@ -200,28 +220,28 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
                 href="https://docs.crystal.exchange"
                 target="_blank"
                 rel="noreferrer"
-                className="sidebar-bottom-link"
+                className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
               >
                 <img src={docs} className="sidebar-icon" />
-                <span className="sidebar-label">{t('docs')}</span>
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('docs')}</span>
               </a>
               <a
                 href="https://discord.gg/CrystalExch"
                 target="_blank"
                 rel="noreferrer"
-                className="sidebar-bottom-link"
+                className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
               >
                 <img src={discord} className="sidebar-icon" />
-                <span className="sidebar-label">{t('discord')}</span>
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('discord')}</span>
               </a>
               <a
                 href="https://x.com/CrystalExch"
                 target="_blank"
                 rel="noreferrer"
-                className="sidebar-bottom-link"
+                className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
               >
                 <img src={twitter} className="sidebar-icon" />
-                <span className="sidebar-label">{'X / ' + t('twitter')}</span>
+                <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{'X / ' + t('twitter')}</span>
               </a>
 
                {/* <div className="sidebar-section">

@@ -473,7 +473,7 @@
     backdrop-filter: blur(5px);
     background-color: rgb(6,6,6, 0.3);
     border-radius: 4px;
-    z-index: 100;
+    z-index: 10;
 }
 
 .meme-trade-action-button {
@@ -869,7 +869,7 @@
     visibility: hidden;
     white-space: nowrap;
     z-index: 13;
-    left: 0; /* This will be updated by JavaScript */
+    left: 0;
 }
 
 .meme-slider-percentage-popup.visible {
@@ -1323,3 +1323,608 @@ opacity: 1;
   animation: spin 1s linear infinite;
 }
 
+/* Mobile View Styles */
+.meme-mobile-view-toggle {
+    display: none !important;
+}
+
+.desktop-only {
+    display: block;
+}
+
+.mobile-only {
+    display: none !important;
+}
+
+.meme-mobile-quickbuy {
+    display: none !important;
+}
+
+.meme-mobile-view-toggle {
+    position: relative;
+    left: 0;
+    right: 0;
+    background: rgb(6, 6, 6);
+    display: none;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+.meme-mobile-toggle-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: transparent;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    width: 100%;
+    letter-spacing: -0.3px;
+}
+
+
+.meme-mobile-toggle-btn.active {
+    border-color: rgba(170, 174, 207, 0.3);
+    color: #d8dcff;
+}
+
+.meme-mobile-toggle-btn:hover:not(.active) {
+    background: rgba(179, 184, 249, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-mobile-quickbuy {
+    position: relative;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(6, 6, 6);
+    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    padding: 12px;
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.meme-mobile-portfolio-section {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+}
+
+.meme-mobile-portfolio-item {
+    display: flex;
+    gap: 4px;
+    text-align: center;
+}
+
+.meme-mobile-portfolio-label {
+    font-size: 0.7rem;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.meme-mobile-portfolio-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #fff;
+}
+
+.meme-mobile-portfolio-value.green {
+    color: rgb(67, 254, 154);
+}
+
+.meme-mobile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.meme-mobile-trade-toggle {
+    display: flex;
+    border-radius: 6px;
+    border: 1px solid rgba(179, 184, 249, 0.1);
+    overflow: hidden;
+    flex: 1;
+}
+
+.meme-mobile-trade-btn {
+    flex: 1;
+    padding: 8px 16px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+    letter-spacing: -0.3px;
+}
+
+.meme-mobile-trade-btn.active.buy {
+    background-color: #326e4051;
+    color: rgb(67 254 154);
+}
+
+.meme-mobile-trade-btn.active.sell {
+    background-color: #6e324051;
+    color: rgb(235, 112, 112);
+}
+
+.meme-mobile-trade-btn:hover:not(.active) {
+    background: rgba(179, 184, 249, 0.05);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-mobile-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meme-mobile-preset-controls {
+    display: flex;
+    gap: 3px;
+}
+
+.meme-mobile-preset-pill {
+    padding: 4px 8px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: rgba(219, 225, 245, 0.03);
+    color: #7f808d;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.meme-mobile-preset-pill:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a0a0a0;
+}
+
+.meme-mobile-preset-pill.active {
+    background: #9fa5d92e;
+    color: #d8dcff;
+    border-color: rgba(170, 174, 207, 0.3);
+}
+
+.meme-mobile-buy-section,
+.meme-mobile-sell-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.meme-mobile-section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #fff;
+    margin-bottom: 4px;
+}
+
+.meme-mobile-order-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #7f808d;
+    font-size: 0.8rem;
+}
+
+.meme-mobile-monad-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.meme-mobile-amount-buttons,
+.meme-mobile-percent-buttons {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+}
+
+.meme-mobile-amount-btn {
+    padding: 8px 12px;
+    border-radius: 12px;
+    color: rgb(67, 254, 154);
+    background-color: rgba(167, 234, 136, 0.133);
+    border: 1px solid rgba(167, 234, 136, 0.2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: .9rem;
+    text-align: center;
+}
+
+.meme-mobile-amount-btn:active {
+    transform: scale(0.9);
+}
+
+
+.meme-mobile-amount-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.meme-mobile-percent-btn {
+    padding: 8px 12px;
+    border-radius: 12px;
+    background-color: #e04e4e20;
+    color: #e04e4e;
+    border: 1px solid rgba(224, 78, 78, 0.2);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: .9rem;
+    text-align: center;
+}
+
+.meme-mobile-percent-btn:active {
+    transform: scale(0.9);
+}
+
+
+.meme-mobile-percent-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.meme-mobile-settings-display {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.meme-mobile-settings-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    justify-content: center;
+}
+
+.meme-mobile-settings-icon {
+    width: 12px;
+    height: 12px;
+    opacity: 0.7;
+}
+
+.meme-mobile-settings-value {
+    font-size: 0.75rem;
+    color: #a1a2ab;
+}
+
+.meme-mobile-wallets-button {
+    border: 1.5px solid rgba(209, 211, 238, 0.114);
+    border-radius: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    cursor: pointer;
+    padding: 4px 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    gap: 4px;
+    background: transparent;
+}
+
+.meme-mobile-wallets-button:hover {
+    background: rgba(179, 184, 249, 0.15);
+    border-color: rgba(179, 184, 249, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.meme-mobile-wallets-button.active {
+    background: rgba(170, 174, 207, 0.15);
+    border-color: rgba(170, 174, 207, 0.3);
+    color: #d8dcff;
+}
+
+.meme-mobile-wallets-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.meme-mobile-wallets-count {
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.meme-mobile-wallets-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgb(6, 6, 6);
+    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    display: flex;
+    flex-direction: column;
+    animation: slideUpFromBottom 0.3s ease;
+    z-index: 10;
+}
+
+@keyframes slideUpFromBottom {
+    from {
+        opacity: 0;
+        transform: translateY(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.meme-mobile-wallets-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 16px;
+    border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+}
+
+.meme-mobile-wallets-title {
+    color: #eceefd;
+    font-size: 0.9rem;
+    letter-spacing: -0.3px;
+}
+
+.meme-mobile-wallets-close {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.meme-mobile-wallets-close:hover {
+    background: rgba(179, 184, 249, 0.1);
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.meme-mobile-wallets-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.meme-mobile-wallets-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+}
+
+.meme-mobile-wallets-empty-text {
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+}
+
+.meme-mobile-wallets-empty-subtitle {
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
+}
+
+.meme-mobile-wallet-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding:  6px 12px;
+    margin-bottom: 4px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.meme-mobile-wallet-item:hover {
+    background: rgba(179, 184, 249, 0.05);
+}
+
+
+.meme-mobile-wallet-checkbox-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.meme-mobile-wallet-checkbox {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    border: 1.5px solid rgba(170, 174, 207, 0.3);
+    border-radius: 3px;
+    background: transparent;
+    position: relative;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.meme-mobile-wallet-checkbox:hover {
+    border-color: rgba(170, 174, 207, 0.6);
+    background: rgba(170, 174, 207, 0.05);
+}
+
+.meme-mobile-wallet-checkbox:checked {
+    background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+    border: none;
+    box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
+}
+
+.meme-mobile-wallet-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    left: 5px;
+    top: 2.5px;
+    width: 5px;
+    height: 8px;
+    border: solid #0f0f12;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+.meme-mobile-wallet-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.meme-mobile-wallet-name {
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.meme-mobile-wallet-item.active .meme-mobile-wallet-name {
+    color: #d8dcff;
+}
+
+.meme-mobile-wallet-address {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.8rem;
+    letter-spacing: -0.2px;
+    margin-top: 2px;
+}
+
+.meme-mobile-wallet-balance {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    flex-shrink: 0;
+}
+
+.meme-mobile-wallet-balance-amount {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.85rem;
+    font-weight: 500;
+    letter-spacing: -0.2px;
+}
+
+.meme-mobile-wallet-balance-amount.blurred {
+    filter: blur(6px);
+    user-select: none;
+}
+
+.meme-mobile-wallet-mon-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+@media(max-width: 1020px) {
+    .meme-interface-container {
+        display: flex;
+        flex-direction: column;
+        padding-bottom: 0;
+        padding-top: 55px;
+        max-height: calc(100vh - 100px);
+        min-height: 450px;
+
+    }
+
+    .memechartandtradesandordercenter {
+        position: relative;
+        border-top: none;
+        flex: 1;
+    }
+
+    .memecharttradespanel {
+        position: relative;
+        height: 100%;
+    }
+
+    .meme-chart-container,
+    .meme-trades-container,
+    .meme-ordercenter {
+        position: absolute;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .meme-trades-container {
+        border-left: none;
+        min-width: 100%;
+    }
+
+    .mobile-hidden {
+        opacity: 0;
+        pointer-events: none;
+        visibility: hidden;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-only {
+        display: flex !important;
+    }
+
+    .meme-mobile-view-toggle {
+        display: flex !important;
+    }
+
+    .meme-mobile-quickbuy {
+        display: flex !important;
+    }
+
+    .meme-token-info-container {
+        display: none;
+    }
+
+    .meme-trading-stats-container {
+        display: none;
+    }
+
+    .meme-trade-panel {
+        display: none !important;
+    }
+
+    /* Fix for order center visibility */
+    .meme-ordercenter {
+        z-index: 10;
+    }
+
+    .meme-ordercenter.mobile-hidden {
+        z-index: -1;
+    }
+}
+
+.meme-mobile-wallets-close-icon{
+    width: 16px;
+    height: 16px;
+    opacity: 0.7;
+}

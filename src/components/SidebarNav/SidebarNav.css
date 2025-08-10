@@ -12,8 +12,11 @@
   overflow: hidden;
   background-color: rgb(6,6,6);
   border-right: 1px solid rgba(179, 184, 249, 0.09);
-  transition: width 0.3s ease;
   z-index: 12;
+}
+
+.sidebar-nav:not(.no-transition) {
+  transition: width 0.3s ease;
 }
 
 .sidebar-nav-inner{
@@ -27,8 +30,11 @@
   align-items: flex-start;
   width: 47px;
   padding-top: 12px;
-  transition: width 0.3s ease;
   overflow: hidden;
+}
+
+.sidebar-nav-inner:not(.no-transition) {
+  transition: width 0.3s ease;
 }
 
 body::before {
@@ -158,7 +164,6 @@ body.sidebar-hover-overlay::before {
   width: 200px;
 }
 
-
 .sidebar-nav.expanded .sidebar-nav-inner {
   width: 200px;
 }
@@ -180,6 +185,9 @@ body.sidebar-hover-overlay::before {
   margin-top: -3px;
   margin-bottom: -3px;
   opacity: 0;
+}
+
+.sidebar-logo-text:not(.no-transition) {
   transition: opacity 0.2s ease 0.1s;
 }
 
@@ -224,12 +232,18 @@ body.sidebar-hover-overlay::before {
   background-color: transparent;
   color: #8c8c9a;
   cursor: pointer;
-  transition: all 0.3s ease;
   overflow: visible;
   margin-left: 5px;
   margin-bottom: 5px;
   align-self: flex-start;
   text-decoration: none;
+}
+
+.view-mode-button:not(.no-transition), 
+.page-mode-button:not(.no-transition),
+.sidebar-bottom-link:not(.no-transition),
+.sidebar-toggle-button:not(.no-transition) {
+  transition: all 0.3s ease;
 }
 
 .sidebar-nav.expanded .view-mode-button,
@@ -239,6 +253,12 @@ body.sidebar-hover-overlay::before {
   width: 180px;
   padding-right: 15px;
   justify-content: flex-start;
+}
+
+.sidebar-nav.expanded .view-mode-button:not(.no-transition),
+.sidebar-nav.expanded .page-mode-button:not(.no-transition),
+.sidebar-nav.expanded .sidebar-bottom-link:not(.no-transition),
+.sidebar-nav.expanded .sidebar-toggle-button:not(.no-transition) {
   transition: all 0.3s ease;
 }
 
@@ -312,11 +332,14 @@ body.sidebar-hover-overlay::before {
   font-size: 0.85rem;
   margin-left: 8px;
   white-space: nowrap;
-  transition: opacity 0.2s ease 0.15s;
   color: #d8dbf58a;
   opacity: 0;
   display: none;
   letter-spacing: -0.2px;
+}
+
+.sidebar-label:not(.no-transition) {
+  transition: opacity 0.2s ease 0.15s;
 }
 
 .sidebar-nav.expanded .sidebar-label {
@@ -470,7 +493,6 @@ body.sidebar-hover-overlay::before {
 .mobile-menu-item:hover .mobile-menu-icon {
   opacity: 1;
 }
-
 
 .sidebar-section {
   margin: 1rem 0;

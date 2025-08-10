@@ -25,6 +25,8 @@ import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
 import filtercup from "../../assets/filtercup.svg";
+import closebutton from "../../assets/close_button.png";
+import monadicon from "../../assets/monadlogo.svg";
 import "./MemeInterface.css";
 
 interface Token {
@@ -114,7 +116,6 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a";
 const TOTAL_SUPPLY = 1e9;
-// const SUBGRAPH_URL = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e`;
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.0.10';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
@@ -294,6 +295,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     balance:0, amountBought:0, amountSold:0,
     valueBought:0, valueSold:0, valueNet:0,
   });
+
+  // Mobile-specific states
+  const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
+  const [mobileBuyAmounts, setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
+  const [mobileSellPercents, setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
+  const [mobileSelectedBuyAmount, setMobileSelectedBuyAmount] = useState('1');
+  const [mobileSelectedSellPercent, setMobileSelectedSellPercent] = useState('25%');
+  const [mobileQuickBuyPreset, setMobileQuickBuyPreset] = useState(1);
+  const [mobileTradeType, setMobileTradeType] = useState<'buy' | 'sell'>('buy');
+  const [mobileWalletsExpanded, setMobileWalletsExpanded] = useState(false);
+  const [mobileWalletNames, setMobileWalletNames] = useState<{ [address: string]: string }>({});
     
   const { activechain } = useSharedContext();
 
@@ -338,7 +350,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           routerAddress as `0x${string}`,
         ],
       });
-
 
       const multiCalldata = encodeFunctionData({
         abi: [{
@@ -459,9 +470,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTokenBalance(bal);
     setAllowance(alw);
   }, [rpcData]);
+
+  useEffect(() => {
+    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+    if (storedWalletNames) {
+      try {
+        setMobileWalletNames(JSON.parse(storedWalletNames));
+      } catch (error) {
+        console.error('Error loading wallet names:', error);
+      }
+    }
+  }, []);
+
   const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
+  
   const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
+    setMobileQuickBuyPreset(preset);
     const presetValues = buyPresets[preset as keyof typeof buyPresets];
     setBuySlippageValue(presetValues.slippage);
     setBuyPriorityFee(presetValues.priority);
@@ -481,6 +506,249 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       handleBuyPresetSelect(preset);
     } else {
       handleSellPresetSelect(preset);
+    }
+  };
+
+  const getMobileWalletBalance = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain || '']?.eth);
+    if (ethToken && balances[ethToken.address]) {
+      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    }
+    return 0;
+  };
+
+  const getMobileWalletName = (address: string, index: number) => {
+    return mobileWalletNames[address] || `Wallet ${index + 1}`;
+  };
+
+  const isMobileWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
+  };
+
+  const handleMobileSetActiveWallet = (privateKey: string) => {
+    if (!isMobileWalletActive(privateKey) && setOneCTSigner) {
+      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+      setOneCTSigner(privateKey);
+
+      if (refetch) {
+        setTimeout(() => refetch(), 100);
+      }
+      if (forceRefreshAllWallets) {
+        setTimeout(() => forceRefreshAllWallets(), 200);
+      }
+    }
+  };
+
+  const getCurrentMobileWalletMONBalance = () => {
+    if (!activeWalletPrivateKey) return 0;
+
+    const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+    if (!currentWallet) return 0;
+
+    return getMobileWalletBalance(currentWallet.address);
+  };
+
+  // Mobile QuickBuy Trading Functions
+  const handleMobileBuyTrade = async (amount: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+      if (setpopup) setpopup(4);
+      return;
+    }
+
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain();
+      return;
+    }
+
+    const requestedAmount = parseFloat(amount);
+    const currentMONBalance = getCurrentMobileWalletMONBalance();
+
+    if (requestedAmount > currentMONBalance) {
+      const txId = `insufficient-${Date.now()}`;
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Insufficient Balance',
+          subtitle: `Need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON`,
+          amount: amount,
+          amountUnit: 'MON'
+        });
+      }
+
+      if (updatePopup) {
+        setTimeout(() => {
+          updatePopup(txId, {
+            title: 'Insufficient Balance',
+            subtitle: `You need ${amount} MON but only have ${currentMONBalance.toFixed(4)} MON available`,
+            variant: 'error',
+            isLoading: false
+          });
+        }, 100);
+      }
+      return;
+    }
+
+    const txId = `mobile-buy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Buying ${amount} MON worth of ${token.symbol}`,
+          amount: amount,
+          amountUnit: 'MON'
+        });
+      }
+
+      const valNum = parseFloat(amount);
+      const value = BigInt(Math.round(valNum * 1e18));
+
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({
+          abi: CrystalLaunchpadRouter,
+          functionName: "buy",
+          args: [token.tokenAddress as `0x${string}`],
+        }),
+        value,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `Buying ${amount} MON worth of ${token.symbol}`,
+          variant: 'info'
+        });
+      }
+
+      const op = await sendUserOperationAsync({ uo });
+      await waitForTxReceipt(op.hash);
+
+      const expectedTokens = currentPrice > 0 ? parseFloat(amount) / currentPrice : 0;
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: `Bought ~${Number(expectedTokens).toFixed(4)} ${token.symbol}`,
+          subtitle: `Spent ${Number(amount).toFixed(4)} MON`,
+          variant: 'success',
+          isLoading: false
+        });
+      }
+
+    } catch (e: any) {
+      console.error(e);
+      const msg = String(e?.message ?? '');
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient balance' : 'Transaction failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          isLoading: false
+        });
+      }
+    }
+  };
+
+  const handleMobileSellTrade = async (value: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+      setpopup?.(4);
+      return;
+    }
+
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain?.();
+      return;
+    }
+
+    const txId = `mobile-sell-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Selling ${value} of ${token.symbol}`,
+          amount: value,
+          amountUnit: '%'
+        });
+      }
+
+      const pct = BigInt(parseInt(value.replace('%', ''), 10));
+      const amountTokenWei = pct === 100n
+        ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
+        : ((rpcData?.rawBalance || 0n) * pct) / 100n;
+
+      if (amountTokenWei <= 0n) {
+        throw new Error(`Invalid sell amount`);
+      }
+
+      if ((rpcData?.rawAllowance || 0n) < amountTokenWei) {
+        if (updatePopup) {
+          updatePopup(txId, {
+            title: 'Approving tokens...',
+            subtitle: `Granting permission to sell ${token.symbol}`,
+            variant: 'info'
+          });
+        }
+
+        const approveUo = {
+          target: tokenAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalLaunchpadToken,
+            functionName: "approve",
+            args: [routerAddress as `0x${string}`, MaxUint256],
+          }),
+          value: 0n,
+        };
+        const approveOp = await sendUserOperationAsync({ uo: approveUo });
+        await waitForTxReceipt(approveOp.hash);
+      }
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming sell...',
+          subtitle: `Selling ${value} of ${token.symbol}`,
+          variant: 'info'
+        });
+      }
+
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalLaunchpadRouter,
+          functionName: "sell",
+          args: [tokenAddress as `0x${string}`, amountTokenWei],
+        }),
+        value: 0n,
+      };
+
+      const sellOp = await sendUserOperationAsync({ uo: sellUo });
+      await waitForTxReceipt(sellOp.hash);
+
+      const soldTokens = Number(amountTokenWei) / 1e18;
+      const expectedMON = soldTokens * currentPrice;
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: `Sold ${Number(soldTokens).toFixed(4)} ${token.symbol}`,
+          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+          variant: 'success',
+          isLoading: false
+        });
+      }
+
+    } catch (e: any) {
+      console.error(e);
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Sell failed',
+          subtitle: e?.message || 'Transaction was rejected',
+          variant: 'error',
+          isLoading: false
+        });
+      }
     }
   };
 
@@ -542,6 +810,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
+  // Rest of your existing useEffect hooks and logic...
   useEffect(() => {
     if (!realtimeCallbackRef.current || !trades.length) return;
 
@@ -567,6 +836,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, [trades, selectedInterval, token.symbol]);
 
+  // Data fetching and WebSocket logic (keeping existing implementation)
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
@@ -686,6 +956,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return () => { isCancelled = true; };
   }, [token.id, selectedInterval]);
 
+  // WebSocket and other data loading logic (keeping existing)
   const lastInvalidateRef = useRef(0);
 
   const closeNotif = useCallback(() => {
@@ -693,6 +964,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTimeout(() => setNotif(null), 300);
   }, []);
 
+  // Continue with existing data fetching and trading logic...
   useEffect(() => {
     if (!token.id) return;
     const ws = new WebSocket("wss://testnet-rpc.monad.xyz");
@@ -808,25 +1080,21 @@ useEffect(() => {
   if (!token.id) return;
 
   (async () => {
-    // Always fetch the top 10 holders first (page 0)
     const data = await gqWithRateLimit(
       HOLDERS_QUERY,
-      { m: token.id.toLowerCase(), skip: 0, first: 10 }, // Always get top 10 first
+      { m: token.id.toLowerCase(), skip: 0, first: 10 },
       `holders-top10-${token.id}`
     );
     
     if (data?.holders) {
-      // Calculate top 10 holding percentage
       const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
         return sum + (Number(holder.balance) / 1e18);
       }, 0);
       
-      // Calculate percentage of total supply held by top 10
       const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
       setTop10HoldingPercentage(top10Percentage);
     }
 
-    // Now fetch the current page data for display
     if (page === 0) {
       setHolders(
         data.holders.map((h: any) => ({
@@ -864,6 +1132,7 @@ useEffect(() => {
     }
   })();
 }, [token.id, page]);
+
   useEffect(() => {
     if(!userAddr || !token.id) return;
 
@@ -944,6 +1213,7 @@ useEffect(() => {
       : n >= 1e3
         ? `$${(n / 1e3).toFixed(1)}K`
         : `$${n.toFixed(0)}`;
+
   const handleTrade = async () => {
     if (!tradeAmount || !account.connected) return;
     if (activeOrderType === "Limit" && !limitPrice) return;
@@ -1090,6 +1360,7 @@ useEffect(() => {
       setIsSigning(false);
     }
   };
+
   const getButtonText = () => {
     if (!account.connected) return "Connect Wallet";
     const targetChainId =
@@ -1100,6 +1371,7 @@ useEffect(() => {
       return `${activeTradeType === "buy" ? "Buy" : "Sell"} ${token.symbol}`;
     return `Set ${activeTradeType === "buy" ? "Buy" : "Sell"} Limit`;
   };
+
   const isTradeDisabled = () => {
     if (!account.connected) return false;
     const targetChainId =
@@ -1145,6 +1417,8 @@ useEffect(() => {
     (totalTraders * currentData.sellerPercentage) / 100,
   );
 
+  const portfolioValue = tokenBalance * currentPrice;
+
   return (
     <div className="meme-interface-container">
       {notif && (
@@ -1157,9 +1431,34 @@ useEffect(() => {
           <button className="meme-notif-close" onClick={closeNotif} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', position: 'absolute', top: 8, right: 8 }}>&times;</button>
         </div>
       )}
+      
+      {/* Mobile View Toggle */}
+      <div className="meme-mobile-view-toggle">
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'chart' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('chart')}
+        >
+          Chart
+        </button>
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'trades' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('trades')}
+        >
+          Trades
+        </button>
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('ordercenter')}
+        >
+          Orders
+        </button>
+      </div>
+
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
-          <div className="meme-chart-container">
+          {/* Desktop: Always show chart and trades side by side */}
+          {/* Mobile: Show only the selected view */}
+          <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
             <MemeChart
               token={token}
               data={chartData}
@@ -1168,26 +1467,26 @@ useEffect(() => {
               realtimeCallbackRef={realtimeCallbackRef}
             />
           </div>
-<div className="meme-trades-container">
-  <MemeTradesComponent
-    tokenList={tokenList}
-    trades={trades}
-    market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
-    tradesByMarket={tradesByMarket}
-    markets={markets}
-    tokendict={tokendict}
-    usdc={usdc}
-    wethticker={wethticker}
-    ethticker={ethticker}
-    onMarketSelect={onMarketSelect}
-    setSendTokenIn={setSendTokenIn}
-    setpopup={setpopup}
-    holders={holders}
-    currentUserAddress={userAddr}
-  />
-</div>
+          <div className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}>
+            <MemeTradesComponent
+              tokenList={tokenList}
+              trades={trades}
+              market={{ id: token.id, quoteAddress: 'YOUR_QUOTE_ADDRESS', quoteAsset: 'USDC' }}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              tokendict={tokendict}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
+              onMarketSelect={onMarketSelect}
+              setSendTokenIn={setSendTokenIn}
+              setpopup={setpopup}
+              holders={holders}
+              currentUserAddress={userAddr}
+            />
+          </div>
         </div>
-        <div className="meme-ordercenter">
+        <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
           <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
@@ -1215,7 +1514,9 @@ useEffect(() => {
           />
         </div>
       </div>
-      <div className="meme-trade-panel">
+
+      {/* Desktop Trade Panel */}
+      <div className="meme-trade-panel desktop-only">
         <div className="meme-buy-sell-container">
           <button
             className={`meme-buy-button ${activeTradeType === "buy" ? "active" : "inactive"}`}
@@ -1787,6 +2088,239 @@ useEffect(() => {
           </span>
         </div>
       </div>
+
+      {/* Mobile QuickBuy Panel */}
+      <div className="meme-mobile-quickbuy mobile-only">
+        {/* <div className="meme-mobile-portfolio-section">
+          <div className="meme-mobile-portfolio-item">
+            <span className="meme-mobile-portfolio-label">Portfolio</span>
+            <span className="meme-mobile-portfolio-value green">
+              {formatNumberWithCommas(portfolioValue, 2)} MON
+            </span>
+          </div>
+          <div className="meme-mobile-portfolio-item">
+            <span className="meme-mobile-portfolio-label">Balance</span>
+            <span className="meme-mobile-portfolio-value">
+              {formatNumberWithCommas(tokenBalance, 3)}
+            </span>
+          </div>
+          <div className="meme-mobile-portfolio-item">
+            <span className="meme-mobile-portfolio-label">Price</span>
+            <span className="meme-mobile-portfolio-value">${formatNumberWithCommas(currentPrice, 6)}</span>
+          </div>
+          <div className="meme-mobile-portfolio-item">
+            <span className="meme-mobile-portfolio-label">Orders</span>
+            <span className="meme-mobile-portfolio-value">0</span>
+          </div>
+        </div> */}
+
+        <div className="meme-mobile-header">
+          <div className="meme-mobile-trade-toggle">
+<button
+  className={`meme-mobile-trade-btn ${mobileTradeType === 'buy' ? 'active buy' : ''}`}
+  onClick={() => setMobileTradeType('buy')}
+>
+  Buy
+</button>
+<button
+  className={`meme-mobile-trade-btn ${mobileTradeType === 'sell' ? 'active sell' : ''}`}
+  onClick={() => setMobileTradeType('sell')}
+>
+  Sell
+</button>
+          </div>
+
+          <div className="meme-mobile-controls">
+
+            {subWallets.length > 0 && (
+              <button
+                className={`meme-mobile-wallets-button ${mobileWalletsExpanded ? 'active' : ''}`}
+                onClick={() => setMobileWalletsExpanded(!mobileWalletsExpanded)}
+                title="Toggle Wallets"
+              >
+                <img src={walleticon} alt="Wallet" className="meme-mobile-wallets-icon" />
+                <span className="meme-mobile-wallets-count">{subWallets.length}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Trading Section */}
+        {mobileTradeType === 'buy' ? (
+          <div className="meme-mobile-buy-section">
+            <div className="meme-mobile-section-header">
+            <div className="meme-mobile-preset-controls">
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(1)}
+              >
+                P1
+              </button>
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(2)}
+              >
+                P2
+              </button>
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(3)}
+              >
+                P3
+              </button>
+            </div>              <div className="meme-mobile-order-indicator">
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                0
+              </div>
+            </div>
+
+            <div className="meme-mobile-amount-buttons">
+              {mobileBuyAmounts.map((amount, index) => (
+                <button
+                  key={index}
+                  className={`meme-mobile-amount-btn ${mobileSelectedBuyAmount === amount ? 'active' : ''}`}
+                  onClick={() => {
+                    setMobileSelectedBuyAmount(amount);
+                    handleMobileBuyTrade(amount);
+                  }}
+                  disabled={!account?.connected}
+                >
+                  {amount}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="meme-mobile-sell-section">
+            <div className="meme-mobile-section-header">
+            <div className="meme-mobile-preset-controls">
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(1)}
+              >
+                P1
+              </button>
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(2)}
+              >
+                P2
+              </button>
+              <button
+                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
+                onClick={() => setMobileQuickBuyPreset(3)}
+              >
+                P3
+              </button>
+            </div>              <div className="meme-mobile-order-indicator">
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                0
+              </div>
+            </div>
+
+            <div className="meme-mobile-percent-buttons">
+              {mobileSellPercents.map((percent, index) => (
+                <button
+                  key={index}
+                  className={`meme-mobile-percent-btn ${mobileSelectedSellPercent === percent ? 'active' : ''}`}
+                  onClick={() => {
+                    setMobileSelectedSellPercent(percent);
+                    handleMobileSellTrade(percent);
+                  }}
+                  disabled={!account?.connected || tokenBalance <= 0}
+                >
+                  {percent}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Settings Display */}
+        <div className="meme-mobile-settings-display">
+          <div className="meme-mobile-settings-item">
+            <img src={slippage} alt="Slippage" className="meme-mobile-settings-icon" />
+            <span className="meme-mobile-settings-value">
+              {mobileTradeType === 'buy' ? buySlippageValue : sellSlippageValue}%
+            </span>
+          </div>
+          <div className="meme-mobile-settings-item">
+            <img src={gas} alt="Priority Fee" className="meme-mobile-settings-icon" />
+            <span className="meme-mobile-settings-value">
+              {mobileTradeType === 'buy' ? buyPriorityFee : sellPriorityFee}
+            </span>
+          </div>
+          <div className="meme-mobile-settings-item">
+            <img src={bribe} alt="Bribe" className="meme-mobile-settings-icon" />
+            <span className="meme-mobile-settings-value">
+              {mobileTradeType === 'buy' ? buyBribeValue : sellBribeValue}
+            </span>
+          </div>
+          
+        </div>
+{mobileWalletsExpanded && (
+  <div className="meme-mobile-wallets-panel">
+    <div className="meme-mobile-wallets-header">
+      <span className="meme-mobile-wallets-title">Wallets ({subWallets.length})</span>
+      <button
+        className="meme-mobile-wallets-close"
+        onClick={() => setMobileWalletsExpanded(false)}
+      >
+        <img src={closebutton} alt="Close" className="meme-mobile-wallets-close-icon" />
+      </button>
+    </div>
+
+    <div className="meme-mobile-wallets-list">
+      {subWallets.length === 0 ? (
+        <div className="meme-mobile-wallets-empty">
+          <div className="meme-mobile-wallets-empty-text">No wallets available</div>
+          <div className="meme-mobile-wallets-empty-subtitle">Create wallets in Portfolio section</div>
+        </div>
+      ) : (
+        subWallets.map((wallet, index) => {
+          const balance = getMobileWalletBalance(wallet.address);
+          const isActive = isMobileWalletActive(wallet.privateKey);
+
+          return (
+            <div
+              key={wallet.address}
+              className={`meme-mobile-wallet-item ${isActive ? 'active' : ''}`}
+              onClick={() => handleMobileSetActiveWallet(wallet.privateKey)}
+            >
+              <div className="meme-mobile-wallet-checkbox-container">
+                <input
+                  type="checkbox"
+                  className="meme-mobile-wallet-checkbox"
+                  checked={isActive}
+                  onChange={() => handleMobileSetActiveWallet(wallet.privateKey)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              </div>
+
+              <div className="meme-mobile-wallet-info">
+                <div className="meme-mobile-wallet-name">
+                  {getMobileWalletName(wallet.address, index)}
+                </div>
+                <div className="meme-mobile-wallet-address">
+                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                </div>
+              </div>
+
+              <div className="meme-mobile-wallet-balance">
+                <div className={`meme-mobile-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                  <img src={monadicon} className="meme-mobile-wallet-mon-icon" alt="MON" />
+                  {formatNumberWithCommas(balance, 2)}
+                </div>
+              </div>
+            </div>
+          );
+        })
+      )}
+    </div>
+  </div>
+)}
+      </div>
+
       <QuickBuyWidget
         isOpen={isWidgetOpen}
         onClose={() => setIsWidgetOpen(false)}

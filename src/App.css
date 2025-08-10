@@ -3928,7 +3928,8 @@ input[type="email"] {
 .akui-btn-group>.akui-btn:first-child {
   height: 30px !important;
   border: none !important;
-  background-color: #aaaecf08 !important;
+  background: none !important;
+  border: 1px solid #aaaecf1e !important;
   border-radius: 6px !important;
 }
 
@@ -3940,7 +3941,7 @@ input[type="email"] {
 .akui-btn-auth {
   height: 30px !important;
   border: none !important;
-  background-color: #aaaecf08 !important;
+  border: 1px solid #aaaecf1e !important;
   border-radius: 6px !important;
 }
 

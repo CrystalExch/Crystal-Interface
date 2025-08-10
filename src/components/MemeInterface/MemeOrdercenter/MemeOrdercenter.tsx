@@ -617,7 +617,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
       <div className="meme-oc-top-bar">
         <div className="meme-oc-types">
-          {window.innerWidth > 1020 ? (
             <>
               <div className="meme-oc-types-rectangle">
                 {availableTabs.map(({ key, label }, index) => (
@@ -633,19 +632,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               </div>
               <div ref={indicatorRef} className="meme-oc-sliding-indicator" />
             </>
-          ) : (
-            <div className="meme-oc-mobile-tabs">
-              <select
-                value={activeSection}
-                onChange={(e) => handleTabChange(e.target.value as typeof activeSection)}
-                className="meme-oc-mobile-select"
-              >
-                {availableTabs.map(({ key, label }) => (
-                  <option key={key} value={key}>{label}</option>
-                ))}
-              </select>
-            </div>
-          )}
         </div>
 
         {onToggleWidget && (
