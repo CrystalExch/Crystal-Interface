@@ -545,9 +545,6 @@
     margin: 0;
 }
 
-.meme-trade-input[type=number] {
-    -moz-appearance: textfield;
-}
 
 
 .meme-token-info-footer{
@@ -699,7 +696,6 @@
 .meme-slider-mode-button {
     flex: 1;
     padding: 4px 8px;
-    fontSize: 0.7rem;
     border: 1px solid rgba(179, 184, 249, 0.09);
     border-radius: 4px;
     background: transparent;
@@ -1102,10 +1098,6 @@
 .meme-setting-input::-webkit-inner-spin-button {
     -webkit-appearance: none;
     margin: 0;
-}
-
-.meme-setting-input[type=number] {
-    -moz-appearance: textfield;
 }
 
 

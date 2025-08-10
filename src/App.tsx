@@ -151,7 +151,7 @@ import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
 import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
-import WidgetExplorer from './components/TokenExplorer/WidgetExplorer.tsx';
+// import WidgetExplorer from './components/TokenExplorer/WidgetExplorer.tsx';
 import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
 
@@ -316,9 +316,9 @@ function App() {
     }
     return null;
   };
- const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
-const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
-const [widgetWidth, setWidgetWidth] = useState(400);
+//  const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
+// const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
+// const [widgetWidth, setWidgetWidth] = useState(400);
 
 // const handleOpenWidgetExplorer = useCallback(() => {
 //   setIsWidgetExplorerOpen(true);
@@ -1272,7 +1272,6 @@ const handleVaultWithdraw = async () => {
   const [limitPriceString, setlimitPriceString] = useState('');
   const [allowance, setallowance] = useState(BigInt(0));
   const [warning, setwarning] = useState(0);
-  const [showReferralsModal, setShowReferralsModal] = useState(false);
   const [lowestAsk, setlowestAsk] = useState(BigInt(0));
   const [highestBid, sethighestBid] = useState(BigInt(0));
   const [priceImpact, setPriceImpact] = useState('');
@@ -2168,9 +2167,12 @@ const handleVaultWithdraw = async () => {
     }
   }, [refreshWalletBalance, sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
 
-  const saveSubWallets = useCallback((wallets) => {
-    setSubWallets(wallets);
-    saveSubWalletsToStorage(wallets);
+  const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
+    setSubWallets((prevWallets) => {
+      const newWallets = typeof wallets === 'function' ? wallets(prevWallets) : wallets;
+      saveSubWalletsToStorage(newWallets);
+      return newWallets;
+    });
   }, [saveSubWalletsToStorage]);
 
   // on market select
@@ -20551,7 +20553,7 @@ const handleVaultWithdraw = async () => {
       <MemeTransactionPopupManager />
 
       {Modals}
-      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView} isWidgetExplorerOpen={isWidgetExplorerOpen} />
+      <SidebarNav simpleView={simpleView} setSimpleView={setSimpleView}/>
       {windowWidth <= 1020 &&
         !simpleView &&
         ['swap', 'limit', 'send', 'scale', 'market'].includes(location.pathname.slice(1)) && (
@@ -20907,7 +20909,6 @@ const handleVaultWithdraw = async () => {
         walletTotalValues={walletTotalValues}
         walletsLoading={walletsLoading}
         subwalletBalanceLoading={subwalletBalanceLoading}
-        refreshWalletBalance={refreshWalletBalance}
         forceRefreshAllWallets={forceRefreshAllWallets}
         setOneCTSigner={setOneCTSigner}
         isVaultDepositSigning={isVaultDepositSigning}
@@ -20918,8 +20919,7 @@ const handleVaultWithdraw = async () => {
         signTypedDataAsync={signTypedDataAsync}
         keccak256={keccak256}
         Wallet={Wallet}
-        activeWalletPrivateKey={oneCTSigner}
-      />
+        activeWalletPrivateKey={oneCTSigner} setShowRefModal={undefined}      />
     }
   />
   <Route path="/swap" element={TradeLayout(swap)} />

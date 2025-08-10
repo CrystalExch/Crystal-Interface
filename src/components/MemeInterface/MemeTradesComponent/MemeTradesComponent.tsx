@@ -178,11 +178,8 @@ export default function MemeTradesComponent({
   const [mcMode, setMcMode] = useState<MCMode>('MC')
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
-  const [devFilter, setDevFilter] = useState(false)
-  const [trackedFilter, setTrackedFilter] = useState(false)
-  const [currentTime, setCurrentTime] = useState(() => Date.now() / 1000)
+  const [_currentTime, setCurrentTime] = useState(() => Date.now() / 1000)
 
-  // Update current time every second for real-time relative time updates
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentTime(Date.now() / 1000)
@@ -191,7 +188,6 @@ export default function MemeTradesComponent({
     return () => clearInterval(interval)
   }, [])
 
-  // Get top 10 holder addresses for quick lookup
   const top10HolderAddresses = useMemo(() => {
     return new Set(
       holders
@@ -200,7 +196,7 @@ export default function MemeTradesComponent({
     )
   }, [holders])
 
-  const fetchLatestPrice = (trades: any[], market: any): number | null => {
+  const fetchLatestPrice = (trades: any[]): number | null => {
     if (!trades || trades.length === 0) return null;
     const sortedTrades = [...trades].sort((a, b) => b.timestamp - a.timestamp);
     const latestTrade = sortedTrades[0];
@@ -227,7 +223,7 @@ export default function MemeTradesComponent({
         / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor) / 10 ** 18;
     }
 
-    const latestPrice = fetchLatestPrice(trades, market);
+    const latestPrice = fetchLatestPrice(trades);
     if (!latestPrice) return 0;
 
     const quotePrice = market.quoteAsset == 'USDC' ? 1 : tradesByMarket[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0]?.[3]

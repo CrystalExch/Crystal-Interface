@@ -4,14 +4,12 @@ import './SidebarNav.css';
 import { useLanguage } from '../../contexts/LanguageContext';
 import candlestick from '../../assets/candlestick.png';
 import portfolio from '../../assets/wallet_icon.png';
-import referrals from '../../assets/referrals.png';
 import leaderboard from '../../assets/leaderboard.png';
 import swap from '../../assets/circulararrow.png';
 import twitter from '../../assets/twitter.png';
 import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 import vaults from '../../assets/yeildvaults.png';
-import launchpad from '../../assets/launchpad.png';
 import earn from '../../assets/earn.png';
 import explorer from '../../assets/explorer.png';
 
@@ -22,7 +20,7 @@ interface SidebarNavProps {
   isWidgetExplorerOpen?: boolean;
 }
 
-const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOpenWidgetExplorer, isWidgetExplorerOpen }) => {
+const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) => {
   const location = useLocation();
   const path = location.pathname;
   const { t } = useLanguage();
@@ -33,11 +31,11 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView, onOp
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backgroundlesslogo = '/CrystalLogo.png';
 
-  const handleWidgetExplorerToggle = () => {
-    if (onOpenWidgetExplorer) {
-      onOpenWidgetExplorer();
-    }
-  };
+  // const handleWidgetExplorerToggle = () => {
+  //   if (onOpenWidgetExplorer) {
+  //     onOpenWidgetExplorer();
+  //   }
+  // };
   
   const isMobile = windowWidth <= 1020;
 

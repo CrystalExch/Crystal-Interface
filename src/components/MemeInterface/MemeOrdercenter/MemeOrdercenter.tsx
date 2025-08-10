@@ -31,12 +31,6 @@ interface MemeOrderCenterProps {
   holders?: LiveHolder[];
   page?: number;
   pageSize?: number;
-  hasNext?: boolean;
-  onPageChange?: (p: number) => void;
-  userStats?: {
-    balance: number; amountBought: number; amountSold: number;
-    valueBought: number; valueSold: number; valueNet: number;
-  };
   currentPrice?: number;
 }
 
@@ -60,9 +54,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   holders: liveHolders = [],
   page = 0,
   pageSize = 100,
-  hasNext = false,
-  onPageChange,
-  userStats,
   currentPrice = 0,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
@@ -70,8 +61,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStartY, setDragStartY] = useState(0);
-  const [dragStartHeight, setDragStartHeight] = useState(0);
+  const [_dragStartY, setDragStartY] = useState(0);
+  const [_dragStartHeight, setDragStartHeight] = useState(0);
 
   useEffect(() => {
     const handleResize = () => {

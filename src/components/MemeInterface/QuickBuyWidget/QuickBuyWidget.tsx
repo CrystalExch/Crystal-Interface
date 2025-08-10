@@ -11,8 +11,6 @@ import walleticon from '../../../assets/wallet_icon.png';
 import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
 import bribe from '../../../assets/bribe.svg';
-
-import { Check } from 'lucide-react';
 import { encodeFunctionData } from 'viem';
 import { MaxUint256 } from 'ethers';
 
@@ -28,7 +26,6 @@ interface QuickBuyWidgetProps {
     isOpen: boolean;
     onClose: () => void;
     tokenSymbol?: string;
-    tokenName?: string;
     tokenAddress?: string;
     tokenPrice?: number;
     buySlippageValue: string;
@@ -53,14 +50,12 @@ interface QuickBuyWidgetProps {
     setOneCTSigner?: (privateKey: string) => void;
     tokenList?: any[];
     isBlurred?: boolean;
-    refreshWalletBalance?: (address: string) => void;
     forceRefreshAllWallets?: () => void;
 }
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     isOpen,
     onClose,
     tokenSymbol = "TOKEN",
-    tokenName = "Token Name",
     tokenAddress,
     tokenPrice = 0,
     buySlippageValue,
@@ -85,7 +80,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     setOneCTSigner,
     tokenList = [],
     isBlurred = false,
-    refreshWalletBalance,
     forceRefreshAllWallets,
 }) => {
 
@@ -102,7 +96,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const [sellPercents, setSellPercents] = useState(['10%', '25%', '50%', '100%']);
     const [sellMONAmounts, setSellMONAmounts] = useState(['1', '5', '10', '25']);
     const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
-    const [lastRefreshTime, setLastRefreshTime] = useState(0);
+    const [_lastRefreshTime, setLastRefreshTime] = useState(0);
     const [quickBuyPreset, setQuickBuyPreset] = useState(1);
     const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
     const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -199,7 +193,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const currentTokenBalance = tokenBalances[tokenAddress || ''] ?? 0n;
     const currentAllowance = allowance ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
-    const allowanceBalance = Number(currentAllowance) / 1e18;
     const getCurrentWalletMONBalance = () => {
         if (!activeWalletPrivateKey) return 0;
 
@@ -669,7 +662,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     };
 
-    const isRefreshing = lastRefreshTime > 0 && (Date.now() - lastRefreshTime < 2000);
 
     const walletsPosition = useMemo(() => {
         const baseX = position.x + widgetDimensions.width - 4;

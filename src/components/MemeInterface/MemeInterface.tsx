@@ -24,7 +24,7 @@ import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
-import filtercup from "../../assets/filtercup.svg";
+// import filtercup from "../../assets/filtercup.svg";
 import closebutton from "../../assets/close_button.png";
 import monadicon from "../../assets/monadlogo.svg";
 import "./MemeInterface.css";
@@ -110,7 +110,6 @@ interface MemeInterfaceProps {
   setOneCTSigner?: (privateKey: string) => void;
   refetch?: () => void;
   isBlurred?: boolean;
-  refreshWalletBalance?: (address: string) => void;
   forceRefreshAllWallets?: () => void;
 }
 
@@ -246,7 +245,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setOneCTSigner,
   refetch,
   isBlurred = false,
-  refreshWalletBalance,
   forceRefreshAllWallets,
 }) => {
 
@@ -271,9 +269,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
-  const [slippageValue, setSlippageValue] = useState("20");
-  const [priorityFee, setPriorityFee] = useState("0.01");
-  const [bribeValue, setBribeValue] = useState("0.05");
+  const [slippageValue, _setSlippageValue] = useState("20");
+  const [priorityFee, _setPriorityFee] = useState("0.01");
+  const [bribeValue, _setBribeValue] = useState("0.05");
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(350);
   const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
   const [isSigning, setIsSigning] = useState(false);
@@ -300,16 +298,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [tokenBalance, setTokenBalance] = useState(0);
   const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
   const [holders, setHolders] = useState<Holder[]>([]);
-  const [page, setPage] = useState(0);
-  const [userStats, setUserStats] = useState({
+  const [page, _setPage] = useState(0);
+  const [_userStats, setUserStats] = useState({
     balance:0, amountBought:0, amountSold:0,
     valueBought:0, valueSold:0, valueNet:0,
   });
 
   // Mobile-specific states
   const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
-  const [mobileBuyAmounts, setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
-  const [mobileSellPercents, setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
+  const [mobileBuyAmounts, _setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
+  const [mobileSellPercents, _setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
   const [mobileSelectedBuyAmount, setMobileSelectedBuyAmount] = useState('1');
   const [mobileSelectedSellPercent, setMobileSelectedSellPercent] = useState('25%');
   const [mobileQuickBuyPreset, setMobileQuickBuyPreset] = useState(1);
@@ -1427,7 +1425,6 @@ useEffect(() => {
     (totalTraders * currentData.sellerPercentage) / 100,
   );
 
-  const portfolioValue = tokenBalance * currentPrice;
 
   return (
     <div className="meme-interface-container">
@@ -1521,9 +1518,7 @@ useEffect(() => {
             holders={holders}
             page={page}
             pageSize={PAGE_SIZE}
-            hasNext={holders.length === PAGE_SIZE}
-            onPageChange={setPage}
-            userStats={userStats}
+
             currentPrice={currentPrice}
           />
         </div>
@@ -2339,7 +2334,6 @@ useEffect(() => {
         isOpen={isWidgetOpen}
         onClose={() => setIsWidgetOpen(false)}
         tokenSymbol={token.symbol}
-        tokenName={token.name}
         tokenAddress={tokenAddress}
         tokenPrice={currentPrice}
         buySlippageValue={buySlippageValue}
@@ -2364,7 +2358,6 @@ useEffect(() => {
         setOneCTSigner={setOneCTSigner}
         tokenList={tokenList}
         isBlurred={isBlurred}
-        refreshWalletBalance={refreshWalletBalance}
         forceRefreshAllWallets={forceRefreshAllWallets}
       />
     </div>
