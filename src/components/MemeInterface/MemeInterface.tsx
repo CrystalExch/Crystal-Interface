@@ -249,6 +249,16 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   refreshWalletBalance,
   forceRefreshAllWallets,
 }) => {
+
+  const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
+  switch (activeView) {
+    case 'chart': return 0;
+    case 'trades': return 1;
+    case 'ordercenter': return 2;
+    default: return 0;
+  }
+};
+
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -1432,28 +1442,32 @@ useEffect(() => {
         </div>
       )}
       
-      {/* Mobile View Toggle */}
-      <div className="meme-mobile-view-toggle">
-        <button
-          className={`meme-mobile-toggle-btn ${mobileActiveView === 'chart' ? 'active' : ''}`}
-          onClick={() => setMobileActiveView('chart')}
-        >
-          Chart
-        </button>
-        <button
-          className={`meme-mobile-toggle-btn ${mobileActiveView === 'trades' ? 'active' : ''}`}
-          onClick={() => setMobileActiveView('trades')}
-        >
-          Trades
-        </button>
-        <button
-          className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
-          onClick={() => setMobileActiveView('ordercenter')}
-        >
-          Orders
-        </button>
-      </div>
-
+    <div className="meme-mobile-view-toggle">
+  <div 
+    className="meme-mobile-toggle-slider"
+    style={{
+      transform: `translateX(${getSliderPosition(mobileActiveView) * 100}%)`
+    }}
+  />
+  <button
+    className={`meme-mobile-toggle-btn ${mobileActiveView === 'chart' ? 'active' : ''}`}
+    onClick={() => setMobileActiveView('chart')}
+  >
+    Chart
+  </button>
+  <button
+    className={`meme-mobile-toggle-btn ${mobileActiveView === 'trades' ? 'active' : ''}`}
+    onClick={() => setMobileActiveView('trades')}
+  >
+    Trades
+  </button>
+  <button
+    className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
+    onClick={() => setMobileActiveView('ordercenter')}
+  >
+    Orders
+  </button>
+</div>
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
           {/* Desktop: Always show chart and trades side by side */}

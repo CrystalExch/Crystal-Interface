@@ -1928,3 +1928,52 @@ opacity: 1;
     height: 16px;
     opacity: 0.7;
 }
+
+
+.meme-mobile-view-toggle {
+    position: relative;
+    left: 0;
+    right: 0;
+    background: rgb(6, 6, 6);
+    display: none;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+    border-radius: 8px;
+    overflow: hidden;
+    border-top: 1px solid rgba(179, 184, 249, 0.09);
+}
+
+.meme-mobile-toggle-slider {
+    position: absolute;
+    top: 8px;
+    left: 4px;
+    height: calc(100% - 8px);
+    width: calc(33.333% - 2px);
+    border-bottom: 1.5px solid #d8dcff;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    box-shadow: 0 2px 8px rgba(170, 174, 207, 0.1);
+}
+
+.meme-mobile-toggle-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: color 0.2s ease;
+    width: 100%;
+    letter-spacing: -0.3px;
+    position: relative;
+    z-index: 2;
+}
+
+.meme-mobile-toggle-btn.active {
+    color: #d8dcff;
+}
+
+.meme-mobile-toggle-btn:hover:not(.active) {
+    color: rgba(255, 255, 255, 0.8);
+}
