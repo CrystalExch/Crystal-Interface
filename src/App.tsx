@@ -20777,44 +20777,53 @@ const handleVaultWithdraw = async () => {
           <div
             // style={getAppContainerStyle()} 
           >
-            <Header
-              setTokenIn={setTokenIn}
-              setTokenOut={setTokenOut}
-              setorders={setorders}
-              settradehistory={settradehistory}
-              settradesByMarket={settradesByMarket}
-              setcanceledorders={setcanceledorders}
-              setpopup={setpopup}
-              setChain={handleSetChain}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              activechain={activechain}
-              tokenIn={tokenIn}
-              setShowTrade={setShowTrade}
-              simpleView={simpleView}
-              setSimpleView={setSimpleView}
-              tokendict={tokendict}
-              transactions={transactions}
-              activeMarket={activeMarket}
-              orderdata={{
-                liquidityBuyOrders,
-                liquiditySellOrders,
-              }}
-              onMarketSelect={onMarketSelect}
-              marketsData={sortedMarkets}
-              tradesloading={tradesloading}
-              tradesByMarket={tradesByMarket}
-               currentWalletIcon={currentWalletIcon} 
-              // style={getHeaderStyle()}
-            />
-          </div>
-          <div className="headerfiller"></div>
-        </>
-      }
-      <div className="app-container">
+        <Header
+  setTokenIn={setTokenIn}
+  setTokenOut={setTokenOut}
+  setorders={setorders}
+  settradehistory={settradehistory}
+  settradesByMarket={settradesByMarket}
+  setcanceledorders={setcanceledorders}
+  setpopup={setpopup}
+  setChain={handleSetChain}
+  account={{
+    connected: connected,
+    address: address,
+    chainId: userchain,
+  }}
+  activechain={activechain}
+  tokenIn={tokenIn}
+  setShowTrade={setShowTrade}
+  simpleView={simpleView}
+  setSimpleView={setSimpleView}
+  tokendict={tokendict}
+  transactions={transactions}
+  activeMarket={activeMarket}
+  orderdata={{
+    liquidityBuyOrders,
+    liquiditySellOrders,
+  }}
+  onMarketSelect={onMarketSelect}
+  marketsData={sortedMarkets}
+  tradesloading={tradesloading}
+  tradesByMarket={tradesByMarket}
+  currentWalletIcon={currentWalletIcon}
+  subWallets={subWallets}
+  walletTokenBalances={walletTokenBalances}
+  activeWalletPrivateKey={oneCTSigner}
+  setOneCTSigner={setOneCTSigner}
+  refetch={refetch}
+  isBlurred={isBlurred}
+  forceRefreshAllWallets={forceRefreshAllWallets}
+  tokenList={memoizedTokenList}
+  logout={logout}
+  tokenBalances={tokenBalances}
+          />
+        </div>
+        <div className="headerfiller"></div>
+      </>
+    }
+    <div className="app-container">
 
 <Routes>
   <Route path="/" element={<Navigate to="/market" replace />} />

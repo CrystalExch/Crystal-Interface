@@ -951,7 +951,7 @@ body {
 
 .tokenselectbg,
 .sendselectbg {
-  border-radius: 14px;
+  border-radius: 6px;
   left: 50%;
   margin: 0 auto;
   overflow: hidden;

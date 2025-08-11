@@ -1655,12 +1655,11 @@ useEffect(() => {
             <div className="meme-trade-input-wrapper">
               <input
                 type="number"
-                placeholder="Limit price"
+                placeholder={token.marketCap.toString()}
                 value={limitPrice}
                 onChange={(e) => setLimitPrice(e.target.value)}
                 className="meme-trade-input"
               />
-              <div className="meme-trade-currency">USD</div>
             </div>
           )}
           <div className="meme-balance-slider-wrapper">

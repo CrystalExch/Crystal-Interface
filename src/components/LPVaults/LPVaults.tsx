@@ -1388,7 +1388,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 >
                   {isVaultDepositSigning ? (
                     <div className="button-content">
-                      <div className="loading-spinner" />
+                      <div className="loading-spinner"/>
                       Creating...
                     </div>
                   ) : (

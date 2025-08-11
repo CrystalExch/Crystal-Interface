@@ -451,7 +451,6 @@
     color: rgba(255, 255, 255, 0.5);
     font-size: .95rem;
     pointer-events: none;
-    z-index: 10;
 }
 
 
@@ -473,7 +472,6 @@
     backdrop-filter: blur(5px);
     background-color: rgb(6,6,6, 0.3);
     border-radius: 4px;
-    z-index: 10;
 }
 
 .meme-trade-action-button {

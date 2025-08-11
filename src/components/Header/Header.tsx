@@ -8,10 +8,13 @@ import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistory
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
 
 import { formatCommas } from '../../utils/numberDisplayFormat';
+import { settings } from '../../settings';
 
 import settingsicon from '../../assets/settings.svg';
 import walleticon from '../../assets/wallet_icon.png';
 import historyIcon from '../../assets/notification.svg';
+import monadicon from '../../assets/monadlogo.svg';
+import closebutton from '../../assets/close_button.png';
 
 import './Header.css';
 
@@ -50,6 +53,17 @@ interface HeaderProps {
   tradesByMarket: any;
   style?: React.CSSProperties; 
   currentWalletIcon?: string;
+  subWallets?: Array<{ address: string, privateKey: string }>;
+  walletTokenBalances?: { [address: string]: any };
+  activeWalletPrivateKey?: string;
+  setOneCTSigner?: (privateKey: string) => void;
+  refetch?: () => void;
+  isBlurred?: boolean;
+  forceRefreshAllWallets?: () => void;
+  tokenList?: any[];
+  logout?: () => void;
+      tokenBalances: { [address: string]: bigint };
+
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -75,11 +89,25 @@ const Header: React.FC<HeaderProps> = ({
   tradesByMarket,
   style, 
   currentWalletIcon,
+  subWallets = [],
+  walletTokenBalances = {},
+  activeWalletPrivateKey,
+  setOneCTSigner,
+  refetch,
+  isBlurred = false,
+  forceRefreshAllWallets,
+  tokenList = [],
+  logout,
+  tokenBalances,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
   const [isTransactionHistoryOpen, setIsTransactionHistoryOpen] = useState(false);
   const [pendingNotifs, setPendingNotifs] = useState(0);
+  const [isWalletDropdownOpen, setIsWalletDropdownOpen] = useState(false);
+  const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+  const walletDropdownRef = useRef<HTMLDivElement>(null);
+
   const languageOptions: Language[] = [
     { code: 'EN', name: 'English' },
     { code: 'ES', name: 'Español' },
@@ -107,6 +135,32 @@ const Header: React.FC<HeaderProps> = ({
   const [liveTokenData, setLiveTokenData] = useState<any>({});
 
   const isMemeTokenPage = location.pathname.startsWith('/meme/');
+
+  // Load wallet names from localStorage
+  useEffect(() => {
+    const storedWalletNames = localStorage.getItem('crystal_wallet_names');
+    if (storedWalletNames) {
+      try {
+        setWalletNames(JSON.parse(storedWalletNames));
+      } catch (error) {
+        console.error('Error loading wallet names:', error);
+      }
+    }
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (walletDropdownRef.current && !walletDropdownRef.current.contains(event.target as Node)) {
+        setIsWalletDropdownOpen(false);
+      }
+    };
+
+    if (isWalletDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [isWalletDropdownOpen]);
 
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     const reqId = Date.now();
@@ -157,7 +211,8 @@ const Header: React.FC<HeaderProps> = ({
       volume24h: (prev.volume24h || 0) + (isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18),
     }));
   }, []);
-const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
+
+  const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
     const token = location.state.tokenData;
     const mergedData = { ...token, ...liveTokenData };
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
@@ -183,6 +238,116 @@ const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
       volume24h: liveTokenData.volume24h || token.volume24h,
     };
   })() : undefined;
+
+  // Wallet helper functions
+  const formatNumberWithCommas = (num: number, decimals = 2) => {
+    if (num === 0) return "0";
+    if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
+    if (num >= 1e6) return `${(num / 1e6).toFixed(decimals)}M`;
+    if (num >= 1e3) return `${(num / 1e3).toFixed(decimals)}K`;
+    if (num >= 1) return num.toLocaleString("en-US", { maximumFractionDigits: decimals });
+    return num.toFixed(Math.min(decimals, 8));
+  };
+
+  const getWalletBalance = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances || !tokenList.length) return 0;
+
+    // Get ETH/MON token from settings
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
+    if (ethToken && balances[ethToken.address]) {
+      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    }
+    return 0;
+  };
+
+  const getWalletName = (address: string, index: number) => {
+    return walletNames[address] || `Wallet ${index + 1}`;
+  };
+const getMainWalletBalance = () => {
+  const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
+  
+  if (ethToken && tokenBalances && tokenBalances[ethToken.address]) {
+    return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+  }
+  return 0;
+};
+
+const isMainWalletActive = () => {
+  return !activeWalletPrivateKey || activeWalletPrivateKey === '';
+};
+
+const handleSetMainWallet = () => {
+  // Clear the active wallet private key to fall back to main wallet
+  localStorage.removeItem('crystal_active_wallet_private_key');
+  if (setOneCTSigner) {
+    setOneCTSigner('');
+  }
+
+  if (refetch) {
+    setTimeout(() => refetch(), 100);
+  }
+  if (forceRefreshAllWallets) {
+    setTimeout(() => forceRefreshAllWallets(), 200);
+  }
+};
+
+  const isWalletActive = (privateKey: string) => {
+    return activeWalletPrivateKey === privateKey;
+  };
+
+  const handleSetActiveWallet = (privateKey: string) => {
+    if (!isWalletActive(privateKey) && setOneCTSigner) {
+      localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+      setOneCTSigner(privateKey);
+
+      if (refetch) {
+        setTimeout(() => refetch(), 100);
+      }
+      if (forceRefreshAllWallets) {
+        setTimeout(() => forceRefreshAllWallets(), 200);
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    // Clear the active wallet
+    if (setOneCTSigner) {
+      setOneCTSigner('');
+      localStorage.removeItem('crystal_active_wallet_private_key');
+    }
+    
+    // Call the logout function if available
+    if (logout) {
+      logout();
+    }
+    
+    setIsWalletDropdownOpen(false);
+  };
+
+  const handleOpenPortfolio = () => {
+    setpopup(4); // Open portfolio popup
+    setIsWalletDropdownOpen(false);
+  };
+
+  const getCurrentWalletInfo = () => {
+    if (!activeWalletPrivateKey) return null;
+    return subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+  };
+
+  const handleWalletButtonClick = () => {
+    if (!account.connected) {
+      setpopup(4);
+    } else if (account.chainId !== activechain) {
+      setChain();
+    } else if (subWallets.length > 0) {
+      setIsWalletDropdownOpen(!isWalletDropdownOpen);
+    } else {
+      setpopup(4);
+    }
+  };
+
+  // Rest of your existing useEffect hooks and logic...
   useEffect(() => {
     if (activeMarket && tokendict) {
       if (tokendict[activeMarket.baseAddress]) {
@@ -245,9 +410,13 @@ const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
     (market: any) => market?.address === activeMarket?.address
   );
 
+  const currentWallet = getCurrentWalletInfo();
+  const displayAddress = currentWallet ? currentWallet.address : account.address;
+
   return (
     <>
-<header className="app-header" style={style}>        <div className="mobile-left-header">
+      <header className="app-header" style={style}>
+        <div className="mobile-left-header">
           <div className="extitle">
             <img src={backgroundlesslogo} className="extitle-logo" />
             <span className="crystal-name">CRYSTAL</span>
@@ -336,33 +505,131 @@ const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
               />
             )}
           </div>
-          <button
-            type="button"
-            className={account.connected ? 'transparent-button' : 'connect-button'}
-            onClick={async () => {
-              if (account.connected && account.chainId === activechain) {
-                setpopup(4);
-              } else {
-                !account.connected
-                  ? setpopup(4)
-                  : setChain()
-              }
-            }}
-          >
-            <div className="connect-content">
-              {!account.connected ? (
-                t('connectWallet')
-              ) : (
-                <span className="transparent-button-container">
-<img 
-  src={currentWalletIcon || walleticon} 
-  className="wallet-icon" 
-/>
-                  <span className="header-wallet-address">{`${account.address?.slice(0, 6)}...${account.address?.slice(-4)}`}</span>
-                </span>
-              )}
-            </div>
-          </button>
+          
+          <div className="wallet-dropdown-container" ref={walletDropdownRef}>
+            <button
+              type="button"
+              className={account.connected ? 'transparent-button wallet-dropdown-button' : 'connect-button'}
+              onClick={handleWalletButtonClick}
+            >
+              <div className="connect-content">
+                {!account.connected ? (
+                  'Connect Wallet'
+                ) : (
+                  <span className="transparent-button-container">
+                      <img 
+                      src={walleticon} 
+                      className="img-wallet-icon" 
+                    />
+                    {subWallets.length > 0 && (
+                      
+                      <span className="wallet-count">{subWallets.length}</span>
+                    )}
+                    <span className="wallet-separator"></span>
+                                        <img 
+                      src={currentWalletIcon || walleticon} 
+                      className="wallet-icon" 
+                    />
+                    <span className="header-wallet-address">
+                      {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'}
+                    </span>
+                    {subWallets.length > 0 && (
+                      <svg 
+                        className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
+                        width="16" 
+                        height="16" 
+                        viewBox="0 0 24 24" 
+                        fill="none" 
+                        stroke="currentColor" 
+                        strokeWidth="2"
+                      >
+                        <polyline points="6 9 12 15 18 9"></polyline>
+                      </svg>
+                    )}
+                  </span>
+                )}
+              </div>
+            </button>
+
+{account.connected && subWallets.length > 0 && (
+  <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+                <div className="wallet-dropdown-header">
+                  <span className="wallet-dropdown-title">Wallets</span>
+                  <button
+                    className="wallet-dropdown-close"
+                    onClick={() => setIsWalletDropdownOpen(false)}
+                  >
+                    <img src={closebutton} alt="Close" className="wallet-dropdown-close-icon" />
+                  </button>
+                </div>
+
+                <div className="wallet-dropdown-list">
+                  
+                  {subWallets.map((wallet, index) => {
+                    const balance = getWalletBalance(wallet.address);
+                    const isActive = isWalletActive(wallet.privateKey);
+
+                    return (
+                      <div
+                        key={wallet.address}
+                        className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+                      >
+                        <div className="wallet-dropdown-checkbox-container">
+                          <input
+                            type="checkbox"
+                            className="wallet-dropdown-checkbox"
+                            checked={isActive}
+                            onChange={() => handleSetActiveWallet(wallet.privateKey)}
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+
+                        <div 
+                          className="wallet-dropdown-info"
+                          onClick={() => handleSetActiveWallet(wallet.privateKey)}
+                        >
+                          <div className="wallet-dropdown-name">
+                            {getWalletName(wallet.address, index)}
+                          </div>
+                          <div className="wallet-dropdown-address">
+                            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                          </div>
+                        </div>
+
+                        <div className="wallet-dropdown-balance">
+                          <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                            <img src={monadicon} className="wallet-dropdown-mon-icon" alt="MON" />
+                            {formatNumberWithCommas(balance, 2)}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  
+                  <div className="wallet-dropdown-actions">
+                    <button
+                      className="wallet-dropdown-action-btn portfolio-btn"
+                      onClick={handleOpenPortfolio}
+                    >
+                      <img className="wallet-dropdown-action-icon" src={walleticon}/>
+                      Portfolio
+                    </button>
+                    <button
+                      className="wallet-dropdown-action-btn logout-btn"
+                      onClick={handleLogout}
+                    >
+                      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </header>
 
