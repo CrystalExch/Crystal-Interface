@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, EyeOff, X, Monitor, Hash, Image, BarChart3, Table } from 'lucide-react';
+import { Search, EyeOff, X, Monitor, Hash, Image, BarChart3, Table, Bell, Volume2, Play, RotateCcw, Info, Ban } from 'lucide-react';
 
 import { settings } from '../../settings';
 import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
@@ -86,6 +86,421 @@ interface DisplaySettings {
     dexPaid: boolean;
   };
 }
+
+interface AlertSettings {
+  soundAlertsEnabled: boolean;
+  volume: number;
+  sounds: {
+    newPairs: string;
+    pairMigrating: string;
+    migrated: string;
+  };
+}
+
+interface BlacklistSettings {
+  items: Array<{
+    id: string;
+    text: string;
+    type: 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+  }>;
+}
+
+type BlacklistTab = 'all' | 'dev' | 'ca' | 'keyword' | 'website' | 'handle';
+
+const BlacklistPopup: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  settings: BlacklistSettings;
+  onSettingsChange: (settings: BlacklistSettings) => void;
+}> = ({ isOpen, onClose, settings, onSettingsChange }) => {
+  const [activeTab, setActiveTab] = useState<BlacklistTab>('all');
+  const [inputValue, setInputValue] = useState('');
+
+  const addToBlacklist = () => {
+    if (!inputValue.trim()) return;
+
+    const newItem = {
+      id: Date.now().toString(),
+      text: inputValue.trim(),
+      type: activeTab === 'all' ? 'keyword' : activeTab as any,
+    };
+
+    onSettingsChange({
+      items: [...settings.items, newItem]
+    });
+
+    setInputValue('');
+  };
+
+  const removeFromBlacklist = (id: string) => {
+    onSettingsChange({
+      items: settings.items.filter(item => item.id !== id)
+    });
+  };
+
+  const deleteAll = () => {
+    onSettingsChange({ items: [] });
+  };
+
+  const exportBlacklist = () => {
+    const data = JSON.stringify(settings.items, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'blacklist.json';
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importBlacklist = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const imported = JSON.parse(e.target?.result as string);
+        if (Array.isArray(imported)) {
+          onSettingsChange({ items: imported });
+        }
+      } catch (error) {
+        console.error('Failed to import blacklist:', error);
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const filteredItems = activeTab === 'all' 
+    ? settings.items 
+    : settings.items.filter(item => item.type === activeTab);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="blacklist-popup-overlay" onClick={onClose}>
+      <div className="blacklist-popup" onClick={(e) => e.stopPropagation()}>
+        <div className="blacklist-popup-header">
+          <h3 className="blacklist-popup-title">Blacklist</h3>
+          <button className="blacklist-close-button" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="blacklist-content">
+          <div className="blacklist-input-section">
+            <input
+              type="text"
+              className="blacklist-input"
+              placeholder="Enter twitter handle, dev address or keyword"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && addToBlacklist()}
+            />
+            <button className="blacklist-add-btn" onClick={addToBlacklist}>
+              Blacklist
+            </button>
+          </div>
+
+          <div className="blacklist-info">
+            <Info size={16} />
+            <span>Blacklist all types of metrics!</span>
+          </div>
+
+          <div className="blacklist-tabs">
+            {(['all', 'dev', 'ca', 'keyword', 'website', 'handle'] as BlacklistTab[]).map((tab) => (
+              <button
+                key={tab}
+                className={`blacklist-tab ${activeTab === tab ? 'active' : ''}`}
+                onClick={() => setActiveTab(tab)}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="blacklist-list">
+            {filteredItems.length === 0 ? (
+              <div className="blacklist-empty">
+                <Ban size={32} style={{ opacity: 0.3, marginBottom: 8 }} />
+                <span>No blacklisted items</span>
+              </div>
+            ) : (
+              filteredItems.map((item) => (
+                <div key={item.id} className="blacklist-item">
+                  <div>
+                    <span className="blacklist-item-text">{item.text}</span>
+                    <span className="blacklist-item-type">({item.type})</span>
+                  </div>
+                  <button
+                    className="blacklist-remove-btn"
+                    onClick={() => removeFromBlacklist(item.id)}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+
+          <div className="blacklist-footer">
+            <span className="blacklist-count">
+              {settings.items.length} / 1000 blacklists
+            </span>
+            <div className="blacklist-actions">
+              <button className="blacklist-delete-all-btn" onClick={deleteAll}>
+                Delete All
+              </button>
+              <label className="blacklist-import-btn">
+                Import
+                <input
+                  type="file"
+                  accept=".json"
+                  style={{ display: 'none' }}
+                  onChange={importBlacklist}
+                />
+              </label>
+              <button className="blacklist-export-btn" onClick={exportBlacklist}>
+                Export
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const AlertsPopup: React.FC<{
+  isOpen: boolean;
+  onClose: () => void;
+  settings: AlertSettings;
+  onSettingsChange: (settings: AlertSettings) => void;
+}> = ({ isOpen, onClose, settings, onSettingsChange }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const sliderRef = useRef<HTMLDivElement>(null);
+
+  const updateSetting = <K extends keyof AlertSettings>(
+    key: K,
+    value: AlertSettings[K]
+  ) => {
+    onSettingsChange({ ...settings, [key]: value });
+  };
+
+  const updateSoundSetting = (key: keyof AlertSettings['sounds'], value: string) => {
+    onSettingsChange({
+      ...settings,
+      sounds: { ...settings.sounds, [key]: value }
+    });
+  };
+
+  const handleVolumeChange = useCallback((clientX: number) => {
+    if (!sliderRef.current) return;
+    
+    const rect = sliderRef.current.getBoundingClientRect();
+    const percentage = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
+    updateSetting('volume', Math.round(percentage));
+  }, []);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDragging(true);
+    handleVolumeChange(e.clientX);
+  }, [handleVolumeChange]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        handleVolumeChange(e.clientX);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, handleVolumeChange]);
+
+  const playSound = (soundType: keyof AlertSettings['sounds']) => {
+    console.log(`Playing ${soundType} sound`);
+    // Here you would implement actual sound playing logic
+  };
+
+  const handleFileUpload = (soundType: keyof AlertSettings['sounds'], event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Here you would handle file upload and validation
+      console.log(`Uploaded file for ${soundType}:`, file.name);
+      updateSoundSetting(soundType, file.name);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="alerts-popup-overlay" onClick={onClose}>
+      <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
+        <div className="alerts-popup-header">
+          <h3 className="alerts-popup-title">Alerts</h3>
+          <button className="alerts-close-button" onClick={onClose}>
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="alerts-content">
+          <div className="alerts-section">
+            <div className="alerts-main-toggle">
+              <div>
+                <h4 className="alerts-main-label">Sound Alerts</h4>
+                <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
+              </div>
+              <div
+                className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
+                onClick={() => updateSetting('soundAlertsEnabled', !settings.soundAlertsEnabled)}
+              >
+                <div className="toggle-slider" />
+              </div>
+            </div>
+
+            <div className="volume-control">
+              <div className="volume-label">
+                <span className="volume-text">Volume</span>
+                <span className="volume-value">{settings.volume} %</span>
+              </div>
+              <div 
+                ref={sliderRef}
+                className="volume-slider-container"
+                onMouseDown={handleMouseDown}
+              >
+                <div 
+                  className="volume-slider-fill" 
+                  style={{ width: `${settings.volume}%` }}
+                />
+                <div 
+                  className="volume-slider-thumb"
+                  style={{ left: `${settings.volume}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="alerts-section">
+            <div className="sound-options">
+              <div className="sound-option">
+                <span className="sound-option-label">New Pairs</span>
+                <div className="sound-controls">
+                  <label className="sound-selector">
+                    <Volume2 size={14} />
+                    {settings.sounds.newPairs || 'Default'}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFileUpload('newPairs', e)}
+                    />
+                  </label>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => playSound('newPairs')}
+                    title="Play sound"
+                  >
+                    <Play size={14} />
+                  </button>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => updateSoundSetting('newPairs', 'Default')}
+                    title="Reset to default"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="sound-option">
+                <span className="sound-option-label">Pair Migrating</span>
+                <div className="sound-controls">
+                  <label className="sound-selector">
+                    <Volume2 size={14} />
+                    {settings.sounds.pairMigrating || 'Default'}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFileUpload('pairMigrating', e)}
+                    />
+                  </label>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => playSound('pairMigrating')}
+                    title="Play sound"
+                  >
+                    <Play size={14} />
+                  </button>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => updateSoundSetting('pairMigrating', 'Default')}
+                    title="Reset to default"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                </div>
+              </div>
+
+              <div className="sound-option">
+                <span className="sound-option-label">Migrated Sound</span>
+                <div className="sound-controls">
+                  <label className="sound-selector">
+                    <Volume2 size={14} />
+                    {settings.sounds.migrated || 'Default'}
+                    <input
+                      type="file"
+                      accept="audio/*"
+                      style={{ display: 'none' }}
+                      onChange={(e) => handleFileUpload('migrated', e)}
+                    />
+                  </label>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => playSound('migrated')}
+                    title="Play sound"
+                  >
+                    <Play size={14} />
+                  </button>
+                  <button 
+                    className="sound-action-btn"
+                    onClick={() => updateSoundSetting('migrated', 'Default')}
+                    title="Reset to default"
+                  >
+                    <RotateCcw size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <p className="alerts-file-info">
+              Maximum 5 seconds and 0.2MB file size
+            </p>
+
+            <button 
+              className="alerts-continue-btn"
+              onClick={onClose}
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface TokenExplorerProps {
   setpopup: (popup: number) => void;
@@ -798,6 +1213,7 @@ const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
   onHideToken: (tokenId: string) => void;
+  onBlacklistToken: (token: Token) => void;
   isLoading: boolean;
   hoveredToken: string | null;
   hoveredImage: string | null;
@@ -819,6 +1235,7 @@ const TokenRow = React.memo<{
   token,
   quickbuyAmount,
   onHideToken,
+  onBlacklistToken,
   isLoading,
   hoveredToken,
   hoveredImage,
@@ -975,6 +1392,19 @@ const TokenRow = React.memo<{
           title="Hide token"
         >
           <EyeOff size={16} />
+        </button>
+      </Tooltip>
+      
+      <Tooltip content="Blacklist Token">
+        <button
+          className="explorer-blacklist-button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onBlacklistToken(token);
+          }}
+          title="Blacklist token"
+        >
+          <Ban size={16} />
         </button>
       </Tooltip>
       <div
@@ -1478,10 +1908,56 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
   });
 
-  // Save display settings to localStorage whenever they change
+  // Alert settings state
+  const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
+    const saved = localStorage.getItem('explorer-alert-settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved alert settings');
+      }
+    }
+    return {
+      soundAlertsEnabled: true,
+      volume: 100,
+      sounds: {
+        newPairs: 'Default',
+        pairMigrating: 'Default',
+        migrated: 'Default',
+      },
+    };
+  });
+
+  // Blacklist settings state
+  const [blacklistSettings, setBlacklistSettings] = useState<BlacklistSettings>(() => {
+    const saved = localStorage.getItem('explorer-blacklist-settings');
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved blacklist settings');
+      }
+    }
+    return { items: [] };
+  });
+
+  // Popup states
+  const [showAlertsPopup, setShowAlertsPopup] = useState(false);
+  const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
+
+  // Save settings to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem('explorer-display-settings', JSON.stringify(displaySettings));
   }, [displaySettings]);
+
+  useEffect(() => {
+    localStorage.setItem('explorer-alert-settings', JSON.stringify(alertSettings));
+  }, [alertSettings]);
+
+  useEffect(() => {
+    localStorage.setItem('explorer-blacklist-settings', JSON.stringify(blacklistSettings));
+  }, [blacklistSettings]);
 
 const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
   new: localStorage.getItem('explorer-quickbuy-new') ?? '0',
@@ -1680,6 +2156,22 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
   }, [navigate]);
 
   const hideToken = useCallback((id: string) => dispatch({ type: 'HIDE_TOKEN', id }), []);
+
+  const handleBlacklistToken = useCallback((token: Token) => {
+    // Directly add dev to blacklist without opening popup
+    const newItem = {
+      id: Date.now().toString(),
+      text: token.tokenAddress,
+      type: 'dev' as const,
+    };
+
+    setBlacklistSettings(prev => ({
+      items: [...prev.items, newItem]
+    }));
+
+    // Optional: Show a quick notification
+    console.log(`Blacklisted dev: ${token.tokenAddress}`);
+  }, []);
 
   const subscribe = useCallback((
     ws: WebSocket,
@@ -1972,6 +2464,18 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
             settings={displaySettings}
             onSettingsChange={setDisplaySettings}
           />
+                    <button
+            className="alerts-popup-trigger"
+            onClick={() => setShowAlertsPopup(true)}
+          >
+            <Bell size={16} />
+          </button>
+          <button
+            className="alerts-popup-trigger"
+            onClick={() => setShowBlacklistPopup(true)}
+          >
+            <Ban size={16} />
+          </button>
           <button
             className="launch-token-btn"
             onClick={() => navigate('/launchpad')}
@@ -2089,6 +2593,7 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
                     token={t}
                     quickbuyAmount={quickAmounts.new}
                     onHideToken={hideToken}
+                    onBlacklistToken={handleBlacklistToken}
                     isLoading={loading.has(t.id)}
                     hoveredToken={hoveredToken}
                     hoveredImage={hoveredImage}
@@ -2223,6 +2728,7 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
                     token={t}
                     quickbuyAmount={quickAmounts.graduating}
                     onHideToken={hideToken}
+                    onBlacklistToken={handleBlacklistToken}
                     isLoading={loading.has(t.id)}
                     hoveredToken={hoveredToken}
                     hoveredImage={hoveredImage}
@@ -2357,6 +2863,7 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
                     token={t}
                     quickbuyAmount={quickAmounts.graduated}
                     onHideToken={hideToken}
+                    onBlacklistToken={handleBlacklistToken}
                     isLoading={loading.has(t.id)}
                     hoveredToken={hoveredToken}
                     hoveredImage={hoveredImage}
@@ -2386,6 +2893,21 @@ const setActivePreset = useCallback((status: Token['status'], preset: number) =>
           </div>
         </div>
       </div>
+
+      {/* Popups */}
+      <AlertsPopup
+        isOpen={showAlertsPopup}
+        onClose={() => setShowAlertsPopup(false)}
+        settings={alertSettings}
+        onSettingsChange={setAlertSettings}
+      />
+
+      <BlacklistPopup
+        isOpen={showBlacklistPopup}
+        onClose={() => setShowBlacklistPopup(false)}
+        settings={blacklistSettings}
+        onSettingsChange={setBlacklistSettings}
+      />
     </div>
   );
 };
