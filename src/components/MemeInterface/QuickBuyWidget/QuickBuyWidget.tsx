@@ -100,6 +100,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const [quickBuyPreset, setQuickBuyPreset] = useState(1);
     const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
     const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+    const [keybindsEnabled, setKeybindsEnabled] = useState(false);
 
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -517,6 +518,46 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }
         }
     };
+    // Keybind functionality
+    useEffect(() => {
+        if (!keybindsEnabled || !isOpen || isEditMode) return;
+
+        const handleKeyPress = (e: KeyboardEvent) => {
+            // Prevent if user is typing in an input field
+            if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            
+            // Buy keybinds: Q, W, E, R
+            if (['q', 'w', 'e', 'r'].includes(key)) {
+                e.preventDefault();
+                const buyIndex = ['q', 'w', 'e', 'r'].indexOf(key);
+                if (buyIndex < buyAmounts.length) {
+                    const amount = buyAmounts[buyIndex];
+                    setSelectedBuyAmount(amount);
+                    handleBuyTrade(amount);
+                }
+            }
+            
+            // Sell keybinds: A, S, D, F
+            if (['a', 's', 'd', 'f'].includes(key)) {
+                e.preventDefault();
+                const sellIndex = ['a', 's', 'd', 'f'].indexOf(key);
+                const currentSellValues = sellMode === 'percent' ? sellPercents : sellMONAmounts;
+                if (sellIndex < currentSellValues.length) {
+                    const value = currentSellValues[sellIndex];
+                    setSelectedSellPercent(value);
+                    handleSellTrade(value);
+                }
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyPress);
+        return () => document.removeEventListener('keydown', handleKeyPress);
+    }, [keybindsEnabled, isOpen, isEditMode, buyAmounts, sellPercents, sellMONAmounts, sellMode, handleBuyTrade, handleSellTrade]);
+
 
     const handleMouseDown = useCallback((e: React.MouseEvent) => {
         if (!widgetRef.current || isEditMode) return;
@@ -585,6 +626,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         setEditingIndex(null);
         setTempValue('');
     }, [isEditMode]);
+
+    const handleKeybindToggle = useCallback((e: React.MouseEvent) => {
+        e.stopPropagation();
+        setKeybindsEnabled(!keybindsEnabled);
+    }, [keybindsEnabled]);
 
     const handleSellModeToggle = useCallback(() => {
         setSellMode(sellMode === 'percent' ? 'mon' : 'percent');
@@ -713,6 +759,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 onClick={handleEditToggle}
                             />
 
+                            <button
+                                className={`quickbuy-keybind-toggle ${keybindsEnabled ? 'active' : ''}`}
+                                onClick={handleKeybindToggle}
+                                title={`Keybinds ${keybindsEnabled ? 'ON' : 'OFF'} - Buy: QWER, Sell: ASDF`}
+                            >
+                                KB
+                            </button>
+
                             <div className="quickbuy-preset-controls">
                                 <button
                                     className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
@@ -762,7 +816,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 <div className="quickbuy-content">
                     <div className="buy-section">
                         <div className="section-header">
-                            <span>Buy</span>
+                            <span>Buy {keybindsEnabled && <span className="quickbuy-keybind-hint">QWER</span>}</span>
                             <div className="quickbuy-order-indicator">
                                 <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
                                 {pendingBuyCount > 0 ? (
@@ -788,11 +842,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                         />
                                     ) : (
                                         <button
-                                            className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''}`}
+                                            className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
                                             onClick={() => handleBuyButtonClick(amount, index)}
                                             disabled={!account?.connected}
                                         >
                                             {amount}
+                                            {keybindsEnabled && <span className="quickbuy-keybind-key">{'QWER'[index]}</span>}
                                         </button>
                                     )}
                                 </div>
@@ -829,6 +884,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 >
                                     <img className="quickbuy-switch-icon" src={switchicon} alt="Switch" />
                                 </button>
+                                {keybindsEnabled && <span className="quickbuy-keybind-hint">ASDF</span>}
                             </div>
                             <div className="quickbuy-order-indicator">
                                 <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
@@ -857,12 +913,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                             />
                                         ) : (
                                             <button
-                                                className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''}`}
+                                                className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
                                                 onClick={() => handleSellButtonClick(value, index)}
                                                 disabled={!account?.connected || isDisabled}
                                                 title={isDisabled ? `Insufficient balance for ${value}` : ''}
                                             >
                                                 {value}
+                                                {keybindsEnabled && <span className="quickbuy-keybind-key">{'ASDF'[index]}</span>}
                                             </button>
                                         )}
                                     </div>
@@ -882,7 +939,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             <div className="quickbuy-settings-item">
                                 <img src={bribe} alt="Bribe" className="quickbuy-settings-icon" />
                                 <span className="quickbuy-settings-value">{sellBribeValue}</span>
-                            </div>
+            </div>
                         </div>
                     </div>
 

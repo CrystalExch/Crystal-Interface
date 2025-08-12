@@ -145,6 +145,7 @@
     transition: all 0.2s;
     font-size: 0.8rem;
     font-weight: 500;
+    position: relative;
 }
 
 .amount-btn:active,
@@ -169,6 +170,27 @@
 }
 
 
+.quickbuy-keybind-key {
+    position: absolute;
+    bottom: 3px;
+    right: 5px;
+    font-size: 0.6rem;
+    opacity: 0.6;
+    font-weight: 600;
+    color: currentColor;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1px 3px;
+    border-radius: 2px;
+    line-height: 1;
+}
+
+.quickbuy-keybind-hint {
+    font-size: 0.7rem;
+    opacity: 0.5;
+    margin-left: 4px;
+    color: #9fa5d9;
+    font-weight: 500;
+}
 
 .trading-options {
     display: flex;
@@ -221,17 +243,6 @@
 
 .value.red {
     color: #e04e4e;
-}
-
-@media (max-width: 768px) {
-    .quickbuy-widget {
-        width: 280px;
-        max-width: calc(100vw - 20px);
-    }
-    
-    .quickbuy-content {
-        padding: 12px;
-    }
 }
 
 .quickbuy-widget {
@@ -436,6 +447,37 @@
     color: #d8dcff;
 }
 
+.quickbuy-keybind-toggle {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: rgba(219, 225, 245, 0.03);
+    color: #7f808d;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 24px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    letter-spacing: -0.2px;
+    outline: none;
+}
+
+.quickbuy-keybind-toggle:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #a0a0a0;
+}
+
+.quickbuy-keybind-toggle.active {
+        background: #9fa5d92e;
+    color: #d8dcff;
+}
+
+
+
 .quickbuy-settings-display {
     display: flex;
     justify-content: flex-start;
@@ -487,7 +529,6 @@
     overflow-y: auto;
 }
 
-/* Animation for settings */
 .quickbuy-settings-display {
     animation: slideIn 0.2s ease-out;
 }
@@ -500,30 +541,6 @@
     to {
         opacity: 1;
         transform: translateY(0);
-    }
-}
-
-/* Responsive adjustments */
-@media (max-width: 320px) {
-    .quickbuy-preset-controls {
-        gap: 2px;
-    }
-    
-    .quickbuy-preset-pill {
-        min-width: 18px;
-        font-size: 9px;
-        padding: 2px 4px;
-    }
-    
-    .quickbuy-settings-display {
-        flex-direction: column;
-        gap: 4px;
-        padding: 8px;
-    }
-    
-    .quickbuy-settings-item {
-        justify-content: space-between;
-        width: 100%;
     }
 }
 
@@ -789,4 +806,3 @@
     width: 14px;
     height: 14px;
 }
-
