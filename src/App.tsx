@@ -88,7 +88,7 @@ import walleticon from './assets/wallet_icon.png';
 import infoicon from './assets/icon.png';
 import refreshicon from './assets/circulararrow.png';
 import Xicon from './assets/Xicon.svg';
-
+import reset from './assets/reset.svg';
 import walletbackpack from './assets/walletbackpack.jpg'
 import walletcoinbase from './assets/walletcoinbase.png'
 import walletconnect from './assets/walletconnect.png'
@@ -13267,11 +13267,7 @@ const handleVaultWithdraw = async () => {
                 Graduated
               </button>
               <button className="explorer-revert-button" onClick={handleExplorerFiltersReset}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="23 4 23 10 17 10"></polyline>
-                  <polyline points="1 20 1 14 7 14"></polyline>
-                  <path d="m3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-                </svg>
+                <img className="filters-reset-icon" src={reset}/>
               </button>
             </div>
 

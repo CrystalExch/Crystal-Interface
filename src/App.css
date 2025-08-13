@@ -2921,7 +2921,7 @@ body[style*="cursor: row-resize"] .ordercenter-drag-handle {
   transition: opacity .2s ease-out;
   box-sizing: content-box;
   background-color: rgb(8, 8, 8);
-  border: 1px solid rgba(43, 43, 43, 0.6);
+  border:1px solid rgba(179, 184, 249, 0.15);
 }
 
 
@@ -8498,4 +8498,15 @@ input::-webkit-inner-spin-button {
 
 .app-container.widget-right {
   margin-right: 420px;
+}
+
+
+.filters-reset-icon{
+  opacity: 0.7;
+  width: 18px;
+}
+
+.filters-reset-icon:hover {
+  opacity: 1;
+  cursor: pointer;
 }

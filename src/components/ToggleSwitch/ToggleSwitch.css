@@ -20,7 +20,7 @@
 
 .market-toggle-switch-background {
   background-color: #26262eb8;
-  border-radius: 4px;
+  border-radius: 3px;
   bottom: 0;
   cursor: pointer;
   left: 0;
@@ -35,8 +35,8 @@
 }
 
 .market-toggle-switch-handle {
-  background-color: #ffffff;
-  border-radius: 3px;
+  background-color: #ffffff67;
+  border-radius: 2px;
   box-shadow: 0 0px 2px rgba(0, 0, 0, 0.5);
   height: 10px;
   left: 2px;
@@ -46,10 +46,11 @@
   width: 10px;
 }
 
+
 .market-toggle-switch
   input[type='checkbox']:checked
   + .market-toggle-switch-background {
-    background:rgb(180 182 244);
+    background:#aaaecf6d;
   }
 
 .market-toggle-switch
@@ -57,6 +58,7 @@
   + .market-toggle-switch-background
   .market-toggle-switch-handle {
   transform: translateX(14px);
+  background-color: #bdc2f1;
 }
 
 .only-current-market-label {
