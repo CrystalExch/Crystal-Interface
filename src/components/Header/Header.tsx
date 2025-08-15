@@ -335,19 +335,16 @@ const handleSetMainWallet = () => {
     return subWallets.find(w => w.privateKey === activeWalletPrivateKey);
   };
 
-  const handleWalletButtonClick = () => {
-    if (!account.connected) {
-      setpopup(4);
-    } else if (account.chainId !== activechain) {
-      setChain();
-    } else if (subWallets.length > 0) {
-      setIsWalletDropdownOpen(!isWalletDropdownOpen);
-    } else {
-      setpopup(4);
-    }
-  };
+const handleWalletButtonClick = () => {
+  if (!account.connected) {
+    setpopup(4);
+  } else if (account.chainId !== activechain) {
+    setChain();
+  } else {
+    setIsWalletDropdownOpen(!isWalletDropdownOpen);
+  }
+};
 
-  // Rest of your existing useEffect hooks and logic...
   useEffect(() => {
     if (activeMarket && tokendict) {
       if (tokendict[activeMarket.baseAddress]) {
@@ -522,8 +519,10 @@ const handleSetMainWallet = () => {
                       className="img-wallet-icon" 
                     />
                     {subWallets.length > 0 && (
-                      
                       <span className="wallet-count">{subWallets.length}</span>
+                    )}
+                    {subWallets.length == 0 && (
+                      <span className="wallet-count">0</span>
                     )}
                     <span className="wallet-separator"></span>
                                         <img 
@@ -533,7 +532,6 @@ const handleSetMainWallet = () => {
                     <span className="header-wallet-address">
                       {displayAddress ? `${displayAddress.slice(0, 6)}...${displayAddress.slice(-4)}` : 'No Address'}
                     </span>
-                    {subWallets.length > 0 && (
                       <svg 
                         className={`wallet-dropdown-arrow ${isWalletDropdownOpen ? 'open' : ''}`}
                         width="16" 
@@ -545,13 +543,13 @@ const handleSetMainWallet = () => {
                       >
                         <polyline points="6 9 12 15 18 9"></polyline>
                       </svg>
-                    )}
+                    
                   </span>
                 )}
               </div>
             </button>
 
-{account.connected && subWallets.length > 0 && (
+{account.connected && (
   <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
                   <span className="wallet-dropdown-title">Wallets</span>
@@ -563,70 +561,84 @@ const handleSetMainWallet = () => {
                   </button>
                 </div>
 
-                <div className="wallet-dropdown-list">
-                  
-                  {subWallets.map((wallet, index) => {
-                    const balance = getWalletBalance(wallet.address);
-                    const isActive = isWalletActive(wallet.privateKey);
+<div className="wallet-dropdown-list">
+  {subWallets.length > 0 ? (
+    subWallets.map((wallet, index) => {
+      const balance = getWalletBalance(wallet.address);
+      const isActive = isWalletActive(wallet.privateKey);
 
-                    return (
-                      <div
-                        key={wallet.address}
-                        className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
-                      >
-                        <div className="wallet-dropdown-checkbox-container">
-                          <input
-                            type="checkbox"
-                            className="wallet-dropdown-checkbox"
-                            checked={isActive}
-                            onChange={() => handleSetActiveWallet(wallet.privateKey)}
-                            onClick={(e) => e.stopPropagation()}
-                          />
-                        </div>
+      return (
+        <div
+          key={wallet.address}
+          className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+        >
+          <div className="wallet-dropdown-checkbox-container">
+            <input
+              type="checkbox"
+              className="wallet-dropdown-checkbox"
+              checked={isActive}
+              onChange={() => handleSetActiveWallet(wallet.privateKey)}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </div>
 
-                        <div 
-                          className="wallet-dropdown-info"
-                          onClick={() => handleSetActiveWallet(wallet.privateKey)}
-                        >
-                          <div className="wallet-dropdown-name">
-                            {getWalletName(wallet.address, index)}
-                          </div>
-                          <div className="wallet-dropdown-address">
-                            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                          </div>
-                        </div>
+          <div 
+            className="wallet-dropdown-info"
+            onClick={() => handleSetActiveWallet(wallet.privateKey)}
+          >
+            <div className="wallet-dropdown-name">
+              {getWalletName(wallet.address, index)}
+            </div>
+            <div className="wallet-dropdown-address">
+              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+            </div>
+          </div>
 
-                        <div className="wallet-dropdown-balance">
-                          <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                            <img src={monadicon} className="wallet-dropdown-mon-icon" alt="MON" />
-                            {formatNumberWithCommas(balance, 2)}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                  
-                  <div className="wallet-dropdown-actions">
-                    <button
-                      className="wallet-dropdown-action-btn portfolio-btn"
-                      onClick={handleOpenPortfolio}
-                    >
-                      <img className="wallet-dropdown-action-icon" src={walleticon}/>
-                      Portfolio
-                    </button>
-                    <button
-                      className="wallet-dropdown-action-btn logout-btn"
-                      onClick={handleLogout}
-                    >
-                      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-                        <polyline points="16 17 21 12 16 7"></polyline>
-                        <line x1="21" y1="12" x2="9" y2="12"></line>
-                      </svg>
-                      Logout
-                    </button>
-                  </div>
-                </div>
+          <div className="wallet-dropdown-balance">
+            <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+              <img src={monadicon} className="wallet-dropdown-mon-icon" alt="MON" />
+              {formatNumberWithCommas(balance, 2)}
+            </div>
+          </div>
+        </div>
+      );
+    })
+  ) : (
+    <div className="wallet-dropdown-no-subwallets">
+      <button
+        className="wallet-dropdown-action-btn 1ct-trading-btn"
+        onClick={() => {
+          setpopup(28);
+          setIsWalletDropdownOpen(false);
+        }}
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+        1CT Trading
+      </button>
+    </div>
+  )}
+  
+  <div className="wallet-dropdown-actions">
+    <button
+      className="wallet-dropdown-action-btn portfolio-btn"
+      onClick={handleOpenPortfolio}
+    >
+      <img className="wallet-dropdown-action-icon" src={walleticon}/>
+      Portfolio
+    </button>
+    <button
+      className="wallet-dropdown-action-btn logout-btn"
+      onClick={handleLogout}
+    >
+      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+        <polyline points="16 17 21 12 16 7"></polyline>
+        <line x1="21" y1="12" x2="9" y2="12"></line>
+      </svg>
+      Logout
+    </button>
+  </div>
+</div>
               </div>
             )}
           </div>

@@ -443,7 +443,7 @@ const getWalletIcon = () => {
     case 'HaHa Wallet':
       return wallethaha;
     default:
-      return walletinjected; 
+      return; 
   }
 };
   useEffect(() => {
@@ -14355,6 +14355,74 @@ const handleVaultWithdraw = async () => {
             )}
           </div>
         ) : null}
+        {popup === 28 ? (
+  <div className="onect-trading-selection-bg">
+    <div ref={popupref} className="onect-trading-selection-container">
+      <div className="onect-trading-header">
+        <h2 className="onect-trading-title">Choose Trading Mode</h2>
+        <button
+          className="onect-trading-close-button"
+          onClick={() => setpopup(0)}
+        >
+          <img src={closebutton} className="close-button-icon" />
+        </button>
+      </div>
+      
+      <div className="onect-trading-content">
+        <div className="trading-mode-options">
+          <div className="trading-mode-option selected">
+            <div className="trading-mode-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+              </svg>
+            </div>
+            <div className="trading-mode-info">
+              <h3>Regular Trading</h3>
+              <p>Standard wallet-based trading with manual approvals</p>
+            </div>
+          </div>
+          
+          <div className="trading-mode-option">
+            <div className="trading-mode-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+            </div>
+            <div className="trading-mode-info">
+              <h3>1CT Trading</h3>
+              <p>Faster execution, better prices, and advanced features</p>
+            </div>
+            <div className="trading-mode-status">
+              <button 
+                className="enable-onect-btn"
+                onClick={async () => {
+                  try {
+                    setIsUsernameSigning(true);
+                    await createSubWallet();
+                    setpopup(0);
+                  } catch (error) {
+                    console.error('Failed to enable 1CT trading:', error);
+                  } finally {
+                    setIsUsernameSigning(false);
+                  }
+                }}
+                disabled={isUsernameSigning}
+              >
+                {isUsernameSigning ? (
+                  <div className="button-content">
+                    <div className="loading-spinner" />
+                  </div>
+                ) : (
+                  'Enable 1CT'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+              </div>
+    </div>
+  </div>
+) : null}
       </div>
     </>
   );
