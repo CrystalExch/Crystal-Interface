@@ -4,13 +4,12 @@ import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { settings } from "../../settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
-
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
 import MemeChart from "./MemeChart/MemeChart";
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-
+import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { defaultMetrics } from "../TokenExplorer/TokenData";
 import { CrystalLaunchpadRouter } from "../../abis/CrystalLaunchpadRouter";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
@@ -24,9 +23,10 @@ import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
-// import filtercup from "../../assets/filtercup.svg";
 import closebutton from "../../assets/close_button.png";
 import monadicon from "../../assets/monadlogo.svg";
+import trash from '../../assets/trash.svg';
+
 import "./MemeInterface.css";
 
 interface Token {
@@ -80,6 +80,12 @@ interface Holder {
   amountSold: number;
   valueBought: number;
   valueSold: number;
+}
+
+interface AdvancedOrder {
+  enabled: boolean;
+  percentage?: string;
+  amount?: string;
 }
 
 interface MemeInterfaceProps {
@@ -249,13 +255,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 }) => {
 
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
-  switch (activeView) {
-    case 'chart': return 0;
-    case 'trades': return 1;
-    case 'ordercenter': return 2;
-    default: return 0;
-  }
-};
+    switch (activeView) {
+      case 'chart': return 0;
+      case 'trades': return 1;
+      case 'ordercenter': return 2;
+      default: return 0;
+    }
+  };
 
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
@@ -276,9 +282,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<"buy" | "sell">("buy");
-  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit">(
-    "market",
-  );
+  const [activeOrderType, setActiveOrderType] = useState<"market" | "Limit">("market");
   const [live, setLive] = useState<Partial<Token>>({});
   const [trades, setTrades] = useState<Trade[]>([]);
   const [selectedInterval, setSelectedInterval] = useState("5m");
@@ -299,10 +303,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [page, _setPage] = useState(0);
-  const [_userStats, setUserStats] = useState({
-    balance:0, amountBought:0, amountSold:0,
-    valueBought:0, valueSold:0, valueNet:0,
+  const [userStats, setUserStats] = useState({
+    balance: 0, amountBought: 0, amountSold: 0,
+    valueBought: 0, valueSold: 0, valueNet: 0,
   });
+
+  const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
+  const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
+  const [advancedOrders, setAdvancedOrders] = useState<Array<{
+    id: string;
+    type: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration';
+    percentage?: string;
+    amount?: string;
+  }>>([]);
 
   // Mobile-specific states
   const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
@@ -314,7 +327,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [mobileTradeType, setMobileTradeType] = useState<'buy' | 'sell'>('buy');
   const [mobileWalletsExpanded, setMobileWalletsExpanded] = useState(false);
   const [mobileWalletNames, setMobileWalletNames] = useState<{ [address: string]: string }>({});
-    
+
   const { activechain } = useSharedContext();
 
   const balancegetter = settings.chainConfig[activechain].balancegetter;
@@ -491,7 +504,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   }, []);
 
   const [top10HoldingPercentage, setTop10HoldingPercentage] = useState(0);
-  
+
   const handleBuyPresetSelect = useCallback((preset: number) => {
     setSelectedBuyPreset(preset);
     setMobileQuickBuyPreset(preset);
@@ -508,7 +521,35 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setSellPriorityFee(presetValues.priority);
     setSellBribeValue(presetValues.bribe);
   }, []);
+  const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
+    if (advancedOrders.length >= 5) return; // Maximum 5 orders
 
+    const newOrder = {
+      id: `${orderType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: orderType,
+      ...(orderType === 'migration'
+        ? {}
+        : orderType === 'devSell'
+          ? { percentage: '0' }
+          : { percentage: orderType === 'takeProfit' ? '+0' : '-0', amount: '0' }
+      )
+    };
+
+    setAdvancedOrders(prev => [...prev, newOrder]);
+    setShowAdvancedDropdown(false);
+  };
+
+  const handleAdvancedOrderRemove = (orderId: string) => {
+    setAdvancedOrders(prev => prev.filter(order => order.id !== orderId));
+  };
+
+  const handleAdvancedOrderUpdate = (orderId: string, field: string, value: string) => {
+    setAdvancedOrders(prev => prev.map(order =>
+      order.id === orderId
+        ? { ...order, [field]: value }
+        : order
+    ));
+  };
   const handlePresetSelect = (preset: number) => {
     if (settingsMode === 'buy') {
       handleBuyPresetSelect(preset);
@@ -1036,9 +1077,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           ...prev.slice(0, 99),
         ]);
 
-        setHolders(prev=>{
+        setHolders(prev => {
           const idx = prev.findIndex(r => r.address.toLowerCase() === caller.toLowerCase());
-          if(idx === -1) return prev;
+          if (idx === -1) return prev;
           const row = { ...prev[idx] };
 
           if (isBuy) {
@@ -1051,10 +1092,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             row.balance -= amountIn;
           }
           row.tokenNet = row.amountBought - row.amountSold;
-          row.valueNet = row.valueSold  - row.valueBought;
+          row.valueNet = row.valueSold - row.valueBought;
 
           const copy = [...prev];
-          copy[idx]  = row;
+          copy[idx] = row;
           return copy;
         });
 
@@ -1084,48 +1125,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
   }, [token.id, tokenAddress, address, refetchBalances]);
 
-useEffect(() => {
-  if (!token.id) return;
+  useEffect(() => {
+    if (!token.id) return;
 
-  (async () => {
-    const data = await gqWithRateLimit(
-      HOLDERS_QUERY,
-      { m: token.id.toLowerCase(), skip: 0, first: 10 },
-      `holders-top10-${token.id}`
-    );
-    
-    if (data?.holders) {
-      const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
-        return sum + (Number(holder.balance) / 1e18);
-      }, 0);
-      
-      const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
-      setTop10HoldingPercentage(top10Percentage);
-    }
-
-    if (page === 0) {
-      setHolders(
-        data.holders.map((h: any) => ({
-          address: h.address,
-          balance: Number(h.balance) / 1e18,
-          amountBought: Number(h.amountBought) / 1e18,
-          amountSold: Number(h.amountSold) / 1e18,
-          valueBought: Number(h.valueBought) / 1e18,
-          valueSold: Number(h.valueSold) / 1e18,
-          valueNet: Number(h.valueNet) / 1e18,
-          tokenNet: Number(h.tokenNet) / 1e18,
-        }))
-      );
-    } else {
-      const pageData = await gqWithRateLimit(
+    (async () => {
+      const data = await gqWithRateLimit(
         HOLDERS_QUERY,
-        { m: token.id.toLowerCase(), skip: page * PAGE_SIZE, first: PAGE_SIZE },
-        `holders-${token.id}-${page}`
+        { m: token.id.toLowerCase(), skip: 0, first: 10 },
+        `holders-top10-${token.id}`
       );
-      
-      if (pageData?.holders) {
+
+      if (data?.holders) {
+        const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
+          return sum + (Number(holder.balance) / 1e18);
+        }, 0);
+
+        const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
+        setTop10HoldingPercentage(top10Percentage);
+      }
+
+      if (page === 0) {
         setHolders(
-          pageData.holders.map((h: any) => ({
+          data.holders.map((h: any) => ({
             address: h.address,
             balance: Number(h.balance) / 1e18,
             amountBought: Number(h.amountBought) / 1e18,
@@ -1136,20 +1157,40 @@ useEffect(() => {
             tokenNet: Number(h.tokenNet) / 1e18,
           }))
         );
+      } else {
+        const pageData = await gqWithRateLimit(
+          HOLDERS_QUERY,
+          { m: token.id.toLowerCase(), skip: page * PAGE_SIZE, first: PAGE_SIZE },
+          `holders-${token.id}-${page}`
+        );
+
+        if (pageData?.holders) {
+          setHolders(
+            pageData.holders.map((h: any) => ({
+              address: h.address,
+              balance: Number(h.balance) / 1e18,
+              amountBought: Number(h.amountBought) / 1e18,
+              amountSold: Number(h.amountSold) / 1e18,
+              valueBought: Number(h.valueBought) / 1e18,
+              valueSold: Number(h.valueSold) / 1e18,
+              valueNet: Number(h.valueNet) / 1e18,
+              tokenNet: Number(h.tokenNet) / 1e18,
+            }))
+          );
+        }
       }
-    }
-  })();
-}, [token.id, page]);
+    })();
+  }, [token.id, page]);
 
   useEffect(() => {
-    if(!userAddr || !token.id) return;
+    if (!userAddr || !token.id) return;
 
     (async () => {
       const id = `${token.id.toLowerCase()}-${userAddr}`;
       const data = await gqWithRateLimit(
         USER_HOLDER_QUERY, { id }, `userHolder-${id}`
       );
-      if(!data?.holder) {
+      if (!data?.holder) {
         setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
         return;
       }
@@ -1163,7 +1204,7 @@ useEffect(() => {
         valueNet: Number(h.valueNet) / 1e18,
       });
     })();
-  },[userAddr, token.id]);
+  }, [userAddr, token.id]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
@@ -1438,33 +1479,34 @@ useEffect(() => {
           <button className="meme-notif-close" onClick={closeNotif} style={{ background: 'none', border: 'none', color: '#fff', fontSize: 18, cursor: 'pointer', position: 'absolute', top: 8, right: 8 }}>&times;</button>
         </div>
       )}
-      
-    <div className="meme-mobile-view-toggle">
-  <div 
-    className="meme-mobile-toggle-slider"
-    style={{
-      transform: `translateX(${getSliderPosition(mobileActiveView) * 100}%)`
-    }}
-  />
-  <button
-    className={`meme-mobile-toggle-btn ${mobileActiveView === 'chart' ? 'active' : ''}`}
-    onClick={() => setMobileActiveView('chart')}
-  >
-    Chart
-  </button>
-  <button
-    className={`meme-mobile-toggle-btn ${mobileActiveView === 'trades' ? 'active' : ''}`}
-    onClick={() => setMobileActiveView('trades')}
-  >
-    Trades
-  </button>
-  <button
-    className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
-    onClick={() => setMobileActiveView('ordercenter')}
-  >
-    Orders
-  </button>
-</div>
+
+      <div className="meme-mobile-view-toggle">
+        <div
+          className="meme-mobile-toggle-slider"
+          style={{
+            transform: `translateX(${getSliderPosition(mobileActiveView) * 100}%)`
+          }}
+        />
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'chart' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('chart')}
+        >
+          Chart
+        </button>
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'trades' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('trades')}
+        >
+          Trades
+        </button>
+        <button
+          className={`meme-mobile-toggle-btn ${mobileActiveView === 'ordercenter' ? 'active' : ''}`}
+          onClick={() => setMobileActiveView('ordercenter')}
+        >
+          Orders
+        </button>
+      </div>
+
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
           {/* Desktop: Always show chart and trades side by side */}
@@ -1518,7 +1560,6 @@ useEffect(() => {
             holders={holders}
             page={page}
             pageSize={PAGE_SIZE}
-
             currentPrice={currentPrice}
           />
         </div>
@@ -1668,8 +1709,7 @@ useEffect(() => {
                 <div className="meme-preset-buttons">
                   {sliderPresets.map((preset: number, index: number) => (
                     <button
-                      key={index}
-                      className={`meme-preset-button ${sliderPercent === preset ? "active" : ""}`}
+                      className={`meme-preset-button ${sliderPercent === preset ? `active ${activeTradeType}` : ""}`}
                       onClick={() => {
                         setSliderPercent(preset);
                         const newAmount = (1000 * preset) / 100;
@@ -1739,19 +1779,22 @@ useEffect(() => {
                   onMouseDown={() => setIsDragging(true)}
                   onMouseUp={() => setIsDragging(false)}
                   style={{
-                    background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgb(28, 28, 31) ${sliderPercent}%)`,
+                    background: `linear-gradient(to right, ${activeTradeType === 'buy' ? 'rgb(67, 254, 154)' : 'rgb(235, 112, 112)'
+                      } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
                 <div
                   className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
+                  style={{
+                    left: `calc(${sliderPercent}% - 15px)`
+                  }}
                 >
                   {sliderPercent}%
                 </div>
                 <div className="meme-balance-slider-marks">
                   {[0, 25, 50, 75, 100].map((markPercent) => (
                     <span
-                      key={markPercent}
-                      className="meme-balance-slider-mark"
+                      className={`meme-balance-slider-mark ${activeTradeType}`}
                       data-active={sliderPercent >= markPercent}
                       data-percentage={markPercent}
                       onClick={() => {
@@ -1889,6 +1932,189 @@ useEffect(() => {
               </div>
             )}
           </div>
+
+          {/* Advanced Trading Strategy Section - Only show for buy orders */}
+          {activeTradeType === "buy" && (
+            <div className="meme-advanced-trading-section">
+              <div className="meme-advanced-trading-toggle">
+                <div className="meme-advanced-trading-header">
+                  <div className="meme-advanced-trading-icon-label">
+                    <span className="meme-advanced-trading-label">Advanced Trading Strategy</span>
+                  </div>
+                  <ToggleSwitch
+                    checked={advancedTradingEnabled}
+                    onChange={() => setAdvancedTradingEnabled(!advancedTradingEnabled)}
+                  />
+                </div>
+
+                {advancedTradingEnabled && (
+                  <div className="meme-advanced-trading-content">
+                    {advancedOrders.map((order) => (
+                      <div key={order.id} className="meme-advanced-order-item">
+                        <div className="meme-advanced-order-inputs">
+                          {(order.type === 'takeProfit' || order.type === 'stopLoss') && (
+                            <>
+                              <div className="meme-advanced-order-input-group">
+                                <svg
+                                  className="advanced-order-type-icon"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="rgb(154 155 164)"
+                                  strokeWidth="2"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  style={{
+                                    transform: order.type === 'stopLoss' ? 'rotate(180deg)' : 'none',
+                                    paddingRight: '2px',
+                                  }}
+                                >
+                                  <path d="m5 12 7-7 7 7" /><path d="M12 19V5" />
+                                </svg>
+                                <span className="meme-advanced-order-input-label">
+                                  {order.type === 'takeProfit' ? 'TP' : 'SL'}
+                                </span>
+                                <input
+                                  type="text"
+                                  className="meme-advanced-order-input"
+                                  value={order.percentage || ''}
+                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
+                                  placeholder={order.type === 'takeProfit' ? '+0' : '-0'}
+                                />
+                                <span className="meme-advanced-order-unit">%</span>
+                              </div>
+                              <div className="meme-advanced-order-input-group">
+                                <span className="meme-advanced-order-input-label">Amount</span>
+                                <input
+                                  type="number"
+                                  className="meme-advanced-order-input"
+                                  value={order.amount || ''}
+                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'amount', e.target.value)}
+                                  placeholder="0"
+                                />
+                                <span className="meme-advanced-order-unit">%</span>
+                              </div>
+                              <button
+                                className="meme-advanced-order-remove"
+                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                              >
+                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                              </button>
+                            </>
+                          )}
+                          {order.type === 'devSell' && (
+                            <>
+                              <div className="meme-advanced-order-input-group">
+                                <svg className="advanced-order-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" />
+                                </svg>
+                                <span className="meme-advanced-order-input-label">Sell Amount on Dev Sell</span>
+                                <input
+                                  type="number"
+                                  className="meme-advanced-order-input"
+                                  value={order.percentage || ''}
+                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
+                                  placeholder="0"
+                                />
+                                <span className="meme-advanced-order-unit">%</span>
+                              </div>
+                              <button
+                                className="meme-advanced-order-remove"
+                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                              >
+                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                              </button>
+                            </>
+                          )}
+                          {order.type === 'migration' && (
+                            <>
+                              <div className="meme-advanced-order-input-group">
+                                <svg className="advanced-order-type-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />
+                                </svg>
+                                <span className="meme-advanced-order-input-label">Sell Amount on Migration</span>
+                                <input
+                                  type="number"
+                                  className="meme-advanced-order-input"
+                                  value={order.percentage || ''}
+                                  onChange={(e) => handleAdvancedOrderUpdate(order.id, 'percentage', e.target.value)}
+                                  placeholder="0"
+                                />
+                                <span className="meme-advanced-order-unit">%</span>
+                              </div>
+                              <button
+                                className="meme-advanced-order-remove"
+                                onClick={() => handleAdvancedOrderRemove(order.id)}
+                              >
+                                <img src={trash} className="meme-advanced-order-remove-icon" alt="Remove" width="14" height="14" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add Button with Dropdown */}
+                    {advancedOrders.length < 5 && (
+                      <div className="meme-advanced-add-container">
+                        <button
+                          className="meme-advanced-add-button"
+                          onClick={() => setShowAdvancedDropdown(!showAdvancedDropdown)}
+                        >
+                          <span>Add</span>
+                          <svg className="meme-advanced-add-icon" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                            <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                          </svg>
+                        </button>
+
+                        {showAdvancedDropdown && (
+                          <div className="meme-advanced-dropdown">
+                            <button
+                              className="meme-advanced-dropdown-item"
+                              onClick={() => handleAdvancedOrderAdd('takeProfit')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m5 12 7-7 7 7" /><path d="M12 19V5" />
+                              </svg>
+                              Take Profit
+                            </button>
+                            <button
+                              className="meme-advanced-dropdown-item"
+                              onClick={() => handleAdvancedOrderAdd('stopLoss')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 5v14" /><path d="m19 12-7 7-7-7" />
+                              </svg>
+                              Stop Loss
+                            </button>
+                            <button
+                              className="meme-advanced-dropdown-item"
+                              onClick={() => handleAdvancedOrderAdd('devSell')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M12 17V3" /><path d="m6 11 6 6 6-6" /><path d="M19 21H5" />
+                              </svg>
+                              Sell on Dev Sell
+                            </button>
+                            <button
+                              className="meme-advanced-dropdown-item"
+                              onClick={() => handleAdvancedOrderAdd('migration')}
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgb(154 155 164)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="m6 17 5-5-5-5" /><path d="m13 17 5-5-5-5" />
+                              </svg>
+                              Migration
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <button
             onClick={() => {
               if (!account.connected) {
@@ -1913,42 +2139,45 @@ useEffect(() => {
             )}
           </button>
 
-        </div>
-        <div className="meme-trading-stats-container">
-          <div className="meme-time-stats-row"></div>
-          <div className="meme-trading-stats-row">
-            <div className="meme-stat-group">
-              <div className="meme-stat-header">
-                <span className="meme-stat-label">TXNS</span>
-                <div className="meme-stat-value">
-                  {formatNumberWithCommas(totalTransactions)}
-                </div>
-              </div>
-              <div className="meme-stat-details">
-                <div className="meme-stat-subrow">
-                  <div className="stat-sublabel">BUYS</div>
-                  <div className="stat-sublabel">SELLS</div>
-                </div>
-                <div className="meme-stat-subrow">
-                  <div className="stat-subvalue buy">
-                    {formatNumberWithCommas(currentData.buyTransactions)}
-                  </div>
-                  <div className="stat-subvalue sell">
-                    {formatNumberWithCommas(currentData.sellTransactions)}
-                  </div>
-                </div>
-                <div className="meme-progress-bar">
-                  <div
-                    className="progress-buy"
-                    style={{ width: `${buyTxPercentage}%` }}
-                  ></div>
-                  <div
-                    className="progress-sell"
-                    style={{ width: `${sellTxPercentage}%` }}
-                  ></div>
-                </div>
+          {/* Portfolio Stats Section */}
+          <div className="meme-portfolio-stats">
+            <div className="meme-portfolio-stat">
+              <div className="meme-portfolio-label">Bought</div>
+              <div className="meme-portfolio-value bought">
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                {formatNumberWithCommas(userStats.valueBought, 1)}
               </div>
             </div>
+            <div className="meme-portfolio-stat">
+              <div className="meme-portfolio-label">Sold</div>
+              <div className="meme-portfolio-value sold">
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+
+                {formatNumberWithCommas(userStats.valueSold, 1)}
+              </div>
+            </div>
+            <div className="meme-portfolio-stat">
+              <div className="meme-portfolio-label">Holding</div>
+              <div className="meme-portfolio-value holding">
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+
+                {formatNumberWithCommas(userStats.balance, 1)}
+              </div>
+            </div>
+            <div className="meme-portfolio-stat pnl">
+              <div className="meme-portfolio-label">PnL</div>
+              <div className={`meme-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}>
+                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+
+                {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
+                {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+              </div>
+            </div>
+          </div>
+
+        </div>
+        <div className="meme-trading-stats-container">
+          <div className="meme-trading-stats-row">
             <div className="meme-stat-group">
               <div className="meme-stat-header">
                 <span className="meme-stat-label">VOLUME</span>
@@ -2038,50 +2267,50 @@ useEffect(() => {
               </svg>
             </button>
           </div>
-{tokenInfoExpanded && (
-  <div className="meme-token-info-grid">
-    <div className="meme-token-info-item">
-      <div className="meme-token-info-icon-container">
-        <svg
-          className="meme-token-info-icon"
-          width="16"
-          height="16"
-          viewBox="0 0 32 32"
-          fill={
-            top10HoldingPercentage > 50
-              ? "#eb7070ff"
-              : top10HoldingPercentage > 30
-              ? "#fbbf24"
-              : "rgb(67 254 154)"
-          }
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-        </svg>
-        <span
-          className="meme-token-info-value"
-          style={{
-            color:
-              top10HoldingPercentage > 50
-                ? "#eb7070ff"
-                : top10HoldingPercentage > 30
-                ? "#fbbf24"
-                : "rgb(67 254 154)",
-          }}
-        >
-          {top10HoldingPercentage.toFixed(2)}%
-        </span>
-      </div>
-      <span className="meme-token-info-label">Top 10 H.</span>
-    </div>
-  </div>
-)}
+          {tokenInfoExpanded && (
+            <div className="meme-token-info-grid">
+              <div className="meme-token-info-item">
+                <div className="meme-token-info-icon-container">
+                  <svg
+                    className="meme-token-info-icon"
+                    width="16"
+                    height="16"
+                    viewBox="0 0 32 32"
+                    fill={
+                      top10HoldingPercentage > 50
+                        ? "#eb7070ff"
+                        : top10HoldingPercentage > 30
+                          ? "#fbbf24"
+                          : "rgb(67 254 154)"
+                    }
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+                  </svg>
+                  <span
+                    className="meme-token-info-value"
+                    style={{
+                      color:
+                        top10HoldingPercentage > 50
+                          ? "#eb7070ff"
+                          : top10HoldingPercentage > 30
+                            ? "#fbbf24"
+                            : "rgb(67 254 154)",
+                    }}
+                  >
+                    {top10HoldingPercentage.toFixed(2)}%
+                  </span>
+                </div>
+                <span className="meme-token-info-label">Top 10 H.</span>
+              </div>
+            </div>
+          )}
         </div>
         <div className="meme-token-info-footer">
           <span className="meme-address">
             <img className="meme-contract-icon" src={contract} />
             <span className="meme-address-title">CA:</span>{" "}
-              {token.id.slice(0, 16)}...{token.id.slice(-8)}
+            {token.id.slice(0, 24)}...{token.id.slice(-4)}
             <svg
               className="meme-address-link"
               xmlns="http://www.w3.org/2000/svg"
@@ -2099,47 +2328,23 @@ useEffect(() => {
 
       {/* Mobile QuickBuy Panel */}
       <div className="meme-mobile-quickbuy mobile-only">
-        {/* <div className="meme-mobile-portfolio-section">
-          <div className="meme-mobile-portfolio-item">
-            <span className="meme-mobile-portfolio-label">Portfolio</span>
-            <span className="meme-mobile-portfolio-value green">
-              {formatNumberWithCommas(portfolioValue, 2)} MON
-            </span>
-          </div>
-          <div className="meme-mobile-portfolio-item">
-            <span className="meme-mobile-portfolio-label">Balance</span>
-            <span className="meme-mobile-portfolio-value">
-              {formatNumberWithCommas(tokenBalance, 3)}
-            </span>
-          </div>
-          <div className="meme-mobile-portfolio-item">
-            <span className="meme-mobile-portfolio-label">Price</span>
-            <span className="meme-mobile-portfolio-value">${formatNumberWithCommas(currentPrice, 6)}</span>
-          </div>
-          <div className="meme-mobile-portfolio-item">
-            <span className="meme-mobile-portfolio-label">Orders</span>
-            <span className="meme-mobile-portfolio-value">0</span>
-          </div>
-        </div> */}
-
         <div className="meme-mobile-header">
           <div className="meme-mobile-trade-toggle">
-<button
-  className={`meme-mobile-trade-btn ${mobileTradeType === 'buy' ? 'active buy' : ''}`}
-  onClick={() => setMobileTradeType('buy')}
->
-  Buy
-</button>
-<button
-  className={`meme-mobile-trade-btn ${mobileTradeType === 'sell' ? 'active sell' : ''}`}
-  onClick={() => setMobileTradeType('sell')}
->
-  Sell
-</button>
+            <button
+              className={`meme-mobile-trade-btn ${mobileTradeType === 'buy' ? 'active buy' : ''}`}
+              onClick={() => setMobileTradeType('buy')}
+            >
+              Buy
+            </button>
+            <button
+              className={`meme-mobile-trade-btn ${mobileTradeType === 'sell' ? 'active sell' : ''}`}
+              onClick={() => setMobileTradeType('sell')}
+            >
+              Sell
+            </button>
           </div>
 
           <div className="meme-mobile-controls">
-
             {subWallets.length > 0 && (
               <button
                 className={`meme-mobile-wallets-button ${mobileWalletsExpanded ? 'active' : ''}`}
@@ -2157,26 +2362,27 @@ useEffect(() => {
         {mobileTradeType === 'buy' ? (
           <div className="meme-mobile-buy-section">
             <div className="meme-mobile-section-header">
-            <div className="meme-mobile-preset-controls">
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(1)}
-              >
-                P1
-              </button>
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(2)}
-              >
-                P2
-              </button>
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(3)}
-              >
-                P3
-              </button>
-            </div>              <div className="meme-mobile-order-indicator">
+              <div className="meme-mobile-preset-controls">
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(1)}
+                >
+                  P1
+                </button>
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(2)}
+                >
+                  P2
+                </button>
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(3)}
+                >
+                  P3
+                </button>
+              </div>
+              <div className="meme-mobile-order-indicator">
                 <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
                 0
               </div>
@@ -2201,26 +2407,27 @@ useEffect(() => {
         ) : (
           <div className="meme-mobile-sell-section">
             <div className="meme-mobile-section-header">
-            <div className="meme-mobile-preset-controls">
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(1)}
-              >
-                P1
-              </button>
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(2)}
-              >
-                P2
-              </button>
-              <button
-                className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
-                onClick={() => setMobileQuickBuyPreset(3)}
-              >
-                P3
-              </button>
-            </div>              <div className="meme-mobile-order-indicator">
+              <div className="meme-mobile-preset-controls">
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 1 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(1)}
+                >
+                  P1
+                </button>
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 2 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(2)}
+                >
+                  P2
+                </button>
+                <button
+                  className={`meme-mobile-preset-pill ${mobileQuickBuyPreset === 3 ? 'active' : ''}`}
+                  onClick={() => setMobileQuickBuyPreset(3)}
+                >
+                  P3
+                </button>
+              </div>
+              <div className="meme-mobile-order-indicator">
                 <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
                 0
               </div>
@@ -2264,69 +2471,69 @@ useEffect(() => {
               {mobileTradeType === 'buy' ? buyBribeValue : sellBribeValue}
             </span>
           </div>
-          
         </div>
-{mobileWalletsExpanded && (
-  <div className="meme-mobile-wallets-panel">
-    <div className="meme-mobile-wallets-header">
-      <span className="meme-mobile-wallets-title">Wallets ({subWallets.length})</span>
-      <button
-        className="meme-mobile-wallets-close"
-        onClick={() => setMobileWalletsExpanded(false)}
-      >
-        <img src={closebutton} alt="Close" className="meme-mobile-wallets-close-icon" />
-      </button>
-    </div>
 
-    <div className="meme-mobile-wallets-list">
-      {subWallets.length === 0 ? (
-        <div className="meme-mobile-wallets-empty">
-          <div className="meme-mobile-wallets-empty-text">No wallets available</div>
-          <div className="meme-mobile-wallets-empty-subtitle">Create wallets in Portfolio section</div>
-        </div>
-      ) : (
-        subWallets.map((wallet, index) => {
-          const balance = getMobileWalletBalance(wallet.address);
-          const isActive = isMobileWalletActive(wallet.privateKey);
-
-          return (
-            <div
-              key={wallet.address}
-              className={`meme-mobile-wallet-item ${isActive ? 'active' : ''}`}
-              onClick={() => handleMobileSetActiveWallet(wallet.privateKey)}
-            >
-              <div className="meme-mobile-wallet-checkbox-container">
-                <input
-                  type="checkbox"
-                  className="meme-mobile-wallet-checkbox"
-                  checked={isActive}
-                  onChange={() => handleMobileSetActiveWallet(wallet.privateKey)}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-
-              <div className="meme-mobile-wallet-info">
-                <div className="meme-mobile-wallet-name">
-                  {getMobileWalletName(wallet.address, index)}
-                </div>
-                <div className="meme-mobile-wallet-address">
-                  {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-                </div>
-              </div>
-
-              <div className="meme-mobile-wallet-balance">
-                <div className={`meme-mobile-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                  <img src={monadicon} className="meme-mobile-wallet-mon-icon" alt="MON" />
-                  {formatNumberWithCommas(balance, 2)}
-                </div>
-              </div>
+        {mobileWalletsExpanded && (
+          <div className="meme-mobile-wallets-panel">
+            <div className="meme-mobile-wallets-header">
+              <span className="meme-mobile-wallets-title">Wallets ({subWallets.length})</span>
+              <button
+                className="meme-mobile-wallets-close"
+                onClick={() => setMobileWalletsExpanded(false)}
+              >
+                <img src={closebutton} alt="Close" className="meme-mobile-wallets-close-icon" />
+              </button>
             </div>
-          );
-        })
-      )}
-    </div>
-  </div>
-)}
+
+            <div className="meme-mobile-wallets-list">
+              {subWallets.length === 0 ? (
+                <div className="meme-mobile-wallets-empty">
+                  <div className="meme-mobile-wallets-empty-text">No wallets available</div>
+                  <div className="meme-mobile-wallets-empty-subtitle">Create wallets in Portfolio section</div>
+                </div>
+              ) : (
+                subWallets.map((wallet, index) => {
+                  const balance = getMobileWalletBalance(wallet.address);
+                  const isActive = isMobileWalletActive(wallet.privateKey);
+
+                  return (
+                    <div
+                      key={wallet.address}
+                      className={`meme-mobile-wallet-item ${isActive ? 'active' : ''}`}
+                      onClick={() => handleMobileSetActiveWallet(wallet.privateKey)}
+                    >
+                      <div className="meme-mobile-wallet-checkbox-container">
+                        <input
+                          type="checkbox"
+                          className="meme-mobile-wallet-checkbox"
+                          checked={isActive}
+                          onChange={() => handleMobileSetActiveWallet(wallet.privateKey)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </div>
+
+                      <div className="meme-mobile-wallet-info">
+                        <div className="meme-mobile-wallet-name">
+                          {getMobileWalletName(wallet.address, index)}
+                        </div>
+                        <div className="meme-mobile-wallet-address">
+                          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                        </div>
+                      </div>
+
+                      <div className="meme-mobile-wallet-balance">
+                        <div className={`meme-mobile-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                          <img src={monadicon} className="meme-mobile-wallet-mon-icon" alt="MON" />
+                          {formatNumberWithCommas(balance, 2)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <QuickBuyWidget

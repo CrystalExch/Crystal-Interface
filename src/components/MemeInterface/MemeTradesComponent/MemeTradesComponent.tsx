@@ -90,7 +90,6 @@ const Tooltip: React.FC<{
             padding: '8px 12px',
             borderRadius: '6px',
             fontSize: '12px',
-            fontWeight: '500',
           }}
         >
           <div className="tooltip-content">

@@ -2461,8 +2461,7 @@
   font-size: 0.7rem;
   transition: all 0.2s ease;
   width: 18px;
-  filter: brightness(0) saturate(100%) invert(21%) sepia(96%) saturate(5829%) hue-rotate(355deg) brightness(102%) contrast(87%);
-}
+filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-rotate(319deg) brightness(95%) contrast(94%);}
 
 
 .blacklist-empty {
@@ -2629,7 +2628,7 @@
 .display-content {
   padding: 16px 20px;
   padding-top: 10px;
-  max-height: 700px;
+  max-height: calc(90vh - 350px);
   overflow-y: auto;
 }
 

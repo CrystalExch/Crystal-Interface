@@ -28,6 +28,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const [expanded, setExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [linkClicked, setLinkClicked] = useState(false); 
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backgroundlesslogo = '/CrystalLogo.png';
 
@@ -40,7 +41,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const isMobile = windowWidth <= 1020;
 
   const handleSidebarMouseEnter = () => {
-    if (!isMobile && !isResizing) {
+    if (!isMobile && !isResizing && !linkClicked) {
       setExpanded(true);
       document.body.classList.add('sidebar-hover-overlay');
     }
@@ -49,6 +50,15 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const handleSidebarMouseLeave = () => {
     if (!isMobile && !isResizing) {
       setExpanded(false);
+      document.body.classList.remove('sidebar-hover-overlay');
+      setLinkClicked(false);
+    }
+  };
+
+  const handleLinkClick = () => {
+    if (!isMobile) {
+      setExpanded(false);
+      setLinkClicked(true);
       document.body.classList.remove('sidebar-hover-overlay');
     }
   };
@@ -114,7 +124,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       >
         <div className={`sidebar-nav-inner ${isResizing ? 'no-transition' : ''}`}>
           {!isMobile && (
-            <Link to="/" className="sidebar-logo">
+            <Link to="/" className="sidebar-logo" onClick={handleLinkClick}>
               <img src={backgroundlesslogo} className="sidebar-logo-image" />
               <span className={`sidebar-logo-text ${isResizing ? 'no-transition' : ''}`}>CRYSTAL</span>
             </Link>
@@ -130,6 +140,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 } else {
                   setSimpleView(false);
                 }
+                handleLinkClick();
               }}
             >
               <img src={candlestick} className="sidebar-icon" />
@@ -145,6 +156,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 } else {
                   setSimpleView(true);
                 }
+                handleLinkClick();
               }}
             >
               <img src={swap} className="sidebar-icon" />
@@ -154,6 +166,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/portfolio"
               className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
             >
               <img src={portfolio} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
@@ -162,6 +175,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/leaderboard"
               className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
             >
               <img src={leaderboard} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
@@ -170,6 +184,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
             >
               <img src={vaults} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Lending')}</span>
@@ -178,6 +193,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/earn/vaults"
               className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
             >
               <img src={earn} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Vaults')}</span>
@@ -186,6 +202,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             <Link
               to="/explorer"
               className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
             >
               <img src={explorer} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Explorer')}</span>
@@ -219,6 +236,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
               >
                 <img src={docs} className="sidebar-icon" />
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('docs')}</span>
@@ -228,6 +246,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
               >
                 <img src={discord} className="sidebar-icon" />
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('discord')}</span>
@@ -237,6 +256,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className={`sidebar-bottom-link ${isResizing ? 'no-transition' : ''}`}
+                onClick={handleLinkClick}
               >
                 <img src={twitter} className="sidebar-icon" />
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{'X / ' + t('twitter')}</span>
