@@ -307,7 +307,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [exportingWallet, setExportingWallet] = useState<{ address: string, privateKey: string } | null>(null);
   const [previewSelection, setPreviewSelection] = useState<Set<string>>(new Set());
 
-  // Utility functions for showing success popups
   const showDistributionSuccess = useCallback((amount: string, sourceCount: number, destCount: number) => {
     const txId = `distribution-${Date.now()}`;
     if (showLoadingPopup) {
@@ -341,7 +340,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
     }
     if (updatePopup) {
       updatePopup(txId, {
-        title: 'Deposit Complete', 
+        title: 'Deposit Complete',
         subtitle: `Deposited ${amount} MON to ${targetWallet.slice(0, 6)}...${targetWallet.slice(-4)}`,
         variant: 'success',
         confirmed: true,
@@ -394,7 +393,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       showLoadingPopup(txId, {
         title: 'Send Back Complete',
         subtitle: `Successfully sent funds back from ${walletCount} wallets to main wallet`
-      });  
+      });
     }
     if (updatePopup) {
       updatePopup(txId, {
@@ -444,34 +443,32 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const isWalletActive = (walletPrivateKey: string) => {
     return activeWalletPrivateKey === walletPrivateKey;
   };
-const deleteWallet = (address: string) => {
-  const walletToDelete = subWallets.find(w => w.address === address);
-  
-  // Check if we're deleting the currently active wallet
-  if (walletToDelete && isWalletActive(walletToDelete.privateKey)) {
-    // Clear the active wallet from localStorage since we're deleting it
-    localStorage.removeItem('crystal_active_wallet_private_key');
-    console.log('Cleared active wallet from localStorage - wallet being deleted');
-  }
-  
-  const updatedWallets = subWallets.filter(w => w.address !== address);
-  setSubWallets(updatedWallets);
-  saveSubWalletsToStorage(updatedWallets);
+  const deleteWallet = (address: string) => {
+    const walletToDelete = subWallets.find(w => w.address === address);
 
-  const newEnabledWallets = new Set(enabledWallets);
-  newEnabledWallets.delete(address);
-  setEnabledWallets(newEnabledWallets);
-  localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
+    if (walletToDelete && isWalletActive(walletToDelete.privateKey)) {
+      localStorage.removeItem('crystal_active_wallet_private_key');
+      console.log('Cleared active wallet from localStorage - wallet being deleted');
+    }
 
-  const newWalletNames = { ...walletNames };
-  delete newWalletNames[address];
-  setWalletNames(newWalletNames);
-  localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+    const updatedWallets = subWallets.filter(w => w.address !== address);
+    setSubWallets(updatedWallets);
+    saveSubWalletsToStorage(updatedWallets);
 
-  setShowDeleteConfirmation(false);
-  setWalletToDelete('');
-  closeExportModal();
-};
+    const newEnabledWallets = new Set(enabledWallets);
+    newEnabledWallets.delete(address);
+    setEnabledWallets(newEnabledWallets);
+    localStorage.setItem('crystal_enabled_wallets', JSON.stringify(Array.from(newEnabledWallets)));
+
+    const newWalletNames = { ...walletNames };
+    delete newWalletNames[address];
+    setWalletNames(newWalletNames);
+    localStorage.setItem('crystal_wallet_names', JSON.stringify(newWalletNames));
+
+    setShowDeleteConfirmation(false);
+    setWalletToDelete('');
+    closeExportModal();
+  };
 
   const confirmDeleteWallet = (address: string) => {
     setWalletToDelete(address);
@@ -487,14 +484,14 @@ const deleteWallet = (address: string) => {
   const getActiveAddress = () => {
     return isSpectating ? spectatedAddress : address;
   };
-const getMainWalletBalance = () => {
-  const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
-  
-  if (ethToken && tokenBalances[ethToken.address]) {
-    return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
-  }
-  return 0;
-};
+  const getMainWalletBalance = () => {
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+
+    if (ethToken && tokenBalances[ethToken.address]) {
+      return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    }
+    return 0;
+  };
 
   const isValidAddress = (addr: string) => {
     return /^0x[a-fA-F0-9]{40}$/.test(addr);
@@ -972,97 +969,89 @@ const getMainWalletBalance = () => {
     setDepositAmount('');
   };
 
+  const [showPNLCalendar, setShowPNLCalendar] = useState(false);
+  const [pnlCalendarLoading, setPNLCalendarLoading] = useState(false);
 
-
-const handleDepositFromEOA = async () => {
-  if (!depositAmount || !depositTargetWallet) {
-    return;
-  }
-
-  try {
-    setIsDepositing(true);
-    
-    // Ensure we're on the correct chain
-    console.log('Setting chain...');
-    await handleSetChain();
-
-    // Convert the deposit amount to Wei
-    const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
-    console.log('Amount in Wei:', ethAmount.toString());
-
-    // Get the main wallet balance to verify we have enough funds
-    const mainWalletBalance = getMainWalletBalance();
-    if (parseFloat(depositAmount) > mainWalletBalance) {
-      throw new Error(`Insufficient balance in main wallet. Available: ${mainWalletBalance.toFixed(4)} MON`);
+  const handleDepositFromEOA = async () => {
+    if (!depositAmount || !depositTargetWallet) {
+      return;
     }
 
-    // Send the transaction from the main wallet (the one that signs transactions)
-    console.log('Sending transaction from main wallet...');
-    const result = await sendUserOperationAsync({
-      uo: {
-        target: depositTargetWallet,
-        value: ethAmount,
-        data: '0x'
+    try {
+      setIsDepositing(true);
+
+      console.log('Setting chain...');
+      await handleSetChain();
+
+      const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
+      console.log('Amount in Wei:', ethAmount.toString());
+
+      const mainWalletBalance = getMainWalletBalance();
+      if (parseFloat(depositAmount) > mainWalletBalance) {
+        throw new Error(`Insufficient balance in main wallet. Available: ${mainWalletBalance.toFixed(4)} MON`);
       }
-    });
 
-    console.log('Transaction result:', result);
+      console.log('Sending transaction from main wallet...');
+      const result = await sendUserOperationAsync({
+        uo: {
+          target: depositTargetWallet,
+          value: ethAmount,
+          data: '0x'
+        }
+      });
 
-    let hash;
-    if (typeof result === 'string') {
-      hash = result;
-    } else if (result && result.hash) {
-      hash = result.hash;
-    } else if (result && result.transactionHash) {
-      hash = result.transactionHash;
-    } else {
-      console.log('Unexpected result format:', result);
-      hash = result;
-    }
+      console.log('Transaction result:', result);
 
-    console.log('Transaction hash:', hash);
+      let hash;
+      if (typeof result === 'string') {
+        hash = result;
+      } else if (result && result.hash) {
+        hash = result.hash;
+      } else if (result && result.transactionHash) {
+        hash = result.transactionHash;
+      } else {
+        console.log('Unexpected result format:', result);
+        hash = result;
+      }
 
-    // Wait for transaction confirmation
-    if (hash && waitForTxReceipt) {
-      console.log('Waiting for transaction receipt...');
+      console.log('Transaction hash:', hash);
+
+      if (hash && waitForTxReceipt) {
+        console.log('Waiting for transaction receipt...');
+        try {
+          const receiptPromise = waitForTxReceipt({ hash });
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Transaction timeout')), 30000)
+          );
+
+          await Promise.race([receiptPromise, timeoutPromise]);
+          console.log('Transaction confirmed');
+        } catch (receiptError) {
+          console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
+        }
+      }
       try {
-        const receiptPromise = waitForTxReceipt({ hash });
-        const timeoutPromise = new Promise((_, reject) => 
-          setTimeout(() => reject(new Error('Transaction timeout')), 30000)
-        );
-        
-        await Promise.race([receiptPromise, timeoutPromise]);
-        console.log('Transaction confirmed');
-      } catch (receiptError) {
-        console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
+        await refreshWalletBalance(depositTargetWallet);
+        console.log('Target wallet balance refreshed');
+      } catch (refreshError) {
+        console.warn('Failed to refresh target wallet balance:', refreshError);
       }
-    }
 
-    // Refresh balances
-    console.log('Refreshing balances...');
-    try {
-      await refreshWalletBalance(depositTargetWallet);
-      console.log('Target wallet balance refreshed');
-    } catch (refreshError) {
-      console.warn('Failed to refresh target wallet balance:', refreshError);
-    }
+      try {
+        refetch();
+        console.log('Main account data refreshed');
+      } catch (refetchError) {
+        console.warn('Failed to refresh main account:', refetchError);
+      }
 
-    try {
-      // Refresh main wallet balance
-      refetch();
-      console.log('Main account data refreshed');
-    } catch (refetchError) {
-      console.warn('Failed to refresh main account:', refetchError);
-    }
-    
-    closeDepositModal();
-    showDepositSuccess(depositAmount, depositTargetWallet);
+      closeDepositModal();
+      showDepositSuccess(depositAmount, depositTargetWallet);
 
-  } catch (error) {
-  } finally {
-    setIsDepositing(false);
-  }
-};
+    } catch (error) {
+    } finally {
+      setIsDepositing(false);
+    }
+  };
 
   const [customDestinationAddress, setCustomDestinationAddress] = useState<string>('');
   const [customAddressError, setCustomAddressError] = useState<string>('');
@@ -1548,254 +1537,253 @@ const handleDepositFromEOA = async () => {
         return [];
     }
   };
-const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
-  const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
-  const isPreviewSelected = previewSelection.has(wallet.address);
-  const isDragging = dragReorderState.draggedIndex === index;
-  const isDragOver = dragReorderState.dragOverIndex === index;
+  const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 'source' | 'destination', containerKey: string) => {
+    const isSelected = selectedWalletsPerContainer[containerType].has(wallet.address);
+    const isPreviewSelected = previewSelection.has(wallet.address);
+    const isDragging = dragReorderState.draggedIndex === index;
+    const isDragOver = dragReorderState.dragOverIndex === index;
 
-  return (
-    <div
-      key={wallet.address}
-      data-wallet-address={wallet.address}
-      className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
-      draggable
-      onDragStart={(e) => {
-        setDropPreviewLine(null);
-        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-
-        if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
-          console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
-          handleMultiDragStart(e, containerType);
-          return;
-        }
-
-        setSelectedWalletsPerContainer(prev => ({
-          ...prev,
-          [containerType]: new Set([wallet.address])
-        }));
-
-        if (containerType === 'main') {
-          if (e.shiftKey) {
-            handleReorderDragStart(e, index, containerType);
-          } else {
-            handleDragStart(e, wallet, index);
-          }
-        } else {
-          if (e.shiftKey) {
-            handleReorderDragStart(e, index, containerType);
-          } else {
-            handleDragStartFromZone(e, wallet, containerType);
-          }
-        }
-      }}
-      onDragEnd={() => {
-        setIsMultiDrag(false);
-        setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
-        setDropPreviewLine(null);
-        setDraggedWallet(null);
-        setDragOverZone(null);
-        console.log('Drag ended, cleaned up states');
-      }}
-      onDragOver={(e) => {
-        if (!isMultiDrag) {
-          handleReorderDragOver(e, index, containerKey);
-        }
-      }}
-      onDragLeave={(e) => {
-        const relatedTarget = e.relatedTarget as Node;
-        if (!e.currentTarget.contains(relatedTarget)) {
+    return (
+      <div
+        key={wallet.address}
+        data-wallet-address={wallet.address}
+        className={`draggable-wallet-item ${isSelected ? 'selected' : ''} ${isPreviewSelected ? 'preview-selected' : ''} ${isDragging ? 'dragging' : ''} ${isMultiDrag && isSelected ? 'multi-drag-ghost' : ''}`}
+        draggable
+        onDragStart={(e) => {
           setDropPreviewLine(null);
-          setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
-        }
-      }}
-      onDrop={() => {
-        return;
-      }}
-      onClick={(e) => {
-        e.stopPropagation();
-        console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
+          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
 
-        if (e.ctrlKey || e.metaKey) {
-          setSelectedWalletsPerContainer(prev => {
-            const newContainerSet = new Set(prev[containerType]);
-            if (newContainerSet.has(wallet.address)) {
-              newContainerSet.delete(wallet.address);
+          if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
+            console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
+            handleMultiDragStart(e, containerType);
+            return;
+          }
+
+          setSelectedWalletsPerContainer(prev => ({
+            ...prev,
+            [containerType]: new Set([wallet.address])
+          }));
+
+          if (containerType === 'main') {
+            if (e.shiftKey) {
+              handleReorderDragStart(e, index, containerType);
             } else {
-              newContainerSet.add(wallet.address);
+              handleDragStart(e, wallet, index);
             }
-            console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
-            return {
-              ...prev,
-              [containerType]: newContainerSet
-            };
-          });
-        } else {
-          setSelectedWalletsPerContainer({
-            main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
-            source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
-            destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
-          });
-          console.log(`Single selected in ${containerType}:`, wallet.address);
-        }
-      }}
-    >
-      {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
-        <div
-          className="drop-preview-line"
-          style={{
-            top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
-          }}
-        />
-      )}
+          } else {
+            if (e.shiftKey) {
+              handleReorderDragStart(e, index, containerType);
+            } else {
+              handleDragStartFromZone(e, wallet, containerType);
+            }
+          }
+        }}
+        onDragEnd={() => {
+          setIsMultiDrag(false);
+          setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
+          setDropPreviewLine(null);
+          setDraggedWallet(null);
+          setDragOverZone(null);
+          console.log('Drag ended, cleaned up states');
+        }}
+        onDragOver={(e) => {
+          if (!isMultiDrag) {
+            handleReorderDragOver(e, index, containerKey);
+          }
+        }}
+        onDragLeave={(e) => {
+          const relatedTarget = e.relatedTarget as Node;
+          if (!e.currentTarget.contains(relatedTarget)) {
+            setDropPreviewLine(null);
+            setDragReorderState(prev => ({ ...prev, dragOverIndex: -1, dragOverPosition: null }));
+          }
+        }}
+        onDrop={() => {
+          return;
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
 
-      {/* Active Wallet Checkbox */}
-      <div className="wallet-active-checkbox-container">
-        <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
-          <input
-            type="checkbox"
-            className="wallet-active-checkbox"
-            checked={isWalletActive(wallet.privateKey)}
-            onChange={(e) => {
-              e.stopPropagation();
-              if (!isWalletActive(wallet.privateKey)) {
-                localStorage.setItem('crystal_active_wallet_private_key', wallet.privateKey);
-                setOneCTSigner(wallet.privateKey);
-                refetch();
-                console.log('Set active wallet and saved to localStorage:', wallet.address);
+          if (e.ctrlKey || e.metaKey) {
+            setSelectedWalletsPerContainer(prev => {
+              const newContainerSet = new Set(prev[containerType]);
+              if (newContainerSet.has(wallet.address)) {
+                newContainerSet.delete(wallet.address);
+              } else {
+                newContainerSet.add(wallet.address);
               }
+              console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
+              return {
+                ...prev,
+                [containerType]: newContainerSet
+              };
+            });
+          } else {
+            setSelectedWalletsPerContainer({
+              main: containerType === 'main' ? new Set([wallet.address]) : new Set(),
+              source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
+              destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
+            });
+            console.log(`Single selected in ${containerType}:`, wallet.address);
+          }
+        }}
+      >
+        {!isMultiDrag && dropPreviewLine && dropPreviewLine.containerKey === containerKey && isDragOver && (
+          <div
+            className="drop-preview-line"
+            style={{
+              top: dragReorderState.dragOverPosition === 'top' ? -1 : '100%'
             }}
-            onClick={(e) => e.stopPropagation()}
           />
-        </Tooltip>
-      </div>
+        )}
 
-      <div className="wallet-drag-info">
-        <div className="wallet-name-container">
-          {editingWallet === wallet.address ? (
-            <div className="wallet-name-edit-container">
-              <input
-                type="text"
-                className="wallet-name-input"
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
-                    saveWalletName(wallet.address);
-                  } else if (e.key === 'Escape') {
-                    setEditingWallet(null);
-                    setEditingName('');
-                  }
-                }}
-                autoFocus
-                onBlur={() => saveWalletName(wallet.address)}
-              />
-            </div>
-          ) : (
-            <div className="wallet-name-display">
-              <span
-                className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
-                style={{
-                  color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
-                }}
-              >
-                {getWalletName(wallet.address, index)}
-              </span>
-              <Edit2
-                size={12}
-                className="wallet-name-edit-icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEditingWallet(wallet.address);
-                }}
-              />
-            </div>
-          )}
+        <div className="wallet-active-checkbox-container">
+          <Tooltip content={isWalletActive(wallet.privateKey) ? "Active Wallet" : "Set as Active Wallet"}>
+            <input
+              type="checkbox"
+              className="wallet-active-checkbox"
+              checked={isWalletActive(wallet.privateKey)}
+              onChange={(e) => {
+                e.stopPropagation();
+                if (!isWalletActive(wallet.privateKey)) {
+                  localStorage.setItem('crystal_active_wallet_private_key', wallet.privateKey);
+                  setOneCTSigner(wallet.privateKey);
+                  refetch();
+                  console.log('Set active wallet and saved to localStorage:', wallet.address);
+                }
+              }}
+              onClick={(e) => e.stopPropagation()}
+            />
+          </Tooltip>
         </div>
-        <div className="wallet-drag-address">
-          {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-          <img
-            src={copy}
-            className="wallets-copy-icon"
-            alt="Copy"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigator.clipboard.writeText(wallet.address);
-            }}
-            style={{ cursor: 'pointer' }}
-          />
+
+        <div className="wallet-drag-info">
+          <div className="wallet-name-container">
+            {editingWallet === wallet.address ? (
+              <div className="wallet-name-edit-container">
+                <input
+                  type="text"
+                  className="wallet-name-input"
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      saveWalletName(wallet.address);
+                    } else if (e.key === 'Escape') {
+                      setEditingWallet(null);
+                      setEditingName('');
+                    }
+                  }}
+                  autoFocus
+                  onBlur={() => saveWalletName(wallet.address)}
+                />
+              </div>
+            ) : (
+              <div className="wallet-name-display">
+                <span
+                  className={`wallet-drag-name ${isWalletActive(wallet.privateKey) ? 'active' : ''}`}
+                  style={{
+                    color: isWalletActive(wallet.privateKey) ? '#d8dcff' : '#fff'
+                  }}
+                >
+                  {getWalletName(wallet.address, index)}
+                </span>
+                <Edit2
+                  size={12}
+                  className="wallet-name-edit-icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startEditingWallet(wallet.address);
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          <div className="wallet-drag-address">
+            {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+            <img
+              src={copy}
+              className="wallets-copy-icon"
+              alt="Copy"
+              onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(wallet.address);
+              }}
+              style={{ cursor: 'pointer' }}
+            />
+          </div>
         </div>
-      </div>
 
-      <div className="wallet-drag-actions">
-        <Tooltip content="Deposit from Main Wallet">
-          <button
-            className="wallet-icon-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              openDepositModal(wallet.address);
-            }}
-          >
-            <Plus size={14} className="wallet-action-icon" />
-          </button>
-        </Tooltip>
-
-        <Tooltip content="Export Private Key">
-          <button
-            className="wallet-icon-button key-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              openExportModal(wallet);
-            }}
-          >
-            <img src={key} className="wallet-action-icon" alt="Export Key" />
-          </button>
-        </Tooltip>
-
-        <Tooltip content="View on Explorer">
-          <a
-            href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="wallet-icon-button explorer-button"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <svg
-              className="wallet-action-icon-svg"
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="white"
+        <div className="wallet-drag-actions">
+          <Tooltip content="Deposit from Main Wallet">
+            <button
+              className="wallet-icon-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openDepositModal(wallet.address);
+              }}
             >
-              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-            </svg>
-          </a>
-        </Tooltip>
+              <Plus size={14} className="wallet-action-icon" />
+            </button>
+          </Tooltip>
 
-        <Tooltip content="Delete Wallet">
-          <button
-            className="wallet-icon-button delete-button"
-            onClick={(e) => {
-              e.stopPropagation();
-              confirmDeleteWallet(wallet.address);
-            }}
-          >
-            <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
-          </button>
-        </Tooltip>
-      </div>
+          <Tooltip content="Export Private Key">
+            <button
+              className="wallet-icon-button key-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                openExportModal(wallet);
+              }}
+            >
+              <img src={key} className="wallet-action-icon" alt="Export Key" />
+            </button>
+          </Tooltip>
 
-      <div className="wallet-drag-values">
-        <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
-          <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
-          {getWalletBalance(wallet.address).toFixed(2)}
+          <Tooltip content="View on Explorer">
+            <a
+              href={`https://testnet.monadexplorer.com/address/${wallet.address}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="wallet-icon-button explorer-button"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <svg
+                className="wallet-action-icon-svg"
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="white"
+              >
+                <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+              </svg>
+            </a>
+          </Tooltip>
+
+          <Tooltip content="Delete Wallet">
+            <button
+              className="wallet-icon-button delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                confirmDeleteWallet(wallet.address);
+              }}
+            >
+              <img src={trash} className="wallet-action-icon" alt="Delete Wallet" />
+            </button>
+          </Tooltip>
+        </div>
+
+        <div className="wallet-drag-values">
+          <div className={`wallet-drag-balance ${isBlurred ? 'blurred' : ''}`}>
+            <img src={monadicon} className="wallet-drag-balance-mon-icon" alt="MON" />
+            {getWalletBalance(wallet.address).toFixed(2)}
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
   const renderWalletContainer = (
     wallets: any[],
@@ -1949,23 +1937,23 @@ const renderWalletItem = (wallet: any, index: number, containerType: 'main' | 's
   }, []);
 
   useEffect(() => {
-  if (activeWalletPrivateKey) {
-    localStorage.setItem('crystal_active_wallet_private_key', activeWalletPrivateKey);
-  }
-}, [activeWalletPrivateKey]);
-
-useEffect(() => {
-  const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
-  
-  if (savedActivePrivateKey && subWallets.length > 0) {
-    const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
-    
-    if (savedWalletExists && activeWalletPrivateKey !== savedActivePrivateKey) {
-      setOneCTSigner(savedActivePrivateKey);
-      console.log('Restored active wallet from localStorage');
+    if (activeWalletPrivateKey) {
+      localStorage.setItem('crystal_active_wallet_private_key', activeWalletPrivateKey);
     }
-  }
-}, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
+  }, [activeWalletPrivateKey]);
+
+  useEffect(() => {
+    const savedActivePrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+
+    if (savedActivePrivateKey && subWallets.length > 0) {
+      const savedWalletExists = subWallets.some(wallet => wallet.privateKey === savedActivePrivateKey);
+
+      if (savedWalletExists && activeWalletPrivateKey !== savedActivePrivateKey) {
+        setOneCTSigner(savedActivePrivateKey);
+        console.log('Restored active wallet from localStorage');
+      }
+    }
+  }, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
 
   useEffect(() => {
     const now = Date.now() / 1000;
@@ -2213,7 +2201,7 @@ useEffect(() => {
           </div>
         );
 
-      case 'wallets':    
+      case 'wallets':
         return (
           <div className="wallets-drag-drop-layout">
             <div className="wallets-left-panel">
@@ -2583,91 +2571,349 @@ useEffect(() => {
                 </div>
               </div>
             )}
-{showDepositModal && (
-  <div className="pk-modal-backdrop" onClick={closeDepositModal}>
-    <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
-      <div className="pk-modal-header">
-        <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
-        <button className="pk-modal-close" onClick={closeDepositModal}>
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
-      <div className="pk-modal-content">
-        
-       <div className="main-wallet-balance-section">
-          <div className="main-wallet-balance-container">
-            <span className="main-wallet-balance-label">Available Balance:</span>
-            <div className="main-wallet-balance-value">
-              <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
-              <span className={`main-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-                {getMainWalletBalance().toFixed(2)} 
-              </span>
-            </div>
-          </div>
-        </div>
+            {showDepositModal && (
+              <div className="pk-modal-backdrop" onClick={closeDepositModal}>
+                <div className="pk-modal-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="pk-modal-header">
+                    <h3 className="pk-modal-title">Deposit from Main Wallet</h3>
+                    <button className="pk-modal-close" onClick={closeDepositModal}>
+                      <img src={closebutton} className="close-button-icon" />
+                    </button>
+                  </div>
+                  <div className="pk-modal-content">
 
-        <div className="pk-input-section">
-          <label className="pk-label">Amount (MON):</label>
-          <div className="pk-input-container">
-            <div className="deposit-amount-input-container">
-              <input
-                type="text"
-                className="pk-input"
-                value={depositAmount}
-                onChange={(e) => {
-                  const value = e.target.value;
-                  if (/^\d*\.?\d{0,18}$/.test(value)) {
-                    setDepositAmount(value);
-                  }
-                }}
-                placeholder="0.00"
-                autoComplete="off"
-              />
-              <button
-                className="deposit-main-max-button"
-                onClick={() => {
-                  const maxBalance = getMainWalletBalance();
-                  const maxDepositAmount = Math.max(0, maxBalance - 0.01);
-                  setDepositAmount(maxDepositAmount.toFixed(2).toString());
-                }}
-                disabled={getMainWalletBalance() <= 0.001}
-              >
-                Max
-              </button>
-            </div>
-            {depositAmount && parseFloat(depositAmount) > getMainWalletBalance() && (
-              <div className="pk-error-message">
-                Insufficient balance. Available: {getMainWalletBalance().toFixed(4)} MON
+                    <div className="main-wallet-balance-section">
+                      <div className="main-wallet-balance-container">
+                        <span className="main-wallet-balance-label">Available Balance:</span>
+                        <div className="main-wallet-balance-value">
+                          <img src={monadicon} className="main-wallet-balance-icon" alt="MON" />
+                          <span className={`main-wallet-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                            {getMainWalletBalance().toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="pk-input-section">
+                      <label className="pk-label">Amount (MON):</label>
+                      <div className="pk-input-container">
+                        <div className="deposit-amount-input-container">
+                          <input
+                            type="text"
+                            className="pk-input"
+                            value={depositAmount}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              if (/^\d*\.?\d{0,18}$/.test(value)) {
+                                setDepositAmount(value);
+                              }
+                            }}
+                            placeholder="0.00"
+                            autoComplete="off"
+                          />
+                          <button
+                            className="deposit-main-max-button"
+                            onClick={() => {
+                              const maxBalance = getMainWalletBalance();
+                              const maxDepositAmount = Math.max(0, maxBalance - 0.01);
+                              setDepositAmount(maxDepositAmount.toFixed(2).toString());
+                            }}
+                            disabled={getMainWalletBalance() <= 0.001}
+                          >
+                            Max
+                          </button>
+                        </div>
+                        {depositAmount && parseFloat(depositAmount) > getMainWalletBalance() && (
+                          <div className="pk-error-message">
+                            Insufficient balance. Available: {getMainWalletBalance().toFixed(4)} MON
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="pk-modal-actions">
+                      <button
+                        className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
+                        onClick={handleDepositFromEOA}
+                        disabled={
+                          !depositAmount ||
+                          parseFloat(depositAmount) <= 0 ||
+                          parseFloat(depositAmount) > getMainWalletBalance() ||
+                          isDepositing
+                        }
+                      >
+                        {isDepositing ? '' : 'Deposit'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
-          </div>
-        </div>
-
-        <div className="pk-modal-actions">
-          <button
-            className={`pk-confirm-button ${isDepositing ? 'loading' : ''}`}
-            onClick={handleDepositFromEOA}
-            disabled={
-              !depositAmount || 
-              parseFloat(depositAmount) <= 0 || 
-              parseFloat(depositAmount) > getMainWalletBalance() ||
-              isDepositing
-            }
-          >
-            {isDepositing ? '' : 'Deposit'}
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
-)}
           </div>
         );
       case 'trenches':
         return (
           <div className="trenches-container">
-            <button onClick={() => setpopup(27)}>View PNL</button>
+            <div className="trenches-top-section">
+
+              <div className="trenches-balance-section">
+                <h3 className="trenches-balance-title">BALANCE</h3>
+                <div>
+                  <div className="trenches-balance-item">
+                    <div className="trenches-balance-label">Total Value</div>
+                    <div className={`trenches-balance-value ${isBlurred ? 'blurred' : ''}`}>
+                      $0
+                    </div>
+                  </div>
+                  <div className="trenches-balance-item">
+                    <div className="trenches-balance-label">Unrealized PNL</div>
+                    <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
+                      $0
+                    </div>
+                  </div>
+                  <div className="trenches-balance-item">
+                    <div className="trenches-balance-label">Available Balance</div>
+                    <div className={`trenches-balance-value-small ${isBlurred ? 'blurred' : ''}`}>
+                      $0
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="trenches-pnl-section">
+                <div className="trenches-pnl-header">
+                  <h3 className="trenches-pnl-title">REALIZED PNL</h3>
+                  <button
+                    className="trenches-pnl-calendar-button"
+                    onClick={() => {
+                      setPNLCalendarLoading(true);
+                      setTimeout(() => {
+                        setPNLCalendarLoading(false);
+                        setShowPNLCalendar(true);
+                      }, 2000);
+                    }}
+                  >
+                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 64 64" width="18" height="18"><path d="M 8 8 L 8 20 L 56 20 L 56 8 L 46 8 L 46 9 C 46 10.657 44.657 12 43 12 C 41.343 12 40 10.657 40 9 L 40 8 L 24 8 L 24 9 C 24 10.657 22.657 12 21 12 C 19.343 12 18 10.657 18 9 L 18 8 L 8 8 z M 8 22 L 8 56 L 56 56 L 56 24 L 52 23.832031 L 52 45 C 52 47 47 47 47 47 C 47 47 47 52 44 52 L 12 52 L 12 22.167969 L 8 22 z M 19 29 L 19 35 L 25 35 L 25 29 L 19 29 z M 29 29 L 29 35 L 35 35 L 35 29 L 29 29 z M 39 29 L 39 35 L 45 35 L 45 29 L 39 29 z M 19 39 L 19 45 L 25 45 L 25 39 L 19 39 z M 29 39 L 29 45 L 35 45 L 35 39 L 29 39 z M 39 39 L 39 45 L 45 45 L 45 39 L 39 39 z"/></svg>
+                  </button>
+                </div>
+
+                <div className="trenches-pnl-chart">
+                  <div className="trenches-pnl-placeholder">
+                    No trading data
+                  </div>
+                </div>
+              </div>
+
+              <div className="trenches-performance-section">
+                <div className="trenches-performance-header">
+                  <h3 className="trenches-performance-title">PERFORMANCE</h3>
+                  <button
+                    className="trenches-pnl-button"
+                    onClick={() => setpopup(27)}
+                  >
+                    View PNL
+                  </button></div>
+
+                <div className="trenches-performance-stats">
+                  <div className="trenches-performance-stat-row">
+                    <span className="trenches-performance-stat-label">7d PNL</span>
+                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                      $0.00
+                    </span>
+                  </div>
+                  <div className="trenches-performance-stat-row">
+                    <span className="trenches-performance-stat-label">7d TXNS</span>
+                    <span className={`trenches-performance-stat-value ${isBlurred ? 'blurred' : ''}`}>
+                      0.0/0
+                    </span>
+                  </div>
+                </div>
+
+                <div className="trenches-performance-ranges">
+                  {[
+                    { label: '>500%', count: 0 },
+                    { label: '200% - 500%', count: 0 },
+                    { label: '0% - 200%', count: 0 },
+                    { label: '0% - 140%', count: 0 },
+                    { label: '<-50%', count: 0 }
+                  ].map((range, index) => (
+                    <div key={index} className="trenches-performance-range">
+                      <span
+                        className="trenches-performance-range-label"
+                      >
+                        {range.label}
+                      </span>
+                      <span className="trenches-performance-range-count">
+                        {range.count}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
+
+            <div className="trenches-activity-section">
+              <div className="trenches-activity-header">
+
+                <div className="trenches-activity-tabs">
+                  {[
+                    { key: 'positions', label: 'Active Positions' },
+                    { key: 'history', label: 'History' },
+                    { key: 'top100', label: 'Top 100' }
+                  ].map(tab => (
+                    <button
+                      key={tab.key}
+                      className={`trenches-activity-tab ${tab.key === 'positions' ? 'active' : ''}`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="trenches-activity-filters">
+                  <input
+                    type="text"
+                    placeholder="Search by name or address"
+                    className="trenches-search-input"
+                  />
+                </div>
+              </div>
+
+              <div className="trenches-table-header">
+                <div>Spot</div>
+                <div>Remaining</div>
+                <div>Action</div>
+                <div>Type</div>
+                <div>Token</div>
+                <div>Amount</div>
+                <div>Market Cap</div>
+                <div>Age</div>
+                <div>Estimate</div>
+              </div>
+
+              <div className="trenches-table-content">
+                <div className="trenches-empty-state">
+                  <div className="trenches-empty-text">
+                    No active positions
+                    <br />
+                    <span className="trenches-empty-subtext">
+                      Start trading to see your positions here
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {pnlCalendarLoading && (
+              <div className="pnl-calendar-backdrop">
+                <div className="pnl-calendar-container">
+                  <div className="pnl-calendar-header">
+                    <div className="pnl-calendar-title-section">
+                      <div className="skeleton-loading skeleton-title"></div>
+                      <div className="pnl-calendar-nav">
+                        <div className="skeleton-loading skeleton-nav-button"></div>
+                        <div className="skeleton-loading skeleton-month"></div>
+                        <div className="skeleton-loading skeleton-nav-button"></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-gradient-bar">
+                    <div className="skeleton-loading skeleton-gradient"></div>
+                    <div className="pnl-calendar-gradient-labels">
+                      <div className="skeleton-loading skeleton-label"></div>
+                      <div className="skeleton-loading skeleton-label"></div>
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-content">
+                    <div className="pnl-calendar-weekdays">
+                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                        <div key={i} className="pnl-calendar-weekday">{day}</div>
+                      ))}
+                    </div>
+
+                    <div className="pnl-calendar-grid">
+                      {Array.from({ length: 31 }, (_, i) => (
+                        <div key={i + 1} className="pnl-calendar-day skeleton-day">
+                          <div className="skeleton-loading skeleton-day-number"></div>
+                          <div className="skeleton-loading skeleton-day-pnl"></div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-footer">
+                    <div className="pnl-calendar-stats">
+                      <div className="skeleton-loading skeleton-stat"></div>
+                      <div className="skeleton-loading skeleton-stat"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {showPNLCalendar && (
+              <div className="pnl-calendar-backdrop" onClick={() => setShowPNLCalendar(false)}>
+                <div className="pnl-calendar-container" onClick={(e) => e.stopPropagation()}>
+                  <div className="pnl-calendar-header">
+                    <div className="pnl-calendar-title-section">
+                      <h3 className="pnl-calendar-title">PNL Calendar</h3>
+                      <div className="pnl-calendar-nav">
+                        <button className="pnl-calendar-nav-button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6" /></svg></button>
+                        <span className="pnl-calendar-month">Aug 2025</span>
+                        <button className="pnl-calendar-nav-button"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="grey" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className=""><path d="m9 18 6-6-6-6" /></svg></button>
+                      </div>
+                    </div>
+                    <div className="pnl-calendar-controls">
+                      <div className="pnl-calendar-total">
+                      </div>
+                      <button className="pnl-calendar-close" onClick={() => setShowPNLCalendar(false)}>
+                        <img src={closebutton} className="close-button-icon" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-gradient-bar">
+                    <span className="pnl-calendar-total-label">$0</span>
+
+                    <div className="pnl-calendar-ratio-container">
+                      <div className="pnl-calendar-ratio-buy"></div>
+                      <div className="pnl-calendar-ratio-sell"></div>
+                    </div>
+
+                    <div className="pnl-calendar-gradient-labels">
+                      <span><span className="pnl-buy-color">0</span> / <span className="pnl-buy-color">$0</span></span>
+                      <span><span className="pnl-sell-color">0</span> / <span className="pnl-sell-color">$0</span></span>
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-content">
+                    <div className="pnl-calendar-weekdays">
+                      {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
+                        <div key={i} className="pnl-calendar-weekday">{day}</div>
+                      ))}
+                    </div>
+
+                    <div className="pnl-calendar-grid">
+                      {Array.from({ length: 31 }, (_, i) => (
+                        <div key={i + 1} className="pnl-calendar-day">
+                          <div className="pnl-calendar-day-number">{i + 1}</div>
+                          <div className="pnl-calendar-day-pnl">$0</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pnl-calendar-footer">
+                    <div className="pnl-calendar-stats">
+                      <span>Current Positive Streak: <strong>0d</strong></span>
+                      <span>Best Positive Streak in Aug: <strong>0d</strong></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         );
     }
   };

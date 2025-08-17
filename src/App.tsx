@@ -10510,7 +10510,7 @@ const handleVaultWithdraw = async () => {
                           }}
                         />
                       </div>
-                      <div className="audio-toggle-row">
+                      {/* <div className="audio-toggle-row">
                         <div className="settings-option-info">
                           <span className="audio-toggle-label">{t('useOneCT')}</span>
                           <span className="settings-option-subtitle">
@@ -10528,7 +10528,6 @@ const handleVaultWithdraw = async () => {
 
                       {useOneCT && (
                         <div className="subwallets-section">
-                          {/* Current Active Wallet Display */}
                           {validOneCT && (
                             <div className="active-wallet-section">
                               <div className="layout-section-title">{t('activeWallet')}</div>
@@ -10539,7 +10538,6 @@ const handleVaultWithdraw = async () => {
                             </div>
                           )}
 
-                          {/* Create New Subwallet Button */}
                           <div className="create-wallet-section">
                             <div className="layout-section-title">{t('subWallets')}</div>
                             <div className="settings-section-subtitle">
@@ -10553,7 +10551,6 @@ const handleVaultWithdraw = async () => {
                             </button>
                           </div>
 
-                          {/* Subwallets List */}
                           {subWallets.length > 0 && (
                             <div className="subwallets-list">
                               <div className="layout-section-title">{t('savedSubWallets')}</div>
@@ -10592,7 +10589,7 @@ const handleVaultWithdraw = async () => {
                             </div>
                           )}
                         </div>
-                      )}
+                      )} */}
                     </div>
                   )}
 

@@ -43,7 +43,10 @@ const TooltipLabel: React.FC<TooltipLabelProps> = ({
         viewportHeight - margin - tooltipRect.height,
       );
 
-      tooltipRef.current.style.transform = 'translate(-50%, 0)';
+      // Get current scale from the element's state
+      const currentScale = isLeaving ? 0.8 : mounted ? 1 : 0;
+      
+      tooltipRef.current.style.transform = `translate(-50%, 0) scale(${currentScale})`;
       tooltipRef.current.style.top = `${top}px`;
       tooltipRef.current.style.left = `${left}px`;
     }
@@ -91,7 +94,7 @@ const TooltipLabel: React.FC<TooltipLabelProps> = ({
       window.removeEventListener('resize', handleScrollResize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, [showTooltip, isLeaving]);
+  }, [showTooltip, isLeaving, mounted]);
 
   return (
     <div
@@ -108,10 +111,11 @@ const TooltipLabel: React.FC<TooltipLabelProps> = ({
             style={{
               position: 'fixed',
               opacity: 0,
+              transform: 'translate(-50%, 0) scale(0)',
               pointerEvents: 'none',
               zIndex: 1000,
               transition: mounted
-                ? 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
+                ? 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)'
                 : 'none',
             }}
             className={`swap-trade-header-tooltip ${
