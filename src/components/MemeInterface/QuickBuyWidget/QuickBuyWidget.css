@@ -154,7 +154,7 @@
 }
 
 .amount-btn{
-    color:rgb(67 254 154);
+    color:rgb(120, 237, 184);
     background-color: rgba(167, 234, 136, 0.133);
     border: 1px solid rgba(167, 234, 136, 0.2);
 }
@@ -238,7 +238,7 @@
 }
 
 .value.green {
-    color: rgb(67 254 154);
+    color: rgb(120, 237, 184);
 }
 
 .value.red {

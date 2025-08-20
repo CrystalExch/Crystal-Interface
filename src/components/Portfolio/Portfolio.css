@@ -3733,10 +3733,6 @@
   height: 12px;
 }
 
-.skeleton-day {
-  border: 1px solid rgba(179, 184, 249, 0.05);
-  background: rgba(255, 255, 255, 0.01);
-}
 
 .skeleton-day-number {
   width: 16px;

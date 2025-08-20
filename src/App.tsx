@@ -151,10 +151,10 @@ import Launchpad from './components/Launchpad/Launchpad.tsx';
 import TokenExplorer from './components/TokenExplorer/TokenExplorer.tsx';
 import MemeInterface from './components/MemeInterface/MemeInterface.tsx';
 import MemeTransactionPopupManager from './components/MemeTransactionPopup/MemeTransactionPopupManager';
-// import WidgetExplorer from './components/TokenExplorer/WidgetExplorer.tsx';
 import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
-
+import TokenBoard from './components/DegenToken/TokenBoard';
+import TokenDetail from './components/DegenToken/TokenDetail';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -20972,7 +20972,38 @@ const handleVaultWithdraw = async () => {
       crystalVaultsAddress={crystalVaults}
     />
   } />
-
+<Route
+  path="/board"
+  element={
+    <TokenBoard
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      setChain={handleSetChain}
+      setpopup={setpopup}
+    />
+  }
+/>
+<Route
+  path="/board/:tokenAddress"
+  element={
+    <TokenDetail
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      setChain={handleSetChain}
+      setpopup={setpopup}
+    />
+  }
+/>
   <Route path="/earn/vaults/:vaultAddress" element={
     <LPVaults
       setpopup={setpopup}

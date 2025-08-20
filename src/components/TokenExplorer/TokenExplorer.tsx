@@ -55,7 +55,7 @@ export interface Token {
   progress: number;
   status: 'new' | 'graduating' | 'graduated';
   description: string;
-  created: string;
+  created: number;
   bondingAmount: number;
   volumeDelta: number;
   telegramHandle: string;
@@ -264,13 +264,21 @@ const formatPrice = (p: number, noDecimals = false) => {
   return `${noDecimals ? Math.round(p) : p.toFixed(2)} MON`;
 };
 
-const formatTimeAgo = (t: string) => {
-  if (t.includes('h ago')) return t.replace(' ago', '');
-  if (t.includes('d ago')) return `${parseInt(t) * 24}h`;
-  if (t.includes('w ago')) return `${parseInt(t) * 7 * 24}h`;
-  if (t.includes('m ago')) return t.replace(' ago', '');
-  if (t.includes('s ago')) return t.replace(' ago', '');
-  return t;
+const formatTimeAgo = (createdTimestamp: number) => {
+  const now = Math.floor(Date.now() / 1000);
+  const ageSec = now - createdTimestamp;
+  
+  if (ageSec < 60) {
+    return `${ageSec}s`;
+  } else if (ageSec < 3600) {
+    return `${Math.floor(ageSec / 60)}m`;
+  } else if (ageSec < 86400) {
+    return `${Math.floor(ageSec / 3600)}h`;
+  } else if (ageSec < 604800) {
+    return `${Math.floor(ageSec / 86400)}d`;
+  } else {
+    return `${Math.floor(ageSec / 604800)}w`;
+  }
 };
 
 const calculateBondingPercentage = (marketCap: number) => {
@@ -2039,7 +2047,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return DISPLAY_DEFAULTS;
     }
   });
+const [, forceUpdate] = useReducer(x => x + 1, 0);
 
+useEffect(() => {
+  const interval = setInterval(() => {
+    forceUpdate();
+  }, 1000);
+
+  return () => clearInterval(interval);
+}, []);
   const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
     const saved = localStorage.getItem('explorer-alert-settings');
     if (!saved) return ALERT_DEFAULTS;
@@ -2268,7 +2284,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       website: meta?.website ?? '',
       status: 'new',
       marketCap: defaultMetrics.price * TOTAL_SUPPLY,
-      created: '0s ago',
+      created: Math.floor(Date.now() / 1000),
       volumeDelta: 0,
       telegramHandle: meta?.telegram ?? '',
       discordHandle: meta?.discord ?? '',
@@ -2378,11 +2394,12 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               console.warn('failed to load metadata for', m.metadataCID, e);
             }
 
-            const ageSec = Math.floor(Date.now() / 1000) - Number(m.createdAt);
-            const created =
-              ageSec >= 3600 ? `${Math.floor(ageSec / 3600)}h ago`
-                : ageSec >= 60 ? `${Math.floor(ageSec / 60)}m ago`
-                  : `${ageSec}s ago`;
+let createdTimestamp = Number(m.createdAt);
+if (createdTimestamp > 1e10) {
+  createdTimestamp = Math.floor(createdTimestamp / 1000);
+}
+
+console.log('Processed timestamp:', createdTimestamp);
 
             return {
               ...defaultMetrics,
@@ -2395,7 +2412,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               twitterHandle: meta.twitter ?? '',
               website: meta.website ?? '',
               status: 'new',
-              created,
+              created: createdTimestamp,
               price,
               marketCap: price * TOTAL_SUPPLY,
               buyTransactions: Number(m.buyCount),

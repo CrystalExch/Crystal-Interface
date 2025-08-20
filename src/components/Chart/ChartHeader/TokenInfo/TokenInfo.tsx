@@ -124,9 +124,22 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
     return `$${price.toFixed(2)}`;
   };
 
-  const formatTimeAgo = (timeStr: string): string => {
-    return timeStr.replace(' ago', '');
-  };
+ const formatTimeAgo = (createdTimestamp: number) => {
+  const now = Math.floor(Date.now() / 1000);
+  const ageSec = now - createdTimestamp;
+  
+  if (ageSec < 60) {
+    return `${ageSec}s`;
+  } else if (ageSec < 3600) {
+    return `${Math.floor(ageSec / 60)}m`;
+  } else if (ageSec < 86400) {
+    return `${Math.floor(ageSec / 3600)}h`;
+  } else if (ageSec < 604800) {
+    return `${Math.floor(ageSec / 86400)}d`;
+  } else {
+    return `${Math.floor(ageSec / 604800)}w`;
+  }
+};
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
