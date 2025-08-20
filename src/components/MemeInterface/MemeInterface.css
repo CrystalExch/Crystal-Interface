@@ -752,13 +752,6 @@
     background: transparent;
 }
 
-.meme-preset-button.active {
-    background: rgb(170 174 207 / 8%);
-    border-color: #aaaecf66;
-    box-shadow: 0 0 0 1px rgba(170, 174, 207, 0.6);
-    color: #d8dcff;
-}
-
 .meme-preset-button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
@@ -2262,23 +2255,6 @@ opacity: 1;
     padding-right: 3px;
 }
 
-/* Preset buttons - Buy (Green) */
-.meme-preset-button.active.buy {
-    background: rgba(67, 254, 154, 0.08);
-    border-color: rgba(67, 254, 154, 0.4);
-    box-shadow: 0 0 0 1px rgba(67, 254, 154, 0.6);
-    color: rgb(67, 254, 154);
-}
-
-/* Preset buttons - Sell (Red) */
-.meme-preset-button.active.sell {
-    background: rgba(235, 112, 112, 0.08);
-    border-color: rgba(235, 112, 112, 0.4);
-    box-shadow: 0 0 0 1px rgba(235, 112, 112, 0.6);
-    color: rgb(235, 112, 112);
-}
-
-/* Slider track - will be set via inline style with dynamic colors */
 .meme-balance-amount-slider {
     appearance: none;
     border-radius: 1px;
