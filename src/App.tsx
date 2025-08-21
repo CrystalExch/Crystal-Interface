@@ -155,6 +155,7 @@ import html2canvas from 'html2canvas';
 import { HexColorPicker } from 'react-colorful';
 import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
+import Tracker from './components/Tracker/Tracker.tsx';
 
 // import config
 import { SearchIcon } from 'lucide-react';
@@ -3257,6 +3258,9 @@ const handleVaultWithdraw = async () => {
         break;
       case location.pathname === '/explorer':
         title = 'Explorer | Crystal';
+        break;
+      case location.pathname === '/trackers':
+        title = 'Trackers | Crystal';
         break;
       case location.pathname.startsWith('/earn/vaults'):
         if (location.pathname === '/earn/vaults') {
@@ -21108,6 +21112,14 @@ const handleVaultWithdraw = async () => {
         onOpenFiltersForColumn={handleOpenFiltersForColumn}
         sendUserOperationAsync={sendUserOperationAsync}
         waitForTxReceipt={waitForTxReceipt}
+      />
+    }
+  />
+   <Route
+    path="/trackers"
+    element={
+      <Tracker
+        isBlurred={isBlurred}
       />
     }
   />

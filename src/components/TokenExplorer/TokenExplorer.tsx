@@ -292,9 +292,11 @@ const Tooltip: React.FC<{
   children: React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
 }> = ({ content, children, position = 'top' }) => {
-  const [vis, setVis] = useState(false);
+  const [shouldRender, setShouldRender] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updatePosition = useCallback(() => {
     if (!containerRef.current) return;
@@ -328,8 +330,42 @@ const Tooltip: React.FC<{
     setTooltipPosition({ top, left });
   }, [position]);
 
+  const handleMouseEnter = useCallback(() => {
+    // Clear any existing fade out timeout
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    // Mount the tooltip first
+    setShouldRender(true);
+    
+    // Give browser time to render the element with opacity: 0, then fade in
+    fadeTimeoutRef.current = setTimeout(() => {
+      setIsVisible(true);
+      fadeTimeoutRef.current = null;
+    }, 10); // Small delay to ensure initial state is applied
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    // Clear any pending fade in
+    if (fadeTimeoutRef.current) {
+      clearTimeout(fadeTimeoutRef.current);
+      fadeTimeoutRef.current = null;
+    }
+
+    // Start fade out immediately
+    setIsVisible(false);
+    
+    // Unmount after fade out completes
+    fadeTimeoutRef.current = setTimeout(() => {
+      setShouldRender(false);
+      fadeTimeoutRef.current = null;
+    }, 300); // Match the CSS transition duration
+  }, []);
+
   useEffect(() => {
-    if (vis) {
+    if (shouldRender) {
       updatePosition();
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
@@ -338,19 +374,28 @@ const Tooltip: React.FC<{
         window.removeEventListener('resize', updatePosition);
       };
     }
-  }, [vis, updatePosition]);
+  }, [shouldRender, updatePosition]);
+
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (fadeTimeoutRef.current) {
+        clearTimeout(fadeTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div
       ref={containerRef}
       className="tooltip-container"
-      onMouseEnter={() => setVis(true)}
-      onMouseLeave={() => setVis(false)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
     >
       {children}
-      {vis && createPortal(
+      {shouldRender && createPortal(
         <div
-          className={`tooltip tooltip-${position} fade-popup visible`}
+          className={`tooltip tooltip-${position} fade-popup ${isVisible ? 'visible' : ''}`}
           style={{
             position: 'absolute',
             top: `${tooltipPosition.top}px`,

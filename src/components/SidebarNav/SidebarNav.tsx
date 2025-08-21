@@ -12,7 +12,7 @@ import docs from '../../assets/docs.png';
 import vaults from '../../assets/yeildvaults.png';
 import earn from '../../assets/earn.png';
 import explorer from '../../assets/explorer.png';
-
+import tracker from '../../assets/tracker.svg';
 interface SidebarNavProps {
  simpleView: boolean;
   setSimpleView: (value: boolean) => void;
@@ -206,6 +206,16 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             >
               <img src={explorer} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Explorer')}</span>
+            </Link>
+
+            
+            <Link
+              to="/trackers"
+              className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={tracker} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
             </Link>
                     
             {isMobile && (
