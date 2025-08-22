@@ -70,7 +70,6 @@ import { formatDisplay } from './components/OrderCenter/utils/formatDisplay.ts';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
-import { CrystalMarketAbi } from './abis/CrystalMarketAbi';
 import { CrystalRouterAbi } from './abis/CrystalRouterAbi';
 import { CrystalReferralAbi } from './abis/CrystalReferralAbi.ts';
 import { TokenAbi } from './abis/TokenAbi';
@@ -144,7 +143,6 @@ import MiniChart from './components/Chart/ChartHeader/TokenInfo/MiniChart/MiniCh
 import Leaderboard from './components/Leaderboard/Leaderboard.tsx';
 import SimpleOrdersContainer from './components/SimpleOrdersContainer/SimpleOrdersContainer';
 import SidebarNav from './components/SidebarNav/SidebarNav';
-import CrystalObject from './components/CrystalObject.tsx';
 import EarnVaults from './components/EarnVaults/EarnVaults.tsx';
 import LPVaults from './components/LPVaults/LPVaults.tsx';
 import Launchpad from './components/Launchpad/Launchpad.tsx';
@@ -175,6 +173,11 @@ export type NotifyPayload = {
 };
 function App() {
   // constants
+  useEffect(() => {
+    if (!localStorage.getItem("noSSR")) {
+      localStorage.setItem("noSSR", "true");
+    }
+  }, []);
   const { config: alchemyconfig } = useAlchemyAccountContext() as any;
   const { client, address: scaAddress } = useSmartAccountClient({});
   const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
@@ -317,77 +320,77 @@ function App() {
     }
     return null;
   };
-//  const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
-// const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
-// const [widgetWidth, setWidgetWidth] = useState(400);
+  //  const [isWidgetExplorerOpen, setIsWidgetExplorerOpen] = useState(false);
+  // const [widgetExplorerSnapSide, setWidgetExplorerSnapSide] = useState<'left' | 'right' | 'none'>('none');
+  // const [widgetWidth, setWidgetWidth] = useState(400);
 
-// const handleOpenWidgetExplorer = useCallback(() => {
-//   setIsWidgetExplorerOpen(true);
-// }, []);
+  // const handleOpenWidgetExplorer = useCallback(() => {
+  //   setIsWidgetExplorerOpen(true);
+  // }, []);
 
-// const handleCloseWidgetExplorer = useCallback(() => {
-//   setIsWidgetExplorerOpen(false);
-//   setWidgetExplorerSnapSide('none');
-//   setWidgetWidth(400); 
-// }, []);
+  // const handleCloseWidgetExplorer = useCallback(() => {
+  //   setIsWidgetExplorerOpen(false);
+  //   setWidgetExplorerSnapSide('none');
+  //   setWidgetWidth(400); 
+  // }, []);
 
-// const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
-//   console.log('Widget snapped to:', side); // Debug log
-//   setWidgetExplorerSnapSide(side);
-// }, []);
+  // const handleWidgetExplorerSnapToSide = useCallback((side: 'left' | 'right' | 'none') => {
+  //   console.log('Widget snapped to:', side); // Debug log
+  //   setWidgetExplorerSnapSide(side);
+  // }, []);
 
-// const handleWidgetExplorerResize = useCallback((width) => {
-//   console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); 
-//   setWidgetWidth(width);
-// }, [widgetExplorerSnapSide]);
+  // const handleWidgetExplorerResize = useCallback((width) => {
+  //   console.log('Widget resized to:', width, 'Snap side:', widgetExplorerSnapSide); 
+  //   setWidgetWidth(width);
+  // }, [widgetExplorerSnapSide]);
 
-// const getAppContainerStyle = () => {
-//   const style = {};
-  
-//   if (widgetExplorerSnapSide === 'left') {
-//     style.marginLeft = `${widgetWidth}px`;
-//     console.log('Applying left margin:', widgetWidth);
-//   } else if (widgetExplorerSnapSide === 'right') {
-//     style.marginRight = `${widgetWidth}px`;
-//     console.log('Applying right margin:', widgetWidth); 
-//   }
-  
-//   style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
-  
-//   return style;
-// };
+  // const getAppContainerStyle = () => {
+  //   const style = {};
+    
+  //   if (widgetExplorerSnapSide === 'left') {
+  //     style.marginLeft = `${widgetWidth}px`;
+  //     console.log('Applying left margin:', widgetWidth);
+  //   } else if (widgetExplorerSnapSide === 'right') {
+  //     style.marginRight = `${widgetWidth}px`;
+  //     console.log('Applying right margin:', widgetWidth); 
+  //   }
+    
+  //   style.transition = 'margin-left 0.2s ease, margin-right 0.2s ease';
+    
+  //   return style;
+  // };
 
-// const getHeaderStyle = () => {
-//   const style = {};
-  
-//   let leftPosition = 55;
-  
-//   if (widgetExplorerSnapSide === 'left') {
-//     leftPosition = 55 + widgetWidth;
-//     console.log('Header left position:', leftPosition);
-//   }
-  
-//   style.left = `${leftPosition}px`;
-//   style.transition = 'left 0.3s ease';
-  
-//   return style;
-// };
+  // const getHeaderStyle = () => {
+  //   const style = {};
+    
+  //   let leftPosition = 55;
+    
+  //   if (widgetExplorerSnapSide === 'left') {
+  //     leftPosition = 55 + widgetWidth;
+  //     console.log('Header left position:', leftPosition);
+  //   }
+    
+  //   style.left = `${leftPosition}px`;
+  //   style.transition = 'left 0.3s ease';
+    
+  //   return style;
+  // };
 
-// const getHeaderClassName = () => {
-//   let className = 'app-header';
-  
-//   if (widgetExplorerSnapSide === 'left') {
-//     className += ' widget-left';
-//   } else if (widgetExplorerSnapSide === 'right') {
-//     className += ' widget-right';
-//   }
-  
-//   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
-//   if (isTradeRoute && !simpleView) {
-//   }
-  
-//   return className;
-// };
+  // const getHeaderClassName = () => {
+  //   let className = 'app-header';
+    
+  //   if (widgetExplorerSnapSide === 'left') {
+  //     className += ' widget-left';
+  //   } else if (widgetExplorerSnapSide === 'right') {
+  //     className += ' widget-right';
+  //   }
+    
+  //   const isTradeRoute = ['/swap', '/limit', '/send', '/scale', '/market'].includes(location.pathname);
+  //   if (isTradeRoute && !simpleView) {
+  //   }
+    
+  //   return className;
+  // };
 
 
   const [useOneCT, setUseOneCT] = useState(true);
@@ -399,6 +402,7 @@ function App() {
     signTransaction: async () => ''
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
+  const [userId, setUserId] = useState(BigInt(2))
   const connected = address != undefined
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
   useEffect(() => {
@@ -411,67 +415,67 @@ function App() {
       }
     }
   }, []);
-const getCurrentConnector = () => {
-  const connection = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1];
-  return connection?.connector;
-};
-const getConnectorName = () => {
-  const connector = getCurrentConnector();
-  return connector?.name || 'Unknown';
-};
-
-const getWalletIcon = () => {
-  const connectorName = getConnectorName();
-  
-  switch (connectorName) {
-    case 'MetaMask':
-      return walletmetamask;
-    case 'Coinbase Wallet':
-      return walletcoinbase;
-    case 'WalletConnect':
-      return walletconnect;
-    case 'Safe':
-      return walletsafe;
-    case 'Rabby Wallet':
-    case 'Rabby':
-      return walletrabby;
-    case 'Backpack':
-      return walletbackpack;
-    case 'Phantom':
-      return walletphantom;
-    case 'Tomo':
-      return wallettomo;
-    case 'HaHa Wallet':
-      return wallethaha;
-    default:
-      return; 
-  }
-};
-  useEffect(() => {
-  if (connected) {
+  const getCurrentConnector = () => {
+    const connection = alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1];
+    return connection?.connector;
+  };
+  const getConnectorName = () => {
     const connector = getCurrentConnector();
-    console.log('Connector details:', {
-      name: connector?.name,
-      type: connector?.type,
-      id: connector?.id
-    });
-  }
-}, [connected]);
+    return connector?.name || 'Unknown';
+  };
 
-const [withdrawPercentage, setWithdrawPercentage] = useState('');
-const [currentWalletType, setCurrentWalletType] = useState('');
-const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
-
-useEffect(() => {
-  if (connected) {
+  const getWalletIcon = () => {
     const connectorName = getConnectorName();
-    setCurrentWalletType(connectorName);
-    setCurrentWalletIcon(getWalletIcon());
-  } else {
-    setCurrentWalletType('');
-    setCurrentWalletIcon(walleticon);
-  }
-}, [connected, alchemyconfig]);
+    
+    switch (connectorName) {
+      case 'MetaMask':
+        return walletmetamask;
+      case 'Coinbase Wallet':
+        return walletcoinbase;
+      case 'WalletConnect':
+        return walletconnect;
+      case 'Safe':
+        return walletsafe;
+      case 'Rabby Wallet':
+      case 'Rabby':
+        return walletrabby;
+      case 'Backpack':
+        return walletbackpack;
+      case 'Phantom':
+        return walletphantom;
+      case 'Tomo':
+        return wallettomo;
+      case 'HaHa Wallet':
+        return wallethaha;
+      default:
+        return; 
+    }
+  };
+    useEffect(() => {
+    if (connected) {
+      const connector = getCurrentConnector();
+      console.log('Connector details:', {
+        name: connector?.name,
+        type: connector?.type,
+        id: connector?.id
+      });
+    }
+  }, [connected]);
+
+  const [withdrawPercentage, setWithdrawPercentage] = useState('');
+  const [currentWalletType, setCurrentWalletType] = useState('');
+  const [currentWalletIcon, setCurrentWalletIcon] = useState(walleticon);
+
+  useEffect(() => {
+    if (connected) {
+      const connectorName = getConnectorName();
+      setCurrentWalletType(connectorName);
+      setCurrentWalletIcon(getWalletIcon());
+    } else {
+      setCurrentWalletType('');
+      setCurrentWalletIcon(walleticon);
+    }
+  }, [connected, alchemyconfig]);
   const saveSubWalletsToStorage = (wallets: Array<{ address: string, privateKey: string }>) => {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
@@ -742,411 +746,403 @@ useEffect(() => {
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
 
+  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
+    quote: '',
+    base: ''
+  });
+  const [vaultQuoteExceedsBalance, setVaultQuoteExceedsBalance] = useState(false);
+  const [vaultBaseExceedsBalance, setVaultBaseExceedsBalance] = useState(false);
+  const [withdrawShares, setWithdrawShares] = useState('');
+  const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
+  const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
+  const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
+  const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
+    if (!percentage || !userShares) return '0';
+    const percentageDecimal = parseFloat(percentage) / 100;
+    const sharesToWithdraw = BigInt(Math.floor(Number(userShares) * percentageDecimal));
+    return sharesToWithdraw.toString();
+  };
 
-const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
-  quote: '',
-  base: ''
-});
-const [vaultQuoteExceedsBalance, setVaultQuoteExceedsBalance] = useState(false);
-const [vaultBaseExceedsBalance, setVaultBaseExceedsBalance] = useState(false);
-const [withdrawShares, setWithdrawShares] = useState('');
-const [withdrawExceedsBalance, setWithdrawExceedsBalance] = useState(false);
-const [depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
-const [withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
+  const handleWithdrawPercentageChange = (value: string) => {
+    const cleanValue = value.replace(/[^\d.]/g, '');
+    
+    const numericValue = parseFloat(cleanValue);
+    if (numericValue > 100) {
+      setWithdrawPercentage('100');
+    } else {
+      setWithdrawPercentage(cleanValue);
+    }
+    
+    setWithdrawExceedsBalance(false);
+    
+    const sharesToWithdraw = calculateSharesFromPercentage(cleanValue, selectedVaultForAction?.userShares);
+    const userSharesBalance = BigInt(selectedVaultForAction?.userShares || 0);
+    
+    if (BigInt(sharesToWithdraw) > userSharesBalance) {
+      setWithdrawExceedsBalance(true);
+    }
+  };
 
-const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
-  if (!percentage || !userShares) return '0';
-  const percentageDecimal = parseFloat(percentage) / 100;
-  const sharesToWithdraw = BigInt(Math.floor(Number(userShares) * percentageDecimal));
-  return sharesToWithdraw.toString();
-};
+  const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setVaultDepositAmounts(prev => ({
+        ...prev,
+        [type]: value
+      }));
 
-const handleWithdrawPercentageChange = (value: string) => {
-  const cleanValue = value.replace(/[^\d.]/g, '');
-  
-  const numericValue = parseFloat(cleanValue);
-  if (numericValue > 100) {
-    setWithdrawPercentage('100');
-  } else {
-    setWithdrawPercentage(cleanValue);
-  }
-  
-  setWithdrawExceedsBalance(false);
-  
-  const sharesToWithdraw = calculateSharesFromPercentage(cleanValue, selectedVaultForAction?.userShares);
-  const userSharesBalance = BigInt(selectedVaultForAction?.userShares || 0);
-  
-  if (BigInt(sharesToWithdraw) > userSharesBalance) {
-    setWithdrawExceedsBalance(true);
-  }
-};
+      if (value !== '' && selectedVaultForAction) {
+        const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
+        if (tokenData) {
+          const tokenDecimals = Number(tokenData.decimals || 18);
+          const maxAllowedAmount = Number(tokenBalances[tokenData.address]) / 10 ** tokenDecimals;
+          const enteredAmount = parseFloat(value);
 
-const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
-  if (value === '' || /^\d*\.?\d*$/.test(value)) {
-    setVaultDepositAmounts(prev => ({
-      ...prev,
-      [type]: value
-    }));
-
-    if (value !== '' && selectedVaultForAction) {
-      const tokenData = type === 'quote' ? selectedVaultForAction.quoteTokenData : selectedVaultForAction.baseTokenData;
-      if (tokenData) {
-        const tokenDecimals = Number(tokenData.decimals || 18);
-        const maxAllowedAmount = Number(tokenBalances[tokenData.address]) / 10 ** tokenDecimals;
-        const enteredAmount = parseFloat(value);
-
+          if (type === 'quote') {
+            setVaultQuoteExceedsBalance(enteredAmount > maxAllowedAmount);
+          } else {
+            setVaultBaseExceedsBalance(enteredAmount > maxAllowedAmount);
+          }
+        }
+      } else {
         if (type === 'quote') {
-          setVaultQuoteExceedsBalance(enteredAmount > maxAllowedAmount);
+          setVaultQuoteExceedsBalance(false);
         } else {
-          setVaultBaseExceedsBalance(enteredAmount > maxAllowedAmount);
+          setVaultBaseExceedsBalance(false);
         }
       }
-    } else {
-      if (type === 'quote') {
-        setVaultQuoteExceedsBalance(false);
+    }
+  };
+
+  const handleWithdrawSharesChange = (value: string) => {
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setWithdrawShares(value);
+
+      if (value !== '' && selectedVaultForAction) {
+        const userSharesBalance = parseFloat(selectedVaultForAction.userShares || '0');
+        const enteredAmount = parseFloat(value);
+        setWithdrawExceedsBalance(enteredAmount > userSharesBalance);
       } else {
-        setVaultBaseExceedsBalance(false);
+        setWithdrawExceedsBalance(false);
       }
     }
-  }
-};
+  };
 
-const handleWithdrawSharesChange = (value: string) => {
-  if (value === '' || /^\d*\.?\d*$/.test(value)) {
-    setWithdrawShares(value);
+  const isVaultDepositEnabled = () => {
+    return vaultDepositAmounts.quote !== '' && vaultDepositAmounts.base !== '' &&
+      parseFloat(vaultDepositAmounts.quote) > 0 && parseFloat(vaultDepositAmounts.base) > 0 &&
+      !vaultQuoteExceedsBalance && !vaultBaseExceedsBalance && depositPreview;
+  };
 
-    if (value !== '' && selectedVaultForAction) {
-      const userSharesBalance = parseFloat(selectedVaultForAction.userShares || '0');
-      const enteredAmount = parseFloat(value);
-      setWithdrawExceedsBalance(enteredAmount > userSharesBalance);
-    } else {
-      setWithdrawExceedsBalance(false);
+  const isWithdrawEnabled = () => {
+    return withdrawShares !== '' && parseFloat(withdrawShares) > 0 && 
+      !withdrawExceedsBalance && withdrawPreview;
+  };
+
+  const getVaultDepositButtonText = () => {
+    if (vaultQuoteExceedsBalance || vaultBaseExceedsBalance) {
+      return 'Insufficient Balance';
     }
-  }
-};
+    if (!depositPreview) {
+      return 'Enter Amounts';
+    }
+    return 'Deposit';
+  };
 
-const isVaultDepositEnabled = () => {
-  return vaultDepositAmounts.quote !== '' && vaultDepositAmounts.base !== '' &&
-    parseFloat(vaultDepositAmounts.quote) > 0 && parseFloat(vaultDepositAmounts.base) > 0 &&
-    !vaultQuoteExceedsBalance && !vaultBaseExceedsBalance && depositPreview;
-};
+  const getWithdrawButtonText = () => {
+    if (withdrawExceedsBalance) {
+      return 'Insufficient Shares';
+    }
+    if (!withdrawPreview) {
+      return 'Enter Amount';
+    }
+    return 'Withdraw';
+  };
 
-const isWithdrawEnabled = () => {
-  return withdrawShares !== '' && parseFloat(withdrawShares) > 0 && 
-    !withdrawExceedsBalance && withdrawPreview;
-};
+  // Preview deposit effect
+  useEffect(() => {
+    if (!selectedVaultForAction || !vaultDepositAmounts.quote || !vaultDepositAmounts.base) {
+      setDepositPreview(null);
+      return;
+    }
 
-const getVaultDepositButtonText = () => {
-  if (vaultQuoteExceedsBalance || vaultBaseExceedsBalance) {
-    return 'Insufficient Balance';
-  }
-  if (!depositPreview) {
-    return 'Enter Amounts';
-  }
-  return 'Deposit';
-};
+    const previewDeposit = async () => {
+      try {
+        const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+        const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
+        
+        if (!crystalVaultsAddress || !HTTP_URL) return;
 
-const getWithdrawButtonText = () => {
-  if (withdrawExceedsBalance) {
-    return 'Insufficient Shares';
-  }
-  if (!withdrawPreview) {
-    return 'Enter Amount';
-  }
-  return 'Withdraw';
-};
+        const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
+        const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
+        
+        const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
+        const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
-// Preview deposit effect
-useEffect(() => {
-  if (!selectedVaultForAction || !vaultDepositAmounts.quote || !vaultDepositAmounts.base) {
-    setDepositPreview(null);
-    return;
-  }
+        const calldata = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "previewDeposit",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            amountQuoteDesired,
+            amountBaseDesired,
+          ],
+        });
 
-  const previewDeposit = async () => {
+        const res = await fetch(HTTP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_call",
+            params: [
+              { to: crystalVaultsAddress, data: calldata },
+              "latest",
+            ],
+          }),
+        });
+
+        const { result } = await res.json();
+        const [shares, amountQuote, amountBase] = decodeFunctionResult({
+          abi: CrystalVaultsAbi,
+          functionName: "previewDeposit",
+          data: result,
+        });
+
+        setDepositPreview({ shares, amountQuote, amountBase });
+      } catch (error) {
+        console.error('Error previewing deposit:', error);
+        setDepositPreview(null);
+      }
+    };
+
+    const timeoutId = setTimeout(previewDeposit, 500);
+    return () => clearTimeout(timeoutId);
+  }, [vaultDepositAmounts, selectedVaultForAction, activechain]);
+
+  // Preview withdrawal effect
+  useEffect(() => {
+    if (!selectedVaultForAction || !withdrawShares) {
+      setWithdrawPreview(null);
+      return;
+    }
+
+    const previewWithdrawal = async () => {
+      try {
+        const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+        const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
+        
+        if (!crystalVaultsAddress || !HTTP_URL) return;
+
+        const shares = BigInt(withdrawShares);
+
+        const calldata = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "previewWithdrawal",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            shares,
+          ],
+        });
+
+        const res = await fetch(HTTP_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0",
+            id: 1,
+            method: "eth_call",
+            params: [
+              { to: crystalVaultsAddress, data: calldata },
+              "latest",
+            ],
+          }),
+        });
+
+        const { result } = await res.json();
+        const [amountQuote, amountBase] = decodeFunctionResult({
+          abi: CrystalVaultsAbi,
+          functionName: "previewWithdrawal",
+          data: result,
+        });
+
+        setWithdrawPreview({ amountQuote, amountBase });
+      } catch (error) {
+        console.error('Error previewing withdrawal:', error);
+        setWithdrawPreview(null);
+      }
+    };
+
+    const timeoutId = setTimeout(previewWithdrawal, 500);
+    return () => clearTimeout(timeoutId);
+  }, [withdrawShares, selectedVaultForAction, activechain]);
+
+  const handleVaultDeposit = async () => {
+    if (!selectedVaultForAction || !connected || !depositPreview) return;
+    
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (userchain !== targetChainId) {
+      handleSetChain();
+      return;
+    }
+
     try {
-      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-      const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
-      
-      if (!crystalVaultsAddress || !HTTP_URL) return;
+      setIsVaultDepositSigning(true);
 
-      const quoteDecimals = Number(selectedVaultForAction.quoteTokenData?.decimals || 18);
-      const baseDecimals = Number(selectedVaultForAction.baseTokenData?.decimals || 18);
-      
+      const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+      const quoteTokenAddress = selectedVaultForAction.quoteAsset;
+      const baseTokenAddress = selectedVaultForAction.baseAsset;
+
+
+      const quoteDecimals = Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18);
+      const baseDecimals = Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18);
+
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
-      const calldata = encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "previewDeposit",
-        args: [
-          selectedVaultForAction.address as `0x${string}`,
-          amountQuoteDesired,
-          amountBaseDesired,
-        ],
-      });
+      const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
+      const amountBaseMin = (amountBaseDesired * 95n) / 100n;
 
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: crystalVaultsAddress, data: calldata },
-            "latest",
+      // Approve tokens if needed
+      if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        const approveQuoteUo = {
+          target: quoteTokenAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+          }),
+          value: 0n,
+        };
+        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+        await waitForTxReceipt(approveQuoteOp.hash);
+      }
+
+      if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
+        const approveBaseUo = {
+          target: baseTokenAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: [{
+              inputs: [
+                { name: "spender", type: "address" },
+                { name: "amount", type: "uint256" }
+              ],
+              name: "approve",
+              outputs: [{ name: "", type: "bool" }],
+              stateMutability: "nonpayable",
+              type: "function",
+            }],
+            functionName: "approve",
+            args: [crystalVaultsAddress as `0x${string}`, maxUint256],
+          }),
+          value: 0n,
+        };
+        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+        await waitForTxReceipt(approveBaseOp.hash);
+      }
+
+      // Deposit into vault
+      const ethValue = 
+        quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
+        baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
+
+      const depositUo = {
+        target: crystalVaultsAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "deposit",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            amountQuoteDesired,
+            amountBaseDesired,
+            amountQuoteMin,
+            amountBaseMin,
           ],
         }),
-      });
+        value: ethValue,
+      };
 
-      const { result } = await res.json();
-      const [shares, amountQuote, amountBase] = decodeFunctionResult({
-        abi: CrystalVaultsAbi,
-        functionName: "previewDeposit",
-        data: result,
-      });
+      const depositOp = await sendUserOperationAsync({ uo: depositUo });
+      await waitForTxReceipt(depositOp.hash);
 
-      setDepositPreview({ shares, amountQuote, amountBase });
-    } catch (error) {
-      console.error('Error previewing deposit:', error);
+      // Reset form
+      setVaultDepositAmounts({ quote: '', base: '' });
+      setVaultQuoteExceedsBalance(false);
+      setVaultBaseExceedsBalance(false);
       setDepositPreview(null);
+      
+      refetch();
+      setpopup(0);
+      setSelectedVaultForAction(null);
+
+    } catch (e: any) {
+      console.error('Vault deposit error:', e);
+    } finally {
+      setIsVaultDepositSigning(false);
     }
   };
 
-  const timeoutId = setTimeout(previewDeposit, 500);
-  return () => clearTimeout(timeoutId);
-}, [vaultDepositAmounts, selectedVaultForAction, activechain]);
+  // Handle vault withdrawal function
+  const handleVaultWithdraw = async () => {
+    if (!selectedVaultForAction || !connected || !withdrawPreview) return;
+    
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (userchain !== targetChainId) {
+      handleSetChain();
+      return;
+    }
 
-// Preview withdrawal effect
-useEffect(() => {
-  if (!selectedVaultForAction || !withdrawShares) {
-    setWithdrawPreview(null);
-    return;
-  }
-
-  const previewWithdrawal = async () => {
     try {
+      setIsVaultWithdrawSigning(true);
+
       const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-      const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
       
-      if (!crystalVaultsAddress || !HTTP_URL) return;
+      const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
+      const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
 
-      const shares = BigInt(withdrawShares);
-
-      const calldata = encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "previewWithdrawal",
-        args: [
-          selectedVaultForAction.address as `0x${string}`,
-          shares,
-        ],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: crystalVaultsAddress, data: calldata },
-            "latest",
+      const withdrawUo = {
+        target: crystalVaultsAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "withdraw",
+          args: [
+            selectedVaultForAction.address as `0x${string}`,
+            BigInt(withdrawShares),
+            amountQuoteMin,
+            amountBaseMin,
           ],
         }),
-      });
+        value: 0n,
+      };
 
-      const { result } = await res.json();
-      const [amountQuote, amountBase] = decodeFunctionResult({
-        abi: CrystalVaultsAbi,
-        functionName: "previewWithdrawal",
-        data: result,
-      });
+      const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
+      await waitForTxReceipt(withdrawOp.hash);
 
-      setWithdrawPreview({ amountQuote, amountBase });
-    } catch (error) {
-      console.error('Error previewing withdrawal:', error);
+      // Reset form
+      setWithdrawShares('');
+      setWithdrawExceedsBalance(false);
       setWithdrawPreview(null);
+      
+      refetch();
+      setpopup(0);
+      setSelectedVaultForAction(null);
+
+    } catch (e: any) {
+      console.error('Vault withdraw error:', e);
+    } finally {
+      setIsVaultWithdrawSigning(false);
     }
   };
-
-  const timeoutId = setTimeout(previewWithdrawal, 500);
-  return () => clearTimeout(timeoutId);
-}, [withdrawShares, selectedVaultForAction, activechain]);
-
-const handleVaultDeposit = async () => {
-  if (!selectedVaultForAction || !connected || !depositPreview) return;
-  
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (userchain !== targetChainId) {
-    handleSetChain();
-    return;
-  }
-
-  try {
-    setIsVaultDepositSigning(true);
-
-    const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-    const quoteTokenAddress = selectedVaultForAction.quoteAsset;
-    const baseTokenAddress = selectedVaultForAction.baseAsset;
-
-
-    const quoteDecimals = Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18);
-    const baseDecimals = Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18);
-
-    const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
-    const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
-
-    const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
-    const amountBaseMin = (amountBaseDesired * 95n) / 100n;
-
-    // Approve tokens if needed
-    if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
-      const approveQuoteUo = {
-        target: quoteTokenAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, maxUint256],
-        }),
-        value: 0n,
-      };
-      const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-      await waitForTxReceipt(approveQuoteOp.hash);
-    }
-
-    if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
-      const approveBaseUo = {
-        target: baseTokenAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: [{
-            inputs: [
-              { name: "spender", type: "address" },
-              { name: "amount", type: "uint256" }
-            ],
-            name: "approve",
-            outputs: [{ name: "", type: "bool" }],
-            stateMutability: "nonpayable",
-            type: "function",
-          }],
-          functionName: "approve",
-          args: [crystalVaultsAddress as `0x${string}`, maxUint256],
-        }),
-        value: 0n,
-      };
-      const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-      await waitForTxReceipt(approveBaseOp.hash);
-    }
-
-    // Deposit into vault
-    const ethValue = 
-      quoteTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountQuoteDesired :
-      baseTokenAddress === '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' ? amountBaseDesired : 0n;
-
-    const depositUo = {
-      target: crystalVaultsAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "deposit",
-        args: [
-          selectedVaultForAction.address as `0x${string}`,
-          amountQuoteDesired,
-          amountBaseDesired,
-          amountQuoteMin,
-          amountBaseMin,
-        ],
-      }),
-      value: ethValue,
-    };
-
-    const depositOp = await sendUserOperationAsync({ uo: depositUo });
-    await waitForTxReceipt(depositOp.hash);
-
-    // Reset form
-    setVaultDepositAmounts({ quote: '', base: '' });
-    setVaultQuoteExceedsBalance(false);
-    setVaultBaseExceedsBalance(false);
-    setDepositPreview(null);
-    
-    refetch();
-    setpopup(0);
-    setSelectedVaultForAction(null);
-
-  } catch (e: any) {
-    console.error('Vault deposit error:', e);
-  } finally {
-    setIsVaultDepositSigning(false);
-  }
-};
-
-// Handle vault withdrawal function
-const handleVaultWithdraw = async () => {
-  if (!selectedVaultForAction || !connected || !withdrawPreview) return;
-  
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (userchain !== targetChainId) {
-    handleSetChain();
-    return;
-  }
-
-  try {
-    setIsVaultWithdrawSigning(true);
-
-    const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-    
-    const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
-    const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
-
-    const withdrawUo = {
-      target: crystalVaultsAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "withdraw",
-        args: [
-          selectedVaultForAction.address as `0x${string}`,
-          BigInt(withdrawShares),
-          amountQuoteMin,
-          amountBaseMin,
-        ],
-      }),
-      value: 0n,
-    };
-
-    const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
-    await waitForTxReceipt(withdrawOp.hash);
-
-    // Reset form
-    setWithdrawShares('');
-    setWithdrawExceedsBalance(false);
-    setWithdrawPreview(null);
-    
-    refetch();
-    setpopup(0);
-    setSelectedVaultForAction(null);
-
-  } catch (e: any) {
-    console.error('Vault withdraw error:', e);
-  } finally {
-    setIsVaultWithdrawSigning(false);
-  }
-};
-
-
-
-
-
-
 
   const updateNotificationPosition = (position: string) => {
     if (previewTimer) {
@@ -2542,7 +2538,7 @@ const handleVaultWithdraw = async () => {
           functionName: 'allowance',
           args: [
             address as `0x${string}`,
-            (getMarket(activeMarket.path.at(0) as any, activeMarket.path.at(1) as any) as any).address
+            router
           ]
         },
         {
@@ -2557,16 +2553,16 @@ const handleVaultWithdraw = async () => {
         },
         {
           to: router,
-          abi: CrystalMarketAbi,
+          abi: CrystalRouterAbi,
           functionName: 'getPriceLevelsFromMid',
-          args: [activeMarket?.address, BigInt(1000000), BigInt(100)]
+          args: [activeMarket?.address, BigInt(1000000), BigInt(1), BigInt(100)]
         },
         {
           to: balancegetter,
           abi: CrystalDataHelperAbi,
           functionName: 'getPrices',
           args: [
-            Array.from(new Set(Object.values(markets).map((m: any) => m.address)))
+            router, [activeMarket?.address]
           ]
         },
         ...(isStake && tokenIn === eth && (tokendict[tokenOut] as any)?.lst && (switched ? amountOutSwap : amountIn) > maxUint256
@@ -2583,33 +2579,33 @@ const handleVaultWithdraw = async () => {
         {
           disabled: !address,
           to: settings.chainConfig[activechain].referralManager,
-          abi: CrystalReferralAbi as any,
-          functionName: 'addressToReferrer',
+          abi: CrystalRouterAbi as any,
+          functionName: 'getUsedRef',
           args: [address],
         },
         ...Array.from(
           new Set(
-            Object.values(markets).map(
+            Object.values(tokendict).map(
               (market) => market.address as `0x${string}`
             )
           )
         ).flatMap((marketAddress: any) => ({
-          to: marketAddress as `0x${string}`,
-          abi: CrystalMarketAbi,
-          functionName: 'accumulatedFeeQuote',
-          args: [address],
+          to: router as `0x${string}`,
+          abi: CrystalRouterAbi,
+          functionName: 'claimableRewards',
+          args: [marketAddress, address],
         })),
         ...Array.from(
           new Set(
-            Object.values(markets).map(
+            Object.values(tokendict).map(
               (market) => market.address as `0x${string}`
             )
           )
         ).flatMap((marketAddress: any) => ({
-          to: marketAddress as `0x${string}`,
-          abi: CrystalMarketAbi,
-          functionName: 'accumulatedFeeBase',
-          args: [address],
+          to: router as `0x${string}`,
+          abi: CrystalRouterAbi,
+          functionName: 'claimableRewards',
+          args: [marketAddress, address],
         }))
       ]
 
@@ -3053,7 +3049,7 @@ const handleVaultWithdraw = async () => {
 
   // order processing
   const processOrders = (buyOrdersRaw: any[], sellOrdersRaw: any[]) => {
-    const mapOrders = (orderData: bigint[]) => {
+    const mapOrdersBuy = (orderData: bigint[]) => {
       const orders = orderData
         .filter(
           (order) =>
@@ -3065,8 +3061,37 @@ const handleVaultWithdraw = async () => {
             Number(order >> BigInt(128)) / Number(activeMarket.priceFactor);
           const size =
             Number(order & BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')) /
-            (Number(activeMarket.scaleFactor) *
-              10 ** Number(activeMarket.quoteDecimals));
+            (10 ** Number(activeMarket.quoteDecimals));
+          return {
+            price,
+            size,
+            totalSize: 0,
+          };
+        });
+
+      let runningTotal = 0;
+      return orders.map((order) => {
+        runningTotal += order.size;
+        return {
+          ...order,
+          totalSize: runningTotal,
+        };
+      });
+    };
+
+    const mapOrdersSell = (orderData: bigint[]) => {
+      const orders = orderData
+        .filter(
+          (order) =>
+            (order & BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')) !==
+            BigInt(0),
+        )
+        .map((order) => {
+          const price =
+            Number(order >> BigInt(128)) / Number(activeMarket.priceFactor);
+          const size =
+            Number(order & BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF')) * Number(order >> BigInt(128)) /
+            Number(activeMarket.scaleFactor) / (10 ** Number(activeMarket.quoteDecimals));
           return {
             price,
             size,
@@ -3085,8 +3110,8 @@ const handleVaultWithdraw = async () => {
     };
 
     return {
-      buyOrders: mapOrders(buyOrdersRaw as bigint[]),
-      sellOrders: mapOrders(sellOrdersRaw as bigint[]),
+      buyOrders: mapOrdersBuy(buyOrdersRaw as bigint[]),
+      sellOrders: mapOrdersSell(sellOrdersRaw as bigint[]),
     };
   }
 
@@ -3627,7 +3652,7 @@ const handleVaultWithdraw = async () => {
       }
       if (refData && Object.keys(tempmids).length > 0) {
         setUsedRefAddress(
-          refData[0]?.result as any || '0x0000000000000000000000000000000000000000',
+          refData[0]?.result?.[0] as any || '0x0000000000000000000000000000000000000000',
         );
         setClaimableFees(() => {
           let newFees = {};
@@ -4128,13 +4153,9 @@ const handleVaultWithdraw = async () => {
               {
                 fromBlock: startBlockNumber,
                 toBlock: endBlockNumber,
-                address: Object.values(markets).map(
-                  (market: { address: string }) => market.address,
-                ),
+                address: router,
                 topics: [
-                  [
-                    '0xc3bcf95b5242764f3f2dc3e504ce05823a3b50c4ccef5e660d13beab2f51f2ca',
-                  ],
+                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
                 ],
               },
             ],
@@ -4146,16 +4167,11 @@ const handleVaultWithdraw = async () => {
               {
                 fromBlock: startBlockNumber,
                 toBlock: endBlockNumber,
-                address: Object.values(markets).map(
-                  (market: { address: string }) => market.address,
-                ),
+                address: router,
                 topics: [
-                  [
-                    '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4',
-                  ],
-                  [
-                    '0x000000000000000000000000' + address?.slice(2),
-                  ],
+                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                  null,
+                  "0x" + userId.toString(16).padStart(64, "0"),
                 ],
               },
             ],
@@ -4197,9 +4213,9 @@ const handleVaultWithdraw = async () => {
           if (Array.isArray(orderlogs)) {
             for (const log of orderlogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket[log['address']];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
-                address?.slice(2).toLowerCase()) {
+              const marketKey = addresstoMarket['0x'+log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
+                userId.toString(16).padStart(64, "0")) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -4216,15 +4232,16 @@ const handleVaultWithdraw = async () => {
                 let _orderdata = log['data'].slice(130);
                 for (let i = 0; i < _orderdata.length; i += 64) {
                   let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                  let _isplace = parseInt(chunk.slice(0, 2), 16) >= 2;
                   if (_isplace) {
-                    let buy = parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(1, 20), 16);
-                    let id = parseInt(chunk.slice(20, 32), 16);
-                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let buy = parseInt(chunk.slice(0, 2), 16) == 2;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
                     let alreadyExist = tempcanceledorders.some(
                       (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                     );
+                    buy ? size *= markets[marketKey].scaleFactor : size *= price
                     if (!alreadyExist) {
                       ordersChanged = true;
                       canceledOrdersChanged = true;
@@ -4292,10 +4309,10 @@ const handleVaultWithdraw = async () => {
                       );
                     }
                   } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 3;
-                    let price = parseInt(chunk.slice(1, 20), 16);
-                    let id = parseInt(chunk.slice(20, 32), 16);
-                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let buy = parseInt(chunk.slice(0, 2), 16) == 0;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
                     let index = temporders.findIndex(
                       (o: any) =>
                         o[0] == price &&
@@ -4377,10 +4394,10 @@ const handleVaultWithdraw = async () => {
           if (Array.isArray(tradelogs)) {
             for (const log of tradelogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket[log['address']];
+              const marketKey = addresstoMarket['0x'+log['topics'][1].slice(26)];
               if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
-                trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
-                trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
+                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
+                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
                 trade[5] == log['transactionHash'])) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
@@ -4510,10 +4527,10 @@ const handleVaultWithdraw = async () => {
                 if (!Array.isArray(temptradesByMarket[marketKey])) {
                   temptradesByMarket[marketKey] = [];
                 }
-                let amountIn = parseInt(log['data'].slice(2, 34), 16);
-                let amountOut = parseInt(log['data'].slice(34, 66), 16);
-                let buy = parseInt(log['data'].slice(66, 67), 16);
-                let price = parseInt(log['data'].slice(98, 130), 16);
+                let amountIn = parseInt(log['data'].slice(66, 130), 16);
+                let amountOut = parseInt(log['data'].slice(130, 194), 16);
+                let buy = parseInt(log['data'].slice(65, 66), 16);
+                let price = parseInt(log['data'].slice(258, 322), 16);
                 temptradesByMarket[marketKey].unshift([
                   amountIn,
                   amountOut,
@@ -4534,10 +4551,10 @@ const handleVaultWithdraw = async () => {
                   marketKey,
                   log['transactionHash'],
                   _timestamp,
-                  parseInt(log['data'].slice(67, 98), 16),
+                  parseInt(log['data'].slice(194, 258), 16),
                 ])
                 if (
-                  log['topics'][1].slice(26) ==
+                  log['topics'][3].slice(26) ==
                   address?.slice(2).toLowerCase()
                 ) {
                   tradeHistoryChanged = true;
@@ -4960,13 +4977,9 @@ const handleVaultWithdraw = async () => {
             params: [
               'monadLogs',
               {
-                address: Object.values(markets).map(
-                  (market: { address: string }) => market.address,
-                ),
+                address: router,
                 topics: [
-                  [
-                    '0xc3bcf95b5242764f3f2dc3e504ce05823a3b50c4ccef5e660d13beab2f51f2ca',
-                  ],
+                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
                 ],
               },
             ],
@@ -4977,16 +4990,11 @@ const handleVaultWithdraw = async () => {
             params: [
               'monadLogs',
               {
-                address: Object.values(markets).map(
-                  (market: { address: string }) => market.address,
-                ),
+                address: router,
                 topics: [
-                  [
-                    '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4',
-                  ],
-                  [
-                    '0x000000000000000000000000' + address?.slice(2),
-                  ],
+                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                  null,
+                  "0x" + userId.toString(16).padStart(64, "0"),
                 ],
               },
             ],
@@ -5050,11 +5058,11 @@ const handleVaultWithdraw = async () => {
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
             let temptrades: any = {};
-            if (log['topics']?.[0] == '0x1c87843c023cd30242ff04316b77102e873496e3d8924ef015475cf066c1d4f4') {
+            if (log['topics']?.[0] == '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66') {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket[log['address']];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][1].slice(26) ==
-                address?.slice(2).toLowerCase()) {
+              const marketKey = addresstoMarket['0x'+log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
+                userId.toString(16).padStart(64, "0")) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -5071,15 +5079,16 @@ const handleVaultWithdraw = async () => {
                 let _orderdata = log['data'].slice(130);
                 for (let i = 0; i < _orderdata.length; i += 64) {
                   let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) < 2;
+                  let _isplace = parseInt(chunk.slice(0, 2), 16) >= 2;
                   if (_isplace) {
-                    let buy = parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(1, 20), 16);
-                    let id = parseInt(chunk.slice(20, 32), 16);
-                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let buy = parseInt(chunk.slice(0, 2), 16) == 2;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
                     let alreadyExist = tempcanceledorders.some(
                       (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                     );
+                    buy ? size *= markets[marketKey].scaleFactor : size *= price
                     if (!alreadyExist) {
                       ordersChanged = true;
                       canceledOrdersChanged = true;
@@ -5147,10 +5156,10 @@ const handleVaultWithdraw = async () => {
                       );
                     }
                   } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 3;
-                    let price = parseInt(chunk.slice(1, 20), 16);
-                    let id = parseInt(chunk.slice(20, 32), 16);
-                    let size = parseInt(chunk.slice(32, 64), 16);
+                    let buy = parseInt(chunk.slice(0, 2), 16) == 0;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
                     let index = temporders.findIndex(
                       (o: any) =>
                         o[0] == price &&
@@ -5230,10 +5239,10 @@ const handleVaultWithdraw = async () => {
             }
             else {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket[log['address']];
+              const marketKey = addresstoMarket['0x'+log['topics'][1].slice(26)];
               if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
-                trade[0] == parseInt(log['data'].slice(2, 34), 16) &&
-                trade[1] == parseInt(log['data'].slice(34, 66), 16) &&
+                trade[0] == parseInt(log['data'].slice(66, 130), 16) &&
+                trade[1] == parseInt(log['data'].slice(130, 194), 16) &&
                 trade[5] == log['transactionHash'])) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
@@ -5363,10 +5372,10 @@ const handleVaultWithdraw = async () => {
                 if (!Array.isArray(temptradesByMarket[marketKey])) {
                   temptradesByMarket[marketKey] = [];
                 }
-                let amountIn = parseInt(log['data'].slice(2, 34), 16);
-                let amountOut = parseInt(log['data'].slice(34, 66), 16);
-                let buy = parseInt(log['data'].slice(66, 67), 16);
-                let price = parseInt(log['data'].slice(98, 130), 16);
+                let amountIn = parseInt(log['data'].slice(66, 130), 16);
+                let amountOut = parseInt(log['data'].slice(130, 194), 16);
+                let buy = parseInt(log['data'].slice(65, 66), 16);
+                let price = parseInt(log['data'].slice(258, 322), 16);
                 temptradesByMarket[marketKey].unshift([
                   amountIn,
                   amountOut,
@@ -5387,10 +5396,10 @@ const handleVaultWithdraw = async () => {
                   marketKey,
                   log['transactionHash'],
                   _timestamp,
-                  parseInt(log['data'].slice(67, 98), 16),
+                  parseInt(log['data'].slice(194, 258), 16),
                 ])
                 if (
-                  log['topics'][1].slice(26) ==
+                  log['topics'][3].slice(26) ==
                   address?.slice(2).toLowerCase()
                 ) {
                   tradeHistoryChanged = true;
@@ -6925,43 +6934,31 @@ const handleVaultWithdraw = async () => {
       let hash;
       setIsSigning(true);
 
-      const orderbatch: Record<
-        string,
-        { 0: any[]; 1: any[]; 2: any[]; 3: any[] }
-      > = {};
+      const orderbatch: Record<string, any> = {}
 
-      orders.forEach((order) => {
-        const k = markets[order[4]].address;
-        if (!orderbatch[k]) {
-          orderbatch[k] = { 0: [], 1: [], 2: [], 3: [] };
-        }
-        orderbatch[k][0].push(0);
-        orderbatch[k][1].push(order[0]);
-        orderbatch[k][2].push(order[1]);
-        orderbatch[k][3].push(
-          markets[order[4]].baseAddress ===
-            '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
-            order[3] === 0
-            ? router
-            : address,
-        );
-      });
-
-      const m = Object.keys(orderbatch) as `0x${string}`[];
-      const action = m.map((market) => orderbatch[market][0]);
-      const price = m.map((market) => orderbatch[market][1]);
-      const param1 = m.map((market) => orderbatch[market][2]);
-      const param2 = m.map((market) => orderbatch[market][3]);
+      orders.forEach(order => {
+        const k = markets[order[4]].address
+        if (!orderbatch[k]) orderbatch[k] = []
+        orderbatch[k].push({
+          isRequireSuccess: true,
+          action: BigInt(0),
+          param1: order[0], // price
+          param2: order[1], // size/id
+          param3: BigInt(0),  // cloid or extra id
+        })
+      })
+      
+      const batches: any = Object.entries(orderbatch).map(([market, actions]) => ({
+        market: market as `0x${string}`,
+        actions,
+        options: BigInt(0)
+      }))
 
       hash = await sendUserOperationAsync({
         uo: multiBatchOrders(
           router,
           BigInt(0),
-          m,
-          action,
-          price,
-          param1,
-          param2,
+          batches,
           '0x0000000000000000000000000000000000000000',
         )
       });
@@ -11609,7 +11606,6 @@ const handleVaultWithdraw = async () => {
               <img className="onboarding-crystal-logo-image" src={clearlogo} />
               <span className="onboarding-crystal-text">CRYSTAL</span>
             </div>
-            <CrystalObject />
 
             {user && !connected && (
               <div className="generating-address-popup">
@@ -15578,7 +15574,7 @@ const handleVaultWithdraw = async () => {
                           let uo = []
                           uo.push(approve(
                             tokenIn as `0x${string}`,
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                            router,
                             maxUint256
                           ))
                           if (tokenOut == eth) {
@@ -15645,14 +15641,14 @@ const handleVaultWithdraw = async () => {
                             customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
                             0,
                             '',
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
+                            router
                           );
                         }
                         else {
                           hash = await sendUserOperationAsync({
                             uo: approve(
                               tokenIn as `0x${string}`,
-                              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                              router,
                               maxUint256
                             )
                           })
@@ -15666,7 +15662,7 @@ const handleVaultWithdraw = async () => {
                             customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
                             0,
                             '',
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
+                            router
                           );
                         }
                       }
@@ -15774,7 +15770,7 @@ const handleVaultWithdraw = async () => {
                           let uo = []
                           uo.push(approve(
                             tokenIn as `0x${string}`,
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                            router,
                             maxUint256
                           ))
                           if (tokenOut == eth) {
@@ -15841,14 +15837,14 @@ const handleVaultWithdraw = async () => {
                             customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
                             0,
                             '',
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
+                            router
                           );
                         }
                         else {
                           hash = await sendUserOperationAsync({
                             uo: approve(
                               tokenIn as `0x${string}`,
-                              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address,
+                              router,
                               maxUint256
                             )
                           })
@@ -15862,7 +15858,7 @@ const handleVaultWithdraw = async () => {
                             customRound(Number(amountIn) / 10 ** Number(tokendict[tokenIn].decimals), 3),
                             0,
                             '',
-                            getMarket(activeMarket.path.at(0), activeMarket.path.at(1)).address
+                            router
                           );
                         }
                       }
@@ -17953,6 +17949,7 @@ const handleVaultWithdraw = async () => {
                         tokenOut as `0x${string}`,
                         limitPrice,
                         amountIn,
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                       )
                     })
                   } else {
@@ -17977,10 +17974,7 @@ const handleVaultWithdraw = async () => {
                       let uo = []
                       uo.push(approve(
                         tokenIn as `0x${string}`,
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).address,
+                        router,
                         maxUint256,
                       ))
                       if (addliquidityonly) {
@@ -17991,6 +17985,7 @@ const handleVaultWithdraw = async () => {
                           tokenOut as `0x${string}`,
                           limitPrice,
                           amountIn,
+                          BigInt(Math.floor(Date.now() / 1000) + 900),
                         ))
                       } else {
                         uo.push(_swap(
@@ -18019,17 +18014,14 @@ const handleVaultWithdraw = async () => {
                         ),
                         0,
                         '',
-                        activeMarket.address,
+                        router,
                       );
                     }
                     else {
                       hash = await sendUserOperationAsync({
                         uo: approve(
                           tokenIn as `0x${string}`,
-                          getMarket(
-                            activeMarket.path.at(0),
-                            activeMarket.path.at(1),
-                          ).address,
+                          router,
                           maxUint256,
                         )
                       })
@@ -18047,7 +18039,7 @@ const handleVaultWithdraw = async () => {
                         ),
                         0,
                         '',
-                        activeMarket.address,
+                        router,
                       );
                     }
                   }
@@ -18061,6 +18053,7 @@ const handleVaultWithdraw = async () => {
                           tokenOut as `0x${string}`,
                           limitPrice,
                           amountIn,
+                          BigInt(Math.floor(Date.now() / 1000) + 900),
                         )
                       })
                     } else {
@@ -18101,6 +18094,7 @@ const handleVaultWithdraw = async () => {
                 await refetch()
                 txPending.current = false
               } catch (error) {
+                console.log(error)
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
                     hash?.hash,
@@ -20335,18 +20329,27 @@ const handleVaultWithdraw = async () => {
                 Number(scaleOrders),
                 Number(scaleSkew)
               );
-              let action: any = [[]];
-              let price: any = [[]];
-              let param1: any = [[]];
-              let param2: any = [[]];
-              let sum = BigInt(0)
-              o.forEach((order) => {
-                sum += tokenIn == activeMarket.quoteAddress ? BigInt(order[2]) : BigInt(order[1])
-                action[0].push(tokenIn == activeMarket.quoteAddress ? ((addliquidityonly || tokenIn == eth) ? 1 : 5) : ((addliquidityonly || tokenIn == eth) ? 2 : 6));
-                price[0].push(order[0]);
-                param1[0].push(tokenIn == activeMarket.quoteAddress ? order[2] : order[1]);
-                param2[0].push(tokenIn == eth ? router : address);
-              });
+
+              const orderbatch: Record<string, any> = {}
+
+              o.forEach(order => {
+                const k = activeMarket?.address
+                if (!orderbatch[k]) orderbatch[k] = []
+                orderbatch[k].push({
+                  isRequireSuccess: true,
+                  action: tokenIn == activeMarket.quoteAddress ? ((addliquidityonly) ? 2 : 4) : ((addliquidityonly) ? 3 : 5),
+                  param1: order[0], // price
+                  param2: tokenIn == activeMarket.quoteAddress ? order[2] : order[1], // size/id
+                  param3: BigInt(0),  // cloid or extra id
+                })
+              })
+              
+              const batches: any = Object.entries(orderbatch).map(([market, actions]) => ({
+                market: market as `0x${string}`,
+                actions,
+                options: BigInt(tokenIn == eth ? (1n << 48n) : 0)
+              }))
+
               let hash;
               setIsSigning(true)
               if (client) {
@@ -20358,11 +20361,7 @@ const handleVaultWithdraw = async () => {
                     uo: multiBatchOrders(
                       router,
                       BigInt(finalAmountIn),
-                      [activeMarket.address],
-                      action,
-                      price,
-                      param1,
-                      param2,
+                      batches,
                       usedRefAddress
                     )
                   })
@@ -20372,20 +20371,13 @@ const handleVaultWithdraw = async () => {
                       let uo = []
                       uo.push(approve(
                         tokenIn as `0x${string}`,
-                        getMarket(
-                          activeMarket.path.at(0),
-                          activeMarket.path.at(1),
-                        ).address,
+                        router,
                         maxUint256,
                       ))
                       uo.push(multiBatchOrders(
                         router,
                         BigInt(0),
-                        [activeMarket.address],
-                        action,
-                        price,
-                        param1,
-                        param2,
+                        batches,
                         usedRefAddress
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
@@ -20401,17 +20393,14 @@ const handleVaultWithdraw = async () => {
                         ),
                         0,
                         '',
-                        activeMarket.address,
+                        router,
                       );
                     }
                     else {
                       hash = await sendUserOperationAsync({
                         uo: approve(
                           tokenIn as `0x${string}`,
-                          getMarket(
-                            activeMarket.path.at(0),
-                            activeMarket.path.at(1),
-                          ).address,
+                          router,
                           maxUint256,
                         )
                       })
@@ -20430,7 +20419,7 @@ const handleVaultWithdraw = async () => {
                         ),
                         0,
                         '',
-                        activeMarket.address,
+                        router,
                       );
                     }
                   }
@@ -20439,11 +20428,7 @@ const handleVaultWithdraw = async () => {
                       uo: multiBatchOrders(
                         router,
                         BigInt(0),
-                        [activeMarket.address],
-                        action,
-                        price,
-                        param1,
-                        param2,
+                        batches,
                         usedRefAddress
                       )
                     })
@@ -21179,6 +21164,7 @@ const handleVaultWithdraw = async () => {
         client={client}
         activechain={activechain}
         markets={markets}
+        tokendict={tokendict}
         subWallets={subWallets}
         setSubWallets={saveSubWallets}
         walletTokenBalances={walletTokenBalances}

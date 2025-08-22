@@ -176,6 +176,7 @@ interface PortfolioProps {
   client: any;
   activechain: any;
   markets: any;
+  tokendict: any;
   isSpectating?: boolean;
   spectatedAddress?: string;
   onStartSpectating?: (address: string) => void;
@@ -200,7 +201,6 @@ interface PortfolioProps {
   keccak256?: any;
   Wallet?: any;
   activeWalletPrivateKey?: string;
-
 }
 
 type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
@@ -247,6 +247,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   client,
   activechain,
   markets,
+  tokendict,
   isSpectating: propIsSpectating,
   spectatedAddress: propSpectatedAddress,
   onStartSpectating,
@@ -1987,7 +1988,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         return (
           <div className="portfolio-layout-with-referrals">
             <ReferralSidebar
-              markets={markets}
+              tokendict={tokendict}
               router={router}
               usedRefAddress={usedRefAddress as `0x${string}`}
               address={getActiveAddress() as `0x${string}`}

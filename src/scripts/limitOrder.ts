@@ -8,13 +8,14 @@ const limitOrder = (
   tokenOut: `0x${string}`,
   price: bigint,
   size: bigint,
+  deadline: bigint,
 ) => {
   return {
       target: address,
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
-        functionName: 'limitOrder',
-        args: [tokenIn, tokenOut, price, size],
+        functionName: 'placeLimitOrder',
+        args: [tokenIn, tokenOut, price, size, deadline],
       }),
       value: value,
     }

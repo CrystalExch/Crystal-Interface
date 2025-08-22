@@ -1,857 +1,11 @@
 export const CrystalRouterAbi = [
 	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [],
-		"name": "ActionFailed",
-		"type": "error"
-	},
-	{
-		"inputs": [],
-		"name": "SlippageExceeded",
-		"type": "error"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "amounts",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "info",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes",
-				"name": "filled",
-				"type": "bytes"
-			}
-		],
-		"name": "OrdersFilled",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "bytes",
-				"name": "orderData",
-				"type": "bytes"
-			}
-		],
-		"name": "OrdersUpdated",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "market",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "maxPrice",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "fee",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "gov",
-				"type": "address"
-			}
-		],
-		"name": "ParamsChanged",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": true,
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "quoteAmount",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "baseAmount",
-				"type": "uint256"
-			}
-		],
-		"name": "RewardsClaimed",
-		"type": "event"
-	},
-	{
-		"stateMutability": "nonpayable",
-		"type": "fallback"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "accumulatedFeeBase",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "accumulatedFeeQuote",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"name": "addressToUserId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "baseAsset",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "actions",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "prices",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "param1",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "address[]",
-				"name": "param2",
-				"type": "address[]"
-			},
-			{
-				"internalType": "address",
-				"name": "owner",
+				"name": "_weth",
 				"type": "address"
 			},
-			{
-				"internalType": "address",
-				"name": "referrer",
-				"type": "address"
-			}
-		],
-		"name": "batchOrders",
-		"outputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "returnData",
-				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "actions",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "prices",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "param1",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "address[]",
-				"name": "param2",
-				"type": "address[]"
-			},
-			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "referrer",
-				"type": "address"
-			}
-		],
-		"name": "batchOrdersRequireSuccess",
-		"outputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "returnData",
-				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "cancelOrder",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "size",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "newFee",
-				"type": "uint256"
-			}
-		],
-		"name": "changeFee",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newGov",
-				"type": "address"
-			}
-		],
-		"name": "changeGov",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "newMaxPrice",
-				"type": "uint256"
-			}
-		],
-		"name": "changeMaxPrice",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			}
-		],
-		"name": "claimFees",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "quoteAmount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "baseAmount",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "fee",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getPrice",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_highestBid",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_lowestAsk",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "isAscending",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "startPrice",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "distance",
-				"type": "uint256"
-			}
-		],
-		"name": "getPriceLevels",
-		"outputs": [
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "distance",
-				"type": "uint256"
-			}
-		],
-		"name": "getPriceLevelsFromMid",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "_highestBid",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_lowestAsk",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "isBuy",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "isExactInput",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "size",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "worstPrice",
-				"type": "uint256"
-			}
-		],
-		"name": "getQuote",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "amountIn",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amountOut",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "gov",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "highestBid",
-		"outputs": [
-			{
-				"internalType": "uint80",
-				"name": "",
-				"type": "uint80"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "latestUserId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "isBuy",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "size",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "owner",
-				"type": "address"
-			}
-		],
-		"name": "limitOrder",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "lowestAsk",
-		"outputs": [
-			{
-				"internalType": "uint80",
-				"name": "",
-				"type": "uint80"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bool",
-				"name": "isBuy",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "isExactInput",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "isFromCaller",
-				"type": "bool"
-			},
-			{
-				"internalType": "bool",
-				"name": "isToCaller",
-				"type": "bool"
-			},
-			{
-				"internalType": "uint256",
-				"name": "orderType",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "size",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "worstPrice",
-				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "referrer",
-				"type": "address"
-			}
-		],
-		"name": "marketOrder",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "amountIn",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amountOut",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "maxPrice",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "minSize",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "orders",
-		"outputs": [
-			{
-				"internalType": "uint40",
-				"name": "owner",
-				"type": "uint40"
-			},
-			{
-				"internalType": "uint128",
-				"name": "size",
-				"type": "uint128"
-			},
-			{
-				"internalType": "uint40",
-				"name": "fillBefore",
-				"type": "uint40"
-			},
-			{
-				"internalType": "uint40",
-				"name": "fillAfter",
-				"type": "uint40"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "priceLevels",
-		"outputs": [
-			{
-				"internalType": "uint128",
-				"name": "size",
-				"type": "uint128"
-			},
-			{
-				"internalType": "uint40",
-				"name": "fillNext",
-				"type": "uint40"
-			},
-			{
-				"internalType": "uint40",
-				"name": "latest",
-				"type": "uint40"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "quoteAsset",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "caller",
-				"type": "address"
-			}
-		],
-		"name": "registerUser",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "_latestUserId",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "router",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "scaleFactor",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"name": "userIdToAddress",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	}
-] as const;
-[
-	{
-		"inputs": [
 			{
 				"internalType": "address",
 				"name": "_gov",
@@ -859,8 +13,70 @@ export const CrystalRouterAbi = [
 			},
 			{
 				"internalType": "address",
-				"name": "_weth",
+				"name": "_feeRecipient",
 				"type": "address"
+			},
+			{
+				"internalType": "uint8",
+				"name": "_feeCommission",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint8",
+				"name": "_feeRebate",
+				"type": "uint8"
+			},
+			{
+				"internalType": "uint256",
+				"name": "_feeClaimDuration",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "_factories",
+				"type": "address[]"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint112",
+						"name": "launchpadInitialNativeSupply",
+						"type": "uint112"
+					},
+					{
+						"internalType": "uint256",
+						"name": "launchpadFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "launchpadCreatorFeeSplit",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedMinSize",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedTakerFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedMakerRebate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedCreatorFeeSplit",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Crystal.LaunchpadParams",
+				"name": "_launchpadParams",
+				"type": "tuple"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -874,6 +90,65 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [],
 		"name": "ActionFailed",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "timestamp",
+				"type": "uint256"
+			}
+		],
+		"name": "Expired",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "asset0",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "asset1",
+				"type": "address"
+			}
+		],
+		"name": "InvalidMarket",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			}
+		],
+		"name": "InvalidPath",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "RefCodeAlreadyTaken",
+		"type": "error"
+	},
+	{
+		"inputs": [],
+		"name": "SlippageExceeded",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "recipient",
+				"type": "address"
+			}
+		],
+		"name": "TransferFailed",
 		"type": "error"
 	},
 	{
@@ -935,6 +210,55 @@ export const CrystalRouterAbi = [
 			}
 		],
 		"name": "GovChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "isBuy",
+				"type": "bool"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "virtualNativeReserve",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "virtualTokenReserve",
+				"type": "uint256"
+			}
+		],
+		"name": "LaunchpadTrade",
 		"type": "event"
 	},
 	{
@@ -1005,18 +329,6 @@ export const CrystalRouterAbi = [
 				"internalType": "uint24",
 				"name": "makerRebate",
 				"type": "uint24"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "feeCommission",
-				"type": "uint8"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "feeRebate",
-				"type": "uint8"
 			}
 		],
 		"name": "MarketCreated",
@@ -1051,18 +363,56 @@ export const CrystalRouterAbi = [
 			},
 			{
 				"indexed": false,
-				"internalType": "uint8",
-				"name": "feeCommission",
-				"type": "uint8"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint8",
-				"name": "feeRebate",
-				"type": "uint8"
+				"internalType": "bool",
+				"name": "isAMMEnabled",
+				"type": "bool"
 			}
 		],
 		"name": "MarketParamsChanged",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "Migrated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "sender",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amountQuote",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amountBase",
+				"type": "uint256"
+			}
+		],
+		"name": "Mint",
 		"type": "event"
 	},
 	{
@@ -1127,6 +477,25 @@ export const CrystalRouterAbi = [
 			{
 				"indexed": true,
 				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "referee",
+				"type": "address"
+			}
+		],
+		"name": "Referral",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
 				"name": "caller",
 				"type": "address"
 			},
@@ -1156,6 +525,92 @@ export const CrystalRouterAbi = [
 				"type": "address"
 			},
 			{
+				"indexed": false,
+				"internalType": "uint112",
+				"name": "reserve0",
+				"type": "uint112"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint112",
+				"name": "reserve1",
+				"type": "uint112"
+			}
+		],
+		"name": "Sync",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "metadataCID",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "social1",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "social2",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "social3",
+				"type": "string"
+			}
+		],
+		"name": "TokenCreated",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": true,
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
 				"indexed": true,
 				"internalType": "uint256",
 				"name": "userId",
@@ -1166,6 +621,12 @@ export const CrystalRouterAbi = [
 				"internalType": "address",
 				"name": "user",
 				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "bool",
+				"name": "isBuy",
+				"type": "bool"
 			},
 			{
 				"indexed": false,
@@ -1190,12 +651,6 @@ export const CrystalRouterAbi = [
 				"internalType": "uint256",
 				"name": "endPrice",
 				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "bool",
-				"name": "isBuy",
-				"type": "bool"
 			}
 		],
 		"name": "Trade",
@@ -1265,6 +720,145 @@ export const CrystalRouterAbi = [
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "deployer",
+				"type": "address"
+			}
+		],
+		"name": "addCanonicalDeployer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteDesired",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseDesired",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseMin",
+				"type": "uint256"
+			}
+		],
+		"name": "addLiquidity",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "liquidity",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteDesired",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseDesired",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseMin",
+				"type": "uint256"
+			}
+		],
+		"name": "addLiquidityETH",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "liquidity",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "addressToRefCode",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "addressToReferrer",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "",
 				"type": "address"
 			}
@@ -1278,26 +872,6 @@ export const CrystalRouterAbi = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "price",
-				"type": "uint256"
-			}
-		],
-		"name": "adminCancelAll",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "adminDeleteMarket",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1335,6 +909,25 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "allTokens",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "market",
 				"type": "address"
@@ -1343,7 +936,7 @@ export const CrystalRouterAbi = [
 				"components": [
 					{
 						"internalType": "bool",
-						"name": "requireSuccess",
+						"name": "isRequireSuccess",
 						"type": "bool"
 					},
 					{
@@ -1384,6 +977,73 @@ export const CrystalRouterAbi = [
 		],
 		"name": "batchOrders",
 		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "isExactInput",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			}
+		],
+		"name": "buy",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "tokenIn",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenOut",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			}
+		],
+		"name": "cancelLimitOrder",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "size",
+				"type": "uint256"
+			}
+		],
 		"stateMutability": "nonpayable",
 		"type": "function"
 	},
@@ -1424,12 +1084,88 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "newFeeClaimDuration",
+				"type": "uint256"
+			}
+		],
+		"name": "changeFeeClaimDuration",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newFeeRecipient",
+				"type": "address"
+			}
+		],
+		"name": "changeFeeRecipient",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "newGov",
 				"type": "address"
 			}
 		],
 		"name": "changeGov",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint112",
+						"name": "launchpadInitialNativeSupply",
+						"type": "uint112"
+					},
+					{
+						"internalType": "uint256",
+						"name": "launchpadFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "launchpadCreatorFeeSplit",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedMinSize",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedTakerFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedMakerRebate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "graduatedCreatorFeeSplit",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Crystal.LaunchpadParams",
+				"name": "newLaunchpadParams",
+				"type": "tuple"
+			}
+		],
+		"name": "changeLaunchpadParams",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1457,6 +1193,24 @@ export const CrystalRouterAbi = [
 				"type": "uint24"
 			},
 			{
+				"internalType": "bool",
+				"name": "isAMMEnabled",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isCanonical",
+				"type": "bool"
+			}
+		],
+		"name": "changeMarketParams",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint8",
 				"name": "newFeeCommission",
 				"type": "uint8"
@@ -1467,7 +1221,7 @@ export const CrystalRouterAbi = [
 				"type": "uint8"
 			}
 		],
-		"name": "changeMarketParams",
+		"name": "changeRefFeeStructure",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -1541,8 +1295,57 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [
 			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "symbol",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "metadataCID",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "description",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social1",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social2",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "social3",
+				"type": "string"
+			}
+		],
+		"name": "createToken",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "bool",
-				"name": "canonical",
+				"name": "isCanonical",
 				"type": "bool"
 			},
 			{
@@ -1589,16 +1392,6 @@ export const CrystalRouterAbi = [
 				"internalType": "uint24",
 				"name": "makerRebate",
 				"type": "uint24"
-			},
-			{
-				"internalType": "uint8",
-				"name": "feeCommission",
-				"type": "uint8"
-			},
-			{
-				"internalType": "uint8",
-				"name": "feeRebate",
-				"type": "uint8"
 			}
 		],
 		"name": "deploy",
@@ -1638,7 +1431,110 @@ export const CrystalRouterAbi = [
 	},
 	{
 		"inputs": [],
+		"name": "depositNative",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "userId",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "eth",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "executeClaimExpiredFees",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "factories",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeClaimDuration",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeCommission",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeRebate",
+		"outputs": [
+			{
+				"internalType": "uint8",
+				"name": "",
+				"type": "uint8"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "feeRecipient",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -1672,9 +1568,14 @@ export const CrystalRouterAbi = [
 			{
 				"components": [
 					{
-						"internalType": "uint256",
-						"name": "marketId",
-						"type": "uint256"
+						"internalType": "bool",
+						"name": "isBuy",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "market",
+						"type": "address"
 					},
 					{
 						"internalType": "uint256",
@@ -1707,12 +1608,60 @@ export const CrystalRouterAbi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct Crystal.OrderByCloid[]",
+				"internalType": "struct Crystal.Order[]",
 				"name": "userOrders",
 				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			}
+		],
+		"name": "getAmountsIn",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			}
+		],
+		"name": "getAmountsOut",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1755,123 +1704,86 @@ export const CrystalRouterAbi = [
 				"internalType": "address",
 				"name": "market",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "distance",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "precision",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "max",
-				"type": "uint256"
-			}
-		],
-		"name": "getDisplayPriceLevelsFromMid",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "highestBid",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "lowestAsk",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			},
-			{
-				"internalType": "bytes",
-				"name": "",
-				"type": "bytes"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
 			}
 		],
 		"name": "getMarket",
 		"outputs": [
 			{
-				"internalType": "uint80",
-				"name": "highestBid",
-				"type": "uint80"
-			},
-			{
-				"internalType": "uint80",
-				"name": "lowestAsk",
-				"type": "uint80"
-			},
-			{
-				"internalType": "uint32",
-				"name": "minSize",
-				"type": "uint32"
-			},
-			{
-				"internalType": "uint24",
-				"name": "takerFee",
-				"type": "uint24"
-			},
-			{
-				"internalType": "uint24",
-				"name": "makerRebate",
-				"type": "uint24"
-			},
-			{
-				"internalType": "uint8",
-				"name": "feeCommission",
-				"type": "uint8"
-			},
-			{
-				"internalType": "uint8",
-				"name": "feeRebate",
-				"type": "uint8"
-			},
-			{
-				"internalType": "address",
-				"name": "quoteAsset",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "baseAsset",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "marketId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "scaleFactor",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "tickSize",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "maxPrice",
-				"type": "uint256"
+				"components": [
+					{
+						"internalType": "address",
+						"name": "quoteAsset",
+						"type": "address"
+					},
+					{
+						"internalType": "address",
+						"name": "baseAsset",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "marketType",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "highestBid",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "lowestAsk",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "scaleFactor",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "tickSize",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "maxPrice",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "minSize",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "takerFee",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "makerRebate",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reserveQuote",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "reserveBase",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "isAMMEnabled",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct Crystal.MarketInfo",
+				"name": "info",
+				"type": "tuple"
 			}
 		],
 		"stateMutability": "view",
@@ -1924,6 +1836,21 @@ export const CrystalRouterAbi = [
 			{
 				"components": [
 					{
+						"internalType": "bool",
+						"name": "isBuy",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "market",
+						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "price",
+						"type": "uint256"
+					},
+					{
 						"internalType": "uint256",
 						"name": "size",
 						"type": "uint256"
@@ -1975,9 +1902,14 @@ export const CrystalRouterAbi = [
 			{
 				"components": [
 					{
-						"internalType": "uint256",
-						"name": "marketId",
-						"type": "uint256"
+						"internalType": "bool",
+						"name": "isBuy",
+						"type": "bool"
+					},
+					{
+						"internalType": "address",
+						"name": "market",
+						"type": "address"
 					},
 					{
 						"internalType": "uint256",
@@ -2010,7 +1942,7 @@ export const CrystalRouterAbi = [
 						"type": "uint256"
 					}
 				],
-				"internalType": "struct Crystal.OrderByCloid",
+				"internalType": "struct Crystal.Order",
 				"name": "",
 				"type": "tuple"
 			}
@@ -2117,6 +2049,11 @@ export const CrystalRouterAbi = [
 			},
 			{
 				"internalType": "uint256",
+				"name": "interval",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
 				"name": "max",
 				"type": "uint256"
 			}
@@ -2142,6 +2079,11 @@ export const CrystalRouterAbi = [
 			{
 				"internalType": "uint256",
 				"name": "distance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "interval",
 				"type": "uint256"
 			},
 			{
@@ -2195,7 +2137,7 @@ export const CrystalRouterAbi = [
 			},
 			{
 				"internalType": "bool",
-				"name": "requireCompleteFill",
+				"name": "isCompleteFill",
 				"type": "bool"
 			},
 			{
@@ -2226,6 +2168,78 @@ export const CrystalRouterAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			}
+		],
+		"name": "getReserves",
+		"outputs": [
+			{
+				"internalType": "uint112",
+				"name": "reserveQuote",
+				"type": "uint112"
+			},
+			{
+				"internalType": "uint112",
+				"name": "reserveBase",
+				"type": "uint112"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			}
+		],
+		"name": "getUsedRef",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "refCode",
+				"type": "string"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			}
+		],
+		"name": "getVirtualReserves",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "virtualNativeReserve",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "virtualTokenReserve",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "gov",
 		"outputs": [
@@ -2239,6 +2253,44 @@ export const CrystalRouterAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isCanonicalDeployer",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "isKeeper",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "latestUserId",
 		"outputs": [
@@ -2246,6 +2298,88 @@ export const CrystalRouterAbi = [
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "launchpadParams",
+		"outputs": [
+			{
+				"internalType": "uint112",
+				"name": "launchpadInitialNativeSupply",
+				"type": "uint112"
+			},
+			{
+				"internalType": "uint256",
+				"name": "launchpadFee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "launchpadCreatorFeeSplit",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "graduatedMinSize",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "graduatedTakerFee",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "graduatedMakerRebate",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "graduatedCreatorFeeSplit",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "launchpadTokenToMarket",
+		"outputs": [
+			{
+				"internalType": "uint112",
+				"name": "virtualNativeReserve",
+				"type": "uint112"
+			},
+			{
+				"internalType": "uint112",
+				"name": "virtualTokenReserve",
+				"type": "uint112"
+			},
+			{
+				"internalType": "uint256",
+				"name": "k",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "creator",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
 			}
 		],
 		"stateMutability": "view",
@@ -2312,6 +2446,25 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "marketIdToMarket",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "market",
 				"type": "address"
@@ -2329,6 +2482,11 @@ export const CrystalRouterAbi = [
 			{
 				"internalType": "uint256",
 				"name": "options",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "orderType",
 				"type": "uint256"
 			},
 			{
@@ -2388,6 +2546,68 @@ export const CrystalRouterAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "address",
+						"name": "market",
+						"type": "address"
+					},
+					{
+						"components": [
+							{
+								"internalType": "bool",
+								"name": "isRequireSuccess",
+								"type": "bool"
+							},
+							{
+								"internalType": "uint256",
+								"name": "action",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "param1",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "param2",
+								"type": "uint256"
+							},
+							{
+								"internalType": "uint256",
+								"name": "param3",
+								"type": "uint256"
+							}
+						],
+						"internalType": "struct Crystal.Action[]",
+						"name": "actions",
+						"type": "tuple[]"
+					},
+					{
+						"internalType": "uint256",
+						"name": "options",
+						"type": "uint256"
+					}
+				],
+				"internalType": "struct Crystal.Batch[]",
+				"name": "batches",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "multiBatchOrders",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "parameters",
 		"outputs": [
@@ -2426,6 +2646,120 @@ export const CrystalRouterAbi = [
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "pendingExpiredFeeClaims",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "tokenIn",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenOut",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "size",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			}
+		],
+		"name": "placeLimitOrder",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "user",
+				"type": "address"
+			},
+			{
+				"internalType": "address[]",
+				"name": "tokens",
+				"type": "address[]"
+			}
+		],
+		"name": "queueClaimExpiredFees",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			}
+		],
+		"name": "refCodeToAddress",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "referrerToReferredAddressCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "registerNewMarginAccount",
 		"outputs": [
@@ -2449,6 +2783,171 @@ export const CrystalRouterAbi = [
 			}
 		],
 		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "deployer",
+				"type": "address"
+			}
+		],
+		"name": "removeCanonicalDeployer",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "liquidity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseMin",
+				"type": "uint256"
+			}
+		],
+		"name": "removeLiquidity",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountQuote",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBase",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "market",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "liquidity",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountQuoteMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBaseMin",
+				"type": "uint256"
+			}
+		],
+		"name": "removeLiquidityETH",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountQuote",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountBase",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "isPostOnly",
+				"type": "bool"
+			},
+			{
+				"internalType": "bool",
+				"name": "isDecrease",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenIn",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenOut",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "price",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "newSize",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "replaceOrder",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
 		"type": "function"
 	},
 	{
@@ -2503,6 +3002,378 @@ export const CrystalRouterAbi = [
 	{
 		"inputs": [
 			{
+				"internalType": "bool",
+				"name": "isExactInput",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "token",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			}
+		],
+		"name": "sell",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "code",
+				"type": "string"
+			}
+		],
+		"name": "setReferral",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "code",
+				"type": "string"
+			}
+		],
+		"name": "setUsedRef",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "bool",
+				"name": "isExactInput",
+				"type": "bool"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenIn",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "tokenOut",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "orderType",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "size",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "worstPrice",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swap",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "userId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "balance",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapETHForExactTokens",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountOutMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapExactETHForTokens",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "payable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountOutMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapExactTokensForETH",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountIn",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountOutMin",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapExactTokensForTokens",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountInMax",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapTokensForExactETH",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountOut",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amountInMax",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address[]",
+				"name": "path",
+				"type": "address[]"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "deadline",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "referrer",
+				"type": "address"
+			}
+		],
+		"name": "swapTokensForExactTokens",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
@@ -2536,6 +3407,11 @@ export const CrystalRouterAbi = [
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
 				"name": "token",
 				"type": "address"
 			},
@@ -2546,6 +3422,24 @@ export const CrystalRouterAbi = [
 			}
 		],
 		"name": "withdraw",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "withdrawNative",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

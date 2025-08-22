@@ -3,7 +3,6 @@ import { Share2, Eye, EyeOff } from 'lucide-react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 import { config } from '../../../wagmi';
-import { CrystalReferralAbi } from '../../../abis/CrystalReferralAbi';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
 import { settings } from '../../../settings';
 import customRound from '../../../utils/customRound';
@@ -12,7 +11,7 @@ import closebutton from '../../../assets/close_button.png';
 import './ReferralSidebar.css';
 
 interface ReferralSidebarProps {
-  markets: { [key: string]: any };
+  tokendict: { [key: string]: any };
   router: `0x${string}`;
   address: `0x${string}` | undefined;
   usedRefLink: string;
@@ -34,7 +33,7 @@ interface ReferralSidebarProps {
 }
 
 const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
-  markets,
+  tokendict,
   router,
   address,
   usedRefLink,
@@ -95,15 +94,15 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
       const refs = (await readContracts(config, {
         contracts: [
           {
-            abi: CrystalReferralAbi,
+            abi: CrystalRouterAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRef',
+            functionName: 'addressToRefCode',
             args: [address ?? '0x0000000000000000000000000000000000000000'],
           },
           {
-            abi: CrystalReferralAbi,
+            abi: CrystalRouterAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRef',
+            functionName: 'addressToRefCode',
             args: [
               usedRefAddress ?? '0x0000000000000000000000000000000000000000',
             ],
@@ -186,9 +185,9 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         let lookup = (await readContracts(config, {
           contracts: [
             {
-              abi: CrystalReferralAbi,
+              abi: CrystalRouterAbi,
               address: settings.chainConfig[activechain].referralManager,
-              functionName: 'refToAddress',
+              functionName: 'refCodeToAddress',
               args: [newRefCode.toLowerCase()],
             },
           ],
@@ -204,7 +203,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           uo: {
             target: settings.chainConfig[activechain].referralManager,
             data: encodeFunctionData({
-              abi: CrystalReferralAbi,
+              abi: CrystalRouterAbi,
               functionName: 'setReferral',
               args: [newRefCode],
             }),
@@ -236,9 +235,9 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         lookup = (await readContracts(config, {
           contracts: [
             {
-              abi: CrystalReferralAbi,
+              abi: CrystalRouterAbi,
               address: settings.chainConfig[activechain].referralManager,
-              functionName: 'refToAddress',
+              functionName: 'refCodeToAddress',
               args: [used.toLowerCase()],
             },
           ],
@@ -261,7 +260,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           uo: {
             target: settings.chainConfig[activechain].referralManager,
             data: encodeFunctionData({
-              abi: CrystalReferralAbi,
+              abi: CrystalRouterAbi,
               functionName: 'setUsedRef',
               args: [used],
             }),
@@ -298,13 +297,13 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             data: encodeFunctionData({
               abi: CrystalRouterAbi,
               functionName: 'claimFees',
-              args: Array.from(
+              args: [address as `0x${string}`, Array.from(
                 new Set(
-                  Object.values(markets).map(
+                  Object.values(tokendict).map(
                     (market) => market.address as `0x${string}`,
                   ),
                 ),
-              ),
+              )]
             }),
             value: 0n,
           },

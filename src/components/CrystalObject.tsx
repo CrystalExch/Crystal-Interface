@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+/* import { useEffect, useRef } from 'react'
 import * as THREE from 'three'
 
 const CrystalObject = () => {
@@ -283,4 +283,4 @@ const CrystalObject = () => {
   )
 }
 
-export default CrystalObject
+export default CrystalObject */
