@@ -31,6 +31,7 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
           : markets[order[4]].quoteAddress,
         BigInt(order[0]),
         BigInt(order[1]),
+        BigInt(Math.floor(Date.now() / 1000) + 900)
       );
       await waitForTxReceipt(hash.hash);
       refetch()

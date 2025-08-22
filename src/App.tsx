@@ -4232,16 +4232,16 @@ function App() {
                 let _orderdata = log['data'].slice(130);
                 for (let i = 0; i < _orderdata.length; i += 64) {
                   let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 2), 16) >= 2;
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
                   if (_isplace) {
-                    let buy = parseInt(chunk.slice(0, 2), 16) == 2;
+                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
                     let price = parseInt(chunk.slice(2, 22), 16);
                     let id = parseInt(chunk.slice(22, 36), 16);
                     let size = parseInt(chunk.slice(36, 64), 16);
                     let alreadyExist = tempcanceledorders.some(
                       (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                     );
-                    buy ? size *= markets[marketKey].scaleFactor : size *= price
+                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
                     if (!alreadyExist) {
                       ordersChanged = true;
                       canceledOrdersChanged = true;
@@ -4309,7 +4309,7 @@ function App() {
                       );
                     }
                   } else {
-                    let buy = parseInt(chunk.slice(0, 2), 16) == 0;
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
                     let price = parseInt(chunk.slice(2, 22), 16);
                     let id = parseInt(chunk.slice(22, 36), 16);
                     let size = parseInt(chunk.slice(36, 64), 16);
@@ -5079,16 +5079,16 @@ function App() {
                 let _orderdata = log['data'].slice(130);
                 for (let i = 0; i < _orderdata.length; i += 64) {
                   let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 2), 16) >= 2;
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
                   if (_isplace) {
-                    let buy = parseInt(chunk.slice(0, 2), 16) == 2;
+                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
                     let price = parseInt(chunk.slice(2, 22), 16);
                     let id = parseInt(chunk.slice(22, 36), 16);
                     let size = parseInt(chunk.slice(36, 64), 16);
                     let alreadyExist = tempcanceledorders.some(
                       (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
                     );
-                    buy ? size *= markets[marketKey].scaleFactor : size *= price
+                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
                     if (!alreadyExist) {
                       ordersChanged = true;
                       canceledOrdersChanged = true;
@@ -5156,7 +5156,7 @@ function App() {
                       );
                     }
                   } else {
-                    let buy = parseInt(chunk.slice(0, 2), 16) == 0;
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
                     let price = parseInt(chunk.slice(2, 22), 16);
                     let id = parseInt(chunk.slice(22, 36), 16);
                     let size = parseInt(chunk.slice(36, 64), 16);

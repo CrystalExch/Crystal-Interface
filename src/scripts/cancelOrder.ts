@@ -8,14 +8,15 @@ const cancelOrder = async (
   tokenOut: `0x${string}`,
   price: bigint,
   id: bigint,
+  deadline: bigint,
 ) =>
   sendUserOperation({
     uo: {
       target: address,
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
-        functionName: 'cancelOrder',
-        args: [tokenIn, tokenOut, price, id],
+        functionName: 'cancelLimitOrder',
+        args: [tokenIn, tokenOut, price, id, deadline],
       }),
       value: 0n,
     },

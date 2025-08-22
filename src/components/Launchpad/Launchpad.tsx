@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { encodeFunctionData } from 'viem';
 
-import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings } from '../../settings';
 import upload from '../../assets/upload.svg'
 import './Launchpad.css';
@@ -27,7 +27,7 @@ interface LaunchpadProps {
 }
 
 const ROUTER_ADDRESS = settings.chainConfig[10143].launchpadRouter.toLowerCase();
-const TOKEN_CREATED_TOPIC = '0xfe210c99153843bc67efa2e9a61ec1d63c505e379b9dcf05a9520e84e36e6063';
+const TOKEN_CREATED_TOPIC = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 
 const UPLOADER_URL = 'https://launchpad-api.bhealthyfences.workers.dev/';
 
@@ -136,9 +136,9 @@ const Launchpad: React.FC<LaunchpadProps> = ({
       uo: {
         target: ROUTER_ADDRESS,
         data: encodeFunctionData({
-          abi: CrystalLaunchpadRouter,
+          abi: CrystalRouterAbi,
           functionName: 'createToken',
-          args: [formData.name, formData.ticker, metadataUri],
+          args: [formData.name, formData.ticker, metadataUri, formData.description, formData.website, formData.twitter, formData.telegram],
         }),
       },
     });
