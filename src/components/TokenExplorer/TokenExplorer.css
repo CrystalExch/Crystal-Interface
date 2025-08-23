@@ -3720,14 +3720,7 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
   width: 100%;
 }
 
-.metric-value {
-  color: #ffffff;
-  font-size: 0.9rem;
-  min-height: 20px;
-  letter-spacing: -0.3px;
-  padding-left: 10px;
-  padding-top: 4px;
-}
+
 
 .metric-color-square {
   width:12px;
