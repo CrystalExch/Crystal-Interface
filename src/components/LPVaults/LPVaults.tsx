@@ -10,6 +10,7 @@ import { config } from '../../wagmi';
 import './LPVaults.css';
 import { createPortal } from 'react-dom';
 import './LPVaults.css'
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 
 interface VaultStrategy {
   id: string;
@@ -66,6 +67,7 @@ interface LPVaultsProps {
   refetch?: () => void;
   activechain: number;
   crystalVaultsAddress: any;
+  router: string;
 }
 
 const performanceData = [
@@ -371,11 +373,12 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   refetch,
   activechain,
   crystalVaultsAddress,
+  router,
 }) => {
 
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState('0x6A6a20102070A58ac8bC21a12B29832CEe2a638e' as `0x${string}`);
+  const [activeVault, _setActiveVault] = useState({address: '0x845564D9444e3766b0f665A9AD097Ad1597F0492' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701'});
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true); 
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
@@ -388,7 +391,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   });
   const [_vaultQuoteExceedsBalance, _setVaultQuoteExceedsBalance] = useState(false);
   const [_vaultBaseExceedsBalance, _setVaultBaseExceedsBalance] = useState(false);
-  const [withdrawShares, _setWithdrawShares] = useState('');
   const [_withdrawExceedsBalance, _setWithdrawExceedsBalance] = useState(false);
   const [_depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
   const [_withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
@@ -413,34 +415,51 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     (async () => {
       try {
-        const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
+        const [vaultDetails, vaultQuoteBalance, vaultBaseBalance, vaultUserBalance] = (await readContracts(config, {
           contracts: [
-            { abi: CrystalVaultsAbi as any, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault] },
+            { abi: CrystalVaultsAbi as any, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault?.address] },
+            {
+              abi: CrystalRouterAbi as any,
+              address: router as `0x${string}`,
+              functionName: 'getDepositedBalance',
+              args: [activeVault?.address as `0x${string}`, activeVault?.quoteAsset as `0x${string}`],
+            }, {
+              abi: CrystalRouterAbi as any,
+              address: router as `0x${string}`,
+              functionName: 'getDepositedBalance',
+              args: [activeVault?.address as `0x${string}`, activeVault?.baseAsset as `0x${string}`],
+            },
             ...(address ? [{
               abi: TokenAbi,
-              address: activeVault,
+              address: activeVault.address,
               functionName: 'balanceOf',
               args: [address as `0x${string}`],
             }] : [])],
         })) as any[];
         if (vaultDetails?.status === "success") {
+          const vaultMetaData = vaultDetails.result[9];
           const vaultDict = {
             address: vaultDetails.result[0],
             quoteAsset: vaultDetails.result[1],
             baseAsset: vaultDetails.result[2],
             owner: vaultDetails.result[3],
-            name: vaultDetails.result[4],
-            desc: vaultDetails.result[5],
-            social1: vaultDetails.result[6],
-            social2: vaultDetails.result[7],
-            totalShares: vaultDetails.result[8],
-            maxShares: vaultDetails.result[9],
-            lockup: vaultDetails.result[10],
-            locked: vaultDetails.result[11],
-            closed: vaultDetails.result[12],
+            totalShares: vaultDetails.result[4],
+            maxShares: vaultDetails.result[5],
+            lockup: vaultDetails.result[6],
+            locked: vaultDetails.result[7],
+            closed: vaultDetails.result[8],
+            name: vaultMetaData.name,
+            desc: vaultMetaData.description,
+            social1: vaultMetaData.social1,
+            social2: vaultMetaData.social2,
+            social3: vaultMetaData.social3,
             type: 'Spot',
+            quoteBalance: 0n,
+            baseBalance: 0n,
             userShares: 0n,
           }
+          vaultDict.quoteBalance = vaultQuoteBalance.result[0]
+          vaultDict.baseBalance = vaultBaseBalance.result[0]
           if (address) {
             vaultDict.userShares = vaultUserBalance.result
           }
@@ -560,8 +579,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       }
 
       const ethValue =
-        createForm.quoteAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountQuote :
-          createForm.baseAsset.toLowerCase() === '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' ? amountBase : 0n;
+        createForm.quoteAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountQuote :
+          createForm.baseAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountBase : 0n;
 
       console.log('Deploying vault with ETH value:', ethValue.toString());
 
@@ -571,13 +590,14 @@ const LPVaults: React.FC<LPVaultsProps> = ({
           abi: CrystalVaultsAbi,
           functionName: "deploy",
           args: [
-            createForm.quoteAsset as `0x${string}`,
-            createForm.baseAsset as `0x${string}`,
+            (createForm.quoteAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createForm.quoteAsset) as `0x${string}`,
+            (createForm.baseAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createForm.baseAsset) as `0x${string}`,
             amountQuote,
             amountBase,
             createForm.name || 'Unnamed Vault',
             createForm.description || 'No description provided',
             createForm.social1 || '',
+            createForm.social2 || '',
             createForm.social2 || '',
           ],
         }),
@@ -603,7 +623,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       setShowCreateModal(false);
 
       refetch?.();
-      alert('Vault created successfully!');
 
     } catch (e: any) {
       console.error('Vault creation error:', e);
@@ -620,7 +639,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         errorMessage = e.message;
       }
 
-      alert(errorMessage);
     } finally {
       setIsVaultDepositSigning(false);
     }
@@ -735,7 +753,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   }, [vaultDepositAmounts, selectedVaultForAction, crystalVaultsAddress]);
 
   useEffect(() => {
-    if (!selectedVaultForAction || !withdrawShares) {
+    if (!selectedVaultForAction) {
       setWithdrawPreview(null);
       return;
     }
@@ -751,7 +769,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     const timeoutId = setTimeout(previewWithdrawal, 500);
     return () => clearTimeout(timeoutId);
-  }, [withdrawShares, selectedVaultForAction, crystalVaultsAddress]);
+  }, [selectedVaultForAction, crystalVaultsAddress]);
 
   const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
     if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
@@ -1223,7 +1241,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </div>
                   <div ref={vaultStrategyIndicatorRef} className="vault-strategy-sliding-indicator" />
                 </div>
-
                 <div className="vault-tab-content">
                   {activeVaultStrategyTab === 'balances' && (
                     <div className="balances-tab">
@@ -1237,21 +1254,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.quoteAsset)} alt={selectedVaultStrategyData.quoteAsset} className="vault-holding-icon" />
+                              <img src={getTokenIcon(selectedVaultStrategyData.quoteAsset)} className="vault-holding-icon" />
                               <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.quoteAsset)}</div>
-                            <div className="vault-holdings-col">${(parseFloat(calculateTVL(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
-                            <div className="vault-holdings-col">${(parseFloat(calculateUserPositionValue(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.quoteBalance)).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.quoteBalance * selectedVaultStrategyData.userShares / selectedVaultStrategyData.totalShares)).toFixed(2)}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.baseAsset)} alt={selectedVaultStrategyData.baseAsset} className="vault-holding-icon" />
+                              <img src={getTokenIcon(selectedVaultStrategyData.baseAsset)} className="vault-holding-icon" />
                               <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.baseAsset)}</div>
-                            <div className="vault-holdings-col">${(parseFloat(calculateTVL(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
-                            <div className="vault-holdings-col">${(parseFloat(calculateUserPositionValue(selectedVaultStrategyData)) / 2).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.baseBalance)).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.baseBalance * selectedVaultStrategyData.userShares / selectedVaultStrategyData.totalShares)).toFixed(2)}</div>
                           </div>
                         </div>
 

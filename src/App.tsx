@@ -470,7 +470,7 @@ function App() {
     if (connected) {
       const connectorName = getConnectorName();
       setCurrentWalletType(connectorName);
-      setCurrentWalletIcon(getWalletIcon());
+      setCurrentWalletIcon(getWalletIcon() ?? '');
     } else {
       setCurrentWalletType('');
       setCurrentWalletIcon(walleticon);
@@ -778,7 +778,7 @@ function App() {
     
     const sharesToWithdraw = calculateSharesFromPercentage(cleanValue, selectedVaultForAction?.userShares);
     const userSharesBalance = BigInt(selectedVaultForAction?.userShares || 0);
-    
+    setWithdrawShares(sharesToWithdraw)
     if (BigInt(sharesToWithdraw) > userSharesBalance) {
       setWithdrawExceedsBalance(true);
     }
@@ -1001,8 +1001,8 @@ function App() {
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * 10 ** quoteDecimals));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * 10 ** baseDecimals));
 
-      const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
-      const amountBaseMin = (amountBaseDesired * 95n) / 100n;
+      const amountQuoteMin = (amountQuoteDesired * 50n) / 100n;
+      const amountBaseMin = (amountBaseDesired * 50n) / 100n;
 
       // Approve tokens if needed
       if (quoteTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
@@ -1063,6 +1063,8 @@ function App() {
           functionName: "deposit",
           args: [
             selectedVaultForAction.address as `0x${string}`,
+            quoteTokenAddress,
+            baseTokenAddress,
             amountQuoteDesired,
             amountBaseDesired,
             amountQuoteMin,
@@ -1107,8 +1109,8 @@ function App() {
 
       const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
       
-      const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
-      const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
+      const amountQuoteMin = (withdrawPreview.amountQuote * 50n) / 100n;
+      const amountBaseMin = (withdrawPreview.amountBase * 50n) / 100n;
 
       const withdrawUo = {
         target: crystalVaultsAddress as `0x${string}`,
@@ -1117,6 +1119,8 @@ function App() {
           functionName: "withdraw",
           args: [
             selectedVaultForAction.address as `0x${string}`,
+            selectedVaultForAction.quoteAsset,
+            selectedVaultForAction.baseAsset,
             BigInt(withdrawShares),
             amountQuoteMin,
             amountBaseMin,
@@ -6913,6 +6917,7 @@ function App() {
           : markets[topOrder[4]].quoteAddress,
         BigInt(topOrder[0]),
         BigInt(topOrder[1]),
+        BigInt(Math.floor(Date.now() / 1000) + 900)
       );
 
       await waitForTxReceipt(hash.hash);
@@ -12827,412 +12832,409 @@ function App() {
             </div>
           </div>
         ) : null}
+        {popup === 22 ? (
+          <div className="modal-overlay">
+            <div className="modal-content vault-action-modal" ref={popupref}>
+              <div className="modal-header">
+                <h2>Deposit to {selectedVaultForAction?.name}</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setpopup(0);
+                    setSelectedVaultForAction(null);
+                    setVaultDepositAmounts({ quote: '', base: '' });
+                    setVaultQuoteExceedsBalance(false);
+                    setVaultBaseExceedsBalance(false);
+                    setDepositPreview(null);
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
 
-{popup === 22 ? (
-  <div className="modal-overlay">
-    <div className="modal-content vault-action-modal" ref={popupref}>
-      <div className="modal-header">
-        <h2>Deposit to {selectedVaultForAction?.name}</h2>
-        <button
-          className="modal-close"
-          onClick={() => {
-            setpopup(0);
-            setSelectedVaultForAction(null);
-            setVaultDepositAmounts({ quote: '', base: '' });
-            setVaultQuoteExceedsBalance(false);
-            setVaultBaseExceedsBalance(false);
-            setDepositPreview(null);
-          }}
-        >
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
+              <div className="modal-body">
+                <div className="vault-deposit-form">
+                  <div className="deposit-amounts-section">
+                    <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                      <div className="deposit-input-wrapper">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className={`deposit-amount-input ${vaultQuoteExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                          value={vaultDepositAmounts.quote}
+                          onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
+                        />
+                        <div className="deposit-token-badge">
+                          <img
+                            src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
+                            className="deposit-token-icon"
+                          />
+                          <span>{tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
+                        </div>
+                      </div>
+                      <div className="lp-deposit-balance-wrapper">
+                        <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                          ${((parseFloat(vaultDepositAmounts.quote) || 0) * 1).toFixed(2)}
+                        </div>
+                        <div className="deposit-balance">
+                          <div className="deposit-balance-value">
+                            <img src={walleticon} className="balance-wallet-icon" />
+                            {selectedVaultForAction?.quoteAsset ? formatDisplayValue(
+                              tokenBalances[selectedVaultForAction?.quoteAsset],
+                              Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
+                            ) : '0.00'} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                          </div>
+                          <button
+                            className="vault-max-button"
+                            onClick={() => {
+                              if (selectedVaultForAction?.quoteAsset) {
+                                const maxAmount = formatDisplayValue(
+                                  tokenBalances[selectedVaultForAction?.quoteAsset],
+                                  Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
+                                ).replace(/,/g, '');
+                                handleVaultDepositAmountChange('quote', maxAmount);
+                              }
+                            }}
+                          >
+                            MAX
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
+                      <div className="deposit-input-wrapper">
+                        <input
+                          type="text"
+                          placeholder="0.0"
+                          className={`deposit-amount-input ${vaultBaseExceedsBalance ? 'lp-input-balance-error' : ''}`}
+                          value={vaultDepositAmounts.base}
+                          onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
+                        />
+                        <div className="deposit-token-badge">
+                          <img
+                            src={tokendict[selectedVaultForAction?.baseAsset]?.image}
+                            className="deposit-token-icon"
+                          />
+                          <span>{tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
+                        </div>
+                      </div>
+                      <div className="lp-deposit-balance-wrapper">
+                        <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
+                          ${((parseFloat(vaultDepositAmounts.base) || 0) * 1).toFixed(2)}
+                        </div>
+                        <div className="deposit-balance">
+                          <div className="deposit-balance-value">
+                            <img src={walleticon} className="balance-wallet-icon" />
+                            {selectedVaultForAction?.baseAsset ? formatDisplayValue(
+                              tokenBalances[selectedVaultForAction?.baseAsset],
+                              Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
+                            ) : '0.00'} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                          </div>
+                          <button
+                            className="vault-max-button"
+                            onClick={() => {
+                              if (selectedVaultForAction?.baseAsset) {
+                                const maxAmount = formatDisplayValue(
+                                  tokenBalances[selectedVaultForAction?.baseAsset],
+                                  Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
+                                ).replace(/,/g, '');
+                                handleVaultDepositAmountChange('base', maxAmount);
+                              }
+                            }}
+                          >
+                            MAX
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-      <div className="modal-body">
-        <div className="vault-deposit-form">
-          <div className="deposit-amounts-section">
-            <div className={`deposit-input-group ${vaultQuoteExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-              <div className="deposit-input-wrapper">
-                <input
-                  type="text"
-                  placeholder="0.0"
-                  className={`deposit-amount-input ${vaultQuoteExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                  value={vaultDepositAmounts.quote}
-                  onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
-                />
-                <div className="deposit-token-badge">
-                  <img
-                    src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
-                    className="deposit-token-icon"
-                  />
-                  <span>{tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
-                </div>
-              </div>
-              <div className="lp-deposit-balance-wrapper">
-                <div className={`lp-deposit-usd-value ${vaultQuoteExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                  ${((parseFloat(vaultDepositAmounts.quote) || 0) * 1).toFixed(2)}
-                </div>
-                <div className="deposit-balance">
-                  <div className="deposit-balance-value">
-                    <img src={walleticon} className="balance-wallet-icon" />
-                    {selectedVaultForAction?.quoteAsset ? formatDisplayValue(
-                      tokenBalances[selectedVaultForAction?.quoteAsset],
-                      Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
-                    ) : '0.00'} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                  {depositPreview && (
+                    <div className="deposit-preview">
+                      <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Deposit Preview:</h5>
+                      <div className="preview-item">
+                        <span>Shares to receive:</span>
+                        <span>{formatDisplayValue(depositPreview.shares, 0)}</span>
+                      </div>
+                      <div className="preview-item">
+                        <span>Quote amount:</span>
+                        <span>{formatDisplayValue(depositPreview.amountQuote, Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
+                      </div>
+                      <div className="preview-item">
+                        <span>Base amount:</span>
+                        <span>{formatDisplayValue(depositPreview.amountBase, Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="deposit-summary">
+                    <div className="deposit-summary-row">
+                      <span>Vault Type:</span>
+                      <span>{selectedVaultForAction?.type || 'Spot'}</span>
+                    </div>
+                    <div className="deposit-summary-row">
+                      <span>Total Value:</span>
+                      <span>
+                        {(() => {
+                          const quoteValue = parseFloat(vaultDepositAmounts.quote) || 0;
+                          const baseValue = parseFloat(vaultDepositAmounts.base) || 0;
+                          const total = quoteValue + baseValue;
+                          return `${total.toFixed(2)}`;
+                        })()}
+                      </span>
+                    </div>
+                    <div className="deposit-summary-row">
+                      <span>Status:</span>
+                      <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
+                        {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
+                      </span>
+                    </div>
                   </div>
-                  <button
-                    className="vault-max-button"
-                    onClick={() => {
-                      if (selectedVaultForAction?.quoteAsset) {
-                        const maxAmount = formatDisplayValue(
-                          tokenBalances[selectedVaultForAction?.quoteAsset],
-                          Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18)
-                        ).replace(/,/g, '');
-                        handleVaultDepositAmountChange('quote', maxAmount);
-                      }
-                    }}
-                  >
-                    MAX
-                  </button>
                 </div>
               </div>
-            </div>
-            <div className={`deposit-input-group ${vaultBaseExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-              <div className="deposit-input-wrapper">
-                <input
-                  type="text"
-                  placeholder="0.0"
-                  className={`deposit-amount-input ${vaultBaseExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                  value={vaultDepositAmounts.base}
-                  onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
-                />
-                <div className="deposit-token-badge">
-                  <img
-                    src={tokendict[selectedVaultForAction?.baseAsset]?.image}
-                    className="deposit-token-icon"
-                  />
-                  <span>{tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
-                </div>
-              </div>
-              <div className="lp-deposit-balance-wrapper">
-                <div className={`lp-deposit-usd-value ${vaultBaseExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                  ${((parseFloat(vaultDepositAmounts.base) || 0) * 1).toFixed(2)}
-                </div>
-                <div className="deposit-balance">
-                  <div className="deposit-balance-value">
-                    <img src={walleticon} className="balance-wallet-icon" />
-                    {selectedVaultForAction?.baseAsset ? formatDisplayValue(
-                      tokenBalances[selectedVaultForAction?.baseAsset],
-                      Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
-                    ) : '0.00'} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
-                  </div>
-                  <button
-                    className="vault-max-button"
-                    onClick={() => {
-                      if (selectedVaultForAction?.baseAsset) {
-                        const maxAmount = formatDisplayValue(
-                          tokenBalances[selectedVaultForAction?.baseAsset],
-                          Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18)
-                        ).replace(/,/g, '');
-                        handleVaultDepositAmountChange('base', maxAmount);
-                      }
-                    }}
-                  >
-                    MAX
-                  </button>
-                </div>
+
+              <div className="modal-footer">
+                <button
+                  className={`vault-confirm-button ${(!isVaultDepositEnabled() || isVaultDepositSigning) ? 'disabled' : ''}`}
+                  onClick={handleVaultDeposit}
+                  disabled={!isVaultDepositEnabled() || isVaultDepositSigning}
+                >
+                  {isVaultDepositSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Depositing...
+                    </div>
+                  ) : (
+                    getVaultDepositButtonText()
+                  )}
+                </button>
               </div>
             </div>
           </div>
+        ) : null}
+        {popup === 23 ? (
+          <div className="modal-overlay">
+            <div className="modal-content vault-action-modal" ref={popupref}>
+              <div className="modal-header">
+                <h2>Withdraw from {selectedVaultForAction?.name}</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setpopup(0);
+                    setSelectedVaultForAction(null);
+                    setWithdrawPercentage('');
+                    setWithdrawExceedsBalance(false);
+                    setWithdrawPreview(null);
+                  }}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
 
-          {depositPreview && (
-            <div className="deposit-preview">
-              <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>Deposit Preview:</h5>
-              <div className="preview-item">
-                <span>Shares to receive:</span>
-                <span>{formatDisplayValue(depositPreview.shares, 0)}</span>
-              </div>
-              <div className="preview-item">
-                <span>Quote amount:</span>
-                <span>{formatDisplayValue(depositPreview.amountQuote, Number(tokendict[selectedVaultForAction?.quoteAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}</span>
-              </div>
-              <div className="preview-item">
-                <span>Base amount:</span>
-                <span>{formatDisplayValue(depositPreview.amountBase, Number(tokendict[selectedVaultForAction?.baseAsset]?.decimals || 18))} {tokendict[selectedVaultForAction?.baseAsset]?.ticker}</span>
-              </div>
-            </div>
-          )}
+              <div className="modal-body">
+                <div className="vault-withdraw-form">
+                  <div className="withdraw-section">
+                    <div className="withdraw-amount-section">
+                      <h4 className="withdraw-section-title">Amount to withdraw</h4>
+                      
+                      <div className="withdraw-percentage-input-container">
+                        <div className="withdraw-percentage-display">
+                          <input
+                            type="text"
+                            placeholder="0"
+                            className="withdraw-percentage-input"
+                            value={withdrawPercentage}
+                            onChange={(e) => handleWithdrawPercentageChange(e.target.value)}
+                          />
+                          <span className="withdraw-percentage-symbol">%</span>
+                        </div>
+                      </div>
 
-          <div className="deposit-summary">
-            <div className="deposit-summary-row">
-              <span>Vault Type:</span>
-              <span>{selectedVaultForAction?.type || 'Spot'}</span>
-            </div>
-            <div className="deposit-summary-row">
-              <span>Total Value:</span>
-              <span>
-                {(() => {
-                  const quoteValue = parseFloat(vaultDepositAmounts.quote) || 0;
-                  const baseValue = parseFloat(vaultDepositAmounts.base) || 0;
-                  const total = quoteValue + baseValue;
-                  return `${total.toFixed(2)}`;
-                })()}
-              </span>
-            </div>
-            <div className="deposit-summary-row">
-              <span>Status:</span>
-              <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
-                {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
-              </span>
+                      <div className="percentage-buttons">
+                        <button
+                          className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
+                          onClick={() => handleWithdrawPercentageChange('25')}
+                        >
+                          25%
+                        </button>
+                        <button
+                          className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
+                          onClick={() => handleWithdrawPercentageChange('50')}
+                        >
+                          50%
+                        </button>
+                        <button
+                          className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
+                          onClick={() => handleWithdrawPercentageChange('75')}
+                        >
+                          75%
+                        </button>
+                        <button
+                          className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
+                          onClick={() => handleWithdrawPercentageChange('100')}
+                        >
+                          Max
+                        </button>
+                      </div>
+
+                      {/* Position Overview */}
+                      <div className="position-overview">
+                        <div className="position-header">
+                          <div className="position-pair">
+                            <div className="lp-token-pair-icons">
+                              <img
+                                src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
+                                className="lp-token-icon lp-token-icon-first"
+                              />
+                              <img
+                                src={tokendict[selectedVaultForAction?.baseAsset]?.image}
+                                className="lp-token-icon lp-token-icon-second"
+                              />
+                            </div>
+                            <span className="pair-name">
+                              {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}/
+                              {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                            </span>
+                          </div>
+                          <div className="position-balance">
+                            Your Position
+                          </div>
+                        </div>
+
+                        {/* Token Positions */}
+                        <div className="token-positions">
+                          <div className="token-position">
+                            <div className="token-info">
+                              <img 
+                                src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
+                                className="token-position-icon" 
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                              </span>
+                            </div>
+                            <div className="token-amount">
+                              {(() => {
+                                const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                                const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                                const userPercentage = userSharesNumber / totalSharesNumber;
+                                const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                                return estimatedQuoteAmount.toFixed(4);
+                              })()}
+                            </div>
+                          </div>
+                          
+                          <div className="token-position">
+                            <div className="token-info">
+                              <img 
+                                src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
+                                className="token-position-icon" 
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                              </span>
+                            </div>
+                            <div className="token-amount">
+                              {(() => {
+                                const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                                const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                                const userPercentage = userSharesNumber / totalSharesNumber;
+                                const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                                return estimatedBaseAmount.toFixed(4);
+                              })()}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+        {/* 
+                    {withdrawPercentage && parseFloat(withdrawPercentage) > 0 && (
+                      <div className="withdraw-preview">
+                        <h5 className="preview-title">You will receive</h5>
+                        <div className="withdraw-token-preview">
+                          <div className="withdraw-token-item">
+                            <div className="token-info">
+                              <img 
+                                src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
+                                className="withdraw-token-icon" 
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              {(() => {
+                                const percentage = parseFloat(withdrawPercentage) / 100;
+                                const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                                const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                                const userPercentage = userSharesNumber / totalSharesNumber;
+                                const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                                return (estimatedQuoteAmount * percentage).toFixed(4);
+                              })()}
+                            </span>
+                          </div>
+                          <div className="withdraw-token-item">
+                            <div className="token-info">
+                              <img 
+                                src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
+                                className="withdraw-token-icon" 
+                              />
+                              <span className="token-symbol">
+                                {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
+                              </span>
+                            </div>
+                            <span className="token-amount">
+                              {(() => {
+                                const percentage = parseFloat(withdrawPercentage) / 100;
+                                const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
+                                const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
+                                const userPercentage = userSharesNumber / totalSharesNumber;
+                                const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
+                                return (estimatedBaseAmount * percentage).toFixed(4);
+                              })()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )} */}
+
+                    <div className="withdraw-summary">
+                      <div className="deposit-summary-row">
+                        <span>Vault Status:</span>
+                        <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
+                          {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
+                        </span>
+                      </div>
+                      {selectedVaultForAction?.lockup && selectedVaultForAction.lockup > 0 && (
+                        <div className="deposit-summary-row">
+                          <span>Lockup Period:</span>
+                          <span>{selectedVaultForAction.lockup} seconds</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className={`vault-confirm-button withdraw ${(!isWithdrawEnabled() || isVaultWithdrawSigning) ? 'disabled' : ''}`}
+                  onClick={handleVaultWithdraw}
+                  disabled={!isWithdrawEnabled() || isVaultWithdrawSigning}
+                >
+                  {isVaultWithdrawSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Withdrawing...
+                    </div>
+                  ) : (
+                    getWithdrawButtonText()
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div className="modal-footer">
-        <button
-          className={`vault-confirm-button ${(!isVaultDepositEnabled() || isVaultDepositSigning) ? 'disabled' : ''}`}
-          onClick={handleVaultDeposit}
-          disabled={!isVaultDepositEnabled() || isVaultDepositSigning}
-        >
-          {isVaultDepositSigning ? (
-            <div className="button-content">
-              <div className="loading-spinner" />
-              Depositing...
-            </div>
-          ) : (
-            getVaultDepositButtonText()
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-) : null}
-
-
-{popup === 23 ? (
-  <div className="modal-overlay">
-    <div className="modal-content vault-action-modal" ref={popupref}>
-      <div className="modal-header">
-        <h2>Withdraw from {selectedVaultForAction?.name}</h2>
-        <button
-          className="modal-close"
-          onClick={() => {
-            setpopup(0);
-            setSelectedVaultForAction(null);
-            setWithdrawPercentage('');
-            setWithdrawExceedsBalance(false);
-            setWithdrawPreview(null);
-          }}
-        >
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
-
-      <div className="modal-body">
-        <div className="vault-withdraw-form">
-          <div className="withdraw-section">
-            <div className="withdraw-amount-section">
-              <h4 className="withdraw-section-title">Amount to withdraw</h4>
-              
-              <div className="withdraw-percentage-input-container">
-                <div className="withdraw-percentage-display">
-                  <input
-                    type="text"
-                    placeholder="0"
-                    className="withdraw-percentage-input"
-                    value={withdrawPercentage}
-                    onChange={(e) => handleWithdrawPercentageChange(e.target.value)}
-                  />
-                  <span className="withdraw-percentage-symbol">%</span>
-                </div>
-              </div>
-
-              <div className="percentage-buttons">
-                <button
-                  className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
-                  onClick={() => handleWithdrawPercentageChange('25')}
-                >
-                  25%
-                </button>
-                <button
-                  className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
-                  onClick={() => handleWithdrawPercentageChange('50')}
-                >
-                  50%
-                </button>
-                <button
-                  className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
-                  onClick={() => handleWithdrawPercentageChange('75')}
-                >
-                  75%
-                </button>
-                <button
-                  className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
-                  onClick={() => handleWithdrawPercentageChange('100')}
-                >
-                  Max
-                </button>
-              </div>
-
-              {/* Position Overview */}
-              <div className="position-overview">
-                <div className="position-header">
-                  <div className="position-pair">
-                    <div className="lp-token-pair-icons">
-                      <img
-                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image}
-                        className="lp-token-icon lp-token-icon-first"
-                      />
-                      <img
-                        src={tokendict[selectedVaultForAction?.baseAsset]?.image}
-                        className="lp-token-icon lp-token-icon-second"
-                      />
-                    </div>
-                    <span className="pair-name">
-                      {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}/
-                      {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
-                    </span>
-                  </div>
-                  <div className="position-balance">
-                    Your Position
-                  </div>
-                </div>
-
-                {/* Token Positions */}
-                <div className="token-positions">
-                  <div className="token-position">
-                    <div className="token-info">
-                      <img 
-                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
-                        className="token-position-icon" 
-                      />
-                      <span className="token-symbol">
-                        {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
-                      </span>
-                    </div>
-                    <div className="token-amount">
-                      {(() => {
-                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
-                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
-                        const userPercentage = userSharesNumber / totalSharesNumber;
-                        const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
-                        return estimatedQuoteAmount.toFixed(4);
-                      })()}
-                    </div>
-                  </div>
-                  
-                  <div className="token-position">
-                    <div className="token-info">
-                      <img 
-                        src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
-                        className="token-position-icon" 
-                      />
-                      <span className="token-symbol">
-                        {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
-                      </span>
-                    </div>
-                    <div className="token-amount">
-                      {(() => {
-                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
-                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
-                        const userPercentage = userSharesNumber / totalSharesNumber;
-                        const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
-                        return estimatedBaseAmount.toFixed(4);
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-{/* 
-            {withdrawPercentage && parseFloat(withdrawPercentage) > 0 && (
-              <div className="withdraw-preview">
-                <h5 className="preview-title">You will receive</h5>
-                <div className="withdraw-token-preview">
-                  <div className="withdraw-token-item">
-                    <div className="token-info">
-                      <img 
-                        src={tokendict[selectedVaultForAction?.quoteAsset]?.image} 
-                        className="withdraw-token-icon" 
-                      />
-                      <span className="token-symbol">
-                        {tokendict[selectedVaultForAction?.quoteAsset]?.ticker}
-                      </span>
-                    </div>
-                    <span className="token-amount">
-                      {(() => {
-                        const percentage = parseFloat(withdrawPercentage) / 100;
-                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
-                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
-                        const userPercentage = userSharesNumber / totalSharesNumber;
-                        const estimatedQuoteAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
-                        return (estimatedQuoteAmount * percentage).toFixed(4);
-                      })()}
-                    </span>
-                  </div>
-                  <div className="withdraw-token-item">
-                    <div className="token-info">
-                      <img 
-                        src={tokendict[selectedVaultForAction?.baseAsset]?.image} 
-                        className="withdraw-token-icon" 
-                      />
-                      <span className="token-symbol">
-                        {tokendict[selectedVaultForAction?.baseAsset]?.ticker}
-                      </span>
-                    </div>
-                    <span className="token-amount">
-                      {(() => {
-                        const percentage = parseFloat(withdrawPercentage) / 100;
-                        const userSharesNumber = Number(selectedVaultForAction?.userShares || 0);
-                        const totalSharesNumber = Number(selectedVaultForAction?.totalShares || 1);
-                        const userPercentage = userSharesNumber / totalSharesNumber;
-                        const estimatedBaseAmount = userPercentage * parseFloat((selectedVaultForAction)) / 2;
-                        return (estimatedBaseAmount * percentage).toFixed(4);
-                      })()}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            )} */}
-
-            <div className="withdraw-summary">
-              <div className="deposit-summary-row">
-                <span>Vault Status:</span>
-                <span className={selectedVaultForAction?.closed ? 'status-error' : selectedVaultForAction?.locked ? 'status-warning' : 'status-success'}>
-                  {selectedVaultForAction?.closed ? 'Closed' : selectedVaultForAction?.locked ? 'Locked' : 'Active'}
-                </span>
-              </div>
-              {selectedVaultForAction?.lockup && selectedVaultForAction.lockup > 0 && (
-                <div className="deposit-summary-row">
-                  <span>Lockup Period:</span>
-                  <span>{selectedVaultForAction.lockup} seconds</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="modal-footer">
-        <button
-          className={`vault-confirm-button withdraw ${(!isWithdrawEnabled() || isVaultWithdrawSigning) ? 'disabled' : ''}`}
-          onClick={handleVaultWithdraw}
-          disabled={!isWithdrawEnabled() || isVaultWithdrawSigning}
-        >
-          {isVaultWithdrawSigning ? (
-            <div className="button-content">
-              <div className="loading-spinner" />
-              Withdrawing...
-            </div>
-          ) : (
-            getWithdrawButtonText()
-          )}
-        </button>
-      </div>
-    </div>
-  </div>
-) : null}
+        ) : null}
         {popup === 24 ? (
           <div className="explorer-filters-popup" ref={popupref}>
             <div className="explorer-filters-header">
@@ -14059,7 +14061,6 @@ function App() {
             </div>
           </div>
         ) : null}
-
         {popup === 26 ? (
           <div
             className="layout-settings-background"
@@ -14353,73 +14354,73 @@ function App() {
           </div>
         ) : null}
         {popup === 28 ? (
-  <div className="onect-trading-selection-bg">
-    <div ref={popupref} className="onect-trading-selection-container">
-      <div className="onect-trading-header">
-        <h2 className="onect-trading-title">Choose Trading Mode</h2>
-        <button
-          className="onect-trading-close-button"
-          onClick={() => setpopup(0)}
-        >
-          <img src={closebutton} className="close-button-icon" />
-        </button>
-      </div>
-      
-      <div className="onect-trading-content">
-        <div className="trading-mode-options">
-          <div className="trading-mode-option selected">
-            <div className="trading-mode-icon">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
-                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
-                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
-              </svg>
-            </div>
-            <div className="trading-mode-info">
-              <h3>Regular Trading</h3>
-              <p>Standard wallet-based trading with manual approvals</p>
-            </div>
-          </div>
-          
-          <div className="trading-mode-option">
-            <div className="trading-mode-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
-            </div>
-            <div className="trading-mode-info">
-              <h3>1CT Trading</h3>
-              <p>Faster execution, better prices, and advanced features</p>
-            </div>
-            <div className="trading-mode-status">
-              <button 
-                className="enable-onect-btn"
-                onClick={async () => {
-                  try {
-                    setIsUsernameSigning(true);
-                    await createSubWallet();
-                    setpopup(0);
-                  } catch (error) {
-                    console.error('Failed to enable 1CT trading:', error);
-                  } finally {
-                    setIsUsernameSigning(false);
-                  }
-                }}
-                disabled={isUsernameSigning}
-              >
-                {isUsernameSigning ? (
-                  <div className="button-content">
-                    <div className="loading-spinner" />
-                  </div>
-                ) : (
-                  'Enable 1CT'
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+          <div className="onect-trading-selection-bg">
+            <div ref={popupref} className="onect-trading-selection-container">
+              <div className="onect-trading-header">
+                <h2 className="onect-trading-title">Choose Trading Mode</h2>
+                <button
+                  className="onect-trading-close-button"
+                  onClick={() => setpopup(0)}
+                >
+                  <img src={closebutton} className="close-button-icon" />
+                </button>
               </div>
-    </div>
-  </div>
-) : null}
+              
+              <div className="onect-trading-content">
+                <div className="trading-mode-options">
+                  <div className="trading-mode-option selected">
+                    <div className="trading-mode-icon">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                      </svg>
+                    </div>
+                    <div className="trading-mode-info">
+                      <h3>Regular Trading</h3>
+                      <p>Standard wallet-based trading with manual approvals</p>
+                    </div>
+                  </div>
+                  
+                  <div className="trading-mode-option">
+                    <div className="trading-mode-icon">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+                    </div>
+                    <div className="trading-mode-info">
+                      <h3>1CT Trading</h3>
+                      <p>Faster execution, better prices, and advanced features</p>
+                    </div>
+                    <div className="trading-mode-status">
+                      <button 
+                        className="enable-onect-btn"
+                        onClick={async () => {
+                          try {
+                            setIsUsernameSigning(true);
+                            await createSubWallet();
+                            setpopup(0);
+                          } catch (error) {
+                            console.error('Failed to enable 1CT trading:', error);
+                          } finally {
+                            setIsUsernameSigning(false);
+                          }
+                        }}
+                        disabled={isUsernameSigning}
+                      >
+                        {isUsernameSigning ? (
+                          <div className="button-content">
+                            <div className="loading-spinner" />
+                          </div>
+                        ) : (
+                          'Enable 1CT'
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                      </div>
+            </div>
+          </div>
+        ) : null}
       </div>
     </>
   );
@@ -20959,6 +20960,7 @@ function App() {
       refetch={refetch}
       activechain={activechain}
       crystalVaultsAddress={crystalVaults}
+      router={router}
     />
   } />
 <Route
@@ -21030,6 +21032,7 @@ function App() {
       refetch={refetch}
       activechain={activechain}
       crystalVaultsAddress={crystalVaults}
+      router={router}
     />
   } />
 
