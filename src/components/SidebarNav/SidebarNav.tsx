@@ -13,6 +13,8 @@ import vaults from '../../assets/yeildvaults.png';
 import earn from '../../assets/earn.png';
 import explorer from '../../assets/explorer.png';
 import tracker from '../../assets/tracker.svg';
+import earnvaults from '../../assets/vaults.png';
+
 interface SidebarNavProps {
  simpleView: boolean;
   setSimpleView: (value: boolean) => void;
@@ -195,7 +197,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
             >
-              <img src={earn} className="sidebar-icon" />
+              <img src={earnvaults} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Vaults')}</span>
             </Link>
             
