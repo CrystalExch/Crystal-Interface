@@ -5,6 +5,7 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { settings } from '../../settings';
 import upload from '../../assets/upload.svg'
 import './Launchpad.css';
+import { useNavigate } from 'react-router-dom';
 
 interface LaunchpadFormData {
   name: string;
@@ -53,6 +54,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   setChain,
   setpopup,
 }) => {
+  const navigate = useNavigate()
   const [formData, setFormData] = useState<LaunchpadFormData>({
     name: '',
     ticker: '',
@@ -138,7 +140,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: 'createToken',
-          args: [formData.name, formData.ticker, metadataUri, formData.description, formData.website, formData.twitter, formData.telegram],
+          args: [formData.name, formData.ticker, metadataUri, formData.description, formData.twitter, formData.website, formData.telegram],
         }),
       },
     });
@@ -198,6 +200,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     } catch (err: any) {
     } finally {
       setIsLaunching(false);
+      navigate('/explorer')
     }
   };
 
@@ -221,7 +224,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
               </div>
             </div>
             <div className="launchpad-form-group">
-              <label className="launchpad-label">Description</label>
+              <label className="launchpad-label">Description <span className="optional-text">[Optional]</span></label>
               <textarea name="description" value={formData.description} onChange={handleInputChange} className="launchpad-input" placeholder="Write a short description" rows={3} disabled={isLaunching} />
             </div>
             <div className="launchpad-form-group">
@@ -250,7 +253,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
             <div className="launchpad-form-group">
               <label className="launchpad-label">Socials <span className="optional-text">[Optional]</span></label>
               <div className="launchpad-socials-grid">
-                {(['website', 'telegram', 'discord', 'twitter'] as const).map((field) => (
+                {(['twitter', 'website', 'telegram'] as const).map((field) => (
                   <div key={field} className="launchpad-social-field">
                     <label className="launchpad-label">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
                     <input name={field} value={formData[field]} onChange={handleInputChange} className="launchpad-input" placeholder={`https://${field}.com/...`} disabled={isLaunching} />

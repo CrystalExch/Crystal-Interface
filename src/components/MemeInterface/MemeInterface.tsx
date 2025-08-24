@@ -121,7 +121,7 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.0.10';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.0.10';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 

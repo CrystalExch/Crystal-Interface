@@ -142,8 +142,8 @@ const MAX_PER_COLUMN = 30;
 const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
-const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.1.4';
+const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.1.4';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -2373,7 +2373,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
+    const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
     wsRef.current = ws;
 
     ws.onopen = () => {

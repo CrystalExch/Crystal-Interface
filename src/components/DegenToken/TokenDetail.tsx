@@ -81,7 +81,7 @@ interface TokenDetailProps {
 }
 
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/crystal-launchpad/v0.0.10';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.0.10';
 const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
 
 const formatPrice = (p: number) => {
