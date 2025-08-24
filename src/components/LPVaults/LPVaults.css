@@ -3728,6 +3728,21 @@
     display:inline-block
 }
 
+.vault-management-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1.5px solid rgba(179,184,249,.1);
+    border-radius: 8px;
+    color: rgb(212,212,216);
+    font-size: 0.85rem;
+    padding: .3rem .75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    height: 31px;
+}
 
 .vault-management-menu {
   position: absolute;
@@ -3836,12 +3851,44 @@
     margin-bottom:1.5rem
 }
 
-
 .percentage-buttons {
   display: flex;
   gap: 0.5rem;
   justify-content: center;
 }
+
+.percentage-btn {
+    background: none;
+    border: 1.5px solid rgba(179, 184, 249, 0.1);
+    border-radius: 12px;
+    color: #ffffff79;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.3px;
+    font-weight: 400;
+    width: 100%;
+}
+
+.percentage-btn:hover {
+    color: #fff;
+    border-color: #2a2a2f;
+    background-color: #ffffff05;
+}
+
+.percentage-btn.active {
+    color: #d8dcff;
+    background-color: rgba(201, 194, 243, 0.05);
+    border-color: #aaaecf;
+    box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
+}
+
 .position-overview{
     border:1px solid rgba(179,184,249,.1);
     border-radius:8px;
