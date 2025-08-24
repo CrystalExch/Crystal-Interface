@@ -10,6 +10,7 @@ import { config } from '../../wagmi';
 import './LPVaults.css';
 import './LPVaults.css'
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import closebutton from '../../assets/close_button.png';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -66,6 +67,8 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
       const trendChange = trend === 'up' ? 0.5 : trend === 'down' ? -0.3 : 0;
       value += randomChange + trendChange;
       data.push({ day: i, value: Math.max(95, value) });
+
+MarketSelector.displayName = 'MarketSelector';
     }
 
     return data;
@@ -138,14 +141,24 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
+      if (!showDropdown) return;
+      
+      const target = event.target as Node;
+          if (dropdownRef.current?.contains(target)) {
+        return;
       }
+      
+      setShowDropdown(false);
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    if (showDropdown) {
+      setTimeout(() => {
+        document.addEventListener('mousedown', handleClickOutside);
+      }, 0);
+    }
+    
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showDropdown]);
 
   const handleTokenSelect = (token: any) => {
     onChange(token.address);
@@ -168,7 +181,10 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
           type="text"
           value={value}
           onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => setShowDropdown(true)}
+          onFocus={(e) => {
+            e.preventDefault();
+            setShowDropdown(true);
+          }}
           className="form-input token-selector-input"
           placeholder={placeholder}
         />
@@ -183,7 +199,11 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
         <button
           type="button"
           className="token-dropdown-button"
-          onClick={() => setShowDropdown(!showDropdown)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowDropdown(!showDropdown);
+          }}
         >
           <ChevronDown size={16} />
         </button>
@@ -266,16 +286,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
 
-  const [createForm, setCreateForm] = useState({
+
+
+  const initialCreateForm = React.useMemo(() => ({
     name: '',
     description: '',
+    selectedMarket: null as any,
     quoteAsset: '',
     baseAsset: '',
     amountQuote: '',
     amountBase: '',
     social1: '',
     social2: ''
-  });
+  }), []);
+
+  const [createForm, setCreateForm] = useState(initialCreateForm);
 
   useEffect(() => {
     setIsLoading(true); 
@@ -465,16 +490,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       await waitForTxReceipt(deployOp.hash);
       console.log('Vault deployed successfully!');
 
-      setCreateForm({
-        name: '',
-        description: '',
-        quoteAsset: '',
-        baseAsset: '',
-        amountQuote: '',
-        amountBase: '',
-        social1: '',
-        social2: ''
-      });
+      setCreateForm(initialCreateForm);
       setShowCreateModal(false);
 
       refetch?.();
@@ -685,6 +701,17 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       }
     }
   }, [currentRoute, filteredVaultStrategies, selectedVaultStrategy]);
+
+  const handleMarketChange = useCallback((market: any) => {
+    setCreateForm(prev => ({
+      ...prev,
+      selectedMarket: market,
+      quoteAsset: market.quoteAddress,
+      baseAsset: market.baseAddress
+    }));
+  }, []);
+
+  const stableMarketsData = React.useMemo(() => marketsData, [marketsData]);
 
   return (
     <div className="vaults-page-container">
@@ -1052,16 +1079,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           PnL
                         </button>
                       </div>
-                      <select
+                      <TimeRangeDropdown 
                         value={vaultStrategyTimeRange}
-                        onChange={(e) => setVaultStrategyTimeRange(e.target.value as any)}
-                        className="time-range-select"
-                      >
-                        <option value="1D">1D</option>
-                        <option value="1W">1W</option>
-                        <option value="1M">1M</option>
-                        <option value="All">All-time</option>
-                      </select>
+                        onChange={setVaultStrategyTimeRange}
+                      />
                     </div>
                   </div>
 
@@ -1167,15 +1188,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         )}
 
         {showCreateModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
+          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
                 <h2>Create New Vault</h2>
                 <button
                   className="modal-close"
                   onClick={() => setShowCreateModal(false)}
                 >
-                  <X size={20} />
+                  <img src={closebutton} className='modal-close-icon' alt="Close" />
                 </button>
               </div>
 
@@ -1203,24 +1224,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 </div>
 
                 <div className="form-row">
-                  <div className="form-group">
-                    <TokenSelector
-                      value={createForm.quoteAsset}
-                      onChange={(value) => setCreateForm(prev => ({ ...prev, quoteAsset: value }))}
-                      tokendict={tokendict}
-                      placeholder="Select quote token..."
-                      label="Quote Asset"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <TokenSelector
-                      value={createForm.baseAsset}
-                      onChange={(value) => setCreateForm(prev => ({ ...prev, baseAsset: value }))}
-                      tokendict={tokendict}
-                      placeholder="Select base token..."
-                      label="Base Asset"
-                    />
-                  </div>
+                <div className="form-group">
+  <label>Select Market Pair</label>
+  <MarketSelector
+    key="create-vault-market-selector"
+    value={createForm.selectedMarket}
+    onChange={handleMarketChange}
+    marketsData={stableMarketsData}
+    placeholder="Select trading pair..."
+  />
+</div>
                 </div>
 
                 <div className="form-row">
@@ -1271,12 +1284,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
               </div>
 
               <div className="modal-footer">
-                <button
-                  className="vault-cancel-button"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  Cancel
-                </button>
                 <button
                   className={`save-button ${(!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase) ? 'disabled' : ''}`}
                   disabled={!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase || isVaultDepositSigning}
