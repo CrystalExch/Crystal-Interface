@@ -10,7 +10,7 @@ import { createPortal } from 'react-dom';
 import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw, Info, Ban, Eye, ChevronDown } from 'lucide-react';
 
 import { settings as appSettings } from '../../settings';
-import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
 import { encodeFunctionData } from 'viem';
 import { defaultMetrics } from './TokenData';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
@@ -32,6 +32,7 @@ import { useNavigate } from 'react-router-dom';
 export interface Token {
   id: string;
   tokenAddress: string;
+  creator: string;
   name: string;
   symbol: string;
   image: string;
@@ -143,7 +144,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.1.4';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -2222,7 +2223,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
       const uo = {
         target: routerAddress,
-        data: encodeFunctionData({ abi: CrystalLaunchpadRouter, functionName: 'buy', args: [token.tokenAddress as `0x${string}`] }),
+        data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
         value: val,
       };
 
@@ -2266,9 +2267,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, [hidden]);
 
   const handleBlacklistToken = useCallback((token: Token) => {
-    const newItem = { id: Date.now().toString(), text: token.tokenAddress, type: 'dev' as const };
+    const newItem = { id: Date.now().toString(), text: token.creator, type: 'dev' as const };
     setBlacklistSettings(prev => ({ items: [...prev.items, newItem] }));
-    console.log(`Blacklisted dev: ${token.tokenAddress}`);
+    console.log(`Blacklisted dev: ${token.creator}`);
   }, []);
 
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
@@ -2418,6 +2419,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 social2
                 social3
                 createdAt
+                migrated
+                migratedAt
                 volumeNative
                 volumeToken
                 buyTxs
@@ -2436,14 +2439,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }),
         });
         const json = await res.json();
-        console.log(json);
         if (cancelled) return;
 
         const rawMarkets = json.data?.launchpadTokens ?? [];
 
         const tokens: Token[] = await Promise.all(
           rawMarkets.map(async (m: any) => {
-            const price = Number(m.latestPrice) / 1e18;
+            const price = Number(m.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price;
 
             let meta: any = {};
             try {
@@ -2462,6 +2464,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               ...defaultMetrics,
               id: m.id.toLowerCase(),
               tokenAddress: m.id.toLowerCase(),
+              creator: m.creator.id,
               name: m.name,
               symbol: m.symbol,
               image: meta.image ?? '/discord.svg',
@@ -2472,9 +2475,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               created: createdTimestamp,
               price,
               marketCap: price * TOTAL_SUPPLY,
-              buyTransactions: Number(m.buyCount),
-              sellTransactions: Number(m.sellCount),
-              volume24h: Number(m.volume24h) / 1e18,
+              buyTransactions: Number(m.buyTxs),
+              sellTransactions: Number(m.sellTxs),
+              volume24h: Number(m.volumeNative) / 1e18,
               volumeDelta: 0,
               telegramHandle: m.telegram ?? '',
               discordHandle: m.discord ?? '',
