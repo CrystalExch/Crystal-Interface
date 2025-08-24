@@ -406,7 +406,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           ) : (
             Object.entries(claimableFees).map(([token, value]) => (
               <div key={token} className="token-row">
-              
                 <span className="token-symbol">{token}</span>
                 <span className={`token-amount ${isBlurred ? 'blurred' : ''}`}>
                   {value ? customRound(value as number, 3) : '0.00'}
