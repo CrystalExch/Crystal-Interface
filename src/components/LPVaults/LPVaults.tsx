@@ -10,7 +10,6 @@ import { config } from '../../wagmi';
 import './LPVaults.css';
 import './LPVaults.css'
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import closebutton from '../../assets/close_button.png';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -67,8 +66,6 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
       const trendChange = trend === 'up' ? 0.5 : trend === 'down' ? -0.3 : 0;
       value += randomChange + trendChange;
       data.push({ day: i, value: Math.max(95, value) });
-
-MarketSelector.displayName = 'MarketSelector';
     }
 
     return data;
@@ -141,24 +138,14 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (!showDropdown) return;
-      
-      const target = event.target as Node;
-          if (dropdownRef.current?.contains(target)) {
-        return;
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false);
       }
-      
-      setShowDropdown(false);
     };
 
-    if (showDropdown) {
-      setTimeout(() => {
-        document.addEventListener('mousedown', handleClickOutside);
-      }, 0);
-    }
-    
+    document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showDropdown]);
+  }, []);
 
   const handleTokenSelect = (token: any) => {
     onChange(token.address);
@@ -181,10 +168,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
           type="text"
           value={value}
           onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={(e) => {
-            e.preventDefault();
-            setShowDropdown(true);
-          }}
+          onFocus={() => setShowDropdown(true)}
           className="form-input token-selector-input"
           placeholder={placeholder}
         />
@@ -199,11 +183,7 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
         <button
           type="button"
           className="token-dropdown-button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowDropdown(!showDropdown);
-          }}
+          onClick={() => setShowDropdown(!showDropdown)}
         >
           <ChevronDown size={16} />
         </button>
@@ -274,9 +254,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState({address: '0x845564D9444e3766b0f665A9AD097Ad1597F0492' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701'});
+  const [activeVault, _setActiveVault] = useState({ address: '0x845564D9444e3766b0f665A9AD097Ad1597F0492' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701' });
   const [vaultList, setVaultList] = useState<any>([]);
-  const [isLoading, setIsLoading] = useState(true); 
+  const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -286,24 +266,19 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
 
-
-
-  const initialCreateForm = React.useMemo(() => ({
+  const [createForm, setCreateForm] = useState({
     name: '',
     description: '',
-    selectedMarket: null as any,
     quoteAsset: '',
     baseAsset: '',
     amountQuote: '',
     amountBase: '',
     social1: '',
     social2: ''
-  }), []);
-
-  const [createForm, setCreateForm] = useState(initialCreateForm);
+  });
 
   useEffect(() => {
-    setIsLoading(true); 
+    setIsLoading(true);
 
     (async () => {
       try {
@@ -360,7 +335,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       } catch (e) {
         console.error(e);
       } finally {
-        setIsLoading(false); 
+        setIsLoading(false);
       }
     })();
   }, [activeVault, address]);
@@ -490,7 +465,16 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       await waitForTxReceipt(deployOp.hash);
       console.log('Vault deployed successfully!');
 
-      setCreateForm(initialCreateForm);
+      setCreateForm({
+        name: '',
+        description: '',
+        quoteAsset: '',
+        baseAsset: '',
+        amountQuote: '',
+        amountBase: '',
+        social1: '',
+        social2: ''
+      });
       setShowCreateModal(false);
 
       refetch?.();
@@ -637,6 +621,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     const deployOp = await sendUserOperationAsync({ uo: deployUo });
     await waitForTxReceipt(deployOp.hash);
   };
+  const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 
   const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
     if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
@@ -679,7 +664,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     window.addEventListener('resize', handleResize);
     document.addEventListener('mousedown', handleClickOutside);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('mousedown', handleClickOutside);
@@ -702,17 +687,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     }
   }, [currentRoute, filteredVaultStrategies, selectedVaultStrategy]);
 
-  const handleMarketChange = useCallback((market: any) => {
-    setCreateForm(prev => ({
-      ...prev,
-      selectedMarket: market,
-      quoteAsset: market.quoteAddress,
-      baseAsset: market.baseAddress
-    }));
-  }, []);
-
-  const stableMarketsData = React.useMemo(() => marketsData, [marketsData]);
-
   return (
     <div className="vaults-page-container">
       <div className="lp-content-wrapper">
@@ -727,7 +701,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="vault-stat">
                   <span className="stat-label">Total Value Locked</span>
                   <span className="stat-value">
-                  {formatUSDDisplay(vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0))}
+                    {formatUSDDisplay(vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0))}
                   </span>
                 </div>
               </div>
@@ -842,7 +816,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 ))
               ) : filteredVaultStrategies.length > 0 ? (
                 filteredVaultStrategies.map((vault: any) => (
-                  <div key={vault.id} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
+                  <div key={vault.address} className="vault-row" onClick={() => showVaultStrategyDetail(vault.address)}>
                     <div className="col vault-name-col">
                       <div className="vault-name-container">
                         <h3 className="vault-name">{vault.name}</h3>
@@ -879,8 +853,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
 
                     <div className="col vault-deposits-col">
-                      <span className="deposits-value">{BigInt(vault.maxShares) === 0n 
-                        ? <span>&#8734;</span> 
+                      <span className="deposits-value">{BigInt(vault.maxShares) === 0n
+                        ? <span>&#8734;</span>
                         : `$${formatDisplayValue(BigInt(vault.maxShares), 0)}`}</span>
                     </div>
 
@@ -951,41 +925,41 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     Withdraw
                   </button>
 
-                 {address && selectedVault.owner.toLowerCase() === address.toLowerCase() && (
-                  <>
-                    <button 
-                      className="vault-management-trigger"
-                      onClick={() => setShowManagementMenu(!showManagementMenu)}
-                    >
-                      Vault Actions
-                      <ChevronDown size={14} />
-                    </button>
-                    
-                    {showManagementMenu && 
-                      <div 
-                        className="vault-management-menu"
+                  {address && selectedVault.owner.toLowerCase() === address.toLowerCase() && (
+                    <>
+                      <button
+                        className="vault-management-trigger"
+                        onClick={() => setShowManagementMenu(!showManagementMenu)}
                       >
-                        <button 
-                          className="vault-management-option"
-                          onClick={() => handleVaultManagement('disable-deposits')}
+                        Vault Actions
+                        <ChevronDown size={14} />
+                      </button>
+
+                      {showManagementMenu &&
+                        <div
+                          className="vault-management-menu"
                         >
-                          {selectedVault?.locked ? t('Enable Deposits') : t('Disable Deposits')}
-                        </button>
-                        <button 
-                          className="vault-management-option"
-                          onClick={() => handleVaultManagement('decrease')}
-                        >
-                          {true ? t('Enable Decrease On Withdraw') : t('Disable Decrease On Withdraw')}
-                        </button>
-                        <button 
-                          className="vault-management-option vault-close-option"
-                          onClick={() => handleVaultManagement('close')}
-                        >
-                          Close Vault
-                        </button>
-                      </div>}
-                  </>
-                )}
+                          <button
+                            className="vault-management-option"
+                            onClick={() => handleVaultManagement('disable-deposits')}
+                          >
+                            {selectedVault?.locked ? t('Enable Deposits') : t('Disable Deposits')}
+                          </button>
+                          <button
+                            className="vault-management-option"
+                            onClick={() => handleVaultManagement('decrease')}
+                          >
+                            {true ? t('Enable Decrease On Withdraw') : t('Disable Decrease On Withdraw')}
+                          </button>
+                          <button
+                            className="vault-management-option vault-close-option"
+                            onClick={() => handleVaultManagement('close')}
+                          >
+                            Close Vault
+                          </button>
+                        </div>}
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1008,8 +982,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Deposit Cap</span>
-                    <span className="vault-metric-value">{BigInt(selectedVault.maxShares) === 0n 
-                      ? <span>&#8734;</span> 
+                    <span className="vault-metric-value">{BigInt(selectedVault.maxShares) === 0n
+                      ? <span>&#8734;</span>
                       : `$${formatDisplayValue(BigInt(selectedVault.maxShares), 0)}`}</span>
                   </div>
                   <div className="vault-metric">
@@ -1030,13 +1004,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
               <div className="vault-strategy-overview">
                 <div className="vault-strategy-description">
                   <div className="description-header">
-                    <span className="leader-label">Vault Owner:</span>
-                    <span className="leader-address">{selectedVault.owner}</span>
+                    <span className="leader-label">Vault Leader</span>
+                    <span className="leader-address">{selectedVault.owner.slice(0, 6)}...{selectedVault.owner.slice(-4)}</span>
                   </div>
-                  <span className="vault-description">Description:</span>
+                  <span className="vault-description">Description</span>
                   <p className="description-text">{selectedVault.desc}</p>
                   <div className="vault-socials">
-                    <span className="vault-description">Socials:</span>
+                    {(selectedVault.social1 || selectedVault.social2) && (
+                      <span className="vault-description">Socials</span>
+                    )}
                     {selectedVault.social1 && (
                       <a
                         href={selectedVault.social1}
@@ -1079,10 +1055,64 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           PnL
                         </button>
                       </div>
-                      <TimeRangeDropdown 
-                        value={vaultStrategyTimeRange}
-                        onChange={setVaultStrategyTimeRange}
-                      />
+                      <div
+                        className="time-range-dropdown-container"
+                        onBlur={(e) => {
+                          if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                            setShowTimeRangeDropdown(false);
+                          }
+                        }}
+                        tabIndex={-1}
+                      >
+                        <button
+                          className="time-range-select-button"
+                          onClick={() => setShowTimeRangeDropdown(!showTimeRangeDropdown)}
+                        >
+                          {vaultStrategyTimeRange === 'All' ? 'All-time' : vaultStrategyTimeRange}
+                          <ChevronDown size={14} />
+                        </button>
+
+                        {showTimeRangeDropdown && (
+                          <div className="time-range-dropdown-portal">
+                            <button
+                              className={`time-range-option ${vaultStrategyTimeRange === '1D' ? 'active' : ''}`}
+                              onClick={() => {
+                                setVaultStrategyTimeRange('1D');
+                                setShowTimeRangeDropdown(false);
+                              }}
+                            >
+                              1D
+                            </button>
+                            <button
+                              className={`time-range-option ${vaultStrategyTimeRange === '1W' ? 'active' : ''}`}
+                              onClick={() => {
+                                setVaultStrategyTimeRange('1W');
+                                setShowTimeRangeDropdown(false);
+                              }}
+                            >
+                              1W
+                            </button>
+                            <button
+                              className={`time-range-option ${vaultStrategyTimeRange === '1M' ? 'active' : ''}`}
+                              onClick={() => {
+                                setVaultStrategyTimeRange('1M');
+                                setShowTimeRangeDropdown(false);
+                              }}
+                            >
+                              1M
+                            </button>
+                            <button
+                              className={`time-range-option ${vaultStrategyTimeRange === 'All' ? 'active' : ''}`}
+                              onClick={() => {
+                                setVaultStrategyTimeRange('All');
+                                setShowTimeRangeDropdown(false);
+                              }}
+                            >
+                              All-time
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
@@ -1188,15 +1218,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         )}
 
         {showCreateModal && (
-          <div className="modal-overlay" onClick={() => setShowCreateModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div className="modal-overlay">
+            <div className="modal-content">
               <div className="modal-header">
                 <h2>Create New Vault</h2>
                 <button
                   className="modal-close"
                   onClick={() => setShowCreateModal(false)}
                 >
-                  <img src={closebutton} className='modal-close-icon' alt="Close" />
+                  <X size={20} />
                 </button>
               </div>
 
@@ -1224,16 +1254,24 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 </div>
 
                 <div className="form-row">
-                <div className="form-group">
-  <label>Select Market Pair</label>
-  <MarketSelector
-    key="create-vault-market-selector"
-    value={createForm.selectedMarket}
-    onChange={handleMarketChange}
-    marketsData={stableMarketsData}
-    placeholder="Select trading pair..."
-  />
-</div>
+                  <div className="form-group">
+                    <TokenSelector
+                      value={createForm.quoteAsset}
+                      onChange={(value) => setCreateForm(prev => ({ ...prev, quoteAsset: value }))}
+                      tokendict={tokendict}
+                      placeholder="Select quote token..."
+                      label="Quote Asset"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <TokenSelector
+                      value={createForm.baseAsset}
+                      onChange={(value) => setCreateForm(prev => ({ ...prev, baseAsset: value }))}
+                      tokendict={tokendict}
+                      placeholder="Select base token..."
+                      label="Base Asset"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-row">
@@ -1291,7 +1329,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 >
                   {isVaultDepositSigning ? (
                     <div className="button-content">
-                      <div className="loading-spinner"/>
+                      <div className="loading-spinner" />
                       Creating...
                     </div>
                   ) : (
