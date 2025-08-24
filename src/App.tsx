@@ -14387,7 +14387,7 @@ function App() {
                           <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" ><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
                     </div>
                     <div className="trading-mode-info">
-                      <h3>1CT Trading</h3>
+                      <h3>Enable 1CT</h3>
                       <p>Faster execution, better prices, and advanced features</p>
                     </div>
                     <div className="trading-mode-status">
@@ -14399,7 +14399,7 @@ function App() {
                             await createSubWallet();
                             setpopup(0);
                           } catch (error) {
-                            console.error('Failed to enable 1CT trading:', error);
+                            console.error('Failed to enable 1CT:', error);
                           } finally {
                             setIsUsernameSigning(false);
                           }
@@ -20961,6 +20961,8 @@ function App() {
       activechain={activechain}
       crystalVaultsAddress={crystalVaults}
       router={router}
+    marketsData={sortedMarkets}
+    onMarketSelect={onMarketSelect} 
     />
   } />
 <Route
