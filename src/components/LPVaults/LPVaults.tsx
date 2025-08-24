@@ -262,7 +262,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showManagementMenu, setShowManagementMenu] = useState(false);
 
-  const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'balances' | 'positions' | 'trades' | 'deposits' | 'withdrawals' | 'depositors'>('balances');
+  const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<any>('balances');
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
 
@@ -384,7 +384,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       }
 
       if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-        console.log('Approving quote token...');
         const approveQuoteUo = {
           target: createForm.quoteAsset as `0x${string}`,
           data: encodeFunctionData({
@@ -405,11 +404,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         };
         const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
         await waitForTxReceipt(approveQuoteOp.hash);
-        console.log('Quote token approved');
       }
 
       if (createForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-        console.log('Approving base token...');
         const approveBaseUo = {
           target: createForm.baseAsset as `0x${string}`,
           data: encodeFunctionData({
@@ -430,14 +427,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         };
         const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
         await waitForTxReceipt(approveBaseOp.hash);
-        console.log('Base token approved');
       }
 
       const ethValue =
         createForm.quoteAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountQuote :
           createForm.baseAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountBase : 0n;
-
-      console.log('Deploying vault with ETH value:', ethValue.toString());
 
       const deployUo = {
         target: crystalVaultsAddress as `0x${string}`,
@@ -459,11 +453,8 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         value: ethValue,
       };
 
-      console.log('Sending deploy transaction...');
       const deployOp = await sendUserOperationAsync({ uo: deployUo });
-      console.log('Deploy transaction sent, waiting for receipt...');
       await waitForTxReceipt(deployOp.hash);
-      console.log('Vault deployed successfully!');
 
       setCreateForm({
         name: '',
@@ -628,7 +619,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       return;
     }
 
-    const availableTabs = ['balances', 'deposits', 'withdrawals', 'depositors'];
+    const availableTabs = ['balances', 'open Orders', 'depositors', 'deposit History'];
     const activeTabIndex = availableTabs.findIndex(tab => tab === activeTab);
 
     if (activeTabIndex !== -1) {
@@ -965,13 +956,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
               <div className="vault-strategy-sticky-bar">
                 <div className="vault-strategy-info">
-                  <h1 className="vault-strategy-name">{selectedVault.name}</h1>
+                  <div className="vault-strategy-name">{selectedVault.name}</div>
                   <div className="vault-strategy-contract">
-                    <span className="contract-label">Contract:</span>
+                    <span className="contract-label">Vault Address:</span>
                     <span className="contract-address">{selectedVault.address}</span>
-                    <button className="copy-address-btn" title="Copy address">
+                    <a className="copy-address-btn" href={`${explorer}/address/${selectedVault.address}`}
+                          target="_blank"
+                          rel="noopener noreferrer">
                       <ExternalLink size={14} />
-                    </button>
+                    </a>
                   </div>
                 </div>
 
@@ -1158,7 +1151,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
               <div className="vault-strategy-tabs">
                 <div className="vault-strategy-tabs-container">
                   <div className="vault-strategy-types-rectangle">
-                    {(['balances', 'deposits', 'withdrawals', 'depositors'] as const).map((tab, index) => (
+                    {(['balances', 'open Orders', 'depositors', 'deposit History'] as const).map((tab, index) => (
                       <div
                         key={tab}
                         ref={(el) => (vaultStrategyTabsRef.current[index] = el)}
@@ -1206,7 +1199,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
                   )}
 
-                  {(activeVaultStrategyTab === 'deposits' || activeVaultStrategyTab === 'withdrawals' || activeVaultStrategyTab === 'depositors') && (
+                  {(activeVaultStrategyTab === 'open Orders' || activeVaultStrategyTab === 'depositors' || activeVaultStrategyTab === 'deposit History') && (
                     <div className="vault-data-tab">
                       <p>No data available for {activeVaultStrategyTab}.</p>
                     </div>

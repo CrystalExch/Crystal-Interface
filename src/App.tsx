@@ -1526,7 +1526,7 @@ function App() {
   }, [client])
 
   const formatDisplayValue = (
-    rawAmount: bigint,
+    rawAmount: number | bigint,
     decimals = 18,
     precision = 3,
   ) => {
@@ -12840,7 +12840,7 @@ function App() {
                       <span className="preview-title">Share of vault:</span>
                       <span className="token-amount">
                         <span className="deposit-token-amount-before">
-                          {formatDisplayValue(BigInt(selectedVault?.userShares / selectedVault?.totalShares), -2)}%
+                          {formatDisplayValue(Number(selectedVault?.userShares) / Number(selectedVault?.totalShares), -2)}%
                         </span>
                         {vaultDepositAmounts.shares > 0n && (
                           <>
@@ -12848,7 +12848,7 @@ function App() {
                               <path d="M5 12h14" />
                               <path d="m12 5 7 7-7 7" />
                             </svg>
-                            {formatDisplayValue(BigInt((selectedVault?.userShares + vaultDepositAmounts?.shares) / (selectedVault?.totalShares + vaultDepositAmounts?.shares)), -2)}%
+                            {formatDisplayValue((Number(selectedVault?.userShares) + Number(vaultDepositAmounts?.shares)) / (Number(selectedVault?.totalShares) + Number(vaultDepositAmounts?.shares)), -2)}%
                           </>
                         )}
                       </span>
@@ -12899,8 +12899,6 @@ function App() {
                 <div className="vault-withdraw-form">
                   <div className="withdraw-section">
                     <div className="withdraw-amount-section">
-                      <h4 className="withdraw-section-title">Amount to withdraw</h4>
-
                       <div className="withdraw-percentage-input-container">
                         <div className="withdraw-percentage-display">
                           <input
@@ -12913,7 +12911,7 @@ function App() {
                             style={{ width: `${Math.max((withdrawPercentage || '0').length, 1)}ch` }}
                             className="withdraw-percentage-input"
                           />
-                          <span className="withdraw-percentage-symbol">%</span>
+                          <span style={{color: `${withdrawPercentage ? '#FFF' : '#ededf571'}`}} className="withdraw-percentage-symbol">%</span>
                         </div>
                       </div>
                       <div className="percentage-buttons">
