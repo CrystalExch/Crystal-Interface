@@ -8,54 +8,20 @@ import { TokenAbi } from '../../abis/TokenAbi';
 import { settings } from "../../settings";
 import { config } from '../../wagmi';
 import './LPVaults.css';
-import { createPortal } from 'react-dom';
 import './LPVaults.css'
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-
-interface VaultStrategy {
-  id: string;
-  address: string;
-  name: string;
-  description: string;
-  type: 'Spot' | 'Margin';
-  quoteAsset: string;
-  baseAsset: string;
-  quoteAssetData?: any;
-  baseAssetData?: any;
-  totalShares: string;
-  maxShares: string;
-  userShares: string;
-  userBalance: string;
-  userEarnings: string;
-  isCreator?: boolean;
-  createdAt: Date;
-  lockup: number;
-  locked: boolean;
-  closed: boolean;
-  owner: string;
-  social1: string;
-  social2: string;
-  age: number;
-}
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
   onSelectToken: (token: { symbol: string; icon: string }) => void;
   setOnSelectTokenCallback?: (callback: ((token: { symbol: string; icon: string }) => void) | null) => void;
   tokendict: { [address: string]: any };
-  tradesByMarket: Record<string, any[]>;
-  markets: Record<string, any>;
   tokenBalances: Record<string, any>;
   currentRoute?: string;
   onRouteChange?: (route: string) => void;
   connected: boolean;
   account: any;
-  selectedVaultForAction: VaultStrategy | null;
-  setSelectedVaultForAction: (vault: VaultStrategy | null) => void;
-  vaultDepositAmount: string;
-  setVaultDepositAmount: (amount: string) => void;
-  vaultWithdrawAmount: string;
-  setVaultWithdrawAmount: (amount: string) => void;
+  setselectedVault: any;
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
   isVaultWithdrawSigning: boolean;
@@ -68,6 +34,10 @@ interface LPVaultsProps {
   activechain: number;
   crystalVaultsAddress: any;
   router: string;
+  formatUSDDisplay: any;
+  calculateUSDValue: any;
+  tradesByMarket: any;
+  getMarket: any;
 }
 
 const performanceData = [
@@ -258,102 +228,6 @@ const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendic
   );
 };
 
-interface VaultManagementDropdownProps {
-  onAction: (action: string) => void;
-  show: boolean;
-  onToggle: (show: boolean) => void;
-}
-
-const VaultManagementDropdown: React.FC<VaultManagementDropdownProps> = ({ onAction, show, onToggle }) => {
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0 });
-
-  useEffect(() => {
-    if (show && triggerRef.current) {
-      const rect = triggerRef.current.getBoundingClientRect();
-      setDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: rect.right + window.scrollX - 200
-      });
-    }
-  }, [show]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (show && triggerRef.current && !triggerRef.current.contains(event.target as Node)) {
-        const dropdownElement = document.querySelector('.vault-management-menu-portal');
-        if (!dropdownElement?.contains(event.target as Node)) {
-          onToggle(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [show, onToggle]);
-
-  const handleAction = (action: string) => {
-    onAction(action);
-    onToggle(false);
-  };
-
-  return (
-    <>
-      <button 
-        ref={triggerRef}
-        className="vault-management-trigger"
-        onClick={() => onToggle(!show)}
-      >
-        Vault Actions
-        <ChevronDown size={14} />
-      </button>
-      
-      {show && createPortal(
-        <div 
-          className="vault-management-menu-portal"
-          style={{
-            position: 'absolute',
-            top: dropdownPosition.top,
-            left: dropdownPosition.left,
-          }}
-        >
-          <button 
-            className="vault-management-option"
-            onClick={() => handleAction('trade')}
-          >
-            Trade for Vault
-          </button>
-          <button 
-            className="vault-management-option"
-            onClick={() => handleAction('disable-deposits')}
-          >
-            Disable Deposits
-          </button>
-          <button 
-            className="vault-management-option"
-            onClick={() => handleAction('auto-close')}
-          >
-            Enable Auto-Close on Withdraw
-          </button>
-          <button 
-            className="vault-management-option"
-            onClick={() => handleAction('distribute')}
-          >
-            Distribute
-          </button>
-          <button 
-            className="vault-management-option vault-close-option"
-            onClick={() => handleAction('close')}
-          >
-            Close Vault
-          </button>
-        </div>,
-        document.body
-      )}
-    </>
-  );
-};
-
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
   tokendict,
@@ -362,8 +236,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   onRouteChange,
   connected,
   account,
-  selectedVaultForAction,
-  setSelectedVaultForAction,
+  setselectedVault,
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   sendUserOperationAsync,
@@ -374,8 +247,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   activechain,
   crystalVaultsAddress,
   router,
+  formatUSDDisplay,
+  calculateUSDValue,
+  tradesByMarket,
+  getMarket,
 }) => {
-
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeVault, _setActiveVault] = useState({address: '0x845564D9444e3766b0f665A9AD097Ad1597F0492' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701'});
@@ -385,15 +261,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showManagementMenu, setShowManagementMenu] = useState(false);
-  const [vaultDepositAmounts, _setVaultDepositAmounts] = useState<{ quote: string, base: string }>({
-    quote: '',
-    base: ''
-  });
-  const [_vaultQuoteExceedsBalance, _setVaultQuoteExceedsBalance] = useState(false);
-  const [_vaultBaseExceedsBalance, _setVaultBaseExceedsBalance] = useState(false);
-  const [_withdrawExceedsBalance, _setWithdrawExceedsBalance] = useState(false);
-  const [_depositPreview, setDepositPreview] = useState<{ shares: bigint, amountQuote: bigint, amountBase: bigint } | null>(null);
-  const [_withdrawPreview, setWithdrawPreview] = useState<{ amountQuote: bigint, amountBase: bigint } | null>(null);
 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<'balances' | 'positions' | 'trades' | 'deposits' | 'withdrawals' | 'depositors'>('balances');
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
@@ -479,11 +346,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       return;
     }
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain();
-      return;
-    }
+    await setChain();
 
     try {
       setIsVaultDepositSigning(true);
@@ -519,14 +382,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       if (baseBalance < amountBase) {
         throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
       }
-
-      console.log('Creating vault with:', {
-        quoteAsset: createForm.quoteAsset,
-        baseAsset: createForm.baseAsset,
-        amountQuote: amountQuote.toString(),
-        amountBase: amountBase.toString(),
-        name: createForm.name
-      });
 
       if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
         console.log('Approving quote token...');
@@ -626,19 +481,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     } catch (e: any) {
       console.error('Vault creation error:', e);
-
-      let errorMessage = 'Failed to create vault';
-
-      if (e.message?.includes('insufficient')) {
-        errorMessage = 'Insufficient balance for one or more tokens';
-      } else if (e.message?.includes('allowance')) {
-        errorMessage = 'Token approval failed. Please try again.';
-      } else if (e.message?.includes('execution reverted')) {
-        errorMessage = 'Transaction failed. This might be due to:\n• Minimum deposit requirements not met\n• Invalid token pair\n• Contract restrictions\n• Network congestion';
-      } else if (e.message) {
-        errorMessage = e.message;
-      }
-
     } finally {
       setIsVaultDepositSigning(false);
     }
@@ -674,14 +516,34 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     return tokenBalances[tokenAddress] || 0n;
   };
 
-  const calculateTVL = (vault: any): string => {
-    const tvl = vault.totalShares;
-    return tvl;
+  const calculateTVL = (vault: any) => {
+    return (
+      calculateUSDValue(
+        vault.quoteBalance,
+        tradesByMarket[
+        (({ baseAsset, quoteAsset }) =>
+          (baseAsset === settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].wethticker : baseAsset) +
+          (quoteAsset === settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].wethticker : quoteAsset)
+        )(getMarket(vault?.quoteAsset, vault?.baseAsset))
+        ],
+        vault?.quoteAsset,
+        getMarket(vault?.quoteAsset, vault?.baseAsset),
+      ) + calculateUSDValue(
+        vault.baseBalance,
+        tradesByMarket[
+        (({ baseAsset, quoteAsset }) =>
+          (baseAsset === settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].wethticker : baseAsset) +
+          (quoteAsset === settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].wethticker : quoteAsset)
+        )(getMarket(vault?.quoteAsset, vault?.baseAsset))
+        ],
+        vault?.baseAsset,
+        getMarket(vault?.quoteAsset, vault?.baseAsset),
+      )
+    )
   };
 
-  const calculateUserPositionValue = (vault: any): string => {
-    const positionValue = vault.userShares;
-    return positionValue;
+  const calculateUserPositionValue = (vault: any) => {
+    return calculateTVL(vault) * Number(vault.userShares) / Number(vault.totalShares);
   };
 
   const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
@@ -707,69 +569,58 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     onRouteChange?.('/earn/vaults');
   };
 
-  const selectedVaultStrategyData = selectedVaultStrategy ?
+  const selectedVault = selectedVaultStrategy ?
     filteredVaultStrategies.find((vault: any) => vault.address === selectedVaultStrategy) : null;
 
-  const handleVaultManagement = (action: string) => {
+  const handleVaultManagement = async (action: string) => {
     setShowManagementMenu(false);
-    
+    await setChain();
+
+    let deployUo = {
+      target: crystalVaultsAddress as `0x${string}`,
+      data: '',
+      value: 0n,
+    };
     switch (action) {
-      case 'trade':
-        console.log('Trade for vault');
-        break;
       case 'disable-deposits':
-        console.log('Disable deposits');
+        !selectedVault?.locked ? deployUo.data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "lock",
+          args: [selectedVault?.address
+          ],
+        }) : deployUo.data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "unlock",
+          args: [selectedVault?.address
+          ],
+        })
         break;
-      case 'auto-close':
-        console.log('Enable auto-close');
-        break;
-      case 'distribute':
-        console.log('Distribute');
+      case 'decrease':
+        true ? deployUo.data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "changeDecreaseOnWithdraw",
+          args: [selectedVault?.address, true
+          ],
+        }) : deployUo.data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "changeDecreaseOnWithdraw",
+          args: [selectedVault?.address, false
+          ],
+        })
         break;
       case 'close':
-        if (confirm('Are you sure you want to close this vault? This action cannot be undone.')) {
-          console.log('Close vault');
-        }
+        deployUo.data = encodeFunctionData({
+          abi: CrystalVaultsAbi,
+          functionName: "close",
+          args: [selectedVault?.address
+          ],
+        })
         break;
     }
+
+    const deployOp = await sendUserOperationAsync({ uo: deployUo });
+    await waitForTxReceipt(deployOp.hash);
   };
-
-  useEffect(() => {
-    if (!selectedVaultForAction || !vaultDepositAmounts.quote || !vaultDepositAmounts.base) {
-      setDepositPreview(null);
-      return;
-    }
-
-    const previewDeposit = async () => {
-      try {
-      } catch (error) {
-        console.error('Error previewing deposit:', error);
-        setDepositPreview(null);
-      }
-    };
-
-    const timeoutId = setTimeout(previewDeposit, 500);
-    return () => clearTimeout(timeoutId);
-  }, [vaultDepositAmounts, selectedVaultForAction, crystalVaultsAddress]);
-
-  useEffect(() => {
-    if (!selectedVaultForAction) {
-      setWithdrawPreview(null);
-      return;
-    }
-
-    const previewWithdrawal = async () => {
-      try {
-
-      } catch (error) {
-        console.error('Error previewing withdrawal:', error);
-        setWithdrawPreview(null);
-      }
-    };
-
-    const timeoutId = setTimeout(previewWithdrawal, 500);
-    return () => clearTimeout(timeoutId);
-  }, [selectedVaultForAction, crystalVaultsAddress]);
 
   const updateVaultStrategyIndicatorPosition = useCallback((activeTab: string) => {
     if (!vaultStrategyIndicatorRef.current || !vaultStrategyTabsRef.current) {
@@ -787,25 +638,25 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         indicator.style.left = `${activeTabElement.offsetLeft}px`;
       }
     }
-  }, [selectedVaultStrategyData?.type]);
+  }, [selectedVault?.type]);
 
   useEffect(() => {
-    if (selectedVaultStrategy && selectedVaultStrategyData) {
+    if (selectedVaultStrategy && selectedVault) {
       setTimeout(() => {
         updateVaultStrategyIndicatorPosition(activeVaultStrategyTab);
       }, 0);
     }
-  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition]);
+  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVault, updateVaultStrategyIndicatorPosition]);
 
   useEffect(() => {
     const handleResize = () => {
-      if (selectedVaultStrategy && selectedVaultStrategyData) {
+      if (selectedVaultStrategy && selectedVault) {
         updateVaultStrategyIndicatorPosition(activeVaultStrategyTab);
       }
     };
 
     const handleClickOutside = (event: MouseEvent) => {
-      if (showManagementMenu && !(event.target as Element).closest('.vault-management-dropdown')) {
+      if (showManagementMenu && !(event.target as Element).closest('.vault-management-menu')) {
         setShowManagementMenu(false);
       }
     };
@@ -817,7 +668,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVaultStrategyData, updateVaultStrategyIndicatorPosition, showManagementMenu]);
+  }, [activeVaultStrategyTab, selectedVaultStrategy, selectedVault, updateVaultStrategyIndicatorPosition, showManagementMenu]);
 
   useEffect(() => {
     if (currentRoute.startsWith('/earn/vaults')) {
@@ -849,7 +700,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="vault-stat">
                   <span className="stat-label">Total Value Locked</span>
                   <span className="stat-value">
-                    ${vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0).toFixed(2)}M
+                  {formatUSDDisplay(vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0))}
                   </span>
                 </div>
               </div>
@@ -997,7 +848,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
 
                     <div className="col vault-apy-col">
-                      <span className="apy-value">${calculateTVL(vault)}</span>
+                      <span className="apy-value">{formatUSDDisplay(calculateTVL(vault))}</span>
                     </div>
 
                     <div className="col vault-deposits-col">
@@ -1007,7 +858,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     </div>
 
                     <div className="col vault-your-deposits-col">
-                      <span className="deposits-value">${calculateUserPositionValue(vault)}</span>
+                      <span className="deposits-value">{formatUSDDisplay(calculateUserPositionValue(vault))}</span>
                     </div>
 
                     <div className="col vault-age-col">
@@ -1030,7 +881,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
           </>
         )}
 
-        {selectedVaultStrategy && selectedVaultStrategyData && (
+        {selectedVaultStrategy && selectedVault && (
           <div className="vault-strategy-detail">
             <div className="vault-strategy-header">
               <div className="vault-strategy-breadcrumb-container">
@@ -1039,56 +890,84 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     Vaults
                   </button>
                   <ChevronLeft size={16} className="earn-breadcrumb-arrow" />
-                  <span className="breadcrumb-current">{selectedVaultStrategyData.name}</span>
+                  <span className="breadcrumb-current">{selectedVault.name}</span>
                 </div>
 
                 <div className="vault-detail-action-buttons">
                   <button
-                    className={`vault-detail-deposit-btn ${!connected || selectedVaultStrategyData.closed ? 'disabled' : ''}`}
+                    className={`vault-detail-deposit-btn ${!connected || selectedVault.closed ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
-                      } else if (!selectedVaultStrategyData.closed) {
-                        setSelectedVaultForAction(selectedVaultStrategyData);
+                      } else if (!selectedVault.closed) {
+                        setselectedVault(selectedVault);
                         setpopup(22);
                       }
                     }}
-                    disabled={!connected || selectedVaultStrategyData.closed}
+                    disabled={!connected || selectedVault.closed}
                   >
                     Deposit
                   </button>
 
                   <button
-                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(selectedVaultStrategyData.userShares || '0') === 0 ? 'disabled' : ''}`}
+                    className={`vault-detail-withdraw-btn ${!connected || parseFloat(selectedVault.userShares || '0') === 0 ? 'disabled' : ''}`}
                     onClick={() => {
                       if (!connected) {
                         setpopup(4);
-                      } else if (parseFloat(selectedVaultStrategyData.userShares || '0') > 0) {
-                        setSelectedVaultForAction(selectedVaultStrategyData);
+                      } else if (parseFloat(selectedVault.userShares || '0') > 0) {
+                        setselectedVault(selectedVault);
                         setpopup(23);
                       }
                     }}
-                    disabled={!connected || parseFloat(selectedVaultStrategyData.userShares || '0') === 0}
+                    disabled={!connected || parseFloat(selectedVault.userShares || '0') === 0}
                   >
                     Withdraw
                   </button>
 
-                 {address && selectedVaultStrategyData.owner.toLowerCase() === address.toLowerCase() && (
-  <VaultManagementDropdown 
-    show={showManagementMenu}
-    onToggle={setShowManagementMenu}
-    onAction={handleVaultManagement}
-  />
-)}
+                 {address && selectedVault.owner.toLowerCase() === address.toLowerCase() && (
+                  <>
+                    <button 
+                      className="vault-management-trigger"
+                      onClick={() => setShowManagementMenu(!showManagementMenu)}
+                    >
+                      Vault Actions
+                      <ChevronDown size={14} />
+                    </button>
+                    
+                    {showManagementMenu && 
+                      <div 
+                        className="vault-management-menu"
+                      >
+                        <button 
+                          className="vault-management-option"
+                          onClick={() => handleVaultManagement('disable-deposits')}
+                        >
+                          {selectedVault?.locked ? t('Enable Deposits') : t('Disable Deposits')}
+                        </button>
+                        <button 
+                          className="vault-management-option"
+                          onClick={() => handleVaultManagement('decrease')}
+                        >
+                          {true ? t('Enable Decrease On Withdraw') : t('Disable Decrease On Withdraw')}
+                        </button>
+                        <button 
+                          className="vault-management-option vault-close-option"
+                          onClick={() => handleVaultManagement('close')}
+                        >
+                          Close Vault
+                        </button>
+                      </div>}
+                  </>
+                )}
                 </div>
               </div>
 
               <div className="vault-strategy-sticky-bar">
                 <div className="vault-strategy-info">
-                  <h1 className="vault-strategy-name">{selectedVaultStrategyData.name}</h1>
+                  <h1 className="vault-strategy-name">{selectedVault.name}</h1>
                   <div className="vault-strategy-contract">
                     <span className="contract-label">Contract:</span>
-                    <span className="contract-address">{selectedVaultStrategyData.address}</span>
+                    <span className="contract-address">{selectedVault.address}</span>
                     <button className="copy-address-btn" title="Copy address">
                       <ExternalLink size={14} />
                     </button>
@@ -1098,22 +977,22 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="vault-strategy-metrics">
                   <div className="vault-metric">
                     <span className="vault-metric-label">Total Value Locked</span>
-                    <span className="vault-metric-value">${calculateTVL(selectedVaultStrategyData)}</span>
+                    <span className="vault-metric-value">{formatUSDDisplay(calculateTVL(selectedVault))}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Deposit Cap</span>
-                    <span className="vault-metric-value">{BigInt(selectedVaultStrategyData.maxShares) === 0n 
+                    <span className="vault-metric-value">{BigInt(selectedVault.maxShares) === 0n 
                       ? <span>&#8734;</span> 
-                      : `$${formatDisplayValue(BigInt(selectedVaultStrategyData.maxShares), 0)}`}</span>
+                      : `$${formatDisplayValue(BigInt(selectedVault.maxShares), 0)}`}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Your Position Value</span>
-                    <span className="vault-metric-value">${calculateUserPositionValue(selectedVaultStrategyData)}</span>
+                    <span className="vault-metric-value">{formatUSDDisplay(calculateUserPositionValue(selectedVault))}</span>
                   </div>
                   <div className="vault-metric">
                     <span className="vault-metric-label">Status</span>
-                    <span className={`vault-metric-value ${selectedVaultStrategyData.closed ? 'metric-negative' : selectedVaultStrategyData.locked ? 'metric-warning' : 'metric-positive'}`}>
-                      {selectedVaultStrategyData.closed ? 'Closed' : selectedVaultStrategyData.locked ? 'Locked' : 'Active'}
+                    <span className={`vault-metric-value ${selectedVault.closed ? 'metric-negative' : selectedVault.locked ? 'metric-warning' : 'metric-positive'}`}>
+                      {selectedVault.closed ? 'Closed' : selectedVault.locked ? 'Locked' : 'Active'}
                     </span>
                   </div>
                 </div>
@@ -1125,32 +1004,32 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                 <div className="vault-strategy-description">
                   <div className="description-header">
                     <span className="leader-label">Vault Owner:</span>
-                    <span className="leader-address">{selectedVaultStrategyData.owner}</span>
+                    <span className="leader-address">{selectedVault.owner}</span>
                   </div>
                   <span className="vault-description">Description:</span>
-                  <p className="description-text">{selectedVaultStrategyData.description}</p>
+                  <p className="description-text">{selectedVault.desc}</p>
                   <div className="vault-socials">
                     <span className="vault-description">Socials:</span>
-                    {selectedVaultStrategyData.social1 && (
+                    {selectedVault.social1 && (
                       <a
-                        href={selectedVaultStrategyData.social1}
+                        href={selectedVault.social1}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
                         <span>Social 1:</span>
-                        {selectedVaultStrategyData.social1}
+                        {selectedVault.social1}
                       </a>
                     )}
-                    {selectedVaultStrategyData.social2 && (
+                    {selectedVault.social2 && (
                       <a
-                        href={selectedVaultStrategyData.social2}
+                        href={selectedVault.social2}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="twitter-link-description"
                       >
                         <span>Social 2:</span>
-                        {selectedVaultStrategyData.social2}
+                        {selectedVault.social2}
                       </a>
                     )}
                   </div>
@@ -1254,21 +1133,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.quoteAsset)} className="vault-holding-icon" />
-                              <span>{getTokenName(selectedVaultStrategyData.quoteAsset)}</span>
+                              <img src={getTokenIcon(selectedVault.quoteAsset)} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVault.quoteAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.quoteAsset)}</div>
-                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.quoteBalance)).toFixed(2)}</div>
-                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.quoteBalance * selectedVaultStrategyData.userShares / selectedVaultStrategyData.totalShares)).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{getTokenTicker(selectedVault.quoteAsset)}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.quoteBalance), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.quoteBalance * selectedVault.userShares / selectedVault.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
-                              <img src={getTokenIcon(selectedVaultStrategyData.baseAsset)} className="vault-holding-icon" />
-                              <span>{getTokenName(selectedVaultStrategyData.baseAsset)}</span>
+                              <img src={getTokenIcon(selectedVault.baseAsset)} className="vault-holding-icon" />
+                              <span>{getTokenName(selectedVault.baseAsset)}</span>
                             </div>
-                            <div className="vault-holdings-col">{getTokenTicker(selectedVaultStrategyData.baseAsset)}</div>
-                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.baseBalance)).toFixed(2)}</div>
-                            <div className="vault-holdings-col">{(Number(selectedVaultStrategyData.baseBalance * selectedVaultStrategyData.userShares / selectedVaultStrategyData.totalShares)).toFixed(2)}</div>
+                            <div className="vault-holdings-col">{getTokenTicker(selectedVault.baseAsset)}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.baseBalance), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.baseBalance * selectedVault.userShares / selectedVault.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}</div>
                           </div>
                         </div>
 

@@ -4437,9 +4437,8 @@
 }
 
 
-.vault-management-menu-portal {
+.vault-management-menu {
   position: absolute;
-  top: calc(100% + 8px);
   border: 1px solid rgb(163 164 185 / 20%);
   border-radius: 4px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
