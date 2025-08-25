@@ -156,7 +156,7 @@ import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
 
 // import config
-import { SearchIcon } from 'lucide-react';
+import { ChevronDown, Search, SearchIcon } from 'lucide-react';
 import { usePortfolioData } from './components/Portfolio/PortfolioGraph/usePortfolioData.ts';
 import { settings } from './settings.ts';
 import { useSharedContext } from './contexts/SharedContext.tsx';
@@ -471,7 +471,20 @@ function App() {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
 
-
+const [createVaultForm, setCreateVaultForm] = useState({
+  name: '',
+  description: '',
+  quoteAsset: '',
+  baseAsset: '',
+  amountQuote: '',
+  amountBase: '',
+  social1: '',
+  social2: '',
+  showQuoteDropdown: false,
+  showBaseDropdown: false,
+  quoteSearchTerm: '',
+  baseSearchTerm: ''
+});
   const createSubWallet = async () => {
     try {
       const privateKey = keccak256(await signTypedDataAsync({
@@ -14205,6 +14218,477 @@ function App() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
+        {popup === 29 ? (
+          <div ref={popupref} className="modal-overlay">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h2>Create New Vault</h2>
+                <button
+                  className="modal-close"
+                  onClick={() => {
+                    setCreateVaultForm({
+                      name: '',
+                      description: '',
+                      quoteAsset: '',
+                      baseAsset: '',
+                      amountQuote: '',
+                      amountBase: '',
+                      social1: '',
+                      social2: '',
+                      showQuoteDropdown: false,
+                      showBaseDropdown: false,
+                      quoteSearchTerm: '',
+                      baseSearchTerm: ''
+                    });
+                    setpopup(0);
+                  }}
+                >
+                      <img src={closebutton} className="close-button-icon" />
+                </button>
+              </div>
+
+              <div 
+                className="modal-body"
+                onClick={(e) => {
+                  if (!(e.target as Element)?.closest?.('.token-selector-container')) {
+                    setCreateVaultForm(prev => ({ 
+                      ...prev, 
+                      showQuoteDropdown: false, 
+                      showBaseDropdown: false 
+                    }));
+                  }
+                }}
+              >
+                <div className="form-group">
+                  <label>Vault Name</label>
+                  <input
+                    type="text"
+                    value={createVaultForm.name}
+                    onChange={(e) => setCreateVaultForm(prev => ({ ...prev, name: e.target.value }))}
+                    className="form-input"
+                    placeholder="Enter vault name"
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>Description</label>
+                  <textarea
+                    value={createVaultForm.description}
+                    onChange={(e) => setCreateVaultForm(prev => ({ ...prev, description: e.target.value }))}
+                    className="form-textarea"
+                    rows={4}
+                    placeholder="Describe your vault strategy"
+                  />
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label className="token-selector-label">Quote Asset</label>
+                    <div className="token-selector-container">
+                      <div className="token-selector-input-wrapper">
+                        <input
+                          type="text"
+                          value={createVaultForm.quoteAsset}
+                          onChange={(e) => {
+                            setCreateVaultForm(prev => ({ ...prev, quoteAsset: e.target.value }));
+                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
+                              setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: false }));
+                            }
+                          }}
+                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: true }))}
+                          className="form-input token-selector-input"
+                          placeholder="Select quote token..."
+                        />
+                        {(() => {
+                          const selectedToken = Object.values(tokendict).find((t) =>
+                            t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
+                          );
+                          return selectedToken ? (
+                            <div className="selected-token-indicator">
+                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
+                              <span className="token-symbol">{selectedToken.ticker}</span>
+                            </div>
+                          ) : null;
+                        })()}
+                        <button
+                          type="button"
+                          className="token-dropdown-button"
+                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: !prev.showQuoteDropdown }))}
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                      </div>
+
+                      {createVaultForm.showQuoteDropdown && (
+                        <div className="token-dropdown">
+                          <div className="token-search">
+                            <input
+                              type="text"
+                              placeholder="Search tokens..."
+                              value={createVaultForm.quoteSearchTerm || ''}
+                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, quoteSearchTerm: e.target.value }))}
+                              className="token-search-input"
+                            />
+                          </div>
+
+                          <div className="token-list">
+                            {Object.values(tokendict).filter((token) => {
+                              const searchTerm = createVaultForm.quoteSearchTerm || '';
+                              if (!searchTerm) return true;
+                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
+                            }).slice(0, 10).map((token) => (
+                              <div
+                                key={token.address}
+                                className="token-option"
+                                onClick={() => {
+                                  setCreateVaultForm(prev => ({ 
+                                    ...prev, 
+                                    quoteAsset: token.address,
+                                    showQuoteDropdown: false,
+                                    quoteSearchTerm: ''
+                                  }));
+                                }}
+                              >
+                                <img src={token.image} alt={token.ticker} className="token-icon" />
+                                <div className="token-info">
+                                  <div className="token-symbol">{token.ticker}</div>
+                                  <div className="token-name">{token.name}</div>
+                                </div>
+                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
+                              </div>
+                            ))}
+
+                            {Object.values(tokendict).filter((token) => {
+                              const searchTerm = createVaultForm.quoteSearchTerm || '';
+                              if (!searchTerm) return false;
+                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
+                            }).length === 0 && createVaultForm.quoteSearchTerm && (
+                              <div className="no-tokens-found">No tokens found</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label className="token-selector-label">Base Asset</label>
+                    <div className="token-selector-container">
+                      <div className="token-selector-input-wrapper">
+                        <input
+                          type="text"
+                          value={createVaultForm.baseAsset}
+                          onChange={(e) => {
+                            setCreateVaultForm(prev => ({ ...prev, baseAsset: e.target.value }));
+                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
+                              setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: false }));
+                            }
+                          }}
+                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: true }))}
+                          className="form-input token-selector-input"
+                          placeholder="Select base token..."
+                        />
+                        {(() => {
+                          const selectedToken = Object.values(tokendict).find((t) =>
+                            t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
+                          );
+                          return selectedToken ? (
+                            <div className="selected-token-indicator">
+                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
+                              <span className="token-symbol">{selectedToken.ticker}</span>
+                            </div>
+                          ) : null;
+                        })()}
+                        <button
+                          type="button"
+                          className="token-dropdown-button"
+                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: !prev.showBaseDropdown }))}
+                        >
+                          <ChevronDown size={16} />
+                        </button>
+                      </div>
+
+                      {createVaultForm.showBaseDropdown && (
+                        <div className="token-dropdown">
+                          <div className="token-search">
+                            <Search size={14} />
+                            <input
+                              type="text"
+                              placeholder="Search tokens..."
+                              value={createVaultForm.baseSearchTerm || ''}
+                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, baseSearchTerm: e.target.value }))}
+                              className="token-search-input"
+                            />
+                          </div>
+
+                          <div className="token-list">
+                            {Object.values(tokendict).filter((token) => {
+                              const searchTerm = createVaultForm.baseSearchTerm || '';
+                              if (!searchTerm) return true;
+                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
+                            }).slice(0, 10).map((token) => (
+                              <div
+                                key={token.address}
+                                className="token-option"
+                                onClick={() => {
+                                  setCreateVaultForm(prev => ({ 
+                                    ...prev, 
+                                    baseAsset: token.address,
+                                    showBaseDropdown: false,
+                                    baseSearchTerm: ''
+                                  }));
+                                }}
+                              >
+                                <img src={token.image} alt={token.ticker} className="token-icon" />
+                                <div className="token-info">
+                                  <div className="token-symbol">{token.ticker}</div>
+                                  <div className="token-name">{token.name}</div>
+                                </div>
+                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
+                              </div>
+                            ))}
+
+                            {Object.values(tokendict).filter((token) => {
+                              const searchTerm = createVaultForm.baseSearchTerm || '';
+                              if (!searchTerm) return false;
+                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
+                            }).length === 0 && createVaultForm.baseSearchTerm && (
+                              <div className="no-tokens-found">No tokens found</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Initial Quote Amount</label>
+                    <input
+                      type="number"
+                      value={createVaultForm.amountQuote}
+                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountQuote: e.target.value }))}
+                      className="form-input"
+                      placeholder="0.0"
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Initial Base Amount</label>
+                    <input
+                      type="number"
+                      value={createVaultForm.amountBase}
+                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, amountBase: e.target.value }))}
+                      className="form-input"
+                      placeholder="0.0"
+                    />
+                  </div>
+                </div>
+
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Social Link 1 (Optional)</label>
+                    <input
+                      type="text"
+                      value={createVaultForm.social1}
+                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social1: e.target.value }))}
+                      className="form-input"
+                      placeholder="https://twitter.com/..."
+                    />
+                  </div>
+                  <div className="form-group">
+                    <label>Social Link 2 (Optional)</label>
+                    <input
+                      type="text"
+                      value={createVaultForm.social2}
+                      onChange={(e) => setCreateVaultForm(prev => ({ ...prev, social2: e.target.value }))}
+                      className="form-input"
+                      placeholder="https://telegram.me/..."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className={`save-button ${(!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
+                  disabled={!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
+                  onClick={async () => {
+                    if (!connected || !createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset ||
+                      !createVaultForm.amountQuote || !createVaultForm.amountBase) {
+                      return;
+                    }
+
+                    await handleSetChain();
+
+                    try {
+                      setIsVaultDepositSigning(true);
+
+                      if (!createVaultForm.quoteAsset.startsWith('0x') || !createVaultForm.baseAsset.startsWith('0x')) {
+                        throw new Error('Invalid token addresses. Please provide valid contract addresses.');
+                      }
+
+                      const quoteAssetData = Object.values(tokendict).find((t) =>
+                        t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
+                      );
+                      const baseAssetData = Object.values(tokendict).find((t) =>
+                        t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
+                      );
+
+                      if (!quoteAssetData || !baseAssetData) {
+                        throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
+                      }
+
+                      const quoteDecimals = Number(quoteAssetData.decimals || 18);
+                      const baseDecimals = Number(baseAssetData.decimals || 18);
+
+                      const amountQuote = BigInt(Math.round(parseFloat(createVaultForm.amountQuote) * 10 ** quoteDecimals));
+                      const amountBase = BigInt(Math.round(parseFloat(createVaultForm.amountBase) * 10 ** baseDecimals));
+
+                      const quoteBalance = tokenBalances[createVaultForm.quoteAsset] || 0n;
+                      const baseBalance = tokenBalances[createVaultForm.baseAsset] || 0n;
+
+                      if (quoteBalance < amountQuote) {
+                        const formatBalance = (amount: bigint, decimals: number) => {
+                          const num = Number(amount) / 10 ** decimals;
+                          return num.toFixed(2);
+                        };
+                        throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createVaultForm.amountQuote}, Available: ${formatBalance(quoteBalance, quoteDecimals)}`);
+                      }
+
+                      if (baseBalance < amountBase) {
+                        const formatBalance = (amount: bigint, decimals: number) => {
+                          const num = Number(amount) / 10 ** decimals;
+                          return num.toFixed(2);
+                        };
+                        throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createVaultForm.amountBase}, Available: ${formatBalance(baseBalance, baseDecimals)}`);
+                      }
+
+                      if (createVaultForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+                        console.log('Approving quote token...');
+                        const approveQuoteUo = {
+                          target: createVaultForm.quoteAsset,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaults, amountQuote],
+                          }),
+                          value: 0n,
+                        };
+                        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
+                        await waitForTxReceipt(approveQuoteOp.hash);
+                        console.log('Quote token approved');
+                      }
+                      if (createVaultForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
+                        console.log('Approving base token...');
+                        const approveBaseUo = {
+                          target: createVaultForm.baseAsset,
+                          data: encodeFunctionData({
+                            abi: [{
+                              inputs: [
+                                { name: "spender", type: "address" },
+                                { name: "amount", type: "uint256" }
+                              ],
+                              name: "approve",
+                              outputs: [{ name: "", type: "bool" }],
+                              stateMutability: "nonpayable",
+                              type: "function",
+                            }],
+                            functionName: "approve",
+                            args: [crystalVaults, amountBase],
+                          }),
+                          value: 0n,
+                        };
+                        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
+                        await waitForTxReceipt(approveBaseOp.hash);
+                        console.log('Base token approved');
+                      }
+
+                      const ethValue =
+                        createVaultForm.quoteAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountQuote :
+                          createVaultForm.baseAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountBase : 0n;
+
+                      console.log('Deploying vault with ETH value:', ethValue.toString());
+
+                      const deployUo = {
+                        target: crystalVaults,
+                        data: encodeFunctionData({
+                          abi: CrystalVaultsAbi,
+                          functionName: "deploy",
+                          args: [
+                            (createVaultForm.quoteAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createVaultForm.quoteAsset),
+                            (createVaultForm.baseAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createVaultForm.baseAsset),
+                            amountQuote,
+                            amountBase,
+                            createVaultForm.name || 'Unnamed Vault',
+                            createVaultForm.description || 'No description provided',
+                            createVaultForm.social1 || '',
+                            createVaultForm.social2 || '',
+                            createVaultForm.social2 || '',
+                          ],
+                        }),
+                        value: ethValue,
+                      };
+
+                      console.log('Sending deploy transaction...');
+                      const deployOp = await sendUserOperationAsync({ uo: deployUo });
+                      console.log('Deploy transaction sent, waiting for receipt...');
+                      await waitForTxReceipt(deployOp.hash);
+                      console.log('Vault deployed successfully!');
+                      setCreateVaultForm({
+                        name: '',
+                        description: '',
+                        quoteAsset: '',
+                        baseAsset: '',
+                        amountQuote: '',
+                        amountBase: '',
+                        social1: '',
+                        social2: '',
+                        showQuoteDropdown: false,
+                        showBaseDropdown: false,
+                        quoteSearchTerm: '',
+                        baseSearchTerm: ''
+                      });
+                      setpopup(0);
+                      refetch?.();
+
+                    } catch (e) {
+                      console.error('Vault creation error:', e);
+                    } finally {
+                      setIsVaultDepositSigning(false);
+                    }
+                  }}
+                >
+                  {isVaultDepositSigning ? (
+                    <div className="button-content">
+                      <div className="loading-spinner" />
+                      Creating...
+                    </div>
+                  ) : (
+                    'Create Vault'
+                  )}
+                </button>
               </div>
             </div>
           </div>
