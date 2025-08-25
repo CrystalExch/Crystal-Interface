@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ChevronDown, ChevronLeft, Plus, Search, X, ExternalLink } from 'lucide-react';
+import { ChevronDown, ChevronLeft, Plus, Search, ExternalLink } from 'lucide-react';
 import { XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from "viem";
@@ -112,121 +112,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
   );
 };
 
-interface TokenSelectorProps {
-  value: string;
-  onChange: (value: string) => void;
-  tokendict: { [address: string]: any };
-  placeholder: string;
-  label: string;
-}
 
-const TokenSelector: React.FC<TokenSelectorProps> = ({ value, onChange, tokendict, placeholder, label }) => {
-  const [showDropdown, setShowDropdown] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  const selectedToken = Object.values(tokendict).find((t: any) =>
-    t.address.toLowerCase() === value.toLowerCase()
-  );
-
-  const filteredTokens = Object.values(tokendict).filter((token: any) => {
-    if (!searchTerm) return true;
-    return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      token.address.toLowerCase().includes(searchTerm.toLowerCase());
-  }).slice(0, 10);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleTokenSelect = (token: any) => {
-    onChange(token.address);
-    setShowDropdown(false);
-    setSearchTerm('');
-  };
-
-  const handleInputChange = (inputValue: string) => {
-    onChange(inputValue);
-    if (inputValue.startsWith('0x') && inputValue.length === 42) {
-      setShowDropdown(false);
-    }
-  };
-
-  return (
-    <div className="token-selector-container" ref={dropdownRef}>
-      <label className="token-selector-label">{label}</label>
-      <div className="token-selector-input-wrapper">
-        <input
-          type="text"
-          value={value}
-          onChange={(e) => handleInputChange(e.target.value)}
-          onFocus={() => setShowDropdown(true)}
-          className="form-input token-selector-input"
-          placeholder={placeholder}
-        />
-
-        {selectedToken && (
-          <div className="selected-token-indicator">
-            <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
-            <span className="token-symbol">{selectedToken.ticker}</span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          className="token-dropdown-button"
-          onClick={() => setShowDropdown(!showDropdown)}
-        >
-          <ChevronDown size={16} />
-        </button>
-      </div>
-
-      {showDropdown && (
-        <div className="token-dropdown">
-          <div className="token-search">
-            <Search size={14} />
-            <input
-              type="text"
-              placeholder="Search tokens..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="token-search-input"
-            />
-          </div>
-
-          <div className="token-list">
-            {filteredTokens.map((token: any) => (
-              <div
-                key={token.address}
-                className="token-option"
-                onClick={() => handleTokenSelect(token)}
-              >
-                <img src={token.image} alt={token.ticker} className="token-icon" />
-                <div className="token-info">
-                  <div className="token-symbol">{token.ticker}</div>
-                  <div className="token-name">{token.name}</div>
-                </div>
-                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
-              </div>
-            ))}
-
-            {filteredTokens.length === 0 && searchTerm && (
-              <div className="no-tokens-found">No tokens found</div>
-            )}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
 const LPVaults: React.FC<LPVaultsProps> = ({
   setpopup,
@@ -259,23 +145,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
   const [activeVaultTab, setActiveVaultTab] = useState<'all' | 'my-vaults'>('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const [showManagementMenu, setShowManagementMenu] = useState(false);
 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<any>('balances');
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
-
-  const [createForm, setCreateForm] = useState({
-    name: '',
-    description: '',
-    quoteAsset: '',
-    baseAsset: '',
-    amountQuote: '',
-    amountBase: '',
-    social1: '',
-    social2: ''
-  });
 
   useEffect(() => {
     setIsLoading(true);
@@ -340,142 +214,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     })();
   }, [activeVault, address]);
 
-  const handleCreateVault = async () => {
-    if (!account.connected || !createForm.name || !createForm.quoteAsset || !createForm.baseAsset ||
-      !createForm.amountQuote || !createForm.amountBase) {
-      return;
-    }
 
-    await setChain();
-
-    try {
-      setIsVaultDepositSigning(true);
-
-      if (!createForm.quoteAsset.startsWith('0x') || !createForm.baseAsset.startsWith('0x')) {
-        throw new Error('Invalid token addresses. Please provide valid contract addresses.');
-      }
-
-      const quoteAssetData = Object.values(tokendict).find((t: any) =>
-        t.address.toLowerCase() === createForm.quoteAsset.toLowerCase()
-      );
-      const baseAssetData = Object.values(tokendict).find((t: any) =>
-        t.address.toLowerCase() === createForm.baseAsset.toLowerCase()
-      );
-
-      if (!quoteAssetData || !baseAssetData) {
-        throw new Error('One or both tokens not found in token dictionary. Please ensure you\'re using valid token addresses.');
-      }
-
-      const quoteDecimals = Number(quoteAssetData.decimals || 18);
-      const baseDecimals = Number(baseAssetData.decimals || 18);
-
-      const amountQuote = BigInt(Math.round(parseFloat(createForm.amountQuote) * 10 ** quoteDecimals));
-      const amountBase = BigInt(Math.round(parseFloat(createForm.amountBase) * 10 ** baseDecimals));
-
-      const quoteBalance = getTokenBalance(createForm.quoteAsset);
-      const baseBalance = getTokenBalance(createForm.baseAsset);
-
-      if (quoteBalance < amountQuote) {
-        throw new Error(`Insufficient ${quoteAssetData.ticker} balance. Required: ${createForm.amountQuote}, Available: ${formatDisplayValue(quoteBalance, quoteDecimals)}`);
-      }
-
-      if (baseBalance < amountBase) {
-        throw new Error(`Insufficient ${baseAssetData.ticker} balance. Required: ${createForm.amountBase}, Available: ${formatDisplayValue(baseBalance, baseDecimals)}`);
-      }
-
-      if (createForm.quoteAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-        const approveQuoteUo = {
-          target: createForm.quoteAsset as `0x${string}`,
-          data: encodeFunctionData({
-            abi: [{
-              inputs: [
-                { name: "spender", type: "address" },
-                { name: "amount", type: "uint256" }
-              ],
-              name: "approve",
-              outputs: [{ name: "", type: "bool" }],
-              stateMutability: "nonpayable",
-              type: "function",
-            }],
-            functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, amountQuote],
-          }),
-          value: 0n,
-        };
-        const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-        await waitForTxReceipt(approveQuoteOp.hash);
-      }
-
-      if (createForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
-        const approveBaseUo = {
-          target: createForm.baseAsset as `0x${string}`,
-          data: encodeFunctionData({
-            abi: [{
-              inputs: [
-                { name: "spender", type: "address" },
-                { name: "amount", type: "uint256" }
-              ],
-              name: "approve",
-              outputs: [{ name: "", type: "bool" }],
-              stateMutability: "nonpayable",
-              type: "function",
-            }],
-            functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, amountBase],
-          }),
-          value: 0n,
-        };
-        const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-        await waitForTxReceipt(approveBaseOp.hash);
-      }
-
-      const ethValue =
-        createForm.quoteAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountQuote :
-          createForm.baseAsset.toLowerCase() === settings.chainConfig[activechain].eth ? amountBase : 0n;
-
-      const deployUo = {
-        target: crystalVaultsAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "deploy",
-          args: [
-            (createForm.quoteAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createForm.quoteAsset) as `0x${string}`,
-            (createForm.baseAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createForm.baseAsset) as `0x${string}`,
-            amountQuote,
-            amountBase,
-            createForm.name || 'Unnamed Vault',
-            createForm.description || 'No description provided',
-            createForm.social1 || '',
-            createForm.social2 || '',
-            createForm.social2 || '',
-          ],
-        }),
-        value: ethValue,
-      };
-
-      const deployOp = await sendUserOperationAsync({ uo: deployUo });
-      await waitForTxReceipt(deployOp.hash);
-
-      setCreateForm({
-        name: '',
-        description: '',
-        quoteAsset: '',
-        baseAsset: '',
-        amountQuote: '',
-        amountBase: '',
-        social1: '',
-        social2: ''
-      });
-      setShowCreateModal(false);
-
-      refetch?.();
-
-    } catch (e: any) {
-      console.error('Vault creation error:', e);
-    } finally {
-      setIsVaultDepositSigning(false);
-    }
-  };
 
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -696,21 +435,20 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </span>
                 </div>
               </div>
-
-              <button
-                className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
-                onClick={() => {
-                  if (!account.connected) {
-                    setpopup(4);
-                  } else {
-                    setShowCreateModal(true);
-                  }
-                }}
-                disabled={!account.connected}
-              >
-                <Plus size={16} />
-                Create Vault
-              </button>
+<button
+  className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
+  onClick={() => {
+    if (!account.connected) {
+      setpopup(4);
+    } else {
+      setpopup(29); 
+    }
+  }}
+  disabled={!account.connected}
+>
+  <Plus size={16} />
+  Create Vault
+</button>
             </div>
 
             <div className="vaults-filters">
@@ -1210,129 +948,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
           </div>
         )}
 
-        {showCreateModal && (
-          <div className="modal-overlay">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h2>Create New Vault</h2>
-                <button
-                  className="modal-close"
-                  onClick={() => setShowCreateModal(false)}
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              <div className="modal-body">
-                <div className="form-group">
-                  <label>Vault Name</label>
-                  <input
-                    type="text"
-                    value={createForm.name}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, name: e.target.value }))}
-                    className="form-input"
-                    placeholder="Enter vault name"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Description</label>
-                  <textarea
-                    value={createForm.description}
-                    onChange={(e) => setCreateForm(prev => ({ ...prev, description: e.target.value }))}
-                    className="form-textarea"
-                    rows={4}
-                    placeholder="Describe your vault strategy"
-                  />
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <TokenSelector
-                      value={createForm.quoteAsset}
-                      onChange={(value) => setCreateForm(prev => ({ ...prev, quoteAsset: value }))}
-                      tokendict={tokendict}
-                      placeholder="Select quote token..."
-                      label="Quote Asset"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <TokenSelector
-                      value={createForm.baseAsset}
-                      onChange={(value) => setCreateForm(prev => ({ ...prev, baseAsset: value }))}
-                      tokendict={tokendict}
-                      placeholder="Select base token..."
-                      label="Base Asset"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Initial Quote Amount</label>
-                    <input
-                      type="number"
-                      value={createForm.amountQuote}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, amountQuote: e.target.value }))}
-                      className="form-input"
-                      placeholder="0.0"
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Initial Base Amount</label>
-                    <input
-                      type="number"
-                      value={createForm.amountBase}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, amountBase: e.target.value }))}
-                      className="form-input"
-                      placeholder="0.0"
-                    />
-                  </div>
-                </div>
-
-                <div className="form-row">
-                  <div className="form-group">
-                    <label>Social Link 1 (Optional)</label>
-                    <input
-                      type="text"
-                      value={createForm.social1}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, social1: e.target.value }))}
-                      className="form-input"
-                      placeholder="https://twitter.com/..."
-                    />
-                  </div>
-                  <div className="form-group">
-                    <label>Social Link 2 (Optional)</label>
-                    <input
-                      type="text"
-                      value={createForm.social2}
-                      onChange={(e) => setCreateForm(prev => ({ ...prev, social2: e.target.value }))}
-                      className="form-input"
-                      placeholder="https://telegram.me/..."
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button
-                  className={`save-button ${(!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase) ? 'disabled' : ''}`}
-                  disabled={!createForm.name || !createForm.quoteAsset || !createForm.baseAsset || !createForm.amountQuote || !createForm.amountBase || isVaultDepositSigning}
-                  onClick={handleCreateVault}
-                >
-                  {isVaultDepositSigning ? (
-                    <div className="button-content">
-                      <div className="loading-spinner" />
-                      Creating...
-                    </div>
-                  ) : (
-                    'Create Vault'
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
