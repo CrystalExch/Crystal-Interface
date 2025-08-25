@@ -1458,7 +1458,7 @@
     border-radius:50%
 }
 .deposit-amounts-section{
-    margin-bottom:12px
+    margin-bottom: 0.5rem;
 }
 .deposit-input-group{
     display:flex;
@@ -1544,9 +1544,8 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
-    margin-bottom:1rem;
     font-size:.85rem;
-    margin-top:.5rem
+    margin: 0.5rem 0.25rem;
 }
 .deposit-summary-row span{
     letter-spacing:-.3px
@@ -1632,8 +1631,11 @@
     line-height:1.2;
     letter-spacing:-.2px
 }
+.withdraw-section{
+    margin-bottom:1rem
+}
 .withdraw-preview{
-    margin-top:1rem
+    margin: 0 0.25rem;
 }
 .add-liquidity-breadcrumb .breadcrumb-link,.breadcrumb-link{
     display:flex;
@@ -1761,8 +1763,8 @@
 .vaults-header{
     display:flex;
     justify-content:space-between;
-    align-items:center;
-    margin-bottom:2rem;
+    align-items:flex-end;
+    margin-bottom:1rem;
     padding:0 10px;
     width:100%
 }
@@ -1857,17 +1859,6 @@
     overflow:hidden;
     width:100%
 }
-.vaults-list-header{
-    display:flex;
-    padding:.75rem 1rem;
-    background-color:rgba(6,6,6,.4);
-    color:#ffffff8b;
-    font-size:.75rem;
-    letter-spacing:-.3px;
-    font-weight:300;
-    border-bottom:1px solid rgba(179,184,249,.1);
-    margin-bottom:.3rem
-}
 .vault-row{
     display:flex;
     align-items:center;
@@ -1913,7 +1904,7 @@
     letter-spacing:-.3px
 }
 .vault-description{
-    font-size:.75rem;
+    font-size:.8rem;
     color:#ffffff79;
     margin:0;
     line-height:1.3;
@@ -2053,8 +2044,7 @@
     letter-spacing:-.3px
 }
 .modal-body{
-    padding:1rem;
-    padding-bottom:0
+    padding: 1rem 1rem 0rem 1rem;
 }
 .form-group{
     margin-bottom:1rem
@@ -2172,12 +2162,15 @@
     letter-spacing:-.5px;
     box-shadow:inset 0 1px 1px rgb(255 255 255/35%),inset 0 -1px 1px rgb(0 0 0/55%),0 2px 8px rgb(170 174 207/10%)
 }
-.vault-strategy-header{
-    top:0;
-    background-color:rgba(6,6,6,.95);
-    backdrop-filter:blur(10px);
-    z-index:10;
-    padding-bottom:1rem
+.create-button:disabled{
+    opacity:.5;
+    cursor:not-allowed
+}
+.create-button.enabled:hover,.save-button:hover{
+    filter:brightness(1.1)
+}
+.vault-strategy-detail{
+    width:100%
 }
 .vault-strategy-sticky-bar{
     display:flex;
@@ -2187,11 +2180,6 @@
     flex-wrap:wrap;
     gap:1rem;
     padding:0
-}
-.vault-strategy-info{
-    display:flex;
-    flex-direction:column;
-    gap:.5rem
 }
 .vault-strategy-content{
     display:flex;
@@ -2245,7 +2233,7 @@
 .description-header{
     display:flex;
     flex-direction:column;
-    margin-bottom:.75rem;
+    margin-bottom:.25rem;
     font-size:.8rem
 }
 .description-text{
@@ -2603,8 +2591,317 @@
     border-color:#aaaecf;
     box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
-.create-vault-button.disabled:hover,.vault-deposit-btn.disabled:hover,.vault-withdraw-btn.disabled:hover,.vault-confirm-button.disabled:hover,.vault-detail-deposit-btn.disabled:hover,.vault-detail-withdraw-btn.disabled:hover,.save-button.disabled:hover{
+.form-group .vault-socials-grid .form-input::placeholder{
+    color:#ffffff4d
+}
+.vaults-page-container{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    width:calc(100% - 20px);
+    height:100%;
+    margin:0 10px
+}
+.page-toggle-container{
+    width:100%;
+    max-width:1100px;
+    margin-top:40px;
+    margin-bottom:20px;
+    display:flex;
+    justify-content:center
+}
+.page-toggle{
+    position:relative;
+    display:flex;
+    border:1.5px solid rgba(179,184,249,.1);
+    border-radius:12px;
+    gap:4px;
+    height:40px;
+    overflow:hidden;
+    background-color:rgba(6,6,6,.8)
+}
+.page-toggle::before{
+    content:'';
+    position:absolute;
+    top:4px;
+    left:4px;
+    height:calc(100% - 8px);
+    width:calc(50% - 4px);
+    border-radius:8px;
+    transition:transform .3s cubic-bezier(.4,0,.2,1);
+    z-index:1;
+    background-color:rgba(201,194,243,.05)
+}
+.page-toggle[data-active=vaults]::before{
+    transform:translateX(100%)
+}
+.page-toggle-tab{
+    position:relative;
+    z-index:2;
+    background:0 0;
+    border:none;
+    color:#ffffff79;
+    font-size:.85rem;
+    font-weight:400;
+    cursor:pointer;
+    transition:color .3s ease;
+    white-space:nowrap;
+    min-width:160px;
+    text-align:center;
+    height:36px;
+    padding:0 1.5rem;
+    letter-spacing:-.3px
+}
+.page-toggle-tab:hover{
+    color:#fff
+}
+.page-toggle-tab.active{
+    color:#fff
+}
+.page-toggle-tab:focus{
+    outline:0
+}
+.vaults-stats{
+    display:flex;
+    gap:3rem;
+    align-items:center
+}
+.vault-stat{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-start
+}
+.stat-label{
+    font-size:.8rem;
+    color:#ffffff79;
+    margin-bottom:.25rem;
+    letter-spacing:-.3px
+}
+.stat-value{
+    font-size:1.5rem;
+    font-weight:300;
+    color:#fff;
+    letter-spacing:-.5px
+}
+.create-vault-button{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    background:linear-gradient(135deg,#aaaecf 0,#9a9ec7 25%,#8b8eb8 50%,#7f82ac 75%,#7f82a1 100%);
+    border:none;
+    border-radius:8px;
+    color:#000;
+    font-size:.85rem;
+    font-weight:500;
+    padding:.5rem .75rem;
+    cursor:pointer;
+    transition:all .2s ease;
+    height:36px;
+    box-shadow:inset 0 1px 1px rgb(255 255 255/35%),inset 0 -1px 1px rgb(0 0 0/55%),0 2px 8px rgb(170 174 207/10%);
+    letter-spacing:-.5px
+}
+.create-vault-button:hover{
+    filter:brightness(1.1)
+}
+.create-vault-button.disabled{
+    opacity:.5;
+    cursor:not-allowed
+}
+.create-vault-button.disabled:hover{
     filter:none
+}
+.vaults-filters{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    width:100%;
+    margin-bottom:.5rem
+}
+.type-filters{
+    display:flex;
+    gap:.5rem;
+    align-items:center
+}
+.filter-button{
+    background:0 0;
+    border:1.5px solid rgba(179,184,249,.1);
+    border-radius:12px;
+    color:#ffffff79;
+    font-size:.75rem;
+    cursor:pointer;
+    transition:all .3s ease;
+    white-space:nowrap;
+    padding:.5rem .75rem;
+    height:32px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    letter-spacing:-.3px
+}
+.filter-button:hover{
+    color:#fff;
+    border-color:#2a2a2f;
+    background-color:#ffffff05
+}
+.filter-button.active{
+    color:#d8dcff;
+    background-color:rgba(201,194,243,.05);
+    border-color:#aaaecf;
+    box-shadow:0 0 0 2px rgba(170,174,207,.3)
+}
+.vaults-list{
+    border:1px solid rgba(179,184,249,.1);
+    border-radius:8px;
+    overflow:hidden;
+    width:100%
+}
+.vaults-list-header{
+    display:flex;
+    padding:.75rem 1rem;
+    background-color:rgba(6,6,6,.4);
+    color:#ffffff8b;
+    font-size:.75rem;
+    letter-spacing:-.3px;
+    font-weight:300;
+    border-bottom:1px solid rgba(179,184,249,.1);
+}
+.vault-row:hover{
+    background-color:#2d2d3124
+}
+.vault-row:last-child{
+    border-bottom:none
+}
+.col{
+    flex:1;
+    display:flex;
+    align-items:center
+}
+.vault-name-col{
+    flex:2.5;
+    flex-direction:column;
+    align-items:flex-start
+}
+.vault-type-col{
+    flex:.8
+}
+.vault-tokens-col{
+    flex:2
+}
+.vault-apy-col{
+    flex:.8
+}
+.vault-deposits-col{
+    flex:1
+}
+.vault-leader-col{
+    flex:1.2
+}
+.vault-your-deposits-col{
+    flex:1
+}
+.vault-age-col{
+    flex:.8
+}
+.vault-snapshot-col{
+    flex:1.5;
+    justify-content:flex-end
+}
+.vault-action-buttons-col{
+    flex:1.5;
+    justify-content:flex-end
+}
+.vault-name-container{
+    display:flex;
+    align-items:center;
+    gap:.3rem;
+    width:100%
+}
+.vault-name{
+    font-size:.85rem;
+    font-weight:400;
+    color:#fff;
+    margin:0;
+    letter-spacing:-.3px
+}
+.creator-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:rgba(170,174,207,.1);
+    color:#aaaecf;
+    padding:2px 8px;
+    border-radius:12px;
+    font-size:.65rem;
+    font-weight:500;
+    letter-spacing:-.2px;
+    width:fit-content
+}
+.vault-type-badge{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:12px;
+    font-size:.8rem;
+    letter-spacing:-.2px
+}
+.vault-tokens{
+    display:flex;
+    align-items:flex-start
+}
+.quote-token{
+    display:flex;
+    align-items:center;
+    gap:.3rem
+}
+.tradable-tokens{
+    display:flex;
+    align-items:center;
+    position:relative
+}
+
+.tradable-token-icon{
+    width:20px;
+    height:20px;
+    border-radius:50%;
+    border:1.5px solid #131317;
+    position:relative;
+    margin-left:-6px
+}
+.tradable-token-icon:first-child{
+    margin-left:0
+}
+.more-tokens{
+    font-size:.7rem;
+    color:#ffffff79;
+    margin-left:.5rem;
+    letter-spacing:-.2px
+}
+.apy-value{
+    font-size:.9rem;
+    font-weight:400;
+    color:#d8dcff;
+    letter-spacing:-.3px
+}
+.deposits-value{
+    font-size:.9rem;
+    font-weight:300;
+    color:#fff;
+    letter-spacing:-.3px
+}
+.age-value{
+    font-size:.8rem;
+    color:#ffffffaf;
+    letter-spacing:-.3px
+}
+.leader-token-name{
+    font-size:.8rem;
+    color:#ffffff8e;
+    letter-spacing:-.3px
+}
+.vault-action-buttons{
+    display:flex;
+    gap:.5rem;
+    align-items:center
 }
 .vault-deposit-btn,.vault-withdraw-btn{
     background:linear-gradient(135deg,#aaaecf 0,#9a9ec7 25%,#8b8eb8 50%,#7f82ac 75%,#7f82a1 100%);
@@ -2793,7 +3090,31 @@
     display:flex;
     justify-content:space-between;
     align-items:center;
-    padding:1rem 0
+}
+.add-liquidity-breadcrumb{
+    display:flex;
+    align-items:center;
+    gap:.5rem;
+    font-size:.9rem;
+    color:#ffffff79
+}
+.breadcrumb-link{
+    display:flex;
+    align-items:center;
+    background:0 0;
+    border:none;
+    color:#ffffff79;
+    cursor:pointer;
+    text-decoration:none;
+    font-size:.9rem;
+    transition:color .2s ease
+}
+.breadcrumb-link:hover{
+    color:#fff
+}
+.breadcrumb-current{
+    color:#fff;
+    font-weight:400
 }
 .vault-detail-action-buttons{
     display:flex;
@@ -2821,25 +3142,133 @@
 .vault-detail-deposit-btn.disabled svg,.vault-detail-withdraw-btn.disabled svg,.deposit-token-amount-before{
     opacity:.5
 }
+.vault-strategy-header{
+    position: relative;
+    z-index:10;
+    padding-bottom:0.5rem
+}
+.vault-strategy-sticky-bar{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:0;
+    flex-wrap:wrap;
+    gap:1rem
+}
+.vault-strategy-info{
+    display:flex;
+    flex-direction:column;
+    gap: 0.25rem;
+}
 .vault-strategy-name{
     font-size:2rem;
     font-weight:400;
     color:#fff;
-    margin:0;
-    letter-spacing:-1px
+    letter-spacing:-1px;
+    margin-top: -0.25rem;
 }
 .vault-strategy-contract{
     display:flex;
     align-items:center;
-    gap:.5rem;
+    gap:.3rem;
     font-size:.8rem;
+    color:#ffffff79
+}
+.vault-strategy-metrics{
+    display:flex;
+    gap:2rem;
+    align-items:center;
+    margin-top: 0.5rem;
+}
+.vault-metric{
+    display:flex;
+    flex-direction:column;
+    align-items:flex-end;
+    text-align:right
+}
+.vault-metric-label{
+    font-size:.75rem;
+    color:#ffffff79;
+    margin-bottom:.25rem
+}
+.vault-metric-value{
+    font-size:1.1rem;
+    font-weight:400;
+    color:#fff
+}
+.metric-positive{
+    color:#d8dcff
+}
+.contract-label{
     color:#ffffff79
 }
 .contract-address{
     color:#fff;
     font-size:.75rem
 }
-@media(max-width:480px){
+.copy-address-btn{
+    background:0 0;
+    border:none;
+    color:#ffffff79;
+    cursor:pointer;
+    padding: 0;
+    border-radius:4px;
+    transition:all .2s ease
+}
+.copy-address-btn:hover{
+    background-color:#ffffff0a;
+    color:#fff
+}
+@media (max-width:1024px){
+    .vault-strategy-sticky-bar{
+        flex-direction:column;
+        align-items:flex-start
+    }
+    .vault-strategy-metrics{
+        width:100%;
+        justify-content:space-between;
+        flex-wrap:wrap;
+        gap:1rem
+    }
+    .vault-detail-action-buttons{
+        margin-top:.5rem
+    }
+}
+@media (max-width:768px){
+    .vault-strategy-breadcrumb-container{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:1rem
+    }
+    .vault-detail-action-buttons{
+        width:100%;
+        justify-content:center;
+        margin-top:0
+    }
+    .vault-detail-deposit-btn,.vault-detail-withdraw-btn{
+        flex:1;
+        justify-content:center
+    }
+    .vault-strategy-metrics{
+        flex-direction:column;
+        gap:.75rem;
+        width:100%
+    }
+    .vault-metric{
+        align-items:center;
+        text-align:center;
+        width:100%
+    }
+    .vault-strategy-name{
+        font-size:1.2rem
+    }
+    .vault-strategy-contract{
+        flex-direction:column;
+        align-items:flex-start;
+        gap:.25rem
+    }
+}
+@media (max-width:480px){
     .vault-detail-action-buttons{
         flex-direction:column;
         gap:.5rem
@@ -2893,7 +3322,7 @@
     cursor:pointer;
     font-size:.75rem;
     font-weight:300;
-    padding:7px 10px;
+    padding:8px 20px;
     text-align:center;
     text-decoration:none;
     transition:opacity.2s,color.3s,text-shadow.3s;
@@ -3298,32 +3727,49 @@
     position:relative;
     display:inline-block
 }
-.vault-management-trigger{
-    display:flex;
-    align-items:center;
-    gap:.25rem;
-    border:1.5px solid rgba(179,184,249,.1);
-    border-radius:8px;
-    color:rgb(212,212,216);
-    font-size:.85rem;
-    padding:.3rem .75rem;
-    cursor:pointer;
-    transition:all.2s ease;
-    letter-spacing:-.3px;
-    white-space:nowrap;
-    height:31px
+
+.vault-management-trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    border: 1.5px solid rgba(179,184,249,.1);
+    border-radius: 8px;
+    color: rgb(212,212,216);
+    font-size: 0.85rem;
+    padding: .3rem .75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    letter-spacing: -0.3px;
+    white-space: nowrap;
+    height: 31px;
 }
-.vault-management-menu{
-    position:absolute;
-    border:1px solid rgb(163 164 185/20%);
-    border-radius:4px;
-    box-shadow:0 8px 32px rgba(0,0,0,.4);
-    overflow:hidden;
-    backdrop-filter:blur(10px);
-    animation:slideDown.2s ease-out;
-    background-color:rgb(0,0,0,.5);
-    right:0;
-    top:60px
+
+.vault-management-menu {
+  position: absolute;
+  border: 1px solid rgb(163 164 185 / 20%);
+  border-radius: 4px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  animation: slideDown 0.2s ease-out;
+  backdrop-filter: blur(10px);
+  background-color: rgb(0,0,0);
+  right: 0;
+  top: 40px;
+}
+
+.vault-management-option {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  text-align: left;  letter-spacing: -0.3px;
+  border-radius: 3px;
 }
 .vault-management-option{
     display:flex;
@@ -3365,28 +3811,38 @@
     font-weight:400;
     letter-spacing:-.3px
 }
+
+
+
+.withdraw-amount-section {
+  margin-bottom: .5rem;
+}
+
+.withdraw-section-title {
+  font-size: 0.9rem;
+  color: #fff;
+  margin-bottom: 1rem;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
 .withdraw-percentage-input-container{
-    display:flex;
-    justify-content:center;
-    width:100%;
-    padding-bottom:1rem
+  display:flex;
+  justify-content:center; 
+  width:100%;
+  padding: 1rem 0;
 }
 .withdraw-percentage-display{
     display:inline-flex;
     align-items:baseline
 }
 .withdraw-percentage-input{
-    width:auto;
-    max-width:none;
-    background:none;
-    border:none;
-    outline:0;
-    color:#fff;
-    font-size:3rem;
-    font-weight:300;
-    text-align:right;
-    letter-spacing:-.5px;
-    font-variant-numeric:tabular-nums
+  width:auto;
+  max-width:none;
+  background:none; border:none; outline:0;
+  color:#fff; font-size:4rem; font-weight:300; text-align:right;
+  letter-spacing:-0.5px;
+  font-variant-numeric: tabular-nums; 
 }
 .percentage-buttons{
     display:flex;
@@ -3394,24 +3850,45 @@
     justify-content:center;
     margin-bottom:1.5rem
 }
-.percentage-btn{
-    background:none;
-    border:1.5px solid rgba(179,184,249,.1);
-    border-radius:12px;
-    color:#ffffff79;
-    font-size:.75rem;
-    cursor:pointer;
-    transition:all.3s ease;
-    white-space:nowrap;
-    padding:.5rem .75rem;
-    height:32px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    letter-spacing:-.3px;
-    font-weight:400;
-    width:100%
+
+.percentage-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
 }
+
+.percentage-btn {
+    background: none;
+    border: 1.5px solid rgba(179, 184, 249, 0.1);
+    border-radius: 12px;
+    color: #ffffff79;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    padding: 0.5rem 0.75rem;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    letter-spacing: -0.3px;
+    font-weight: 400;
+    width: 100%;
+}
+
+.percentage-btn:hover {
+    color: #fff;
+    border-color: #2a2a2f;
+    background-color: #ffffff05;
+}
+
+.percentage-btn.active {
+    color: #d8dcff;
+    background-color: rgba(201, 194, 243, 0.05);
+    border-color: #aaaecf;
+    box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.3);
+}
+
 .position-overview{
     border:1px solid rgba(179,184,249,.1);
     border-radius:8px;
@@ -3473,6 +3950,103 @@
 .status-warning{
     color:#ffc107
 }
+
+.pair-name {
+  font-size: 0.9rem;
+  color: #fff;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.position-balance {
+  font-size: 0.8rem;
+  color: #ffffff79;
+  letter-spacing: -0.3px;
+}
+
+.token-positions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.token-position {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.deposit-token-info {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+
+}
+
+.token-position-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid #131317;
+}
+
+.token-symbol {
+  font-size: .9rem;
+  color: #fff;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.token-amount {
+  display: flex;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #fff;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+}
+
+.preview-title {
+  color: #ffffff79;
+  font-size: 0.8rem;
+  font-weight: 400;
+  letter-spacing: -0.3px;
+  margin-bottom: 0.25rem;
+}
+
+.withdraw-token-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.withdraw-token-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 6px;
+}
+
+.withdraw-token-icon {
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  border: 1px solid #131317;
+}
+
+.status-success {
+  color: #50f08d;
+}
+
+.status-warning {
+  color: #ffc107;
+}
+
+.status-error {
+  color: #ff5757;
+}
+
+
 .modal-close-icon{
     width:18px;
     height:18px;
@@ -3623,9 +4197,6 @@
     color:#aaaecf
 }
 .withdraw-percentage-symbol{
-    margin-left:.25rem;
-    font-size:3rem;
-    font-weight:300;
-    line-height:1;
-    color:#dcdcf171
+  margin-left:0.25rem;
+  font-size:4rem; font-weight:300; line-height:1;
 }
