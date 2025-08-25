@@ -180,10 +180,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
                     (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                     false,
+                    false,
                     BigInt(order[0]),
                     BigInt(order[1]),
-                    BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)),
+                    BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)),
                     BigInt(0),
+                    BigInt(Math.floor(Date.now() / 1000) + 900),
                     usedRefAddress
                   )})
                   await waitForTxReceipt(hash.hash);
@@ -213,6 +215,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       : markets[order[4]].quoteAddress,
                     BigInt(order[0]),
                     BigInt(order[1]),
+                    BigInt(Math.floor(Date.now() / 1000) + 900)
                   );
                   await waitForTxReceipt(hash.hash);
                   refetch()
@@ -325,7 +328,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
               timezone: 'Etc/UTC',
               exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: Number(activeMarketRef.current.priceFactor),
+              pricescale: activeMarketRef.current?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(activeMarketRef.current?.latestPrice ?? 1)) - 1) : Number(activeMarketRef.current.priceFactor),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -567,10 +570,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         (order[3] == 1 ? markets[order[4]].quoteAsset : markets[order[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].quoteAddress : markets[order[4]].baseAddress,
                         (order[3] == 1 ? markets[order[4]].baseAsset : markets[order[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : order[3] == 1 ? markets[order[4]].baseAddress : markets[order[4]].quoteAddress,
                         false,
+                        false,
                         BigInt(order[0]),
                         BigInt(order[1]),
-                        BigInt(orderLine.getPrice() * Number(markets[order[4]].priceFactor)),
+                        BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)),
                         BigInt(0),
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )})
                       await waitForTxReceipt(hash.hash);
@@ -600,6 +605,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                           : markets[order[4]].quoteAddress,
                         BigInt(order[0]),
                         BigInt(order[1]),
+                        BigInt(Math.floor(Date.now() / 1000) + 900)
                       );
                       await waitForTxReceipt(hash.hash);
                       refetch()

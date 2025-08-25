@@ -7,10 +7,12 @@ const replaceOrder = (
   tokenIn: `0x${string}`,
   tokenOut: `0x${string}`,
   postOnly: boolean,
+  isDecrease: boolean,
   price: bigint,
   id: bigint,
   newPrice: bigint,
   newSize: bigint,
+  deadline: bigint,
   ref: `0x${string}`,
 ) => {
   return {
@@ -20,12 +22,14 @@ const replaceOrder = (
       functionName: 'replaceOrder',
       args: [
         postOnly,
+        isDecrease,
         tokenIn,
         tokenOut,
         price,
         id,
         newPrice,
         newSize,
+        deadline,
         ref,
       ],
     }),

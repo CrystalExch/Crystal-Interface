@@ -1084,10 +1084,12 @@ const [createVaultForm, setCreateVaultForm] = useState({
           (editingOrder[3] == 1 ? markets[editingOrder[4]].quoteAsset : markets[editingOrder[4]].baseAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrder[3] == 1 ? markets[editingOrder[4]].quoteAddress : markets[editingOrder[4]].baseAddress,
           (editingOrder[3] == 1 ? markets[editingOrder[4]].baseAsset : markets[editingOrder[4]].quoteAsset) == settings.chainConfig[activechain].ethticker ? settings.chainConfig[activechain].weth : editingOrder[3] == 1 ? markets[editingOrder[4]].baseAddress : markets[editingOrder[4]].quoteAddress,
           false,
+          false,
           BigInt(editingOrder[0]),
           BigInt(editingOrder[1]),
           BigInt(scaledPrice),
           BigInt(0),
+          BigInt(Math.floor(Date.now() / 1000) + 900),
           usedRefAddress
         )
       });
@@ -1148,10 +1150,12 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 : markets[editingOrderSize[4]].quoteAddress
           ),
           false,
+          false,
           BigInt(editingOrderSize[0]),
           BigInt(editingOrderSize[1]),
           BigInt(editingOrderSize[0]),
           scaledSize,
+          BigInt(Math.floor(Date.now() / 1000) + 900),
           usedRefAddress
         )
       });
@@ -1183,7 +1187,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
   const [trades, setTrades] = useState<
     [boolean, string, number, string, string][]
   >([]);
-  const [spreadData, setSpreadData] = useState({});
+  const [spreadData, setSpreadData] = useState<any>({});
   const [activeSection, setActiveSection] = useState<
     'orders' | 'tradeHistory' | 'orderHistory' | 'balances'
   >(() => {
@@ -1262,9 +1266,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
       openTokenOutSelect: 'KeyE',
       cancelAllOrders: 'KeyC',
       cancelTopOrder: 'KeyX',
-      openPortfolio: 'KeyP',
-      openLeaderboard: 'KeyL',
-      openReferrals: 'KeyO',
       toggleFavorite: 'KeyM',
       toggleSimpleView: 'KeyV',
       refreshQuote: 'KeyR',
@@ -2181,10 +2182,10 @@ const [createVaultForm, setCreateVaultForm] = useState({
   }, [location.pathname, simpleView]);
 
   // update limit amount
-  const updateLimitAmount = useCallback((price: number, priceFactor: number) => {
-    let newPrice = BigInt(Math.round(price * priceFactor));
+  const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
+    let newPrice = BigInt(Math.round(price.toPrecision(5) * priceFactor));
     setlimitPrice(newPrice);
-    setlimitPriceString(price.toFixed(Math.floor(Math.log10(priceFactor))));
+    setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor))));
     setlimitChase(false);
     if (location.pathname.slice(1) == 'limit') {
       if (switched) {
@@ -2484,18 +2485,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
           functionName: 'claimableRewards',
           args: [marketAddress, address],
         })),
-        ...Array.from(
-          new Set(
-            Object.values(tokendict).map(
-              (market) => market.address as `0x${string}`
-            )
-          )
-        ).flatMap((marketAddress: any) => ({
-          to: router as `0x${string}`,
-          abi: CrystalRouterAbi,
-          functionName: 'claimableRewards',
-          args: [marketAddress, address],
-        }))
       ]
 
       const oneCTDepositGroup: any = [
@@ -3161,9 +3150,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
       case location.pathname === '/portfolio':
         title = 'Portfolio | Crystal';
         break;
-      case location.pathname === '/referrals':
-        title = 'Referrals | Crystal';
-        break;
       case location.pathname === '/leaderboard':
         title = 'Leaderboard | Crystal';
         break;
@@ -3524,7 +3510,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
             setLiquiditySellOrders({ orders: liquiditySell, market: activeMarket.address });
 
-            setBaseInterval(1 / Number(activeMarket.priceFactor));
+            setBaseInterval(1 / (activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)));
             setOBInterval(
               localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
                 ? Number(
@@ -3532,7 +3518,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                     `${activeMarket.baseAsset}_ob_interval`,
                   ),
                 )
-                : 1 / Number(activeMarket.priceFactor),
+                : 1 / (activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)),
             );
           } catch (error) {
             console.error(error);
@@ -3546,61 +3532,35 @@ const [createVaultForm, setCreateVaultForm] = useState({
         setClaimableFees(() => {
           let newFees = {};
           let totalFees = 0;
-          const baseOffset = new Set(
-            Object.values(markets).map(
-              (market) => market.address as `0x${string}`
-            )
-          ).size
           Array.from(
-            Object.values(markets).reduce((acc, market: any) => {
+            Object.values(tokendict).reduce((acc, market: any) => {
               if (!acc.has(market.address)) acc.set(market.address, market);
               return acc;
             }, new Map<string, any>()).values()
-          ).forEach((market: any, index) => {
+          ).forEach((token: any, index) => {
             if (
               tempmids !== null &&
-              market !== null
+              token !== null
             ) {
               const quoteIndex = index;
-              const baseIndex = index + baseOffset;
-              const quotePrice = market.quoteAsset == 'USDC' ? 1 : Number(tempmids[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.[0])
-                / Number(markets[(market.quoteAsset == wethticker ? ethticker : market.quoteAsset) + 'USDC']?.priceFactor)
-              const midValue = Number(
-                (tempmids?.[`${market.baseAsset}${market.quoteAsset}`]?.[0]) || 0,
-              ) * quotePrice;
-
-              if (!(newFees as any)[market.quoteAsset]) {
-                (newFees as any)[market.quoteAsset] =
-                  Number(refData[quoteIndex + 1].result) /
-                  10 ** Number(market.quoteDecimals);
-                totalFees +=
-                  Number(refData[quoteIndex + 1].result) /
-                  10 ** Number(market.quoteDecimals);
-              } else {
-                (newFees as any)[market.quoteAsset] +=
-                  Number(refData[quoteIndex + 1].result) /
-                  10 ** Number(market.quoteDecimals);
-                totalFees +=
-                  Number(refData[quoteIndex + 1].result) /
-                  10 ** Number(market.quoteDecimals);
-              }
-
-              if (!(newFees as any)[market.baseAsset]) {
-                (newFees as any)[market.baseAsset] =
-                  Number(refData[baseIndex + 1].result) /
-                  10 ** Number(market.baseDecimals);
-                totalFees +=
-                  (Number(refData[baseIndex + 1].result) * midValue) /
-                  Number(market.scaleFactor) /
-                  10 ** Number(market.quoteDecimals);
-              } else {
-                (newFees as any)[market.baseAsset] +=
-                  Number(refData[baseIndex + 1].result) /
-                  10 ** Number(market.baseDecimals);
-                totalFees +=
-                  (Number(refData[baseIndex + 1].result) * midValue) /
-                  Number(market.scaleFactor) /
-                  10 ** Number(market.quoteDecimals);
+              const quotePrice = token.ticker == 'USDC' ? 1 : Number(tempmids[(token.ticker == wethticker ? ethticker : token.ticker) + 'USDC']?.[0])
+                / Number(markets[(token.ticker == wethticker ? ethticker : token.ticker) + 'USDC']?.priceFactor)
+              if (Number(refData[quoteIndex + 1].result) != 0) {
+                if (!(newFees as any)[token.address]) {
+                  (newFees as any)[token.address] =
+                    Number(refData[quoteIndex + 1].result) /
+                    10 ** Number(token.decimals);
+                  totalFees +=
+                    Number(refData[quoteIndex + 1].result) * quotePrice /
+                    10 ** Number(token.decimals);
+                } else {
+                  (newFees as any)[token.address] +=
+                    Number(refData[quoteIndex + 1].result) /
+                    10 ** Number(token.decimals);
+                  totalFees +=
+                    Number(refData[quoteIndex + 1].result) * quotePrice /
+                    10 ** Number(token.decimals);
+                }
               }
             }
           });
@@ -3681,8 +3641,8 @@ const [createVaultForm, setCreateVaultForm] = useState({
               : Number(highestBid)) / Number(activeMarket.priceFactor);
         setAveragePrice(
           multihop
-            ? `${customRound(estPrice, 2)} ${tokendict[tokenOut].ticker}`
-            : `${estPrice.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor))))} USDC`,
+            ? `${customRound(estPrice, 2)}`
+            : `${estPrice.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(estPrice ?? 1)) - 1) : Number(activeMarket.priceFactor))))}`,
         );
         setPriceImpact(() => {
           let temppriceimpact;
@@ -4004,7 +3964,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
         return [
           isBuy,
           formatCommas(
-            price.toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+            price.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(price ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
           ),
           tradeValue,
           time,
@@ -4244,19 +4204,19 @@ const [createVaultForm, setCreateVaultForm] = useState({
                       let baseasset =
                         markets[marketKey].baseAddress;
                       let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
+                        (buy ? size : size * price / Number(
+                          markets[marketKey].scaleFactor
+                        )) /
+                        (10 **
                           Number(
                             markets[marketKey]
                               .quoteDecimals,
                           ))
                       ).toFixed(2);
                       let amountbase = customRound(
-                        size /
-                        price /
+                        (buy ? size * Number(
+                          markets[marketKey].scaleFactor
+                        ) / price : size) /
                         10 **
                         Number(
                           markets[marketKey]
@@ -4655,7 +4615,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.6`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -4749,7 +4709,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
           });
 
           const result = await response.json();
-
+          console.log(result)
           if (!isAddressInfoFetching) return;
           const map = result?.data?.marketFilledMaps || [];
           for (const batch of map) {
@@ -5091,19 +5051,19 @@ const [createVaultForm, setCreateVaultForm] = useState({
                       let baseasset =
                         markets[marketKey].baseAddress;
                       let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
+                        (buy ? size : size * price / Number(
+                          markets[marketKey].scaleFactor
+                        )) /
+                        (10 **
                           Number(
                             markets[marketKey]
                               .quoteDecimals,
                           ))
                       ).toFixed(2);
                       let amountbase = customRound(
-                        size /
-                        price /
+                        (buy ? size * Number(
+                          markets[marketKey].scaleFactor
+                        ) / price : size) /
                         10 **
                         Number(
                           markets[marketKey]
@@ -6307,7 +6267,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
       setlimitPriceString(
         (
           Number(price) / Number(activeMarket.priceFactor)
-        ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
       );
       if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
         setamountIn(
@@ -7022,24 +6982,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
         return;
       }
 
-      if (event.code === keybinds.openPortfolio) {
-        event.preventDefault();
-        navigate('/portfolio');
-        return;
-      }
-
-      if (event.code === keybinds.openLeaderboard) {
-        event.preventDefault();
-        navigate('/leaderboard');
-        return;
-      }
-
-      if (event.code === keybinds.openReferrals) {
-        event.preventDefault();
-        navigate('/referrals');
-        return;
-      }
-
       if (event.code === keybinds.openMarketSearch) {
         event.preventDefault();
         setpopup(8);
@@ -7507,7 +7449,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -8224,7 +8166,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -8519,6 +8461,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
       });
     }
   };
+
   const [explorerFiltersActiveTab, setExplorerFiltersActiveTab] = useState<'new' | 'graduating' | 'graduated'>(() => {
     const saved = localStorage.getItem('crystal_explorer_active_tab');
     return (saved as 'new' | 'graduating' | 'graduated') || 'new';
@@ -8532,7 +8475,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
     setExplorerFiltersActiveTab(columnType);
     setpopup(24);
   }, []);
-
 
   const initialExplorerFilters = {
     ageMin: '', ageMax: '',
@@ -8571,6 +8513,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
     const saved = localStorage.getItem('crystal_active_explorer_filter_tab');
     return (saved as 'new' | 'graduating' | 'graduated') || 'new';
   });
+
   useEffect(() => {
     localStorage.setItem('crystal_explorer_active_tab', explorerFiltersActiveTab);
   }, [explorerFiltersActiveTab]);
@@ -8594,6 +8537,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
   useEffect(() => {
     localStorage.setItem('crystal_active_explorer_filter_tab', activeExplorerFilterTab);
   }, [activeExplorerFilterTab]);
+
   const handleExplorerFilterInputChange = useCallback((field: string, value: string | boolean) => {
     setExplorerFilters((prev: any) => {
       const newFilters = { ...prev, [field]: value };
@@ -8613,7 +8557,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
     localStorage.setItem('crystal_explorer_active_tab', 'new');
     localStorage.setItem('crystal_explorer_active_section', 'audit');
   }, []);
-
 
   const handleExplorerFiltersImport = useCallback(() => {
     const input = document.createElement('input');
@@ -8636,6 +8579,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
     };
     input.click();
   }, []);
+
   const handleExplorerFiltersExport = useCallback(() => {
     const dataStr = JSON.stringify(explorerFilters, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -8684,7 +8628,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
     defaultColor: string;
   }
 
-  // ============ CONSTANTS ============
   const tokenIconUrl = './monad.svg';
   const tokenName = 'MON';
   const leverage = 10;
@@ -8701,7 +8644,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
     showPNLRectangle: true,
   };
 
-  // ============ STATE VARIABLES TO ADD ============
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
   const [currency, setCurrency] = useState(tokenName);
   const [selectedBg, setSelectedBg] = useState(PNLBG2);
@@ -8712,13 +8654,9 @@ const [createVaultForm, setCreateVaultForm] = useState({
   const [activePicker, setActivePicker] = useState<string | null>(null);
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
 
-  // ============ REFS TO ADD ============
   const captureRef = useRef<HTMLDivElement>(null);
   const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
 
-  // ============ FUNCTIONS TO ADD ============
-
-  // ColorInput component
   const ColorInput = React.memo<ColorInputProps>(({
     color,
     onChange,
@@ -8829,7 +8767,6 @@ const [createVaultForm, setCreateVaultForm] = useState({
     );
   });
 
-  // Main functions
   const toggleRightPanel = useCallback(() => {
     setShowRightPanel(!showRightPanel);
     if (!showRightPanel) {
@@ -9036,6 +8973,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
   useEffect(() => {
     setTempCustomizationSettings(customizationSettings);
   }, [customizationSettings]);
+
   //popup modals
   const Modals = (
     <>
@@ -10694,15 +10632,12 @@ const [createVaultForm, setCreateVaultForm] = useState({
                           switchTokens: 'KeyZ',
                           maxAmount: 'KeyA',
                           focusInput: 'KeyF',
-                          openSettings: 'KeyS',
+                          openSettings: 'KeyP',
                           openWallet: 'KeyW',
                           openTokenInSelect: 'KeyQ',
                           openTokenOutSelect: 'KeyE',
                           cancelAllOrders: 'KeyC',
                           cancelTopOrder: 'KeyX',
-                          openPortfolio: 'KeyP',
-                          openLeaderboard: 'KeyL',
-                          openReferrals: 'KeyO',
                           toggleFavorite: 'KeyM',
                           toggleSimpleView: 'KeyV',
                           refreshQuote: 'KeyR',
@@ -16419,7 +16354,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
               ) : isWrap ? (
                 `1 ${tokendict[tokenOut].ticker}`
               ) : (
-                `${formatSubscript(multihop ? parseFloat(averagePrice).toString() : parseFloat(averagePrice).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))))} ${multihop ? tokendict[tokenIn].ticker : activeMarket.quoteAsset}`
+                `${formatSubscript(averagePrice)} ${multihop ? tokendict[tokenIn].ticker : activeMarket.quoteAsset}`
               )}
             </div>
           </div>
@@ -16943,7 +16878,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 setlimitPriceString(
                   (
                     Number(price) / Number(activeMarket.priceFactor)
-                  ).toFixed(Math.floor(Math.log10(Number(activeMarket.priceFactor)))),
+                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
                 );
                 setamountOutSwap(
                   price != BigInt(0) && amountIn != BigInt(0)
@@ -17351,7 +17286,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 setIsComposing(false);
                 if (
                   new RegExp(
-                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
+                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(Number(e.currentTarget.value) == 0 ? 1 : Number(e.currentTarget.value) ?? 1)) - 1) : Number(activeMarket.priceFactor)))}}$`
                   ).test(e.currentTarget.value)
                 ) {
                   setlimitChase(false);
@@ -17474,7 +17409,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 }
                 if (
                   new RegExp(
-                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
+                    `^\\d*\\.?\\d{0,${Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(Number(e.currentTarget.value) == 0 ? 1 : Number(e.currentTarget.value) ?? 1)) - 1) : Number(activeMarket.priceFactor)))}}$`
                   ).test(e.target.value)
                 ) {
                   setlimitChase(false);
@@ -17663,7 +17598,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                         newPrice = marketPrice * (1 + numValue / 100);
                       }
 
-                      updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+                      updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
                     }
                   }}
                   onFocus={(e) => {
@@ -17725,7 +17660,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                   ? Math.max(0, marketPrice * 0.99)
                   : marketPrice * 1.01;
 
-                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-1%" : "+1%"}
@@ -17740,7 +17675,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                   ? Math.max(0, marketPrice * 0.95)
                   : marketPrice * 1.05;
 
-                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-5%" : "+5%"}
@@ -17756,7 +17691,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                   ? Math.max(0, marketPrice * 0.9)
                   : marketPrice * 1.1;
 
-                updateLimitAmount(newPrice, Number(activeMarket.priceFactor));
+                updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
               }}
             >
               {tokenIn === activeMarket?.quoteAddress ? "-10%" : "+10%"}
@@ -19902,7 +19837,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 onChange={(e) => {
                   if (
                     new RegExp(
-                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
+                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(Number(e.target.value) == 0 ? 1 : Number(e.target.value) ?? 1)) - 1) : Number(activeMarket.priceFactor)))}}$`
                     ).test(e.target.value)
                   ) {
                     setScaleStartString(e.target.value);
@@ -19991,7 +19926,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 onChange={(e) => {
                   if (
                     new RegExp(
-                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(Number(activeMarket.priceFactor)))}}$`
+                      `^\\d*\\.?\\d{0,${Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(Number(e.target.value) == 0 ? 1 : Number(e.target.value) ?? 1)) - 1) : Number(activeMarket.priceFactor)))}}$`
                     ).test(e.target.value)
                   ) {
                     setScaleEndString(e.target.value);
@@ -20949,7 +20884,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                     roundedBuyOrders: roundedBuyOrders?.orders,
                     roundedSellOrders: roundedSellOrders?.orders,
                     spreadData,
-                    priceFactor: Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    priceFactor: markets[roundedBuyOrders?.key]?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spreadData?.averagePrice ?? 1)) - 1) : Number(markets[roundedBuyOrders?.key]?.priceFactor),
                     symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
                     symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
                   }}

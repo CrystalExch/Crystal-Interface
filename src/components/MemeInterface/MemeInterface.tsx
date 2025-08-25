@@ -11,7 +11,7 @@ import MemeChart from "./MemeChart/MemeChart";
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { defaultMetrics } from "../TokenExplorer/TokenData";
-import { CrystalLaunchpadRouter } from "../../abis/CrystalLaunchpadRouter";
+import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { CrystalLaunchpadToken } from "../../abis/CrystalLaunchpadToken";
 import { useSharedContext } from "../../contexts/SharedContext";
@@ -294,7 +294,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
   const [buyBribeValue, setBuyBribeValue] = useState('0.05');
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
-  const [allowance, setAllowance] = useState(0);
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
   const [sellSlippageValue, setSellSlippageValue] = useState('15');
   const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
@@ -363,15 +362,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         ],
       });
 
-      const allowanceCalldata = encodeFunctionData({
-        abi: CrystalLaunchpadToken,
-        functionName: "allowance",
-        args: [
-          address as `0x${string}`,
-          routerAddress as `0x${string}`,
-        ],
-      });
-
       const multiCalldata = encodeFunctionData({
         abi: [{
           inputs: [
@@ -404,7 +394,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         functionName: "tryBlockAndAggregate",
         args: [false, [
           { target: balancegetter, callData: balanceCalldata },
-          { target: tokenAddress as `0x${string}`, callData: allowanceCalldata },
         ]],
       });
 
@@ -457,7 +446,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       });
 
       let rawBalance = 0n;
-      let rawAllowance = 0n;
 
       if (returnData[0].success) {
         [rawBalance] = decodeFunctionResult({
@@ -467,15 +455,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         });
       }
 
-      if (returnData[1].success) {
-        rawAllowance = decodeFunctionResult({
-          abi: CrystalLaunchpadToken,
-          functionName: "allowance",
-          data: returnData[1].returnData,
-        });
-      }
-
-      return { rawBalance, rawAllowance };
+      return { rawBalance };
     },
     enabled: !!address && !!tokenAddress,
     staleTime: 30_000,
@@ -483,13 +463,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   useEffect(() => {
     if (!rpcData) return;
-    const { rawBalance, rawAllowance } = rpcData;
+    const { rawBalance } = rpcData;
 
     const bal = Number(rawBalance.toString()) / 1e18;
-    const alw = Number(rawAllowance.toString()) / 1e18;
 
     setTokenBalance(bal);
-    setAllowance(alw);
   }, [rpcData]);
 
   useEffect(() => {
@@ -521,6 +499,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setSellPriorityFee(presetValues.priority);
     setSellBribeValue(presetValues.bribe);
   }, []);
+  
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
     if (advancedOrders.length >= 5) return; // Maximum 5 orders
 
@@ -550,6 +529,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         : order
     ));
   };
+
   const handlePresetSelect = (preset: number) => {
     if (settingsMode === 'buy') {
       handleBuyPresetSelect(preset);
@@ -658,9 +638,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const uo = {
         target: routerAddress,
         data: encodeFunctionData({
-          abi: CrystalLaunchpadRouter,
+          abi: CrystalRouterAbi,
           functionName: "buy",
-          args: [token.tokenAddress as `0x${string}`],
+          args: [true, token.tokenAddress as `0x${string}`, value, 0n],
         }),
         value,
       };
@@ -734,28 +714,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         throw new Error(`Invalid sell amount`);
       }
 
-      if ((rpcData?.rawAllowance || 0n) < amountTokenWei) {
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Approving tokens...',
-            subtitle: `Granting permission to sell ${token.symbol}`,
-            variant: 'info'
-          });
-        }
-
-        const approveUo = {
-          target: tokenAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalLaunchpadToken,
-            functionName: "approve",
-            args: [routerAddress as `0x${string}`, MaxUint256],
-          }),
-          value: 0n,
-        };
-        const approveOp = await sendUserOperationAsync({ uo: approveUo });
-        await waitForTxReceipt(approveOp.hash);
-      }
-
       if (updatePopup) {
         updatePopup(txId, {
           title: 'Confirming sell...',
@@ -767,9 +725,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const sellUo = {
         target: routerAddress as `0x${string}`,
         data: encodeFunctionData({
-          abi: CrystalLaunchpadRouter,
+          abi: CrystalRouterAbi,
           functionName: "sell",
-          args: [tokenAddress as `0x${string}`, amountTokenWei],
+          args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
         }),
         value: 0n,
       };
@@ -1297,9 +1255,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const uo = {
           target: routerAddress,
           data: encodeFunctionData({
-            abi: CrystalLaunchpadRouter,
+            abi: CrystalRouterAbi,
             functionName: "buy",
-            args: [token.tokenAddress as `0x${string}`],
+            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
           }),
           value,
         };
@@ -1337,28 +1295,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
 
-        if (allowance < parseFloat(tradeAmount)) {
-          if (updatePopup) {
-            updatePopup(txId, {
-              title: 'Approving tokens...',
-              subtitle: `Granting permission to sell ${token.symbol}`,
-              variant: 'info'
-            });
-          }
-
-          const approveUo = {
-            target: tokenAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: CrystalLaunchpadToken,
-              functionName: "approve",
-              args: [routerAddress as `0x${string}`, MaxUint256],
-            }),
-            value: 0n,
-          };
-          const approveOp = await sendUserOperationAsync({ uo: approveUo });
-          await waitForTxReceipt(approveOp.hash);
-        }
-
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming sell...',
@@ -1370,9 +1306,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         const sellUo = {
           target: routerAddress as `0x${string}`,
           data: encodeFunctionData({
-            abi: CrystalLaunchpadRouter,
+            abi: CrystalRouterAbi,
             functionName: "sell",
-            args: [tokenAddress as `0x${string}`, amountTokenWei],
+            args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
           }),
           value: 0n,
         };
@@ -1465,7 +1401,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const sellers = Math.floor(
     (totalTraders * currentData.sellerPercentage) / 100,
   );
-
 
   return (
     <div className="meme-interface-container">
@@ -1707,13 +1642,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             {sliderMode === "presets" && (
               <div className="meme-slider-container meme-presets-mode">
                 <div className="meme-preset-buttons">
-                  {sliderPresets.map((preset: number, index: number) => (
+                  {sliderPresets.map((preset: number) => (
                     <button
                       className={`meme-preset-button ${sliderPercent === preset ? `active ${activeTradeType}` : ""}`}
                       onClick={() => {
                         setSliderPercent(preset);
-                        const newAmount = (1000 * preset) / 100;
-                        setTradeAmount(newAmount.toString());
+                        if (activeTradeType == "buy") {
+                        }
+                        else {
+                          const newAmount = (tokenBalance * preset) / 100;
+                          setTradeAmount(newAmount.toString());
+                        }
                       }}
                     >
                       {preset}%
@@ -2556,7 +2495,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         routerAddress={routerAddress}
         setpopup={setpopup}
         tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
-        allowance={rpcData?.rawAllowance ?? 0n}
         refetch={refetchBalances}
         subWallets={subWallets}
         walletTokenBalances={walletTokenBalances}

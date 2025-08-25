@@ -389,7 +389,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
               {claimableLoading ? (
                 <div className="skeleton skeleton-claimable"></div>
               ) : (
-                `${totalClaimableFees ? customRound(totalClaimableFees, 2) : '$0.00'}`
+                `${totalClaimableFees ? '$' + customRound(totalClaimableFees, 2) : '$0.00'}`
               )}            </div>
             <div className="stat-label">Claimable</div>
           </div>
@@ -406,7 +406,14 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           ) : (
             Object.entries(claimableFees).map(([token, value]) => (
               <div key={token} className="token-row">
-                <span className="token-symbol">{token}</span>
+                <div className="token-item">
+                  <div className="token-info">
+                    <div className="token-logo">
+                      <img className="referral-token-image" src={tokendict[token]?.image}/>
+                      <span className="token-symbol">{tokendict[token]?.ticker}</span>
+                    </div>
+                  </div>
+                </div>
                 <span className={`token-amount ${isBlurred ? 'blurred' : ''}`}>
                   {value ? customRound(value as number, 3) : '0.00'}
                 </span>

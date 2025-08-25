@@ -62,8 +62,7 @@ interface HeaderProps {
   forceRefreshAllWallets?: () => void;
   tokenList?: any[];
   logout?: () => void;
-      tokenBalances: { [address: string]: bigint };
-
+  tokenBalances: { [address: string]: bigint };
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -128,9 +127,6 @@ const Header: React.FC<HeaderProps> = ({
 
   const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
   const TOTAL_SUPPLY = 1e9;
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const marketSubRef = useRef<string | null>(null);
 
   const [liveTokenData, setLiveTokenData] = useState<any>({});
 
@@ -264,33 +260,34 @@ const Header: React.FC<HeaderProps> = ({
   const getWalletName = (address: string, index: number) => {
     return walletNames[address] || `Wallet ${index + 1}`;
   };
-const getMainWalletBalance = () => {
-  const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
-  
-  if (ethToken && tokenBalances && tokenBalances[ethToken.address]) {
-    return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
-  }
-  return 0;
-};
 
-const isMainWalletActive = () => {
-  return !activeWalletPrivateKey || activeWalletPrivateKey === '';
-};
+  const getMainWalletBalance = () => {
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
+    
+    if (ethToken && tokenBalances && tokenBalances[ethToken.address]) {
+      return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    }
+    return 0;
+  };
 
-const handleSetMainWallet = () => {
-  // Clear the active wallet private key to fall back to main wallet
-  localStorage.removeItem('crystal_active_wallet_private_key');
-  if (setOneCTSigner) {
-    setOneCTSigner('');
-  }
+  const isMainWalletActive = () => {
+    return !activeWalletPrivateKey || activeWalletPrivateKey === '';
+  };
 
-  if (refetch) {
-    setTimeout(() => refetch(), 100);
-  }
-  if (forceRefreshAllWallets) {
-    setTimeout(() => forceRefreshAllWallets(), 200);
-  }
-};
+  const handleSetMainWallet = () => {
+    // Clear the active wallet private key to fall back to main wallet
+    localStorage.removeItem('crystal_active_wallet_private_key');
+    if (setOneCTSigner) {
+      setOneCTSigner('');
+    }
+
+    if (refetch) {
+      setTimeout(() => refetch(), 100);
+    }
+    if (forceRefreshAllWallets) {
+      setTimeout(() => forceRefreshAllWallets(), 200);
+    }
+  };
 
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
@@ -355,46 +352,6 @@ const handleWalletButtonClick = () => {
       }
     }
   }, [activeMarket, tokendict]);
-
-  useEffect(() => {
-    if (!isMemeTokenPage || !location.state?.tokenData) return;
-
-    const token = location.state.tokenData;
-    const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      console.log('WebSocket connected for meme token:', token.symbol);
-      subscribe(ws, ['logs', { address: token.id }], (subId) => {
-        marketSubRef.current = subId;
-        console.log('Subscribed to market updates:', subId);
-      });
-    };
-
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.method === 'eth_subscription' && msg.params?.result) {
-        updateMarketData(msg.params.result, token.id);
-      }
-    };
-
-    ws.onerror = (e) => console.error('WebSocket error:', e);
-    ws.onclose = () => console.log('WebSocket closed');
-
-    return () => {
-      if (ws.readyState === WebSocket.OPEN) {
-        ws.close();
-      }
-    };
-  }, [isMemeTokenPage, subscribe, updateMarketData]);
-
-  useEffect(() => {
-    return () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-    };
-  }, []);
 
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);

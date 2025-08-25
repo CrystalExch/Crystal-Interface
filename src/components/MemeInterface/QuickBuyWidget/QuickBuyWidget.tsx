@@ -42,7 +42,6 @@ interface QuickBuyWidgetProps {
     routerAddress?: string;
     setpopup?: (value: number) => void;
     tokenBalances?: { [key: string]: bigint };
-    allowance?: bigint;
     refetch?: () => void;
     subWallets?: Array<{ address: string, privateKey: string }>;
     walletTokenBalances?: { [address: string]: any };
@@ -72,7 +71,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     routerAddress,
     setpopup,
     tokenBalances = {},
-    allowance = BigInt(0),
     refetch,
     subWallets = [],
     walletTokenBalances = {},
@@ -192,7 +190,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     };
 
     const currentTokenBalance = tokenBalances[tokenAddress || ''] ?? 0n;
-    const currentAllowance = allowance ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
     const getCurrentWalletMONBalance = () => {
         if (!activeWalletPrivateKey) return 0;
@@ -425,29 +422,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
             if (amountTokenWei <= 0n || amountTokenWei > currentTokenBalance) {
                 throw new Error(`Invalid sell amount. Trying to sell ${amountTokenWei.toString()} but only have ${currentTokenBalance.toString()}`);
-            }
-
-            if (currentAllowance < amountTokenWei) {
-                if (updatePopup) {
-                    updatePopup(txId, {
-                        title: 'Approving tokens...',
-                        subtitle: `Granting permission to sell ${tokenSymbol}`,
-                        variant: 'info'
-                    });
-                }
-
-                const approveUo = {
-                    target: tokenAddress as `0x${string}`,
-                    data: encodeFunctionData({
-                        abi: CrystalLaunchpadToken,
-                        functionName: "approve",
-                        args: [routerAddress as `0x${string}`, MaxUint256],
-                    }),
-                    value: 0n,
-                };
-                const approveOp = await sendUserOperationAsync({ uo: approveUo });
-                await waitForTxReceipt(approveOp.hash);
-                await new Promise(r => setTimeout(r, 800));
             }
 
             if (updatePopup) {

@@ -77,7 +77,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           86400
         }`.toLowerCase();
         // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.4';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
         let allCandles: any[] = [];
         const query = `
           query {
@@ -89,7 +89,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 high
                 low
                 close
-                volume
+                baseVolume
               }
               series2: klines(first: 1000, skip: 1000, orderBy: time, orderDirection: desc) {
                 id
@@ -98,7 +98,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 high
                 low
                 close
-                volume
+                baseVolume
               }
               series3: klines(first: 1000, skip: 2000, orderBy: time, orderDirection: desc) {
                 id
@@ -107,7 +107,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 high
                 low
                 close
-                volume
+                baseVolume
               }
             }
           }
@@ -144,14 +144,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           }
           
           lastClose = close
-    
+
           return {
             time: candle.time * 1000,
             open,
             high,
             low,
             close,
-            volume: parseFloat(candle.volume),
+            volume: Number(candle.baseVolume) / (10 ** Number(activeMarket.baseDecimals)),
           };
         });
         if (subgraphData && subgraphData.length) {
