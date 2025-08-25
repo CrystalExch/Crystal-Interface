@@ -119,7 +119,7 @@ interface MemeInterfaceProps {
   forceRefreshAllWallets?: () => void;
 }
 
-const MARKET_UPDATE_EVENT = "0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a";
+const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const TOTAL_SUPPLY = 1e9;
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -151,71 +151,6 @@ const USER_HOLDER_QUERY = `
 const queryCache = new Map();
 const lastRequestTime = { value: 0 };
 const MIN_REQUEST_INTERVAL = 2000;
-
-const gqWithRateLimit = async (query: string, variables: Record<string, any>, cacheKey?: string) => {
-  if (cacheKey && queryCache.has(cacheKey)) {
-    const cached = queryCache.get(cacheKey);
-    if (Date.now() - cached.timestamp < 30000) {
-      return cached.data;
-    }
-  }
-  const now = Date.now();
-  const timeSinceLastRequest = now - lastRequestTime.value;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    await new Promise(resolve => setTimeout(resolve, MIN_REQUEST_INTERVAL - timeSinceLastRequest));
-  }
-
-  try {
-    lastRequestTime.value = Date.now();
-    const res = await fetch(SUBGRAPH_URL, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ query, variables }),
-    });
-
-    if (res.status === 429) {
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      const retryRes = await fetch(SUBGRAPH_URL, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ query, variables }),
-      });
-
-      if (!retryRes.ok) {
-        throw new Error(`HTTP ${retryRes.status}: ${retryRes.statusText}`);
-      }
-
-      const retryData = await retryRes.json();
-      if (retryData.errors) {
-        throw new Error(JSON.stringify(retryData.errors));
-      }
-
-      if (cacheKey) {
-        queryCache.set(cacheKey, { data: retryData.data, timestamp: Date.now() });
-      }
-
-      return retryData.data;
-    }
-
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-    }
-
-    const data = await res.json();
-    if (data.errors) {
-      throw new Error(JSON.stringify(data.errors));
-    }
-
-    if (cacheKey) {
-      queryCache.set(cacheKey, { data: data.data, timestamp: Date.now() });
-    }
-
-    return data.data;
-  } catch (error) {
-    console.error('Subgraph query failed:', error);
-    return null;
-  }
-};
 
 const fmt = (v: number, d = 6) => {
   if (v === 0) return "0";
@@ -850,43 +785,53 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     const fetchMemeTokenData = async () => {
       try {
-        const cacheKey = `market-${token.id.toLowerCase()}`;
-        const data = await gqWithRateLimit(
-          `
-          query ($id: ID!) {
-            market: markets(where: { id: $id }) {
-              latestPrice
-              volume24h
-              buyCount
-              sellCount
-            }
-            trades(first: 50, orderBy: timestamp, orderDirection: desc, where: { market: $id }) {
-              id
-              trader
-              timestamp
-              isBuy
-              price
-              tokenAmount
-              nativeAmount
-            }
-            series(id: "${(selectedInterval === '1d' ? 'HOUR_1'
-            : selectedInterval === '1h' ? 'HOUR_1'
-              : selectedInterval === '15m' ? 'MINUTE_15'
-                : 'MINUTE_5')
-          }-${token.id.toLowerCase()}") {
-              klines(first: 1000, orderBy: timestamp, orderDirection: desc) {
-                timestamp open high low close volume
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: `
+            query ($id: ID!, $seriesId: ID!) {
+              launchpadTokens: launchpadTokens(where: { id: $id }) {
+                lastPriceNativePerTokenWad
+                volumeNative
+                buyTxs
+                sellTxs
+                trades(first: 50, orderBy: block, orderDirection: desc) {
+                  id
+                  account
+                  block
+                  isBuy
+                  priceNativePerTokenWad
+                  amountIn
+                  amountOut
+                }
               }
+              candles: series(id: $seriesId) {
+                klines(first: 1000, orderBy: time, orderDirection: desc) {
+                  time open high low close baseVolume
+                }
+              }
+            }`,
+            variables: {
+              id: token.id.toLowerCase(),
+              seriesId: `${'0x81e0aec2413987cb107258d876862dd1701f5da1'.toLowerCase()}-${(
+                selectedInterval === '1m' ? 60 :
+                selectedInterval === '5m' ? 300 :
+                selectedInterval === '15m' ? 900 :
+                selectedInterval === '1h' ? 3600 :
+                selectedInterval === '4h' ? 14400 :
+                86400
+              )}`
             }
-          }`,
-          { id: token.id.toLowerCase() },
-          cacheKey
-        );
-
+          }),
+        });
+    
+        const data = await response.json();
+        console.log(data)
         if (isCancelled || !data) return;
 
-        if (data.market?.length) {
-          const m = data.market[0];
+        if (data.launchpadTokens?.length) {
+          const m = data.launchpadTokens[0];
           setLive(p => ({
             ...p,
             price: Number(m.latestPrice) / 1e18,
@@ -911,9 +856,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         } else {
           setTrades([]);
         }
+        console.log(data.candles)
 
-        if (data.series?.klines) {
-          const bars = data.series.klines
+        if (data.candles?.klines) {
+          const bars = data.candles.klines
             .slice().reverse()
             .map((c: any) => ({
               time: Number(c.timestamp) * 1000,
@@ -1087,11 +1033,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (!token.id) return;
 
     (async () => {
-      const data = await gqWithRateLimit(
-        HOLDERS_QUERY,
-        { m: token.id.toLowerCase(), skip: 0, first: 10 },
-        `holders-top10-${token.id}`
-      );
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          query: HOLDERS_QUERY,
+        }),
+      });
+  
+      const data = await response.json();
 
       if (data?.holders) {
         const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
@@ -1116,15 +1066,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }))
         );
       } else {
-        const pageData = await gqWithRateLimit(
-          HOLDERS_QUERY,
-          { m: token.id.toLowerCase(), skip: page * PAGE_SIZE, first: PAGE_SIZE },
-          `holders-${token.id}-${page}`
-        );
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: HOLDERS_QUERY,
+          }),
+        });
+    
+        const data = await response.json();
 
-        if (pageData?.holders) {
+        if (data?.holders) {
           setHolders(
-            pageData.holders.map((h: any) => ({
+            data.holders.map((h: any) => ({
               address: h.address,
               balance: Number(h.balance) / 1e18,
               amountBought: Number(h.amountBought) / 1e18,
@@ -1144,10 +1098,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (!userAddr || !token.id) return;
 
     (async () => {
-      const id = `${token.id.toLowerCase()}-${userAddr}`;
-      const data = await gqWithRateLimit(
-        USER_HOLDER_QUERY, { id }, `userHolder-${id}`
-      );
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          query: USER_HOLDER_QUERY,
+        }),
+      });
+  
+      const data = await response.json();
       if (!data?.holder) {
         setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
         return;

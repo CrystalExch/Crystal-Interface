@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { settings } from '../../settings';
 import { defaultMetrics } from '../TokenExplorer/TokenData';
 import './TokenBoard.css';
 
@@ -46,7 +47,7 @@ interface TokenBoardProps {
 }
 
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.0.16';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
 const formatPrice = (p: number, noDecimals = false) => {
@@ -263,28 +264,45 @@ const fetchTokens = useCallback(async () => {
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
         query: `
-          {
-            markets(first: 50, orderBy: createdAt, orderDirection: desc) {
+        {
+          launchpadTokens(first: 30, orderBy: createdAt, orderDirection: desc) {
+            id
+            creator {
               id
-              tokenAddress
-              name
-              symbol
-              metadataCID
-              createdAt
-              latestPrice
-              buyCount
-              sellCount
-              volume24h
+            }
+            name
+            symbol
+            metadataCID
+            description
+            social1
+            social2
+            social3
+            createdAt
+            migrated
+            migratedAt
+            volumeNative
+            volumeToken
+            buyTxs
+            sellTxs
+            distinctBuyers
+            distinctSellers
+            lastPriceNativePerTokenWad
+            lastUpdatedAt
+            trades {
+              id
+              amountIn
+              amountOut
             }
           }
-        `,
+        }`,
       }),
     });
 
     const data = await response.json();
-    if (!data.data?.markets) return;
+    console.log(data)
+    if (!data.data?.launchpadTokens) return;
 
-    const tokenPromises = data.data.markets.map(async (market: any) => {
+    const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
       const price = Number(market.latestPrice) / 1e18;
       
       let metadata: any = {};
@@ -339,7 +357,7 @@ const fetchTokens = useCallback(async () => {
   const setupWebSocket = useCallback(() => {
     if (wsRef.current) return;
 
-    const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
+    const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
     wsRef.current = ws;
 
     ws.onopen = () => {

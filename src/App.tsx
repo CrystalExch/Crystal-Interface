@@ -2183,7 +2183,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
 
   // update limit amount
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
-    let newPrice = BigInt(Math.round(price.toPrecision(5) * priceFactor));
+    let newPrice = BigInt(Math.round(Number(price.toPrecision(5)) * priceFactor));
     setlimitPrice(newPrice);
     setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor))));
     setlimitChase(false);
@@ -4622,85 +4622,29 @@ const [createVaultForm, setCreateVaultForm] = useState({
 
           const query = `
             query {
-              marketFilledMaps(
-                where: {
-                  caller: "${address}"
-                }
-              ) {
+              account(id: "${address}") {
                 id
-                orders(first: 1000, orderDirection: desc, orderBy: timeStamp) {
+                userIds {
                   id
-                  caller
-                  amountIn
-                  amountOut
-                  buySell
-                  price
-                  contractAddress
-                  transactionHash
-                  timeStamp
                 }
-              }
-              orders1: orderMaps(where:{caller: "${address}"}) {
-                id
-                batches(first: 200, orderDirection: desc, orderBy: id) {
+                orderMap {
                   id
-                  orders(first: 1000, where:{status: 2}) {
-                    id
-                    caller
-                    originalSizeBase
-                    originalSizeQuote
-                    filledAmountBase
-                    filledSizeQuote
-                    price
-                    buySell
-                    contractAddress
-                    transactionHash
-                    timestamp
-                    status
-                  }
                 }
-              }
-              orders2: orderMaps(where:{caller: "${address}"}) {
-                id
-                batches(first: 10, orderDirection: desc, orderBy: id) {
+                openOrderMap {
                   id
-                  orders(first: 1000, where: { status_not: 2 }) {
-                    id
-                    caller
-                    originalSizeBase
-                    originalSizeQuote
-                    filledAmountBase
-                    filledSizeQuote
-                    price
-                    buySell
-                    contractAddress
-                    transactionHash
-                    timestamp
-                    filledTimestamp
-                    status
-                  }
                 }
-              }
-              filledMaps(where:{caller: "${address}"}) {
-                id
-                orders(first: 1000, orderDirection: desc, orderBy: timestamp) {
+                fillMap {
                   id
-                  caller
-                  originalSizeBase
-                  originalSizeQuote
-                  filledAmountBase
-                  filledSizeQuote
-                  price
-                  buySell
-                  contractAddress
-                  transactionHash
-                  timestamp
-                  filledTimestamp
-                  status
+                }
+                tradeMap {
+                  id
+                }
+                launchpadTradeMap {
+                  id
                 }
               }
             }
-          `;
+          `
 
           const response = await fetch(endpoint, {
             method: "POST",
@@ -5491,7 +5435,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.6`;
         let allLogs: any[] = [];
 
         const query = `

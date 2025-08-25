@@ -76,7 +76,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           selectedInterval === '4h' ? 14400 :
           86400
         }`.toLowerCase();
-        // const endpoint = `https://gateway.thegraph.com/api/${settings.graphKey}/subgraphs/id/6ikTAWa2krJSVCr4bSS9tv3i5nhyiELna3bE8cfgm8yn`;
         const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
         let allCandles: any[] = [];
         const query = `
