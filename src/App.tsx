@@ -20548,7 +20548,6 @@ function App() {
     </div>
   );
 
-
   return (
     <div className="app-wrapper" key={language}>
       <NavigationProgress location={location} />

@@ -46,8 +46,8 @@ interface TokenBoardProps {
 }
 
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.0.10';
-const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.0.16';
+const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
 const formatPrice = (p: number, noDecimals = false) => {
   if (p >= 1e12) return `$${noDecimals ? Math.round(p / 1e12) : (p / 1e12).toFixed(1)}T`;
