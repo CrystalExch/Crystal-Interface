@@ -175,11 +175,13 @@
   align-items: center;
   display: flex;
   gap: 4px;
+  margin-top: -3px;
 }
 
 .full-token-name {
-  color: #b8b7b7;
-  font-size: 0.65rem;
+  color: rgba(242, 242, 249, 0.8);
+  font-size: 0.8rem;
+  font-weight: 300;
 }
 
 .token-actions {

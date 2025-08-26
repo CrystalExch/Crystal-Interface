@@ -2,7 +2,7 @@ import React from 'react';
 
 import { useTokenData, TokenSymbol } from '../TokenDescriptions';
 
-import infoicon from '../../../../../assets/icon.png';
+import infoicon from '../../../../../assets/infoi.svg';
 
 import './TokenInfoPopup.css';
 
