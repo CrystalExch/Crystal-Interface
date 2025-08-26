@@ -7093,7 +7093,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                 key={token.address}
                 onMouseEnter={() => setSelectedTokenIndex(index)}
                 onClick={() => {
-                  if ((location.pathname.slice(1) == 'lending' || location.pathname.slice(1) == 'earn/liquidity-pools') && onSelectTokenCallback) {
+                  if ((location.pathname.slice(1) == 'lending' || location.pathname.slice(1) == 'earn/liquidity') && onSelectTokenCallback) {
                     onSelectTokenCallback({
                       icon: token.image,
                       symbol: token.ticker
