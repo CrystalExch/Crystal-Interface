@@ -67,10 +67,10 @@
 
 .time-period-sliding-indicator {
   cursor: pointer;
-  background-color: #9399eb0d;
+  background-color: #9399eb2b;
   border-radius: 3px;
-  bottom: 6px;
-  height: 19px;
+  bottom: 5px;
+  height: 20px;
   position: absolute;
   transition:
     left 0.3s ease,

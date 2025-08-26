@@ -1636,7 +1636,6 @@ function App() {
     );
   };
 
-
   const calculateSharesFromPercentage = (percentage: string, userShares: any) => {
     if (!percentage || !userShares) return '0';
     const percentageDecimal = parseFloat(percentage) / 100;
@@ -4617,7 +4616,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.6`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.12`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -5437,7 +5436,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.6`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.12`;
         let allLogs: any[] = [];
 
         const query = `
@@ -12157,7 +12156,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgba(17, 17, 20, 1) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgba(28, 28, 31, 1) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>
@@ -15517,7 +15516,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -17987,7 +17986,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -20363,7 +20362,7 @@ function App() {
                   if (popup) popup.classList.remove('visible');
                 }}
                 style={{
-                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(17, 17, 20, 1) ${sliderPercent}%)`,
+                  background: `linear-gradient(to right,rgb(171, 176, 224) ${sliderPercent}%,rgba(28, 28, 31, 1) ${sliderPercent}%)`,
                 }}
               />
               <div className="slider-percentage-popup">{sliderPercent}%</div>
@@ -20756,8 +20755,7 @@ function App() {
       setData={setChartData}
       realtimeCallbackRef={realtimeCallbackRef}
       limitPrice={limitPrice}
-      setLimitPrice={setlimitPrice}
-      setLimitPriceString={setlimitPriceString}
+      updateLimitAmount={updateLimitAmount}
       tokenIn={tokenIn}
       amountIn={amountIn}
       isLimitOrderMode={location.pathname.slice(1) === 'limit'}
@@ -21037,7 +21035,6 @@ function App() {
         </>
       }
       <div className="app-container">
-
         <Routes>
           <Route path="/" element={<Navigate to="/market" replace />} />
           <Route path="*" element={<Navigate to="/market" replace />} />
@@ -21122,8 +21119,6 @@ function App() {
               getMarket={getMarket}
             />
           } />
-
-
           <Route
             path="/earn/liquidity"
             element={
@@ -21152,7 +21147,6 @@ function App() {
               />
             }
           />
-
           <Route
             path="/board"
             element={
@@ -21222,7 +21216,6 @@ function App() {
               getMarket={getMarket}
             />
           } />
-
           <Route
             path="/launchpad"
             element={
@@ -21276,7 +21269,6 @@ function App() {
               ethticker={ethticker}
             />
           } />
-
           <Route
             path="/explorer"
             element={
@@ -21372,7 +21364,8 @@ function App() {
                 keccak256={keccak256}
                 Wallet={Wallet}
                 refreshWalletBalance={refreshWalletBalance}
-                activeWalletPrivateKey={oneCTSigner} setShowRefModal={undefined} />
+                activeWalletPrivateKey={oneCTSigner} setShowRefModal={undefined}
+                lastRefGroupFetch={lastRefGroupFetch} />
             }
           />
           <Route path="/swap" element={TradeLayout(swap)} />

@@ -13,7 +13,7 @@
   justify-content: space-between;
   padding: 0 10px;
   height: 40px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   background: rgb(6, 6, 6);
 }
 
@@ -128,7 +128,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .tracker-panel-title {
@@ -419,7 +419,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 20px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .tracker-trades-info h3 {

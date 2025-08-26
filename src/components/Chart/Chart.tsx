@@ -29,10 +29,8 @@ interface ChartComponentProps {
   data: any;
   setData: any;
   realtimeCallbackRef: any;
-  // Add new props for limit preview
   limitPrice?: bigint;
-  setLimitPrice?: (price: bigint) => void;
-  setLimitPriceString?: (priceString: string) => void;
+  updateLimitAmount?: any;
   tokenIn?: string;
   amountIn?: bigint;
   isLimitOrderMode?: boolean;
@@ -57,10 +55,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   data,
   setData,
   realtimeCallbackRef,
-  // New props for limit preview
   limitPrice,
-  setLimitPrice,
-  setLimitPriceString,
+  updateLimitAmount,
   tokenIn,
   amountIn,
   isLimitOrderMode = false,
@@ -90,7 +86,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           selectedInterval === '4h' ? 14400 :
           86400
         }`.toLowerCase();
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.6';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.12';
         let allCandles: any[] = [];
         const query = `
           query {
@@ -213,10 +209,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           newTxPopup={newTxPopup}
           usedRefAddress={usedRefAddress}
           realtimeCallbackRef={realtimeCallbackRef}
-          // Pass through the limit preview props
           limitPrice={limitPrice}
-          setLimitPrice={setLimitPrice}
-          setLimitPriceString={setLimitPriceString}
+          updateLimitAmount={updateLimitAmount}
           tokenIn={tokenIn}
           amountIn={amountIn}
           isLimitOrderMode={isLimitOrderMode}

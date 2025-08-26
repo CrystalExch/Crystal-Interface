@@ -1309,48 +1309,6 @@ const LP: React.FC<LPProps> = ({
                     )}
                   </div>
 
-                  <div className="form-section">
-                    <h2>Fee tier</h2>
-                    <p className="section-description">
-                      The fee tier determines the trading fee collected on swaps. Higher fee tiers are typically used for more volatile token pairs.
-                    </p>
-
-                    <div className="fee-tier-options">
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '0.05%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('0.05%')}
-                      >
-                        <div className="fee-tier-percentage">0.05%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for stable pairs</span>
-                          <span className="fee-tier-subtitle">Very stable pairs like USDC/USDT</span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '0.30%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('0.30%')}
-                      >
-                        <div className="fee-tier-percentage">0.30%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for most pairs</span>
-                          <span className="fee-tier-subtitle">Most liquid for majority of pairs</span>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`fee-tier-option ${selectedFeeTier === '1.00%' ? 'active' : ''}`}
-                        onClick={() => setSelectedFeeTier('1.00%')}
-                      >
-                        <div className="fee-tier-percentage">1.00%</div>
-                        <div className="fee-tier-description">
-                          <span className="fee-tier-title">Best for exotic pairs</span>
-                          <span className="fee-tier-subtitle">Rare or highly volatile pairs</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
                   <button
                     className={`continue-button ${addLiquidityTokens.first && addLiquidityTokens.second ? 'enabled' : ''}`}
                     disabled={!addLiquidityTokens.first || !addLiquidityTokens.second}

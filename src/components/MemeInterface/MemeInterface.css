@@ -151,7 +151,7 @@
 
 .meme-trading-stats-container {
   color: #fff;
-  border-top: 1px solid rgba(179, 184, 249, 0.09);
+  border-top: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 
@@ -160,7 +160,7 @@
   gap: 6px;
   padding: 0 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-time-stat-item {
@@ -168,7 +168,7 @@
   text-align: center;
   padding: 8px;
   border-radius: 6px;
-  border: 1px solid rgba(179, 184, 249, 0.09);
+  border: 1px solid rgba(179, 184, 249, 0.12);
   width: 25%;
 }
 
@@ -209,7 +209,7 @@
   padding-right: 20px;
   padding-top: 5px;
   margin-right: 10px;
-  border-right: 1px solid rgba(179, 184, 249, 0.09);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
   min-width: 70px;
   height: 50px;
 }
@@ -371,7 +371,7 @@
 
 .meme-buy-button.inactive {
    background-color: #11111328;
-    border: 1.5px solid rgba(179, 184, 249, 0.09);
+    border: 1.5px solid rgba(179, 184, 249, 0.12);
     color: #666;
 }
 
@@ -383,7 +383,7 @@
 .meme-sell-button.inactive {
     background-color: #11111328;
     color: #666;
-    border: 1.5px solid rgba(179, 184, 249, 0.09);
+    border: 1.5px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-buy-button:hover{
@@ -401,7 +401,7 @@
 .meme-trade-input-container {
     padding: 12px;
     padding-top: 0;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-trade-input-wrapper {
@@ -564,7 +564,7 @@
     font-size: 0.9rem;
     color: rgb(169, 169, 174);
     align-self: center;
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 5px;
     padding: 1px 6px;
     cursor: pointer;
@@ -640,7 +640,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     padding: 12px 0;
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
     margin-top: 12px;
 }
 
@@ -705,7 +705,7 @@
 .meme-slider-mode-button {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 4px;
     background: transparent;
     color: rgb(255,255,255,0.7);
@@ -739,7 +739,7 @@
 }
 
 .meme-preset-button {
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 8px;
     color: rgb(255, 255, 255, 0.7);
     cursor: pointer;
@@ -766,7 +766,7 @@
 }
 
 .meme-increment-button {
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 8px;
     color: rgb(255,255,255,0.7);
     cursor: pointer;
@@ -786,7 +786,7 @@
 }
 
 .meme-increment-display {
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 8px;
     color: rgb(255,255,255,0.7);
     font-size: 1rem;
@@ -1023,7 +1023,7 @@
     flex: 1;
     padding: 8px 12px;
     background: transparent;
-    border: 1px solid rgba(179, 184, 249, 0.09);
+    border: 1px solid rgba(179, 184, 249, 0.12);
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
@@ -1374,7 +1374,7 @@ opacity: 1;
     left: 0;
     right: 0;
     background: rgb(6, 6, 6);
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
     padding: 12px;
     display: none;
     flex-direction: column;
@@ -1384,7 +1384,7 @@ opacity: 1;
 .meme-mobile-portfolio-section {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-mobile-portfolio-item {
@@ -1636,7 +1636,7 @@ opacity: 1;
     left: 0;
     right: 0;
     background: rgb(6, 6, 6);
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
     display: flex;
     flex-direction: column;
     animation: slideUpFromBottom 0.3s ease;
@@ -1659,7 +1659,7 @@ opacity: 1;
     align-items: center;
     justify-content: space-between;
     padding: 5px 16px;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-mobile-wallets-title {
@@ -1934,7 +1934,7 @@ opacity: 1;
     backdrop-filter: blur(10px);
     border-radius: 8px;
     overflow: hidden;
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-mobile-toggle-slider {
@@ -1978,7 +1978,7 @@ opacity: 1;
 .meme-advanced-trading-section {
     padding: 12px;
     margin-top: 8px;
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .meme-advanced-trading-toggle {

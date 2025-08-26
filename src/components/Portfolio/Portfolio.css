@@ -169,7 +169,7 @@
     padding:20px
 }
 .account-summary-container.positive{
-    background:linear-gradient(145deg,rgba(16,16,18,.9),rgba(177,172,232,.2))
+    background:linear-gradient(145deg,#111114e5,#00b89433)
 }
 .account-summary-container.negative{
     background:linear-gradient(145deg,rgb(17 17 20/90%),rgb(255 82 82/20%))
@@ -182,7 +182,7 @@
     line-height:1.2
 }
 .percentage-value.positive{
-    color:#d8dcff
+    color:#00b894
 }
 .percentage-value.negative{
     color:#ff5252
@@ -1286,7 +1286,7 @@
         padding:20px
     }
     .account-summary-container.positive{
-        background:linear-gradient(145deg,rgba(16,16,18,.9),rgba(177,172,232,.2))
+        background:linear-gradient(145deg,#111114e5,#00b89433)
     }
     .account-summary-container.negative{
         background:linear-gradient(145deg,rgb(17 17 20/90%),rgb(255 82 82/20%))
@@ -1299,7 +1299,7 @@
         line-height:1.2
     }
     .percentage-value.positive{
-        color:#d8dcff
+        color:#00b894
     }
     .percentage-value.negative{
         color:#ff5252
@@ -3884,7 +3884,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 12px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
 }
 
 .pnl-calendar-weekday {

@@ -201,6 +201,7 @@ interface PortfolioProps {
   keccak256?: any;
   Wallet?: any;
   activeWalletPrivateKey?: string;
+  lastRefGroupFetch: any;
 }
 
 type PortfolioTab = 'spot' | 'margin' | 'wallets' | 'trenches';
@@ -268,7 +269,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
   signTypedDataAsync,
   keccak256,
   Wallet,
-  activeWalletPrivateKey
+  activeWalletPrivateKey,
+  lastRefGroupFetch
 }) => {
   const [activeTab, setActiveTab] = useState<PortfolioTab>('spot');
   const [activeSection, setActiveSection] = useState<
@@ -2007,6 +2009,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               waitForTxReceipt={waitForTxReceipt}
               client={client}
               activechain={activechain}
+              lastRefGroupFetch={lastRefGroupFetch}
             />
 
             <div className="portfolio-left-column">

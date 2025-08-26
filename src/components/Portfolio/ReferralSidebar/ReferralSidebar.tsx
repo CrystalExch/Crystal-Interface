@@ -30,6 +30,7 @@ interface ReferralSidebarProps {
   waitForTxReceipt: any;
   client: any;
   activechain: any;
+  lastRefGroupFetch: any;
 }
 
 const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
@@ -52,6 +53,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   waitForTxReceipt,
   client,
   activechain,
+  lastRefGroupFetch
 }) => {
   const [referredCount, setReferredCount] = useState(0);
   const [commissionBonus, setCommissionBonus] = useState(0);
@@ -309,6 +311,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           },
         });
         await waitForTxReceipt(hash.hash);
+        lastRefGroupFetch.current = 0;
         refetch();
       } catch (error) {
       } finally {

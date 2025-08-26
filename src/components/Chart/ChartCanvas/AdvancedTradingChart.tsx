@@ -33,8 +33,7 @@ interface ChartCanvasProps {
   usedRefAddress: any;
   realtimeCallbackRef: any;
   limitPrice?: bigint;
-  setLimitPrice?: (price: bigint) => void;
-  setLimitPriceString?: (priceString: string) => void;
+  updateLimitAmount?: any;
   tokenIn?: string;
   amountIn?: bigint;
   isLimitOrderMode?: boolean;
@@ -59,8 +58,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   usedRefAddress,
   realtimeCallbackRef,
   limitPrice = BigInt(0),
-  setLimitPrice,
-  setLimitPriceString,
+  updateLimitAmount,
   tokenIn,
   amountIn = BigInt(0),
   isLimitOrderMode = false,
@@ -77,15 +75,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   
   const previewOrderLineRef = useRef<any>(null);
-  const limitPriceRef = useRef(limitPrice);
-  const tokenInRef = useRef(tokenIn);
-  const amountInRef = useRef(amountIn);
-
-  useEffect(() => {
-    limitPriceRef.current = limitPrice;
-    tokenInRef.current = tokenIn;
-    amountInRef.current = amountIn;
-  }, [limitPrice, tokenIn, amountIn]);
 
   const updatePreviewOrderLine = () => {
     if (!chartReady || !widgetRef.current?.activeChart()) {
@@ -126,36 +115,33 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
       
       const orderTypeText = isBuyOrder ? "Place limit buy" : "Place limit sell";
       
-const divider = ' \u2502 ';
+      const divider = ' \u2502 ';
 
-const previewLine = widgetRef.current.activeChart()
-  .createOrderLine()
-  .setPrice(priceInDisplayUnits)
-.setText(`${orderTypeText}${divider}${formattedPrice}`)
-  .setQuantity('\u200B')          
-  .setQuantityBackgroundColor('rgba(0,0,0,0)') 
-  .setQuantityBorderColor('rgba(0,0,0,0)')
-  .setQuantityTextColor('rgba(0,0,0,0)')
-  .setLineColor('#aaaecf')
-  .setBodyBackgroundColor('rgba(6,6,6,0.9)')
-  .setBodyTextColor('#D8DCFF')
-  .setBodyBorderColor('#D8DCFF')
-  .setBodyFont('10px Funnel Display')
-  .setLineStyle(1)
-  .setCancellable(false)            
- .onMove(() => {
-    const newPrice = previewLine.getPrice();
-    const newPriceBigInt = BigInt(Math.round(newPrice * Number(activeMarket.priceFactor)));
-    setLimitPrice?.(newPriceBigInt);
-    setLimitPriceString?.(newPrice.toFixed(3));
-    const formatted = newPrice.toFixed(3);
-const side = tokenInRef.current === activeMarket.quoteAddress
-  ? 'Place limit buy'
-  : 'Place limit sell';
-previewLine.setText(`${side}${divider}${formatted}`);
-;
-  });
-
+      const previewLine = widgetRef.current.activeChart()
+        .createOrderLine()
+        .setPrice(priceInDisplayUnits)
+      .setText(`${orderTypeText}${divider}${formattedPrice}`)
+        .setQuantity('\u200B')          
+        .setQuantityBackgroundColor('rgba(0,0,0,0)') 
+        .setQuantityBorderColor('rgba(0,0,0,0)')
+        .setQuantityTextColor('rgba(0,0,0,0)')
+        .setLineColor('#aaaecf')
+        .setBodyBackgroundColor('rgba(6,6,6,0.9)')
+        .setBodyTextColor('#D8DCFF')
+        .setBodyBorderColor('#D8DCFF')
+        .setBodyFont('10px Funnel Display')
+        .setLineStyle(1)
+        .setCancellable(false)            
+      .onMove(() => {
+          const newPrice = previewLine.getPrice();
+          updateLimitAmount(newPrice, Number(activeMarket.priceFactor), activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(newPrice ?? 1)) - 1) : Number(activeMarket.priceFactor));
+          const formatted = newPrice.toFixed(3);
+      const side = tokenIn === activeMarket.quoteAddress
+        ? 'Place limit buy'
+        : 'Place limit sell';
+      previewLine.setText(`${side}${divider}${formatted}`);
+      ;
+        });
       previewOrderLineRef.current = previewLine;
     } catch (error) {
       console.error('Error creating preview order line:', error);
@@ -163,8 +149,13 @@ previewLine.setText(`${side}${divider}${formatted}`);
   };
 
   useEffect(() => {
-    if (chartReady) {
-      updatePreviewOrderLine();
+    try {
+      if (chartReady) {
+        updatePreviewOrderLine();
+      }
+    }
+    catch (e) {
+
     }
   }, [chartReady, limitPrice, amountIn, tokenIn, isLimitOrderMode, activeMarket]);
 
@@ -276,8 +267,6 @@ previewLine.setText(`${side}${divider}${formatted}`);
                   orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                 }
                 try {
-                  console.log(BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)))
-
                   await setChain();
                   let hash;
                   hash = await sendUserOperationAsync({uo: replaceOrder(
@@ -678,7 +667,6 @@ previewLine.setText(`${side}${divider}${formatted}`);
                       orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                     }
                     try {
-                      console.log(BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)))
                       await setChain();
                       let hash;
                       hash = await sendUserOperationAsync({uo: replaceOrder(

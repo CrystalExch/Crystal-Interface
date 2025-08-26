@@ -134,8 +134,8 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         btn?.classList.contains('active'),
       );
       if (activeButton && indicatorRef.current) {
-        indicatorRef.current.style.width = `${activeButton.offsetWidth - 4}px`;
-        indicatorRef.current.style.left = `${activeButton.offsetLeft + 2}px`;
+        indicatorRef.current.style.width = `${activeButton.offsetWidth - 2}px`;
+        indicatorRef.current.style.left = `${activeButton.offsetLeft + 1}px`;
       }
     };
 
@@ -152,13 +152,13 @@ const PortfolioGraph: React.FC<PortfolioGraphProps> = memo(
         const change =
           firstValue !== 0 ? ((lastValue - firstValue) / firstValue) * 100 : 0;
         onPercentageChange?.(change);
-        setColorValue?.(change >= 0 ? '#aaaecf' : '#d63031');
+        setColorValue?.(change >= 0 ? '#00b894' : '#d63031');
         setHigh(Math.max(...chartData.map((d) => d.value)) || 0);
         setLow(Math.min(...chartData.map((d) => d.value)) || 0);
       }
       else {
         onPercentageChange?.(0)
-        setColorValue?.('#aaaecf');
+        setColorValue?.('#00b894');
       }
     }, [chartData]);
 
@@ -389,12 +389,12 @@ const EmptyGraph: React.FC<{
           <Line
             type="monotone"
             dataKey="value"
-            stroke="#aaaecf"
+            stroke="#00b894"
             strokeWidth={2}
             dot={{ r: 0 }}
             activeDot={{
               r: 4,
-              stroke: '#aaaecf',
+              stroke: '#00b894',
               strokeWidth: 2,
               fill: '#16171c',
             }}

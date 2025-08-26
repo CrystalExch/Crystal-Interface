@@ -11,7 +11,7 @@
   z-index: 8;
   overflow: hidden;
   background-color: rgb(6,6,6);
-  border-right: 1px solid rgba(179, 184, 249, 0.09);
+  border-right: 1px solid rgba(179, 184, 249, 0.12);
   z-index: 12;
 }
 
@@ -67,7 +67,7 @@ body.sidebar-hover-overlay::before {
     height: 46px;
     padding: 0;
     border-right: none;
-    border-top: 1px solid rgba(179, 184, 249, 0.09);
+    border-top: 1px solid rgba(179, 184, 249, 0.12);
     background-color: rgb(6,6,6);
     z-index: 10;
   }
@@ -450,7 +450,7 @@ body.sidebar-hover-overlay::before {
 
 .mobile-menu-close:hover {
   color: #aaaecf;
-  background: rgba(179, 184, 249, 0.09);
+  background: rgba(179, 184, 249, 0.12);
 }
 
 .mobile-menu-content {

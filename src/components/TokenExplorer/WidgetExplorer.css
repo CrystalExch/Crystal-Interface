@@ -49,7 +49,7 @@
   align-items: center;
   justify-content: space-between;
   padding: .5rem 1rem;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   background: rgb(6, 6, 6);
   cursor: grab;
   min-height: 40px;
@@ -158,7 +158,7 @@
 .widget-explorer-mobile-tabs {
   display: flex;
   background: rgb(6, 6, 6);
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   padding: 0;
   overflow-x: auto;
 }
@@ -219,7 +219,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 0.5rem 1rem;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   background: rgba(255, 255, 255, 0.02);
 }
 
@@ -393,7 +393,7 @@
 /* Token Rows - EXACT same styling as TokenExplorer */
 .widget-explorer-token-row {
   background: transparent;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.09);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
   padding: .75rem;
   padding-bottom: 0.5rem;
   display: flex;
