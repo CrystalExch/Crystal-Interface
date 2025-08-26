@@ -183,7 +183,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               timezone: 'Etc/UTC',
               exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: 100000000, 
+              pricescale: 10 ** Math.max(0, 5 - Math.floor(Math.log10(0.000001 ?? 1)) - 1), 
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -193,6 +193,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getBars: async (
+          symbolInfo: any,
           resolution: string,
           periodParams: any,
           onHistoryCallback: Function,
@@ -245,6 +246,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         getMarks: async (
+          symbolInfo: any,
           from: number,
           to: number,
           onDataCallback: (marks: any[]) => void,
@@ -353,30 +355,34 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   }, [token.symbol]);
 
   useEffect(() => {
-    tokenRef.current = token;
-    if (chartReady && widgetRef.current) {
-      setOverlayVisible(true);
-      localStorage.setItem('meme_chart_timeframe', selectedInterval === '1d'
-        ? '1D'
-        : selectedInterval === '4h'
-          ? '240'
-          : selectedInterval === '1h'
-            ? '60'
-            : selectedInterval.slice(0, -1));
-
-      widgetRef.current.setSymbol(
-        `${token.symbol}/MON`,
-        selectedInterval === '1d'
+    try {
+      tokenRef.current = token;
+      if (chartReady && widgetRef.current) {
+        setOverlayVisible(true);
+        localStorage.setItem('meme_chart_timeframe', selectedInterval === '1d'
           ? '1D'
           : selectedInterval === '4h'
             ? '240'
             : selectedInterval === '1h'
               ? '60'
-              : selectedInterval.slice(0, -1),
-        () => {
-          setOverlayVisible(false);
-        },
-      );
+              : selectedInterval.slice(0, -1));
+  
+        widgetRef.current.setSymbol(
+          `${token.symbol}/MON`,
+          selectedInterval === '1d'
+            ? '1D'
+            : selectedInterval === '4h'
+              ? '240'
+              : selectedInterval === '1h'
+                ? '60'
+                : selectedInterval.slice(0, -1),
+          () => {
+            setOverlayVisible(false);
+          },
+        );
+      }
+    }
+    catch(e) {
     }
   }, [token.symbol, selectedInterval]);
 

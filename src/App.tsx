@@ -1972,7 +1972,7 @@ function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           jsonrpc: '2.0',
-          id: Math.random(),
+          id: Math.floor(Math.random() * 1e9) + 1,
           method: 'eth_call',
           params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
         })
