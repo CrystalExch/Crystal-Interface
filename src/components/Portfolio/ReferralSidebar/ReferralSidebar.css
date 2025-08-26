@@ -168,6 +168,20 @@
   overflow-y: auto;
 }
 
+.referral-token-image{
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.token-logo{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+
 .token-row {
   align-items: center;
   display: flex;

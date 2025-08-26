@@ -11,6 +11,7 @@ import discord from '../../assets/Discord.svg'
 import docs from '../../assets/docs.png';
 import vaults from '../../assets/yeildvaults.png';
 import earn from '../../assets/earn.png';
+import liquidity from '../../assets/liquidity.svg';
 import explorer from '../../assets/explorer.png';
 import tracker from '../../assets/tracker.svg';
 import earnvaults from '../../assets/vaults.png';
@@ -191,7 +192,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={vaults} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Lending')}</span>
             </Link>
-            
+            <Link
+              to="/earn/liquidity"
+              className={`page-mode-button ${path === '/earn/liquidity' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={liquidity} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Liquidity')}</span>
+            </Link>
             <Link
               to="/earn/vaults"
               className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}

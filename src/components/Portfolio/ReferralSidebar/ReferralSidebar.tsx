@@ -407,7 +407,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             Object.entries(claimableFees).map(([token, value]) => (
               <div key={token} className="token-row">
                 <div className="token-item">
-                  <div className="token-info">
+                  <div className="referrals-token-info">
                     <div className="token-logo">
                       <img className="referral-token-image" src={tokendict[token]?.image}/>
                       <span className="token-symbol">{tokendict[token]?.ticker}</span>

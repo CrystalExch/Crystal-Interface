@@ -154,6 +154,8 @@ import { HexColorPicker } from 'react-colorful';
 import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
+import LP from './components/LP/LP.tsx';
+
 
 // import config
 import { ChevronDown, Search, SearchIcon } from 'lucide-react';
@@ -21108,6 +21110,37 @@ const [createVaultForm, setCreateVaultForm] = useState({
               getMarket={getMarket}
             />
           } />
+
+          
+<Route 
+  path="/earn/liquidity" 
+  element={
+    <LP
+      setpopup={setpopup}
+      onSelectToken={(token) => {
+        setSelectedToken(token);
+        setTimeout(() => setSelectedToken(null), 100);
+      }}
+      setOnSelectTokenCallback={setOnSelectTokenCallback}
+      tokendict={tokendict}
+      tradesByMarket={tradesByMarket}
+      markets={markets}
+      tokenBalances={tokenBalances}
+      connected={connected}
+      account={{
+        connected: connected,
+        address: address,
+        chainId: userchain,
+      }}
+      sendUserOperationAsync={sendUserOperationAsync}
+      waitForTxReceipt={waitForTxReceipt}
+      setChain={handleSetChain}
+      address={address}
+      refetch={refetch}
+    />
+  } 
+/>
+
           <Route
             path="/board"
             element={
