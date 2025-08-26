@@ -172,6 +172,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                   orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                 }
                 try {
+                  console.log(BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)))
+
                   await setChain();
                   let hash;
                   hash = await sendUserOperationAsync({uo: replaceOrder(
@@ -562,6 +564,7 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                       orderLine.setQuantity(formatDisplay(customRound((order[2]-order[7]) * (order[0]) / orderLine.getPrice() / Number(markets[order[4]].priceFactor) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
                     }
                     try {
+                      console.log(BigInt(orderLine.getPrice().toPrecision(5) * Number(markets[order[4]].priceFactor)))
                       await setChain();
                       let hash;
                       hash = await sendUserOperationAsync({uo: replaceOrder(

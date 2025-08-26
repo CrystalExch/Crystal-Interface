@@ -798,7 +798,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 sellTxs
                 trades(first: 50, orderBy: block, orderDirection: desc) {
                   id
-                  account
+                  account {id}
                   block
                   isBuy
                   priceNativePerTokenWad
@@ -814,7 +814,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }`,
             variables: {
               id: token.id.toLowerCase(),
-              seriesId: `${'0x81e0aec2413987cb107258d876862dd1701f5da1'.toLowerCase()}-${(
+              seriesId: `${token.id.toLowerCase()}-${(
                 selectedInterval === '1m' ? 60 :
                 selectedInterval === '5m' ? 300 :
                 selectedInterval === '15m' ? 900 :
@@ -826,7 +826,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }),
         });
     
-        const data = await response.json();
+        const data = (await response.json())?.data;
         console.log(data)
         if (isCancelled || !data) return;
 
@@ -842,32 +842,32 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }));
         }
 
-        if (data.trades?.length) {
-          const mapped = data.trades.map((t: any) => ({
+        if (data.launchpadTokens?.[0]?.trades?.length) {
+          const mapped = data.launchpadTokens?.[0]?.trades.map((t: any) => ({
             id: t.id,
-            timestamp: Number(t.timestamp),
+            timestamp: Number(t.block),
             isBuy: t.isBuy,
-            price: Number(t.price) / 1e18,
-            tokenAmount: Number(t.tokenAmount) / 1e18,
-            nativeAmount: Number(t.nativeAmount) / 1e18,
-            caller: t.trader,
+            price: Number(t.priceNativePerTokenWad) / 1e18,
+            tokenAmount: Number(t.isBuy ? t.amountOut : t.amountIn) / 1e18,
+            nativeAmount: Number(t.isBuy ? t.amountIn : t.amountOut) / 1e18,
+            caller: t.account.id,
           }));
+
           setTrades(mapped);
         } else {
           setTrades([]);
         }
-        console.log(data.candles)
 
         if (data.candles?.klines) {
           const bars = data.candles.klines
             .slice().reverse()
             .map((c: any) => ({
-              time: Number(c.timestamp) * 1000,
+              time: Number(c.time) * 1000,
               open: Number(c.open) / 1e18,
               high: Number(c.high) / 1e18,
               low: Number(c.low) / 1e18,
               close: Number(c.close) / 1e18,
-              volume: Number(c.volume) / 1e18,
+              volume: Number(c.baseVolume) / 1e18,
             }));
 
           const key = token.symbol + 'MON' + (
@@ -890,7 +890,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             if (next) {
               let t = bar.time + intervalMs;
               while (t < next.time) {
-                filled.push({ time: t, open: bar.close, high: bar.close, low: bar.close, close: bar.close, volume: 0 });
+                filled.push({ time: t, open: bar.close, high: bar.close, low: bar.close, close: bar.close, volume: bar.baseVolume });
                 t += intervalMs;
               }
             }
@@ -1042,7 +1042,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       });
   
       const data = await response.json();
-
+      console.log(data)
       if (data?.holders) {
         const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
           return sum + (Number(holder.balance) / 1e18);
