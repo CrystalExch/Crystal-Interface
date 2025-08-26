@@ -29,6 +29,13 @@ interface ChartComponentProps {
   data: any;
   setData: any;
   realtimeCallbackRef: any;
+  // Add new props for limit preview
+  limitPrice?: bigint;
+  setLimitPrice?: (price: bigint) => void;
+  setLimitPriceString?: (priceString: string) => void;
+  tokenIn?: string;
+  amountIn?: bigint;
+  isLimitOrderMode?: boolean;
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -50,6 +57,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   data,
   setData,
   realtimeCallbackRef,
+  // New props for limit preview
+  limitPrice,
+  setLimitPrice,
+  setLimitPriceString,
+  tokenIn,
+  amountIn,
+  isLimitOrderMode = false,
 }) => {
   const [overlayVisible, setOverlayVisible] = useState(true);
   const [_lastPair, setLastPair] = useState('');
@@ -199,6 +213,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           newTxPopup={newTxPopup}
           usedRefAddress={usedRefAddress}
           realtimeCallbackRef={realtimeCallbackRef}
+          // Pass through the limit preview props
+          limitPrice={limitPrice}
+          setLimitPrice={setLimitPrice}
+          setLimitPriceString={setLimitPriceString}
+          tokenIn={tokenIn}
+          amountIn={amountIn}
+          isLimitOrderMode={isLimitOrderMode}
         />
       ) : (
         <>

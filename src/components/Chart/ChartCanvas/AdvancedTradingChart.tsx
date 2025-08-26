@@ -32,6 +32,12 @@ interface ChartCanvasProps {
   newTxPopup: any;
   usedRefAddress: any;
   realtimeCallbackRef: any;
+  limitPrice?: bigint;
+  setLimitPrice?: (price: bigint) => void;
+  setLimitPriceString?: (priceString: string) => void;
+  tokenIn?: string;
+  amountIn?: bigint;
+  isLimitOrderMode?: boolean;
 }
 
 const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
@@ -52,6 +58,12 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   waitForTxReceipt,
   usedRefAddress,
   realtimeCallbackRef,
+  limitPrice = BigInt(0),
+  setLimitPrice,
+  setLimitPriceString,
+  tokenIn,
+  amountIn = BigInt(0),
+  isLimitOrderMode = false,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -63,6 +75,98 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
+  
+  const previewOrderLineRef = useRef<any>(null);
+  const limitPriceRef = useRef(limitPrice);
+  const tokenInRef = useRef(tokenIn);
+  const amountInRef = useRef(amountIn);
+
+  useEffect(() => {
+    limitPriceRef.current = limitPrice;
+    tokenInRef.current = tokenIn;
+    amountInRef.current = amountIn;
+  }, [limitPrice, tokenIn, amountIn]);
+
+  const updatePreviewOrderLine = () => {
+    if (!chartReady || !widgetRef.current?.activeChart()) {
+      return;
+    }
+
+    if (previewOrderLineRef.current) {
+      try {
+        previewOrderLineRef.current.remove();
+      } catch (e) {
+      }
+      previewOrderLineRef.current = null;
+    }
+
+    if (!isLimitOrderMode || limitPrice <= BigInt(0) || amountIn <= BigInt(0)) {
+      return;
+    }
+
+    try {
+      const priceInDisplayUnits = Number(limitPrice) / Number(activeMarket.priceFactor);
+      const isBuyOrder = tokenIn === activeMarket.quoteAddress;
+      
+      let quantityDisplay = "";
+      if (tokenIn === activeMarket.baseAddress) {
+        quantityDisplay = customRound(
+          Number(amountIn) / (10 ** Number(activeMarket.baseDecimals)), 
+          3
+        ).toString();
+      } else {
+        const baseAmount = (amountIn * (activeMarket.scaleFactor || BigInt(1))) / limitPrice;
+        quantityDisplay = customRound(
+          Number(baseAmount) / (10 ** Number(activeMarket.baseDecimals)), 
+          3
+        ).toString();
+      }
+      
+      const formattedPrice = priceInDisplayUnits.toFixed(3);
+      
+      const orderTypeText = isBuyOrder ? "Place limit buy" : "Place limit sell";
+      
+const divider = ' \u2502 ';
+
+const previewLine = widgetRef.current.activeChart()
+  .createOrderLine()
+  .setPrice(priceInDisplayUnits)
+.setText(`${orderTypeText}${divider}${formattedPrice}`)
+  .setQuantity('\u200B')          
+  .setQuantityBackgroundColor('rgba(0,0,0,0)') 
+  .setQuantityBorderColor('rgba(0,0,0,0)')
+  .setQuantityTextColor('rgba(0,0,0,0)')
+  .setLineColor('rgba(255, 255, 0, 1)')
+  .setBodyBackgroundColor('rgba(6,6,6,0.9)')
+  .setBodyTextColor('rgba(255, 255, 0, 1)')
+  .setBodyBorderColor('rgba(255, 255, 0, 1)')
+  .setBodyFont('10px Funnel Display')
+  .setLineStyle(1)
+  .setCancellable(false)            
+ .onMove(() => {
+    const newPrice = previewLine.getPrice();
+    const newPriceBigInt = BigInt(Math.round(newPrice * Number(activeMarket.priceFactor)));
+    setLimitPrice?.(newPriceBigInt);
+    setLimitPriceString?.(newPrice.toFixed(3));
+    const formatted = newPrice.toFixed(3);
+const side = tokenInRef.current === activeMarket.quoteAddress
+  ? 'Place limit buy'
+  : 'Place limit sell';
+previewLine.setText(`${side}${divider}${formatted}`);
+;
+  });
+
+      previewOrderLineRef.current = previewLine;
+    } catch (error) {
+      console.error('Error creating preview order line:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (chartReady) {
+      updatePreviewOrderLine();
+    }
+  }, [chartReady, limitPrice, amountIn, tokenIn, isLimitOrderMode, activeMarket]);
 
   useEffect(() => {
     if (data[2] != showChartOutliers) {
@@ -488,6 +592,14 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
     return () => {
       try {
+        if (previewOrderLineRef.current) {
+          try {
+            previewOrderLineRef.current.remove();
+          } catch (e) {
+          }
+          previewOrderLineRef.current = null;
+        }
+
         ordersRef.current.forEach((order: any) => {
           try {
             if (order?.[10] && typeof order[10].remove === 'function') {
@@ -534,6 +646,8 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
 
           () => {
             setOverlayVisible(false);
+            updatePreviewOrderLine();
+            
             if (orders.length > 0 && isOrdersVisible) {
               if (widgetRef.current?.activeChart()?.symbol()) {
                 const marketKey = widgetRef.current.activeChart().symbol().split('/')[0] + widgetRef.current.activeChart().symbol().split('/')[1]

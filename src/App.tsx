@@ -473,20 +473,20 @@ function App() {
     localStorage.setItem('crystal_sub_wallets', JSON.stringify(wallets));
   };
 
-const [createVaultForm, setCreateVaultForm] = useState({
-  name: '',
-  description: '',
-  quoteAsset: '',
-  baseAsset: '',
-  amountQuote: '',
-  amountBase: '',
-  social1: '',
-  social2: '',
-  showQuoteDropdown: false,
-  showBaseDropdown: false,
-  quoteSearchTerm: '',
-  baseSearchTerm: ''
-});
+  const [createVaultForm, setCreateVaultForm] = useState({
+    name: '',
+    description: '',
+    quoteAsset: '',
+    baseAsset: '',
+    amountQuote: '',
+    amountBase: '',
+    social1: '',
+    social2: '',
+    showQuoteDropdown: false,
+    showBaseDropdown: false,
+    quoteSearchTerm: '',
+    baseSearchTerm: ''
+  });
   const createSubWallet = async () => {
     try {
       const privateKey = keccak256(await signTypedDataAsync({
@@ -12805,7 +12805,7 @@ const [createVaultForm, setCreateVaultForm] = useState({
                             style={{ width: `${Math.max((withdrawPercentage || '0').length, 1)}ch` }}
                             className="withdraw-percentage-input"
                           />
-                          <span style={{color: `${withdrawPercentage ? '#FFF' : '#ededf571'}`}} className="withdraw-percentage-symbol">%</span>
+                          <span style={{ color: `${withdrawPercentage ? '#FFF' : '#ededf571'}` }} className="withdraw-percentage-symbol">%</span>
                         </div>
                       </div>
                       <div className="percentage-buttons">
@@ -14126,18 +14126,18 @@ const [createVaultForm, setCreateVaultForm] = useState({
                     setpopup(0);
                   }}
                 >
-                      <img src={closebutton} className="close-button-icon" />
+                  <img src={closebutton} className="close-button-icon" />
                 </button>
               </div>
 
-              <div 
+              <div
                 className="modal-body"
                 onClick={(e) => {
                   if (!(e.target as Element)?.closest?.('.token-selector-container')) {
-                    setCreateVaultForm(prev => ({ 
-                      ...prev, 
-                      showQuoteDropdown: false, 
-                      showBaseDropdown: false 
+                    setCreateVaultForm(prev => ({
+                      ...prev,
+                      showQuoteDropdown: false,
+                      showBaseDropdown: false
                     }));
                   }
                 }}
@@ -14226,8 +14226,8 @@ const [createVaultForm, setCreateVaultForm] = useState({
                                 key={token.address}
                                 className="token-option"
                                 onClick={() => {
-                                  setCreateVaultForm(prev => ({ 
-                                    ...prev, 
+                                  setCreateVaultForm(prev => ({
+                                    ...prev,
                                     quoteAsset: token.address,
                                     showQuoteDropdown: false,
                                     quoteSearchTerm: ''
@@ -14250,14 +14250,14 @@ const [createVaultForm, setCreateVaultForm] = useState({
                                 token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 token.address.toLowerCase().includes(searchTerm.toLowerCase());
                             }).length === 0 && createVaultForm.quoteSearchTerm && (
-                              <div className="no-tokens-found">No tokens found</div>
-                            )}
+                                <div className="no-tokens-found">No tokens found</div>
+                              )}
                           </div>
                         </div>
                       )}
                     </div>
                   </div>
-                  
+
                   <div className="form-group">
                     <label className="token-selector-label">Base Asset</label>
                     <div className="token-selector-container">
@@ -14320,8 +14320,8 @@ const [createVaultForm, setCreateVaultForm] = useState({
                                 key={token.address}
                                 className="token-option"
                                 onClick={() => {
-                                  setCreateVaultForm(prev => ({ 
-                                    ...prev, 
+                                  setCreateVaultForm(prev => ({
+                                    ...prev,
                                     baseAsset: token.address,
                                     showBaseDropdown: false,
                                     baseSearchTerm: ''
@@ -14344,8 +14344,8 @@ const [createVaultForm, setCreateVaultForm] = useState({
                                 token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                                 token.address.toLowerCase().includes(searchTerm.toLowerCase());
                             }).length === 0 && createVaultForm.baseSearchTerm && (
-                              <div className="no-tokens-found">No tokens found</div>
-                            )}
+                                <div className="no-tokens-found">No tokens found</div>
+                              )}
                           </div>
                         </div>
                       )}
@@ -20755,6 +20755,12 @@ const [createVaultForm, setCreateVaultForm] = useState({
       data={advChartData}
       setData={setChartData}
       realtimeCallbackRef={realtimeCallbackRef}
+      limitPrice={limitPrice}
+      setLimitPrice={setlimitPrice}
+      setLimitPriceString={setlimitPriceString}
+      tokenIn={tokenIn}
+      amountIn={amountIn}
+      isLimitOrderMode={location.pathname.slice(1) === 'limit'}
     />
   ), [
     activeMarket,
@@ -20772,7 +20778,13 @@ const [createVaultForm, setCreateVaultForm] = useState({
     newTxPopup,
     usedRefAddress,
     advChartData,
-    realtimeCallbackRef
+    realtimeCallbackRef,
+      limitPrice,
+  setlimitPrice,
+  setlimitPriceString,
+  tokenIn,
+  amountIn,
+  location.pathname,
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (
@@ -21111,35 +21123,35 @@ const [createVaultForm, setCreateVaultForm] = useState({
             />
           } />
 
-          
-<Route 
-  path="/earn/liquidity" 
-  element={
-    <LP
-      setpopup={setpopup}
-      onSelectToken={(token) => {
-        setSelectedToken(token);
-        setTimeout(() => setSelectedToken(null), 100);
-      }}
-      setOnSelectTokenCallback={setOnSelectTokenCallback}
-      tokendict={tokendict}
-      tradesByMarket={tradesByMarket}
-      markets={markets}
-      tokenBalances={tokenBalances}
-      connected={connected}
-      account={{
-        connected: connected,
-        address: address,
-        chainId: userchain,
-      }}
-      sendUserOperationAsync={sendUserOperationAsync}
-      waitForTxReceipt={waitForTxReceipt}
-      setChain={handleSetChain}
-      address={address}
-      refetch={refetch}
-    />
-  } 
-/>
+
+          <Route
+            path="/earn/liquidity"
+            element={
+              <LP
+                setpopup={setpopup}
+                onSelectToken={(token) => {
+                  setSelectedToken(token);
+                  setTimeout(() => setSelectedToken(null), 100);
+                }}
+                setOnSelectTokenCallback={setOnSelectTokenCallback}
+                tokendict={tokendict}
+                tradesByMarket={tradesByMarket}
+                markets={markets}
+                tokenBalances={tokenBalances}
+                connected={connected}
+                account={{
+                  connected: connected,
+                  address: address,
+                  chainId: userchain,
+                }}
+                sendUserOperationAsync={sendUserOperationAsync}
+                waitForTxReceipt={waitForTxReceipt}
+                setChain={handleSetChain}
+                address={address}
+                refetch={refetch}
+              />
+            }
+          />
 
           <Route
             path="/board"
