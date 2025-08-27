@@ -26,7 +26,6 @@ interface ChartCanvasProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  waitForTxReceipt: any;
   address: any;
   client: any;
   newTxPopup: any;
@@ -54,7 +53,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
-  waitForTxReceipt,
   usedRefAddress,
   realtimeCallbackRef,
   limitPrice = BigInt(0),
@@ -283,7 +281,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     BigInt(Math.floor(Date.now() / 1000) + 900),
                     usedRefAddress
                   )})
-                  await waitForTxReceipt(hash.hash);
                   refetch()
                 } catch (error) {
                   orderLine.setCancellable(true)
@@ -312,7 +309,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                     BigInt(order[1]),
                     BigInt(Math.floor(Date.now() / 1000) + 900)
                   );
-                  await waitForTxReceipt(hash.hash);
                   refetch()
                   try {
                     orderLine.remove()
@@ -683,7 +679,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )})
-                      await waitForTxReceipt(hash.hash);
                       refetch()
                     } catch (error) {
                       orderLine.setCancellable(true)
@@ -712,7 +707,6 @@ const AdvancedTradingChart: React.FC<ChartCanvasProps> = ({
                         BigInt(order[1]),
                         BigInt(Math.floor(Date.now() / 1000) + 900)
                       );
-                      await waitForTxReceipt(hash.hash);
                       refetch()
                       try {
                         orderLine.remove()

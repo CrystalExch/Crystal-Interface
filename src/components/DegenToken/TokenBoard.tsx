@@ -40,7 +40,6 @@ interface Token {
 
 interface TokenBoardProps {
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   setpopup?: (popup: number) => void;
@@ -214,7 +213,6 @@ const TokenCard: React.FC<{ token: Token; onClick: () => void }> = ({ token, onC
 
 const TokenBoard: React.FC<TokenBoardProps> = ({
   sendUserOperationAsync,
-  waitForTxReceipt,
   account,
   setChain,
   setpopup

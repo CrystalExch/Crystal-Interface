@@ -74,7 +74,6 @@ interface Comment {
 
 interface TokenDetailProps {
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   setpopup?: (popup: number) => void;
@@ -101,7 +100,6 @@ const formatNumber = (n: number) => {
 
 const TokenDetail: React.FC<TokenDetailProps> = ({
   sendUserOperationAsync,
-  waitForTxReceipt,
   account,
   setChain,
   setpopup
@@ -394,7 +392,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   }, [token, fetchTokenData]);
 
   const handleTrade = async () => {
-    if (!tradeAmount || !account.connected || !token || !sendUserOperationAsync || !waitForTxReceipt) {
+    if (!tradeAmount || !account.connected || !token || !sendUserOperationAsync) {
       setpopup?.(4);
       return;
     }
@@ -441,7 +439,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         }
 
         const op = await sendUserOperationAsync({ uo });
-        await waitForTxReceipt(op.hash);
 
         if (updatePopup) {
           updatePopup(txId, {
@@ -483,7 +480,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             value: 0n,
           };
           const approveOp = await sendUserOperationAsync({ uo: approveUo });
-          await waitForTxReceipt(approveOp.hash);
         }
 
         if (updatePopup) {
@@ -505,7 +501,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         };
 
         const sellOp = await sendUserOperationAsync({ uo: sellUo });
-        await waitForTxReceipt(sellOp.hash);
 
         if (updatePopup) {
           updatePopup(txId, {

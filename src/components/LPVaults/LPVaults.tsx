@@ -27,7 +27,6 @@ interface LPVaultsProps {
   isVaultWithdrawSigning: boolean;
   setIsVaultWithdrawSigning: (signing: boolean) => void;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   setChain: () => void;
   address: string;
   refetch?: () => void;
@@ -116,7 +115,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   isVaultDepositSigning,
   setIsVaultDepositSigning,
   sendUserOperationAsync,
-  waitForTxReceipt,
   setChain,
   address,
   refetch,
@@ -348,7 +346,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     }
 
     const deployOp = await sendUserOperationAsync({ uo: deployUo });
-    await waitForTxReceipt(deployOp.hash);
   };
   const [showTimeRangeDropdown, setShowTimeRangeDropdown] = useState(false);
 

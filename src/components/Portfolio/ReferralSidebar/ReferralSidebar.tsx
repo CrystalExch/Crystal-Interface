@@ -27,7 +27,6 @@ interface ReferralSidebarProps {
   account: any;
   refetch: any;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   client: any;
   activechain: any;
   lastRefGroupFetch: any;
@@ -50,7 +49,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   account,
   refetch,
   sendUserOperationAsync,
-  waitForTxReceipt,
   client,
   activechain,
   lastRefGroupFetch
@@ -212,7 +210,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             value: 0n,
           },
         });
-        await waitForTxReceipt(hash.hash);
         setRefLink(newRefCode);
         setShowCreateModal(false);
         setNewRefCode('');
@@ -269,7 +266,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             value: 0n,
           },
         });
-        await waitForTxReceipt(hash.hash);
         setUsedRefLink(used);
         setUsedRefAddress(used === '' ? '0x0000000000000000000000000000000000000000' : lookup?.[0].result);
         setShowEnterCode(false);
@@ -310,7 +306,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
             value: 0n,
           },
         });
-        await waitForTxReceipt(hash.hash);
         lastRefGroupFetch.current = 0;
         refetch();
       } catch (error) {

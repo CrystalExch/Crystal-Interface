@@ -22,7 +22,6 @@ interface OrderItemProps {
   sendUserOperationAsync: any;
   setChain: any;
   quotePrice: any;
-  waitForTxReceipt: any;
   onMarketSelect: any;
   setpopup: (value: number) => void;
   onLimitPriceUpdate?: (price: number) => void;
@@ -38,7 +37,6 @@ const OrderItem: React.FC<OrderItemProps> = ({
   sendUserOperationAsync, 
   setChain, 
   quotePrice, 
-  waitForTxReceipt, 
   onMarketSelect, 
   openEditOrderPopup,
   openEditOrderSizePopup // Add this to destructuring
@@ -160,7 +158,6 @@ const OrderItem: React.FC<OrderItemProps> = ({
           refetch={refetch} 
           sendUserOperationAsync={sendUserOperationAsync} 
           setChain={setChain} 
-          waitForTxReceipt={waitForTxReceipt} 
         />
       </span>
     </div>

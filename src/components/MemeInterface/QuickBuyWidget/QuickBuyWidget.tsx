@@ -35,7 +35,6 @@ interface QuickBuyWidgetProps {
     sellPriorityFee: string;
     sellBribeValue: string;
     sendUserOperationAsync?: any;
-    waitForTxReceipt?: any;
     account?: { connected: boolean; address: string; chainId: number };
     setChain?: () => void;
     activechain?: string;
@@ -64,7 +63,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     sellPriorityFee,
     sellBribeValue,
     sendUserOperationAsync,
-    waitForTxReceipt,
     account,
     setChain,
     activechain,
@@ -243,7 +241,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     }, [isOpen]);
     const handleBuyTrade = async (amount: string) => {
-        if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+        if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
             if (setpopup) setpopup(4);
             return;
         }
@@ -330,7 +328,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }
 
             const op = await sendUserOperationAsync({ uo });
-            await waitForTxReceipt(op.hash);
 
             const expectedTokens = tokenPrice > 0 ? parseFloat(amount) / tokenPrice : 0;
             if (updatePopup) {
@@ -369,7 +366,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     };
 
     const handleSellTrade = async (value: string) => {
-        if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+        if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
             setpopup?.(4);
             return;
         }
@@ -443,7 +440,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             };
 
             const sellOp = await sendUserOperationAsync({ uo: sellUo });
-            await waitForTxReceipt(sellOp.hash);
 
             const soldTokens = Number(amountTokenWei) / 1e18;
             const expectedMON = soldTokens * tokenPrice;

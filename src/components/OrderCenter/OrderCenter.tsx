@@ -45,7 +45,6 @@ interface OrderCenterProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  waitForTxReceipt: any;
   isBlurred?: boolean;
   isVertDragging?: boolean;
   isOrderCenterVisible?: boolean;
@@ -85,7 +84,6 @@ const OrderCenter: React.FC<OrderCenterProps> =
     sendUserOperationAsync,
     setChain,
     isBlurred,
-    waitForTxReceipt,
     isVertDragging,
     isOrderCenterVisible,
     onLimitPriceUpdate,
@@ -307,7 +305,6 @@ const OrderCenter: React.FC<OrderCenterProps> =
               pageSize={pageSize}
               currentPage={currentPage}
               setChain={setChain}
-              waitForTxReceipt={waitForTxReceipt}
               onMarketSelect={onMarketSelect}
               setpopup={setpopup}
               onLimitPriceUpdate={onLimitPriceUpdate}

@@ -136,7 +136,6 @@ interface TokenExplorerProps {
   onOpenFiltersForColumn: (c: Token['status']) => void;
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
 }
 
 const MAX_PER_COLUMN = 30;
@@ -2058,7 +2057,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
-  waitForTxReceipt,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2232,7 +2230,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
 
       const op = await sendUserOperationAsync({ uo });
-      await waitForTxReceipt(op.hash);
 
       if (updatePopup) {
         updatePopup(txId, { title: 'Quick Buy Complete', subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, variant: 'success', confirmed: true, isLoading: false });
@@ -2252,7 +2249,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     } finally {
       dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
     }
-  }, [routerAddress, sendUserOperationAsync, waitForTxReceipt]);
+  }, [routerAddress, sendUserOperationAsync]);
 
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
@@ -2406,7 +2403,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           body: JSON.stringify({
             query: `
             {
-              launchpadTokens(first: 30, orderBy: createdAt, orderDirection: desc) {
+              launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
                 id
                 creator {
                   id
@@ -2418,7 +2415,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 social1
                 social2
                 social3
-                createdAt
+                timestamp
                 migrated
                 migratedAt
                 volumeNative
@@ -2439,6 +2436,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }),
         });
         const json = await res.json();
+        console.log(json)
         if (cancelled) return;
 
         const rawMarkets = json.data?.launchpadTokens ?? [];
@@ -2455,7 +2453,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               console.warn('failed to load metadata for', m.metadataCID, e);
             }
 
-            let createdTimestamp = Number(m.createdAt);
+            let createdTimestamp = Number(m.timestamp);
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }

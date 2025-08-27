@@ -184,7 +184,7 @@ function App() {
   const { client, address: scaAddress } = useSmartAccountClient({});
   const { sendUserOperationAsync: rawSendUserOperationAsync } = useSendUserOperation({
     client,
-    waitForTxn: true,
+    waitForTxn: false,
   });
   const { signTypedDataAsync } = useSignTypedData({ client })
   const user = useUser();
@@ -227,7 +227,7 @@ function App() {
     return g;
   })();
 
-  const txReceiptResolvers = new Map<string, () => void>();
+  const txReceiptResolvers = useRef(new Map<string, () => void>());
   // get market including multihop
   const getMarket = (token1: string, token2: string): any => {
     return (
@@ -543,6 +543,7 @@ function App() {
 
   const sendUserOperationAsync = useCallback(
     async (params: any, gasLimit: bigint = 0n, prioFee: bigint = 0n) => {
+      let hash: `0x${string}`;
       if (validOneCT) {
         const tx = {
           to: params.uo.target,
@@ -556,7 +557,7 @@ function App() {
         }
         oneCTNonceRef.current += 1;
         const signedTx = await onectclient.signTransaction(tx);
-        const hash = keccak256(signedTx) as `0x${string}`;
+        hash = keccak256(signedTx) as `0x${string}`;
 
         const RPC_URLS = [
           HTTP_URL,
@@ -565,7 +566,6 @@ function App() {
           'https://monad-testnet.drpc.org',
           'https://monad-testnet.g.alchemy.com/v2/SqJPlMJRSODWXbVjwNyzt6-uY9RMFGng',
         ];
-
         RPC_URLS.forEach(url => {
           fetch(url, {
             method: 'POST',
@@ -578,11 +578,20 @@ function App() {
             })
           }).catch();
         });
-        return { hash }
       }
       else {
-        return rawSendUserOperationAsync(params)
-      }
+        hash = (await rawSendUserOperationAsync(params))?.hash
+      }    
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          txReceiptResolvers.current.set(hash, resolve);
+        }),
+        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
+          txReceiptResolvers.current.delete(hash);
+          hash = r.transactionHash;
+        }),
+      ]);
+      return hash
     },
     [validOneCT]
   );
@@ -1096,7 +1105,6 @@ function App() {
         )
       });
 
-      await waitForTxReceipt(hash.hash);
       refetch();
       setpopup(0);
       setEditingOrder(null);
@@ -1162,7 +1170,6 @@ function App() {
         )
       });
 
-      await waitForTxReceipt(hash.hash);
       refetch();
       setpopup(0);
       setEditingOrderSize(null);
@@ -1526,21 +1533,6 @@ function App() {
     return await alchemyconfig?._internal?.wagmiConfig?.state?.connections?.entries()?.next()?.value?.[1]?.connector?.switchChain({ chainId: activechain as any });
   }, [activechain]);
 
-  const waitForTxReceipt = useCallback(async (hash: `0x${string}`) => {
-    if (!client) {
-      return await Promise.race([
-        new Promise<void>((resolve) => {
-          txReceiptResolvers.set(hash, resolve);
-        }),
-        waitForTransactionReceipt(config, { hash, pollingInterval: 500 }).then((r) => {
-          txReceiptResolvers.delete(hash);
-          return r.transactionHash;
-        }),
-      ]);
-    }
-    return hash
-  }, [client])
-
   const formatDisplayValue = (
     rawAmount: number | bigint,
     decimals = 18,
@@ -1783,7 +1775,6 @@ function App() {
           value: 0n,
         };
         const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-        await waitForTxReceipt(approveQuoteOp.hash);
       }
 
       if (baseTokenAddress !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE') {
@@ -1806,7 +1797,6 @@ function App() {
           value: 0n,
         };
         const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-        await waitForTxReceipt(approveBaseOp.hash);
       }
 
       // Deposit into vault
@@ -1833,7 +1823,6 @@ function App() {
       };
 
       const depositOp = await sendUserOperationAsync({ uo: depositUo });
-      await waitForTxReceipt(depositOp.hash);
 
       setVaultDepositAmounts({ shares: 0n, quote: 0n, base: 0n });
       setVaultInputStrings({ quote: '', base: '' })
@@ -1886,7 +1875,6 @@ function App() {
       };
 
       const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
-      await waitForTxReceipt(withdrawOp.hash);
 
       // Reset form
       setWithdrawShares('');
@@ -4073,10 +4061,10 @@ function App() {
                   }
                 }
                 tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
                 if (resolve) {
                   resolve();
-                  txReceiptResolvers.delete(log['transactionHash']);
+                  txReceiptResolvers.current.delete(log['transactionHash']);
                 }
                 let _timestamp = parseInt(log['blockTimestamp'], 16);
                 let _orderdata = log['data'].slice(130);
@@ -4256,10 +4244,10 @@ function App() {
                   }
                 }
                 tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
                 if (resolve) {
                   resolve();
-                  txReceiptResolvers.delete(log['transactionHash']);
+                  txReceiptResolvers.current.delete(log['transactionHash']);
                 }
                 let _timestamp = parseInt(log['blockTimestamp'], 16);
                 let _orderdata = log['data'].slice(258);
@@ -4823,7 +4811,7 @@ function App() {
 
       wsRef.current.onmessage = (event) => {
         const message = JSON.parse(event.data);
-        if (message?.params?.result) {
+        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
           const log = message?.params?.result;
           let ordersChanged = false;
           let canceledOrdersChanged = false;
@@ -4864,10 +4852,10 @@ function App() {
                   }
                 }
                 tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
                 if (resolve) {
                   resolve();
-                  txReceiptResolvers.delete(log['transactionHash']);
+                  txReceiptResolvers.current.delete(log['transactionHash']);
                 }
                 let _timestamp = Math.floor(Date.now() / 1000);
                 let _orderdata = log['data'].slice(130);
@@ -5045,10 +5033,10 @@ function App() {
                   }
                 }
                 tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.get(log['transactionHash']);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
                 if (resolve) {
                   resolve();
-                  txReceiptResolvers.delete(log['transactionHash']);
+                  txReceiptResolvers.current.delete(log['transactionHash']);
                 }
                 let _timestamp = Math.floor(Date.now() / 1000);
                 let _orderdata = log['data'].slice(258);
@@ -6430,7 +6418,6 @@ function App() {
             value: 0n,
           },
         });
-        await waitForTxReceipt(hash.hash);
         setUsedRefLink(used);
         setUsedRefAddress('0x0000000000000000000000000000000000000000')
         setIsRefSigning(false);
@@ -6452,7 +6439,6 @@ function App() {
             value: 0n,
           },
         });
-        await waitForTxReceipt(hash.hash);
         setUsedRefLink(used);
         setUsedRefAddress(lookup?.[0].result)
         setIsRefSigning(false);
@@ -6544,7 +6530,6 @@ function App() {
         },
       });
 
-      await waitForTxReceipt(hash.hash);
       setUsername(_usernameInput);
       audio.currentTime = 0;
       audio.play();
@@ -6710,7 +6695,6 @@ function App() {
         BigInt(Math.floor(Date.now() / 1000) + 900)
       );
 
-      await waitForTxReceipt(hash.hash);
       refetch();
 
     } catch (error) {
@@ -6718,7 +6702,7 @@ function App() {
     } finally {
       setIsSigning(false);
     }
-  }, [connected, userchain, activechain, orders, router, markets, sendUserOperationAsync, waitForTxReceipt, refetch, isSigning]);
+  }, [connected, userchain, activechain, orders, router, markets, sendUserOperationAsync, refetch, isSigning]);
 
   const handleCancelAllOrders = useCallback(async () => {
     if (!connected || userchain !== activechain || orders.length === 0 || isSigning) {
@@ -6758,7 +6742,6 @@ function App() {
         )
       });
 
-      await waitForTxReceipt(hash.hash);
       refetch();
 
     } catch (error) {
@@ -6766,7 +6749,7 @@ function App() {
     } finally {
       setIsSigning(false);
     }
-  }, [connected, userchain, activechain, orders, markets, router, address, sendUserOperationAsync, waitForTxReceipt, refetch, isSigning]);
+  }, [connected, userchain, activechain, orders, markets, router, address, sendUserOperationAsync, refetch, isSigning]);
 
   const handleSubmitTransaction = useCallback(() => {
     if (popup !== 0) return;
@@ -9293,7 +9276,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          (hash),
                           'send',
                           eth,
                           '',
@@ -9317,7 +9300,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          (hash),
                           'send',
                           sendTokenIn,
                           '',
@@ -13640,7 +13623,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          (hash),
                           'send',
                           eth,
                           '',
@@ -13664,7 +13647,7 @@ function App() {
                           txPending.current = true
                         }
                         newTxPopup(
-                          (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                          (hash),
                           'send',
                           sendTokenIn,
                           '',
@@ -14476,7 +14459,6 @@ function App() {
                           value: 0n,
                         };
                         const approveQuoteOp = await sendUserOperationAsync({ uo: approveQuoteUo });
-                        await waitForTxReceipt(approveQuoteOp.hash);
                         console.log('Quote token approved');
                       }
                       if (createVaultForm.baseAsset.toLowerCase() !== '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee') {
@@ -14500,7 +14482,6 @@ function App() {
                           value: 0n,
                         };
                         const approveBaseOp = await sendUserOperationAsync({ uo: approveBaseUo });
-                        await waitForTxReceipt(approveBaseOp.hash);
                         console.log('Base token approved');
                       }
 
@@ -14533,7 +14514,6 @@ function App() {
                       console.log('Sending deploy transaction...');
                       const deployOp = await sendUserOperationAsync({ uo: deployUo });
                       console.log('Deploy transaction sent, waiting for receipt...');
-                      await waitForTxReceipt(deployOp.hash);
                       console.log('Vault deployed successfully!');
                       setCreateVaultForm({
                         name: '',
@@ -15648,9 +15628,7 @@ function App() {
                 if (tokenIn == eth && tokenOut == weth) {
                   hash = await sendUserOperationAsync({ uo: wrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
-                    (client
-                      ? hash.hash
-                      : await waitForTxReceipt(hash.hash)),
+                    hash,
                     'wrap',
                     eth,
                     weth,
@@ -15662,9 +15640,7 @@ function App() {
                 } else if (tokenIn == weth && tokenOut == eth) {
                   hash = await sendUserOperationAsync({ uo: unwrapeth(amountIn, weth) }, (rpcQueryData?.gasEstimate ?? 0n));
                   newTxPopup(
-                    (client
-                      ? hash.hash
-                      : await waitForTxReceipt(hash.hash)),
+                    hash,
                     'unwrap',
                     weth,
                     eth,
@@ -15676,9 +15652,7 @@ function App() {
                 } else if (tokenIn == eth && tokendict[tokenOut]?.lst == true && isStake) {
                   hash = await sendUserOperationAsync({ uo: stake(tokenOut, address, amountIn) }, (rpcQueryData?.gasEstimate ?? 0n) * 1100n / 1000n);
                   newTxPopup(
-                    (client
-                      ? hash.hash
-                      : await waitForTxReceipt(hash.hash)),
+                    hash,
                     'stake',
                     eth,
                     tokenOut,
@@ -15805,9 +15779,7 @@ function App() {
                             )
                           })
                           newTxPopup(
-                            client
-                              ? hash.hash
-                              : await waitForTxReceipt(hash.hash),
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -16001,9 +15973,7 @@ function App() {
                             )
                           })
                           newTxPopup(
-                            client
-                              ? hash.hash
-                              : await waitForTxReceipt(hash.hash),
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -16084,7 +16054,7 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  await waitForTxReceipt(hash.hash);
+                  console.log("done", Date.now())
                 }
                 setswitched(false);
                 setInputString('');
@@ -18155,7 +18125,7 @@ function App() {
                       }
                       hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
-                        hash.hash,
+                        hash,
                         'approve',
                         tokenIn,
                         '',
@@ -18178,9 +18148,7 @@ function App() {
                         )
                       })
                       newTxPopup(
-                        client
-                          ? hash.hash
-                          : await waitForTxReceipt(hash.hash),
+                        hash,
                         'approve',
                         tokenIn,
                         '',
@@ -18226,9 +18194,8 @@ function App() {
                     }
                   }
                 }
-                if (!client && hash?.hash) {
+                if (!client && hash) {
                   txPending.current = true
-                  await waitForTxReceipt(hash.hash);
                 }
                 setInputString('');
                 setamountIn(BigInt(0));
@@ -18249,7 +18216,7 @@ function App() {
                 console.log(error)
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash?.hash,
+                    hash,
                     "limitFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
@@ -18367,7 +18334,6 @@ function App() {
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-          waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -18954,7 +18920,7 @@ function App() {
                     txPending.current = true
                   }
                   newTxPopup(
-                    (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                    (hash),
                     'send',
                     eth,
                     '',
@@ -18978,7 +18944,7 @@ function App() {
                     txPending.current = true
                   }
                   newTxPopup(
-                    (client ? hash.hash : await waitForTxReceipt(hash.hash)),
+                    (hash),
                     'send',
                     tokenIn,
                     '',
@@ -20534,7 +20500,7 @@ function App() {
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
                       newTxPopup(
-                        hash.hash,
+                        hash,
                         'approve',
                         tokenIn,
                         '',
@@ -20557,10 +20523,7 @@ function App() {
                         )
                       })
                       newTxPopup(
-                        (client
-                          ? hash.hash
-                          : await waitForTxReceipt(hash.hash)
-                        ),
+                        hash,
                         'approve',
                         tokenIn,
                         '',
@@ -20586,9 +20549,8 @@ function App() {
                     })
                   }
                 }
-                if (!client && hash?.hash) {
+                if (!client && hash) {
                   txPending.current = true
-                  await waitForTxReceipt(hash.hash);
                 }
                 setInputString('');
                 setamountIn(BigInt(0));
@@ -20616,7 +20578,7 @@ function App() {
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash?.hash,
+                    hash,
                     "limitFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
@@ -20729,7 +20691,6 @@ function App() {
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={handleSetChain}
-          waitForTxReceipt={waitForTxReceipt}
         />
       </div>}
     </div>
@@ -20747,7 +20708,6 @@ function App() {
       refetch={refetch}
       sendUserOperationAsync={sendUserOperationAsync}
       setChain={handleSetChain}
-      waitForTxReceipt={waitForTxReceipt}
       address={address}
       client={client}
       newTxPopup={newTxPopup}
@@ -20771,7 +20731,6 @@ function App() {
     router,
     refetch,
     handleSetChain,
-    waitForTxReceipt,
     address,
     client,
     newTxPopup,
@@ -20906,7 +20865,6 @@ function App() {
                 refetch={refetch}
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
                 isVertDragging={isVertDragging}
                 isOrderCenterVisible={isOrderCenterVisible}
                 onLimitPriceUpdate={setCurrentLimitPrice}
@@ -21077,7 +21035,6 @@ function App() {
                 chainId: userchain,
               }}
               sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
               activechain={activechain}
               setChain={handleSetChain}
             />}
@@ -21108,7 +21065,6 @@ function App() {
               isVaultWithdrawSigning={isVaultWithdrawSigning}
               setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
               sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
               setChain={handleSetChain}
               address={address}
               refetch={refetch}
@@ -21141,7 +21097,6 @@ function App() {
                   chainId: userchain,
                 }}
                 sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
                 setChain={handleSetChain}
                 address={address}
                 refetch={refetch}
@@ -21153,7 +21108,6 @@ function App() {
             element={
               <TokenBoard
                 sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
                 account={{
                   connected: connected,
                   address: address,
@@ -21169,7 +21123,6 @@ function App() {
             element={
               <TokenDetail
                 sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
                 account={{
                   connected: connected,
                   address: address,
@@ -21205,7 +21158,6 @@ function App() {
               isVaultWithdrawSigning={isVaultWithdrawSigning}
               setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
               sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
               setChain={handleSetChain}
               address={address}
               refetch={refetch}
@@ -21223,7 +21175,6 @@ function App() {
               <Launchpad
                 address={address}
                 sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
                 account={{
                   connected: connected,
                   address: address,
@@ -21247,7 +21198,6 @@ function App() {
               setpopup={setpopup}
               tokenList={memoizedTokenList}
               sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
               account={{
                 connected: connected,
                 address: address,
@@ -21279,7 +21229,6 @@ function App() {
                 activeFilterTab={activeExplorerFilterTab}
                 onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
-                waitForTxReceipt={waitForTxReceipt}
               />
             }
           />
@@ -21338,7 +21287,6 @@ function App() {
                 refetch={refetch}
                 sendUserOperationAsync={sendUserOperationAsync}
                 setChain={handleSetChain}
-                waitForTxReceipt={waitForTxReceipt}
                 marketsData={marketsData}
                 usedRefLink={usedRefLink}
                 setUsedRefLink={setUsedRefLink}
@@ -21391,7 +21339,6 @@ function App() {
   activeFilterTab={activeExplorerFilterTab}
   onOpenFiltersForColumn={handleOpenFiltersForColumn}
   sendUserOperationAsync={sendUserOperationAsync}
-  waitForTxReceipt={waitForTxReceipt}
   onSnapToSide={handleWidgetExplorerSnapToSide}
   currentSnapSide={widgetExplorerSnapSide}
   onWidgetResize={handleWidgetExplorerResize} 

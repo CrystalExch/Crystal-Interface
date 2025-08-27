@@ -20,7 +20,6 @@ interface OrdersContentProps {
   setChain: any;
   pageSize: number;
   currentPage: number;
-  waitForTxReceipt: any;
   onMarketSelect: any;
   setpopup: (value: number) => void;
   onLimitPriceUpdate?: (price: number) => void;
@@ -38,7 +37,6 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
   setChain, 
   pageSize, 
   currentPage, 
-  waitForTxReceipt, 
   onMarketSelect,
   setpopup, 
   onLimitPriceUpdate, 
@@ -176,7 +174,6 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
                   param2,
                   '0x0000000000000000000000000000000000000000',
                 )})
-                await waitForTxReceipt(hash.hash);
                 refetch()
               } catch (error) {
               } finally {
@@ -201,7 +198,6 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
               setChain={setChain}
               quotePrice={markets[item[4]].quoteAsset == 'USDC' ? 1 : trades[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.[0]?.[3]
               / Number(markets[(markets[item[4]].quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : markets[item[4]].quoteAsset) + 'USDC']?.priceFactor)}
-              waitForTxReceipt={waitForTxReceipt}
               onMarketSelect={onMarketSelect}
               setpopup={setpopup}
               onLimitPriceUpdate={onLimitPriceUpdate}

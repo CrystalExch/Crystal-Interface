@@ -69,7 +69,6 @@ interface EarnVaultsProps {
     ethticker: string;
     account: any;
     sendUserOperationAsync: any;
-    waitForTxReceipt: any;
     activechain: number;
     setChain: () => void;
 }
@@ -138,7 +137,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
     wethticker,
     account,
     sendUserOperationAsync,
-    waitForTxReceipt,
     activechain,
     setChain,
     refetch,
@@ -272,7 +270,6 @@ const EarnVaults: React.FC<EarnVaultsProps> = ({
       },
     });
     
-    await waitForTxReceipt(hash.hash);
     return true;
   } catch (error) {
     console.error('Approval failed:', error);
@@ -319,7 +316,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
       },
     });
 
-    await waitForTxReceipt(hash.hash);
     refetch();
     lendingRefetch();
     return true;
@@ -363,7 +359,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                 },
             });
 
-            await waitForTxReceipt(hash.hash);
             refetch();
             lendingRefetch();
             return true;
@@ -407,7 +402,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                 },
             });
 
-            await waitForTxReceipt(hash.hash);
             refetch();
             lendingRefetch();
             return true;
@@ -451,7 +445,6 @@ const handleSupply = async (tokenAddress: `0x${string}`, amount: string, account
                 },
             });
 
-            await waitForTxReceipt(hash.hash);
             refetch();
             lendingRefetch();
             return true;

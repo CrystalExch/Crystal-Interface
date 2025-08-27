@@ -21,7 +21,6 @@ interface ChartComponentProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  waitForTxReceipt: any;
   address: any;
   client: any;
   newTxPopup: any;
@@ -47,7 +46,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
-  waitForTxReceipt,
   address,
   client,
   newTxPopup,
@@ -203,7 +201,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           refetch={refetch}
           sendUserOperationAsync={sendUserOperationAsync}
           setChain={setChain}
-          waitForTxReceipt={waitForTxReceipt}
           address={address}
           client={client}
           newTxPopup={newTxPopup}

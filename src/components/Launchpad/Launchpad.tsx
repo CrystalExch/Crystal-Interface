@@ -21,7 +21,6 @@ interface LaunchpadFormData {
 interface LaunchpadProps {
   address: `0x${string}` | undefined;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   account: any;
   setChain: () => void;
   setpopup: (n: number) => void;
@@ -49,7 +48,6 @@ async function uploadToR2(
 
 const Launchpad: React.FC<LaunchpadProps> = ({
   sendUserOperationAsync,
-  waitForTxReceipt,
   account,
   setChain,
   setpopup,
@@ -144,7 +142,6 @@ const Launchpad: React.FC<LaunchpadProps> = ({
         }),
       },
     });
-    return waitForTxReceipt(op.hash);
   };
 
   const extractAddresses = (receipt: any) => {

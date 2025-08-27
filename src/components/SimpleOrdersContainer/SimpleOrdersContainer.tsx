@@ -13,7 +13,6 @@ interface SimpleOrdersContainerProps {
   refetch: () => void;
   sendUserOperationAsync: any;
   setChain: () => Promise<void>;
-  waitForTxReceipt: any;
 }
 
 const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
@@ -23,7 +22,6 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
-  waitForTxReceipt,
 }) => {
   const { t } = useLanguage();
   const [loadingOrders, setLoadingOrders] = useState<{ [key: string]: boolean }>(
@@ -65,8 +63,8 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         : markets[order[4]].quoteAddress,
       BigInt(order[0]),
       BigInt(order[1]),
+      BigInt(Math.floor(Date.now() / 1000) + 900),
       );
-      await waitForTxReceipt(hash.hash);
       refetch()
     } catch (error) {
     } finally {
@@ -120,9 +118,8 @@ const SimpleOrdersContainer: React.FC<SimpleOrdersContainerProps> = ({
         price,
         param1,
         param2,
-        '0x0000000000000000000000000000000000000000'
+        '0x0000000000000000000000000000000000000000',
       )})
-      await waitForTxReceipt(hash.hash);
       refetch()
     } catch (error) {
     } finally {

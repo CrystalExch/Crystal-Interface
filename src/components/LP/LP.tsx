@@ -74,7 +74,6 @@ interface LPProps {
   connected: boolean;
   account: any;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   setChain: () => void;
   address: string;
   refetch?: () => void;
@@ -214,7 +213,6 @@ const LP: React.FC<LPProps> = ({
   connected,
   account,
   sendUserOperationAsync,
-  waitForTxReceipt,
   setChain,
   address,
   refetch,
@@ -920,7 +918,6 @@ const LP: React.FC<LPProps> = ({
           value: 0n,
         };
         const approveFirstOp = await sendUserOperationAsync({ uo: approveFirstUo });
-        await waitForTxReceipt(approveFirstOp.hash);
       }
 
       if (secondTokenBalance < amountBaseDesired) {
@@ -943,7 +940,6 @@ const LP: React.FC<LPProps> = ({
           value: 0n,
         };
         const approveSecondOp = await sendUserOperationAsync({ uo: approveSecondUo });
-        await waitForTxReceipt(approveSecondOp.hash);
       }
 
       // Deposit into vault
@@ -964,7 +960,6 @@ const LP: React.FC<LPProps> = ({
       };
 
       const depositOp = await sendUserOperationAsync({ uo: depositUo });
-      await waitForTxReceipt(depositOp.hash);
 
       // Reset form
       setVaultDepositAmounts({ first: '', second: '' });
@@ -1011,7 +1006,6 @@ const LP: React.FC<LPProps> = ({
       };
 
       const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
-      await waitForTxReceipt(withdrawOp.hash);
 
       // Reset form
       setWithdrawAmount('');

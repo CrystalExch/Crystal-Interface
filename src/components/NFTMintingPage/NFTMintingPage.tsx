@@ -9,7 +9,6 @@ import './NFTMintingPage.css';
 interface NFTMintingPageProps {
   address: `0x${string}` | undefined;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   setChain: any;
 }
 
@@ -24,7 +23,6 @@ interface AddressData {
 const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
   address,
   sendUserOperationAsync,
-  waitForTxReceipt,
   setChain,
 }) => {
   const [tree, setTree] = useState<any | null>(null);
@@ -131,7 +129,6 @@ const NFTMintingPage: React.FC<NFTMintingPageProps> = ({
         args: [tokenId, amount, proof],
       });
       const op = await sendUserOperationAsync({ uo: { target: CLAIM_ADDRESS, data, value: amount } });
-      await waitForTxReceipt(op.hash);
       setHasMinted(true);
     } catch (e) {
       console.error('claim failed', e);

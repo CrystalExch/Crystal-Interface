@@ -99,7 +99,6 @@ interface MemeInterfaceProps {
   setSendTokenIn: (token: any) => void;
   setpopup: (value: number) => void;
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   tokenBalances?: { [key: string]: bigint };
@@ -170,7 +169,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setSendTokenIn,
   setpopup,
   sendUserOperationAsync,
-  waitForTxReceipt,
   account,
   setChain,
   tokendict = {},
@@ -517,7 +515,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   // Mobile QuickBuy Trading Functions
   const handleMobileBuyTrade = async (amount: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       if (setpopup) setpopup(4);
       return;
     }
@@ -589,7 +587,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
 
       const op = await sendUserOperationAsync({ uo });
-      await waitForTxReceipt(op.hash);
 
       const expectedTokens = currentPrice > 0 ? parseFloat(amount) / currentPrice : 0;
       if (updatePopup) {
@@ -617,7 +614,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const handleMobileSellTrade = async (value: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !waitForTxReceipt || !tokenAddress || !routerAddress) {
+    if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
       return;
     }
@@ -668,7 +665,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       };
 
       const sellOp = await sendUserOperationAsync({ uo: sellUo });
-      await waitForTxReceipt(sellOp.hash);
 
       const soldTokens = Number(amountTokenWei) / 1e18;
       const expectedMON = soldTokens * currentPrice;
@@ -1230,7 +1226,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
 
         const op = await sendUserOperationAsync({ uo });
-        await waitForTxReceipt(op.hash);
 
         if (updatePopup) {
           updatePopup(txId, {
@@ -1273,7 +1268,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         };
 
         const sellOp = await sendUserOperationAsync({ uo: sellUo });
-        await waitForTxReceipt(sellOp.hash);
 
         if (updatePopup) {
           updatePopup(txId, {
@@ -2447,7 +2441,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         sellPriorityFee={sellPriorityFee}
         sellBribeValue={sellBribeValue}
         sendUserOperationAsync={sendUserOperationAsync}
-        waitForTxReceipt={waitForTxReceipt}
         account={account}
         setChain={setChain}
         activechain={String(activechain)}

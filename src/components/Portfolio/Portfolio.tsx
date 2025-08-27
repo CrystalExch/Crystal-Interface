@@ -167,7 +167,6 @@ interface PortfolioProps {
   refetch: any;
   sendUserOperationAsync: any;
   setChain: any;
-  waitForTxReceipt: any;
   marketsData: any;
   usedRefLink: string;
   setUsedRefLink: any;
@@ -239,7 +238,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   refetch,
   sendUserOperationAsync,
   setChain,
-  waitForTxReceipt,
   marketsData,
   usedRefLink,
   setUsedRefLink,
@@ -1019,15 +1017,14 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
       console.log('Transaction hash:', hash);
 
-      if (hash && waitForTxReceipt) {
+      if (hash) {
         console.log('Waiting for transaction receipt...');
         try {
-          const receiptPromise = waitForTxReceipt({ hash });
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Transaction timeout')), 30000)
           );
 
-          await Promise.race([receiptPromise, timeoutPromise]);
+          await Promise.race([timeoutPromise]);
           console.log('Transaction confirmed');
         } catch (receiptError) {
           console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
@@ -2006,7 +2003,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
               account={account}
               refetch={refetch}
               sendUserOperationAsync={sendUserOperationAsync}
-              waitForTxReceipt={waitForTxReceipt}
               client={client}
               activechain={activechain}
               lastRefGroupFetch={lastRefGroupFetch}
@@ -2068,7 +2064,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     sendUserOperationAsync={sendUserOperationAsync}
                     setChain={setChain}
                     isBlurred={isBlurred}
-                    waitForTxReceipt={waitForTxReceipt}
                     openEditOrderPopup={() => { }}
                     openEditOrderSizePopup={() => { }}
                     marketsData={marketsData}

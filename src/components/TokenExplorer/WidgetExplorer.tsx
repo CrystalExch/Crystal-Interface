@@ -69,7 +69,6 @@ interface WidgetExplorerProps {
   onOpenFiltersForColumn: (c: Token['status']) => void;
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
-  waitForTxReceipt: any;
   onSnapToSide?: (side: 'left' | 'right' | 'none') => void;
   currentSnapSide?: 'left' | 'right' | 'none';
   onWidgetResize?: (width: number) => void;
@@ -961,7 +960,6 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
-  waitForTxReceipt,
   onSnapToSide,
   currentSnapSide = 'none',
   onWidgetResize,
@@ -1389,7 +1387,6 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
       }
 
       const op = await sendUserOperationAsync({ uo });
-      await waitForTxReceipt(op.hash);
 
       if (updatePopup) {
         updatePopup(txId, {
@@ -1417,7 +1414,7 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
     } finally {
       dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
     }
-  }, [routerAddress, sendUserOperationAsync, waitForTxReceipt]);
+  }, [routerAddress, sendUserOperationAsync]);
 
   // Other handlers
   const handleTokenClick = useCallback((t: Token) => {
