@@ -132,7 +132,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <span className={`sidebar-logo-text ${isResizing ? 'no-transition' : ''}`}>CRYSTAL</span>
             </Link>
           )}
-
           <div className="sidebar-links">
             <Link
               to="/market"
@@ -149,7 +148,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={candlestick} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('advancedView')}</span>
             </Link>
-
             <Link
               to="/swap"
               className={`view-mode-button ${path === '/swap' || (isTradingPage && simpleView) ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -165,7 +163,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={swap} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('simpleView')}</span>
             </Link>
-
             <Link
               to="/portfolio"
               className={`page-mode-button ${path === '/portfolio' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -174,8 +171,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={portfolio} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
             </Link>
-
-            <Link
+            {/* <Link
               to="/leaderboard"
               className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
@@ -183,7 +179,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
             </Link>
-            
             <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -191,7 +186,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             >
               <img src={vaults} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Lending')}</span>
-            </Link>
+            </Link> */}
             <Link
               to="/earn/liquidity"
               className={`page-mode-button ${path === '/earn/liquidity' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -208,7 +203,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={earnvaults} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Vaults')}</span>
             </Link>
-            
             <Link
               to="/explorer"
               className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -217,8 +211,6 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={explorer} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Explorer')}</span>
             </Link>
-
-            
             <Link
               to="/trackers"
               className={`page-mode-button ${path === '/trackers' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -227,7 +219,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={tracker} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trackers')}</span>
             </Link>
-                    
+
             {isMobile && (
               <button
                 onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}

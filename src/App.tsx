@@ -2184,7 +2184,7 @@ function App() {
 
   // update limit amount
   const updateLimitAmount = useCallback((price: number, priceFactor: number, displayPriceFactor?: number) => {
-    let newPrice = BigInt(Math.round(Number(price.toPrecision(5)) * priceFactor));
+    let newPrice = BigInt(Math.round(Number(price) * priceFactor));
     setlimitPrice(newPrice);
     setlimitPriceString(price.toFixed(Math.floor(Math.log10(displayPriceFactor ? displayPriceFactor : priceFactor))));
     setlimitChase(false);
@@ -8557,6 +8557,7 @@ function App() {
   }, []);
 
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
+  
   type CustomizationSettings = {
     mainTextColor: string;
     positivePNLColor: string;

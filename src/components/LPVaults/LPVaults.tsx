@@ -40,16 +40,6 @@ interface LPVaultsProps {
   getMarket: any;
 }
 
-const performanceData = [
-  { name: 'Jan', value: 12.4 },
-  { name: 'Feb', value: 14.8 },
-  { name: 'Mar', value: 18.2 },
-  { name: 'Apr', value: 16.9 },
-  { name: 'May', value: 21.3 },
-  { name: 'Jun', value: 22.7 },
-  { name: 'Jul', value: 24.5 },
-];
-
 interface VaultSnapshotProps {
   vaultId: string;
   performance?: any;
@@ -148,6 +138,15 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   const [showManagementMenu, setShowManagementMenu] = useState(false);
 
   const [activeVaultStrategyTab, setActiveVaultStrategyTab] = useState<any>('balances');
+  const [activeVaultPerformance, setActiveVaultPerformance] = useState<any>([
+    { name: 'Jan', value: 12.4 },
+    { name: 'Feb', value: 14.8 },
+    { name: 'Mar', value: 18.2 },
+    { name: 'Apr', value: 16.9 },
+    { name: 'May', value: 21.3 },
+    { name: 'Jun', value: 22.7 },
+    { name: 'Jul', value: 24.5 },
+  ])
   const [vaultStrategyTimeRange, setVaultStrategyTimeRange] = useState<'1D' | '1W' | '1M' | 'All'>('All');
   const [vaultStrategyChartType, setVaultStrategyChartType] = useState<'value' | 'pnl'>('value');
 
@@ -435,22 +434,21 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                   </span>
                 </div>
               </div>
-<button
-  className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
-  onClick={() => {
-    if (!account.connected) {
-      setpopup(4);
-    } else {
-      setpopup(29); 
-    }
-  }}
-  disabled={!account.connected}
->
-  <Plus size={16} />
-  Create Vault
-</button>
+              <button
+                className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
+                onClick={() => {
+                  if (!account.connected) {
+                    setpopup(4);
+                  } else {
+                    setpopup(29); 
+                  }
+                }}
+                disabled={!account.connected}
+              >
+                <Plus size={16} />
+                Create Vault
+              </button>
             </div>
-
             <div className="vaults-filters">
               <div className="vault-tabs" data-active={activeVaultTab}>
                 <button
@@ -849,7 +847,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
                   <div className="performance-chart">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={performanceData}>
+                      <AreaChart data={activeVaultPerformance}>
                         <defs>
                           <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />

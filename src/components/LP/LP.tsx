@@ -6,7 +6,7 @@ import { useQuery } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
-import { CrystalVaultsAbi } from '../../abis/CrystalVaultsAbi';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from "../../settings";
 import './LP.css';
 
@@ -222,25 +222,6 @@ const LP: React.FC<LPProps> = ({
   const { activechain } = useSharedContext();
   
   const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
-
-  // Balance fetching for vault tokens
-  const { data: vaultBalances, refetch: refetchVaultBalances } = useQuery({
-    queryKey: ["vault-balances", address, crystalVaultsAddress],
-    queryFn: async () => {
-      if (!address || !crystalVaultsAddress) return {};
-      
-      const allVaultsCall = encodeFunctionData({
-        abi: CrystalVaultsAbi,
-        functionName: "allVaults",
-        args: [0n], 
-      });
-
-      return {};
-    },
-    enabled: !!address && !!crystalVaultsAddress,
-    staleTime: 30_000,
-  });
-
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
   const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
   const [hoveredTvl, setHoveredTvl] = useState<number | null>(null);
@@ -969,8 +950,8 @@ const LP: React.FC<LPProps> = ({
       const depositUo = {
         target: crystalVaultsAddress as `0x${string}`,
         data: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "deposit",
+          abi: CrystalRouterAbi,
+          functionName: "addLiquidity",
           args: [
             selectedVaultData.id as `0x${string}`, // vault address
             amountQuoteDesired,
@@ -992,7 +973,6 @@ const LP: React.FC<LPProps> = ({
       
       // Refresh balances
       refetch?.();
-      refetchVaultBalances();
 
     } catch (e: any) {
       console.error('Vault deposit error:', e);
@@ -1018,8 +998,8 @@ const LP: React.FC<LPProps> = ({
       const withdrawUo = {
         target: crystalVaultsAddress as `0x${string}`,
         data: encodeFunctionData({
-          abi: CrystalVaultsAbi,
-          functionName: "withdraw",
+          abi: CrystalRouterAbi,
+          functionName: "removeLiquidity",
           args: [
             selectedVaultData.id as `0x${string}`, // vault address
             sharesToWithdraw,
@@ -1039,7 +1019,6 @@ const LP: React.FC<LPProps> = ({
       
       // Refresh balances
       refetch?.();
-      refetchVaultBalances();
 
     } catch (e: any) {
       console.error('Vault withdraw error:', e);
