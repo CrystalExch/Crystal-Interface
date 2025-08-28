@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X } from 'lucide-react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { encodeFunctionData } from "viem";
-import { useQuery } from "@tanstack/react-query";
 import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
@@ -10,18 +9,6 @@ import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { settings } from "../../settings";
 import './LP.css';
 
-import iconmonad from '../../assets/iconmonad.png';
-import iconusdc from '../../assets/iconusdc.png';
-import iconshmonad from '../../assets/iconshmon.png';
-import iconaprmonad from '../../assets/iconaprmon.png';
-import iconchog from '../../assets/iconchog.png';
-import iconweth from '../../assets/iconweth.png';
-import iconwbtc from '../../assets/iconwbtc.png';
-import iconsol from '../../assets/iconsol.png';
-import icondak from '../../assets/icondak.png';
-import iconyaki from '../../assets/iconyaki.png';
-import iconusdt from '../../assets/iconusdt.png';
-import iconsmon from '../../assets/iconsmon.png';
 import verified from '../../assets/verified.png';
 
 interface Vault {
@@ -219,7 +206,7 @@ const LP: React.FC<LPProps> = ({
 }) => {
   const { activechain } = useSharedContext();
   
-  const crystalVaultsAddress = settings.chainConfig[activechain]?.crystalVaults;
+  const router = settings.chainConfig[activechain]?.router;
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
   const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
   const [hoveredTvl, setHoveredTvl] = useState<number | null>(null);
@@ -245,9 +232,9 @@ const LP: React.FC<LPProps> = ({
   const [duplicateTokenWarning, setDuplicateTokenWarning] = useState('');
 
   const [activeVaultDetailTab, setActiveVaultDetailTab] = useState<'deposit' | 'withdraw'>('deposit');
-  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ first: string, second: string }>({
-    first: '',
-    second: ''
+  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ base: string, quote: string }>({
+    base: '',
+    quote: ''
   });
   const [vaultFirstTokenExceedsBalance, setVaultFirstTokenExceedsBalance] = useState(false);
   const [vaultSecondTokenExceedsBalance, setVaultSecondTokenExceedsBalance] = useState(false);
@@ -273,348 +260,10 @@ const LP: React.FC<LPProps> = ({
 
   const defaultTokens = ['MON', 'WMON', 'USDC'];
 
-  const vaults: Vault[] = [
-    {
-      id: 'mon-usdc-lp-vault',
-      name: 'MON-USDC',
-      tokens: {
-        first: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 24.5,
-      tvl: '$3.7M',
-      description: 'Earn yield by providing liquidity to the MON-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '1234.56',
-      tags: ['Popular', 'High APY'],
-      dailyYield: '0.0671%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '49.35%/50.65%',
-      totalSupply: '$2.8M',
-      supplyApy: 22.1,
-      totalBorrowed: '$0.9M',
-      borrowApy: 28.3,
-      verified: true,
-      category: 'Regular',
-    },
-    {
-      id: 'weth-usdc-lp-vault',
-      name: 'WETH-USDC',
-      tokens: {
-        first: {
-          symbol: 'WETH',
-          icon: iconweth,
-          feeAmount: '0.05%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.05%'
-        }
-      },
-      apy: 8.2,
-      tvl: '$12.5M',
-      description: 'Earn yield by providing liquidity to the ETH-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Stable', 'Low Risk'],
-      dailyYield: '0.0224%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$9.8M',
-      supplyApy: 7.5,
-      totalBorrowed: '$2.7M',
-      borrowApy: 9.8,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'wbtc-usdc-lp-vault',
-      name: 'WBTC-USDC',
-      tokens: {
-        first: {
-          symbol: 'WBTC',
-          icon: iconwbtc,
-          feeAmount: '0.05%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.05%'
-        }
-      },
-      apy: 6.7,
-      tvl: '$18.9M',
-      description: 'Earn yield by providing liquidity to the BTC-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Stable'],
-      dailyYield: '0.0183%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '48.50%/51.50%',
-      totalSupply: '$15.2M',
-      supplyApy: 6.2,
-      totalBorrowed: '$3.7M',
-      borrowApy: 8.1,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'shmon-mon-lp-vault',
-      name: 'shMON-MON',
-      tokens: {
-        first: {
-          symbol: 'shMON',
-          icon: iconshmonad,
-          feeAmount: '1.00%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '1.00%'
-        }
-      },
-      apy: 32.8,
-      tvl: '$2.2M',
-      description: 'Earn yield by providing liquidity to the shMON-MON pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High Yield', 'New'],
-      dailyYield: '0.0898%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '52.10%/47.90%',
-      totalSupply: '$1.6M',
-      supplyApy: 30.2,
-      totalBorrowed: '$0.6M',
-      borrowApy: 38.5,
-      category: 'LST'
-    },
-    {
-      id: 'sol-usdc-lp-vault',
-      name: 'SOL-USDC',
-      tokens: {
-        first: {
-          symbol: 'SOL',
-          icon: iconsol,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 7.5,
-      tvl: '$8.7M',
-      description: 'Earn yield by providing liquidity to the SOL-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Popular'],
-      dailyYield: '0.0205%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$6.9M',
-      supplyApy: 7.1,
-      totalBorrowed: '$1.8M',
-      borrowApy: 8.9,
-      verified: true,
-      category: 'Regular'
-    },
-    {
-      id: 'aprmon-mon-lp-vault',
-      name: 'APRMON-MON',
-      tokens: {
-        first: {
-          symbol: 'APRMON',
-          icon: iconaprmonad,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 9.1,
-      tvl: '$5.3M',
-      description: 'Earn yield by providing liquidity to the AVAX-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0249%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$4.2M',
-      supplyApy: 8.6,
-      totalBorrowed: '$1.1M',
-      borrowApy: 10.8,
-      category: 'LST'
-    },
-    {
-      id: 'dak-monad-lp-vault',
-      name: 'DAK-MON',
-      tokens: {
-        first: {
-          symbol: 'DAK',
-          icon: icondak,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 11.2,
-      tvl: '$3.9M',
-      description: 'Earn yield by providing liquidity to the ARB-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High Volume'],
-      dailyYield: '0.0307%',
-      protocolFee: '0.75%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.1M',
-      supplyApy: 10.5,
-      totalBorrowed: '$0.8M',
-      borrowApy: 13.2,
-      category: 'Regular'
-    },
-    {
-      id: 'yaki-mon-lp-vault',
-      name: 'YAKI-MON',
-      tokens: {
-        first: {
-          symbol: 'YAKI',
-          icon: iconyaki,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 15.3,
-      tvl: '$1.8M',
-      description: 'Earn yield by providing liquidity to the CHZ-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High APY'],
-      dailyYield: '0.0419%',
-      protocolFee: '0.75%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$1.4M',
-      supplyApy: 14.2,
-      totalBorrowed: '$0.4M',
-      borrowApy: 18.1,
-      category: 'Regular'
-    },
-    {
-      id: 'chog-usdc-lp-vault',
-      name: 'CHOG-USDC',
-      tokens: {
-        first: {
-          symbol: 'CHOG',
-          icon: iconchog,
-          feeAmount: '1.00%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '1.00%'
-        }
-      },
-      apy: 42.7,
-      tvl: '$0.9M',
-      description: 'Earn yield by providing liquidity to the CHOG-USDC pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['High APY', 'High Risk'],
-      dailyYield: '0.1170%',
-      protocolFee: '1.0%',
-      withdrawalTime: 'Instant',
-      depositRatio: '47.25%/52.75%',
-      totalSupply: '$0.7M',
-      supplyApy: 39.8,
-      totalBorrowed: '$0.2M',
-      borrowApy: 48.5,
-      category: 'Regular'
-    },
-    {
-      id: 'smon-mon-lp-vault',
-      name: 'sMON-MON',
-      tokens: {
-        first: {
-          symbol: 'sMON',
-          icon: iconsmon,
-          feeAmount: '0.30%'
-        },
-        second: {
-          symbol: 'MON',
-          icon: iconmonad,
-          feeAmount: '0.30%'
-        }
-      },
-      apy: 8.9,
-      tvl: '$4.3M',
-      description: 'Earn yield by providing liquidity to the XRP-USDT pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0244%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.4M',
-      supplyApy: 8.3,
-      totalBorrowed: '$0.9M',
-      borrowApy: 10.5,
-      category: 'LST'
-    },
-    {
-      id: 'usdt-usdc-lp-vault',
-      name: 'USDT-USDC',
-      tokens: {
-        first: {
-          symbol: 'USDT',
-          icon: iconusdt,
-          feeAmount: '0.01%'
-        },
-        second: {
-          symbol: 'USDC',
-          icon: iconusdc,
-          feeAmount: '0.01%'
-        }
-      },
-      apy: 8.9,
-      tvl: '$4.3M',
-      description: 'Earn yield by providing liquidity to the XRP-USDT pool. This vault automatically compounds rewards into more LP tokens to maximize your returns.',
-      userBalance: '0.00',
-      tags: ['Medium Risk'],
-      dailyYield: '0.0244%',
-      protocolFee: '0.5%',
-      withdrawalTime: 'Instant',
-      depositRatio: '50.00%/50.00%',
-      totalSupply: '$3.4M',
-      supplyApy: 8.3,
-      totalBorrowed: '$0.9M',
-      borrowApy: 10.5,
-      verified: true,
-      category: 'Stable'
-    },
-  ];
-
-  const showVaultDetail = (vaultId: string) => {
-    setSelectedVault(vaultId);
+  const showVaultDetail = (vault: any) => {
+    setSelectedVault(vault.baseAsset + vault.quoteAsset);
     setActiveVaultDetailTab('deposit');
-    setVaultDepositAmounts({ first: '', second: '' });
+    setVaultDepositAmounts({ base: '', quote: '' });
     setWithdrawAmount('');
     setVaultFirstTokenExceedsBalance(false);
     setVaultSecondTokenExceedsBalance(false);
@@ -686,27 +335,27 @@ const LP: React.FC<LPProps> = ({
     return `$${usd.toFixed(2)}`;
   };
 
-  const filteredVaults = vaults.filter(vault => {
+  const filteredVaults = Object.values(markets).filter((market: any) => {
     const tokenMatch =
       selectedTokens.length === 0 ||
       selectedTokens.every(token =>
-        vault.tokens.first.symbol === token.symbol ||
-        vault.tokens.second.symbol === token.symbol
+        market.quoteAsset === token.symbol ||
+        market.baseAsset === token.symbol
       );
 
     const isDeposited = activeTab === 'deposited'
-      ? parseFloat(vault.userBalance) > 0
+      ? parseFloat(market?.userBalance) > 0
       : true;
 
     let categoryMatch = true;
     if (activeFilter === 'LSTs') {
-      categoryMatch = vault.category === 'LST';
+      categoryMatch = market?.category === 'LST';
     } else if (activeFilter === 'Stables') {
-      categoryMatch = vault.category === 'Stable';
+      categoryMatch = market?.category === 'Stable';
     } else if (activeFilter === 'Verified') {
-      categoryMatch = vault.verified === true;
+      categoryMatch = market?.verified === true;
     } else if (activeFilter === 'Unverified') {
-      categoryMatch = vault.verified === false;
+      categoryMatch = market?.verified === false;
     }
 
     return tokenMatch && isDeposited && categoryMatch;
@@ -796,7 +445,7 @@ const LP: React.FC<LPProps> = ({
     }
   };
 
-  const handleVaultDepositAmountChange = (position: 'first' | 'second', value: string) => {
+  const handleVaultDepositAmountChange = (position: 'base' | 'quote', value: string) => {
     if (value === '' || /^\d*\.?\d*$/.test(value)) {
       setVaultDepositAmounts(prev => ({
         ...prev,
@@ -804,7 +453,7 @@ const LP: React.FC<LPProps> = ({
       }));
 
       if (value !== '' && selectedVaultData) {
-        const tokenSymbol = position === 'first' ? selectedVaultData.tokens.first.symbol : selectedVaultData.tokens.second.symbol;
+        const tokenSymbol = position === 'base' ? selectedVaultData.baseAsset : selectedVaultData.quoteAsset;
         const userBalance = getTokenBalance(tokenSymbol);
         const tokenDecimals = Number(
           (Object.values(tokendict).find(t => t.ticker === tokenSymbol)?.decimals) || 18
@@ -812,13 +461,13 @@ const LP: React.FC<LPProps> = ({
         const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
         const enteredAmount = parseFloat(value);
 
-        if (position === 'first') {
+        if (position === 'base') {
           setVaultFirstTokenExceedsBalance(enteredAmount > maxAllowedAmount);
         } else {
           setVaultSecondTokenExceedsBalance(enteredAmount > maxAllowedAmount);
         }
       } else {
-        if (position === 'first') {
+        if (position === 'base') {
           setVaultFirstTokenExceedsBalance(false);
         } else {
           setVaultSecondTokenExceedsBalance(false);
@@ -848,8 +497,8 @@ const LP: React.FC<LPProps> = ({
   };
 
   const isVaultDepositEnabled = () => {
-    return vaultDepositAmounts.first !== '' && vaultDepositAmounts.second !== '' &&
-      parseFloat(vaultDepositAmounts.first) > 0 && parseFloat(vaultDepositAmounts.second) > 0 &&
+    return vaultDepositAmounts.base !== '' && vaultDepositAmounts.quote !== '' &&
+      parseFloat(vaultDepositAmounts.base) > 0 && parseFloat(vaultDepositAmounts.quote) > 0 &&
       !vaultFirstTokenExceedsBalance && !vaultSecondTokenExceedsBalance;
   };
 
@@ -867,40 +516,20 @@ const LP: React.FC<LPProps> = ({
     }
 
     try {
-      const firstTokenAddress = Object.values(tokendict).find(
-        (t: any) => t.ticker === selectedVaultData.tokens.first.symbol
-      )?.address;
-      
-      const secondTokenAddress = Object.values(tokendict).find(
-        (t: any) => t.ticker === selectedVaultData.tokens.second.symbol
-      )?.address;
-
-      if (!firstTokenAddress || !secondTokenAddress) {
-        throw new Error('Token addresses not found');
-      }
-
-      const firstTokenDecimals = Number(
-        Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.first.symbol)?.decimals || 18
-      );
-      
-      const secondTokenDecimals = Number(
-        Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.second.symbol)?.decimals || 18
-      );
-
-      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.first) * 10 ** firstTokenDecimals));
-      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.second) * 10 ** secondTokenDecimals));
+      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
+      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
       
       // Use 95% of desired amounts as minimum (5% slippage)
       const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
       const amountBaseMin = (amountBaseDesired * 95n) / 100n;
 
       // Approve tokens if needed
-      const firstTokenBalance = getTokenBalance(selectedVaultData.tokens.first.symbol);
-      const secondTokenBalance = getTokenBalance(selectedVaultData.tokens.second.symbol);
-      
+      const firstTokenBalance = getTokenBalance(selectedVaultData.baseAsset);
+      const secondTokenBalance = getTokenBalance(selectedVaultData.quoteAsset);
+
       if (firstTokenBalance < amountQuoteDesired) {
         const approveFirstUo = {
-          target: firstTokenAddress as `0x${string}`,
+          target: selectedVaultData?.quoteAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: [{
               inputs: [
@@ -913,7 +542,7 @@ const LP: React.FC<LPProps> = ({
               type: "function",
             }],
             functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+            args: [router as `0x${string}`, MaxUint256],
           }),
           value: 0n,
         };
@@ -922,7 +551,7 @@ const LP: React.FC<LPProps> = ({
 
       if (secondTokenBalance < amountBaseDesired) {
         const approveSecondUo = {
-          target: secondTokenAddress as `0x${string}`,
+          target: selectedVaultData?.baseAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: [{
               inputs: [
@@ -935,7 +564,7 @@ const LP: React.FC<LPProps> = ({
               type: "function",
             }],
             functionName: "approve",
-            args: [crystalVaultsAddress as `0x${string}`, MaxUint256],
+            args: [router as `0x${string}`, MaxUint256],
           }),
           value: 0n,
         };
@@ -944,16 +573,17 @@ const LP: React.FC<LPProps> = ({
 
       // Deposit into vault
       const depositUo = {
-        target: crystalVaultsAddress as `0x${string}`,
+        target: router as `0x${string}`,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: "addLiquidity",
           args: [
-            selectedVaultData.id as `0x${string}`, // vault address
+            selectedVaultData.address as `0x${string}`,
+            account.address,
             amountQuoteDesired,
             amountBaseDesired,
-            amountQuoteMin,
-            amountBaseMin,
+            0n,
+            0n,
           ],
         }),
         value: 0n,
@@ -962,7 +592,7 @@ const LP: React.FC<LPProps> = ({
       const depositOp = await sendUserOperationAsync({ uo: depositUo });
 
       // Reset form
-      setVaultDepositAmounts({ first: '', second: '' });
+      setVaultDepositAmounts({ base: '', quote: '' });
       setVaultFirstTokenExceedsBalance(false);
       setVaultSecondTokenExceedsBalance(false);
       
@@ -991,15 +621,16 @@ const LP: React.FC<LPProps> = ({
       const amountBaseMin = 0n; // You'd want to calculate this properly
 
       const withdrawUo = {
-        target: crystalVaultsAddress as `0x${string}`,
+        target: router as `0x${string}`,
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: "removeLiquidity",
           args: [
-            selectedVaultData.id as `0x${string}`, // vault address
+            selectedVaultData.address as `0x${string}`,
+            account.address,
             sharesToWithdraw,
-            amountQuoteMin,
-            amountBaseMin,
+            0n,
+            0n,
           ],
         }),
         value: 0n,
@@ -1089,7 +720,7 @@ const LP: React.FC<LPProps> = ({
     setSelectedVault(null);
   };
 
-  const selectedVaultData = selectedVault ? vaults.find(vault => vault.id === selectedVault) : null;
+  const selectedVaultData = selectedVault ? markets[selectedVault] : null;
 
   const hasInitializedFavorites = useRef(false);
 
@@ -1676,30 +1307,26 @@ const LP: React.FC<LPProps> = ({
                 <div
                   key={vault.id}
                   className="lp-card"
-                  onClick={() => showVaultDetail(vault.id)}
+                  onClick={() => showVaultDetail(vault)}
                 >
                   <div className="lp-summary">
                     <div className="lp-col lp-asset-col">
                       <div className="lp-token-pair-icons">
                         <img
-                          src={vault.tokens.first.icon}
-                          alt={vault.tokens.first.symbol}
+                          src={tokendict[vault.baseAddress]?.image}
                           className="lp-token-icon lp-token-icon-first"
                         />
                         <img
-                          src={vault.tokens.second.icon}
-                          alt={vault.tokens.second.symbol}
+                          src={tokendict[vault.quoteAddress]?.image}
                           className="lp-token-icon lp-token-icon-second"
                         />
                       </div>
                       <div className="lp-asset-info">
-                        <h3 className="lp-listname">{vault.name}</h3>
+                        <h3 className="lp-listname">{vault.baseAsset + '/' + vault.quoteAsset}</h3>
                         <div className="lp-fee-amounts">
-                          {vault.tokens.first.feeAmount && (
-                            <span className="lp-fee-amount">{vault.tokens.first.feeAmount}</span>
-                          )}
+                          <span className="lp-fee-amount">0.3%</span>
                         </div>
-                        {vault.verified && (
+                        {vault?.verified && (
                           <img src={verified} alt="Verified" className="lp-verified-badge" />
                         )}
                       </div>
@@ -1712,15 +1339,15 @@ const LP: React.FC<LPProps> = ({
                     </div>
 
                     <div className="lp-col lp-supply-apy-col">
-                      <div className="lp-supply-apy-value"> {vault.supplyApy}%</div>
+                      <div className="lp-supply-apy-value"> {vault?.supplyApy}%</div>
                     </div>
 
                     <div className="lp-col lp-borrowed-col">
-                      <div className="lp-borrowed-value">{vault.totalBorrowed}</div>
+                      <div className="lp-borrowed-value">{vault?.totalBorrowed}</div>
                     </div>
 
                     <div className="lp-col lp-borrow-apy-col">
-                      <div className="lp-borrow-apy-value">{vault.borrowApy}%</div>
+                      <div className="lp-borrow-apy-value">{vault?.borrowApy}%</div>
                     </div>
                   </div>
                 </div>
@@ -1747,22 +1374,18 @@ const LP: React.FC<LPProps> = ({
                       <div className="lp-detail-asset">
                         <div className="lp-detail-token-pair">
                           <img
-                            src={selectedVaultData.tokens.first.icon}
-                            alt={selectedVaultData.tokens.first.symbol}
+                            src={tokendict[selectedVaultData.baseAddress]?.image}
                             className="lp-detail-token-icon lp-first-token"
                           />
                           <img
-                            src={selectedVaultData.tokens.second.icon}
-                            alt={selectedVaultData.tokens.second.symbol}
+                            src={tokendict[selectedVaultData.quoteAddress]?.image}
                             className="lp-detail-token-icon lp-second-token"
                           />
                         </div>
                         <div>
-                          <h2 className="lp-detail-name">{selectedVaultData.name}</h2>
+                          <h2 className="lp-detail-name">{selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h2>
                           <div className="lp-fee-amounts-detail">
-                            {selectedVaultData.tokens.first.feeAmount && (
-                              <span className="lp-fee-amount">{selectedVaultData.tokens.first.feeAmount}</span>
-                            )}
+                            <span className="lp-fee-amount">0.3%</span>
                           </div>
                         </div>
                       </div>
@@ -1823,7 +1446,7 @@ const LP: React.FC<LPProps> = ({
                     </div>
 
                     <div className="lp-detail-description">
-                      <h4>About {selectedVaultData.name}</h4>
+                      <h4>About {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
                       <p>{selectedVaultData.description}</p>
                       <a href="#" className="lp-learn-more">
                         Learn more <ArrowUpRight size={14} />
@@ -1869,7 +1492,7 @@ const LP: React.FC<LPProps> = ({
 
                   {activeVaultDetailTab === 'deposit' ? (
                     <div className="vault-deposit-form">
-                      <h4 className="vault-form-title">Add Liquidity to {selectedVaultData.name}</h4>
+                      <h4 className="vault-form-title">Add Liquidity to {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
                       <p className="vault-form-description">
                         Enter the amounts you want to deposit for each token. The ratio will be maintained automatically.
                       </p>
@@ -1881,23 +1504,23 @@ const LP: React.FC<LPProps> = ({
                               type="text"
                               placeholder="0.0"
                               className={`deposit-amount-input ${vaultFirstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                              value={vaultDepositAmounts.first}
-                              onChange={(e) => handleVaultDepositAmountChange('first', e.target.value)}
+                              value={vaultDepositAmounts.base}
+                              onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
                             />
                             <div className="deposit-token-badge">
-                              <img src={selectedVaultData.tokens.first.icon} alt="" className="deposit-token-icon" />
-                              <span>{selectedVaultData.tokens.first.symbol}</span>
+                              <img src={tokendict[selectedVaultData.baseAddress]?.image} alt="" className="deposit-token-icon" />
+                              <span>{selectedVaultData.baseAsset}</span>
                             </div>
                           </div>
                           <div className="lp-deposit-balance-wrapper">
                             <div className={`lp-deposit-usd-value ${vaultFirstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                              {calculateUSD(vaultDepositAmounts.first, selectedVaultData.tokens.first.symbol)}
+                              {calculateUSD(vaultDepositAmounts.base, selectedVaultData.baseAsset)}
                             </div>
                             <div className="deposit-balance">
                               Balance: {formatDisplayValue(
-                                getTokenBalance(selectedVaultData.tokens.first.symbol),
+                                getTokenBalance(selectedVaultData.baseAsset),
                                 Number(
-                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.first.symbol)?.decimals) || 18
+                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18
                                 )
                               )}
                             </div>
@@ -1910,23 +1533,23 @@ const LP: React.FC<LPProps> = ({
                               type="text"
                               placeholder="0.0"
                               className={`deposit-amount-input ${vaultSecondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                              value={vaultDepositAmounts.second}
-                              onChange={(e) => handleVaultDepositAmountChange('second', e.target.value)}
+                              value={vaultDepositAmounts.quote}
+                              onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
                             />
                             <div className="deposit-token-badge">
-                              <img src={selectedVaultData.tokens.second.icon} alt="" className="deposit-token-icon" />
-                              <span>{selectedVaultData.tokens.second.symbol}</span>
+                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} alt="" className="deposit-token-icon" />
+                              <span>{selectedVaultData.quoteAsset}</span>
                             </div>
                           </div>
                           <div className="lp-deposit-balance-wrapper">
                             <div className={`lp-deposit-usd-value ${vaultSecondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                              {calculateUSD(vaultDepositAmounts.second, selectedVaultData.tokens.second.symbol)}
+                              {calculateUSD(vaultDepositAmounts.quote, selectedVaultData.quoteAsset)}
                             </div>
                             <div className="deposit-balance">
                               Balance: {formatDisplayValue(
-                                getTokenBalance(selectedVaultData.tokens.second.symbol),
+                                getTokenBalance(selectedVaultData.quoteAsset),
                                 Number(
-                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.tokens.second.symbol)?.decimals) || 18
+                                  (Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18
                                 )
                               )}
                             </div>
@@ -1943,8 +1566,8 @@ const LP: React.FC<LPProps> = ({
                           <span>Total Value:</span>
                           <span>
                             {(() => {
-                              const firstUSD = calculateUSD(vaultDepositAmounts.first, selectedVaultData.tokens.first.symbol);
-                              const secondUSD = calculateUSD(vaultDepositAmounts.second, selectedVaultData.tokens.second.symbol);
+                              const firstUSD = calculateUSD(vaultDepositAmounts.base, selectedVaultData.baseAsset);
+                              const secondUSD = calculateUSD(vaultDepositAmounts.quote, selectedVaultData.quoteAsset);
                               const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
                               const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
                               const total = firstValue + secondValue;
@@ -1964,7 +1587,7 @@ const LP: React.FC<LPProps> = ({
                     </div>
                   ) : (
                     <div className="vault-withdraw-form">
-                      <h4 className="vault-form-title">Withdraw from {selectedVaultData.name}</h4>
+                      <h4 className="vault-form-title">Withdraw from {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
                       <p className="vault-form-description">
                         Enter the amount of LP tokens you want to withdraw. You'll receive both tokens proportionally.
                       </p>
@@ -1982,13 +1605,13 @@ const LP: React.FC<LPProps> = ({
                             <div className="deposit-token-badge">
                               <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
                                 <img
-                                  src={selectedVaultData.tokens.first.icon}
+                                  src={tokendict[selectedVaultData.baseAddress]?.image}
                                   alt=""
                                   className="lp-token-icon lp-token-icon-first"
                                   style={{ width: '20px', height: '20px' }}
                                 />
                                 <img
-                                  src={selectedVaultData.tokens.second.icon}
+                                  src={tokendict[selectedVaultData.quoteAddress]?.image}
                                   alt=""
                                   className="lp-token-icon lp-token-icon-second"
                                   style={{ width: '20px', height: '20px', left: '15px' }}
@@ -2011,15 +1634,15 @@ const LP: React.FC<LPProps> = ({
                           <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
                           <div className="withdraw-token-preview">
                             <div className="withdraw-token-item">
-                              <img src={selectedVaultData.tokens.first.icon} alt="" className="withdraw-token-icon" />
-                              <span>{selectedVaultData.tokens.first.symbol}</span>
+                              <img src={tokendict[selectedVaultData.baseAddress]?.image} alt="" className="withdraw-token-icon" />
+                              <span>{selectedVaultData.baseAsset}</span>
                               <span style={{ marginLeft: 'auto', color: '#fff' }}>
                                 {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
                               </span>
                             </div>
                             <div className="withdraw-token-item">
-                              <img src={selectedVaultData.tokens.second.icon} alt="" className="withdraw-token-icon" />
-                              <span>{selectedVaultData.tokens.second.symbol}</span>
+                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} alt="" className="withdraw-token-icon" />
+                              <span>{selectedVaultData.quoteAsset}</span>
                               <span style={{ marginLeft: 'auto', color: '#fff' }}>
                                 {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
                               </span>
