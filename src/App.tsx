@@ -166,13 +166,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import CopyButton from './components/CopyButton/CopyButton.tsx';
 import { sMonAbi } from './abis/sMonAbi.ts';
 const clearlogo = '/CrystalLogo.png';
-export type NotifyPayload = {
-  title: string;
-  subtitle?: string;
-  amount?: string;
-  amountUnit?: string;
-  variant?: 'success' | 'error' | 'info';
-};
+
 function App() {
   // constants
   useEffect(() => {
@@ -20988,6 +20982,7 @@ function App() {
               tokenList={memoizedTokenList}
               logout={logout}
               tokenBalances={tokenBalances}
+              lastRefGroupFetch={lastRefGroupFetch}
             />
           </div>
           <div className="headerfiller"></div>
@@ -21313,8 +21308,10 @@ function App() {
                 keccak256={keccak256}
                 Wallet={Wallet}
                 refreshWalletBalance={refreshWalletBalance}
-                activeWalletPrivateKey={oneCTSigner} setShowRefModal={undefined}
-                lastRefGroupFetch={lastRefGroupFetch} />
+                activeWalletPrivateKey={oneCTSigner}
+                setShowRefModal={undefined}
+                lastRefGroupFetch={lastRefGroupFetch}
+              />
             }
           />
           <Route path="/swap" element={TradeLayout(swap)} />

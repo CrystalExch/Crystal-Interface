@@ -51,18 +51,18 @@ interface HeaderProps {
   isChartLoading?: boolean;
   tradesloading?: boolean;
   tradesByMarket: any;
-  style?: React.CSSProperties; 
   currentWalletIcon?: string;
   subWallets?: Array<{ address: string, privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
-  setOneCTSigner?: (privateKey: string) => void;
-  refetch?: () => void;
+  setOneCTSigner: (privateKey: string) => void;
+  refetch: () => void;
   isBlurred?: boolean;
   forceRefreshAllWallets?: () => void;
   tokenList?: any[];
-  logout?: () => void;
+  logout: () => void;
   tokenBalances: { [address: string]: bigint };
+  lastRefGroupFetch: any;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -86,7 +86,6 @@ const Header: React.FC<HeaderProps> = ({
   onMarketSelect,
   marketsData,
   tradesByMarket,
-  style, 
   currentWalletIcon,
   subWallets = [],
   walletTokenBalances = {},
@@ -97,7 +96,7 @@ const Header: React.FC<HeaderProps> = ({
   forceRefreshAllWallets,
   tokenList = [],
   logout,
-  tokenBalances,
+  lastRefGroupFetch,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -121,12 +120,7 @@ const Header: React.FC<HeaderProps> = ({
 
   const [isMenuOpen, setIsMenuOpen] = useState<boolean>(false);
   const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState<boolean>(false);
-  const [inPic, setInPic] = useState('');
-  const [outPic, setOutPic] = useState('');
   const backgroundlesslogo = '/CrystalLogo.png';
-
-  const MARKET_UPDATE_EVENT = '0x797f1d495432fad97f05f9fdae69fbc68c04742c31e6dfcba581332bd1e7272a';
-  const TOTAL_SUPPLY = 1e9;
 
   const [liveTokenData, setLiveTokenData] = useState<any>({});
 
@@ -157,56 +151,6 @@ const Header: React.FC<HeaderProps> = ({
       return () => document.removeEventListener('mousedown', handleClickOutside);
     }
   }, [isWalletDropdownOpen]);
-
-  const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
-    const reqId = Date.now();
-    ws.send(JSON.stringify({
-      id: reqId,
-      jsonrpc: '2.0',
-      method: 'eth_subscribe',
-      params,
-    }));
-    if (!onAck) return;
-    const handler = (evt: MessageEvent) => {
-      const msg = JSON.parse(evt.data);
-      if (msg.id === reqId && msg.result) {
-        onAck(msg.result);
-        ws.removeEventListener('message', handler);
-      }
-    };
-    ws.addEventListener('message', handler);
-  }, []);
-
-  const updateMarketData = useCallback((log: any, tokenId: string) => {
-    if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
-
-    const market = log.address.toLowerCase();
-    if (market !== tokenId.toLowerCase()) return;
-
-    const hex = log.data.replace(/^0x/, '');
-    const words: string[] = [];
-    for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-
-    const amounts = BigInt('0x' + words[0]);
-    const isBuy = BigInt('0x' + words[1]);
-    const priceRaw = BigInt('0x' + words[2]);
-    const counts = BigInt('0x' + words[3]);
-
-    const priceEth = Number(priceRaw) / 1e18;
-    const buys = Number(counts >> 128n);
-    const sells = Number(counts & ((1n << 128n) - 1n));
-    const amountIn = Number(amounts >> 128n);
-    const amountOut = Number(amounts & ((1n << 128n) - 1n));
-
-    setLiveTokenData((prev: any) => ({
-      ...prev,
-      price: priceEth,
-      marketCap: priceEth * TOTAL_SUPPLY,
-      buyTransactions: buys,
-      sellTransactions: sells,
-      volume24h: (prev.volume24h || 0) + (isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18),
-    }));
-  }, []);
 
   const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
     const token = location.state.tokenData;
@@ -261,49 +205,25 @@ const Header: React.FC<HeaderProps> = ({
     return walletNames[address] || `Wallet ${index + 1}`;
   };
 
-  const getMainWalletBalance = () => {
-    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
-    
-    if (ethToken && tokenBalances && tokenBalances[ethToken.address]) {
-      return Number(tokenBalances[ethToken.address]) / 10 ** Number(ethToken.decimals);
-    }
-    return 0;
-  };
-
-  const isMainWalletActive = () => {
-    return !activeWalletPrivateKey || activeWalletPrivateKey === '';
-  };
-
-  const handleSetMainWallet = () => {
-    // Clear the active wallet private key to fall back to main wallet
-    localStorage.removeItem('crystal_active_wallet_private_key');
-    if (setOneCTSigner) {
-      setOneCTSigner('');
-    }
-
-    if (refetch) {
-      setTimeout(() => refetch(), 100);
-    }
-    if (forceRefreshAllWallets) {
-      setTimeout(() => forceRefreshAllWallets(), 200);
-    }
-  };
-
   const isWalletActive = (privateKey: string) => {
     return activeWalletPrivateKey === privateKey;
   };
 
   const handleSetActiveWallet = (privateKey: string) => {
-    if (!isWalletActive(privateKey) && setOneCTSigner) {
+    if (!isWalletActive(privateKey)) {
       localStorage.setItem('crystal_active_wallet_private_key', privateKey);
       setOneCTSigner(privateKey);
-
-      if (refetch) {
-        setTimeout(() => refetch(), 100);
-      }
+      lastRefGroupFetch.current = 0;
+      setTimeout(() => refetch(), 0);
       if (forceRefreshAllWallets) {
         setTimeout(() => forceRefreshAllWallets(), 200);
       }
+    }
+    else {
+      localStorage.removeItem('crystal_active_wallet_private_key');
+      setOneCTSigner('')
+      lastRefGroupFetch.current = 0;
+      setTimeout(() => refetch(), 0);
     }
   };
 
@@ -332,26 +252,15 @@ const Header: React.FC<HeaderProps> = ({
     return subWallets.find(w => w.privateKey === activeWalletPrivateKey);
   };
 
-const handleWalletButtonClick = () => {
-  if (!account.connected) {
-    setpopup(4);
-  } else if (account.chainId !== activechain) {
-    setChain();
-  } else {
-    setIsWalletDropdownOpen(!isWalletDropdownOpen);
-  }
-};
-
-  useEffect(() => {
-    if (activeMarket && tokendict) {
-      if (tokendict[activeMarket.baseAddress]) {
-        setInPic(tokendict[activeMarket.baseAddress].image);
-      }
-      if (tokendict[activeMarket.quoteAddress]) {
-        setOutPic(tokendict[activeMarket.quoteAddress].image);
-      }
+  const handleWalletButtonClick = () => {
+    if (!account.connected) {
+      setpopup(4);
+    } else if (account.chainId !== activechain) {
+      setChain();
+    } else {
+      setIsWalletDropdownOpen(!isWalletDropdownOpen);
     }
-  }, [activeMarket, tokendict]);
+  };
 
   const toggleMenu = (): void => {
     setIsMenuOpen(!isMenuOpen);
@@ -369,7 +278,7 @@ const handleWalletButtonClick = () => {
 
   return (
     <>
-      <header className="app-header" style={style}>
+      <header className="app-header">
         <div className="mobile-left-header">
           <div className="extitle">
             <img src={backgroundlesslogo} className="extitle-logo" />
@@ -378,8 +287,8 @@ const handleWalletButtonClick = () => {
         </div>
         <div className="left-header">
           <ChartHeader
-            in_icon={inPic}
-            out_icon={outPic}
+            in_icon={tokendict[activeMarket.baseAddress].image}
+            out_icon={tokendict[activeMarket.quoteAddress].image}
             price={isMemeTokenPage && memeTokenData ?
               memeTokenData.price?.toString() || 'n/a' :
               marketHeader?.currentPrice || 'n/a'
@@ -505,97 +414,94 @@ const handleWalletButtonClick = () => {
                 )}
               </div>
             </button>
-
-{account.connected && (
-  <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
+            {account.connected && (
+              <div className={`wallet-dropdown-panel ${isWalletDropdownOpen ? 'visible' : ''}`}>
                 <div className="wallet-dropdown-header">
                   <span className="wallet-dropdown-title">Wallets</span>
                   <button
                     className="wallet-dropdown-close"
                     onClick={() => setIsWalletDropdownOpen(false)}
                   >
-                    <img src={closebutton} alt="Close" className="wallet-dropdown-close-icon" />
+                    <img src={closebutton} className="wallet-dropdown-close-icon" />
                   </button>
                 </div>
+                  <div className="wallet-dropdown-list">
+                    {subWallets.length > 0 ? (
+                      subWallets.map((wallet, index) => {
+                        const balance = getWalletBalance(wallet.address);
+                        const isActive = isWalletActive(wallet.privateKey);
+                        return (
+                          <div
+                            key={wallet.address}
+                            className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
+                            onClick={(e) => {
+                              handleSetActiveWallet(wallet.privateKey)
+                              e.stopPropagation()
+                            }}
+                          >
+                            <div className="wallet-dropdown-checkbox-container">
+                              <input
+                                type="checkbox"
+                                className="wallet-dropdown-checkbox"
+                                checked={isActive}
+                              />
+                            </div>
 
-<div className="wallet-dropdown-list">
-  {subWallets.length > 0 ? (
-    subWallets.map((wallet, index) => {
-      const balance = getWalletBalance(wallet.address);
-      const isActive = isWalletActive(wallet.privateKey);
+                            <div 
+                              className="wallet-dropdown-info"
+                            >
+                              <div className="wallet-dropdown-name">
+                                {getWalletName(wallet.address, index)}
+                              </div>
+                              <div className="wallet-dropdown-address">
+                                {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
+                              </div>
+                            </div>
 
-      return (
-        <div
-          key={wallet.address}
-          className={`wallet-dropdown-item ${isActive ? 'active' : ''}`}
-        >
-          <div className="wallet-dropdown-checkbox-container">
-            <input
-              type="checkbox"
-              className="wallet-dropdown-checkbox"
-              checked={isActive}
-              onChange={() => handleSetActiveWallet(wallet.privateKey)}
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-
-          <div 
-            className="wallet-dropdown-info"
-            onClick={() => handleSetActiveWallet(wallet.privateKey)}
-          >
-            <div className="wallet-dropdown-name">
-              {getWalletName(wallet.address, index)}
-            </div>
-            <div className="wallet-dropdown-address">
-              {wallet.address.slice(0, 6)}...{wallet.address.slice(-4)}
-            </div>
-          </div>
-
-          <div className="wallet-dropdown-balance">
-            <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
-              <img src={monadicon} className="wallet-dropdown-mon-icon" alt="MON" />
-              {formatNumberWithCommas(balance, 2)}
-            </div>
-          </div>
-        </div>
-      );
-    })
-  ) : (
-    <div className="wallet-dropdown-no-subwallets">
-      <button
-        className="wallet-dropdown-action-btn 1ct-trading-btn"
-        onClick={() => {
-          setpopup(28);
-          setIsWalletDropdownOpen(false);
-        }}
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
-        Enable 1CT
-      </button>
-    </div>
-  )}
-  
-  <div className="wallet-dropdown-actions">
-    <button
-      className="wallet-dropdown-action-btn portfolio-btn"
-      onClick={handleOpenPortfolio}
-    >
-      <img className="wallet-dropdown-action-icon" src={walleticon}/>
-      Portfolio
-    </button>
-    <button
-      className="wallet-dropdown-action-btn logout-btn"
-      onClick={handleLogout}
-    >
-      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
-        <polyline points="16 17 21 12 16 7"></polyline>
-        <line x1="21" y1="12" x2="9" y2="12"></line>
-      </svg>
-      Logout
-    </button>
-  </div>
-</div>
+                            <div className="wallet-dropdown-balance">
+                              <div className={`wallet-dropdown-balance-amount ${isBlurred ? 'blurred' : ''}`}>
+                                <img src={monadicon} className="wallet-dropdown-mon-icon"/>
+                                {formatNumberWithCommas(balance, 2)}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="wallet-dropdown-no-subwallets">
+                        <button
+                          className="wallet-dropdown-action-btn 1ct-trading-btn"
+                          onClick={() => {
+                            setpopup(28);
+                            setIsWalletDropdownOpen(false);
+                          }}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="wallet-dropdown-action-icon"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg>
+                          Enable 1CT
+                        </button>
+                      </div>
+                    )}
+                  <div className="wallet-dropdown-actions">
+                    <button
+                      className="wallet-dropdown-action-btn portfolio-btn"
+                      onClick={handleOpenPortfolio}
+                    >
+                      <img className="wallet-dropdown-action-icon" src={walleticon}/>
+                      Portfolio
+                    </button>
+                    <button
+                      className="wallet-dropdown-action-btn logout-btn"
+                      onClick={handleLogout}
+                    >
+                      <svg className="wallet-dropdown-action-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                        <polyline points="16 17 21 12 16 7"></polyline>
+                        <line x1="21" y1="12" x2="9" y2="12"></line>
+                      </svg>
+                      Logout
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>

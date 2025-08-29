@@ -211,8 +211,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
     })();
   }, [activeVault, address]);
 
-
-
   const vaultStrategyIndicatorRef = useRef<HTMLDivElement>(null);
   const vaultStrategyTabsRef = useRef<(HTMLDivElement | null)[]>([]);
 
