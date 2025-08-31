@@ -70,7 +70,7 @@ export const formatSig = (value: string): string => {
   if (intRaw === '0') {
     let z = 0;
     while (z < fracRaw.length && fracRaw[z] === '0') z++;
-    if (z > 4) {
+    if (z > 2) {
       const remainder = fracRaw.slice(z);
       if (!remainder) return signStr + '0';
       return `${signStr}0.0${toSubscript(z)}${remainder}`;

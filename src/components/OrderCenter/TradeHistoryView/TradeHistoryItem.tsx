@@ -25,6 +25,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
   onMarketSelect,
 }) => {
   const { activechain, favorites, toggleFavorite } = useSharedContext();
+  console.log(trade);
 
   const priceFactor = Number(market.priceFactor);
   const baseDecimals = Number(market.baseDecimals);
@@ -82,7 +83,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
       <div className="oc-cell value-cell">
         <span className="order-value">
           {formatBalance(
-            (trade[2] === 1 ? trade[0] / 10 ** quoteDecimals : trade[1] * quotePrice / 10 ** baseDecimals),
+            (trade[2] === 1 ? trade[0] / 10 ** quoteDecimals : trade[1] / (quotePrice * 10 ** quoteDecimals)),
             'usd',
           )}
         </span>
@@ -99,7 +100,10 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
 
       <div className="oc-cell trigger-price">
         {formatSig(
-          (trade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
+          (trade[2] === 1
+            ? ((trade[0] / 10 ** quoteDecimals) / (trade[1] / 10 ** baseDecimals)).toFixed(Math.floor(Math.log10(priceFactor))) 
+            : ((trade[1] / 10 ** quoteDecimals) / (trade[0] / 10 ** baseDecimals)).toFixed(Math.floor(Math.log10(priceFactor)))
+          )
         )}
       </div>
       <span className="oc-cell status">

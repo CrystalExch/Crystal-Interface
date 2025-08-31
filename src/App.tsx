@@ -4727,14 +4727,14 @@ function App() {
             for (const o of allOrders) {
               const marketKey = getMarketKey(o.market);
               const idParts = (o.id ?? "").split("-");
-              const head = parseInt(idParts[0] ?? "0", 10) || 0;
+              const price = Number(o.price);
               const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
               const original = Number(o.originalSize ?? 0);
               const remaining = Number(o.remainingSize ?? 0);
               const filled = Math.max(0, original - remaining);
 
               tempcanceledorders.push([
-                head,
+                price,
                 tail,
                 original,
                 o.isBuy ? 1 : 0,
@@ -4742,7 +4742,7 @@ function App() {
                 o.id,
                 Number(o.updatedAt ?? o.placedAt ?? 0),
                 filled,
-                Number(o.price ?? 0) * original,
+                o.isBuy ? original : Number(o.price ?? 0) * original,
                 statusCode(o.status),
               ]);
             }
