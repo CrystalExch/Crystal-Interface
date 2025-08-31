@@ -19,7 +19,6 @@ import { useSharedContext } from "../../contexts/SharedContext";
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
 import slippage from "../../assets/slippage.svg";
-import bribe from "../../assets/bribe.svg";
 import switchicon from "../../assets/switch.svg";
 import editicon from "../../assets/edit.svg";
 import walleticon from "../../assets/wallet_icon.png"
@@ -210,7 +209,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [slippageValue, _setSlippageValue] = useState("20");
   const [priorityFee, _setPriorityFee] = useState("0.01");
-  const [bribeValue, _setBribeValue] = useState("0.05");
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(350);
   const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
   const [isSigning, setIsSigning] = useState(false);
@@ -225,12 +223,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [buySlippageValue, setBuySlippageValue] = useState('20');
   const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
-  const [buyBribeValue, setBuyBribeValue] = useState('0.05');
   const [settingsMode, setSettingsMode] = useState<'buy' | 'sell'>('buy');
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
   const [sellSlippageValue, setSellSlippageValue] = useState('15');
   const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
-  const [sellBribeValue, setSellBribeValue] = useState('0.03');
   const [tokenBalance, setTokenBalance] = useState(0);
   const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
   const [holders, setHolders] = useState<Holder[]>([]);
@@ -268,15 +264,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const multicallAddress = settings.chainConfig[activechain]?.multicall3;
 
   const buyPresets = {
-    1: { slippage: '20', priority: '0.01', bribe: '0.05' },
-    2: { slippage: '15', priority: '0.02', bribe: '0.1' },
-    3: { slippage: '10', priority: '0.05', bribe: '0.2' }
+    1: { slippage: '20', priority: '0.01' },
+    2: { slippage: '15', priority: '0.02'},
+    3: { slippage: '10', priority: '0.05'}
   };
   const queryClient = useQueryClient();
   const sellPresets = {
-    1: { slippage: '15', priority: '0.005', bribe: '0.03' },
-    2: { slippage: '12', priority: '0.01', bribe: '0.07' },
-    3: { slippage: '8', priority: '0.03', bribe: '0.15' }
+    1: { slippage: '15', priority: '0.005'},
+    2: { slippage: '12', priority: '0.01' },
+    3: { slippage: '8', priority: '0.03'}
   };
 
   const userAddr = (address ?? account?.address ?? "").toLowerCase();
@@ -422,7 +418,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const presetValues = buyPresets[preset as keyof typeof buyPresets];
     setBuySlippageValue(presetValues.slippage);
     setBuyPriorityFee(presetValues.priority);
-    setBuyBribeValue(presetValues.bribe);
   }, []);
 
   const handleSellPresetSelect = useCallback((preset: number) => {
@@ -430,11 +425,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const presetValues = sellPresets[preset as keyof typeof sellPresets];
     setSellSlippageValue(presetValues.slippage);
     setSellPriorityFee(presetValues.priority);
-    setSellBribeValue(presetValues.bribe);
   }, []);
   
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
-    if (advancedOrders.length >= 5) return; // Maximum 5 orders
+    if (advancedOrders.length >= 5) return; 
 
     const newOrder = {
       id: `${orderType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -1713,10 +1707,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <img src={gas} className="meme-settings-icon2" />
                   <span className="meme-settings-value">{priorityFee}</span>
                 </div>
-                <div className="meme-settings-item">
-                  <img src={bribe} className="meme-settings-icon3" />
-                  <span className="meme-settings-value">{bribeValue}</span>
-                </div>
               </div>
               <button
                 className="meme-settings-edit-button"
@@ -1796,24 +1786,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         className="meme-setting-input"
                         value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
                         onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
-                        step="0.001"
-                        min="0"
-                      />
-                      <span className="meme-setting-unit">MON</span>
-                    </div>
-                  </div>
-
-                  <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img src={bribe} alt="Bribe" className="meme-setting-label-icon" />
-                      Bribe
-                    </label>
-                    <div className="meme-setting-input-wrapper">
-                      <input
-                        type="number"
-                        className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buyBribeValue : sellBribeValue}
-                        onChange={(e) => settingsMode === 'buy' ? setBuyBribeValue(e.target.value) : setSellBribeValue(e.target.value)}
                         step="0.001"
                         min="0"
                       />
@@ -2357,12 +2329,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               {mobileTradeType === 'buy' ? buyPriorityFee : sellPriorityFee}
             </span>
           </div>
-          <div className="meme-mobile-settings-item">
-            <img src={bribe} alt="Bribe" className="meme-mobile-settings-icon" />
-            <span className="meme-mobile-settings-value">
-              {mobileTradeType === 'buy' ? buyBribeValue : sellBribeValue}
-            </span>
-          </div>
         </div>
 
         {mobileWalletsExpanded && (
@@ -2436,10 +2402,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         tokenPrice={currentPrice}
         buySlippageValue={buySlippageValue}
         buyPriorityFee={buyPriorityFee}
-        buyBribeValue={buyBribeValue}
         sellSlippageValue={sellSlippageValue}
         sellPriorityFee={sellPriorityFee}
-        sellBribeValue={sellBribeValue}
         sendUserOperationAsync={sendUserOperationAsync}
         account={account}
         setChain={setChain}

@@ -449,7 +449,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
     if (walletToDelete && isWalletActive(walletToDelete.privateKey)) {
       localStorage.removeItem('crystal_active_wallet_private_key');
-      console.log('Cleared active wallet from localStorage - wallet being deleted');
     }
 
     const updatedWallets = subWallets.filter(w => w.address !== address);
@@ -508,7 +507,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       try {
         setEnabledWallets(new Set(JSON.parse(storedEnabledWallets)));
       } catch (error) {
-        console.error('Error loading enabled wallets:', error);
       }
     }
 
@@ -517,7 +515,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       try {
         setWalletNames(JSON.parse(storedWalletNames));
       } catch (error) {
-        console.error('Error loading wallet names:', error);
       }
     }
   }, []);
@@ -552,7 +549,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     e.dataTransfer.setData('text/plain', JSON.stringify(dragData));
   };
   const handleSingleMainDrop = (dragData: any, targetZone: 'source' | 'destination') => {
-    console.log('Single main drop:', dragData.address, 'to', targetZone);
 
     const targetArray = targetZone === 'source' ? sourceWallets : destinationWallets;
     const isAlreadyInZone = targetArray.some(w => w.address === dragData.address);
@@ -567,7 +563,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
   };
 
   const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
-    console.log('Single zone drop:', dragData.address, 'from', dragData.sourceZone, 'to', targetZone);
 
     if (targetZone === 'main') {
       if (dragData.sourceZone === 'source') {
@@ -605,8 +600,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDragOverZone(null);
     setDropPreviewLine(null);
 
-    console.log('Universal drop triggered for zone:', targetZone);
-
     try {
       let data = null;
       const jsonData = e.dataTransfer.getData('application/json');
@@ -620,11 +613,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
       }
 
       if (!data) {
-        console.log('No valid drag data found');
         return;
       }
-
-      console.log('Processing drop data:', data.type, 'to', targetZone);
 
       switch (data.type) {
         case 'multi-drag':
@@ -656,7 +646,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       }
 
     } catch (error) {
-      console.error('Error handling drop:', error);
     }
 
     setDraggedWallet(null);
@@ -735,6 +724,21 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDestinationWallets([]);
   };
 
+  const getWalletBalanceWithGas = (address: string) => {
+    const balances = walletTokenBalances[address];
+    if (!balances) return 0;
+
+    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain].eth);
+    if (ethToken && balances[ethToken.address]) {
+      const totalBalance = Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+      const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** Number(ethToken.decimals);
+      const availableBalance = Math.max(0, totalBalance - gasAmount);
+      return availableBalance;
+    }
+
+    return 0;
+  };
+
   const executeDistribution = async () => {
     if (sourceWallets.length === 0 || destinationWallets.length === 0 || !distributionAmount) {
       alert('Please add source wallets, destination wallets, and set an amount');
@@ -790,7 +794,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       setDistributionAmount('');
 
     } catch (error) {
-      console.error('Distribution failed:', error);
       alert('Distribution failed. Please try again.');
     } finally {
       setIsVaultDepositSigning(false);
@@ -912,11 +915,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
       setSubWallets(updatedWallets);
       saveSubWalletsToStorage(updatedWallets);
 
-      console.log('Wallet Imported:', { address: walletAddress, privateKey: '***' });
       closeImportModal();
       showWalletImported(walletAddress);
     } catch (error) {
-      console.error('Error importing wallet:', error);
       setImportError('Failed to import wallet. Please check your private key.');
     } finally {
       setIsImporting(false);
@@ -981,18 +982,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
     try {
       setIsDepositing(true);
 
-      console.log('Setting chain...');
       await handleSetChain();
 
       const ethAmount = BigInt(Math.round(parseFloat(depositAmount) * 1e18));
-      console.log('Amount in Wei:', ethAmount.toString());
 
       const mainWalletBalance = getMainWalletBalance();
       if (parseFloat(depositAmount) > mainWalletBalance) {
         throw new Error(`Insufficient balance in main wallet. Available: ${mainWalletBalance.toFixed(4)} MON`);
       }
 
-      console.log('Sending transaction from main wallet...');
       const result = await sendUserOperationAsync({
         uo: {
           target: depositTargetWallet,
@@ -1000,8 +998,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           data: '0x'
         }
       });
-
-      console.log('Transaction result:', result);
 
       let hash;
       if (typeof result === 'string') {
@@ -1011,37 +1007,27 @@ const Portfolio: React.FC<PortfolioProps> = ({
       } else if (result && result.transactionHash) {
         hash = result.transactionHash;
       } else {
-        console.log('Unexpected result format:', result);
         hash = result;
       }
 
-      console.log('Transaction hash:', hash);
-
       if (hash) {
-        console.log('Waiting for transaction receipt...');
         try {
           const timeoutPromise = new Promise((_, reject) =>
             setTimeout(() => reject(new Error('Transaction timeout')), 30000)
           );
 
           await Promise.race([timeoutPromise]);
-          console.log('Transaction confirmed');
         } catch (receiptError) {
-          console.warn('Receipt waiting failed, but transaction may still be successful:', receiptError);
         }
       }
       try {
         await refreshWalletBalance(depositTargetWallet);
-        console.log('Target wallet balance refreshed');
       } catch (refreshError) {
-        console.warn('Failed to refresh target wallet balance:', refreshError);
       }
 
       try {
         refetch();
-        console.log('Main account data refreshed');
       } catch (refetchError) {
-        console.warn('Failed to refresh main account:', refetchError);
       }
 
       closeDepositModal();
@@ -1057,13 +1043,13 @@ const Portfolio: React.FC<PortfolioProps> = ({
   const [customAddressError, setCustomAddressError] = useState<string>('');
   const calculateMaxAmount = () => {
     const totalSourceBalance = sourceWallets.reduce((total, wallet) => {
-      return total + getWalletBalance(wallet.address);
+      return total + getWalletBalanceWithGas(wallet.address);
     }, 0);
     return totalSourceBalance;
   };
   const handleMaxAmount = () => {
     const maxAmount = calculateMaxAmount();
-    setDistributionAmount(maxAmount.toString());
+    setDistributionAmount(maxAmount.toFixed(6));
   };
 
   const handleAddCustomAddress = () => {
@@ -1115,9 +1101,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
         if (!sourceWalletData) continue;
 
         const walletBalance = getWalletBalance(destWallet.address);
-        if (walletBalance > 0.001) {
-          const transferAmount = walletBalance - 0.001;
+        const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** 18;
+        const transferAmount = Math.max(0, walletBalance - gasAmount - 0.001);
 
+        if (transferAmount > 0) {
           await handleSubwalletTransfer(
             destWallet.address,
             address,
@@ -1135,7 +1122,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       showSendBackSuccess(destinationWallets.length);
 
     } catch (error) {
-      console.error('Send back to main wallet failed:', error);
       alert('Send back to main wallet failed. Please try again.');
     } finally {
       setIsVaultDepositSigning(false);
@@ -1306,12 +1292,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         };
       });
 
-    console.log('Multi-drag data prepared:', {
-      containerType,
-      selectedCount: selectedWalletsData.length,
-      wallets: selectedWalletsData.map(w => w.address)
-    });
-
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('application/json', JSON.stringify({
       type: 'multi-drag',
@@ -1327,31 +1307,24 @@ const Portfolio: React.FC<PortfolioProps> = ({
     setDragOverZone(null);
     setDropPreviewLine(null);
 
-    console.log('Multi-drop triggered for zone:', targetZone);
-
     try {
       const jsonData = e.dataTransfer.getData('application/json');
-      console.log('Drop data received:', jsonData ? 'JSON data found' : 'No JSON data');
 
       if (jsonData) {
         const data = JSON.parse(jsonData);
-        console.log('Parsed drop data:', data);
 
         if (data.type === 'multi-drag' && data.wallets && data.wallets.length > 0) {
           const { wallets, sourceContainer } = data;
-          console.log(`Processing multi-drop: ${wallets.length} wallets from ${sourceContainer} to ${targetZone}`);
 
           if (sourceContainer !== targetZone) {
             if (sourceContainer === 'source') {
               setSourceWallets(prev => {
                 const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
-                console.log('Removed from source:', prev.length - filtered.length);
                 return filtered;
               });
             } else if (sourceContainer === 'destination') {
               setDestinationWallets(prev => {
                 const filtered = prev.filter(w => !wallets.some((sw: any) => sw.address === w.address));
-                console.log('Removed from destination:', prev.length - filtered.length);
                 return filtered;
               });
             }
@@ -1359,13 +1332,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
             if (targetZone === 'source') {
               setSourceWallets(prev => {
                 const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
-                console.log('Adding to source:', newWallets.length);
                 return [...prev, ...newWallets];
               });
             } else if (targetZone === 'destination') {
               setDestinationWallets(prev => {
                 const newWallets = wallets.filter((w: any) => !prev.some(pw => pw.address === w.address));
-                console.log('Adding to destination:', newWallets.length);
                 return [...prev, ...newWallets];
               });
             }
@@ -1376,19 +1347,15 @@ const Portfolio: React.FC<PortfolioProps> = ({
             destination: new Set()
           });
           setIsMultiDrag(false);
-          console.log('Multi-drop completed successfully');
           return;
         } else if (data.type === 'reorder') {
-          console.log('Handling reorder drop');
           handleReorderDrop(e, targetZone as any);
           return;
         }
       }
     } catch (error) {
-      console.error('Error handling multi-drop JSON:', error);
     }
 
-    console.log('Falling back to single drop handling');
     try {
       const textData = e.dataTransfer.getData('text/plain');
       if (textData) {
@@ -1396,7 +1363,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         return;
       }
     } catch (error) {
-      console.error('Error handling text drop data:', error);
     }
     setIsMultiDrag(false);
     if (draggedWallet?.sourceZone) {
@@ -1416,8 +1382,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       container: containerType,
       timestamp: Date.now()
     };
-
-    console.log('Setting reorder data:', reorderData);
 
     e.dataTransfer.effectAllowed = 'move';
     e.dataTransfer.setData('application/json', JSON.stringify(reorderData));
@@ -1484,7 +1448,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
     try {
       const jsonData = e.dataTransfer.getData('application/json');
       if (!jsonData || jsonData.trim() === '') {
-        console.log('No JSON data found for reorder operation');
         return;
       }
 
@@ -1516,7 +1479,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         }
       }
     } catch (error) {
-      console.error('Error handling reorder drop:', error);
     }
     setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
     setDropPreviewLine(null);
@@ -1554,7 +1516,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           setDragReorderState({ draggedIndex: -1, dragOverIndex: -1, dragOverPosition: null });
 
           if (selectedWalletsPerContainer[containerType].size > 1 && isSelected) {
-            console.log('Starting multi-drag with', selectedWalletsPerContainer[containerType].size, 'wallets');
             handleMultiDragStart(e, containerType);
             return;
           }
@@ -1584,7 +1545,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
           setDropPreviewLine(null);
           setDraggedWallet(null);
           setDragOverZone(null);
-          console.log('Drag ended, cleaned up states');
         }}
         onDragOver={(e) => {
           if (!isMultiDrag) {
@@ -1603,7 +1563,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
         }}
         onClick={(e) => {
           e.stopPropagation();
-          console.log('Wallet clicked:', wallet.address, 'Ctrl held:', e.ctrlKey, 'Container:', containerType);
 
           if (e.ctrlKey || e.metaKey) {
             setSelectedWalletsPerContainer(prev => {
@@ -1613,7 +1572,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
               } else {
                 newContainerSet.add(wallet.address);
               }
-              console.log(`New selection for ${containerType}:`, Array.from(newContainerSet));
               return {
                 ...prev,
                 [containerType]: newContainerSet
@@ -1625,7 +1583,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
               source: containerType === 'source' ? new Set([wallet.address]) : new Set(),
               destination: containerType === 'destination' ? new Set([wallet.address]) : new Set()
             });
-            console.log(`Single selected in ${containerType}:`, wallet.address);
           }
         }}
       >
@@ -1650,7 +1607,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   localStorage.setItem('crystal_active_wallet_private_key', wallet.privateKey);
                   setOneCTSigner(wallet.privateKey);
                   refetch();
-                  console.log('Set active wallet and saved to localStorage:', wallet.address);
                 }
               }}
               onClick={(e) => e.stopPropagation()}
@@ -1950,7 +1906,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
 
       if (savedWalletExists && activeWalletPrivateKey !== savedActivePrivateKey) {
         setOneCTSigner(savedActivePrivateKey);
-        console.log('Restored active wallet from localStorage');
       }
     }
   }, [subWallets, activeWalletPrivateKey, setOneCTSigner]);
@@ -2424,8 +2379,8 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     >
                       Clear All
                     </button>
-                    <button
-                      className="execute-distribution-button"
+                         <button
+                      className={`execute-distribution-button ${isVaultDepositSigning ? 'loading' : ''}`}
                       onClick={executeDistribution}
                       disabled={
                         sourceWallets.length === 0 ||
@@ -2435,7 +2390,19 @@ const Portfolio: React.FC<PortfolioProps> = ({
                         isVaultDepositSigning
                       }
                     >
-                      {isVaultDepositSigning ? 'Distributing...' : 'Execute Distribution'}
+                      {isVaultDepositSigning ? (
+                        <div className="button-loading-spinner">
+                          <svg 
+                            className="loading-spinner" 
+                            width="16" 
+                            height="16" 
+                            viewBox="0 0 50 50"
+                          >
+                          </svg>
+                        </div>
+                      ) : (
+                        'Execute Distribution'
+                      )}
                     </button>
                   </div>
                 </div>
@@ -2614,8 +2581,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
                             className="deposit-main-max-button"
                             onClick={() => {
                               const maxBalance = getMainWalletBalance();
-                              const maxDepositAmount = Math.max(0, maxBalance - 0.01);
-                              setDepositAmount(maxDepositAmount.toFixed(2).toString());
+                              const gasAmount = Number(settings.chainConfig[activechain].gasamount || BigInt(0)) / 10 ** 18;
+                              const maxDepositAmount = Math.max(0, maxBalance - gasAmount - 0.01);
+                              setDepositAmount(maxDepositAmount.toFixed(6));
                             }}
                             disabled={getMainWalletBalance() <= 0.001}
                           >

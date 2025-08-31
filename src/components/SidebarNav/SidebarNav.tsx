@@ -17,7 +17,7 @@ import tracker from '../../assets/tracker.svg';
 import earnvaults from '../../assets/vaults.png';
 
 interface SidebarNavProps {
- simpleView: boolean;
+  simpleView: boolean;
   setSimpleView: (value: boolean) => void;
   onOpenWidgetExplorer?: () => void;
   isWidgetExplorerOpen?: boolean;
@@ -31,7 +31,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   const [expanded, setExpanded] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [linkClicked, setLinkClicked] = useState(false); 
+  const [linkClicked, setLinkClicked] = useState(false);
   const resizeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const backgroundlesslogo = '/CrystalLogo.png';
 
@@ -40,7 +40,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
   //     onOpenWidgetExplorer();
   //   }
   // };
-  
+
   const isMobile = windowWidth <= 1020;
 
   const handleSidebarMouseEnter = () => {
@@ -75,7 +75,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
       const newWidth = window.innerWidth;
       setWindowWidth(newWidth);
-      
+
       if (newWidth <= 1020) {
         setExpanded(false);
       }
@@ -88,7 +88,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
     };
 
     window.addEventListener('resize', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
       if (resizeTimeoutRef.current) {
@@ -102,9 +102,9 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
       if (mobileMenuOpen && event.target instanceof Element) {
         const mobileMenu = document.querySelector('.mobile-hamburger-menu');
         const hamburgerButton = document.querySelector('.mobile-hamburger-button');
-        
-        if (mobileMenu && !mobileMenu.contains(event.target) && 
-            hamburgerButton && !hamburgerButton.contains(event.target)) {
+
+        if (mobileMenu && !mobileMenu.contains(event.target) &&
+          hamburgerButton && !hamburgerButton.contains(event.target)) {
           setMobileMenuOpen(false);
         }
       }
@@ -120,7 +120,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
   return (
     <>
-      <div 
+      <div
         className={`sidebar-nav ${simpleView ? 'simple-view' : 'advanced-view'} ${expanded ? 'expanded' : 'collapsed'} ${isResizing ? 'no-transition' : ''}`}
         onMouseEnter={handleSidebarMouseEnter}
         onMouseLeave={handleSidebarMouseLeave}
@@ -171,7 +171,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={portfolio} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('portfolio')}</span>
             </Link>
-            {/* <Link
+            <Link
               to="/leaderboard"
               className={`page-mode-button ${path === '/leaderboard' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
@@ -179,7 +179,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               <img src={leaderboard} className="sidebar-icon" />
               <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('leaderboard')}</span>
             </Link>
-            <Link
+            {/* <Link
               to="/lending"
               className={`page-mode-button ${path === '/lending' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
@@ -189,20 +189,18 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
             </Link> */}
             <Link
               to="/earn/liquidity"
-              className={`page-mode-button ${path === '/earn/liquidity' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              className={`page-mode-button ${path.startsWith('/earn/liquidity') || path.startsWith('/earn/vaults')
+                  ? 'active'
+                  : ''
+                } ${isResizing ? 'no-transition' : ''}`}
               onClick={handleLinkClick}
             >
               <img src={liquidity} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Liquidity')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>
+                {t('Earn')}
+              </span>
             </Link>
-            <Link
-              to="/earn/vaults"
-              className={`page-mode-button ${path === '/earn/vaults' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <img src={earnvaults} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Vaults')}</span>
-            </Link>
+
             <Link
               to="/explorer"
               className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
@@ -222,7 +220,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
             {isMobile && (
               <button
-                onClick={()=>setMobileMenuOpen(!mobileMenuOpen)}
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="mobile-hamburger-button"
               >
                 <svg
@@ -274,7 +272,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{'X / ' + t('twitter')}</span>
               </a>
 
-               {/* <div className="sidebar-section">
+              {/* <div className="sidebar-section">
           <div className="sidebar-section-title">Tools</div>
           
           <div 
@@ -301,18 +299,18 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
 
       {isMobile && (
         <>
-          <div 
+          <div
             className={`mobile-menu-backdrop ${mobileMenuOpen ? 'open' : ''}`}
-            onClick={()=>setMobileMenuOpen(false)}
+            onClick={() => setMobileMenuOpen(false)}
           />
-          
+
           <div className={`mobile-hamburger-menu ${mobileMenuOpen ? 'open' : ''}`}>
             <div className="mobile-menu-header">
               <div className="mobile-menu-logo">
                 <img src={backgroundlesslogo} className="extitle-logo" />
                 <span className="crystal-name">CRYSTAL</span>
               </div>
-              <button onClick={()=>setMobileMenuOpen(false)} className="mobile-menu-close">
+              <button onClick={() => setMobileMenuOpen(false)} className="mobile-menu-close">
                 <svg
                   width="24"
                   height="24"
@@ -326,14 +324,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 </svg>
               </button>
             </div>
-            
-            <div className="mobile-menu-content">       
+
+            <div className="mobile-menu-content">
               <a
                 href="https://docs.crystal.exchange"
                 target="_blank"
                 rel="noreferrer"
                 className="mobile-menu-item"
-                onClick={()=>setMobileMenuOpen(false)}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 <img src={docs} className="mobile-menu-icon" />
                 <span>{t('docs')}</span>
@@ -343,7 +341,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className="mobile-menu-item"
-                onClick={()=>setMobileMenuOpen(false)}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 <img src={discord} className="mobile-menu-icon" />
                 <span>{t('discord')}</span>
@@ -353,7 +351,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 target="_blank"
                 rel="noreferrer"
                 className="mobile-menu-item"
-                onClick={()=>setMobileMenuOpen(false)}
+                onClick={() => setMobileMenuOpen(false)}
               >
                 <img src={twitter} className="mobile-menu-icon" />
                 <span>{'X / ' + t('twitter')}</span>

@@ -10,7 +10,6 @@ import { showLoadingPopup, updatePopup } from '../../MemeTransactionPopup/MemeTr
 import walleticon from '../../../assets/wallet_icon.png';
 import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
-import bribe from '../../../assets/bribe.svg';
 import { encodeFunctionData } from 'viem';
 import { MaxUint256 } from 'ethers';
 
@@ -30,10 +29,8 @@ interface QuickBuyWidgetProps {
     tokenPrice?: number;
     buySlippageValue: string;
     buyPriorityFee: string;
-    buyBribeValue: string;
     sellSlippageValue: string;
     sellPriorityFee: string;
-    sellBribeValue: string;
     sendUserOperationAsync?: any;
     account?: { connected: boolean; address: string; chainId: number };
     setChain?: () => void;
@@ -58,10 +55,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     tokenPrice = 0,
     buySlippageValue,
     buyPriorityFee,
-    buyBribeValue,
     sellSlippageValue,
     sellPriorityFee,
-    sellBribeValue,
     sendUserOperationAsync,
     account,
     setChain,
@@ -833,10 +828,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
                                 <span className="quickbuy-settings-value">{buyPriorityFee}</span>
                             </div>
-                            <div className="quickbuy-settings-item">
-                                <img src={bribe} alt="Bribe" className="quickbuy-settings-icon-bribe" />
-                                <span className="quickbuy-settings-value">{buyBribeValue}</span>
-                            </div>
                         </div>
                     </div>
 
@@ -906,10 +897,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
                                 <span className="quickbuy-settings-value">{sellPriorityFee}</span>
                             </div>
-                            <div className="quickbuy-settings-item">
-                                <img src={bribe} alt="Bribe" className="quickbuy-settings-icon" />
-                                <span className="quickbuy-settings-value">{sellBribeValue}</span>
-            </div>
                         </div>
                     </div>
 

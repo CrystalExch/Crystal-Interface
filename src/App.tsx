@@ -154,7 +154,7 @@ import { HexColorPicker } from 'react-colorful';
 import TokenBoard from './components/DegenToken/TokenBoard';
 import TokenDetail from './components/DegenToken/TokenDetail';
 import Tracker from './components/Tracker/Tracker.tsx';
-import LP from './components/LP/LP.tsx';
+import Earn from './components/Earn/Earn.tsx';
 
 
 // import config
@@ -21043,70 +21043,85 @@ function App() {
               setChain={handleSetChain}
             />}
           />
-          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
-          <Route path="/earn/vaults" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              tokenBalances={tokenBalances}
-              currentRoute="/earn/vaults"
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              setselectedVault={setselectedVault}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              sendUserOperationAsync={sendUserOperationAsync}
-              setChain={handleSetChain}
-              address={address}
-              refetch={refetch}
-              activechain={activechain}
-              crystalVaultsAddress={crystalVaults}
-              router={router}
-              formatUSDDisplay={formatUSDDisplay}
-              calculateUSDValue={calculateUSDValue}
-              getMarket={getMarket}
-            />
-          } />
-          <Route
-            path="/earn/liquidity"
-            element={
-              <LP
-                setpopup={setpopup}
-                onSelectToken={(token) => {
-                  setSelectedToken(token);
-                  setTimeout(() => setSelectedToken(null), 100);
-                }}
-                setOnSelectTokenCallback={setOnSelectTokenCallback}
-                tokendict={tokendict}
-                tradesByMarket={tradesByMarket}
-                markets={markets}
-                tokenBalances={tokenBalances}
-                connected={connected}
-                account={{
-                  connected: connected,
-                  address: address,
-                  chainId: userchain,
-                }}
-                sendUserOperationAsync={sendUserOperationAsync}
-                setChain={handleSetChain}
-                address={address}
-                refetch={refetch}
-              />
-            }
-          />
+<Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
+<Route path="/earn/*" element={
+  <Earn
+    setpopup={setpopup}
+    onSelectToken={(token) => {
+      setSelectedToken(token);
+      setTimeout(() => setSelectedToken(null), 100);
+    }}
+    setOnSelectTokenCallback={setOnSelectTokenCallback}
+    selectedToken={selectedToken}
+    tokenBalances={tokenBalances}
+    tokendict={tokendict}
+    address={address}
+    connected={connected}
+    refetch={refetch}
+    tradesByMarket={tradesByMarket}
+    markets={markets}
+    usdc={usdc}
+    wethticker={wethticker}
+    ethticker={ethticker}
+    account={{
+      connected: connected,
+      address: address,
+      chainId: userchain,
+    }}
+    sendUserOperationAsync={sendUserOperationAsync}
+    activechain={activechain}
+    setChain={handleSetChain}
+    setselectedVault={setselectedVault}
+    isVaultDepositSigning={isVaultDepositSigning}
+    setIsVaultDepositSigning={setIsVaultDepositSigning}
+    isVaultWithdrawSigning={isVaultWithdrawSigning}
+    setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+    crystalVaultsAddress={crystalVaults}
+    router={router}
+    formatUSDDisplay={formatUSDDisplay}
+    calculateUSDValue={calculateUSDValue}
+    getMarket={getMarket}
+  />
+} />
+<Route path="/earn/vaults/:vaultAddress" element={
+  <Earn
+    setpopup={setpopup}
+    onSelectToken={(token) => {
+      setSelectedToken(token);
+      setTimeout(() => setSelectedToken(null), 100);
+    }}
+    setOnSelectTokenCallback={setOnSelectTokenCallback}
+    selectedToken={selectedToken}
+    tokenBalances={tokenBalances}
+    tokendict={tokendict}
+    address={address}
+    connected={connected}
+    refetch={refetch}
+    tradesByMarket={tradesByMarket}
+    markets={markets}
+    usdc={usdc}
+    wethticker={wethticker}
+    ethticker={ethticker}
+    account={{
+      connected: connected,
+      address: address,
+      chainId: userchain,
+    }}
+    sendUserOperationAsync={sendUserOperationAsync}
+    activechain={activechain}
+    setChain={handleSetChain}
+    setselectedVault={setselectedVault}
+    isVaultDepositSigning={isVaultDepositSigning}
+    setIsVaultDepositSigning={setIsVaultDepositSigning}
+    isVaultWithdrawSigning={isVaultWithdrawSigning}
+    setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+    crystalVaultsAddress={crystalVaults}
+    router={router}
+    formatUSDDisplay={formatUSDDisplay}
+    calculateUSDValue={calculateUSDValue}
+    getMarket={getMarket}
+  />
+} />
           <Route
             path="/board"
             element={
