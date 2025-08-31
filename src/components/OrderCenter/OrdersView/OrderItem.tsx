@@ -8,9 +8,8 @@ import customRound from '../../../utils/customRound';
 import { fetchLatestPrice } from '../../../utils/getPrice';
 import {
   formatBalance,
-  formatSubscript,
 } from '../../../utils/numberDisplayFormat.ts';
-import { formatDateAndTime, formatDisplay, getPriceGap } from '../utils';
+import { formatDateAndTime, formatDisplay, getPriceGap, formatSig } from '../utils';
 
 import './OrderItem.css';
 
@@ -49,10 +48,10 @@ const OrderItem: React.FC<OrderItemProps> = ({
   const baseDecimals = Number(market.baseDecimals);
   const quoteDecimals = Number(market.quoteDecimals);
   const scaleFactor = Number(market.scaleFactor);
-  const amount = order[2] / 10 ** baseDecimals;
+  const amount = order[3] === 1 ? (order[2] / ((order[0] / priceFactor) * (10 ** quoteDecimals))) : order[2] / 10 ** baseDecimals;
   const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
-  const usdValue = (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
+  const usdValue = order[3] === 1 ? order[2] / 10 ** quoteDecimals : (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
   const isBuyOrder = order[3] === 1;
   const currentPrice = fetchLatestPrice(trades, market) || 0;
   const limitPrice = order[0] / priceFactor;
@@ -127,7 +126,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
       </div>
       <div className="oc-cell limit-price">
         <div className="open-order-price-level">
-          {formatSubscript(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
+          {formatSig(limitPrice.toFixed(Math.floor(Math.log10(priceFactor))))}
           <div className="edit-limit-price-button"
                onClick={(e) => {
                  e.stopPropagation();

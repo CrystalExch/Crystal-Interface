@@ -1,5 +1,5 @@
 export { formatDateAndTime } from '../../../utils/formatDateAndTime';
-export { formatDisplay } from './formatDisplay';
+export { formatDisplay, formatSig } from './formatDisplay';
 export { useSortableData } from './useSortableData';
 
 export { getOrderHistoryValue } from './OrderHistory/getOrderHistoryValue';

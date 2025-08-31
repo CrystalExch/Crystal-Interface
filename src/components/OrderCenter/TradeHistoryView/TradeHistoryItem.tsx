@@ -6,11 +6,8 @@ import ViewButton from '../ExplorerViewButton/ExplorerViewButton';
 import { settings } from '../../../settings.ts';
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
-import {
-  formatBalance,
-  formatSubscript,
-} from '../../../utils/numberDisplayFormat';
-import { formatDateAndTime, formatDisplay } from '../utils';
+import { formatBalance } from '../../../utils/numberDisplayFormat';
+import { formatDateAndTime, formatDisplay, formatSig } from '../utils';
 
 import './TradeHistoryItem.css';
 
@@ -85,7 +82,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
       <div className="oc-cell value-cell">
         <span className="order-value">
           {formatBalance(
-            (trade[2] === 1 ? trade[0] : trade[1]) * quotePrice / 10 ** quoteDecimals,
+            (trade[2] === 1 ? trade[0] / 10 ** quoteDecimals : trade[1] * quotePrice / 10 ** baseDecimals),
             'usd',
           )}
         </span>
@@ -101,7 +98,7 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
       </div>
 
       <div className="oc-cell trigger-price">
-        {formatSubscript(
+        {formatSig(
           (trade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
         )}
       </div>

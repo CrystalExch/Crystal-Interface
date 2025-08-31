@@ -4600,7 +4600,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.2`;
 
           const query = `
             query {
@@ -4718,7 +4718,7 @@ function App() {
                 o.id,
                 Number(o.placedAt ?? o.updatedAt ?? 0),
                 filled,
-                Number(o.price ?? 0) * original,
+                o.isBuy ? original : Number(o.price ?? 0) * original,
                 statusCode(o.status),
               ]);
             }
@@ -5452,7 +5452,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.2`;
         let allLogs: any[] = [];
 
         const query = `
