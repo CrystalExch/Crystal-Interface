@@ -26,7 +26,7 @@ interface OrderItemProps {
   setpopup: (value: number) => void;
   onLimitPriceUpdate?: (price: number) => void;
   openEditOrderPopup: (order: any) => void;
-  openEditOrderSizePopup: (order: any) => void; // Add this new prop
+  openEditOrderSizePopup: (order: any) => void;
 }
 
 const OrderItem: React.FC<OrderItemProps> = ({ 
@@ -39,7 +39,7 @@ const OrderItem: React.FC<OrderItemProps> = ({
   quotePrice, 
   onMarketSelect, 
   openEditOrderPopup,
-  openEditOrderSizePopup // Add this to destructuring
+  openEditOrderSizePopup
 }) => {
   const { favorites, toggleFavorite } = useSharedContext();
 
@@ -54,9 +54,9 @@ const OrderItem: React.FC<OrderItemProps> = ({
   const percentFilled = (amountFilled / amount) * 100;
   const usdValue = (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
   const isBuyOrder = order[3] === 1;
-
   const currentPrice = fetchLatestPrice(trades, market) || 0;
   const limitPrice = order[0] / priceFactor;
+
   const { formattedGap, gapColor } = getPriceGap(
     limitPrice,
     currentPrice,

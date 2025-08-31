@@ -4601,130 +4601,162 @@ function App() {
         isAddressInfoFetching = true;
         try {
           const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
-          let temptradehistory: any[] = [];
-          let temporders: any[] = [];
-          let tempcanceledorders: any[] = [];
 
           const query = `
             query {
               account(id: "${address}") {
                 id
-                userIds {
-                  id
+                openOrderMap {
+                  shards { batches { orders {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                  }}}
                 }
                 orderMap {
-                  id
-                }
-                openOrderMap {
-                  id
-                }
-                fillMap {
-                  id
+                  shards { batches { orders {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                  }}}
                 }
                 tradeMap {
-                  id
-                }
-                launchpadTradeMap {
-                  id
+                  shards { batches { trades {
+                    id
+                    market { id baseAsset quoteAsset }
+                    amountIn
+                    amountOut
+                    startPrice
+                    endPrice
+                    isBuy
+                    timestamp
+                    tx
+                  }}}
                 }
               }
             }
-          `
+          `;
 
           const response = await fetch(endpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "content-type": "application/json" },
             body: JSON.stringify({ query }),
           });
+          if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
 
           const result = await response.json();
-          console.log(result)
+          if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
+
           if (!isAddressInfoFetching) return;
-          const map = result?.data?.marketFilledMaps || [];
-          for (const batch of map) {
-            for (const event of batch.orders) {
-              const marketKey = addresstoMarket[event.contractAddress];
-              if (marketKey) {
-                temptradehistory.push([
-                  event.amountIn,
-                  event.amountOut,
-                  event.buySell,
-                  event.price,
-                  marketKey,
-                  event.transactionHash,
-                  event.timeStamp,
-                  1,
-                ]);
-              }
+
+          const flatten = (map: any, key: "orders" | "trades") =>
+            (map?.shards ?? [])
+              .flatMap((s: any) => s?.batches ?? [])
+              .flatMap((b: any) => b?.[key] ?? []);
+
+          const statusCode = (s: any) => {
+            if (typeof s === "number") return s;
+            const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
+            return m[(s ?? "").toString().toLowerCase()] ?? -1;
+          };
+
+          const getMarketKey = (m: any) => {
+            if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
+            if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
+            return "unknown";
+          };
+
+          const acct = result?.data?.account;
+          let temptradehistory: any[] = [];
+          let temporders: any[] = [];
+          let tempcanceledorders: any[] = [];
+
+          if (acct) {
+            const trades = flatten(acct.tradeMap, "trades") || [];
+            for (const t of trades) {
+              const marketKey = getMarketKey(t.market);
+              temptradehistory.push([
+                Number(t.amountIn ?? 0),
+                Number(t.amountOut ?? 0),
+                t.isBuy ? 1 : 0,
+                Number((t.endPrice ?? t.startPrice) ?? 0),
+                marketKey,
+                t.tx,
+                Number(t.timestamp ?? 0),
+                1,
+              ]);
+            }
+
+            const openOrders = flatten(acct.openOrderMap, "orders") || [];
+            for (const o of openOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split("-");
+              const price = Number(o.price);
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              temporders.push([
+                price,
+                tail,
+                original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.id,
+                Number(o.placedAt ?? o.updatedAt ?? 0),
+                filled,
+                Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
+            }
+
+            const allOrders = flatten(acct.orderMap, "orders") || [];
+            for (const o of allOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split("-");
+              const head = parseInt(idParts[0] ?? "0", 10) || 0;
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              tempcanceledorders.push([
+                head,
+                tail,
+                original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.id,
+                Number(o.updatedAt ?? o.placedAt ?? 0),
+                filled,
+                Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
             }
           }
 
-          const updatedMaps = (result?.data?.orders1 || []).concat(result?.data?.orders2 || []).concat(result?.data?.filledMaps || []);
-          for (const orderMap of updatedMaps) {
-            const batches = orderMap.batches || [];
-            for (const batch of batches) {
-              const orders = batch.orders || [];
-              for (const order of orders) {
-                const marketKey = addresstoMarket[order.contractAddress];
-                if (!marketKey) continue;
-                const row = [
-                  parseInt(order.id.split('-')[0], 10),
-                  parseInt(order.id.split('-')[2], 10),
-                  Number(order.originalSizeBase.toString()),
-                  order.buySell,
-                  marketKey,
-                  order.transactionHash,
-                  order.timestamp,
-                  Number(order.filledAmountBase.toString()),
-                  Number(order.originalSizeQuote.toString()),
-                  order.status,
-                ];
-
-                if (order.status === 2) {
-                  temporders.push(row);
-                  tempcanceledorders.push(row);
-                } else if (order.status === 1) {
-                  const tradeRow = [
-                    order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
-                    order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
-                    order.buySell,
-                    parseInt(order.id.split('-')[0], 10),
-                    marketKey,
-                    order.transactionHash,
-                    order?.filledTimestamp ? order.filledTimestamp : order.timestamp,
-                    0
-                  ];
-
-                  const row = [
-                    parseInt(order.id.split('-')[0], 10),
-                    parseInt(order.id.split('-')[2], 10),
-                    Number(order.originalSizeBase.toString()),
-                    order.buySell,
-                    marketKey,
-                    order.transactionHash,
-                    order.timestamp,
-                    Number(order.filledAmountBase.toString()),
-                    Number(order.originalSizeQuote.toString()),
-                    order.status,
-                  ];
-
-                  temptradehistory.push(tradeRow);
-                  tempcanceledorders.push(row);
-                } else {
-                  tempcanceledorders.push(row);
-                }
-              }
-            }
-          }
-
-          settradehistory([...temptradehistory]);
-          setorders([...temporders]);
-          setcanceledorders([...tempcanceledorders]);
+          settradehistory(temptradehistory);
+          setorders(temporders);
+          setcanceledorders(tempcanceledorders);
           setaddressinfoloading(false);
-          isAddressInfoFetching = false
+          isAddressInfoFetching = false;
         } catch (error) {
           console.error("Error fetching logs:", error);
           setaddressinfoloading(false);
+          isAddressInfoFetching = false;
         }
       }
       else if (!user) {
@@ -4740,7 +4772,7 @@ function App() {
         setcanceledorders([]);
         setaddressinfoloading(false);
       }
-    })()
+    })();
 
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
