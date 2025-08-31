@@ -586,7 +586,7 @@ const LP: React.FC<LPProps> = ({
             0n,
           ],
         }),
-        value: 0n,
+        value: amountBaseDesired,
       };
 
       const depositOp = await sendUserOperationAsync({ uo: depositUo });

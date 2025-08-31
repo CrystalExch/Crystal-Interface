@@ -392,7 +392,7 @@ function App() {
     signTransaction: async () => ''
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
-  const [userId, setUserId] = useState(BigInt(2))
+  const [userId, setUserId] = useState(BigInt(1))
   const connected = address != undefined
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
   useEffect(() => {
@@ -2452,8 +2452,8 @@ function App() {
         {
           disabled: !address,
           to: settings.chainConfig[activechain].referralManager,
-          abi: CrystalRouterAbi as any,
-          functionName: 'getUsedRef',
+          abi: CrystalReferralAbi as any,
+          functionName: 'getRefInfo',
           args: [address],
         },
         ...Array.from(
@@ -3246,6 +3246,7 @@ function App() {
       }
     }
   }, [amountsQuote]);
+
   // process data
   useLayoutEffect(() => {
     const data = rpcQueryData?.readContractData?.mainGroup;
@@ -3509,9 +3510,12 @@ function App() {
         }
       }
       if (refData && Object.keys(tempmids).length > 0) {
+        console.log(refData)
         setUsedRefAddress(
           refData[0]?.result?.[0] as any || '0x0000000000000000000000000000000000000000',
         );
+        setRefLink(refs[0].result);
+        setUsedRefLink(refs[1].result);
         setClaimableFees(() => {
           let newFees = {};
           let totalFees = 0;
@@ -4598,7 +4602,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.12`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
           let temptradehistory: any[] = [];
           let temporders: any[] = [];
           let tempcanceledorders: any[] = [];
@@ -5418,7 +5422,7 @@ function App() {
         Object.keys(markets).forEach((market) => {
           temptradesByMarket[market] = [];
         });
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.1.12`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
         let allLogs: any[] = [];
 
         const query = `
@@ -6386,7 +6390,7 @@ function App() {
           {
             abi: CrystalReferralAbi,
             address: settings.chainConfig[activechain].referralManager,
-            functionName: 'refToAddress',
+            functionName: 'refCodeToAddress',
             args: [used.toLowerCase()],
           },
         ],
@@ -6493,7 +6497,7 @@ function App() {
     setIsUsernameSigning(true);
 
     try {
-      const read = (await readContracts(config, {
+      /* const read = (await readContracts(config, {
         contracts: [
           {
             abi: CrystalReferralAbi,
@@ -6522,7 +6526,7 @@ function App() {
           }),
           value: 0n,
         },
-      });
+      }); */
 
       setUsername(_usernameInput);
       audio.currentTime = 0;
@@ -6561,7 +6565,7 @@ function App() {
     }, 10);
   };
 
-  useEffect(() => {
+  /* useEffect(() => {
     const fetchUsername = async () => {
       try {
         const read = await readContracts(config, {
@@ -6588,7 +6592,7 @@ function App() {
     if (address) {
       fetchUsername();
     }
-  }, [address, activechain, config]);
+  }, [address, activechain, config]); */
 
   useEffect(() => {
     let animationStartTimer: ReturnType<typeof setTimeout> | undefined;
@@ -14495,11 +14499,16 @@ function App() {
                             (createVaultForm.baseAsset == settings.chainConfig[activechain].eth ? settings.chainConfig[activechain].weth : createVaultForm.baseAsset),
                             amountQuote,
                             amountBase,
-                            createVaultForm.name || 'Unnamed Vault',
-                            createVaultForm.description || 'No description provided',
-                            createVaultForm.social1 || '',
-                            createVaultForm.social2 || '',
-                            createVaultForm.social2 || '',
+                            0n,
+                            0n,
+                            true,
+                            {
+                              name: createVaultForm.name || 'Unnamed Vault',
+                              description: createVaultForm.description || 'No description provided',
+                              social1: createVaultForm.social1 || '',
+                              social2: createVaultForm.social2 || '',
+                              social3: createVaultForm.social2 || ''
+                            },
                           ],
                         }),
                         value: ethValue,

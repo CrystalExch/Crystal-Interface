@@ -84,7 +84,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           selectedInterval === '4h' ? 14400 :
           86400
         }`.toLowerCase();
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.1.12';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.2.0';
         let allCandles: any[] = [];
         const query = `
           query {

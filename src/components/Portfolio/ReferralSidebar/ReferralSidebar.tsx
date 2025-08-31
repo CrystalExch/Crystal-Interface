@@ -3,6 +3,7 @@ import { Share2, Eye, EyeOff } from 'lucide-react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
 import { config } from '../../../wagmi';
+import { CrystalReferralAbi } from '../../../abis/CrystalReferralAbi';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
 import { settings } from '../../../settings';
 import customRound from '../../../utils/customRound';
@@ -90,29 +91,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     setIsLoading(true);
     setClaimableLoading(true);
 
-    (async () => {
-      const refs = (await readContracts(config, {
-        contracts: [
-          {
-            abi: CrystalRouterAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRefCode',
-            args: [address ?? '0x0000000000000000000000000000000000000000'],
-          },
-          {
-            abi: CrystalRouterAbi,
-            address: settings.chainConfig[activechain].referralManager,
-            functionName: 'addressToRefCode',
-            args: [
-              usedRefAddress ?? '0x0000000000000000000000000000000000000000',
-            ],
-          },
-        ],
-      })) as any[];
-      setRefLink(refs[0].result);
-      setUsedRefLink(refs[1].result);
-    })();
-
     const fetchInfo = async () => {
       try {
         const res = await fetch(
@@ -185,7 +163,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         let lookup = (await readContracts(config, {
           contracts: [
             {
-              abi: CrystalRouterAbi,
+              abi: CrystalReferralAbi,
               address: settings.chainConfig[activechain].referralManager,
               functionName: 'refCodeToAddress',
               args: [newRefCode.toLowerCase()],
@@ -203,7 +181,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           uo: {
             target: settings.chainConfig[activechain].referralManager,
             data: encodeFunctionData({
-              abi: CrystalRouterAbi,
+              abi: CrystalReferralAbi,
               functionName: 'setReferral',
               args: [newRefCode],
             }),
@@ -234,7 +212,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         lookup = (await readContracts(config, {
           contracts: [
             {
-              abi: CrystalRouterAbi,
+              abi: CrystalReferralAbi,
               address: settings.chainConfig[activechain].referralManager,
               functionName: 'refCodeToAddress',
               args: [used.toLowerCase()],
@@ -259,7 +237,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           uo: {
             target: settings.chainConfig[activechain].referralManager,
             data: encodeFunctionData({
-              abi: CrystalRouterAbi,
+              abi: CrystalReferralAbi,
               functionName: 'setUsedRef',
               args: [used],
             }),
