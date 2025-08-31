@@ -3,6 +3,8 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import Overlay from '../loading/LoadingComponent';
 import PortfolioGraph from './PortfolioGraph/PortfolioGraph';
+import PNLComponent from '../PNLComponent/PNLComponent';
+
 import OrderCenter from '../OrderCenter/OrderCenter';
 import ReferralSidebar from './ReferralSidebar/ReferralSidebar';
 import cheveron from '../../assets/chevron_arrow.png'
@@ -561,6 +563,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
       setDestinationWallets(prev => [...prev, { ...dragData, sourceZone: undefined }]);
     }
   };
+  const [showPNLModal, setShowPNLModal] = useState(false);
 
   const handleSingleZoneDrop = (dragData: any, targetZone: 'source' | 'destination' | 'main') => {
 
@@ -2379,7 +2382,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     >
                       Clear All
                     </button>
-                         <button
+                    <button
                       className={`execute-distribution-button ${isVaultDepositSigning ? 'loading' : ''}`}
                       onClick={executeDistribution}
                       disabled={
@@ -2392,10 +2395,10 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     >
                       {isVaultDepositSigning ? (
                         <div className="button-loading-spinner">
-                          <svg 
-                            className="loading-spinner" 
-                            width="16" 
-                            height="16" 
+                          <svg
+                            className="loading-spinner"
+                            width="16"
+                            height="16"
                             viewBox="0 0 50 50"
                           >
                           </svg>
@@ -2660,7 +2663,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                       }, 2000);
                     }}
                   >
-                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 64 64" width="18" height="18"><path d="M 8 8 L 8 20 L 56 20 L 56 8 L 46 8 L 46 9 C 46 10.657 44.657 12 43 12 C 41.343 12 40 10.657 40 9 L 40 8 L 24 8 L 24 9 C 24 10.657 22.657 12 21 12 C 19.343 12 18 10.657 18 9 L 18 8 L 8 8 z M 8 22 L 8 56 L 56 56 L 56 24 L 52 23.832031 L 52 45 C 52 47 47 47 47 47 C 47 47 47 52 44 52 L 12 52 L 12 22.167969 L 8 22 z M 19 29 L 19 35 L 25 35 L 25 29 L 19 29 z M 29 29 L 29 35 L 35 35 L 35 29 L 29 29 z M 39 29 L 39 35 L 45 35 L 45 29 L 39 29 z M 19 39 L 19 45 L 25 45 L 25 39 L 19 39 z M 29 39 L 29 45 L 35 45 L 35 39 L 29 39 z M 39 39 L 39 45 L 45 45 L 45 39 L 39 39 z"/></svg>
+                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="18" height="18"><path d="M 8 8 L 8 20 L 56 20 L 56 8 L 46 8 L 46 9 C 46 10.657 44.657 12 43 12 C 41.343 12 40 10.657 40 9 L 40 8 L 24 8 L 24 9 C 24 10.657 22.657 12 21 12 C 19.343 12 18 10.657 18 9 L 18 8 L 8 8 z M 8 22 L 8 56 L 56 56 L 56 24 L 52 23.832031 L 52 45 C 52 47 47 47 47 47 C 47 47 47 52 44 52 L 12 52 L 12 22.167969 L 8 22 z M 19 29 L 19 35 L 25 35 L 25 29 L 19 29 z M 29 29 L 29 35 L 35 35 L 35 29 L 29 29 z M 39 29 L 39 35 L 45 35 L 45 29 L 39 29 z M 19 39 L 19 45 L 25 45 L 25 39 L 19 39 z M 29 39 L 29 45 L 35 45 L 35 39 L 29 39 z M 39 39 L 39 45 L 45 45 L 45 39 L 39 39 z" /></svg>
                   </button>
                 </div>
 
@@ -2676,9 +2679,9 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   <h3 className="trenches-performance-title">PERFORMANCE</h3>
                   <button
                     className="trenches-pnl-button"
-                    onClick={() => setpopup(27)}
+                    onClick={() => setShowPNLModal(true)}
                   >
-<svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 64 64" width="16" height="16"><path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z"/></svg>                  </button>
+                    <svg fill="#cfcfdfff" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="16" height="16"><path d="M 31.964844 2.0078125 A 2 2 0 0 0 30.589844 2.5898438 L 20.349609 12.820312 A 2.57 2.57 0 0 0 19.910156 13.470703 A 2 2 0 0 0 21.759766 16.240234 L 30 16.240234 L 30 39.779297 A 2 2 0 0 0 34 39.779297 L 34 16.240234 L 42.25 16.240234 A 2 2 0 0 0 43.660156 12.820312 L 33.410156 2.5898438 A 2 2 0 0 0 31.964844 2.0078125 z M 4 21.619141 A 2 2 0 0 0 2 23.619141 L 2 56 A 2 2 0 0 0 4 58 L 60 58 A 2 2 0 0 0 62 56 L 62 23.619141 A 2 2 0 0 0 60 21.619141 L 44.269531 21.619141 A 2 2 0 0 0 44.269531 25.619141 L 58 25.619141 L 58 54 L 6 54 L 6 25.619141 L 19.730469 25.619141 A 2 2 0 0 0 19.730469 21.619141 L 4 21.619141 z" /></svg>                  </button>
                 </div>
 
                 <div className="trenches-performance-stats">
@@ -2939,6 +2942,11 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
+        <PNLComponent
+          isVisible={showPNLModal}
+          onClose={() => setShowPNLModal(false)}
+          windowWidth={window.innerWidth}
+        />
       </div>
     );
   } else {
@@ -2998,9 +3006,16 @@ const Portfolio: React.FC<PortfolioProps> = ({
         <div className="portfolio-content-container">
           {renderTabContent()}
         </div>
+        <PNLComponent
+          isVisible={showPNLModal}
+          onClose={() => setShowPNLModal(false)}
+          windowWidth={window.innerWidth}
+        />
       </div>
     );
+
   }
+
 };
 
 export default Portfolio;
