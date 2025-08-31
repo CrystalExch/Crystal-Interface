@@ -1,0 +1,144 @@
+.earn-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: calc(100% - 20px);
+  height: 100%;
+  margin: 0 10px;
+}
+
+.earn-page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 40px;
+  gap: 1.5rem;
+  height: 120px;
+}
+
+.earn-title-section {
+  text-align: center;
+}
+
+.earn-main-title {
+  display: flex;
+  align-self: flex-start;
+  font-size: 2.5rem;
+  font-weight: 300;
+  color: #fff;
+  margin: 0;
+  letter-spacing: -1px;
+}
+
+.earn-subtitle {
+  font-size: 1rem;
+  color: #ffffff79;
+  letter-spacing: -0.5px;
+  font-weight: 300;
+  line-height: 1.4;
+}
+
+.earn-toggle-container {
+  display: flex;
+  width: 100%;
+  border-bottom: 1.5px solid rgba(179, 184, 249, .1);
+}
+
+.earn-toggle {
+  position: relative;
+  display: flex;
+  gap: 4px;
+  height: 40px;
+  overflow: hidden;
+}
+
+.earn-toggle::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  height: calc(100% - 4px);
+  width: calc(50%);
+  transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+  border-bottom: 1.5px solid #d8dcff;
+}
+
+.earn-toggle[data-active=vaults]::before {
+  transform: translateX(100%);
+}
+
+.earn-toggle-tab {
+  position: relative;
+  z-index: 2;
+  background: transparent;
+  border: none;
+  color: #ffffff79;
+  font-size: .95rem;
+  cursor: pointer;
+  transition: color .3s ease;
+  white-space: nowrap;
+  min-width: 100px;
+  text-align: center;
+  height: 36px;
+  padding: 0 .5rem;
+  letter-spacing: -.3px;
+}
+
+.earn-toggle-tab:hover {
+  color: #fff;
+}
+
+.earn-toggle-tab.active {
+  color: #d8dcff;
+}
+
+.earn-toggle-tab:focus {
+  outline: 0;
+}
+
+.earn-content {
+  width: 100%;
+  max-width: 1100px;
+  flex: 1;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .earn-header {
+    margin-top: 20px;
+    gap: 1rem;
+  }
+  
+  .earn-main-title {
+    font-size: 2rem;
+  }
+  
+  .earn-subtitle {
+    font-size: 0.9rem;
+    padding: 0 1rem;
+  }
+  
+  .earn-toggle {
+    width: 100%;
+    max-width: 400px;
+  }
+  
+  .earn-toggle-tab {
+    min-width: auto;
+    flex: 1;
+    font-size: .8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .earn-main-title {
+    font-size: 1.8rem;
+  }
+  
+  .earn-subtitle {
+    font-size: 0.85rem;
+  }
+}
+
