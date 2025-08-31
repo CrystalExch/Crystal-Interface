@@ -31,6 +31,11 @@ interface ColorInputProps {
   defaultColor: string;
 }
 
+interface ImageDimensions {
+  width: number;
+  height: number;
+}
+
 const ToggleSwitch: React.FC<{
   checked: boolean;
   onChange: () => void;
@@ -45,7 +50,6 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   onClose, 
   windowWidth = window.innerWidth 
 }) => {
-  // Sample data - you can make these props if needed
   const tokenIconUrl = './monad.svg';
   const tokenName = 'MON';
   const leverage = 10;
@@ -63,6 +67,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   };
 
   const [uploadedBg, setUploadedBg] = useState<string | null>(null);
+  const [uploadedImageDimensions, setUploadedImageDimensions] = useState<ImageDimensions | null>(null);
+  const [backgroundPosition, setBackgroundPosition] = useState({ x: 50, y: 50 }); // percentage values
   const [currency, setCurrency] = useState(tokenName);
   const [selectedBg, setSelectedBg] = useState(PNLBG2);
   const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
@@ -71,9 +77,12 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [showRightPanel, setShowRightPanel] = useState(false);
   const [activePicker, setActivePicker] = useState<string | null>(null);
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
 
   const captureRef = useRef<HTMLDivElement>(null);
   const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
+  const cardRef = useRef<HTMLDivElement>(null);
 
   const ColorInput = React.memo<ColorInputProps>(({
     color,
@@ -281,20 +290,111 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setActivePicker(id);
   };
 
+  const isUploadedImageSelected = selectedBg === uploadedBg && uploadedBg !== null;
+
+  const checkImageNeedsScrolling = useCallback(() => {
+    if (!uploadedImageDimensions || !cardRef.current) return { needsHorizontal: false, needsVertical: false };
+    
+    const cardRect = cardRef.current.getBoundingClientRect();
+    const cardWidth = cardRect.width;
+    const cardHeight = cardRect.height;
+    
+    const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
+    
+    // Calculate if image is larger than card in either dimension
+    const needsHorizontal = imgWidth > cardWidth;
+    const needsVertical = imgHeight > cardHeight;
+    
+    return { needsHorizontal, needsVertical };
+  }, [uploadedImageDimensions]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (!isUploadedImageSelected) return;
+    
+    const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
+    if (!needsHorizontal && !needsVertical) return;
+    
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX,
+      y: e.clientY
+    });
+  }, [isUploadedImageSelected, checkImageNeedsScrolling]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging || !isUploadedImageSelected) return;
+    
+    const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
+    
+    // Calculate movement delta
+    const deltaX = e.clientX - dragStart.x;
+    const deltaY = e.clientY - dragStart.y;
+    
+    // Sensitivity
+    const sensitivity = 0.2;
+    
+    let newX = backgroundPosition.x;
+    let newY = backgroundPosition.y;
+    
+    if (needsHorizontal) {
+      //drag
+      newX = Math.max(0, Math.min(100, backgroundPosition.x - (deltaX * sensitivity)));
+    }
+    
+    if (needsVertical) {
+      //drag
+      newY = Math.max(0, Math.min(100, backgroundPosition.y - (deltaY * sensitivity)));
+    }
+    
+    setBackgroundPosition({ x: newX, y: newY });
+    
+    setDragStart({ x: e.clientX, y: e.clientY });
+  }, [isDragging, isUploadedImageSelected, dragStart, backgroundPosition, checkImageNeedsScrolling]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
   const handleBgSelect = (bg: string) => {
     setSelectedBg(bg);
     setCustomizationSettings(defaultCustomizationSettings);
+    // Reset background position when selecting a different background
+    if (bg !== uploadedBg) {
+      setBackgroundPosition({ x: 50, y: 50 });
+    }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const getImageDimensions = (src: string): Promise<ImageDimensions> => {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+      img.onerror = reject;
+      img.src = src;
+    });
+  };
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const result = event.target?.result;
         if (typeof result === 'string') {
-          setUploadedBg(result);
-          setSelectedBg(result);
+          try {
+            const dimensions = await getImageDimensions(result);
+            setUploadedImageDimensions(dimensions);
+            setUploadedBg(result);
+            setSelectedBg(result);
+            setBackgroundPosition({ x: 50, y: 50 }); // Reset to center
+          } catch (error) {
+            console.error('Error getting image dimensions:', error);
+            setUploadedBg(result);
+            setSelectedBg(result);
+            setUploadedImageDimensions(null);
+          }
         }
       };
       reader.readAsDataURL(file);
@@ -362,6 +462,52 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           'rectangleTextColor';
   };
 
+  // calculate size of uploaded img
+  const getBackgroundSize = () => {
+    if (!isUploadedImageSelected || !uploadedImageDimensions || !cardRef.current) {
+      return 'cover';
+    }
+
+    const cardRect = cardRef.current.getBoundingClientRect();
+    const cardWidth = cardRect.width;
+    const cardHeight = cardRect.height;
+    const { width: imgWidth, height: imgHeight } = uploadedImageDimensions;
+
+    const scaleX = cardWidth / imgWidth;
+    const scaleY = cardHeight / imgHeight;
+
+    const scale = Math.max(scaleX, scaleY);
+    
+    const scaledWidth = imgWidth * scale;
+    const scaledHeight = imgHeight * scale;
+
+    return `${scaledWidth}px ${scaledHeight}px`;
+  };
+
+  const getBackgroundStyle = () => {
+    if (isUploadedImageSelected && uploadedImageDimensions) {
+      const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
+      
+      if (needsHorizontal || needsVertical) {
+        return {
+          backgroundImage: `url(${selectedBg})`,
+          backgroundSize: getBackgroundSize(),
+          backgroundPosition: `${backgroundPosition.x}% ${backgroundPosition.y}%`,
+          backgroundRepeat: 'no-repeat',
+          cursor: isDragging ? 'grabbing' : 'grab',
+        };
+      }
+    }
+    
+    return {
+      backgroundImage: `url(${selectedBg})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
+      cursor: 'default',
+    };
+  };
+
   useEffect(() => {
     setCurrency(tokenName);
   }, []);
@@ -392,7 +538,23 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     setTempCustomizationSettings(customizationSettings);
   }, [customizationSettings]);
 
+  // Mouse event listeners for dragging
+  useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
   if (!isVisible) return null;
+
+  const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
+  const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical);
 
   return (
     <div className="pnl-modal-overlay" onClick={onClose}>
@@ -404,14 +566,28 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           <div
             className={`pnl-card ${!isCapturing ? 'pnl-card-display' : ''}`}
             ref={captureRef}
-            style={{
-              backgroundImage: `url(${selectedBg})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              backgroundRepeat: 'no-repeat',
-            }}
+            style={getBackgroundStyle()}
+            onMouseDown={handleMouseDown}
           >
-            <div className="pnl-card-content">
+            <div ref={cardRef} className="pnl-card-content">
+              {showScrollHint && (
+                <div className="scroll-hint" style={{
+                  position: 'absolute',
+                  top: '10px',
+                  right: '10px',
+                  background: 'rgba(0, 0, 0, 0.7)',
+                  color: 'white',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                  fontSize: '12px',
+                  pointerEvents: 'none',
+                  zIndex: 1000
+                }}>
+                  {needsHorizontal && needsVertical ? 'Drag to scroll' : 
+                   needsHorizontal ? 'Drag to scroll horizontally' : 'Drag to scroll vertically'}
+                </div>
+              )}
+              
               <div className="pnl-header-section">
                 <div className="pnl-card-header">
                   <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
@@ -514,7 +690,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
 
           <div className="pnl-footer pnl-layer-bottom">
             <div className="pnl-footer-left">
-                              <button className="pnl-footer-btn" onClick={toggleRightPanel}>
+              <button className="pnl-footer-btn" onClick={toggleRightPanel}>
                 {showRightPanel ? 'Hide Panel' : 'Customize'}
               </button>
               {['1D', '7D', '30D', 'MAX'].map(label => (
