@@ -130,9 +130,11 @@
   font-weight: 500;
 }
 
-.stat-label {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 0.7rem;
+.ref-stat-label {
+  font-size: .8rem;
+  color: #ffffff79;
+  letter-spacing: -.3px;
+  margin-bottom: -0.25rem;
 }
 
 .claimable-section {
@@ -380,29 +382,24 @@
   margin-bottom: 9px;
 }
 
-.skeleton-stat {
-  height: 16px;
+.skeleton-referred {
+  height: 18px;
   width: 40px;
 }
 
 .skeleton-claimable {
-  height: 16px;
-  width: 60px;
+  height: 30px;
+  width: 100px;
+  margin-bottom: 0.35rem;
 }
 
 .skeleton-token-icon {
-  height: 16px;
-  width: 16px;
-  border-radius: 50%;
-}
-
-.skeleton-token-symbol {
-  height: 12px;
-  width: 40px;
+  height: 22px;
+  width: 60px;
 }
 
 .skeleton-token-amount {
-  height: 12px;
+  height: 20px;
   width: 50px;
 }
 

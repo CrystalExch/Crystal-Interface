@@ -155,7 +155,7 @@ interface PortfolioProps {
   chartDays: number;
   setChartDays: (days: number) => void;
   totalClaimableFees: number;
-  claimableFees: { [key: string]: number };
+  claimableFees: { [key: string]: number } | undefined;
   refLink: string;
   setRefLink: any;
   setShowRefModal: any;
@@ -170,7 +170,7 @@ interface PortfolioProps {
   marketsData: any;
   usedRefLink: string;
   setUsedRefLink: any;
-  usedRefAddress: string;
+  setClaimableFees: any;
   setUsedRefAddress: any;
   client: any;
   activechain: any;
@@ -241,7 +241,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   marketsData,
   usedRefLink,
   setUsedRefLink,
-  usedRefAddress,
+  setClaimableFees,
   setUsedRefAddress,
   client,
   activechain,
@@ -1944,7 +1944,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
             <ReferralSidebar
               tokendict={tokendict}
               router={router}
-              usedRefAddress={usedRefAddress as `0x${string}`}
+              setClaimableFees={setClaimableFees}
               address={getActiveAddress() as `0x${string}`}
               usedRefLink={usedRefLink}
               setUsedRefLink={setUsedRefLink}

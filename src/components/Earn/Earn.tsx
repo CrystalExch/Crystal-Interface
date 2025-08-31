@@ -40,7 +40,6 @@ const Earn: React.FC<EarnProps> = (props) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'liquidity' | 'vaults'>('vaults');
 
-  // Determine active tab based on current route
   useEffect(() => {
     if (location.pathname.includes('/earn/liquidity')) {
       setActiveTab('liquidity');
@@ -67,9 +66,8 @@ const Earn: React.FC<EarnProps> = (props) => {
       <div className="earn-page-header">
         <div className="earn-title-section">
           <h1 className="earn-main-title">Earn</h1>
-          <p className="earn-subtitle">Provide liquidity and earn rewards through automated strategies</p>
+          <p className="earn-subtitle">Provide liquidity and earn rewards through both passive and automated strategies</p>
         </div>
-        
         <div className="earn-toggle-container">
           <div className="earn-toggle" data-active={activeTab}>
             <button

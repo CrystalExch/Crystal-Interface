@@ -57,7 +57,7 @@ export const settings: any = {
       weth: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701',
       usdc: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea',
       balancegetter:
-        '0x1484964594c7e2B84777a834d7A6E00cc0f96F5F' as `0x${string}`,
+        '0x3850BfAd2B797539eE804eee3a07ce42CA2004B3' as `0x${string}`,
       router: '0xe3AC349368f3865ae40ee7cc453A0B01c2dE6C05' as `0x${string}`,
       referralManager: '0x1484964594c7e2B84777a834d7A6E00cc0f96F5F' as `0x${string}`,
       launchpadRouter: '0xe3AC349368f3865ae40ee7cc453A0B01c2dE6C05' as `0x${string}`,

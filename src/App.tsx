@@ -635,8 +635,8 @@ function App() {
     return saved ? parseFloat(saved) : 10;
   });
 
-  const [claimableFees, setClaimableFees] = useState<{ [key: string]: number }>(
-    {},
+  const [claimableFees, setClaimableFees] = useState<{ [key: string]: number } | undefined>(
+    undefined
   );
   const [tokenIn, setTokenIn] = useState(() => {
     if (location.pathname.slice(1) == 'send') {
@@ -4466,8 +4466,8 @@ function App() {
                     let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                     let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                     rawVolume =
-                      (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
-                      10 ** Number(markets[marketKey].quoteDecimals);
+                      (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
+                      10 ** Number(markets[marketKey].baseDecimals);
 
                     const tradeTimeSec = lastTrade[6];
                     const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
@@ -5254,8 +5254,8 @@ function App() {
                       let openPrice = parseFloat((lastTrade[7] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                       let closePrice = parseFloat((lastTrade[3] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))));
                       rawVolume =
-                        (lastTrade[2] == 1 ? lastTrade[0] : lastTrade[1]) /
-                        10 ** Number(markets[marketKey].quoteDecimals);
+                        (lastTrade[2] == 0 ? lastTrade[0] : lastTrade[1]) /
+                        10 ** Number(markets[marketKey].baseDecimals);
 
                       const tradeTimeSec = lastTrade[6];
                       const flooredTradeTimeSec = Math.floor(tradeTimeSec / barSizeSec) * barSizeSec;
@@ -9956,7 +9956,7 @@ function App() {
                                 type="text"
                                 className="input-field"
                                 value={rpcUrl}
-                                placeholder="https://mainnet.infura.io/v3/…"
+                                placeholder="https://testnet-rpc.monad.xyz"
                                 onChange={e => {
                                   setRpcUrl(e.target.value)
                                   localStorage.setItem('crystal_rpc_url', e.target.value)
@@ -9970,7 +9970,7 @@ function App() {
                                 type="text"
                                 className="input-field"
                                 value={graphUrl}
-                                placeholder="https://api.thegraph.com/subgraphs/name/…"
+                                placeholder="https://gateway.thegraph.com/api/YOUR_API_KEY/subgraphs/id/..."
                                 onChange={e => {
                                   setGraphUrl(e.target.value)
                                   localStorage.setItem('crystal_graph_url', e.target.value)
@@ -21041,85 +21041,85 @@ function App() {
               setChain={handleSetChain}
             />}
           />
-<Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
-<Route path="/earn/*" element={
-  <Earn
-    setpopup={setpopup}
-    onSelectToken={(token) => {
-      setSelectedToken(token);
-      setTimeout(() => setSelectedToken(null), 100);
-    }}
-    setOnSelectTokenCallback={setOnSelectTokenCallback}
-    selectedToken={selectedToken}
-    tokenBalances={tokenBalances}
-    tokendict={tokendict}
-    address={address}
-    connected={connected}
-    refetch={refetch}
-    tradesByMarket={tradesByMarket}
-    markets={markets}
-    usdc={usdc}
-    wethticker={wethticker}
-    ethticker={ethticker}
-    account={{
-      connected: connected,
-      address: address,
-      chainId: userchain,
-    }}
-    sendUserOperationAsync={sendUserOperationAsync}
-    activechain={activechain}
-    setChain={handleSetChain}
-    setselectedVault={setselectedVault}
-    isVaultDepositSigning={isVaultDepositSigning}
-    setIsVaultDepositSigning={setIsVaultDepositSigning}
-    isVaultWithdrawSigning={isVaultWithdrawSigning}
-    setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-    crystalVaultsAddress={crystalVaults}
-    router={router}
-    formatUSDDisplay={formatUSDDisplay}
-    calculateUSDValue={calculateUSDValue}
-    getMarket={getMarket}
-  />
-} />
-<Route path="/earn/vaults/:vaultAddress" element={
-  <Earn
-    setpopup={setpopup}
-    onSelectToken={(token) => {
-      setSelectedToken(token);
-      setTimeout(() => setSelectedToken(null), 100);
-    }}
-    setOnSelectTokenCallback={setOnSelectTokenCallback}
-    selectedToken={selectedToken}
-    tokenBalances={tokenBalances}
-    tokendict={tokendict}
-    address={address}
-    connected={connected}
-    refetch={refetch}
-    tradesByMarket={tradesByMarket}
-    markets={markets}
-    usdc={usdc}
-    wethticker={wethticker}
-    ethticker={ethticker}
-    account={{
-      connected: connected,
-      address: address,
-      chainId: userchain,
-    }}
-    sendUserOperationAsync={sendUserOperationAsync}
-    activechain={activechain}
-    setChain={handleSetChain}
-    setselectedVault={setselectedVault}
-    isVaultDepositSigning={isVaultDepositSigning}
-    setIsVaultDepositSigning={setIsVaultDepositSigning}
-    isVaultWithdrawSigning={isVaultWithdrawSigning}
-    setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-    crystalVaultsAddress={crystalVaults}
-    router={router}
-    formatUSDDisplay={formatUSDDisplay}
-    calculateUSDValue={calculateUSDValue}
-    getMarket={getMarket}
-  />
-} />
+          <Route path="/earn" element={<Navigate to="/earn/vaults" replace />} />
+          <Route path="/earn/*" element={
+            <Earn
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              selectedToken={selectedToken}
+              tokenBalances={tokenBalances}
+              tokendict={tokendict}
+              address={address}
+              connected={connected}
+              refetch={refetch}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              sendUserOperationAsync={sendUserOperationAsync}
+              activechain={activechain}
+              setChain={handleSetChain}
+              setselectedVault={setselectedVault}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+              crystalVaultsAddress={crystalVaults}
+              router={router}
+              formatUSDDisplay={formatUSDDisplay}
+              calculateUSDValue={calculateUSDValue}
+              getMarket={getMarket}
+            />
+          } />
+          <Route path="/earn/vaults/:vaultAddress" element={
+            <Earn
+              setpopup={setpopup}
+              onSelectToken={(token) => {
+                setSelectedToken(token);
+                setTimeout(() => setSelectedToken(null), 100);
+              }}
+              setOnSelectTokenCallback={setOnSelectTokenCallback}
+              selectedToken={selectedToken}
+              tokenBalances={tokenBalances}
+              tokendict={tokendict}
+              address={address}
+              connected={connected}
+              refetch={refetch}
+              tradesByMarket={tradesByMarket}
+              markets={markets}
+              usdc={usdc}
+              wethticker={wethticker}
+              ethticker={ethticker}
+              account={{
+                connected: connected,
+                address: address,
+                chainId: userchain,
+              }}
+              sendUserOperationAsync={sendUserOperationAsync}
+              activechain={activechain}
+              setChain={handleSetChain}
+              setselectedVault={setselectedVault}
+              isVaultDepositSigning={isVaultDepositSigning}
+              setIsVaultDepositSigning={setIsVaultDepositSigning}
+              isVaultWithdrawSigning={isVaultWithdrawSigning}
+              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
+              crystalVaultsAddress={crystalVaults}
+              router={router}
+              formatUSDDisplay={formatUSDDisplay}
+              calculateUSDValue={calculateUSDValue}
+              getMarket={getMarket}
+            />
+          } />
           <Route
             path="/board"
             element={
@@ -21307,7 +21307,7 @@ function App() {
                 marketsData={marketsData}
                 usedRefLink={usedRefLink}
                 setUsedRefLink={setUsedRefLink}
-                usedRefAddress={usedRefAddress}
+                setClaimableFees={setClaimableFees}
                 setUsedRefAddress={setUsedRefAddress}
                 client={client}
                 activechain={activechain}
