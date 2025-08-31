@@ -7976,6 +7976,19 @@ input::-webkit-inner-spin-button {
   height: 500px;
   max-width: 100%;
   max-height: 100%;
+  gap: 8px;
+}
+
+.pnl-modal-overlay{
+  position: fixed;
+  display: flex;
+  align-items: center;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 12;
 }
 
 .pnl-modal-container.mobile {
@@ -7994,15 +8007,13 @@ input::-webkit-inner-spin-button {
 
 .pnl-modal {
   background-color: #080808;
-  border: 1px solid rgba(43, 43, 43, 0.6);
   box-sizing: content-box;
   z-index: 12;
   position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
-    border-radius: 8px;
-
+  border-radius: 6px;
 }
 
 .main-popup {
@@ -8039,6 +8050,8 @@ input::-webkit-inner-spin-button {
   flex-direction: column;
   font-family: 'Inter', sans-serif;
   color: white;
+  border-radius: 8px;
+  border: 1px solid rgba(179, 184, 249, 0.15);
 }
 
 .pnl-card-content {
@@ -8049,6 +8062,7 @@ input::-webkit-inner-spin-button {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
+  border-radius: 8px;
 }
 
 .pnl-card-header {
@@ -8085,23 +8099,23 @@ input::-webkit-inner-spin-button {
 }
 
 .pnl-token-name {
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.6rem;
 }
 
 .pnl-leverage-tag {
   font-size: 0.75rem;
-  background: #333;
-  color: rgb(168, 168, 215);
+  background:  #aaaecf3b;
+  color: #d8dcff;
   padding: 4px 8px;
   border-radius: 6px;
+  backdrop-filter: blur(5px);
 }
 
 .pnl-percentage {
   font-size: 3rem;
   font-weight: bold;
   margin: 10px 0;
-  padding: 4px 24px;
+  padding: 0 12px;
   border-radius: 4px;
   display: inline-block;
 }
@@ -8135,7 +8149,6 @@ input::-webkit-inner-spin-button {
 .pnl-exit-value,
 .pnl-referral-value {
   font-size: 1.25rem;
-  font-weight: 500;
 }
 
 .pnl-referral {
@@ -8146,7 +8159,6 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  padding: 10px;
   margin-top: -10px;
 }
 
@@ -8162,20 +8174,20 @@ input::-webkit-inner-spin-button {
   align-items: center;
   font-size: 0.75rem;
   gap: 6px;
-  padding: 6px 10px;
-  border: 1.5px solid #2a2a2e91;
-  border-radius: 8px;
-  color: #ccc;
+  padding: 6px 12px;
+  border: 1.5px solid #2a2a2e52;
+  border-radius: 6px;
+  color: #ebedff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   transition: all 0.2s ease;
   background: none;
+  letter-spacing: -0.3px;
 }
 
 .pnl-footer-btn:hover {
-  background-color: #222;
   color: #fff;
-  border-color: #444;
+  border-color: #2a2a2e52;
 }
 
 .pnl-section {
@@ -8188,10 +8200,9 @@ input::-webkit-inner-spin-button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
   pointer-events: auto;
   z-index: 2;
-  height: 80px;
+  height: 100px;
 }
 
 .pnl-middle-left {
@@ -8213,12 +8224,10 @@ input::-webkit-inner-spin-button {
   font-size: 0.75rem;
   gap: 6px;
   padding: 6px 10px;
-  width: 64px;
-  height: 64px;
-  background: #1a1a1d33;
-  border: 1.5px solid #2a2a2e91;
+  width: 120px;
+  height: 80px;
+  border: 1.5px solid #22222e91;
   border-radius: 6px;
-  color: #9499a3;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   cursor: pointer;
   background-size: cover;
@@ -8230,19 +8239,16 @@ input::-webkit-inner-spin-button {
   gap: 4px;
   padding: 16px;
   width: 120px;
-  height: 64px;
   text-align: center;
   border-radius: 8px;
-  color: #ccc;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  color: #ebedff;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .pnl-upload-box:hover {
-  background-color: #222;
   color: #fff;
-  border-color: #444;
+  border-color: #2a2a2e91;
 }
 
 .pnl-file-input {
@@ -8251,29 +8257,29 @@ input::-webkit-inner-spin-button {
 
 .right-panel-content {
   flex: 1;
-  padding: 20px;
   overflow: hidden;
   color: white;
   display: flex;
   flex-direction: column;
   height: 100%;
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
 }
 
 .right-panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-bottom: 15px;
-  border-bottom: 1px solid rgba(43, 43, 43, 0.6);
-  margin-bottom: 20px;
+  padding: 8px 15px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.15);
   flex-shrink: 0;
 }
 
 .right-panel-header h3 {
   margin: 0;
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1rem;
   color: #eaedff;
+  letter-spacing: -0.3px;
 }
 
 .close-right-panel {
@@ -8308,18 +8314,17 @@ input::-webkit-inner-spin-button {
   overflow-y: auto;
   padding-right: 10px;
   margin-right: -10px;
+  padding: 8px 10px;
 }
 
 .customization-footer {
-  padding-top: 15px;
-  border-top: 1px solid rgba(43, 43, 43, 0.6);
-  margin-top: 15px;
   flex-shrink: 0;
+  border-top: 1px solid rgba(179, 184, 249, 0.15);
 }
 
 .apply-btn {
   width: 100%;
-  padding: 12px 20px;
+  padding: 8px 20px;
   background: linear-gradient(135deg,
       #aaaecf 0,
       #9a9ec7 25%,
@@ -8327,7 +8332,7 @@ input::-webkit-inner-spin-button {
       #7f82ac 75%,
       #7f82a1 100%);
   border: none;
-  border-radius: 8px;
+  border-radius: 20px;
   color: #0f0f12;
   font-size: 0.9rem;
   font-weight: 500;
@@ -8337,6 +8342,9 @@ input::-webkit-inner-spin-button {
     inset 0 -1px 1px rgb(0 0 0/55%),
     0 2px 8px rgb(170 174 207/10%);
   transition: filter 0.3s ease;
+  letter-spacing: -0.3px;
+  margin: 10px;
+  width: calc(100% - 20px);
 }
 
 .apply-btn:hover {
