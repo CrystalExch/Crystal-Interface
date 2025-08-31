@@ -17,10 +17,10 @@ interface ReferralSidebarProps {
   address: `0x${string}` | undefined;
   usedRefLink: string;
   setUsedRefLink: any;
-  usedRefAddress: `0x${string}` | undefined;
+  setClaimableFees: any;
   setUsedRefAddress: any;
   totalClaimableFees: number;
-  claimableFees: { [key: string]: number };
+  claimableFees: { [key: string]: number } | undefined;
   refLink: string;
   setRefLink: any;
   setChain: any;
@@ -39,7 +39,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   address,
   usedRefLink,
   setUsedRefLink,
-  usedRefAddress,
+  setClaimableFees,
   setUsedRefAddress,
   totalClaimableFees,
   claimableFees,
@@ -58,7 +58,6 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const [commissionBonus, setCommissionBonus] = useState(0);
   const [username, setUsername] = useState('');
   const [isLoading, setIsLoading] = useState(true);
-  const [claimableLoading, setClaimableLoading] = useState(false);
   const [isSigning, setIsSigning] = useState(false);
   const [isRemovingCode, setIsRemovingCode] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
@@ -78,20 +77,18 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     : getDisplayAddress(address || '');
 
   useEffect(() => {
+    setClaimableFees(undefined);
     if (!address) {
       setCommissionBonus(0);
       setUsername('');
       setReferredCount(0);
       setIsLoading(false);
-      setClaimableLoading(false);
       return;
     }
 
     // Set loading states when address changes
-    setIsLoading(true);
-    setClaimableLoading(true);
-
-    const fetchInfo = async () => {
+    setIsLoading(false);
+    /* const fetchInfo = async () => {
       try {
         const res = await fetch(
           `https://api.crystal.exchange/user_info/${address.toLowerCase()}`
@@ -113,15 +110,8 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
 
     fetchInfo();
     const iv = setInterval(fetchInfo, 3000);
-    return () => clearInterval(iv);
+    return () => clearInterval(iv); */
   }, [address]);
-
-  // Separate effect for claimable fees loading
-  useEffect(() => {
-    if (address) {
-      setClaimableLoading(false);
-    }
-  }, [totalClaimableFees, claimableFees]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(`https://app.crystal.exchange?ref=${refLink}`);
@@ -220,7 +210,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
           ],
         })) as any[];
 
-        if (lookup[0].result === '0x0000000000000000000000000000000000000000') {
+        if (lookup[0].result === '0x0000000000000000000000000000000000000000' || lookup[0].result == address) {
           setError('Failed to set referral code');
           return false;
         }
@@ -342,18 +332,18 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         <div className="stat-item">
           <div className="stat-content">
             <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
-              {isLoading ? <div className="skeleton skeleton-stat"></div> : referredCount}
+              {isLoading ? <div className="skeleton skeleton-referred"></div> : referredCount}
             </div>
-            <div className="stat-label">Referred</div>
+            <div className="ref-stat-label">Referred</div>
           </div>
         </div>
 
         <div className="stat-item">
           <div className="stat-content">
             <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
-              {isLoading ? <div className="skeleton skeleton-stat"></div> : commissionBonus}
+              {isLoading ? <div className="skeleton skeleton-referred"></div> : commissionBonus}
             </div>
-            <div className="stat-label">Crystals</div>
+            <div className="ref-stat-label">Crystals</div>
           </div>
         </div>
       </div>
@@ -362,17 +352,17 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         <div className="stat-item">
           <div className="stat-content">
             <div className={`stat-value ${isBlurred ? 'blurred' : ''}`}>
-              {claimableLoading ? (
+              {claimableFees == undefined ? (
                 <div className="skeleton skeleton-claimable"></div>
               ) : (
                 `${totalClaimableFees ? '$' + customRound(totalClaimableFees, 2) : '$0.00'}`
               )}            </div>
-            <div className="stat-label">Claimable</div>
+            <div className="ref-stat-label">Claimable</div>
           </div>
         </div>
 
         <div className="token-list">
-          {claimableLoading ? (
+          {claimableFees == undefined ? (
             [1, 2, 3].map((i) => (
               <div key={i} className="token-row">
                 <div className="skeleton skeleton-token-icon"></div>
@@ -401,14 +391,14 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         <button
           className="claim-button"
           onClick={handleClaimFees}
-          disabled={isSigning || totalClaimableFees === 0 || claimableLoading}
+          disabled={isSigning || totalClaimableFees === 0 || claimableFees == undefined}
         >
           {isSigning ? (
             <>
               <div className="spinner"></div>
               Claiming...
             </>
-          ) : claimableLoading ? (
+          ) : claimableFees == undefined ? (
             <>
               <div className="spinner"></div>
               Loading...

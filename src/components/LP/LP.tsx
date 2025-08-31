@@ -6,6 +6,7 @@ import { MaxUint256 } from "ethers";
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import customRound from '../../utils/customRound.tsx';
 import { settings } from "../../settings";
 import './LP.css';
 
@@ -232,9 +233,14 @@ const LP: React.FC<LPProps> = ({
   const [duplicateTokenWarning, setDuplicateTokenWarning] = useState('');
 
   const [activeVaultDetailTab, setActiveVaultDetailTab] = useState<'deposit' | 'withdraw'>('deposit');
-  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<{ base: string, quote: string }>({
+  const [vaultInputStrings, setVaultInputStrings] = useState<{ base: string, quote: string }>({
     base: '',
     quote: ''
+  });
+  const [vaultDepositAmounts, setVaultDepositAmounts] = useState<any>({
+    shares: 0n,
+    quote: 0n,
+    base: 0n
   });
   const [vaultFirstTokenExceedsBalance, setVaultFirstTokenExceedsBalance] = useState(false);
   const [vaultSecondTokenExceedsBalance, setVaultSecondTokenExceedsBalance] = useState(false);
@@ -263,7 +269,7 @@ const LP: React.FC<LPProps> = ({
   const showVaultDetail = (vault: any) => {
     setSelectedVault(vault.baseAsset + vault.quoteAsset);
     setActiveVaultDetailTab('deposit');
-    setVaultDepositAmounts({ base: '', quote: '' });
+    setVaultInputStrings({ base: '', quote: '' });
     setWithdrawAmount('');
     setVaultFirstTokenExceedsBalance(false);
     setVaultSecondTokenExceedsBalance(false);
@@ -445,32 +451,54 @@ const LP: React.FC<LPProps> = ({
     }
   };
 
-  const handleVaultDepositAmountChange = (position: 'base' | 'quote', value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setVaultDepositAmounts(prev => ({
-        ...prev,
-        [position]: value
-      }));
+  const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
+    console.log(selectedVaultData)
+    if (/^\d*\.?\d{0,18}$/.test(value) && selectedVaultData) {
+      const tokenData = type == 'quote' ? tokendict[selectedVaultData?.quoteAsset] : tokendict[selectedVaultData?.baseAsset];
+      if (tokenData) {
+        const tokenDecimals = Number(tokenData.decimals) || 18;
+        const enteredAmount = parseFloat(value) || 0;
 
-      if (value !== '' && selectedVaultData) {
-        const tokenSymbol = position === 'base' ? selectedVaultData.baseAsset : selectedVaultData.quoteAsset;
-        const userBalance = getTokenBalance(tokenSymbol);
-        const tokenDecimals = Number(
-          (Object.values(tokendict).find(t => t.ticker === tokenSymbol)?.decimals) || 18
-        );
-        const maxAllowedAmount = Number(userBalance) / 10 ** tokenDecimals;
-        const enteredAmount = parseFloat(value);
-
-        if (position === 'base') {
-          setVaultFirstTokenExceedsBalance(enteredAmount > maxAllowedAmount);
+        if (type === 'quote') {
+          const amountBase = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.baseBalance / selectedVaultData?.quoteBalance
+          const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance;
+          const b = amountBase * selectedVaultData?.totalShares / selectedVaultData?.baseBalance
+          const shares = a > b ? b : a
+          setVaultInputStrings({
+            [type]: value,
+            'base': amountBase == 0n ? '' : customRound(
+              Number(amountBase) /
+              10 ** Number(tokendict[selectedVaultData?.baseAsset].decimals),
+              3,
+            ).toString()
+          })
+          setVaultDepositAmounts({
+            shares,
+            [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+            'base': amountBase,
+          });
+          setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          setVaultFirstTokenExceedsBalance(amountBase > tokenBalances[selectedVaultData?.baseAsset]);
         } else {
-          setVaultSecondTokenExceedsBalance(enteredAmount > maxAllowedAmount);
-        }
-      } else {
-        if (position === 'base') {
-          setVaultFirstTokenExceedsBalance(false);
-        } else {
-          setVaultSecondTokenExceedsBalance(false);
+          const amountQuote = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.quoteBalance / selectedVaultData?.baseBalance
+          const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.baseBalance;
+          const b = amountQuote * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance
+          const shares = a > b ? b : a
+          setVaultInputStrings({
+            [type]: value,
+            'quote': amountQuote == 0n ? '' : customRound(
+              Number(amountQuote) /
+              10 ** Number(tokendict[selectedVaultData?.quoteAsset].decimals),
+              3,
+            ).toString()
+          })
+          setVaultDepositAmounts({
+            shares,
+            [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+            'quote': amountQuote,
+          });
+          setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          setVaultFirstTokenExceedsBalance(amountQuote > tokenBalances[selectedVaultData?.quoteAsset]);
         }
       }
     }
@@ -497,8 +525,8 @@ const LP: React.FC<LPProps> = ({
   };
 
   const isVaultDepositEnabled = () => {
-    return vaultDepositAmounts.base !== '' && vaultDepositAmounts.quote !== '' &&
-      parseFloat(vaultDepositAmounts.base) > 0 && parseFloat(vaultDepositAmounts.quote) > 0 &&
+    return vaultInputStrings.base !== '' && vaultInputStrings.quote !== '' &&
+      parseFloat(vaultInputStrings.base) > 0 && parseFloat(vaultInputStrings.quote) > 0 &&
       !vaultFirstTokenExceedsBalance && !vaultSecondTokenExceedsBalance;
   };
 
@@ -516,8 +544,8 @@ const LP: React.FC<LPProps> = ({
     }
 
     try {
-      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
-      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultDepositAmounts.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
+      const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultInputStrings.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
+      const amountBaseDesired = BigInt(Math.round(parseFloat(vaultInputStrings.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
       
       // Use 95% of desired amounts as minimum (5% slippage)
       const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
@@ -591,12 +619,10 @@ const LP: React.FC<LPProps> = ({
 
       const depositOp = await sendUserOperationAsync({ uo: depositUo });
 
-      // Reset form
-      setVaultDepositAmounts({ base: '', quote: '' });
+      setVaultInputStrings({ base: '', quote: '' });
       setVaultFirstTokenExceedsBalance(false);
       setVaultSecondTokenExceedsBalance(false);
       
-      // Refresh balances
       refetch?.();
 
     } catch (e: any) {
@@ -1346,33 +1372,6 @@ const LP: React.FC<LPProps> = ({
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
-
-                    <div className="lp-detail-description">
-                      <h4>About {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
-                      <p>{selectedVaultData.description}</p>
-                      <a href="#" className="lp-learn-more">
-                        Learn more <ArrowUpRight size={14} />
-                      </a>
-                    </div>
-
-                    <div className="lp-trade-info-rectangle">
-                      <div className="lp-info-row">
-                        <div className="lp-label-container">Protocol Fee</div>
-                        <div className="lp-value-container">{selectedVaultData.protocolFee}</div>
-                      </div>
-                      <div className="lp-info-row">
-                        <div className="lp-label-container">Withdrawal Time</div>
-                        <div className="lp-value-container">{selectedVaultData.withdrawalTime}</div>
-                      </div>
-                      <div className="lp-info-row">
-                        <div className="lp-label-container">Total Supply</div>
-                        <div className="lp-value-container">{selectedVaultData.totalSupply}</div>
-                      </div>
-                      <div className="lp-info-row">
-                        <div className="lp-label-container">Total Borrowed</div>
-                        <div className="lp-value-container">{selectedVaultData.totalBorrowed}</div>
-                      </div>
-                    </div>
                   </div>
                 </div>
 
@@ -1406,7 +1405,7 @@ const LP: React.FC<LPProps> = ({
                               type="text"
                               placeholder="0.0"
                               className={`deposit-amount-input ${vaultFirstTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                              value={vaultDepositAmounts.base}
+                              value={vaultInputStrings.base}
                               onChange={(e) => handleVaultDepositAmountChange('base', e.target.value)}
                             />
                             <div className="deposit-token-badge">
@@ -1416,7 +1415,7 @@ const LP: React.FC<LPProps> = ({
                           </div>
                           <div className="lp-deposit-balance-wrapper">
                             <div className={`lp-deposit-usd-value ${vaultFirstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                              {calculateUSD(vaultDepositAmounts.base, selectedVaultData.baseAsset)}
+                              {calculateUSD(vaultInputStrings.base, selectedVaultData.baseAsset)}
                             </div>
                             <div className="deposit-balance">
                               Balance: {formatDisplayValue(
@@ -1435,7 +1434,7 @@ const LP: React.FC<LPProps> = ({
                               type="text"
                               placeholder="0.0"
                               className={`deposit-amount-input ${vaultSecondTokenExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                              value={vaultDepositAmounts.quote}
+                              value={vaultInputStrings.quote}
                               onChange={(e) => handleVaultDepositAmountChange('quote', e.target.value)}
                             />
                             <div className="deposit-token-badge">
@@ -1445,7 +1444,7 @@ const LP: React.FC<LPProps> = ({
                           </div>
                           <div className="lp-deposit-balance-wrapper">
                             <div className={`lp-deposit-usd-value ${vaultSecondTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                              {calculateUSD(vaultDepositAmounts.quote, selectedVaultData.quoteAsset)}
+                              {calculateUSD(vaultInputStrings.quote, selectedVaultData.quoteAsset)}
                             </div>
                             <div className="deposit-balance">
                               Balance: {formatDisplayValue(
@@ -1468,8 +1467,8 @@ const LP: React.FC<LPProps> = ({
                           <span>Total Value:</span>
                           <span>
                             {(() => {
-                              const firstUSD = calculateUSD(vaultDepositAmounts.base, selectedVaultData.baseAsset);
-                              const secondUSD = calculateUSD(vaultDepositAmounts.quote, selectedVaultData.quoteAsset);
+                              const firstUSD = calculateUSD(vaultInputStrings.base, selectedVaultData.baseAsset);
+                              const secondUSD = calculateUSD(vaultInputStrings.quote, selectedVaultData.quoteAsset);
                               const firstValue = parseFloat(firstUSD.replace('$', '')) || 0;
                               const secondValue = parseFloat(secondUSD.replace('$', '')) || 0;
                               const total = firstValue + secondValue;

@@ -10,6 +10,7 @@ import { config } from '../../wagmi';
 import './LPVaults.css';
 import './LPVaults.css'
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
 
 interface LPVaultsProps {
   setpopup: (value: number) => void;
@@ -128,7 +129,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState({ address: '0x845564D9444e3766b0f665A9AD097Ad1597F0492' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701' });
+  const [activeVault, _setActiveVault] = useState({ address: '0x67813Ea7b7204928C660EAfD1CC3b04B387Cd8Dc' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701' });
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
@@ -153,20 +154,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 
     (async () => {
       try {
-        const [vaultDetails, vaultQuoteBalance, vaultBaseBalance, vaultUserBalance] = (await readContracts(config, {
+        const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
           contracts: [
-            { abi: CrystalVaultsAbi as any, address: crystalVaultsAddress, functionName: 'getVault', args: [activeVault?.address] },
-            {
-              abi: CrystalRouterAbi as any,
-              address: router as `0x${string}`,
-              functionName: 'getDepositedBalance',
-              args: [activeVault?.address as `0x${string}`, activeVault?.quoteAsset as `0x${string}`],
-            }, {
-              abi: CrystalRouterAbi as any,
-              address: router as `0x${string}`,
-              functionName: 'getDepositedBalance',
-              args: [activeVault?.address as `0x${string}`, activeVault?.baseAsset as `0x${string}`],
-            },
+            { abi: CrystalDataHelperAbi as any, address: settings.chainConfig[activechain].balancegetter, functionName: 'getVaultsInfo', args: [crystalVaultsAddress, [activeVault?.address]] },
             ...(address ? [{
               abi: TokenAbi,
               address: activeVault.address,
@@ -175,29 +165,29 @@ const LPVaults: React.FC<LPVaultsProps> = ({
             }] : [])],
         })) as any[];
         if (vaultDetails?.status === "success") {
-          const vaultMetaData = vaultDetails.result[9];
+          const vaultMetaData = vaultDetails.result[0].metadata;
           const vaultDict = {
-            address: vaultDetails.result[0],
-            quoteAsset: vaultDetails.result[1],
-            baseAsset: vaultDetails.result[2],
-            owner: vaultDetails.result[3],
-            totalShares: vaultDetails.result[4],
-            maxShares: vaultDetails.result[5],
-            lockup: vaultDetails.result[6],
-            locked: vaultDetails.result[7],
-            closed: vaultDetails.result[8],
+            address: activeVault?.address,
+            quoteAsset: vaultDetails.result[0].quoteAsset,
+            baseAsset: vaultDetails.result[0].baseAsset,
+            owner: vaultDetails.result[0].owner,
+            totalShares: vaultDetails.result[0].totalShares,
+            maxShares: vaultDetails.result[0].maxShares,
+            lockup: vaultDetails.result[0].lockup,
+            locked: vaultDetails.result[0].locked,
+            closed: vaultDetails.result[0].closed,
             name: vaultMetaData.name,
             desc: vaultMetaData.description,
             social1: vaultMetaData.social1,
             social2: vaultMetaData.social2,
             social3: vaultMetaData.social3,
             type: 'Spot',
-            quoteBalance: 0n,
-            baseBalance: 0n,
+            quoteDecimals: vaultDetails.result[0].quoteDecimals,
+            baseDecimals: vaultDetails.result[0].baseDecimals,
+            quoteBalance: vaultDetails.result[0].quoteBalance,
+            baseBalance: vaultDetails.result[0].baseBalance,
             userShares: 0n,
           }
-          vaultDict.quoteBalance = vaultQuoteBalance.result[0]
-          vaultDict.baseBalance = vaultBaseBalance.result[0]
           if (address) {
             vaultDict.userShares = vaultUserBalance.result
           }

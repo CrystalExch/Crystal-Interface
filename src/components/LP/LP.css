@@ -1305,6 +1305,7 @@
 }
 
 .vault-deposit-form, .vault-withdraw-form {
+    margin-top: 1rem;
     width: 100%;
 }
 
