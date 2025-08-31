@@ -3493,8 +3493,7 @@ function App() {
             setRoundedSellOrders({ orders: roundedSell, key: activeMarketKey });
             setLiquidityBuyOrders({ orders: liquidityBuy, market: activeMarket.address });
             setLiquiditySellOrders({ orders: liquiditySell, market: activeMarket.address });
-
-            setBaseInterval(1 / (activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)));
+            setBaseInterval(1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)));
             setOBInterval(
               localStorage.getItem(`${activeMarket.baseAsset}_ob_interval`)
                 ? Number(
@@ -3502,7 +3501,7 @@ function App() {
                     `${activeMarket.baseAsset}_ob_interval`,
                   ),
                 )
-                : 1 / (activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)),
+                : 1 / (activeMarket?.marketType != 0 && spread?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spread?.averagePrice ?? 1)) - 1) : Number(activeMarket.priceFactor)),
             );
           } catch (error) {
             console.error(error);
@@ -3510,12 +3509,11 @@ function App() {
         }
       }
       if (refData && Object.keys(tempmids).length > 0) {
-        console.log(refData)
         setUsedRefAddress(
           refData[0]?.result?.[0] as any || '0x0000000000000000000000000000000000000000',
         );
-        setRefLink(refs[0].result);
-        setUsedRefLink(refs[1].result);
+        setUsedRefLink(refData[0]?.result?.[1]);
+        setRefLink(refData[0]?.result?.[2]);
         setClaimableFees(() => {
           let newFees = {};
           let totalFees = 0;
@@ -3629,7 +3627,7 @@ function App() {
         setAveragePrice(
           multihop
             ? `${customRound(estPrice, 2)}`
-            : `${estPrice.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(estPrice ?? 1)) - 1) : Number(activeMarket.priceFactor))))}`,
+            : `${estPrice.toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 && estPrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(estPrice ?? 1)) - 1) : Number(activeMarket.priceFactor))))}`,
         );
         setPriceImpact(() => {
           let temppriceimpact;
@@ -20803,7 +20801,7 @@ function App() {
                     roundedBuyOrders: roundedBuyOrders?.orders,
                     roundedSellOrders: roundedSellOrders?.orders,
                     spreadData,
-                    priceFactor: markets[roundedBuyOrders?.key]?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spreadData?.averagePrice ?? 1)) - 1) : Number(markets[roundedBuyOrders?.key]?.priceFactor),
+                    priceFactor: markets[roundedBuyOrders?.key]?.marketType != 0 && spreadData?.averagePrice ? 10 ** Math.max(0, 5 - Math.floor(Math.log10(spreadData?.averagePrice ?? 1)) - 1) : Number(markets[roundedBuyOrders?.key]?.priceFactor),
                     symbolIn: markets[roundedBuyOrders?.key]?.quoteAsset,
                     symbolOut: markets[roundedBuyOrders?.key]?.baseAsset,
                   }}
