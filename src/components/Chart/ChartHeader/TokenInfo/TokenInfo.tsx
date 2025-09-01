@@ -80,6 +80,7 @@ interface TokenInfoProps {
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
   in_icon,
+  out_icon,
   price,
   activeMarket,
   onMarketSelect,
@@ -686,11 +687,11 @@ const handleTwitterOpen = (handle: string) => {
                 } as React.CSSProperties}
               >
                 <div className="token-icons-inner">
-                  <TokenIcons inIcon={in_icon} />
+                  <TokenIcons inIcon={in_icon} outIcon={out_icon}  />
                 </div>
               </div>
             ) : (
-              <TokenIcons inIcon={in_icon} />
+              <TokenIcons inIcon={in_icon} outIcon={out_icon} />
             )}
           </div>
         )}

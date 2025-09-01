@@ -107,7 +107,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     }, []);
 
-    const CrystalLaunchpadRouter = [
+    const CrystalRouterAbi = [
         {
             "inputs": [{ "name": "token", "type": "address" }],
             "name": "buy",
@@ -307,7 +307,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const uo = {
                 target: routerAddress,
                 data: encodeFunctionData({
-                    abi: CrystalLaunchpadRouter,
+                    abi: CrystalRouterAbi,
                     functionName: "buy",
                     args: [tokenAddress as `0x${string}`],
                 }),
@@ -427,7 +427,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             const sellUo = {
                 target: routerAddress as `0x${string}`,
                 data: encodeFunctionData({
-                    abi: CrystalLaunchpadRouter,
+                    abi: CrystalRouterAbi,
                     functionName: "sell",
                     args: [tokenAddress as `0x${string}`, amountTokenWei],
                 }),

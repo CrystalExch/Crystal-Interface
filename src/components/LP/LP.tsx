@@ -452,53 +452,78 @@ const LP: React.FC<LPProps> = ({
   };
 
   const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
-    console.log(selectedVaultData)
     if (/^\d*\.?\d{0,18}$/.test(value) && selectedVaultData) {
-      const tokenData = type == 'quote' ? tokendict[selectedVaultData?.quoteAsset] : tokendict[selectedVaultData?.baseAsset];
+      const tokenData = type == 'quote' ? tokendict[selectedVaultData?.quoteAddress] : tokendict[selectedVaultData?.baseAddress];
       if (tokenData) {
         const tokenDecimals = Number(tokenData.decimals) || 18;
         const enteredAmount = parseFloat(value) || 0;
 
         if (type === 'quote') {
-          const amountBase = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.baseBalance / selectedVaultData?.quoteBalance
-          const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance;
-          const b = amountBase * selectedVaultData?.totalShares / selectedVaultData?.baseBalance
-          const shares = a > b ? b : a
-          setVaultInputStrings({
-            [type]: value,
-            'base': amountBase == 0n ? '' : customRound(
-              Number(amountBase) /
-              10 ** Number(tokendict[selectedVaultData?.baseAsset].decimals),
-              3,
-            ).toString()
-          })
-          setVaultDepositAmounts({
-            shares,
-            [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
-            'base': amountBase,
-          });
-          setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
-          setVaultFirstTokenExceedsBalance(amountBase > tokenBalances[selectedVaultData?.baseAsset]);
+          if (selectedVaultData?.totalShares) {
+              const amountBase = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.baseBalance / selectedVaultData?.quoteBalance
+              const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance;
+              const b = amountBase * selectedVaultData?.totalShares / selectedVaultData?.baseBalance
+              const shares = a > b ? b : a
+              setVaultInputStrings({
+                [type]: value,
+                'base': amountBase == 0n ? '' : customRound(
+                  Number(amountBase) /
+                  10 ** Number(tokendict[selectedVaultData?.baseAddress].decimals),
+                  3,
+                ).toString()
+              })
+              setVaultDepositAmounts({
+                shares,
+                [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+                'base': amountBase,
+              });
+              setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+              setVaultFirstTokenExceedsBalance(amountBase > tokenBalances[selectedVaultData?.baseAddress]);
+          }
+          else {
+            setVaultInputStrings(prev => ({
+              ...prev,
+              [type]: value,
+            }));
+            setVaultDepositAmounts((prev: any) => ({
+              ...prev,
+              [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+            }));
+            setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          }
         } else {
-          const amountQuote = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.quoteBalance / selectedVaultData?.baseBalance
-          const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.baseBalance;
-          const b = amountQuote * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance
-          const shares = a > b ? b : a
-          setVaultInputStrings({
-            [type]: value,
-            'quote': amountQuote == 0n ? '' : customRound(
-              Number(amountQuote) /
-              10 ** Number(tokendict[selectedVaultData?.quoteAsset].decimals),
-              3,
-            ).toString()
-          })
-          setVaultDepositAmounts({
-            shares,
-            [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
-            'quote': amountQuote,
-          });
-          setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
-          setVaultFirstTokenExceedsBalance(amountQuote > tokenBalances[selectedVaultData?.quoteAsset]);
+          if (selectedVaultData?.totalShares) {
+            const amountQuote = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.quoteBalance / selectedVaultData?.baseBalance
+            const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.baseBalance;
+            const b = amountQuote * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance
+            const shares = a > b ? b : a
+            setVaultInputStrings({
+              [type]: value,
+              'quote': amountQuote == 0n ? '' : customRound(
+                Number(amountQuote) /
+                10 ** Number(tokendict[selectedVaultData?.quoteAddress].decimals),
+                3,
+              ).toString()
+            })
+            setVaultDepositAmounts({
+              shares,
+              [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+              'quote': amountQuote,
+            });
+            setVaultFirstTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+            setVaultSecondTokenExceedsBalance(amountQuote > tokenBalances[selectedVaultData?.quoteAddress]);
+          }
+          else {
+            setVaultInputStrings(prev => ({
+              ...prev,
+              [type]: value,
+            }));
+            setVaultDepositAmounts((prev: any) => ({
+              ...prev,
+              [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+            }));
+            setVaultFirstTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          }
         }
       }
     }
@@ -657,6 +682,7 @@ const LP: React.FC<LPProps> = ({
             sharesToWithdraw,
             amountQuoteMin,
             amountBaseMin,
+            '0x0000000000000000000000000000000000000000',
           ],
         }),
         value: 0n,
@@ -747,6 +773,11 @@ const LP: React.FC<LPProps> = ({
   };
 
   const selectedVaultData = selectedVault ? markets[selectedVault] : null;
+  if (selectedVault) {
+    selectedVaultData.quoteBalance = 0n;
+    selectedVaultData.baseBalance = 0n;
+    selectedVaultData.totalShares = 0n;
+  }
 
   const hasInitializedFavorites = useRef(false);
 
