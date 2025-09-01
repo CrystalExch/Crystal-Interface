@@ -38,7 +38,7 @@ interface EarnProps {
 const Earn: React.FC<EarnProps> = (props) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'liquidity' | 'vaults'>('vaults');
+  const [activeTab, setActiveTab] = useState<'liquidity' | 'vaults'>('liquidity');
 
   useEffect(() => {
     if (location.pathname.includes('/earn/liquidity')) {

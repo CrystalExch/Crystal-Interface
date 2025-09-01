@@ -166,10 +166,9 @@
   display: flex;
   align-items: center;
   color: #fff;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   font-weight: 400;
   margin-bottom: -5px;
-  margin-top: -2px;
 }
 
 .token-name {
@@ -181,7 +180,7 @@
 
 .full-token-name {
   color: rgba(242, 242, 249, 0.8);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 300;
 }
 

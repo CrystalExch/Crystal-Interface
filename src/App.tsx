@@ -609,32 +609,23 @@ function App() {
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
-
   const [orderSizePercent, setOrderSizePercent] = useState(100);
   const [originalOrderSize, setOriginalOrderSize] = useState(0);
-  type SliderMode = 'slider' | 'presets' | 'increment';
-  const [spotSliderMode, setSpotSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
-  const [trenchesSliderMode, setTrenchesSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
-  const [spotSliderPresets, setSpotSliderPresets] = useState([25, 50, 75, 100]);
-  const [trenchesSliderPresets, setTrenchesSliderPresets] = useState([25, 50, 75, 100]);
-  const [spotSliderIncrement, setSpotSliderIncrement] = useState(5);
-  const [trenchesSliderIncrement, setTrenchesSliderIncrement] = useState(5);
-
-  const [sliderMode, setSliderMode] = useState<SliderMode>(() => {
-    const saved = localStorage.getItem('crystal_slider_mode');
-    return (saved as SliderMode) || 'slider';
+  const [spotSliderMode, setSpotSliderMode] = useState(() => {
+    const saved = localStorage.getItem('crystal_spot_slider_mode');
+    return saved || 'slider';
   });
-
-  const [sliderPresets, setSliderPresets] = useState<number[]>(() => {
-    const saved = localStorage.getItem('crystal_slider_presets');
+  const [trenchesSliderMode, setTrenchesSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
+  const [trenchesSliderPresets, setTrenchesSliderPresets] = useState([25, 50, 75, 100]);
+  const [trenchesSliderIncrement, setTrenchesSliderIncrement] = useState(5);
+  const [spotSliderPresets, setSpotSliderPresets] = useState<number[]>(() => {
+    const saved = localStorage.getItem('crystal_spot_slider_presets');
     return saved ? JSON.parse(saved) : [25, 50, 75];
   });
-
-  const [sliderIncrement, setSliderIncrement] = useState<number>(() => {
-    const saved = localStorage.getItem('crystal_slider_increment');
+  const [spotSliderIncrement, setSpotSliderIncrement] = useState<number>(() => {
+    const saved = localStorage.getItem('crystal__spot_slider_increment');
     return saved ? parseFloat(saved) : 10;
   });
-
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number } | undefined>(
     undefined
   );
@@ -746,15 +737,12 @@ function App() {
     const saved = localStorage.getItem('crystal_notification_position');
     return saved || 'bottom-right';
   });
-
   const [showPreview, setShowPreview] = useState(false);
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
-
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
-
   const [vaultDepositAmounts, setVaultDepositAmounts] = useState<any>({
     shares: 0n,
     quote: 0n,
@@ -818,11 +806,9 @@ function App() {
       setPreviewTimer(newTimer);
     }
   };
-
   const [hiddenPopupTypes, setHiddenPopupTypes] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hidden_popup_types') || '{}');
   });
-
   const updateHiddenPopupType = (actionType: string, hide: boolean) => {
     const newHiddenTypes = { ...hiddenPopupTypes, [actionType]: hide };
     setHiddenPopupTypes(newHiddenTypes);
@@ -840,7 +826,6 @@ function App() {
     const saved = localStorage.getItem('crystal_active_settings_section');
     return saved || 'general';
   });
-
   const updateActiveSettingsSection = (section: string) => {
     setActiveSettingsSection(section);
     localStorage.setItem('crystal_active_settings_section', section);
@@ -1110,12 +1095,10 @@ function App() {
       setIsEditingSigning(false);
     }
   };
-
   const [editingOrderSize, setEditingOrderSize] = useState<any>(null);
   const [currentOrderSize, setCurrentOrderSize] = useState<number>(0);
   const [hasEditedSize, setHasEditedSize] = useState(false);
   const [isEditingSizeSigning, setIsEditingSizeSigning] = useState(false);
-
   const handleEditOrderSizeConfirm = async () => {
     if (isEditingSizeSigning || !editingOrderSize) return;
 
@@ -1175,7 +1158,6 @@ function App() {
       setIsEditingSizeSigning(false);
     }
   };
-
   const { chartData, portChartLoading } = usePortfolioData(
     address,
     Object.values(tokendict),
@@ -1246,16 +1228,8 @@ function App() {
   const [mobileDragY, setMobileDragY] = useState(0);
   const [mobileStartY, setMobileStartY] = useState(0);
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
-  const lastRefGroupFetch = useRef(0);
-  const blockNumber = useRef(0n);
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const pingIntervalRef = useRef<any>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
-
   const [keybinds, setKeybinds] = useState(() => {
     const saved = localStorage.getItem('crystal_keybinds');
     return saved ? JSON.parse(saved) : {
@@ -1272,17 +1246,12 @@ function App() {
       toggleFavorite: 'KeyM',
       toggleSimpleView: 'KeyV',
       refreshQuote: 'KeyR',
-      switchToOrders: 'Digit1',
-      switchToTrades: 'Digit2',
-      switchToHistory: 'Digit3',
     };
   });
-
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
   const [mainWalletBalances, setMainWalletBalances] = useState<any>({})
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
-
   const scrollToToken = (index: number) => {
     const tokenListContainer = document.querySelector('.tokenlist');
     if (!tokenListContainer) return;
@@ -1297,7 +1266,6 @@ function App() {
       });
     }
   };
-
   const handleTokenSelectKeyDown = (e: React.KeyboardEvent) => {
     const currentTokenList = Object.values(tokendict).filter(
       (token) =>
@@ -1341,15 +1309,11 @@ function App() {
         break;
     }
   };
-
   const [orderSizeString, setOrderSizeString] = useState('');
-
   const displayValue = hasEditedSize
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
-
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
-
   const displayLimitPrice = hasEditedPrice
     ? limitPriceString
     : (currentLimitPrice === 0 ? '' : currentLimitPrice.toString());
@@ -1413,7 +1377,12 @@ function App() {
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
   const txPending = useRef(false);
-
+  const lastRefGroupFetch = useRef(0);
+  const blockNumber = useRef(0n);
+  const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<any>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  
   // more constants
   const languageOptions = [
     { code: 'EN', name: 'English' },
@@ -4605,14 +4574,14 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.2`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.4`;
 
           const query = `
             query {
               account(id: "${address}") {
                 id
                 openOrderMap {
-                  shards { batches { orders {
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
                     id
                     market { id baseAsset quoteAsset }
                     isBuy
@@ -4625,7 +4594,7 @@ function App() {
                   }}}
                 }
                 orderMap {
-                  shards { batches { orders {
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
                     id
                     market { id baseAsset quoteAsset }
                     isBuy
@@ -4638,7 +4607,7 @@ function App() {
                   }}}
                 }
                 tradeMap {
-                  shards { batches { trades {
+                  shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
                     id
                     market { id baseAsset quoteAsset }
                     amountIn
@@ -4662,6 +4631,7 @@ function App() {
           if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
 
           const result = await response.json();
+          console.log(result)
           if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
 
           if (!isAddressInfoFetching) return;
@@ -5456,11 +5426,11 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.2`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.4`;
 
         const query = `
           query {
-            markets(first: 10, orderBy: volume, orderDirection: desc) {
+            markets(first: 0, orderBy: volume, orderDirection: desc) {
               id
               baseAsset
               quoteAsset
@@ -10332,29 +10302,11 @@ function App() {
                           {renderKeybindButton('refreshQuote', t('refreshQuote'), t('refreshCurrentPriceQuote'))}
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">{t('navigationShortcuts')}</div>
-                          <div className="settings-section-subtitle">
-                            {t('jumpToDifferentPagesQuickly')}
-                          </div>
-                          {renderKeybindButton('openPortfolio', t('openPortfolio'), t('navigateToPortfolioPage'))}
-                          {renderKeybindButton('openLeaderboard', t('openLeaderboard'), t('navigateToLeaderboardPage'))}
-                          {renderKeybindButton('openReferrals', t('openReferrals'), t('navigateToReferralsPage'))}
-                        </div>
-                        <div className="settings-subsection">
                           <div className="layout-section-title">{t('marketShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('interactWithMarketDataQuickly')}
                           </div>
                           {renderKeybindButton('toggleFavorite', t('toggleFavorite'), t('addRemoveCurrentMarketFavorites'))}
-                        </div>
-                        <div className="settings-subsection">
-                          <div className="layout-section-title">{t('orderCenterShortcuts')}</div>
-                          <div className="settings-section-subtitle">
-                            {t('navigateOrderCenterTabsQuickly')}
-                          </div>
-                          {renderKeybindButton('switchToOrders', t('switchToOrders'), t('viewActiveOrdersTab'))}
-                          {renderKeybindButton('switchToTrades', t('switchToTradeHistory'), t('viewTradeHistoryTab'))}
-                          {renderKeybindButton('switchToHistory', t('switchToOrderHistory'), t('viewOrderHistoryTab'))}
                         </div>
                       </div>
                     </div>
@@ -10370,12 +10322,12 @@ function App() {
                         localStorage.setItem('crystal_language', 'EN');
                         setTradingMode('spot');
                         localStorage.setItem('crystal_trading_mode', 'spot');
-                        setSliderMode('slider');
-                        localStorage.setItem('crystal_slider_mode', 'slider');
-                        setSliderPresets([25, 50, 75]);
-                        localStorage.setItem('crystal_slider_presets', JSON.stringify([25, 50, 75]));
-                        setSliderIncrement(10);
-                        localStorage.setItem('crystal_slider_increment', '10');
+                        setSpotSliderMode('slider');
+                        localStorage.setItem('crystal_spot_slider_mode', 'slider');
+                        setSpotSliderPresets([25, 50, 75]);
+                        localStorage.setItem('crystal_spot_slider_presets', JSON.stringify([25, 50, 75]));
+                        setSpotSliderIncrement(10);
+                        localStorage.setItem('crystal_spot_slider_increment', '10');
                         setRpcUrl('');
                         localStorage.setItem('crystal_rpc_url', '');
                         setGraphUrl('');
@@ -10432,9 +10384,6 @@ function App() {
                           toggleFavorite: 'KeyM',
                           toggleSimpleView: 'KeyV',
                           refreshQuote: 'KeyR',
-                          switchToOrders: 'Digit1',
-                          switchToTrades: 'Digit2',
-                          switchToHistory: 'Digit3',
                         };
                         setKeybinds(defaultKeybinds);
                         localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
@@ -15022,10 +14971,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -15106,13 +15055,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -15186,13 +15135,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -15921,7 +15870,6 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  console.log("done", Date.now())
                 }
                 setswitched(false);
                 setInputString('');
@@ -17482,10 +17430,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -17566,13 +17514,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -17646,13 +17594,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -19854,10 +19802,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -19938,13 +19886,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -20018,13 +19966,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
