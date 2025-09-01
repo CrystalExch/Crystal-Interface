@@ -61,7 +61,7 @@ interface TokenInfoProps {
   isTradeRoute?: boolean;
   simpleView?: boolean;
   isMemeToken?: boolean;
- memeTokenData?: {
+  memeTokenData?: {
     symbol: string;
     name: string;
     image: string;
@@ -884,7 +884,7 @@ const handleTwitterOpen = (handle: string) => {
                         <div className="minichart-section">
                           <MiniChart
                             market={market}
-                            series={market.series}
+                            series={market.mini}
                             priceChange={market.priceChange}
                             isVisible={true}
                           />

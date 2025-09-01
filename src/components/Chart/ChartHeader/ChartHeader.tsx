@@ -32,7 +32,7 @@ interface ChartHeaderProps {
   simpleView: boolean;
   tradesByMarket: any;
   isMemeToken?: boolean;
- memeTokenData?: {
+  memeTokenData?: {
     symbol: string;
     name: string;
     image: string;

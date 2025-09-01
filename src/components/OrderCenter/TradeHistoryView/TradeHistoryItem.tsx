@@ -25,7 +25,6 @@ const TradeHistoryItem: React.FC<TradeHistoryItemProps> = ({
   onMarketSelect,
 }) => {
   const { activechain, favorites, toggleFavorite } = useSharedContext();
-  console.log(trade);
 
   const priceFactor = Number(market.priceFactor);
   const baseDecimals = Number(market.baseDecimals);

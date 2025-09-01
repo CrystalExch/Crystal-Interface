@@ -37,7 +37,7 @@ interface ChartComponentProps {
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   activeMarket,
-  tradehistory, 
+  tradehistory,
   isMarksVisible,
   orders,
   isOrdersVisible,
@@ -76,14 +76,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         if (showChartOutliers != data[2]) {
           setOverlayVisible(true);
         }
-        const seriesId = `${activeMarket.address}-${
-          selectedInterval === '1m' ? 60 :
+        const seriesId = `${activeMarket.address}-${selectedInterval === '1m' ? 60 :
           selectedInterval === '5m' ? 300 :
-          selectedInterval === '15m' ? 900 :
-          selectedInterval === '1h' ? 3600 :
-          selectedInterval === '4h' ? 14400 :
-          86400
-        }`.toLowerCase();
+            selectedInterval === '15m' ? 900 :
+              selectedInterval === '1h' ? 3600 :
+                selectedInterval === '4h' ? 14400 :
+                  86400
+          }`.toLowerCase();
         const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.2.2';
         let allCandles: any[] = [];
         const query = `
@@ -135,45 +134,96 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           console.error('Error fetching from subgraph:', err);
         }
         if (!isFetching) return;
-        allCandles.reverse();
-        let lastClose: number | null = null;
-        const outlierFactor = selectedInterval == '1d' ? 0.5 : selectedInterval == '4h' ? 0.25 : selectedInterval == '1h' ? 0.1 : selectedInterval == '15m' ? 0.05 : 0.01
-        const subgraphData = allCandles.map((candle: any) => {
-          const priceFactor = Number(activeMarket.priceFactor);
-          const open = lastClose !== null ? lastClose : candle.open / priceFactor;
-          const close = candle.close / priceFactor
-    
-          let high = candle.high / priceFactor;
-          let low = candle.low / priceFactor;
-          if (!showChartOutliers) {
-            high = Math.min(high, Math.max(open, close) * (1 + outlierFactor));
-            low = Math.max(low, Math.min(open, close) * (1 - outlierFactor));
-          }
-          
-          lastClose = close
 
-          return {
-            time: candle.time * 1000,
+        const stepSec =
+          selectedInterval === '1m' ? 60 :
+            selectedInterval === '5m' ? 300 :
+              selectedInterval === '15m' ? 900 :
+                selectedInterval === '1h' ? 3600 :
+                  selectedInterval === '4h' ? 14400 : 86400;
+        const stepMs = stepSec * 1000;
+
+        const priceFactor = Number(activeMarket.priceFactor);
+        const baseDecs = Number(activeMarket.baseDecimals);
+
+        const byTime = new Map<number, any>();
+        (allCandles || []).forEach((c: any) => {
+          if (c && c.time != null) byTime.set(Number(c.time), c);
+        });
+        const sorted = Array.from(byTime.values()).sort((a, b) => a.time - b.time);
+
+        let lastClose: number | null = null;
+        const outlierFactor =
+          selectedInterval === '1d' ? 0.5 :
+            selectedInterval === '4h' ? 0.25 :
+              selectedInterval === '1h' ? 0.1 :
+                selectedInterval === '15m' ? 0.05 : 0.01;
+
+        const filled: Array<{
+          time: number; open: number; high: number; low: number; close: number; volume: number;
+        }> = [];
+
+        for (let i = 0; i < sorted.length; i++) {
+          const cur = sorted[i];
+          const curTms = Number(cur.time) * 1000;
+
+          if (i > 0) {
+            const prev = sorted[i - 1];
+            let expected = Number(prev.time) * 1000 + stepMs;
+            const carry = lastClose ?? (Number(prev.close) / priceFactor);
+            while (expected < curTms) {
+              filled.push({ time: expected, open: carry, high: carry, low: carry, close: carry, volume: 0 });
+              expected += stepMs;
+              lastClose = carry;
+            }
+          }
+
+          const open = lastClose != null ? lastClose : Number(cur.open) / priceFactor;
+          const close = Number(cur.close) / priceFactor;
+          let high = Number(cur.high) / priceFactor;
+          let low = Number(cur.low) / priceFactor;
+
+          if (!showChartOutliers) {
+            const hiCap = Math.max(open, close) * (1 + outlierFactor);
+            const loCap = Math.min(open, close) * (1 - outlierFactor);
+            high = Math.min(high, hiCap);
+            low = Math.max(low, loCap);
+          }
+
+          filled.push({
+            time: curTms,
             open,
             high,
             low,
             close,
-            volume: Number(candle.baseVolume) / (10 ** Number(activeMarket.baseDecimals)),
-          };
-        });
-        if (subgraphData && subgraphData.length) {
+            volume: Number(cur.baseVolume ?? 0) / (10 ** baseDecs),
+          });
+
+          lastClose = close;
+        }
+
+        if (filled.length === 1) {
+          const p = filled[0].close;
+          filled[0].high = Math.max(filled[0].high, p * 1.001);
+          filled[0].low = Math.min(filled[0].low, p * 0.999);
+        }
+
+        if (filled.length) {
           setData([
-            subgraphData,
-            normalizeTicker(activeMarket.baseAsset, activechain) + normalizeTicker(activeMarket.quoteAsset, activechain) +
-              (selectedInterval === '1d'
-                ? '1D'
-                : selectedInterval === '4h'
+            filled,
+            normalizeTicker(activeMarket.baseAsset, activechain) +
+            normalizeTicker(activeMarket.quoteAsset, activechain) +
+            (selectedInterval === '1d'
+              ? '1D'
+              : selectedInterval === '4h'
                 ? '240'
                 : selectedInterval === '1h'
-                ? '60'
-                : selectedInterval.slice(0, -1)), showChartOutliers
+                  ? '60'
+                  : selectedInterval.slice(0, -1)),
+            showChartOutliers
           ]);
         }
+
       } catch (err) {
         console.error('Error fetching subgraph candles:', err);
       }
@@ -192,7 +242,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           selectedInterval={selectedInterval}
           setSelectedInterval={setSelectedInterval}
           setOverlayVisible={setOverlayVisible}
-          tradehistory={tradehistory} 
+          tradehistory={tradehistory}
           isMarksVisible={isMarksVisible}
           orders={orders}
           isOrdersVisible={isOrdersVisible}
@@ -221,10 +271,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               handleTimeChange={setSelectedInterval}
             />
           </div>
-          <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible}/>
+          <ChartCanvas data={data} activeMarket={activeMarket} selectedInterval={selectedInterval} setOverlayVisible={setOverlayVisible} />
         </>
       )}
-      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100}/>
+      <Overlay isVisible={overlayVisible} bgcolor={'rgb(6,6,6)'} height={15} maxLogoHeight={100} />
     </div>
   );
 };

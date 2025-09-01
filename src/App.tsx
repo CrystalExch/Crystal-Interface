@@ -66,7 +66,7 @@ import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { getTradeValue } from './utils/getTradeValue.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
-import { formatDisplay } from './components/OrderCenter/utils/formatDisplay.ts';
+import { formatDisplay, formatSig } from './components/OrderCenter/utils/formatDisplay.ts';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -1885,6 +1885,11 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
+
+  const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
+  `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
+
+  const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -5447,327 +5452,156 @@ function App() {
     (async () => {
       try {
         settradesloading(true);
-        // amountin, amountout, buy/sell, price, market, hash, timestamp
-        let temptradesByMarket: any = {};
-        Object.keys(markets).forEach((market) => {
-          temptradesByMarket[market] = [];
-        });
+
+        const temptradesByMarket: Record<string, any[]> = {};
+        Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
+
         const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.2`;
-        let allLogs: any[] = [];
 
         const query = `
           query {
-            orders1: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xCd5455B24f3622A1CfEce944615AE5Bc8f36Ee18" }
-            ) {
+            markets(first: 10, orderBy: volume, orderDirection: desc) {
               id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders2: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x97fa0031E2C9a21F0727bcaB884E15c090eC3ee3" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders3: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x33C5Dc9091952870BD1fF47c89fA53D63f9729b6" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders4: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xcB5ec6D6d0E49478119525E4013ff333Fc46B742" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders5: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x93cBC4b52358c489665680182f0056f4F23C76CD" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders6: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xf00A3bd942DC0e32d07048ED6255E281667784f6" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders7: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x3051ec9feFaEc14F2bAB836FAb5A4c970A71874a" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders8: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x9fA48CFB43829A932A227E4d7996e310ccf40E9C" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders9: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x45f7db719367bbf9E508D3CeA401EBC62fc732A9" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders10: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x5a6f296032AaAE6737ed5896bC09D01dc2d42507" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders11: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xCF16582dC82c4C17fA5b54966ee67b74FD715fB5" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            series_collection(
-              where: {
-                id_gte: "series-1h-",
-                id_lte: "series-1h-ffffffffffffffffffffffffffffffffffffffff"
-              }
-            ) {
-              id
-              klines(first: 24, orderBy: time, orderDirection: desc) {
-                id
+              baseAsset
+              quoteAsset
+              marketType
+              scaleFactor
+              tickSize
+              takerFee
+              makerRebate
+              volume
+              latestPrice
+              miniPoints(first: 24, orderBy: time, orderDirection: desc) {
+                price
                 time
-                open
-                high
-                low
-                close
-                volume
+              }
+              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
+                id
+                amountIn
+                amountOut
+                isBuy
+                timestamp
+                tx
               }
             }
           }
         `;
 
-        const response = await fetch(endpoint, {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
-        const json = await response.json();
-        const orders = json.data.orders1
-          .concat(
-            json.data.orders2,
-            json.data.orders3,
-            json.data.orders4,
-            json.data.orders5,
-            json.data.orders6,
-            json.data.orders7,
-            json.data.orders8,
-            json.data.orders9,
-            json.data.orders10,
-            json.data.orders11,
-          );
+        const json = await res.json();
+        const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
 
-        allLogs = allLogs.concat(orders);
+        const addrToKey: Record<string, string> = {};
+        Object.values(markets).forEach((m: any) => {
+          if (m?.address) addrToKey[m.address.toLowerCase()] = m.marketKey;
+        });
 
-        if (Array.isArray(allLogs)) {
-          for (const event of allLogs) {
-            if (addresstoMarket[event.contractAddress]) {
-              temptradesByMarket[addresstoMarket[event.contractAddress]].push([
-                parseInt(event.amountIn),
-                parseInt(event.amountOut),
-                event.buySell,
-                event.price,
-                addresstoMarket[event.contractAddress],
-                event.transactionHash,
-                event.timeStamp,
+        const wethticker = settings.chainConfig[activechain].wethticker;
+        const ethticker = settings.chainConfig[activechain].ethticker;
+
+        const tokenDict = settings.chainConfig[activechain].tokendict as Record<string, any>;
+        const tokenDictLC: Record<string, any> = {};
+        for (const [addr, meta] of Object.entries(tokenDict)) tokenDictLC[addr.toLowerCase()] = meta;
+
+        const addrToTicker = (addr?: string) => {
+          const hit = addr ? tokenDictLC[addr.toLowerCase()] : undefined;
+          return hit?.ticker ?? 'UNK';
+        };
+        const normTicker = (t: string) => (t === wethticker ? ethticker : t);
+        const keyFromAddrs = (baseAddr: string, quoteAddr: string) =>
+          `${normTicker(addrToTicker(baseAddr))}${normTicker(addrToTicker(quoteAddr))}`;
+
+        const rows = list.map((m: any) => {
+          const marketKey = keyFromAddrs(m.baseAsset, m.quoteAsset);
+
+          const cfg = markets[marketKey];
+          if (!cfg) return null;
+
+          const pf = Number(cfg.priceFactor);
+          const decs = Math.max(0, Math.floor(Math.log10(pf)));
+
+          const lastRaw = Number(m.latestPrice ?? 0);
+          const last = lastRaw / pf;
+
+          const miniDesc = Array.isArray(m.miniPoints) ? m.miniPoints : [];
+          const miniAsc = [...miniDesc].reverse().map((p: any) => ({
+            time: Number(p.time) * 1000,
+            value: Number(p.price) / pf,
+          }));
+          const open24 = miniAsc.length ? miniAsc[0].value : last;
+          const highs = miniAsc.length ? miniAsc.map(p => p.value) : [last];
+          const high24 = Math.max(...highs);
+          const low24 = Math.min(...highs);
+
+          const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
+          const deltaRaw = lastRaw - open24 * pf;
+
+          const volQ = Number(m.volume ?? 0);
+          const volumeDisplay = formatCommas(volQ.toFixed(2));
+
+          const mk = marketKey;
+          const trades = Array.isArray(m.trades) ? m.trades : [];
+          if (trades.length) {
+            for (const t of trades) {
+              temptradesByMarket[mk].push([
+                Number(t.amountIn ?? 0),
+                Number(t.amountOut ?? 0),
+                t.isBuy ? 1 : 0,
+                lastRaw,
+                mk,
+                t.tx,
+                Number(t.timestamp ?? 0),
               ]);
             }
+          } else {
+            temptradesByMarket[mk].push([
+              0, 0, 1, lastRaw, mk, '0x', Math.floor(Date.now() / 1000),
+            ]);
           }
-        }
+
+          return {
+            ...cfg,
+            marketKey: mk,
+            pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
+            mini: miniAsc,
+            currentPrice: formatSig(last.toFixed(decs)),
+            high24h: formatSubscript(high24.toFixed(decs)),
+            low24h: formatSubscript(low24.toFixed(decs)),
+            volume: volumeDisplay,
+            priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
+            priceChangeAmount: deltaRaw,
+          };
+        }).filter(Boolean) as any[];
+        console.log(temptradesByMarket);
+
         settradesByMarket(temptradesByMarket);
+        setMarketsData(rows);
         settradesloading(false);
+
         if (
           sendInputString === '' &&
           location.pathname.slice(1) === 'send' &&
           amountIn &&
-          BigInt(amountIn) != BigInt(0)
+          BigInt(amountIn) !== BigInt(0)
         ) {
+          const mkObj = getMarket(activeMarket.path.at(0), activeMarket.path.at(1));
+          const mkKey = (({ baseAsset, quoteAsset }: any) =>
+            (baseAsset === wethticker ? ethticker : baseAsset) +
+            (quoteAsset === wethticker ? ethticker : quoteAsset)
+          )(mkObj);
           setsendInputString(
             `$${calculateUSDValue(
               BigInt(amountIn),
-              temptradesByMarket[
-              (({ baseAsset, quoteAsset }) =>
-                (baseAsset === wethticker ? ethticker : baseAsset) +
-                (quoteAsset === wethticker ? ethticker : quoteAsset)
-              )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
-              ],
+              temptradesByMarket[mkKey],
               tokenIn,
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
-            ).toFixed(2)}`,
+              mkObj
+            ).toFixed(2)}`
           );
         }
-
-        try {
-          const data = json.data.series_collection;
-          const processedMarkets = data.map((series: any) => {
-            const idParts = series.id.split("-");
-            const address = idParts[2];
-
-            const match = Object.values(markets).find(
-              (m) => m.address.toLowerCase() === address.toLowerCase()
-            );
-            if (!match) return;
-            const candles: any = series.klines.reverse();
-            const highs = candles.map((c: any) => c.high);
-            const lows = candles.map((c: any) => c.low);
-            const high = Math.max(...highs);
-            const low = Math.min(...lows);
-            const firstPrice = candles[0].open;
-            const lastPrice = candles[candles.length - 1].close;
-            const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-            const quotePrice = match.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.[0]?.[3]
-              / Number(markets[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.priceFactor)
-            const totalVolume = candles
-              .filter((c: any) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
-              .reduce((acc: number, c: any) => acc + parseFloat(c.volume.toString()), 0) * quotePrice;
-            const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
-
-            return {
-              ...match,
-              pair: `${match.baseAsset}/${match.quoteAsset}`,
-              currentPrice: formatSubscript((lastPrice / Number(match.priceFactor)).toFixed(decimals)),
-              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-              priceChangeAmount: lastPrice - firstPrice,
-              volume: formatCommas(totalVolume.toFixed(2)),
-              marketKey: `${match.baseAsset}${match.quoteAsset}`,
-              series: candles,
-              firstPrice: firstPrice,
-              high24h: formatSubscript((high / Number(match.priceFactor)).toFixed(decimals)),
-              low24h: formatSubscript((low / Number(match.priceFactor)).toFixed(decimals)),
-            };
-          });
-          setMarketsData(processedMarkets);
-        } catch (error) {
-          console.error("error fetching candles:", error);
-        }
-
       } catch (error) {
         console.error("Error fetching data:", error);
         settradesloading(false);
