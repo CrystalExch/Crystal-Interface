@@ -10,7 +10,7 @@
   right: 0;
   z-index: 10;
   transition: left 0.3s ease; 
-  border-top: 1px solid rgba(179, 184, 249, 0.12);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .footer-content-left {

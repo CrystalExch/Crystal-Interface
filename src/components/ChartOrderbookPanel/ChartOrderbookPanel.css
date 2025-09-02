@@ -40,7 +40,7 @@
 .drag-handle::after{
   content: '';
   position: absolute;
-  border-left: 1px solid rgba(179, 184, 249, 0.12);
+  border-left: 1px solid rgba(179, 184, 249, 0.1);
   width: 1px;
   height: 100%;
   margin-left: 2.5px;
