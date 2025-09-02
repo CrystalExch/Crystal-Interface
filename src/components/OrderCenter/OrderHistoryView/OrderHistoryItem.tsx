@@ -30,8 +30,8 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   const quoteDecimals = Number(market.quoteDecimals);
   const baseDecimals = Number(market.baseDecimals);
 
-  const amount = order[3] === 1 ? order[2] / 10 ** quoteDecimals : order[2] / 10 ** baseDecimals;
-  const amountFilled = order[3] === 1 ? order[7] / 10 ** quoteDecimals : order[7] / 10 ** baseDecimals;
+  const amount = order[2] / 10 ** baseDecimals;
+  const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
 
   const tokenAddress =

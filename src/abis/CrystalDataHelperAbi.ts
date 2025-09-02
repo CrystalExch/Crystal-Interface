@@ -167,6 +167,19 @@ export const CrystalDataHelperAbi = [
     "inputs": [
       {
         "internalType": "address",
+        "name": "newGov",
+        "type": "address"
+      }
+    ],
+    "name": "changeGov",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
         "name": "market",
         "type": "address"
       },
@@ -177,6 +190,42 @@ export const CrystalDataHelperAbi = [
       }
     ],
     "name": "changeMarket",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "code",
+        "type": "string"
+      }
+    ],
+    "name": "changeRef",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
+      },
+      {
+        "internalType": "string",
+        "name": "code",
+        "type": "string"
+      }
+    ],
+    "name": "changeUsedRef",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -221,6 +270,70 @@ export const CrystalDataHelperAbi = [
         "internalType": "address",
         "name": "market",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "distance",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "interval",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "max",
+        "type": "uint256"
+      }
+    ],
+    "name": "getMarketData",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "quoteReserve",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "baseReserve",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "highestBid",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "lowestAsk",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bytes",
+        "name": "bids",
+        "type": "bytes"
+      },
+      {
+        "internalType": "bytes",
+        "name": "asks",
+        "type": "bytes"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "crystal",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
       }
     ],
     "name": "getPrice",
@@ -241,7 +354,7 @@ export const CrystalDataHelperAbi = [
         "type": "uint256"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -261,6 +374,16 @@ export const CrystalDataHelperAbi = [
     "outputs": [
       {
         "internalType": "uint256[]",
+        "name": "quoteReserves",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "baseReserves",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint256[]",
         "name": "mids",
         "type": "uint256[]"
       },
@@ -275,7 +398,7 @@ export const CrystalDataHelperAbi = [
         "type": "uint256[]"
       }
     ],
-    "stateMutability": "view",
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {

@@ -3,11 +3,14 @@ import { ArrowUpRight, ChevronDown, ChevronLeft, Plus, Search, Star, X } from 'l
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { encodeFunctionData } from "viem";
 import { MaxUint256 } from "ethers";
+import { readContracts } from '@wagmi/core';
 import { useSharedContext } from '../../contexts/SharedContext';
 import { fetchLatestPrice } from '../../utils/getPrice.ts';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
+import { TokenAbi } from '../../abis/TokenAbi.ts';
 import customRound from '../../utils/customRound.tsx';
 import { settings } from "../../settings";
+import { config } from '../../wagmi';
 import './LP.css';
 
 import verified from '../../assets/verified.png';
@@ -211,7 +214,7 @@ const LP: React.FC<LPProps> = ({
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
   const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
   const [hoveredTvl, setHoveredTvl] = useState<number | null>(null);
-  const [selectedVault, setSelectedVault] = useState<string | null>(null);
+  const [selectedVault, setSelectedVault] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [selectedTokens, setSelectedTokens] = useState<Token[]>([]);
@@ -265,6 +268,47 @@ const LP: React.FC<LPProps> = ({
   }, [tokendict]);
 
   const defaultTokens = ['MON', 'WMON', 'USDC'];
+  const [vaultList, setVaultList] = useState<any>([]);
+
+  const selectedVaultData = selectedVault ?
+    vaultList.find((vault: any) => (vault.baseAsset + vault.quoteAsset) == selectedVault) : undefined;
+
+  const hasInitializedFavorites = useRef(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [vaultDetails, vaultTotalSupply, vaultUserBalance] = (await readContracts(config, {
+          contracts: [
+            { abi: CrystalRouterAbi as any, address: router, functionName: 'getReserves', args: [markets?.[selectedVault]?.address] },
+            { abi: TokenAbi as any, address: markets?.[selectedVault]?.address, functionName: 'totalSupply', args: [] },
+            ...(account.address ? [{
+              abi: TokenAbi as any,
+              address: markets?.[selectedVault]?.address,
+              functionName: 'balanceOf',
+              args: [account.address as `0x${string}`],
+            }] : [])],
+        })) as any[];
+        if (vaultDetails?.status === "success") {
+          const vaultDict = {
+            ...markets?.[selectedVault],
+            quoteBalance: vaultDetails.result[0],
+            baseBalance: vaultDetails.result[1],
+            userBalance: 0n,
+            totalShares: vaultTotalSupply.result,
+          }
+          if (account.address) {
+            vaultDict.userBalance = vaultUserBalance.result
+          }
+          console.log(vaultDict)
+          setVaultList([vaultDict]);
+        }
+      } catch (e) {
+        console.error(e);
+      } finally {
+      }
+    })();
+  }, [selectedVault, account.address]);
 
   const showVaultDetail = (vault: any) => {
     setSelectedVault(vault.baseAsset + vault.quoteAsset);
@@ -679,7 +723,7 @@ const LP: React.FC<LPProps> = ({
           args: [
             selectedVaultData.address as `0x${string}`,
             account.address,
-            sharesToWithdraw,
+            selectedVaultData.userBalance,
             amountQuoteMin,
             amountBaseMin,
             '0x0000000000000000000000000000000000000000',
@@ -769,17 +813,8 @@ const LP: React.FC<LPProps> = ({
   };
 
   const backToList = () => {
-    setSelectedVault(null);
+    setSelectedVault('');
   };
-
-  const selectedVaultData = selectedVault ? markets[selectedVault] : null;
-  if (selectedVault) {
-    selectedVaultData.quoteBalance = 0n;
-    selectedVaultData.baseBalance = 0n;
-    selectedVaultData.totalShares = 0n;
-  }
-
-  const hasInitializedFavorites = useRef(false);
 
   useEffect(() => {
     if (hasInitializedFavorites.current || availableTokens.length === 0) return;
@@ -1376,9 +1411,9 @@ const LP: React.FC<LPProps> = ({
                         <AreaChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                           <defs>
                             <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
-                              <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                              <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
+                              <stop offset="0%" stopColor="#00b894" stopOpacity={0.4} />
+                              <stop offset="50%" stopColor="#00b894" stopOpacity={0.1} />
+                              <stop offset="100%" stopColor="#00b894" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <XAxis
@@ -1394,11 +1429,11 @@ const LP: React.FC<LPProps> = ({
                           <Area
                             type="monotone"
                             dataKey="value"
-                            stroke="#aaaecf"
+                            stroke="#00b894"
                             strokeWidth={2}
                             fill="url(#performanceGrad)"
                             dot={false}
-                            activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
+                            activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#00b894", strokeWidth: 2 }}
                           />
                         </AreaChart>
                       </ResponsiveContainer>

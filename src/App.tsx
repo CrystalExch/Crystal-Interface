@@ -1382,7 +1382,7 @@ function App() {
   const wsRef = useRef<WebSocket | null>(null);
   const pingIntervalRef = useRef<any>(null);
   const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  
+
   // more constants
   const languageOptions = [
     { code: 'EN', name: 'English' },
@@ -3367,9 +3367,11 @@ function App() {
         }).reduce(
           (acc, market, i) => {
             const prices = [
+              (data as any)[4].result?.[2][i],
+              (data as any)[4].result?.[3][i],
+              (data as any)[4].result?.[4][i],
               (data as any)[4].result?.[0][i],
               (data as any)[4].result?.[1][i],
-              (data as any)[4].result?.[2][i],
             ];
             acc[market] = prices;
             return acc;
@@ -3919,7 +3921,6 @@ function App() {
         const { price, tradeValue } = getTradeValue(trade, activeMarket);
         const time = formatTime(trade[6]);
         const hash = trade[5];
-
         return [
           isBuy,
           formatCommas(
@@ -4687,13 +4688,13 @@ function App() {
               temporders.push([
                 price,
                 tail,
-                original,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
                 o.isBuy ? 1 : 0,
                 marketKey,
                 o.id,
                 Number(o.placedAt ?? o.updatedAt ?? 0),
                 filled,
-                o.isBuy ? original : Number(o.price ?? 0) * original,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
                 statusCode(o.status),
               ]);
             }
@@ -4711,13 +4712,13 @@ function App() {
               tempcanceledorders.push([
                 price,
                 tail,
-                original,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
                 o.isBuy ? 1 : 0,
                 marketKey,
                 o.id,
                 Number(o.updatedAt ?? o.placedAt ?? 0),
                 filled,
-                o.isBuy ? original : Number(o.price ?? 0) * original,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
                 statusCode(o.status),
               ]);
             }
@@ -5430,7 +5431,7 @@ function App() {
 
         const query = `
           query {
-            markets(first: 0, orderBy: volume, orderDirection: desc) {
+            markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
               id
               baseAsset
               quoteAsset
@@ -5463,6 +5464,7 @@ function App() {
           body: JSON.stringify({ query }),
         });
         const json = await res.json();
+        console.log(json);
         const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
 
         const addrToKey: Record<string, string> = {};
@@ -5510,7 +5512,7 @@ function App() {
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
-          const volQ = Number(m.volume ?? 0);
+          const volQ = Number(m.volume / 10 ** 6 ?? 0);
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const mk = marketKey;
@@ -5527,12 +5529,8 @@ function App() {
                 Number(t.timestamp ?? 0),
               ]);
             }
-          } else {
-            temptradesByMarket[mk].push([
-              0, 0, 1, lastRaw, mk, '0x', Math.floor(Date.now() / 1000),
-            ]);
           }
-
+          
           return {
             ...cfg,
             marketKey: mk,
@@ -5546,7 +5544,6 @@ function App() {
             priceChangeAmount: deltaRaw,
           };
         }).filter(Boolean) as any[];
-        console.log(temptradesByMarket);
 
         settradesByMarket(temptradesByMarket);
         setMarketsData(rows);
@@ -6028,111 +6025,113 @@ function App() {
   useEffect(() => {
     if (limitChase && mids?.[activeMarketKey]?.[0]) {
       const price = tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
-      setlimitPrice(price);
-      setlimitPriceString(
-        (
-          Number(price) / Number(activeMarket.priceFactor)
-        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
-      );
-      if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-        setamountIn(
-          price !== BigInt(0) && amountOutSwap !== BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? (amountOutSwap *
-                (activeMarket.scaleFactor || BigInt(1))) /
-              price
-              : (amountOutSwap * price) /
-              (activeMarket.scaleFactor || BigInt(1))
-            : BigInt(0),
+      if (price) {
+        setlimitPrice(price);
+        setlimitPriceString(
+          (
+            Number(price) / Number(activeMarket.priceFactor)
+          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
         );
-        setInputString(
-          (price !== BigInt(0) && amountOutSwap !== BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? customRound(
-                Number(
-                  (amountOutSwap *
-                    (activeMarket.scaleFactor || BigInt(1))) /
-                  price,
-                ) /
-                10 ** Number(tokendict[tokenIn].decimals),
-                3,
-              )
-              : customRound(
-                Number(
-                  (amountOutSwap * price) /
-                  (activeMarket.scaleFactor || BigInt(1)),
-                ) /
-                10 ** Number(tokendict[tokenIn].decimals),
-                3,
-              )
-            : ''
-          ).toString(),
-        );
-        const percentage =
-          tokenBalances[tokenIn] === BigInt(0)
-            ? 0
-            : Math.min(
-              100,
-              Math.floor(
-                Number(
-                  (price !== BigInt(0) &&
-                    amountOutSwap !== BigInt(0)
-                    ? tokenIn === activeMarket?.baseAddress
-                      ? (amountOutSwap *
-                        (activeMarket.scaleFactor ||
-                          BigInt(1))) /
-                      price
-                      : (amountOutSwap * price) /
-                      (activeMarket.scaleFactor || BigInt(1))
-                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+        if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+          setamountIn(
+            price !== BigInt(0) && amountOutSwap !== BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? (amountOutSwap *
+                  (activeMarket.scaleFactor || BigInt(1))) /
+                price
+                : (amountOutSwap * price) /
+                (activeMarket.scaleFactor || BigInt(1))
+              : BigInt(0),
+          );
+          setInputString(
+            (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? customRound(
+                  Number(
+                    (amountOutSwap *
+                      (activeMarket.scaleFactor || BigInt(1))) /
+                    price,
+                  ) /
+                  10 ** Number(tokendict[tokenIn].decimals),
+                  3,
                 )
-              ),
-            );
-        setSliderPercent(percentage);
-        const slider = document.querySelector(
-          '.balance-amount-slider',
-        );
-        const popup = document.querySelector(
-          '.slider-percentage-popup',
-        );
-        if (slider && popup) {
-          const rect = slider.getBoundingClientRect();
-          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-            }px`;
+                : customRound(
+                  Number(
+                    (amountOutSwap * price) /
+                    (activeMarket.scaleFactor || BigInt(1)),
+                  ) /
+                  10 ** Number(tokendict[tokenIn].decimals),
+                  3,
+                )
+              : ''
+            ).toString(),
+          );
+          const percentage =
+            tokenBalances[tokenIn] === BigInt(0)
+              ? 0
+              : Math.min(
+                100,
+                Math.floor(
+                  Number(
+                    (price !== BigInt(0) &&
+                      amountOutSwap !== BigInt(0)
+                      ? tokenIn === activeMarket?.baseAddress
+                        ? (amountOutSwap *
+                          (activeMarket.scaleFactor ||
+                            BigInt(1))) /
+                        price
+                        : (amountOutSwap * price) /
+                        (activeMarket.scaleFactor || BigInt(1))
+                      : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                  )
+                ),
+              );
+          setSliderPercent(percentage);
+          const slider = document.querySelector(
+            '.balance-amount-slider',
+          );
+          const popup = document.querySelector(
+            '.slider-percentage-popup',
+          );
+          if (slider && popup) {
+            const rect = slider.getBoundingClientRect();
+            (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+              }px`;
+          }
         }
-      }
-      else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-        setamountOutSwap(
-          price != BigInt(0) && amountIn != BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? (amountIn * price) /
-              (activeMarket.scaleFactor || BigInt(1))
-              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-              price
-            : BigInt(0),
-        );
-        setoutputString(
-          (price != BigInt(0) && amountIn != BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? customRound(
-                Number(
-                  (amountIn * price) /
-                  (activeMarket.scaleFactor || BigInt(1)),
-                ) /
-                10 ** Number(tokendict[tokenOut].decimals),
-                3,
-              )
-              : customRound(
-                Number(
-                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                  price,
-                ) /
-                10 ** Number(tokendict[tokenOut].decimals),
-                3,
-              )
-            : ''
-          ).toString(),
-        );
+        else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+          setamountOutSwap(
+            price != BigInt(0) && amountIn != BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? (amountIn * price) /
+                (activeMarket.scaleFactor || BigInt(1))
+                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                price
+              : BigInt(0),
+          );
+          setoutputString(
+            (price != BigInt(0) && amountIn != BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? customRound(
+                  Number(
+                    (amountIn * price) /
+                    (activeMarket.scaleFactor || BigInt(1)),
+                  ) /
+                  10 ** Number(tokendict[tokenOut].decimals),
+                  3,
+                )
+                : customRound(
+                  Number(
+                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                    price,
+                  ) /
+                  10 ** Number(tokendict[tokenOut].decimals),
+                  3,
+                )
+              : ''
+            ).toString(),
+          );
+        }
       }
     }
   }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1)]);
@@ -9157,7 +9156,7 @@ function App() {
                     } catch (error) {
                       if (!(error instanceof TransactionExecutionError)) {
                         newTxPopup(
-                          hash.hash,
+                          hash,
                           "sendFailed",
                           sendTokenIn === eth ? eth : sendTokenIn,
                           "",
@@ -13483,7 +13482,7 @@ function App() {
                     } catch (error) {
                       if (!(error instanceof TransactionExecutionError)) {
                         newTxPopup(
-                          hash.hash,
+                          hash,
                           "sendFailed",
                           sendTokenIn === eth ? eth : sendTokenIn,
                           "",
@@ -15576,7 +15575,7 @@ function App() {
                           }
                           hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
-                            hash.hash,
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -15770,7 +15769,7 @@ function App() {
                           }
                           hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
-                            hash.hash,
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -15890,7 +15889,7 @@ function App() {
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash.hash,
+                    hash,
                     "swapFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
@@ -18792,7 +18791,7 @@ function App() {
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash.hash,
+                    hash,
                     "sendFailed",
                     tokenIn === eth ? eth : tokenIn,
                     "",

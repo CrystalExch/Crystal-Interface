@@ -48,10 +48,10 @@ const OrderItem: React.FC<OrderItemProps> = ({
   const baseDecimals = Number(market.baseDecimals);
   const quoteDecimals = Number(market.quoteDecimals);
   const scaleFactor = Number(market.scaleFactor);
-  const amount = order[3] === 1 ? (order[2] / ((order[0] / priceFactor) * (10 ** quoteDecimals))) : order[2] / 10 ** baseDecimals;
+  const amount = order[2] / 10 ** baseDecimals;
   const amountFilled = order[7] / 10 ** baseDecimals;
   const percentFilled = (amountFilled / amount) * 100;
-  const usdValue = order[3] === 1 ? order[2] / 10 ** quoteDecimals : (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
+  const usdValue = (order[8] * quotePrice / (scaleFactor * 10 ** quoteDecimals)).toFixed(2);
   const isBuyOrder = order[3] === 1;
   const currentPrice = fetchLatestPrice(trades, market) || 0;
   const limitPrice = order[0] / priceFactor;
