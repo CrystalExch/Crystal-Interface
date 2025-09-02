@@ -2266,22 +2266,18 @@ opacity: 1;
     width: calc(100% - 15px);
 }
 
-/* Slider marks - Buy (Green) */
 .meme-balance-slider-mark.buy[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(67, 254, 154);
 }
 
-/* Slider marks - Sell (Red) */
 .meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(235, 112, 112);
 }
 
-/* Default slider marks (fallback for buy) */
 .meme-balance-slider-mark[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(67, 254, 154);
 }
 
-/* Fix slider percentage popup positioning */
 .meme-slider-percentage-popup {
     align-items: center;
     background-color: rgb(9, 9, 9);
@@ -2307,7 +2303,6 @@ opacity: 1;
     z-index: 13;
 }
 
-/* Settings presets - Buy (Green) */
 .meme-settings-preset.active.buy {
     background: rgba(67, 254, 154, 0.08);
     border-color: rgba(67, 254, 154, 0.4);
@@ -2315,7 +2310,6 @@ opacity: 1;
     color: rgb(67, 254, 154);
 }
 
-/* Settings presets - Sell (Red) */
 .meme-settings-preset.active.sell {
     background: rgba(235, 112, 112, 0.08);
     border-color: rgba(235, 112, 112, 0.4);

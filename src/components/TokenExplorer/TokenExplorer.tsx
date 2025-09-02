@@ -703,11 +703,11 @@ const AlertsPopup: React.FC<{
                   />
 
 
-                  <div className="meme-balance-slider-marks">
+                  <div className="meme-volume-slider-marks">
                     {[0, 25, 50, 75, 100].map((mark) => (
                       <span
                         key={mark}
-                        className="meme-balance-slider-mark"
+                        className="meme-volume-slider-mark"
                         data-active={settings.volume >= mark}
                         data-percentage={mark}
                         onClick={() => updateSetting('volume', mark)}
@@ -2605,7 +2605,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.new}
                           onChange={(e) => setQuickAmount('new', e.target.value)}
                           onFocus={handleInputFocus}
@@ -2719,7 +2719,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.graduating}
                           onChange={(e) => setQuickAmount('graduating', e.target.value)}
                           onFocus={handleInputFocus}
@@ -2831,7 +2831,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.graduated}
                           onChange={(e) => setQuickAmount('graduated', e.target.value)}
                           onFocus={handleInputFocus}

@@ -160,7 +160,6 @@
 .explorer-token-symbol {
   color: #ffffff;
   font-size: 1rem;
-  font-weight: 500;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -676,8 +675,8 @@
 .explorer-quick-buy-search-icon {
   width: 15px;
   height: 15px;
-  filter: invert(1);
-  opacity: 0.5;
+  filter: invert(1) brightness(0) saturate(100%) invert(28%) sepia(24%) saturate(349%) hue-rotate(210deg) brightness(91%) contrast(88%);
+  
 }
 
 .sniper-icon {
@@ -771,24 +770,26 @@
   position: relative;
   display: flex;
   align-items: center;
-  border: 1.5px solid rgba(179, 184, 249, .1);
-  border-radius: 12px;
+  border: 1px solid rgba(179, 184, 249, .12);
+  border-radius: 20px;
   padding: 0 .5rem;
-  padding-right: 0.3rem;
+  padding-right: 0.15rem;
   height: 28px;
   gap: .3rem;
   max-width: 170px;
+
 }
 
 .explorer-quickbuy-input {
   background: 0 0;
   border: none;
   outline: 0;
-  color: #fff;
-  font-size: .8rem;
+  color: #ffffffbd;
+  font-size: .85rem;
   flex: 1;
   min-width: 0;
   letter-spacing: -.3px;
+  transform: scaleX(1.1);
 }
 
 .explorer-quickbuy-input::placeholder {
@@ -1973,22 +1974,20 @@
 .explorer-preset-controls {
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: 2px;
   height: 100%;
-  border-left: 1.5px solid rgba(179, 184, 249, .1);
-  padding-left: 5px;
+  border-left: 1px solid rgba(179, 184, 249, .12);
+  padding-left: 2px;
 }
 
 .explorer-preset-pill {
-  padding: 2px 0;
+  padding: 1.5px 3px;
   font-size: 0.8rem;
-  font-weight: 500;
   color: #7f808d;
-  border-radius: 4px;
+  border-radius: 3px;
   cursor: pointer;
   transition: all 0.2s ease;
   min-width: 20px;
-  height: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1996,14 +1995,23 @@
   outline: none;
 }
 
+.explorer-preset-pill:last-child {
+  margin-right: 0;
+  padding-right: 5px;
+  border-radius: 0 20px 20px 0px;
+}
+
 .explorer-preset-pill:hover {
-  color: #a0a0a0;
+  background-color: #7f808d17;
 }
 
 .explorer-preset-pill.active {
   color: #d8dcff;
 }
 
+.explorer-preset-pill.active:hover {
+  background-color: #9fa5f525;
+}
 .display-dropdown {
   position: relative;
 }
@@ -3487,12 +3495,11 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
   filter: brightness(0) saturate(100%) invert(100%);
 }
 
-/* Base styles - now defaults to SQUARE (remove border-radius) */
 .explorer-token-image-container {
   cursor: pointer;
   width: 74px;
   height: 74px;
-  border-radius: 8px;  /* ← Square by default */
+  border-radius: 8px;  
   background: conic-gradient(from 0deg,
       var(--progress-color-start) 0deg,
       var(--progress-color-mid) calc(var(--progress-angle) / 2),
@@ -3505,9 +3512,8 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
   position: relative;
 }
 
-/* Circular mode - NOW ADDS border-radius */
 .explorer-token-image-container.circle-mode {
-  border-radius: 50%;  /* ← Make circular when circle-mode is active */
+  border-radius: 50%;  
 }
 
 .explorer-progress-spacer {
@@ -3573,13 +3579,12 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
 }
 
 
-/* Progress line styles */
 .explorer-progress-line {
-  width: 60px;
-  height: 3px;
-  background: rgba(255, 255, 255, 0.1);
+  width: 70px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 2px;
-  margin: 4px 0 2px 0;
+  margin: 3px 0 2px 0;
   position: relative;
   overflow: hidden;
 }
@@ -3606,19 +3611,9 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
     rgba(255, 255, 255, 0.3) 50%,
     transparent 100%
   );
-  animation: progress-shimmer 2s ease-in-out infinite;
 }
 
-@keyframes progress-shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
 
-/* Remove progress ring when progressBar is disabled */
 .explorer-token-image-container.no-progress-ring {
   background: none !important;
 }
@@ -4249,5 +4244,62 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
 .reset-icon{
   width: 15px;
   height: 15px;
+}
+
+
+
+
+.meme-volume-slider-marks {
+    color: #ffffff7b;
+    display: flex;
+    font-size: 0.75rem;
+    justify-content: space-between;
+    padding: 0;
+    position: relative;
+    width: 101%;
+    z-index: 1;
+}
+
+.meme-volume-slider-mark {
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 200;
+    margin: 0 -4px;
+    padding: 0 8px;
+    position: relative;
+    transition: color 0.2s ease;
+}
+
+.meme-volume-slider-mark::before {
+    content: '';
+    height: 4px;
+    left: 50%;
+    position: absolute;
+    top: -10px;
+    transform: translateX(-50%);
+    width: 5px;
+}
+
+.meme-volume-slider-mark[data-percentage='0']::before,
+.meme-volume-slider-mark[data-percentage='100']::before {
+    display: none;
+}
+
+.meme-volume-slider-mark:hover {
+    color: #ffffff93;
+}
+
+.meme-volume-slider-mark[data-active='true']:not(:first-child):not(:last-child)::before {
+    background-color: rgb(171, 176, 224);
+}
+
+.meme-volume-slider-mark[data-active='false']:not(:first-child):not(:last-child)::before {
+    background-color: rgb(6, 6, 6);
+}
+
+
+.meme-volume-slider-mark[data-active='false']:not(:first-child):not(:last-child)::before {
+    background-color: rgb(6, 6, 6);
 }
 
