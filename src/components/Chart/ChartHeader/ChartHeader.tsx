@@ -169,7 +169,7 @@ const ChartHeader: React.FC<ChartHeaderProps> = ({
           ? orderdata.liquiditySellOrders?.orders
           : [];
       
-      const activechain = Object.keys(settings.chainConfig)[0]; // Fallback - you may want to pass this as a prop
+      const activechain = Object.keys(settings.chainConfig)[0];
       const quotePrice = activeMarket.quoteAsset == 'USDC' ? 1 : 
         tradesByMarket[(activeMarket.quoteAsset == settings.chainConfig[activechain]?.wethticker ? 
           settings.chainConfig[activechain]?.ethticker : activeMarket.quoteAsset) + 'USDC']?.[0]?.[3];
