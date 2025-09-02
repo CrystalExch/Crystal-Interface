@@ -8,6 +8,7 @@ interface PopupData {
   subtitle?: string;
   amount?: string;
   amountUnit?: string;
+  tokenImage?: string;
   variant: 'success' | 'error' | 'info';
   isLoading?: boolean;
   visible: boolean;
@@ -22,6 +23,7 @@ export const showLoadingPopup = (id: string, data: {
   subtitle?: string;
   amount?: string;
   amountUnit?: string;
+  tokenImage?: string;
 }) => {
   const newPopup: PopupData = {
     id,
@@ -29,6 +31,7 @@ export const showLoadingPopup = (id: string, data: {
     subtitle: data.subtitle,
     amount: data.amount,
     amountUnit: data.amountUnit,
+    tokenImage: data.tokenImage,
     variant: 'info',
     isLoading: true,
     visible: true,
@@ -46,6 +49,7 @@ export const updatePopup = (id: string, data: {
   variant: 'success' | 'error' | 'info';
   confirmed?: boolean;
   isLoading?: boolean;
+  tokenImage?: string;
 }) => {
   if (globalSetPopups) {
     globalSetPopups(prev =>
@@ -59,6 +63,7 @@ export const updatePopup = (id: string, data: {
               isLoading: data.isLoading ?? p.isLoading,
               visible: true,
               confirmed: data.confirmed ?? true,
+              tokenImage: data.tokenImage || p.tokenImage, 
             }
           : p
       ).slice(0, 7)

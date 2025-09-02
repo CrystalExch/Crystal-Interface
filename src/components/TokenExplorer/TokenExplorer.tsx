@@ -1201,14 +1201,11 @@ const DisplayDropdown: React.FC<{
                         ['holders', 'Holders'],
                         ['proTraders', 'Pro Traders'],
                         ['kols', 'KOLs'],
-                        ['devMigrations', 'Dev Migrations'],
                         ['top10Holders', 'Top 10 Holders'],
                         ['devHolding', 'Dev Holding'],
-                        ['fundingTime', 'Funding Time'],
                         ['snipers', 'Snipers'],
                         ['insiders', 'Insiders'],
                         ['bundlers', 'Bundlers'],
-                        ['dexPaid', 'Dex Paid'],
                       ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                     ).map(([k, label]) => (
                       <div key={k} className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`} onClick={() => updateRowSetting(k, !settings.visibleRows[k])}>
@@ -2206,51 +2203,68 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const handleImageSearch = useCallback((img: string) => {
     window.open(`https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(img)}`, '_blank', 'noopener,noreferrer');
   }, []);
+const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
+  const val = BigInt(amt || '0') * 10n ** 18n;
+  if (val === 0n) return;
 
-  const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
-    const val = BigInt(amt || '0') * 10n ** 18n;
-    if (val === 0n) return;
+  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
 
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
-
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, { title: 'Sending transaction...', subtitle: `Quick buying ${amt} MON worth of ${token.symbol}`, amount: amt, amountUnit: 'MON' });
-      }
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
-        value: val,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, { title: 'Confirming transaction...', subtitle: `Quick buying ${amt} MON worth of ${token.symbol}`, variant: 'info' });
-      }
-
-      const op = await sendUserOperationAsync({ uo });
-
-      if (updatePopup) {
-        updatePopup(txId, { title: 'Quick Buy Complete', subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, variant: 'success', confirmed: true, isLoading: false });
-      }
-    } catch (e: any) {
-      console.error('Quick buy failed', e);
-      const msg = String(e?.message ?? '');
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          confirmed: true,
-          isLoading: false
-        });
-      }
-    } finally {
-      dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, { 
+        title: 'Sending transaction...', 
+        subtitle: `${amt} MON worth of ${token.symbol}`, 
+        amount: amt, 
+        amountUnit: 'MON',
+        tokenImage: token.image  
+      });
     }
-  }, [routerAddress, sendUserOperationAsync]);
 
+    const uo = {
+      target: routerAddress,
+      data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
+      value: val,
+    };
+
+    if (updatePopup) {
+      updatePopup(txId, { 
+        title: 'Confirming transaction...', 
+        subtitle: `${amt} MON worth of ${token.symbol}`, 
+        variant: 'info',
+        tokenImage: token.image 
+      });
+    }
+
+    const op = await sendUserOperationAsync({ uo });
+
+    if (updatePopup) {
+      updatePopup(txId, { 
+        title: 'Quick Buy Complete', 
+        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, 
+        variant: 'success', 
+        confirmed: true, 
+        isLoading: false,
+        tokenImage: token.image
+      });
+    }
+  } catch (e: any) {
+    console.error('Quick buy failed', e);
+    const msg = String(e?.message ?? '');
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+        subtitle: msg || 'Please try again.',
+        variant: 'error',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image 
+      });
+    }
+  } finally {
+    dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+  }
+}, [routerAddress, sendUserOperationAsync]);
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
