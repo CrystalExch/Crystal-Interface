@@ -1191,10 +1191,6 @@
     margin-top: 3rem;
     padding-bottom: 3rem;
 }
-.add-liquidity-content{
-    max-width:1000px;
-    margin:0 auto
-}
 .add-liquidity-breadcrumb{
     display:flex;
     align-items:center;
