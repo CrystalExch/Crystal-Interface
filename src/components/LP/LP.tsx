@@ -725,8 +725,7 @@ const LP: React.FC<LPProps> = ({
             account.address,
             selectedVaultData.userBalance,
             amountQuoteMin,
-            amountBaseMin,
-            '0x0000000000000000000000000000000000000000',
+            amountBaseMin
           ],
         }),
         value: 0n,

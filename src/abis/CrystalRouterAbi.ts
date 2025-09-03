@@ -2774,11 +2774,6 @@ export const CrystalRouterAbi = [
         "internalType": "uint256",
         "name": "amountBaseMin",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
       }
     ],
     "name": "removeLiquidity",
@@ -2823,11 +2818,6 @@ export const CrystalRouterAbi = [
         "internalType": "uint256",
         "name": "amountBaseMin",
         "type": "uint256"
-      },
-      {
-        "internalType": "address",
-        "name": "user",
-        "type": "address"
       }
     ],
     "name": "removeLiquidityETH",
