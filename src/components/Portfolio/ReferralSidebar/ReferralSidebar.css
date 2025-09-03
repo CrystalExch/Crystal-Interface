@@ -1,5 +1,5 @@
 .referral-sidebar {
-  border-right: 1px solid rgba(179, 184, 249, 0.12);
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -693,7 +693,7 @@
 @media (max-width: 1020px) {
   .referral-sidebar {
     border-right: none;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
     max-width: 100%;
     min-width: 100%;
     width: 100%;

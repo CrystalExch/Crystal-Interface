@@ -1187,19 +1187,9 @@
     filter:brightness(1.1)
 }
 .add-liquidity-container{
-    height:100vh;
     color:#fff;
-    padding:2rem;
-    padding-top:6rem;
-    width:100vw;
-    position:fixed;
-    top:0;
-    left:0;
-    overflow-y:auto
-}
-.add-liquidity-content{
-    max-width:1000px;
-    margin:0 auto
+    margin-top: 3rem;
+    padding-bottom: 3rem;
 }
 .add-liquidity-breadcrumb{
     display:flex;
@@ -3145,7 +3135,6 @@
 }
 .vault-strategy-header{
     position: relative;
-    z-index:10;
     padding-bottom:0.5rem
 }
 .vault-strategy-sticky-bar{

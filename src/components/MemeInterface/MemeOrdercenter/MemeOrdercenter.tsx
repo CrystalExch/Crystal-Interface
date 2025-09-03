@@ -79,8 +79,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     };
 
-    handleResize();
-
     window.addEventListener('resize', handleResize);
 
     return () => {

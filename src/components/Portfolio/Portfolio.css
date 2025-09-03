@@ -3884,7 +3884,7 @@
   grid-template-columns: repeat(7, 1fr);
   gap: 8px;
   margin-bottom: 12px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .pnl-calendar-weekday {

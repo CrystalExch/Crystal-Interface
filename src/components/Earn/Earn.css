@@ -2,9 +2,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: calc(100% - 20px);
+  width: calc(100% - 50px);
   height: 100%;
-  margin: 0 10px;
+  margin: 0 25px;
 }
 
 .earn-page-header {
@@ -58,9 +58,8 @@
   content: '';
   position: absolute;
   top: 4px;
-  left: 4px;
   height: calc(100% - 4px);
-  width: calc(50%);
+  width: calc(50% + 4px);
   transition: transform .3s cubic-bezier(.4, 0, .2, 1);
   border-bottom: 1.5px solid #d8dcff;
 }
