@@ -7,16 +7,10 @@
     min-height: 550px;
 }
 .meme-trade-panel{
-    min-width:300px;
-    width: 380px;
+    min-width:330px;
+    width: 330px;
     border-left:1px solid rgba(179,184,249,.09);
-      overflow-y: auto;
-
-}
-@media (max-width: 1440px) {
-    .meme-trade-panel {
-        width: 320px;
-    }
+    overflow-y: auto;
 }
 .memechartandtradesandordercenter {
     width: 100%;
@@ -1908,8 +1902,6 @@ opacity: 1;
     .meme-trade-panel {
         display: none !important;
     }
-
-    /* Fix for order center visibility */
     .meme-ordercenter {
         z-index: 10;
     }
