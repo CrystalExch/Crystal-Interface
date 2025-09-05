@@ -470,16 +470,15 @@ function App() {
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
     description: '',
+    selectedMarket: '',
     quoteAsset: '',
     baseAsset: '',
     amountQuote: '',
     amountBase: '',
     social1: '',
     social2: '',
-    showQuoteDropdown: false,
-    showBaseDropdown: false,
-    quoteSearchTerm: '',
-    baseSearchTerm: ''
+    showMarketDropdown: false,
+    marketSearchTerm: ''
   });
   const createSubWallet = async () => {
     try {
@@ -575,7 +574,7 @@ function App() {
       }
       else {
         hash = (await rawSendUserOperationAsync(params))?.hash
-      }    
+      }
       await Promise.race([
         new Promise<void>((resolve) => {
           txReceiptResolvers.current.set(hash, resolve);
@@ -1856,7 +1855,7 @@ function App() {
   };
 
   const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
-  `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
+    `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
 
   const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
 
@@ -5530,7 +5529,7 @@ function App() {
               ]);
             }
           }
-          
+
           return {
             ...cfg,
             marketKey: mk,
@@ -8371,7 +8370,7 @@ function App() {
   }, []);
 
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
-  
+
   type CustomizationSettings = {
     mainTextColor: string;
     positivePNLColor: string;
@@ -13905,16 +13904,15 @@ function App() {
                     setCreateVaultForm({
                       name: '',
                       description: '',
+                      selectedMarket: '',
                       quoteAsset: '',
                       baseAsset: '',
                       amountQuote: '',
                       amountBase: '',
                       social1: '',
                       social2: '',
-                      showQuoteDropdown: false,
-                      showBaseDropdown: false,
-                      quoteSearchTerm: '',
-                      baseSearchTerm: ''
+                      showMarketDropdown: false,
+                      marketSearchTerm: ''
                     });
                     setpopup(0);
                   }}
@@ -13926,11 +13924,10 @@ function App() {
               <div
                 className="modal-body"
                 onClick={(e) => {
-                  if (!(e.target as Element)?.closest?.('.token-selector-container')) {
+                  if (!(e.target as Element)?.closest?.('.market-selector-container')) {
                     setCreateVaultForm(prev => ({
                       ...prev,
-                      showQuoteDropdown: false,
-                      showBaseDropdown: false
+                      showMarketDropdown: false
                     }));
                   }
                 }}
@@ -13957,192 +13954,85 @@ function App() {
                   />
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="token-selector-label">Quote Asset</label>
-                    <div className="token-selector-container">
-                      <div className="token-selector-input-wrapper">
-                        <input
-                          type="text"
-                          value={createVaultForm.quoteAsset}
-                          onChange={(e) => {
-                            setCreateVaultForm(prev => ({ ...prev, quoteAsset: e.target.value }));
-                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
-                              setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: false }));
-                            }
-                          }}
-                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: true }))}
-                          className="form-input token-selector-input"
-                          placeholder="Select quote token..."
-                        />
-                        {(() => {
-                          const selectedToken = Object.values(tokendict).find((t) =>
-                            t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
-                          );
-                          return selectedToken ? (
-                            <div className="selected-token-indicator">
-                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
-                              <span className="token-symbol">{selectedToken.ticker}</span>
-                            </div>
-                          ) : null;
-                        })()}
-                        <button
-                          type="button"
-                          className="token-dropdown-button"
-                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: !prev.showQuoteDropdown }))}
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                      </div>
-
-                      {createVaultForm.showQuoteDropdown && (
-                        <div className="token-dropdown">
-                          <div className="token-search">
-                            <input
-                              type="text"
-                              placeholder="Search tokens..."
-                              value={createVaultForm.quoteSearchTerm || ''}
-                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, quoteSearchTerm: e.target.value }))}
-                              className="token-search-input"
-                            />
+                <div className="form-group">
+                  <label className="market-selector-label">Trading Market</label>
+                  <div className="market-selector-container">
+                      {(() => {
+                        const selectedMarket = Object.values(markets).find((market) =>
+                          `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
+                        );
+                        return selectedMarket ? (
+                          <div className="selected-token-indicator">
+                            <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
+                            <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
                           </div>
-
-                          <div className="token-list">
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.quoteSearchTerm || '';
-                              if (!searchTerm) return true;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map((token) => (
-                              <div
-                                key={token.address}
-                                className="token-option"
-                                onClick={() => {
-                                  setCreateVaultForm(prev => ({
-                                    ...prev,
-                                    quoteAsset: token.address,
-                                    showQuoteDropdown: false,
-                                    quoteSearchTerm: ''
-                                  }));
-                                }}
-                              >
-                                <img src={token.image} alt={token.ticker} className="token-icon" />
-                                <div className="token-info">
-                                  <div className="token-symbol">{token.ticker}</div>
-                                  <div className="token-name">{token.name}</div>
-                                </div>
-                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
-                              </div>
-                            ))}
-
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.quoteSearchTerm || '';
-                              if (!searchTerm) return false;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).length === 0 && createVaultForm.quoteSearchTerm && (
-                                <div className="no-tokens-found">No tokens found</div>
-                              )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        ) : null;
+                      })()}
+                   <div className="market-selector-input-wrapper">
+                    <input
+                      type="text"
+                      value=""
+                      onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
+                      className="form-input market-selector-input"
+                      placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
+                      readOnly
+                    />
+                    <button
+                      type="button"
+                      className="token-dropdown-button"
+                      onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
+                    >
+                      <ChevronDown size={16} />
+                    </button>
                   </div>
-
-                  <div className="form-group">
-                    <label className="token-selector-label">Base Asset</label>
-                    <div className="token-selector-container">
-                      <div className="token-selector-input-wrapper">
-                        <input
-                          type="text"
-                          value={createVaultForm.baseAsset}
-                          onChange={(e) => {
-                            setCreateVaultForm(prev => ({ ...prev, baseAsset: e.target.value }));
-                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
-                              setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: false }));
-                            }
-                          }}
-                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: true }))}
-                          className="form-input token-selector-input"
-                          placeholder="Select base token..."
-                        />
-                        {(() => {
-                          const selectedToken = Object.values(tokendict).find((t) =>
-                            t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
-                          );
-                          return selectedToken ? (
-                            <div className="selected-token-indicator">
-                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
-                              <span className="token-symbol">{selectedToken.ticker}</span>
-                            </div>
-                          ) : null;
-                        })()}
-                        <button
-                          type="button"
-                          className="token-dropdown-button"
-                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: !prev.showBaseDropdown }))}
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                      </div>
-
-                      {createVaultForm.showBaseDropdown && (
-                        <div className="token-dropdown">
-                          <div className="token-search">
-                            <Search size={14} />
-                            <input
-                              type="text"
-                              placeholder="Search tokens..."
-                              value={createVaultForm.baseSearchTerm || ''}
-                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, baseSearchTerm: e.target.value }))}
-                              className="token-search-input"
-                            />
-                          </div>
-
-                          <div className="token-list">
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.baseSearchTerm || '';
-                              if (!searchTerm) return true;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map((token) => (
+                    {createVaultForm.showMarketDropdown && (
+                      <div className="create-vault-token-dropdown">
+                        <div className="create-vault-token-list">
+                          {Object.values(markets).filter((market) => {
+                            const searchTerm = createVaultForm.marketSearchTerm || '';
+                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                            if (!searchTerm) return true;
+                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                          }).slice(0, 10).map((market) => {
+                            const marketKey = `${market.baseAsset}${market.quoteAsset}`;
+                            return (
                               <div
-                                key={token.address}
-                                className="token-option"
+                                key={marketKey}
+                                className="create-vault-token-option"
                                 onClick={() => {
                                   setCreateVaultForm(prev => ({
                                     ...prev,
-                                    baseAsset: token.address,
-                                    showBaseDropdown: false,
-                                    baseSearchTerm: ''
+                                    selectedMarket: marketKey,
+                                    quoteAsset: market.quoteAddress,
+                                    baseAsset: market.baseAddress,
+                                    showMarketDropdown: false,
+                                    marketSearchTerm: ''
                                   }));
                                 }}
                               >
-                                <img src={token.image} alt={token.ticker} className="token-icon" />
-                                <div className="token-info">
-                                  <div className="token-symbol">{token.ticker}</div>
-                                  <div className="token-name">{token.name}</div>
+                                <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
+                                <div className="create-vault-token-info">
+                                  <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
                                 </div>
-                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
                               </div>
-                            ))}
+                            );
+                          })}
 
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.baseSearchTerm || '';
-                              if (!searchTerm) return false;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).length === 0 && createVaultForm.baseSearchTerm && (
-                                <div className="no-tokens-found">No tokens found</div>
-                              )}
-                          </div>
+                          {Object.values(markets).filter((market) => {
+                            const searchTerm = createVaultForm.marketSearchTerm || '';
+                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                            if (!searchTerm) return false;
+                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                          }).length === 0 && createVaultForm.marketSearchTerm && (
+                              <div className="no-tokens-found">No markets found</div>
+                            )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -14156,6 +14046,11 @@ function App() {
                       className="form-input"
                       placeholder="0.0"
                     />
+                    {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
+                      <small className="token-label">
+                        {tokendict[createVaultForm.quoteAsset].ticker} ({tokendict[createVaultForm.quoteAsset].name})
+                      </small>
+                    )}
                   </div>
                   <div className="form-group">
                     <label>Initial Base Amount</label>
@@ -14166,6 +14061,11 @@ function App() {
                       className="form-input"
                       placeholder="0.0"
                     />
+                    {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
+                      <small className="token-label">
+                        {tokendict[createVaultForm.baseAsset].ticker} ({tokendict[createVaultForm.baseAsset].name})
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -14195,10 +14095,10 @@ function App() {
 
               <div className="modal-footer">
                 <button
-                  className={`save-button ${(!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
-                  disabled={!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
+                  className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
+                  disabled={!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
                   onClick={async () => {
-                    if (!connected || !createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset ||
+                    if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
                       !createVaultForm.amountQuote || !createVaultForm.amountBase) {
                       return;
                     }
@@ -14333,16 +14233,15 @@ function App() {
                       setCreateVaultForm({
                         name: '',
                         description: '',
+                        selectedMarket: '',
                         quoteAsset: '',
                         baseAsset: '',
                         amountQuote: '',
                         amountBase: '',
                         social1: '',
                         social2: '',
-                        showQuoteDropdown: false,
-                        showBaseDropdown: false,
-                        quoteSearchTerm: '',
-                        baseSearchTerm: ''
+                        showMarketDropdown: false,
+                        marketSearchTerm: ''
                       });
                       setpopup(0);
                       refetch?.();
@@ -20551,12 +20450,12 @@ function App() {
     usedRefAddress,
     advChartData,
     realtimeCallbackRef,
-      limitPrice,
-  setlimitPrice,
-  setlimitPriceString,
-  tokenIn,
-  amountIn,
-  location.pathname,
+    limitPrice,
+    setlimitPrice,
+    setlimitPriceString,
+    tokenIn,
+    amountIn,
+    location.pathname,
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (

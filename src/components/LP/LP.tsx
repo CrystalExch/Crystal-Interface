@@ -209,7 +209,7 @@ const LP: React.FC<LPProps> = ({
   refetch,
 }) => {
   const { activechain } = useSharedContext();
-  
+
   const router = settings.chainConfig[activechain]?.router;
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
   const [hoveredVolume, setHoveredVolume] = useState<number | null>(null);
@@ -504,25 +504,25 @@ const LP: React.FC<LPProps> = ({
 
         if (type === 'quote') {
           if (selectedVaultData?.totalShares) {
-              const amountBase = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.baseBalance / selectedVaultData?.quoteBalance
-              const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance;
-              const b = amountBase * selectedVaultData?.totalShares / selectedVaultData?.baseBalance
-              const shares = a > b ? b : a
-              setVaultInputStrings({
-                [type]: value,
-                'base': amountBase == 0n ? '' : customRound(
-                  Number(amountBase) /
-                  10 ** Number(tokendict[selectedVaultData?.baseAddress].decimals),
-                  3,
-                ).toString()
-              })
-              setVaultDepositAmounts({
-                shares,
-                [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
-                'base': amountBase,
-              });
-              setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
-              setVaultFirstTokenExceedsBalance(amountBase > tokenBalances[selectedVaultData?.baseAddress]);
+            const amountBase = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.baseBalance / selectedVaultData?.quoteBalance
+            const a = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVaultData?.totalShares / selectedVaultData?.quoteBalance;
+            const b = amountBase * selectedVaultData?.totalShares / selectedVaultData?.baseBalance
+            const shares = a > b ? b : a
+            setVaultInputStrings({
+              [type]: value,
+              'base': amountBase == 0n ? '' : customRound(
+                Number(amountBase) /
+                10 ** Number(tokendict[selectedVaultData?.baseAddress].decimals),
+                3,
+              ).toString()
+            })
+            setVaultDepositAmounts({
+              shares,
+              [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
+              'base': amountBase,
+            });
+            setVaultSecondTokenExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+            setVaultFirstTokenExceedsBalance(amountBase > tokenBalances[selectedVaultData?.baseAddress]);
           }
           else {
             setVaultInputStrings(prev => ({
@@ -605,7 +605,7 @@ const LP: React.FC<LPProps> = ({
 
   const handleVaultDeposit = async () => {
     if (!selectedVaultData || !account.connected) return;
-    
+
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
       setChain();
@@ -615,7 +615,7 @@ const LP: React.FC<LPProps> = ({
     try {
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultInputStrings.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultInputStrings.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
-      
+
       // Use 95% of desired amounts as minimum (5% slippage)
       const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
       const amountBaseMin = (amountBaseDesired * 95n) / 100n;
@@ -691,7 +691,7 @@ const LP: React.FC<LPProps> = ({
       setVaultInputStrings({ base: '', quote: '' });
       setVaultFirstTokenExceedsBalance(false);
       setVaultSecondTokenExceedsBalance(false);
-      
+
       refetch?.();
 
     } catch (e: any) {
@@ -701,7 +701,7 @@ const LP: React.FC<LPProps> = ({
 
   const handleVaultWithdraw = async () => {
     if (!selectedVaultData || !account.connected) return;
-    
+
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
       setChain();
@@ -710,7 +710,7 @@ const LP: React.FC<LPProps> = ({
 
     try {
       const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawAmount) * 1e18));
-      
+
       // Use 95% of expected amounts as minimum (5% slippage)
       const amountQuoteMin = 0n; // You'd want to calculate this properly
       const amountBaseMin = 0n; // You'd want to calculate this properly
@@ -737,7 +737,7 @@ const LP: React.FC<LPProps> = ({
       // Reset form
       setWithdrawAmount('');
       setWithdrawExceedsBalance(false);
-      
+
       // Refresh balances
       refetch?.();
 
@@ -1123,7 +1123,27 @@ const LP: React.FC<LPProps> = ({
     <div className="lp-content-wrapper">
       {!selectedVault && (
         <div className="lp-filter-row">
+
           <div className="lp-filter-buttons">
+            <div className="lp-tabs" data-active={activeTab}>
+              <button
+                className={`lp-tab ${activeTab === 'all' ? 'active' : ''}`}
+                onClick={() => setActiveTab('all')}
+              >
+                All LP Vaults
+              </button>
+              <button
+                className={`lp-tab ${activeTab === 'deposited' ? 'active' : ''}`}
+                onClick={() => setActiveTab('deposited')}
+              >
+                My Positions
+              </button>
+            </div>
+
+
+          </div>
+          <div className="lp-filter-search-container">
+            <div className="lp-filters">
             {(['All', 'LSTs', 'Stables', 'Unverified', 'Verified'] as const).map((filter) => (
               <button
                 key={filter}
@@ -1133,6 +1153,128 @@ const LP: React.FC<LPProps> = ({
                 {filter}
               </button>
             ))}
+            </div>
+            <div className="lp-search-container" ref={searchRef}>
+              <div
+                className="lp-search-input"
+                onClick={() => setIsSearchOpen(true)}
+              >
+                <Search size={16} className="lp-search-icon" />
+
+                {selectedTokens.map((token) => (
+                  <div key={token.symbol} className="lp-search-selected-token">
+                    <img src={token.icon} alt={token.symbol} className="lp-search-selected-icon" />
+                    <span>{token.symbol}</span>
+                    <button
+                      className="lp-search-remove-token"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeSelectedToken(token.symbol);
+                      }}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  placeholder={selectedTokens.length === 0 ? "Search" : ""}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="lp-search-field"
+                />
+              </div>
+
+              {isSearchOpen && (
+                <div className="lp-search-dropdown">
+                  <div className="lp-search-tokens">
+                    <div className="lp-favorites-container">
+                      {getFavoriteTokens().map((token) => (
+                        <div
+                          key={`favorite-${token.symbol}`}
+                          className="lp-search-token-favorites"
+                          onClick={() => handleTokenToggle(token)}
+                        >
+                          <img src={token.icon} alt={token.symbol} className="lp-search-token-icon-favorite" />
+                          {!defaultTokens.includes(token.symbol) && (
+                            <div className="lp-token-favorites">
+                              <span className="lp-search-token-symbol-favorite">{token.symbol}</span>
+                            </div>
+                          )}
+                          {!defaultTokens.includes(token.symbol) && (
+                            <button
+                              className="lp-favorite-close-button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleFavorite(token.address);
+                              }}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="lp-trending-header">
+                      <span className="lp-trending-title"> Default tokens</span>
+                      <div className="lp-trending-line"> </div>
+                    </div>
+                    {searchQuery.length > 0 && (
+                      <>
+                        {filteredTokens.length > 0 ? (
+                          filteredTokens.map((token) => (
+                            <div
+                              key={`search-${token.symbol}`}
+                              className="lp-search-token"
+                              onClick={() => handleTokenToggle(token)}
+                            >
+                              <Star
+                                size={18}
+                                className="lp-search-token-star"
+                                onClick={(e) => handleFavoriteToggle(token, e)}
+                                fill="none"
+                                color="#ffffff79"
+                              />
+                              <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
+                              <div className="lp-token-details">
+                                <span className="lp-search-token-symbol">{token.symbol}</span>
+                                <span className="lp-search-token-name">{token.name}</span>
+                              </div>
+                            </div>
+                          ))
+                        ) : (
+                          <div className="lp-search-empty">No tokens found</div>
+                        )}
+                      </>
+                    )}
+
+                    {searchQuery.length === 0 && getRemainingTokens().map((token) => (
+                      <div
+                        key={`remaining-${token.symbol}`}
+                        className="lp-search-token"
+                        onClick={() => handleTokenToggle(token)}
+                      >
+                        <Star
+                          size={18}
+                          className={`lp-search-token-star ${isTokenFavorited(token) ? 'favorited' : ''}`}
+                          onClick={(e) => handleFavoriteToggle(token, e)}
+                          fill={isTokenFavorited(token) ? '#aaaecf' : 'none'}
+                          color={isTokenFavorited(token) ? '#aaaecf' : '#ffffff79'}
+                        />
+
+                        <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
+                        <div className="lp-token-details">
+                          <span className="lp-search-token-symbol">{token.symbol}</span>
+                          <span className="lp-search-token-name">{token.name}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
           <button
             className="add-liquidity-button"
@@ -1141,153 +1283,13 @@ const LP: React.FC<LPProps> = ({
             <Plus size={16} />
             Add Liquidity
           </button>
+
         </div>
       )}
 
       <div className={`lp-rectangle ${selectedVault ? 'no-border' : ''}`}>
         {!selectedVault ? (
           <>
-            <div className="lp-header">
-              <div className="lp-filter">
-                <div className="lp-tabs" data-active={activeTab}>
-                  <button
-                    className={`lp-tab ${activeTab === 'all' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('all')}
-                  >
-                    All LP Vaults
-                  </button>
-                  <button
-                    className={`lp-tab ${activeTab === 'deposited' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('deposited')}
-                  >
-                    My Positions (1)
-                  </button>
-                </div>
-
-                <div className="lp-search-container" ref={searchRef}>
-                  <div
-                    className="lp-search-input"
-                    onClick={() => setIsSearchOpen(true)}
-                  >
-                    <Search size={16} className="lp-search-icon" />
-
-                    {selectedTokens.map((token) => (
-                      <div key={token.symbol} className="lp-search-selected-token">
-                        <img src={token.icon} alt={token.symbol} className="lp-search-selected-icon" />
-                        <span>{token.symbol}</span>
-                        <button
-                          className="lp-search-remove-token"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeSelectedToken(token.symbol);
-                          }}
-                        >
-                          ×
-                        </button>
-                      </div>
-                    ))}
-
-                    <input
-                      ref={searchInputRef}
-                      type="text"
-                      placeholder={selectedTokens.length === 0 ? "Search" : ""}
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="lp-search-field"
-                    />
-                  </div>
-
-                  {isSearchOpen && (
-                    <div className="lp-search-dropdown">
-                      <div className="lp-search-tokens">
-                        <div className="lp-favorites-container">
-                          {getFavoriteTokens().map((token) => (
-                            <div
-                              key={`favorite-${token.symbol}`}
-                              className="lp-search-token-favorites"
-                              onClick={() => handleTokenToggle(token)}
-                            >
-                              <img src={token.icon} alt={token.symbol} className="lp-search-token-icon-favorite" />
-                              {!defaultTokens.includes(token.symbol) && (
-                                <div className="lp-token-favorites">
-                                  <span className="lp-search-token-symbol-favorite">{token.symbol}</span>
-                                </div>
-                              )}
-                              {!defaultTokens.includes(token.symbol) && (
-                                <button
-                                  className="lp-favorite-close-button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleFavorite(token.address);
-                                  }}
-                                >
-                                  ×
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        <div className="lp-trending-header">
-                          <span className="lp-trending-title"> Default tokens</span>
-                          <div className="lp-trending-line"> </div>
-                        </div>
-                        {searchQuery.length > 0 && (
-                          <>
-                            {filteredTokens.length > 0 ? (
-                              filteredTokens.map((token) => (
-                                <div
-                                  key={`search-${token.symbol}`}
-                                  className="lp-search-token"
-                                  onClick={() => handleTokenToggle(token)}
-                                >
-                                  <Star
-                                    size={18}
-                                    className="lp-search-token-star"
-                                    onClick={(e) => handleFavoriteToggle(token, e)}
-                                    fill="none"
-                                    color="#ffffff79"
-                                  />
-                                  <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
-                                  <div className="lp-token-details">
-                                    <span className="lp-search-token-symbol">{token.symbol}</span>
-                                    <span className="lp-search-token-name">{token.name}</span>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="lp-search-empty">No tokens found</div>
-                            )}
-                          </>
-                        )}
-
-                        {searchQuery.length === 0 && getRemainingTokens().map((token) => (
-                          <div
-                            key={`remaining-${token.symbol}`}
-                            className="lp-search-token"
-                            onClick={() => handleTokenToggle(token)}
-                          >
-                            <Star
-                              size={18}
-                              className={`lp-search-token-star ${isTokenFavorited(token) ? 'favorited' : ''}`}
-                              onClick={(e) => handleFavoriteToggle(token, e)}
-                              fill={isTokenFavorited(token) ? '#aaaecf' : 'none'}
-                              color={isTokenFavorited(token) ? '#aaaecf' : '#ffffff79'}
-                            />
-
-                            <img src={token.icon} alt={token.symbol} className="lp-search-token-icon" />
-                            <div className="lp-token-details">
-                              <span className="lp-search-token-symbol">{token.symbol}</span>
-                              <span className="lp-search-token-name">{token.name}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
             <div className="lp-vaults-grid">
               <div className="lp-vaults-list-header">
                 <div className="lp-col lp-asset-col">Pool</div>
@@ -1411,9 +1413,9 @@ const LP: React.FC<LPProps> = ({
                         <AreaChart data={performanceData} margin={{ top: 5, right: 30, left: 0, bottom: 5 }}>
                           <defs>
                             <linearGradient id="performanceGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="0%" stopColor="#00b894" stopOpacity={0.4} />
-                              <stop offset="50%" stopColor="#00b894" stopOpacity={0.1} />
-                              <stop offset="100%" stopColor="#00b894" stopOpacity={0} />
+                              <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
+                              <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                              <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <XAxis
@@ -1429,11 +1431,11 @@ const LP: React.FC<LPProps> = ({
                           <Area
                             type="monotone"
                             dataKey="value"
-                            stroke="#00b894"
+                            stroke="#aaaecf"
                             strokeWidth={2}
                             fill="url(#performanceGrad)"
                             dot={false}
-                            activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#00b894", strokeWidth: 2 }}
+                            activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
                           />
                         </AreaChart>
                       </ResponsiveContainer>
@@ -1559,7 +1561,7 @@ const LP: React.FC<LPProps> = ({
                         Enter the amount of LP tokens you want to withdraw. You'll receive both tokens proportionally.
                       </p>
 
-                                                <div className="withdraw-section">
+                      <div className="withdraw-section">
                         <div className={`deposit-input-group ${withdrawExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
                           <div className="deposit-input-wrapper">
                             <input
@@ -1598,20 +1600,74 @@ const LP: React.FC<LPProps> = ({
                         </div>
 
                         <div className="withdraw-preview">
-                          <h5 style={{ color: '#ffffff79', fontSize: '0.8rem', marginBottom: '0.5rem' }}>You will receive:</h5>
+                          <div className="preview-title">Your position:</div>
                           <div className="withdraw-token-preview">
                             <div className="withdraw-token-item">
-                              <img src={tokendict[selectedVaultData.baseAddress]?.image} alt="" className="withdraw-token-icon" />
-                              <span>{selectedVaultData.baseAsset}</span>
-                              <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                                {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
+                              <div className="deposit-token-info">
+                                <img
+                                  src={tokendict[selectedVaultData.baseAddress]?.image}
+                                  alt=""
+                                  className="withdraw-token-icon"
+                                />
+                                <span className="token-symbol">
+                                  {selectedVaultData.baseAsset}
+                                </span>
+                              </div>
+                              <span className="token-amount">
+                                <span className="deposit-token-amount-before">
+                                  {(() => {
+                                    const currentAmount = (parseFloat(selectedVaultData.userBalance) * 0.5).toFixed(4);
+                                    return currentAmount;
+                                  })()}
+                                </span>
+                                {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
+                                  <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                      <path d="M5 12h14" />
+                                      <path d="m12 5 7 7-7 7" />
+                                    </svg>
+                                    {(() => {
+                                      const currentAmount = parseFloat(selectedVaultData.userBalance) * 0.5;
+                                      const withdrawnAmount = parseFloat(withdrawAmount) * 0.5;
+                                      const remainingAmount = currentAmount - withdrawnAmount;
+                                      return remainingAmount.toFixed(4);
+                                    })()}
+                                  </>
+                                )}
                               </span>
                             </div>
                             <div className="withdraw-token-item">
-                              <img src={tokendict[selectedVaultData.quoteAddress]?.image} alt="" className="withdraw-token-icon" />
-                              <span>{selectedVaultData.quoteAsset}</span>
-                              <span style={{ marginLeft: 'auto', color: '#fff' }}>
-                                {(parseFloat(withdrawAmount || '0') * 0.5).toFixed(4)}
+                              <div className="deposit-token-info">
+                                <img
+                                  src={tokendict[selectedVaultData.quoteAddress]?.image}
+                                  alt=""
+                                  className="withdraw-token-icon"
+                                />
+                                <span className="token-symbol">
+                                  {selectedVaultData.quoteAsset}
+                                </span>
+                              </div>
+                              <span className="token-amount">
+                                <span className="deposit-token-amount-before">
+                                  {(() => {
+                                    const currentAmount = (parseFloat(selectedVaultData.userBalance) * 0.5).toFixed(4);
+                                    return currentAmount;
+                                  })()}
+                                </span>
+                                {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
+                                  <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                      <path d="M5 12h14" />
+                                      <path d="m12 5 7 7-7 7" />
+                                    </svg>
+                                    {(() => {
+                                      const currentAmount = parseFloat(selectedVaultData.userBalance) * 0.5;
+                                      const withdrawnAmount = parseFloat(withdrawAmount) * 0.5;
+                                      const remainingAmount = currentAmount - withdrawnAmount;
+                                      return remainingAmount.toFixed(4);
+                                    })()}
+                                  </>
+                                )}
                               </span>
                             </div>
                           </div>

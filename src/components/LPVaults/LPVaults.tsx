@@ -76,12 +76,12 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
               <linearGradient id={`gradient-${vaultId}`} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={isPositive ? "#00b894" : "#d63031"}
+                  stopColor={isPositive ? "#aaaecf" : "#d63031"}
                   stopOpacity={0.3}
                 />
                 <stop
                   offset="100%"
-                  stopColor={isPositive ? "#00b894" : "#d63031"}
+                  stopColor={isPositive ? "#aaaecf" : "#d63031"}
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -89,7 +89,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
             <Area
               type="monotone"
               dataKey="value"
-              stroke={isPositive ? "#00b894" : "#d63031"}
+              stroke={isPositive ? "#aaaecf" : "#d63031"}
               strokeWidth={1.5}
               fill={`url(#gradient-${vaultId})`}
               dot={false}
@@ -835,9 +835,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       <AreaChart data={activeVaultPerformance}>
                         <defs>
                           <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#00b894" stopOpacity={0.4} />
-                            <stop offset="50%" stopColor="#00b894" stopOpacity={0.1} />
-                            <stop offset="100%" stopColor="#00b894" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#aaaecf" stopOpacity={0.4} />
+                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
+                            <stop offset="100%" stopColor="#aaaecf" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <XAxis
@@ -857,11 +857,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                         <Area
                           type="monotone"
                           dataKey="value"
-                          stroke="#00b894"
+                          stroke="#aaaecf"
                           strokeWidth={2}
                           fill="url(#vaultPerformanceGrad)"
                           dot={false}
-                          activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#00b894", strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>

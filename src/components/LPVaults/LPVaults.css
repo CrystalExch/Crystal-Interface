@@ -307,14 +307,7 @@
     justify-content:space-between;
     align-items:center
 }
-.lp-filter{
-    display:flex;
-    justify-content:space-between;
-    align-items:center;
-    gap:.5rem;
-    padding-top:15px;
-    width:100%
-}
+
 .lp-filter-buttons,.type-filters,.vault-action-buttons{
     display:flex;
     gap:.5rem;
@@ -1333,17 +1326,17 @@
     color:#000;
     border-color:#ddd
 }
-.token-option{
+.create-vault-token-option{
     display:flex;
     align-items:center;
-    gap:.75rem;
-    padding:1rem;
+    gap:.5rem;
+    padding: 0.5rem 1rem;
     cursor:pointer;
     transition:background-color.2s ease;
     color:#fff
 }
-.token-option:hover{
-    background-color:#2a2a2f
+.create-vault-token-option:hover{
+    background-color:#161619
 }
 .continue-button{
     width:100%;
@@ -2061,8 +2054,6 @@
 }
 .form-input:focus,.form-textarea:focus,.time-range-select-button:focus{
     outline:none;
-    border-color:#aaaecf;
-    box-shadow:0 0 0 2px rgba(170,174,207,.3)
 }
 .form-group small{
     display:block;
@@ -3282,14 +3273,6 @@
     .vault-tab-content{
         padding:.75rem
     }
-    .lp-filter-buttons{
-        gap:.25rem
-    }
-    .lp-filter-button{
-        font-size:.7rem;
-        padding:.4rem .6rem;
-        height:28px
-    }
     .add-liquidity-button{
         font-size:.8rem;
         padding:.45rem .7rem;
@@ -3498,16 +3481,6 @@
     }
 }
 @media(max-width:600px){
-    .lp-filter-row{
-        flex-direction:column;
-        gap:1rem;
-        align-items:center
-    }
-    .lp-filter-buttons{
-        justify-content:center;
-        flex-wrap:wrap;
-        width:100%
-    }
     .add-liquidity-button{
         max-width:127.56px;
         justify-content:center;
@@ -3526,13 +3499,13 @@
 }
 .selected-token-indicator{
     position:absolute;
-    right:40px;
+    left:15px;
     top:50%;
     transform:translateY(-50%);
     display:flex;
     align-items:center;
     gap:.5rem;
-    pointer-events:none
+    pointer-events:none;
 }
 .token-dropdown-button{
     position:absolute;
@@ -3548,19 +3521,22 @@
     align-items:center;
     justify-content:center
 }
-.token-dropdown{
+.create-vault-token-dropdown{
     position:absolute;
     top:100%;
     left:0;
     right:0;
-    background:#1a1a1a;
-    border:1px solid #333;
+    background:rgb(6,6,6);
     border-radius:8px;
     z-index:1000;
-    max-height:300px;
+    max-height:200px;
     overflow:hidden;
     margin-top:4px;
-    box-shadow:0 4px 12px rgba(0,0,0,.3)
+    box-shadow:0 4px 12px rgba(0,0,0,.3);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(170,174,207,.2) transparent;
+    border: 1px solid rgba(179,184,249,.1);
 }
 .token-search{
     display:flex;
@@ -4047,7 +4023,6 @@
     align-items:center;
     border:1.5px solid rgba(179,184,249,.1);
     border-radius:6px;
-    padding-left:5px
 }
 .market-selector-input{
     cursor:pointer;
@@ -4188,4 +4163,13 @@
 .withdraw-percentage-symbol{
   margin-left:0.25rem;
   font-size:4rem; font-weight:300; line-height:1;
+}
+
+
+.create-vault-token-icon{
+    width:25px;
+    height:25px;
+    border-radius:50%;
+    border:1px solid #131317;
+    margin-left:-6px
 }

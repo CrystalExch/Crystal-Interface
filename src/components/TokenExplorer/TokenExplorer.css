@@ -2635,6 +2635,8 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
   padding-top: 10px;
   max-height: calc(90vh - 350px);
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 206, 238, 0.2) transparent;
 }
 
 .display-section {

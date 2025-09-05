@@ -255,6 +255,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   }, [tokens, searchTerm, sortBy]);
 
 
+
 const fetchTokens = useCallback(async () => {
   try {
     const response = await fetch(SUBGRAPH_URL, {
@@ -263,7 +264,7 @@ const fetchTokens = useCallback(async () => {
       body: JSON.stringify({
         query: `
         {
-          launchpadTokens(first: 30, orderBy: createdAt, orderDirection: desc) {
+          launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
             id
             creator {
               id
@@ -275,7 +276,7 @@ const fetchTokens = useCallback(async () => {
             social1
             social2
             social3
-            createdAt
+            timestamp
             migrated
             migratedAt
             volumeNative
@@ -301,7 +302,7 @@ const fetchTokens = useCallback(async () => {
     if (!data.data?.launchpadTokens) return;
 
     const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
-      const price = Number(market.latestPrice) / 1e18;
+      const price = Number(market.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price; // Fixed field name
       
       let metadata: any = {};
       try {
@@ -313,7 +314,7 @@ const fetchTokens = useCallback(async () => {
         console.warn('Failed to load metadata for', market.metadataCID, e);
       }
 
-      let createdTimestamp = Number(market.createdAt);
+      let createdTimestamp = Number(market.timestamp); // Changed from createdAt to timestamp
       if (createdTimestamp > 1e10) {
         createdTimestamp = Math.floor(createdTimestamp / 1000);
       }
@@ -321,7 +322,7 @@ const fetchTokens = useCallback(async () => {
       return {
         ...defaultMetrics,
         id: market.id.toLowerCase(),
-        tokenAddress: market.tokenAddress.toLowerCase(),
+        tokenAddress: market.id.toLowerCase(), // Use id as tokenAddress since it's the same
         name: market.name,
         symbol: market.symbol,
         image: metadata.image || '',
@@ -334,12 +335,12 @@ const fetchTokens = useCallback(async () => {
         created: createdTimestamp,
         price,
         marketCap: price * TOTAL_SUPPLY,
-        buyTransactions: Number(market.buyCount),
-        sellTransactions: Number(market.sellCount),
-        volume24h: Number(market.volume24h) / 1e18,
+        buyTransactions: Number(market.buyTxs), // Fixed field name
+        sellTransactions: Number(market.sellTxs), // Fixed field name
+        volume24h: Number(market.volumeNative) / 1e18, // Fixed field name
         volumeDelta: 0,
         change24h: Math.random() * 200 - 100, // Mock data for now
-        createdBy: '0x0000000000000000000000000000000000000000', // Since we can't get creator from API
+        createdBy: market.creator?.id || '0x0000000000000000000000000000000000000000',
       } as Token;
     });
 

@@ -175,15 +175,6 @@
     align-items: center;
 }
 
-.lp-filter {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: .5rem;
-    padding-top: 15px;
-    width: 100%;
-}
-
 .lp-filter-buttons {
     display: flex;
     gap: .5rem;
@@ -211,7 +202,13 @@
     border-color: #2a2a2f;
     background-color: #ffffff05;
 }
-
+.lp-filter{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:.5rem;
+    width:100%
+}
 .lp-filter-button.active {
     color: #d8dcff;
     background-color: rgba(201, 194, 243, .05);
@@ -598,14 +595,16 @@
 }
 
 .lp-filter-row {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: 1rem;
+    margin-bottom: .75rem;
 }
 
 .add-liquidity-button {
+    position: absolute;
     display: flex;
     align-items: center;
     gap: .5rem;
@@ -623,6 +622,8 @@
     letter-spacing: -.5px;
     white-space: nowrap;
     flex-shrink: 0;
+    right:0;
+    top: -100px
 }
 
 .add-liquidity-button:hover {
@@ -1320,10 +1321,6 @@
 
 .withdraw-preview {
     margin-top: 1rem;
-    padding: 1rem;
-    background-color: rgba(170, 174, 207, .02);
-    border-radius: 8px;
-    border: 1px solid rgba(179, 184, 249, .05);
 }
 
 .withdraw-token-preview {
@@ -1336,8 +1333,7 @@
     display: flex;
     align-items: center;
     gap: .5rem;
-    padding: .5rem;
-    background-color: rgba(255, 255, 255, .02);
+    padding: .2rem;
     border-radius: 6px;
     font-size: .8rem;
     color: #ffffff79;
@@ -1350,7 +1346,6 @@
     border: 1px solid #131317;
 }
 
-/* Mobile Responsive Styles */
 @media (max-width: 1024px) {
     .vault-detail-layout {
         flex-direction: column;
@@ -1540,4 +1535,17 @@
 
 .earn-breadcrumb-arrow {
     transform: rotate(180deg);
+}
+.withdraw-token-name{
+    font-size: 1rem;
+    color: #ffffffcf;
+    font-weight: 400;
+}.lp-filter-search-container{
+    display: flex;
+    gap: 0.65rem
+}
+
+.lp-filters{
+    display: flex;
+    gap: 0.35rem;
 }
