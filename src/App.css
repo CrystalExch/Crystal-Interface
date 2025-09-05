@@ -1128,7 +1128,6 @@ body {
 .swap-button:disabled:not(.signing) {
   color: #0f0f12;
   cursor: not-allowed;
-  font-weight: 400;
   opacity: 0.4;
   transform: none;
   user-select: none;
@@ -3357,7 +3356,7 @@ body:has(.right-column.show) .blur-background-popups {
 }
 
 .search-markets-dropdown-popup {
-  border-radius: 16px;
+  border-radius: 6px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
   left: 50%;
   overflow: hidden;

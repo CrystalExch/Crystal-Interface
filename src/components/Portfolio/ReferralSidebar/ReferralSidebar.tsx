@@ -395,13 +395,11 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         >
           {isSigning ? (
             <>
-              <div className="spinner"></div>
-              Claiming...
+              <div className="loading-spinner"></div>
             </>
           ) : claimableFees == undefined ? (
             <>
-              <div className="spinner"></div>
-              Loading...
+              <div className="loading-spinner"></div>
             </>
           ) : totalClaimableFees === 0 ? (
             'Nothing to Claim'
