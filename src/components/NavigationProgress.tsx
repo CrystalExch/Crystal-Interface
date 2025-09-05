@@ -15,13 +15,13 @@ const NavigationProgress: React.FC<NavigationProgressProps> = ({
   useEffect(() => {
     const cleanPath = (path: string) => path.split('?')[0];
     const isTradeRoute = (path: string) =>
-      ['limit', 'send', 'scale','market'].includes(path.split('/')[1]);
+      ['swap', 'limit', 'send', 'scale', 'market'].includes(path.split('/')[1]);
 
     const currentPath = cleanPath(location.pathname);
     const prevPath = cleanPath(prevPathRef.current);
 
     if (
-      !(isTradeRoute(currentPath) && isTradeRoute(prevPath)) &&
+      !((isTradeRoute(currentPath) && isTradeRoute(prevPath)) && !(currentPath.split('/')[1] == 'swap' && prevPath.split('/')[1] == 'market') && !(currentPath.split('/')[1] == 'market' && prevPath.split('/')[1] == 'swap')) &&
       currentPath !== prevPath
     ) {
       setIsComplete(false);
