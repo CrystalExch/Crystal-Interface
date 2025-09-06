@@ -64,6 +64,8 @@ const LP: React.FC<LPProps> = ({
   refetch,
 }) => {
   const { activechain } = useSharedContext();
+  const [withdrawPercentage, setWithdrawPercentage] = useState('');
+  const [withdrawPreview, setWithdrawPreview] = useState<any>(null);
 
   const router = settings.chainConfig[activechain]?.router;
   const [activeTab, setActiveTab] = useState<'all' | 'deposited'>('all');
@@ -150,11 +152,13 @@ const LP: React.FC<LPProps> = ({
             quoteBalance: vaultDetails.result[0],
             baseBalance: vaultDetails.result[1],
             userBalance: 0n,
+            userShares: 0n,
             totalShares: vaultTotalSupply.result,
           }
-          if (account.address) {
-            vaultDict.userBalance = vaultUserBalance.result
-          }
+if (account.address) {
+  vaultDict.userBalance = vaultUserBalance.result;
+  vaultDict.userShares = vaultUserBalance.result;
+}
           setVaultList([vaultDict]);
         }
       } catch (e) {
@@ -169,6 +173,8 @@ const LP: React.FC<LPProps> = ({
     setActiveVaultDetailTab('deposit');
     setVaultInputStrings({ base: '', quote: '' });
     setWithdrawAmount('');
+    setWithdrawPercentage('');
+    setWithdrawPreview(null);
     setVaultFirstTokenExceedsBalance(false);
     setVaultSecondTokenExceedsBalance(false);
     setWithdrawExceedsBalance(false);
@@ -427,19 +433,6 @@ const LP: React.FC<LPProps> = ({
     }
   };
 
-  const handleWithdrawAmountChange = (value: string) => {
-    if (value === '' || /^\d*\.?\d*$/.test(value)) {
-      setWithdrawAmount(value);
-
-      if (value !== '' && selectedVaultData) {
-        const userLPBalance = parseFloat(selectedVaultData.userBalance);
-        const enteredAmount = parseFloat(value);
-        setWithdrawExceedsBalance(enteredAmount > userLPBalance);
-      } else {
-        setWithdrawExceedsBalance(false);
-      }
-    }
-  };
 
   const isAddLiquidityEnabled = () => {
     return depositAmounts.first !== '' && depositAmounts.second !== '' &&
@@ -453,9 +446,55 @@ const LP: React.FC<LPProps> = ({
       !vaultFirstTokenExceedsBalance && !vaultSecondTokenExceedsBalance;
   };
 
-  const isWithdrawEnabled = () => {
-    return withdrawAmount !== '' && parseFloat(withdrawAmount) > 0 && !withdrawExceedsBalance;
+  const handleWithdrawPercentageChange = (percentage: string) => {
+    let cappedPercentage = percentage;
+    if(cappedPercentage !== '' && parseFloat(cappedPercentage) > 100) {
+      cappedPercentage = '100';
+    }
+    setWithdrawPercentage(cappedPercentage);
+
+    if (cappedPercentage === '' || !selectedVaultData) {
+      if (cappedPercentage === '') {
+        setWithdrawAmount('');
+        setWithdrawExceedsBalance(false);
+        setWithdrawPreview(null);
+        return;
+      }
+    }
+
+const percentageValue = parseFloat(cappedPercentage);
+    if (percentageValue > 100) {
+      setWithdrawExceedsBalance(true);
+      setWithdrawPreview(null);
+      return;
+    }
+
+    const userLPBalance = BigInt(selectedVaultData.userShares || 0);
+const percentageBigInt = BigInt(Math.round(percentageValue * 100));
+    const sharesToWithdraw = (userLPBalance * percentageBigInt) / 10000n;
+
+    const totalShares = BigInt(selectedVaultData.totalShares || 0);
+    const quoteBalance = BigInt(selectedVaultData.quoteBalance || 0);
+    const baseBalance = BigInt(selectedVaultData.baseBalance || 0);
+
+    if (totalShares > 0n) {
+      const amountQuote = (quoteBalance * sharesToWithdraw) / totalShares;
+      const amountBase = (baseBalance * sharesToWithdraw) / totalShares;
+
+      setWithdrawAmount(sharesToWithdraw.toString());
+      setWithdrawPreview({
+        amountQuote,
+        amountBase,
+        shares: sharesToWithdraw
+      });
+      setWithdrawExceedsBalance(false);
+    }
   };
+
+  const isWithdrawEnabled = () => {
+    return withdrawPercentage !== '' && parseFloat(withdrawPercentage) > 0 && !withdrawExceedsBalance && withdrawPreview;
+  };
+
 
   const handleVaultDeposit = async () => {
     if (!selectedVaultData || !account.connected) return;
@@ -469,12 +508,6 @@ const LP: React.FC<LPProps> = ({
     try {
       const amountQuoteDesired = BigInt(Math.round(parseFloat(vaultInputStrings.quote) * Number(10n ** tokendict[selectedVaultData?.quoteAddress]?.decimals)));
       const amountBaseDesired = BigInt(Math.round(parseFloat(vaultInputStrings.base) * Number(10n ** tokendict[selectedVaultData?.baseAddress]?.decimals)));
-
-      // Use 95% of desired amounts as minimum (5% slippage)
-      const amountQuoteMin = (amountQuoteDesired * 95n) / 100n;
-      const amountBaseMin = (amountBaseDesired * 95n) / 100n;
-
-      // Approve tokens if needed
       const firstTokenBalance = getTokenBalance(selectedVaultData.baseAsset);
       const secondTokenBalance = getTokenBalance(selectedVaultData.quoteAsset);
 
@@ -522,7 +555,6 @@ const LP: React.FC<LPProps> = ({
         const approveSecondOp = await sendUserOperationAsync({ uo: approveSecondUo });
       }
 
-      // Deposit into vault
       const depositUo = {
         target: router as `0x${string}`,
         data: encodeFunctionData({
@@ -554,7 +586,7 @@ const LP: React.FC<LPProps> = ({
   };
 
   const handleVaultWithdraw = async () => {
-    if (!selectedVaultData || !account.connected) return;
+    if (!selectedVaultData || !account.connected || !withdrawPreview) return;
 
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
@@ -563,11 +595,10 @@ const LP: React.FC<LPProps> = ({
     }
 
     try {
-      const sharesToWithdraw = BigInt(Math.round(parseFloat(withdrawAmount) * 1e18));
+      const sharesToWithdraw = withdrawPreview.shares;
 
-      // Use 95% of expected amounts as minimum (5% slippage)
-      const amountQuoteMin = 0n; // You'd want to calculate this properly
-      const amountBaseMin = 0n; // You'd want to calculate this properly
+      const amountQuoteMin = (withdrawPreview.amountQuote * 95n) / 100n;
+      const amountBaseMin = (withdrawPreview.amountBase * 95n) / 100n;
 
       const withdrawUo = {
         target: router as `0x${string}`,
@@ -577,7 +608,7 @@ const LP: React.FC<LPProps> = ({
           args: [
             selectedVaultData.address as `0x${string}`,
             account.address,
-            selectedVaultData.userBalance,
+            sharesToWithdraw,
             amountQuoteMin,
             amountBaseMin
           ],
@@ -585,13 +616,12 @@ const LP: React.FC<LPProps> = ({
         value: 0n,
       };
 
-      const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
 
-      // Reset form
       setWithdrawAmount('');
+      setWithdrawPercentage('');
+      setWithdrawPreview(null);
       setWithdrawExceedsBalance(false);
 
-      // Refresh balances
       refetch?.();
 
     } catch (e: any) {
@@ -612,9 +642,8 @@ const LP: React.FC<LPProps> = ({
     }
     return 'Deposit';
   };
-
   const getWithdrawButtonText = () => {
-    if (withdrawExceedsBalance) {
+    if (withdrawExceedsBalance || (withdrawPercentage && parseFloat(withdrawPercentage) > 100)) {
       return 'Insufficient Balance';
     }
     return 'Withdraw';
@@ -997,15 +1026,15 @@ const LP: React.FC<LPProps> = ({
           </div>
           <div className="lp-filter-search-container">
             <div className="lp-filters">
-            {(['All', 'LSTs', 'Stables', 'Unverified', 'Verified'] as const).map((filter) => (
-              <button
-                key={filter}
-                className={`lp-filter-button ${activeFilter === filter ? 'active' : ''}`}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter}
-              </button>
-            ))}
+              {(['All', 'LSTs', 'Stables', 'Unverified', 'Verified'] as const).map((filter) => (
+                <button
+                  key={filter}
+                  className={`lp-filter-button ${activeFilter === filter ? 'active' : ''}`}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </button>
+              ))}
             </div>
             <div className="lp-search-container" ref={searchRef}>
               <div
@@ -1409,89 +1438,60 @@ const LP: React.FC<LPProps> = ({
                     <div className="vault-withdraw-form">
                       <h4 className="vault-form-title">Withdraw from {selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h4>
                       <p className="vault-form-description">
-                        Enter the amount of LP tokens you want to withdraw. You'll receive both tokens proportionally.
+                        Select the percentage of your position to withdraw. You'll receive both tokens proportionally.
                       </p>
 
                       <div className="withdraw-section">
-                        <div className={`deposit-input-group ${withdrawExceedsBalance ? 'lp-input-container-balance-error' : ''}`}>
-                          <div className="deposit-input-wrapper">
-                            <input
-                              type="text"
-                              placeholder="0.0"
-                              className={`deposit-amount-input ${withdrawExceedsBalance ? 'lp-input-balance-error' : ''}`}
-                              value={withdrawAmount}
-                              onChange={(e) => handleWithdrawAmountChange(e.target.value)}
-                            />
-                            <div className="deposit-token-badge">
-                              <div className="lp-token-pair-icons" style={{ width: '40px', height: '20px' }}>
-                                <img
-                                  src={tokendict[selectedVaultData.baseAddress]?.image}
-                                  alt=""
-                                  className="lp-token-icon lp-token-icon-first"
-                                  style={{ width: '20px', height: '20px' }}
-                                />
-                                <img
-                                  src={tokendict[selectedVaultData.quoteAddress]?.image}
-                                  alt=""
-                                  className="lp-token-icon lp-token-icon-second"
-                                  style={{ width: '20px', height: '20px', left: '15px' }}
-                                />
-                              </div>
-                              <span>LP Tokens</span>
+                        <div className="withdraw-amount-section">
+                          <div className="withdraw-percentage-input-container">
+                            <div className="withdraw-percentage-display">
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="0"
+                                value={withdrawPercentage}
+                                onChange={(e) => handleWithdrawPercentageChange(e.target.value.replace(/[^\d]/g, ''))}
+                                size={Math.max((withdrawPercentage || '0').length, 1)}
+                                style={{ width: `${Math.max((withdrawPercentage || '0').length, 1)}ch` }}
+                                className="withdraw-percentage-input"
+                              />
+                              <span style={{ color: `${withdrawPercentage ? '#FFF' : '#ededf571'}` }} className="withdraw-percentage-symbol">%</span>
                             </div>
                           </div>
-                          <div className="lp-deposit-balance-wrapper">
-                            <div className={`lp-deposit-usd-value ${withdrawExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
-                              ${(parseFloat(withdrawAmount || '0') * 1.5).toFixed(2)}
-                            </div>
-                            <div className="deposit-balance">
-                              Balance: {selectedVaultData.userBalance} LP
-                            </div>
+                          <div className="percentage-buttons">
+                            <button
+                              className={`percentage-btn ${withdrawPercentage === '25' ? 'active' : ''}`}
+                              onClick={() => handleWithdrawPercentageChange('25')}
+                            >
+                              25%
+                            </button>
+                            <button
+                              className={`percentage-btn ${withdrawPercentage === '50' ? 'active' : ''}`}
+                              onClick={() => handleWithdrawPercentageChange('50')}
+                            >
+                              50%
+                            </button>
+                            <button
+                              className={`percentage-btn ${withdrawPercentage === '75' ? 'active' : ''}`}
+                              onClick={() => handleWithdrawPercentageChange('75')}
+                            >
+                              75%
+                            </button>
+                            <button
+                              className={`percentage-btn ${withdrawPercentage === '100' ? 'active' : ''}`}
+                              onClick={() => handleWithdrawPercentageChange('100')}
+                            >
+                              Max
+                            </button>
                           </div>
                         </div>
-
                         <div className="withdraw-preview">
                           <div className="preview-title">Your position:</div>
                           <div className="withdraw-token-preview">
                             <div className="withdraw-token-item">
                               <div className="deposit-token-info">
                                 <img
-                                  src={tokendict[selectedVaultData.baseAddress]?.image}
-                                  alt=""
-                                  className="withdraw-token-icon"
-                                />
-                                <span className="token-symbol">
-                                  {selectedVaultData.baseAsset}
-                                </span>
-                              </div>
-                              <span className="token-amount">
-                                <span className="deposit-token-amount-before">
-                                  {(() => {
-                                    const currentAmount = (parseFloat(selectedVaultData.userBalance) * 0.5).toFixed(4);
-                                    return currentAmount;
-                                  })()}
-                                </span>
-                                {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
-                                  <>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
-                                      <path d="M5 12h14" />
-                                      <path d="m12 5 7 7-7 7" />
-                                    </svg>
-                                    {(() => {
-                                      const currentAmount = parseFloat(selectedVaultData.userBalance) * 0.5;
-                                      const withdrawnAmount = parseFloat(withdrawAmount) * 0.5;
-                                      const remainingAmount = currentAmount - withdrawnAmount;
-                                      return remainingAmount.toFixed(4);
-                                    })()}
-                                  </>
-                                )}
-                              </span>
-                            </div>
-                            <div className="withdraw-token-item">
-                              <div className="deposit-token-info">
-                                <img
                                   src={tokendict[selectedVaultData.quoteAddress]?.image}
-                                  alt=""
                                   className="withdraw-token-icon"
                                 />
                                 <span className="token-symbol">
@@ -1500,23 +1500,40 @@ const LP: React.FC<LPProps> = ({
                               </div>
                               <span className="token-amount">
                                 <span className="deposit-token-amount-before">
-                                  {(() => {
-                                    const currentAmount = (parseFloat(selectedVaultData.userBalance) * 0.5).toFixed(4);
-                                    return currentAmount;
-                                  })()}
+                                  {formatDisplayValue((BigInt(selectedVaultData?.quoteBalance || 0) * BigInt(selectedVaultData?.userShares || 0)) / BigInt(selectedVaultData?.totalShares || 1), Number(tokendict[selectedVaultData?.quoteAddress]?.decimals || 18))}
                                 </span>
-                                {withdrawAmount && parseFloat(withdrawAmount) > 0 && (
+                                {withdrawPreview?.amountQuote != undefined && (
                                   <>
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
                                       <path d="M5 12h14" />
                                       <path d="m12 5 7 7-7 7" />
                                     </svg>
-                                    {(() => {
-                                      const currentAmount = parseFloat(selectedVaultData.userBalance) * 0.5;
-                                      const withdrawnAmount = parseFloat(withdrawAmount) * 0.5;
-                                      const remainingAmount = currentAmount - withdrawnAmount;
-                                      return remainingAmount.toFixed(4);
-                                    })()}
+                                    {formatDisplayValue((BigInt(selectedVaultData?.quoteBalance || 0) * BigInt(selectedVaultData?.userShares || 0)) / BigInt(selectedVaultData?.totalShares || 1) - BigInt(withdrawPreview?.amountQuote || 0), Number(tokendict[selectedVaultData?.quoteAddress]?.decimals || 18))}
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                            <div className="withdraw-token-item">
+                              <div className="deposit-token-info">
+                                <img
+                                  src={tokendict[selectedVaultData.baseAddress]?.image}
+                                  className="withdraw-token-icon"
+                                />
+                                <span className="token-symbol">
+                                  {selectedVaultData.baseAsset}
+                                </span>
+                              </div>
+                              <span className="token-amount">
+                                <span className="deposit-token-amount-before">
+                                  {formatDisplayValue((BigInt(selectedVaultData?.baseBalance || 0) * BigInt(selectedVaultData?.userShares || 0)) / BigInt(selectedVaultData?.totalShares || 1), Number(tokendict[selectedVaultData?.baseAddress]?.decimals || 18))}
+                                </span>
+                                {withdrawPreview?.amountBase != undefined && (
+                                  <>
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-right-icon lucide-arrow-right" style={{ margin: '0 4px', opacity: 0.7 }}>
+                                      <path d="M5 12h14" />
+                                      <path d="m12 5 7 7-7 7" />
+                                    </svg>
+                                    {formatDisplayValue((BigInt(selectedVaultData?.baseBalance || 0) * BigInt(selectedVaultData?.userShares || 0)) / BigInt(selectedVaultData?.totalShares || 1) - BigInt(withdrawPreview?.amountBase || 0), Number(tokendict[selectedVaultData?.baseAddress]?.decimals || 18))}
                                   </>
                                 )}
                               </span>
@@ -1526,8 +1543,8 @@ const LP: React.FC<LPProps> = ({
                       </div>
 
                       <button
-                        className={`continue-button ${isWithdrawEnabled() ? 'enabled' : ''} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
-                        disabled={!isWithdrawEnabled()}
+                        className={`continue-button ${(withdrawPercentage == '' || parseFloat(withdrawPercentage) == 0 || withdrawExceedsBalance || !withdrawPreview) ? '' : 'enabled'} ${withdrawExceedsBalance ? 'lp-button-balance-error' : ''}`}
+                        disabled={(withdrawPercentage == '' || parseFloat(withdrawPercentage) == 0 || withdrawExceedsBalance || !withdrawPreview)}
                         onClick={handleVaultWithdraw}
                       >
                         {getWithdrawButtonText()}
