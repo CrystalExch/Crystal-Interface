@@ -1887,24 +1887,6 @@ const TokenRow = React.memo<{
             </Tooltip>
           )}
 
-          {displaySettings.visibleRows.bundlers && (
-            <Tooltip content="Bundle Holding">
-              <div className="explorer-holding-item">
-                <svg
-                  className="holding-icon"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 128 128"
-                  fill={token.bundleHolding > 5 ? "#eb7070ff" : "rgb(67, 254, 154)"}
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M117 68.26l-26-15a2 2 0 00-2 0l-26 15A2 2 0 0062 70v30a2 2 0 001 1.73l26 15a2 2 0 002 0l26-15a2 2 0 001-1.73V70A2 2 0 00117 68.26zm-27-11l22.46 13L90 82.7 68 70zM66 73.46L88 86.15v25.41L66 98.86zm26 38.1V86.18L114 74V98.85zM56 102.25l-16 8.82V86.72l17-10a2 2 0 10-2-3.44l-17 10L15.55 70.56 38 57.82l17 8.95a2 2 0 001.86-3.54l-18-9.46a2 2 0 00-1.92 0L11 68.53a2 2 0 00-1 1.74V99.73a2 2 0 001 1.74L37 116.2a2 2 0 002 0l19-10.46a2 2 0 10-1.92-3.5zm-42-28L36 86.74V111L14 98.56zM38 49a2 2 0 002-2V28.46L62 41.15V61a2 2 0 004 0V41.15L88 28.46V47a2 2 0 004 0V25a2 2 0 00-1-1.73l-26-15a2 2 0 00-2 0l-26 15A2 2 0 0036 25V47A2 2 0 0038 49zM64 12.31L86 25 64 37.69 42 25z" />
-                </svg>                <span className="explorer-holding-value" style={{ color: token.bundleHolding > 5 ? "#eb7070ff" : "rgb(67, 254, 154)" }}>
-                  {token.bundleHolding.toFixed(1)}%
-                </span>
-              </div>
-            </Tooltip>
-          )}
 
           {displaySettings.visibleRows.insiders && (
             <Tooltip content="Insider Holding">
