@@ -74,7 +74,7 @@
 
 @media(max-width: 1350px){
   .explorer-quick-buy-btn{
-    margin-top: 20px !important;
+    margin-top: 10px !important;
   }
 }
 
@@ -398,14 +398,6 @@
 }
 
 
-@media(max-width:1560px){
-  .explorer-quick-buy-btn{
-    display: none;
-  }
-  .explorer-token-row:hover .explorer-quick-buy-btn{
-    display: flex;
-  }
-}
 
 .explorer-additional-data{
   display: flex;
@@ -3100,8 +3092,7 @@ filter: brightness(0) saturate(100%) invert(76%) sepia(62%) saturate(4997%) hue-
   filter: brightness(0) saturate(100%) invert(93%) sepia(8%) saturate(1486%) hue-rotate(194deg) brightness(99%) contrast(96%);
 }
 
-/* Responsive adjustments for different sizes */
-@media(max-width: 1560px) {
+@media(max-width: 1300px) {
   .explorer-quick-buy-btn.size-small,
   .explorer-quick-buy-btn.size-large,
   .explorer-quick-buy-btn.size-mega {
