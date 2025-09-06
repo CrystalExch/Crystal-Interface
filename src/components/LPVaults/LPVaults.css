@@ -1747,7 +1747,6 @@
     display:flex;
     justify-content:space-between;
     align-items:flex-end;
-    margin-bottom:1rem;
     width:100%;
     position: relative;
 }
