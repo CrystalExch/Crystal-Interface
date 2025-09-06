@@ -3777,7 +3777,7 @@ body:has(.popup-blur) {
 }
 
 .akui-modal {
-  border: 1.5px solid #1a1a1de8 !important;
+  border: 1.5px solid #a0a8f61e !important;
   border-radius: 12px !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2) !important;
   background-color: #0f0f10 !important;
@@ -3785,7 +3785,7 @@ body:has(.popup-blur) {
 }
 
 .akui-input {
-  border: 1.5px solid #ffffff10 !important;
+  border: 1.5px solid #a0a8f61e !important;
   background: transparent !important;
   height: 34px !important;
   border-radius: 6px !important;
@@ -3817,7 +3817,7 @@ body:has(.popup-blur) {
 
 input[inputmode="numeric"][pattern="[0-9]*"] {
   border-width: 1.5px !important;
-  border-color: #ffffff16 !important;
+  border-color: #a0a8f61e !important;
 }
 
 input[name="email"],
@@ -3933,7 +3933,7 @@ input[type="email"] {
   height: 30px !important;
   border: none !important;
   background: none !important;
-  border: 1px solid #aaaecf1e !important;
+  border: 1.5px solid #a0a8f61e !important;
   border-radius: 6px !important;
 }
 
@@ -3945,7 +3945,7 @@ input[type="email"] {
 .akui-btn-auth {
   height: 30px !important;
   border: none !important;
-  border: 1px solid #aaaecf1e !important;
+  border: 1.5px solid #a0a8f61e !important;
   border-radius: 6px !important;
 }
 

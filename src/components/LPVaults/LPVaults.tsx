@@ -407,18 +407,6 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         {!selectedVaultStrategy && (
           <>
             <div className="vaults-header">
-              <div className="vaults-stats">
-                <div className="vault-stat">
-                  <span className="stat-label">Total Vaults</span>
-                  <span className="stat-value">{vaultList.length || 0}</span>
-                </div>
-                <div className="vault-stat">
-                  <span className="stat-label">Total Value Locked</span>
-                  <span className="stat-value">
-                    {formatUSDDisplay(vaultList.reduce((total: number, vault: any) => total + parseFloat(calculateTVL(vault)), 0))}
-                  </span>
-                </div>
-              </div>
               <button
                 className={`create-vault-button ${!account.connected ? 'disabled' : ''}`}
                 onClick={() => {

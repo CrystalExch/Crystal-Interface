@@ -146,7 +146,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               }}
             >
               <img src={candlestick} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('advancedView')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Trade')}</span>
             </Link>
             <Link
               to="/swap"
@@ -161,7 +161,7 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
               }}
             >
               <img src={swap} className="sidebar-icon" />
-              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('simpleView')}</span>
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('Swap')}</span>
             </Link>
             <Link
               to="/portfolio"
