@@ -143,11 +143,6 @@
     display:flex;
     flex-direction:column
 }
-.lp-detail-header{
-    display:flex;
-    align-items:center;
-    border-bottom:1px solid #ffffff0a
-}
 .lp-detail-top{
     display:flex;
     justify-content:space-between;
@@ -213,7 +208,7 @@
 .lp-listname{
     font-size:.9rem
 }
-.lp-container,.vaults-page-container{
+.lp-container {
     display:flex;
     flex-direction:column;
     align-items:center;
@@ -364,21 +359,7 @@
     z-index:1;
     background-color:rgba(201,194,243,.05)
 }
-.lp-tab{
-    position:relative;
-    z-index:2;
-    background:0 0;
-    border:none;
-    color:#ffffff79;
-    font-size:.75rem;
-    font-weight:300;
-    cursor:pointer;
-    transition:color.3s ease;
-    white-space:nowrap;
-    min-width:120px;
-    text-align:center;
-    height:30px
-}
+
 .lp-tab:hover,.lp-tab.active,.breadcrumb-link:hover,.breadcrumb-current,.add-liquidity-breadcrumb .breadcrumb-link:hover,.page-toggle-tab:hover,.page-toggle-tab.active,.contract-address,.leader-address,.twitter-link-description span,.token-dropdown-button:hover{
     color:#fff
 }
@@ -1587,7 +1568,7 @@
     border:none;
     color:#ffffff79;
     font-size:.8rem;
-    font-weight:400;
+    font-weight:300;
     cursor:pointer;
     transition:all.2s ease;
     padding:.25rem 1rem;
@@ -2578,12 +2559,12 @@
     color:#ffffff4d
 }
 .vaults-page-container{
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    width:calc(100% - 20px);
-    height:100%;
-    margin:0 10px
+    display: flex;
+    flex-direction: column;
+    align-self: center;
+    max-width: 1100px;
+    width: 100%;
+    padding-bottom: 20px;
 }
 .page-toggle-container{
     width:100%;

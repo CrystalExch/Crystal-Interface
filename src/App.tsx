@@ -5691,7 +5691,7 @@ function App() {
 
           const cfg = markets[marketKey];
           if (!cfg) return null;
-          cfg.latestPrice = m.latestPrice;
+          cfg.latestPrice = m.latestPrice / Number(cfg.priceFactor);
           const pf = Number(cfg.priceFactor);
           const decs = Math.max(0, Math.floor(Math.log10(pf)));
 
