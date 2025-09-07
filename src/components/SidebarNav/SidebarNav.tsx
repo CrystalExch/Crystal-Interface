@@ -15,6 +15,7 @@ import liquidity from '../../assets/liquidity.svg';
 import explorer from '../../assets/explorer.png';
 import tracker from '../../assets/tracker.svg';
 import earnvaults from '../../assets/vaults.png';
+import fun from '../../assets/fun.png';
 
 interface SidebarNavProps {
   simpleView: boolean;
@@ -200,7 +201,14 @@ const SidebarNav: React.FC<SidebarNavProps> = ({ simpleView, setSimpleView }) =>
                 {t('Earn')}
               </span>
             </Link>
-
+         <Link
+              to="/board"
+              className={`page-mode-button ${path === '/board' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <img src={fun} className="sidebar-icon" />
+              <span className={`sidebar-label ${isResizing ? 'no-transition' : ''}`}>{t('crystal.fun')}</span>
+            </Link>
             <Link
               to="/explorer"
               className={`page-mode-button ${path === '/explorer' ? 'active' : ''} ${isResizing ? 'no-transition' : ''}`}

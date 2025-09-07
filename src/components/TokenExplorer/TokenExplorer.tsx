@@ -617,6 +617,7 @@ const AlertsPopup: React.FC<{
 }> = ({ isOpen, onClose, settings, onSettingsChange }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+
   const sliderRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastVolumeRef = useRef<number>(settings.volume);
@@ -627,7 +628,12 @@ const AlertsPopup: React.FC<{
       [key]: !prev[key]
     }));
   };
-
+  const closeDropdown = (key: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [key]: false
+    }));
+  };
   const getSoundDisplayName = (soundPath: string) => {
     if (soundPath === stepaudio) return 'Step Audio';
     if (soundPath === kaching) return 'Ka-ching';
@@ -817,28 +823,52 @@ const AlertsPopup: React.FC<{
                         {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
                       </span>
                       <div className="sound-controls">
-                        <div
-                          className="sound-selector-dropdown"
-                          ref={el => dropdownRefs.current[key] = el}
-                        >
+                        <div className="sound-selector-dropdown">
                           <button
                             className="sound-selector"
                             onClick={() => toggleDropdown(key)}
+                            onBlur={(e) => {
+                              if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                                closeDropdown(key);
+                              }
+                            }}
                           >
                             <Volume2 size={14} />
                             <span>{getSoundDisplayName(settings.sounds[key])}</span>
+            <div className="sound-action-button-container">
 
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
+
+                              <Play size={14} />
+
+                            </button>
+
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
+
+                              <RotateCcw size={14} />
+
+                            </button>
+
+                          </div>
                             {openDropdowns[key] && (
                               <div className="sound-dropdown-content">
                                 <button
                                   className={`sound-dropdown-item ${settings.sounds[key] === stepaudio ? 'active' : ''}`}
-                                  onClick={() => selectSound(key, stepaudio)}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, stepaudio);
+                                    closeDropdown(key);
+                                  }}
                                 >
                                   Step Audio
                                 </button>
                                 <button
                                   className={`sound-dropdown-item ${settings.sounds[key] === kaching ? 'active' : ''}`}
-                                  onClick={() => selectSound(key, kaching)}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, kaching);
+                                    closeDropdown(key);
+                                  }}
                                 >
                                   Ka-ching
                                 </button>
@@ -848,22 +878,17 @@ const AlertsPopup: React.FC<{
                                     type="file"
                                     accept="audio/*"
                                     style={{ display: 'none' }}
-                                    onChange={(e) => handleFileUpload(key, e)}
+                                    onChange={(e) => {
+                                      handleFileUpload(key, e);
+                                      closeDropdown(key);
+                                    }}
                                   />
                                 </label>
-                              </div>
-                            )}
-                            
-            <div className="sound-action-button-container">
-                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
-                              <Play size={14} />
-                            </button>
-                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
-                              <RotateCcw size={14} />
-                            </button>
-                          </div>
-                          </button>
 
+                              </div>
+                              
+                            )}
+                          </button>
                         </div>
 
                       </div>

@@ -140,7 +140,6 @@ display: flex;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
 }
 
 .board-token-image-container {
@@ -173,16 +172,16 @@ display: flex;
 }
 
 .board-token-symbol {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #999;
   font-weight: 500;
   text-transform: uppercase;
+  margin-top: -5px;
 }
 
 .board-token-creator {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
   font-size: 0.85rem;
   flex-wrap: wrap;
 }
@@ -204,13 +203,13 @@ display: flex;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  gap: 5px;
 }
 
 .board-market-cap {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 5px;
 }
 
 .board-mc-label {
@@ -221,13 +220,13 @@ display: flex;
 }
 
 .board-mc-value {
-  font-size: 1rem;
+  font-size: .85rem;
   font-weight: 600;
   color: #ffffff;
 }
 
 .board-price-change {
-  font-size: 1rem;
+  font-size: .8rem;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 6px;
@@ -248,7 +247,7 @@ display: flex;
 }
 
 .board-token-description {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #ccc;
   line-height: 1.4;
   margin-bottom: 16px;
@@ -274,11 +273,12 @@ display: flex;
 }
 
 .board-progress-bar {
-  width: 100%;
+  width: 50px;
   height: 6px;
   background: #2a2a2a;
   border-radius: 3px;
   overflow: hidden;
+  margin-left: 5px;
 }
 
 .board-progress-fill {
@@ -366,21 +366,16 @@ display: flex;
   }
 }
 
-/* Hover effects for interactive elements */
 .board-token-card:hover .board-token-image {
   transform: scale(1.05);
   transition: transform 0.3s ease;
 }
 
-.board-token-card:hover .board-creator-address {
-  color: #ffed4e;
-}
 
 .board-token-card:hover .board-progress-fill {
   filter: brightness(1.1);
 }
 
-/* Custom scrollbar for webkit browsers */
 .board-container::-webkit-scrollbar {
   width: 8px;
 }
