@@ -143,7 +143,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.11';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.12';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -1479,12 +1479,8 @@ const TokenRow = React.memo<{
   onTokenClick: (token: Token) => void;
   onQuickBuy: (token: Token, amount: string) => void;
   onCopyToClipboard: (text: string) => void;
-  onWebsiteOpen: (url: string) => void;
-  onTwitterOpen: (handle: string) => void;
   onTwitterContractSearch: (address: string) => void;
   onImageSearch: (image: string) => void;
-  onTelegramOpen: (handle: string) => void;
-  onDiscordOpen: (handle: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
 }>((props) => {
@@ -1503,12 +1499,8 @@ const TokenRow = React.memo<{
     onTokenClick,
     onQuickBuy,
     onCopyToClipboard,
-    onWebsiteOpen,
-    onTwitterOpen,
     onTwitterContractSearch,
     onImageSearch,
-    onTelegramOpen,
-    onDiscordOpen,
     displaySettings,
     isHidden
   } = props;
@@ -1741,51 +1733,44 @@ const TokenRow = React.memo<{
               {displaySettings.visibleRows.socials && (
                 <>
                   {!!token.twitterHandle && (
-                    <button
+                    <a
                       className="explorer-twitter-btn"
-                      onClick={(e) => { e.stopPropagation(); onTwitterOpen(token.twitterHandle); }}
-                      title={`visit @${token.twitterHandle}`}
+                      href={token.twitterHandle}
+                      target="_blank"
+                      rel="noreferrer"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
-                    </button>
+                    </a>
                   )}
 
                   {!!token.website && (
-                    <button
-                      className="explorer-website-link"
-                      onClick={(e) => { e.stopPropagation(); onWebsiteOpen(token.website); }}
-                    >
+                    <a
+                      className="explorer-twitter-btn"
+                      href={token.website}
+                      target="_blank"
+                      rel="noreferrer"                    >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                       </svg>
-                    </button>
+                    </a>
                   )}
 
                   {!!token.telegramHandle && (
-                    <button
+                    <a
                       className="explorer-telegram-btn"
-                      onClick={(e) => { e.stopPropagation(); onTelegramOpen(token.telegramHandle); }}
-                      title="share on telegram"
+                      href={token.telegramHandle}
+                      target="_blank"
+                      rel="noreferrer"  
                     >
                       <img src={telegram} alt="telegram" />
-                    </button>
-                  )}
-
-                  {!!token.discordHandle && (
-                    <button
-                      className="explorer-discord-btn"
-                      onClick={(e) => { e.stopPropagation(); onDiscordOpen(token.discordHandle); }}
-                    >
-                      <img src={discord} alt="discord" />
-                    </button>
+                    </a>
                   )}
 
                   <button
                     className="explorer-twitter-btn"
                     onClick={(e) => { e.stopPropagation(); onTwitterContractSearch(token.tokenAddress); }}
-                    title="search contract on twitter"
                   >
                     <Search size={14} />
                   </button>
@@ -2472,7 +2457,12 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
-
+            const socials = [m.social1,m.social2,m.social3].map(s=>s?(/^https?:\/\//.test(s)?s:`https://${s}`):s)
+            const twitter = socials.find(s=>s?.startsWith("https://x.com")||s?.startsWith("https://twitter.com"))
+            if(twitter){socials.splice(socials.indexOf(twitter),1)}
+            const telegram = socials.find(s=>s?.startsWith("https://t.me"))
+            if(telegram){socials.splice(socials.indexOf(telegram),1)}
+            const website = socials[0]
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
@@ -2482,8 +2472,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               symbol: m.symbol,
               image: meta.image ?? '/discord.svg',
               description: meta.description ?? '',
-              twitterHandle: m.twitter ?? '',
-              website: m.website ?? '',
+              twitterHandle: twitter ?? '',
+              website: website ?? '',
               status: 'new',
               created: createdTimestamp,
               price,
@@ -2492,8 +2482,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               sellTransactions: Number(m.sellTxs),
               volume24h: Number(m.volumeNative) / 1e18,
               volumeDelta: 0,
-              telegramHandle: m.telegram ?? '',
-              discordHandle: m.discord ?? '',
+              telegramHandle: telegram ?? '',
             } as Token;
           })
         );
@@ -2686,12 +2675,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
-                          onTelegramOpen={handleTelegramOpen}
                           onTwitterContractSearch={handleTwitterContractSearch}
                           onImageSearch={handleImageSearch}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2798,12 +2783,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
-                          onTelegramOpen={handleTelegramOpen}
                           onTwitterContractSearch={handleTwitterContractSearch}
                           onImageSearch={handleImageSearch}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2912,12 +2893,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
                           onTwitterContractSearch={handleTwitterContractSearch}
                           onImageSearch={handleImageSearch}
-                          onTelegramOpen={handleTelegramOpen}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />

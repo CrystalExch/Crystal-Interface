@@ -4727,7 +4727,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.11`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.12`;
 
           const query = `
             query {
@@ -5625,7 +5625,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.11`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.12`;
 
         const query = `
           query {
@@ -5711,7 +5711,7 @@ function App() {
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
-          const volQ = Number(m.volume / 10 ** 6 ?? 0);
+          const volQ = Number(m.volume / 10 ** 6);
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const mk = marketKey;
@@ -6229,7 +6229,7 @@ function App() {
         setlimitPriceString(
           (
             Number(price) / Number(activeMarket.priceFactor)
-          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
         );
         if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
           setamountIn(
@@ -7407,7 +7407,7 @@ function App() {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -8124,7 +8124,7 @@ function App() {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -16104,7 +16104,7 @@ function App() {
                 setlimitPriceString(
                   (
                     Number(price) / Number(activeMarket.priceFactor)
-                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                 );
                 setamountOutSwap(
                   price != BigInt(0) && amountIn != BigInt(0)
