@@ -157,7 +157,7 @@ const Header: React.FC<HeaderProps> = ({
     const token = location.state.tokenData;
     const mergedData = { ...token, ...liveTokenData };
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
-    const bondingPercentage = Math.min((currentMarketCap / 25000) * 100, 100);
+    const bondingPercentage = Math.min((currentMarketCap / 10000) * 100, 100);
 
     return {
       symbol: token.symbol,

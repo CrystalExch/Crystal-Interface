@@ -145,7 +145,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.12';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -1536,8 +1536,6 @@ const TokenRow = React.memo<{
   onTokenClick: (token: Token) => void;
   onQuickBuy: (token: Token, amount: string) => void;
   onCopyToClipboard: (text: string) => void;
-  onTwitterContractSearch: (address: string) => void;
-  onImageSearch: (image: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
 }>((props) => {
@@ -1556,8 +1554,6 @@ const TokenRow = React.memo<{
     onTokenClick,
     onQuickBuy,
     onCopyToClipboard,
-    onTwitterContractSearch,
-    onImageSearch,
     displaySettings,
     isHidden
   } = props;
@@ -1726,7 +1722,13 @@ const TokenRow = React.memo<{
         <div
           ref={imageContainerRef}
           className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
-          onClick={() => onImageSearch(token.image)}
+          onClick={(e) => {
+          e.stopPropagation();
+          window.open(
+            `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
+            '_blank',
+            'noopener,noreferrer'
+          )}}
           onMouseEnter={() => onImageHover(token.id)}
           onMouseLeave={onImageLeave}
           style={token.status === 'graduated' || !displaySettings.progressBar
@@ -1795,6 +1797,7 @@ const TokenRow = React.memo<{
                       href={token.twitterHandle}
                       target="_blank"
                       rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -1807,7 +1810,9 @@ const TokenRow = React.memo<{
                       className="explorer-twitter-btn"
                       href={token.website}
                       target="_blank"
-                      rel="noreferrer"                    >
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
+                    >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                       </svg>
@@ -1819,18 +1824,34 @@ const TokenRow = React.memo<{
                       className="explorer-telegram-btn"
                       href={token.telegramHandle}
                       target="_blank"
-                      rel="noreferrer"  
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
-                      <img src={telegram} alt="telegram" />
+                      <img src={telegram}/>
                     </a>
                   )}
 
-                  <button
-                    className="explorer-twitter-btn"
-                    onClick={(e) => { e.stopPropagation(); onTwitterContractSearch(token.tokenAddress); }}
+                  {!!token.discordHandle && (
+                    <a
+                      className="explorer-discord-btn"
+                      href={token.discordHandle}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
+                    >
+                      <img src={discord}/>
+                    </a>
+                  )}
+
+                  <a
+                      className="explorer-telegram-btn"
+                      href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                   >
                     <Search size={14} />
-                  </button>
+                  </a>
                 </>
               )}
             </div>
@@ -2223,29 +2244,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   }, []);
 
-  const handleWebsiteOpen = useCallback((url: string) => {
-    if (!url) return;
-    const u = url.startsWith('http') ? url : `https://${url}`;
-    window.open(u, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTwitterOpen = useCallback((h: string) => {
-    const handle = h?.startsWith('http') ? h : `https://twitter.com/${h?.replace('@', '')}`;
-    window.open(handle, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTelegramOpen = useCallback((h: string) => {
-    const url = h?.startsWith('http') ? h : `https://t.me/${h?.replace('@', '')}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleDiscordOpen = useCallback((h: string) => {
-    const url = h?.startsWith('http') ? h : `https://${h}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTwitterContractSearch = useCallback((addr: string) => {
-    window.open(`https://twitter.com/search?q=${addr}`, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleImageSearch = useCallback((img: string) => {
-    window.open(`https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(img)}`, '_blank', 'noopener,noreferrer');
-  }, []);
 const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   const val = BigInt(amt || '0') * 10n ** 18n;
   if (val === 0n) return;
@@ -2519,6 +2517,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
             if(twitter){socials.splice(socials.indexOf(twitter),1)}
             const telegram = socials.find(s=>s?.startsWith("https://t.me"))
             if(telegram){socials.splice(socials.indexOf(telegram),1)}
+            const discord = socials.find(s=>s?.startsWith("https://discord.gg")||s?.startsWith("https://discord.com"))
+            if(discord){socials.splice(socials.indexOf(discord),1)}
             const website = socials[0]
             return {
               ...defaultMetrics,
@@ -2539,6 +2539,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               sellTransactions: Number(m.sellTxs),
               volume24h: Number(m.volumeNative) / 1e18,
               volumeDelta: 0,
+              discordHandle: discord ?? '',
               telegramHandle: telegram ?? '',
             } as Token;
           })
@@ -2732,8 +2733,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2840,8 +2839,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2950,8 +2947,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />

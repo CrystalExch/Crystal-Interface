@@ -135,45 +135,37 @@ const OrdersContent: React.FC<OrdersContentProps> = ({
             className="cancel-all-label"
             onClick={async () => {
               if (orders.length === 0) return;
-              const orderbatch: Record<
-                string,
-                { 0: any[]; 1: any[]; 2: any[]; 3: any[] }
-              > = {};
-              orders.forEach((order) => {
-                const k = markets[order[4]].address;
-                if (!orderbatch[k]) {
-                  orderbatch[k] = { 0: [], 1: [], 2: [], 3: [] };
-                }
-                orderbatch[k][0].push(0);
-                orderbatch[k][1].push(order[0]);
-                orderbatch[k][2].push(order[1]);
-                orderbatch[k][3].push(
-                  markets[order[4]].baseAddress ===
-                    '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE' &&
-                    order[3] === 0
-                    ? router
-                    : address,
-                );
-              });
-              const m = Object.keys(orderbatch) as `0x${string}`[];
-              const action = m.map((market) => orderbatch[market][0]);
-              const price = m.map((market) => orderbatch[market][1]);
-              const param1 = m.map((market) => orderbatch[market][2]);
-              const param2 = m.map((market) => orderbatch[market][3]);
+              const orderbatch: Record<string, any> = {}
+
+              orders.forEach(order => {
+                const k = markets[order[4]].address
+                if (!orderbatch[k]) orderbatch[k] = []
+                orderbatch[k].push({
+                  isRequireSuccess: false,
+                  action: 1n,
+                  param1: order[0], // price
+                  param2: order[1], // size/id
+                  param3: BigInt(0),  // cloid or extra id
+                })
+              })
+
+              const batches: any = Object.entries(orderbatch).map(([market, actions]) => ({
+                market: market as `0x${string}`,
+                actions,
+                options: BigInt(0)
+              }))
               try {
                 await setChain()
-                let hash;
                 setIsSigning(true);
-                hash = await sendUserOperationAsync({uo: multiBatchOrders(
-                  router,
-                  BigInt(0),
-                  m,
-                  action,
-                  price,
-                  param1,
-                  param2,
-                  '0x0000000000000000000000000000000000000000',
-                )})
+                await sendUserOperationAsync({
+                  uo: multiBatchOrders(
+                    router,
+                    BigInt(0),
+                    batches,
+                    BigInt(Math.floor(Date.now() / 1000) + 900),
+                    '0x0000000000000000000000000000000000000000',
+                  )
+                });
                 refetch()
               } catch (error) {
               } finally {

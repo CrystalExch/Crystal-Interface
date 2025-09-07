@@ -126,17 +126,16 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             body: JSON.stringify({ query }),
           });
           const json = await res1.json();
-          console.log(json);
-          allCandles = allCandles
-            .concat(json.data.series_collection?.[0]?.series1)
-            .concat(json.data.series_collection?.[0]?.series2)
-            .concat(json.data.series_collection?.[0]?.series3);
+          allCandles=allCandles
+            .concat(json.data.series_collection?.[0]?.series1||[])
+            .concat(json.data.series_collection?.[0]?.series2||[])
+            .concat(json.data.series_collection?.[0]?.series3||[])
         } catch (err) {
           console.error('Error fetching from subgraph:', err);
         }
         if (!isFetching) return;
 
-       allCandles.reverse();
+        allCandles.reverse();
         let lastClose: number | null = null;
         const outlierFactor = selectedInterval == '1d' ? 0.5 : selectedInterval == '4h' ? 0.25 : selectedInterval == '1h' ? 0.1 : selectedInterval == '15m' ? 0.05 : 0.01
         const subgraphData = allCandles.map((candle: any) => {
@@ -162,23 +161,19 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             volume: Number(candle.baseVolume) / (10 ** Number(activeMarket.baseDecimals)),
           };
         });
-
-        if (subgraphData && subgraphData.length) {
-          setData([
-            subgraphData,
-            normalizeTicker(activeMarket.baseAsset, activechain) +
-            normalizeTicker(activeMarket.quoteAsset, activechain) +
-            (selectedInterval === '1d'
-              ? '1D'
-              : selectedInterval === '4h'
-                ? '240'
-                : selectedInterval === '1h'
-                  ? '60'
-                  : selectedInterval.slice(0, -1)),
-            showChartOutliers
-          ]);
-        }
-
+        setData([
+          subgraphData,
+          normalizeTicker(activeMarket.baseAsset, activechain) +
+          normalizeTicker(activeMarket.quoteAsset, activechain) +
+          (selectedInterval === '1d'
+            ? '1D'
+            : selectedInterval === '4h'
+              ? '240'
+              : selectedInterval === '1h'
+                ? '60'
+                : selectedInterval.slice(0, -1)),
+          showChartOutliers
+        ]);
       } catch (err) {
         console.error('Error fetching subgraph candles:', err);
       }

@@ -10,8 +10,8 @@ import { showLoadingPopup, updatePopup } from '../../MemeTransactionPopup/MemeTr
 import walleticon from '../../../assets/wallet_icon.png';
 import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
+import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
-import { MaxUint256 } from 'ethers';
 
 interface PendingTransaction {
     id: string;
@@ -34,7 +34,7 @@ interface QuickBuyWidgetProps {
     sendUserOperationAsync?: any;
     account?: { connected: boolean; address: string; chainId: number };
     setChain?: () => void;
-    activechain?: string;
+    activechain: number;
     routerAddress?: string;
     setpopup?: (value: number) => void;
     tokenBalances?: { [key: string]: bigint };
@@ -107,39 +107,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     }, []);
 
-    const CrystalRouterAbi = [
-        {
-            "inputs": [{ "name": "token", "type": "address" }],
-            "name": "buy",
-            "outputs": [],
-            "stateMutability": "payable",
-            "type": "function"
-        },
-        {
-            "inputs": [
-                { "name": "token", "type": "address" },
-                { "name": "amount", "type": "uint256" }
-            ],
-            "name": "sell",
-            "outputs": [],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        }
-    ];
-
-    const CrystalLaunchpadToken = [
-        {
-            "inputs": [
-                { "name": "spender", "type": "address" },
-                { "name": "amount", "type": "uint256" }
-            ],
-            "name": "approve",
-            "outputs": [{ "name": "", "type": "bool" }],
-            "stateMutability": "nonpayable",
-            "type": "function"
-        }
-    ];
-
     const formatNumberWithCommas = (num: number, decimals = 2) => {
         if (num === 0) return "0";
         if (num >= 1e9) return `${(num / 1e9).toFixed(decimals)}B`;
@@ -153,7 +120,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         const balances = walletTokenBalances[address];
         if (!balances) return 0;
 
-        const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain || '']?.eth);
+        const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain]?.eth);
         if (ethToken && balances[ethToken.address]) {
             return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
         }
@@ -241,10 +208,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             return;
         }
 
-        const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
         const currentChainId = Number(account.chainId);
 
-        if (currentChainId !== targetChainId) {
+        if (currentChainId != activechain) {
             if (setChain) setChain();
             return;
         }
@@ -309,7 +275,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 data: encodeFunctionData({
                     abi: CrystalRouterAbi,
                     functionName: "buy",
-                    args: [tokenAddress as `0x${string}`],
+                    args: [true, tokenAddress as `0x${string}`, value, 0n],
                 }),
                 value,
             };
@@ -366,10 +332,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             return;
         }
 
-        const targetChainId = Number(settings?.chainConfig?.[activechain || '']?.chainId || activechain);
         const currentChainId = Number(account.chainId);
 
-        if (currentChainId !== targetChainId) {
+        if (currentChainId != activechain) {
             setChain?.();
             return;
         }
@@ -429,7 +394,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 data: encodeFunctionData({
                     abi: CrystalRouterAbi,
                     functionName: "sell",
-                    args: [tokenAddress as `0x${string}`, amountTokenWei],
+                    args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
                 }),
                 value: 0n,
             };

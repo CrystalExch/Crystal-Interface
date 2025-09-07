@@ -66,30 +66,6 @@ const Launchpad: React.FC<LaunchpadProps> = ({
   const [dragActive, setDragActive] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isLaunching, setIsLaunching] = useState(false);
-  const [_error, setError] = useState('');
-  const [_deployedTokenAddress, setDeployedTokenAddress] = useState('');
-  const [_deployedMarketAddress, setDeployedMarketAddress] = useState('');
-
-  useEffect(() => {
-    const ws = new WebSocket('wss://testnet-rpc.monad.xyz');
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          id: 1,
-          jsonrpc: '2.0',
-          method: 'eth_subscribe',
-          params: ['logs', { address: ROUTER_ADDRESS, topics: [TOKEN_CREATED_TOPIC] }],
-        })
-      );
-    };
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-      console.log('new token log:', msg.params.result);
-    };
-    ws.onerror = (e) => console.error('ws error', e);
-    return () => ws.close();
-  }, []);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -131,40 +107,14 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     (document.getElementById('file-input') as HTMLInputElement | null)?.click();
   };
 
-  const deployToken = async (metadataUri: string) => {
-    const op = await sendUserOperationAsync({
-      uo: {
-        target: ROUTER_ADDRESS,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: 'createToken',
-          args: [formData.name, formData.ticker, metadataUri, formData.description, formData.twitter, formData.website, formData.telegram],
-        }),
-      },
-    });
-  };
-
-  const extractAddresses = (receipt: any) => {
-    const event = receipt.logs.find(
-      (l: any) => l.topics?.[0] === TOKEN_CREATED_TOPIC
-    );
-    if (!event) throw new Error('TokenCreated event not found');
-    return {
-      token: `0x${event.topics[2].slice(26)}`,
-      market: `0x${event.topics[1].slice(26)}`,
-    };
-  };
-
   const handleLaunch = async () => {
     if (!formData.name || !formData.ticker || !formData.image) {
-      setError('Fill in name, ticker, and image');
       return;
     }
     if (!account.connected) return setpopup(4);
     if (account.chainId !== 10143) return setChain();
 
     setIsLaunching(true);
-    setError('');
     try {
       const imageKey = `img/${formData.ticker}-${Date.now()}.${formData.image.name.split('.').pop()
         }`;
@@ -190,14 +140,22 @@ const Launchpad: React.FC<LaunchpadProps> = ({
         metaKey,
         JSON.stringify(metadata),
         'application/json'
-      );      const receipt = await deployToken(metadataUrl);
-      const { token, market } = extractAddresses(receipt);
-      setDeployedTokenAddress(token);
-      setDeployedMarketAddress(market);
-    } catch (err: any) {
-    } finally {
+      );
+      await sendUserOperationAsync({
+        uo: {
+          target: ROUTER_ADDRESS,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: 'createToken',
+            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram],
+          }),
+        },
+      });
       setIsLaunching(false);
-      navigate('/explorer')
+      navigate('/explorer');
+    } catch (err: any) {
+      setIsLaunching(false);
+      return
     }
   };
 
@@ -252,8 +210,8 @@ const Launchpad: React.FC<LaunchpadProps> = ({
               <div className="launchpad-socials-grid">
                 {(['twitter', 'website', 'telegram'] as const).map((field) => (
                   <div key={field} className="launchpad-social-field">
-                    <label className="launchpad-label">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                    <input name={field} value={formData[field]} onChange={handleInputChange} className="launchpad-input" placeholder={`https://${field}.com/...`} disabled={isLaunching} />
+                    <label className="launchpad-label">{field == 'telegram' ? 'Discord/Telegram' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                    <input name={field} value={formData[field]} onChange={handleInputChange} className="launchpad-input" placeholder={field == 'telegram' ? 'https://t.me/...' : `https://${field}.com/...`} disabled={isLaunching} />
                   </div>
                 ))}
               </div>

@@ -122,7 +122,7 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.12';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
@@ -148,10 +148,6 @@ const USER_HOLDER_QUERY = `
     holder(id:$id){ ${HOLDER_FIELDS} }
   }
 `;
-
-const queryCache = new Map();
-const lastRequestTime = { value: 0 };
-const MIN_REQUEST_INTERVAL = 2000;
 
 const fmt = (v: number, d = 6) => {
   if (v === 0) return "0";
@@ -212,7 +208,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [settingsExpanded, setSettingsExpanded] = useState(false);
   const [slippageValue, _setSlippageValue] = useState("20");
   const [priorityFee, _setPriorityFee] = useState("0.01");
-  const [orderCenterHeight, setOrderCenterHeight] = useState<number>(350);
+  const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
+    const savedHeight = localStorage.getItem('orderCenterHeight');
+    if (savedHeight !== null) {
+      const parsedHeight = parseFloat(savedHeight);
+      if (!isNaN(parsedHeight)) {
+        return parsedHeight;
+      }
+    }
+
+    if (window.innerHeight > 1080) return 367.58;
+    if (window.innerHeight > 960) return 324.38;
+    if (window.innerHeight > 840) return 282.18;
+    if (window.innerHeight > 720) return 239.98;
+    return 198.78;
+  });
   const [isVertDragging, setIsVertDragging] = useState<boolean>(false);
   const [isSigning, setIsSigning] = useState(false);
   const [activeTradeType, setActiveTradeType] = useState<"buy" | "sell">("buy");
@@ -798,7 +808,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   amountIn
                   amountOut
                 }
-                ${'series300'} {
+                series: ${'series'+ (selectedInterval === '1m' ? '60' :
+                selectedInterval === '5m' ? '300' :
+                selectedInterval === '15m' ? '900' :
+                selectedInterval === '1h' ? '3600' :
+                selectedInterval === '4h' ? '14400' :
+                '86400')} {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close
                   }
@@ -843,8 +858,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           setTrades([]);
         }
 
-        if (data.candles?.klines) {
-          const bars = data.candles.klines
+        if (data.launchpadTokens?.[0]?.series?.klines) {
+          const bars = data.launchpadTokens?.[0]?.series?.klines
             .slice().reverse()
             .map((c: any) => ({
               time: Number(c.time) * 1000,
@@ -2402,10 +2417,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         sendUserOperationAsync={sendUserOperationAsync}
         account={account}
         setChain={setChain}
-        activechain={String(activechain)}
+        activechain={activechain}
         routerAddress={routerAddress}
         setpopup={setpopup}
-        tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n } : {}}
+        tokenBalances={tokenAddress ? { [tokenAddress]: rpcData?.rawBalance ?? 0n, ['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee']: walletTokenBalances['0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'] } : {}}
         refetch={refetchBalances}
         subWallets={subWallets}
         walletTokenBalances={walletTokenBalances}

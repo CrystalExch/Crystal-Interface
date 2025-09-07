@@ -863,8 +863,6 @@ function App() {
     if (window.innerHeight > 840) return 282.18;
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
-
-
   });
   const [showChartOutliers, setShowChartOutliers] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
@@ -4727,7 +4725,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.12`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
 
           const query = `
             query {
@@ -5625,7 +5623,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.12`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
 
         const query = `
           query {
@@ -6706,12 +6704,8 @@ function App() {
     }
 
     try {
-      let hash;
-      setIsSigning(true);
-
       const topOrder = orders[0];
-
-      hash = await cancelOrder(
+      await cancelOrder(
         sendUserOperationAsync,
         router,
         topOrder[3] == 1
@@ -6727,10 +6721,7 @@ function App() {
 
       refetch();
 
-    } catch (error) {
-      console.error('Error canceling top order:', error);
-    } finally {
-      setIsSigning(false);
+    } catch {
     }
   }, [connected, userchain, activechain, orders, router, markets, sendUserOperationAsync, refetch, isSigning]);
 
@@ -6740,17 +6731,14 @@ function App() {
     }
 
     try {
-      let hash;
-      setIsSigning(true);
-
       const orderbatch: Record<string, any> = {}
 
       orders.forEach(order => {
         const k = markets[order[4]].address
         if (!orderbatch[k]) orderbatch[k] = []
         orderbatch[k].push({
-          isRequireSuccess: true,
-          action: BigInt(0),
+          isRequireSuccess: false,
+          action: 1n,
           param1: order[0], // price
           param2: order[1], // size/id
           param3: BigInt(0),  // cloid or extra id
@@ -6763,21 +6751,19 @@ function App() {
         options: BigInt(0)
       }))
 
-      hash = await sendUserOperationAsync({
+      await sendUserOperationAsync({
         uo: multiBatchOrders(
           router,
           BigInt(0),
           batches,
+          BigInt(Math.floor(Date.now() / 1000) + 900),
           '0x0000000000000000000000000000000000000000',
         )
       });
 
       refetch();
 
-    } catch (error) {
-      console.error('Error canceling all orders:', error);
-    } finally {
-      setIsSigning(false);
+    } catch {
     }
   }, [connected, userchain, activechain, orders, markets, router, address, sendUserOperationAsync, refetch, isSigning]);
 
@@ -19790,6 +19776,7 @@ function App() {
                       router,
                       BigInt(finalAmountIn),
                       batches,
+                      BigInt(Math.floor(Date.now() / 1000) + 900),
                       usedRefAddress
                     )
                   })
@@ -19806,6 +19793,7 @@ function App() {
                         router,
                         BigInt(0),
                         batches,
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
@@ -19854,6 +19842,7 @@ function App() {
                         router,
                         BigInt(0),
                         batches,
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )
                     })
