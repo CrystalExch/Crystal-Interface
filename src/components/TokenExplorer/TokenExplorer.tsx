@@ -30,6 +30,8 @@ import { useNavigate } from 'react-router-dom';
 
 
 import stepaudio from '../../assets/step_audio.mp3';
+import kaching from '../../assets/ka-ching.mp3';
+
 
 export interface Token {
   id: string;
@@ -101,7 +103,6 @@ interface DisplaySettings {
     fundingTime: boolean;
     snipers: boolean;
     insiders: boolean;
-    bundlers: boolean;
     dexPaid: boolean;
   };
   metricColoring: boolean;
@@ -179,7 +180,6 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     fundingTime: false,
     snipers: true,
     insiders: true,
-    bundlers: true,
     dexPaid: false,
   },
   metricColoring: false,
@@ -379,11 +379,11 @@ const Tooltip: React.FC<{
       setShouldRender(false);
       setIsLeaving(false);
       fadeTimeoutRef.current = null;
-    }, 150); 
+    }, 150);
   }, []);
 
   useEffect(() => {
-    if (shouldRender && !isLeaving) { 
+    if (shouldRender && !isLeaving) {
       updatePosition();
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
@@ -616,15 +616,34 @@ const AlertsPopup: React.FC<{
   onSettingsChange: (settings: AlertSettings) => void;
 }> = ({ isOpen, onClose, settings, onSettingsChange }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+
   const sliderRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastVolumeRef = useRef<number>(settings.volume);
-
-  // Initialize audio object
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const toggleDropdown = (key: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+  const closeDropdown = (key: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [key]: false
+    }));
+  };
+  const getSoundDisplayName = (soundPath: string) => {
+    if (soundPath === stepaudio) return 'Step Audio';
+    if (soundPath === kaching) return 'Ka-ching';
+    if (soundPath.includes('blob:')) return 'Custom Audio';
+    return 'Custom Audio';
+  };
   useEffect(() => {
     audioRef.current = new Audio(stepaudio);
     audioRef.current.volume = settings.volume / 100;
-    
+
     return () => {
       if (audioRef.current) {
         audioRef.current.pause();
@@ -670,7 +689,6 @@ const AlertsPopup: React.FC<{
   }, []);
 
   const handleVolumeChangeEnd = useCallback(() => {
-    // Play audio when volume slider is released if volume changed
     if (audioRef.current && Math.abs(settings.volume - lastVolumeRef.current) > 0) {
       audioRef.current.currentTime = 0;
       audioRef.current.play().catch(console.error);
@@ -697,15 +715,15 @@ const AlertsPopup: React.FC<{
 
   const playSound = (soundType: keyof AlertSettings['sounds']) => {
     if (!audioRef.current) return;
-    
-    // For now, all sounds use the step audio, but this could be extended
+
     const soundUrl = settings.sounds[soundType];
-    
-    if (soundUrl === stepaudio || soundUrl === 'Default') {
-      audioRef.current.currentTime = 0;
-      audioRef.current.play().catch(console.error);
+
+    if (soundUrl === stepaudio || soundUrl === kaching || soundUrl === 'Default') {
+      const audio = new Audio(soundUrl === 'Default' ? stepaudio : soundUrl);
+      audio.volume = settings.volume / 100;
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
     } else {
-      // Handle custom uploaded sounds
       const customAudio = new Audio(soundUrl);
       customAudio.volume = settings.volume / 100;
       customAudio.play().catch(console.error);
@@ -717,48 +735,54 @@ const AlertsPopup: React.FC<{
     if (file) {
       const url = URL.createObjectURL(file);
       updateSoundSetting(soundType, url);
+      setOpenDropdowns(prev => ({ ...prev, [soundType]: false }));
     }
+    event.target.value = '';
   };
 
-    if (!isOpen) return null;
+  const selectSound = (soundType: keyof AlertSettings['sounds'], soundValue: string) => {
+    updateSoundSetting(soundType, soundValue);
+    setOpenDropdowns(prev => ({ ...prev, [soundType]: false }));
+  };
+  if (!isOpen) return null;
 
-    return (
-      <div className="alerts-popup-overlay" onClick={onClose}>
-        <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
-          <div className="alerts-popup-header">
-            <h3 className="alerts-popup-title">Alerts</h3>
-            <button className="alerts-close-button" onClick={onClose}>
-              <img src={closebutton} className="explorer-close-button" />
-            </button>
-          </div>
+  return (
+    <div className="alerts-popup-overlay" onClick={onClose}>
+      <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
+        <div className="alerts-popup-header">
+          <h3 className="alerts-popup-title">Alerts</h3>
+          <button className="alerts-close-button" onClick={onClose}>
+            <img src={closebutton} className="explorer-close-button" />
+          </button>
+        </div>
 
-          <div className="alerts-content">
-            <div className="alerts-section">
-              <div className="alerts-main-toggle">
-                <div>
-                  <h4 className="alerts-main-label">Sound Alerts</h4>
-                  <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
-                </div>
-                <div
-                  className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
-                  onClick={() => updateSetting('soundAlertsEnabled', !settings.soundAlertsEnabled)}
-                >
-                  <div className="toggle-slider" />
-                </div>
+        <div className="alerts-content">
+          <div className="alerts-section">
+            <div className="alerts-main-toggle">
+              <div>
+                <h4 className="alerts-main-label">Sound Alerts</h4>
+                <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
               </div>
-
+              <div
+                className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
+                onClick={() => updateSetting('soundAlertsEnabled', !settings.soundAlertsEnabled)}
+              >
+                <div className="toggle-slider" />
+              </div>
             </div>
 
-            {settings.soundAlertsEnabled && (
-              <div>
-                <div className="alerts-volume-slider">
-                  <div className="volume-label">
-                    <span className="volume-text">Volume</span>
-                    <span className="volume-value">{settings.volume}%</span>
-                  </div>
+          </div>
 
-                  <div className="meme-slider-container meme-slider-mode" style={{ position: 'relative' }}>
-               <input
+          {settings.soundAlertsEnabled && (
+            <div>
+              <div className="alerts-volume-slider">
+                <div className="volume-label">
+                  <span className="volume-text">Volume</span>
+                  <span className="volume-value">{settings.volume}%</span>
+                </div>
+
+                <div className="meme-slider-container meme-slider-mode" style={{ position: 'relative' }}>
+                  <input
                     type="range"
                     className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
                     min="0"
@@ -776,66 +800,113 @@ const AlertsPopup: React.FC<{
                   />
 
 
-                    <div className="meme-volume-slider-marks">
-                      {[0, 25, 50, 75, 100].map((mark) => (
-                        <span
-                          key={mark}
-                          className="meme-volume-slider-mark"
-                          data-active={settings.volume >= mark}
-                          data-percentage={mark}
-                          onClick={() => updateSetting('volume', mark)}
-                        >
-                          {mark}%
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="alerts-section">
-                  <div className="sound-options">
-                    {(['newPairs', 'pairMigrating', 'migrated'] as const).map((key) => (
-                      <div className="sound-option" key={key}>
-                        <span className="sound-option-label">
-                          {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
-                        </span>
-                        <div className="sound-controls">
-                          <label className="sound-selector">
-                          <Volume2 size={14} />
-                          {settings.sounds[key] === stepaudio ? 'Step Audio' : 
-                           settings.sounds[key] === 'Default' ? 'Default' : 
-                           settings.sounds[key].includes('blob:') ? 'Custom Audio' : 
-                           settings.sounds[key]}
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) => handleFileUpload(key, e)}
-                          />
-                          <div className="sound-action-button-container">
-                            <button className="sound-action-btn" onClick={() => playSound(key)} title="Play sound">
-                              <Play size={14} />
-                            </button>
-                            <button className="sound-action-btn" onClick={() => updateSoundSetting(key, stepaudio)} title="Reset to default">
-                              <RotateCcw size={14} />
-                            </button>
-                          </div>
-                        </label>
-                        </div>
-                      </div>
+                  <div className="meme-volume-slider-marks">
+                    {[0, 25, 50, 75, 100].map((mark) => (
+                      <span
+                        key={mark}
+                        className="meme-volume-slider-mark"
+                        data-active={settings.volume >= mark}
+                        data-percentage={mark}
+                        onClick={() => updateSetting('volume', mark)}
+                      >
+                        {mark}%
+                      </span>
                     ))}
                   </div>
-
-                  <p className="alerts-file-info">Maximum 5 seconds and 0.2MB file size</p>
                 </div>
               </div>
-            )}
-            <button className="alerts-continue-btn" onClick={onClose}>Continue</button>
+              <div className="alerts-section">
+                <div className="sound-options">
+                  {(['newPairs', 'pairMigrating', 'migrated'] as const).map((key) => (
+                    <div className="sound-option" key={key}>
+                      <span className="sound-option-label">
+                        {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
+                      </span>
+                      <div className="sound-controls">
+                        <div className="sound-selector-dropdown">
+                          <button
+                            className="sound-selector"
+                            onClick={() => toggleDropdown(key)}
+                            onBlur={(e) => {
+                              if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                                closeDropdown(key);
+                              }
+                            }}
+                          >
+                            <Volume2 size={14} />
+                            <span>{getSoundDisplayName(settings.sounds[key])}</span>
+            <div className="sound-action-button-container">
 
-          </div>
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
+
+                              <Play size={14} />
+
+                            </button>
+
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
+
+                              <RotateCcw size={14} />
+
+                            </button>
+
+                          </div>
+                            {openDropdowns[key] && (
+                              <div className="sound-dropdown-content">
+                                <button
+                                  className={`sound-dropdown-item ${settings.sounds[key] === stepaudio ? 'active' : ''}`}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, stepaudio);
+                                    closeDropdown(key);
+                                  }}
+                                >
+                                  Step Audio
+                                </button>
+                                <button
+                                  className={`sound-dropdown-item ${settings.sounds[key] === kaching ? 'active' : ''}`}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, kaching);
+                                    closeDropdown(key);
+                                  }}
+                                >
+                                  Ka-ching
+                                </button>
+                                <label className="sound-dropdown-item">
+                                  Upload Other
+                                  <input
+                                    type="file"
+                                    accept="audio/*"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => {
+                                      handleFileUpload(key, e);
+                                      closeDropdown(key);
+                                    }}
+                                  />
+                                </label>
+
+                              </div>
+                              
+                            )}
+                          </button>
+                        </div>
+
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <p className="alerts-file-info">Maximum 5 seconds and 0.2MB file size</p>
+              </div>
+            </div>
+          )}
+          <button className="alerts-continue-btn" onClick={onClose}>Continue</button>
+
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
 
 const ColorPicker: React.FC<{
@@ -1281,7 +1352,6 @@ const DisplayDropdown: React.FC<{
                         ['devHolding', 'Dev Holding'],
                         ['snipers', 'Snipers'],
                         ['insiders', 'Insiders'],
-                        ['bundlers', 'Bundlers'],
                       ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                     ).map(([k, label]) => (
                       <div key={k} className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`} onClick={() => updateRowSetting(k, !settings.visibleRows[k])}>
@@ -2248,64 +2318,64 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   const val = BigInt(amt || '0') * 10n ** 18n;
   if (val === 0n) return;
 
-  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
+    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
 
-  try {
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, { 
-        title: 'Sending transaction...', 
-        subtitle: `${amt} MON worth of ${token.symbol}`, 
-        amount: amt, 
-        amountUnit: 'MON',
-        tokenImage: token.image  
-      });
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          amount: amt,
+          amountUnit: 'MON',
+          tokenImage: token.image
+        });
+      }
+
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
+        value: val,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          variant: 'info',
+          tokenImage: token.image
+        });
+      }
+
+      const op = await sendUserOperationAsync({ uo });
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Quick Buy Complete',
+          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } finally {
+      dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
     }
-
-    const uo = {
-      target: routerAddress,
-      data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
-      value: val,
-    };
-
-    if (updatePopup) {
-      updatePopup(txId, { 
-        title: 'Confirming transaction...', 
-        subtitle: `${amt} MON worth of ${token.symbol}`, 
-        variant: 'info',
-        tokenImage: token.image 
-      });
-    }
-
-    const op = await sendUserOperationAsync({ uo });
-
-    if (updatePopup) {
-      updatePopup(txId, { 
-        title: 'Quick Buy Complete', 
-        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, 
-        variant: 'success', 
-        confirmed: true, 
-        isLoading: false,
-        tokenImage: token.image
-      });
-    }
-  } catch (e: any) {
-    console.error('Quick buy failed', e);
-    const msg = String(e?.message ?? '');
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-        subtitle: msg || 'Please try again.',
-        variant: 'error',
-        confirmed: true,
-        isLoading: false,
-        tokenImage: token.image 
-      });
-    }
-  } finally {
-    dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
-  }
-}, [routerAddress, sendUserOperationAsync]);
+  }, [routerAddress, sendUserOperationAsync]);
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
@@ -2384,14 +2454,24 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
       volumeDelta: 0,
       telegramHandle: meta?.telegram ?? '',
       discordHandle: meta?.discord ?? '',
+      creator: `0x${topics[3].slice(26)}`.toLowerCase(),
     };
 
     dispatch({ type: 'ADD_MARKET', token });
+    if (alertSettings.soundAlertsEnabled) {
+      try {
+        const audio = new Audio(alertSettings.sounds.newPairs);
+        audio.volume = alertSettings.volume / 100;
+        audio.play().catch(console.error);
+      } catch (error) {
+        console.error('Failed to play new pairs sound:', error);
+      }
+    }
 
     if (!marketSubs.current[market] && wsRef.current) {
       subscribe(wsRef.current, ['logs', { address: market }], (sub) => (marketSubs.current[market] = sub));
     }
-  }, [subscribe]);
+  }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume]);
 
   const updateMarket = useCallback((log: any) => {
     if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
@@ -2628,7 +2708,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-            </svg>           
+            </svg>
           </button>
           <button className="launch-token-btn" onClick={() => navigate('/launchpad')}>
             Launch a Token

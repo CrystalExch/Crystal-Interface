@@ -60,7 +60,7 @@ const formatPrice = (p: number, noDecimals = false) => {
 const formatTimeAgo = (createdTimestamp: number) => {
   const now = Math.floor(Date.now() / 1000);
   const ageSec = now - createdTimestamp;
-  
+
   if (ageSec < 60) {
     return `${ageSec}s ago`;
   } else if (ageSec < 3600) {
@@ -92,7 +92,7 @@ const MiniChart: React.FC<{ token: Token }> = ({ token }) => {
     const data: number[] = [];
     const basePrice = token.price || 1;
     const change = token.change24h || 0;
-    
+
     for (let i = 0; i < points; i++) {
       const progress = i / (points - 1);
       const randomVariation = (Math.random() - 0.5) * 0.1;
@@ -114,7 +114,7 @@ const MiniChart: React.FC<{ token: Token }> = ({ token }) => {
     data.forEach((price, index) => {
       const x = (index / (data.length - 1)) * canvas.width;
       const y = canvas.height - ((price - minPrice) / priceRange) * canvas.height;
-      
+
       if (index === 0) {
         ctx.moveTo(x, y);
       } else {
@@ -126,87 +126,84 @@ const MiniChart: React.FC<{ token: Token }> = ({ token }) => {
   }, [token.price, token.change24h]);
 
   return (
-    <canvas 
-      ref={canvasRef} 
-      width={80} 
-      height={40} 
+    <canvas
+      ref={canvasRef}
+      width={80}
+      height={40}
       className="board-mini-chart"
     />
   );
 };
 
 const TokenCard: React.FC<{ token: Token; onClick: () => void }> = ({ token, onClick }) => {
-  const changeColor = token.change24h >= 0 ? '#22c55e' : '#ef4444';
+  const changeColor = token.change24h >= 0 ? '#50f08d' : '#ef4444';
   const changeSign = token.change24h >= 0 ? '+' : '';
 
   return (
     <div className="board-token-card" onClick={onClick}>
-                    <div className="board-token-image-container">
-          <img 
-            src={token.image || '/placeholder-token.png'} 
-            alt={token.name}
-            className="board-token-image"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder-token.png';
-            }}
-          />
-        </div>
-        <div className="board-token-card-content">        
-      <div className="board-card-header">
-
-        <div className="board-token-info">
-          <div className="board-token-name">{token.name}</div>
-          <div className="board-token-symbol">{token.symbol}</div>
-        </div>
+      <div className="board-token-image-container">
+        <img
+          src={token.image || '/placeholder-token.png'}
+          alt={token.name}
+          className="board-token-image"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder-token.png';
+          }}
+        />
       </div>
+      <div className="board-token-card-body">
+      <div className="board-token-card-content">
+        <div className="board-card-header">
 
-      <div className="board-token-creator">
-        <div className="board-creator-info"> 
-        <span className="board-creator-address">
-          {token.createdBy ? 
-            `${token.createdBy.slice(0, 6)}...${token.createdBy.slice(-4)}` : 
-            '0x0000000000000000000000000000000000000000'
-          }
-        </span>
-        <span className="board-time-ago">{formatTimeAgo(token.created)}</span>
+          <div className="board-token-info">
+            <div className="board-token-name">{token.name}</div>
+            <div className="board-token-symbol">{token.symbol}</div>
+          </div>
         </div>
-      </div>
 
-      <div className="board-market-info">
-        <div className="board-market-cap">
-          <span className="board-mc-label">MC</span>
-          <span className="board-mc-value">{formatPrice(token.marketCap)}</span>
+        <div className="board-token-creator">
+          <div className="board-creator-info">
+            <span className="board-creator-address">
+              {token.createdBy ?
+                `${token.createdBy.slice(0, 6)}...${token.createdBy.slice(-4)}` :
+                '0x0000000000000000000000000000000000000000'
+              }
+            </span>
+            <span className="board-time-ago">{formatTimeAgo(token.created)}</span>
+          </div>
         </div>
-        <div className="board-price-change" style={{ color: changeColor }}>
-          {changeSign}{token.change24h.toFixed(2)}%
-        </div>
-      </div>
+
+        <div className="board-market-info">
+          <div className="board-market-cap">
+            <span className="board-mc-label">MC</span>
+            <span className="board-mc-value">{formatPrice(token.marketCap)}</span>
+          </div>
+          <div className="board-bonding-progress">
+            <div className="board-progress-bar">
+              <div
+                className="board-progress-fill"
+                style={{
+                  width: `${token.status === 'graduated' ? 100 : Math.min((token.marketCap / 10000) * 100, 100)}%`,
+                  backgroundColor: token.status === 'graduated' ? '#ffd700' : '#22c55e'
+                }}
+              />
             </div>
+          </div>
+          <div className="board-price-change" style={{ color: changeColor }}>
+            {changeSign}{token.change24h.toFixed(2)}%
+          </div>
+        </div>
+      </div>
       {token.description && (
         <div className="board-token-description">
-          {token.description.length > 100 
-            ? `${token.description.slice(0, 100)}...` 
+          {token.description.length > 100
+            ? `${token.description.slice(0, 100)}...`
             : token.description
           }
         </div>
       )}
-
-      <div className="board-card-footer">
-        <div className="board-bonding-progress">
-          <div className="board-progress-label">
-            {token.status === 'graduated' ? 'Graduated' : `${Math.min((token.marketCap / 10000) * 100, 100).toFixed(1)}% to graduation`}
-          </div>
-          <div className="board-progress-bar">
-            <div 
-              className="board-progress-fill" 
-              style={{ 
-                width: `${token.status === 'graduated' ? 100 : Math.min((token.marketCap / 10000) * 100, 100)}%`,
-                backgroundColor: token.status === 'graduated' ? '#ffd700' : '#22c55e'
-              }}
-            />
-          </div>
-        </div>
       </div>
+
     </div>
   );
 };
@@ -230,7 +227,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
     // Apply search filter
     if (searchTerm.trim()) {
       const term = searchTerm.toLowerCase();
-      filtered = tokens.filter(token => 
+      filtered = tokens.filter(token =>
         token.name.toLowerCase().includes(term) ||
         token.symbol.toLowerCase().includes(term) ||
         token.description.toLowerCase().includes(term)
@@ -256,13 +253,13 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
 
 
 
-const fetchTokens = useCallback(async () => {
-  try {
-    const response = await fetch(SUBGRAPH_URL, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({
-        query: `
+  const fetchTokens = useCallback(async () => {
+    try {
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          query: `
         {
           launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
             id
@@ -294,64 +291,64 @@ const fetchTokens = useCallback(async () => {
             }
           }
         }`,
-      }),
-    });
+        }),
+      });
 
-    const data = await response.json();
-    console.log(data)
-    if (!data.data?.launchpadTokens) return;
+      const data = await response.json();
+      console.log(data)
+      if (!data.data?.launchpadTokens) return;
 
-    const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
-      const price = Number(market.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price; // Fixed field name
-      
-      let metadata: any = {};
-      try {
-        const metaResponse = await fetch(market.metadataCID);
-        if (metaResponse.ok) {
-          metadata = await metaResponse.json();
+      const tokenPromises = data.data.launchpadTokens.map(async (market: any) => {
+        const price = Number(market.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price; // Fixed field name
+
+        let metadata: any = {};
+        try {
+          const metaResponse = await fetch(market.metadataCID);
+          if (metaResponse.ok) {
+            metadata = await metaResponse.json();
+          }
+        } catch (e) {
+          console.warn('Failed to load metadata for', market.metadataCID, e);
         }
-      } catch (e) {
-        console.warn('Failed to load metadata for', market.metadataCID, e);
-      }
 
-      let createdTimestamp = Number(market.timestamp); // Changed from createdAt to timestamp
-      if (createdTimestamp > 1e10) {
-        createdTimestamp = Math.floor(createdTimestamp / 1000);
-      }
+        let createdTimestamp = Number(market.timestamp); // Changed from createdAt to timestamp
+        if (createdTimestamp > 1e10) {
+          createdTimestamp = Math.floor(createdTimestamp / 1000);
+        }
 
-      return {
-        ...defaultMetrics,
-        id: market.id.toLowerCase(),
-        tokenAddress: market.id.toLowerCase(), // Use id as tokenAddress since it's the same
-        name: market.name,
-        symbol: market.symbol,
-        image: metadata.image || '',
-        description: metadata.description || '',
-        twitterHandle: metadata.twitter || '',
-        website: metadata.website || '',
-        telegramHandle: metadata.telegram || '',
-        discordHandle: metadata.discord || '',
-        status: 'new' as const,
-        created: createdTimestamp,
-        price,
-        marketCap: price * TOTAL_SUPPLY,
-        buyTransactions: Number(market.buyTxs), // Fixed field name
-        sellTransactions: Number(market.sellTxs), // Fixed field name
-        volume24h: Number(market.volumeNative) / 1e18, // Fixed field name
-        volumeDelta: 0,
-        change24h: Math.random() * 200 - 100, // Mock data for now
-        createdBy: market.creator?.id || '0x0000000000000000000000000000000000000000',
-      } as Token;
-    });
+        return {
+          ...defaultMetrics,
+          id: market.id.toLowerCase(),
+          tokenAddress: market.id.toLowerCase(), // Use id as tokenAddress since it's the same
+          name: market.name,
+          symbol: market.symbol,
+          image: metadata.image || '',
+          description: metadata.description || '',
+          twitterHandle: metadata.twitter || '',
+          website: metadata.website || '',
+          telegramHandle: metadata.telegram || '',
+          discordHandle: metadata.discord || '',
+          status: 'new' as const,
+          created: createdTimestamp,
+          price,
+          marketCap: price * TOTAL_SUPPLY,
+          buyTransactions: Number(market.buyTxs), // Fixed field name
+          sellTransactions: Number(market.sellTxs), // Fixed field name
+          volume24h: Number(market.volumeNative) / 1e18, // Fixed field name
+          volumeDelta: 0,
+          change24h: Math.random() * 200 - 100, // Mock data for now
+          createdBy: market.creator?.id || '0x0000000000000000000000000000000000000000',
+        } as Token;
+      });
 
-    const resolvedTokens = await Promise.all(tokenPromises);
-    setTokens(resolvedTokens);
-  } catch (error) {
-    console.error('Failed to fetch tokens:', error);
-  } finally {
-    setLoading(false);
-  }
-}, []);
+      const resolvedTokens = await Promise.all(tokenPromises);
+      setTokens(resolvedTokens);
+    } catch (error) {
+      console.error('Failed to fetch tokens:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   const setupWebSocket = useCallback(() => {
     if (wsRef.current) return;
@@ -367,7 +364,7 @@ const fetchTokens = useCallback(async () => {
       try {
         const msg = JSON.parse(data);
         if (msg?.method !== 'eth_subscription' || !msg.params?.result) return;
-        
+
         const log = msg.params.result;
         if (log.topics[0] === MARKET_UPDATE_EVENT) {
           const marketId = log.address.toLowerCase();
@@ -381,8 +378,8 @@ const fetchTokens = useCallback(async () => {
           const price = Number(priceRaw) / 1e18;
           const marketCap = price * TOTAL_SUPPLY;
 
-          setTokens(prev => prev.map(token => 
-            token.id === marketId 
+          setTokens(prev => prev.map(token =>
+            token.id === marketId
               ? { ...token, price, marketCap }
               : token
           ));
@@ -417,8 +414,8 @@ const fetchTokens = useCallback(async () => {
   }, [fetchTokens, setupWebSocket]);
 
   const handleTokenClick = (token: Token) => {
-    navigate(`/board/${token.tokenAddress}`, { 
-      state: { tokenData: token } 
+    navigate(`/board/${token.tokenAddress}`, {
+      state: { tokenData: token }
     });
   };
 
