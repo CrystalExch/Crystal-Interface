@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Share2, Eye, EyeOff } from 'lucide-react';
 import { readContracts } from '@wagmi/core';
 import { encodeFunctionData } from 'viem';
@@ -68,6 +68,7 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
   const [error, setError] = useState('');
   const [isBlurred, setIsBlurred] = useState(false);
   const [isEditingCode, setIsEditingCode] = useState(false);
+  const isFirst = useRef(true);
 
   const getDisplayAddress = (addr: string) =>
     addr && addr.startsWith('0x') ? `${addr.slice(0, 6)}...${addr.slice(-4)}` : addr;
@@ -77,17 +78,16 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
     : getDisplayAddress(address || '');
 
   useEffect(() => {
-    setClaimableFees(undefined);
-    if (!address) {
-      setCommissionBonus(0);
-      setUsername('');
-      setReferredCount(0);
-      setIsLoading(false);
+    if (isFirst.current) {
+      isFirst.current = false;
       return;
     }
-
-    // Set loading states when address changes
+    setClaimableFees(undefined);
+    setCommissionBonus(0);
+    setUsername('');
+    setReferredCount(0);
     setIsLoading(false);
+
     /* const fetchInfo = async () => {
       try {
         const res = await fetch(
@@ -395,13 +395,11 @@ const ReferralSidebar: React.FC<ReferralSidebarProps> = ({
         >
           {isSigning ? (
             <>
-              <div className="spinner"></div>
-              Claiming...
+              <div className="loading-spinner"></div>
             </>
           ) : claimableFees == undefined ? (
             <>
-              <div className="spinner"></div>
-              Loading...
+              <div className="loading-spinner"></div>
             </>
           ) : totalClaimableFees === 0 ? (
             'Nothing to Claim'

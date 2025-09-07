@@ -17,9 +17,8 @@ const CancelButton: React.FC<CancelButtonProps> = ({ order, router, refetch, sen
     if (isSigning) return;
     try {
       await setChain();
-      let hash;
       setIsSigning(true);
-      hash = await cancelOrder(
+      await cancelOrder(
         sendUserOperationAsync,
         router,
         order[3] == 1

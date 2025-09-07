@@ -123,13 +123,13 @@
 }
 
 .board-token-card {
-display: flex;
-  border-radius: 12px;
+  display: flex;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   gap: 15px;
   overflow: hidden;
+  background: none;
 }
 
 .board-token-card:hover {
@@ -140,7 +140,6 @@ display: flex;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 16px;
 }
 
 .board-token-image-container {
@@ -173,16 +172,16 @@ display: flex;
 }
 
 .board-token-symbol {
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #999;
   font-weight: 500;
   text-transform: uppercase;
+  margin-top: -5px;
 }
 
 .board-token-creator {
   display: flex;
   align-items: center;
-  margin-bottom: 16px;
   font-size: 0.85rem;
   flex-wrap: wrap;
 }
@@ -204,13 +203,13 @@ display: flex;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  gap: 5px;
 }
 
 .board-market-cap {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 5px;
 }
 
 .board-mc-label {
@@ -221,13 +220,13 @@ display: flex;
 }
 
 .board-mc-value {
-  font-size: 1rem;
+  font-size: .85rem;
   font-weight: 600;
   color: #ffffff;
 }
 
 .board-price-change {
-  font-size: 1rem;
+  font-size: .8rem;
   font-weight: 600;
   padding: 4px 8px;
   border-radius: 6px;
@@ -248,7 +247,7 @@ display: flex;
 }
 
 .board-token-description {
-  font-size: 0.9rem;
+  font-size: 0.75rem;
   color: #ccc;
   line-height: 1.4;
   margin-bottom: 16px;
@@ -274,11 +273,12 @@ display: flex;
 }
 
 .board-progress-bar {
-  width: 100%;
+  width: 50px;
   height: 6px;
   background: #2a2a2a;
   border-radius: 3px;
   overflow: hidden;
+  margin-left: 5px;
 }
 
 .board-progress-fill {
@@ -316,26 +316,12 @@ display: flex;
   color: #666;
 }
 
-/* Loading skeleton animation */
-@keyframes boardPulse {
-  0%, 100% {
-    opacity: 0.4;
-  }
-  50% {
-    opacity: 0.8;
-  }
-}
-
-.board-token-card.loading {
-  animation: boardPulse 2s infinite;
-}
 
 .board-token-card.loading * {
   background: #2a2a2a;
   color: transparent;
 }
 
-/* Responsive adjustments */
 @media (max-width: 480px) {
   .board-container {
     padding: 16px 12px;
@@ -366,21 +352,16 @@ display: flex;
   }
 }
 
-/* Hover effects for interactive elements */
 .board-token-card:hover .board-token-image {
   transform: scale(1.05);
   transition: transform 0.3s ease;
 }
 
-.board-token-card:hover .board-creator-address {
-  color: #ffed4e;
-}
 
 .board-token-card:hover .board-progress-fill {
   filter: brightness(1.1);
 }
 
-/* Custom scrollbar for webkit browsers */
 .board-container::-webkit-scrollbar {
   width: 8px;
 }
@@ -407,4 +388,159 @@ display: flex;
 .board-creator-info{
     display: flex;
     gap: 6px;
+}
+
+
+.board-token-card.skeleton {
+  pointer-events: none;
+  cursor: default;
+}
+
+.board-token-card.skeleton * {
+  color: transparent !important;
+  position: relative;
+  overflow: hidden;
+}
+
+.board-token-card.skeleton .board-token-image-container {
+  background: var(--skeleton-bg) !important;
+  border-radius: 8px !important;
+  border: none !important
+}
+
+.board-token-card.skeleton .board-token-image {
+  background: var(--skeleton-bg) !important;
+  border-radius: 8px !important;
+}
+
+.board-token-card.skeleton .board-token-name {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 20px !important;
+  width: 140px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-token-symbol {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 20px !important;
+  width: 60px !important;
+  display: inline-block !important;
+  margin-left: 5px;
+}
+
+.board-token-card.skeleton .board-creator-address {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 14px !important;
+  width: 100px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-time-ago {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 14px !important;
+  width: 50px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-mc-label {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 14px !important;
+  width: 25px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-mc-value {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 14px !important;
+  width: 60px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-price-change {
+  background: var(--skeleton-bg) !important;
+  border-radius: 6px !important;
+  height: 22px !important;
+  width: 70px !important;
+  display: inline-block !important;
+}
+
+.board-token-card.skeleton .board-progress-bar {
+  background: var(--skeleton-bg) !important;
+  border-radius: 3px !important;
+}
+
+.board-token-card.skeleton .board-progress-fill {
+  background: rgba(170, 174, 207, 0.3) !important;
+  border-radius: 3px !important;
+  width: 60% !important;
+}
+
+.board-token-card.skeleton .board-token-description {
+  background: var(--skeleton-bg) !important;
+  border-radius: 4px !important;
+  height: 87px !important;
+  width: 100% !important;
+  display: block !important;
+  margin-top: 12px !important;
+  margin-bottom: 0;
+}
+
+
+.board-token-card.skeleton .board-progress-fill::before {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(170, 174, 207, 0.4),
+    transparent
+  );
+}
+
+.board-token-card.skeleton .board-token-card-body::before,
+.board-token-card.skeleton .board-token-card-content::before,
+.board-token-card.skeleton .board-card-header::before,
+.board-token-card.skeleton .board-token-info::before,
+.board-token-card.skeleton .board-token-creator::before,
+.board-token-card.skeleton .board-creator-info::before,
+.board-token-card.skeleton .board-market-info::before,
+.board-token-card.skeleton .board-market-cap::before,
+.board-token-card.skeleton .board-bonding-progress::before {
+  display: none !important;
+}
+
+:root {
+  --skeleton-bg: rgba(189, 189, 235, 0.08);        
+  --skeleton-meme-shimmer: rgba(226, 230, 247, 0.1);  
+}
+
+
+.board-token-card.skeleton .board-token-image-container {
+  background: var(--skeleton-bg) !important;
+  border-radius: 8px !important;
+  border: none !important;
+}
+
+.board-token-card.skeleton .board-token-image {
+  background: transparent !important; /* Remove background from inner image */
+  border-radius: 8px !important;
+}
+
+/* Remove any existing shimmer animations and prevent them */
+.board-token-card.skeleton,
+.board-token-card.skeleton *,
+.board-token-card.skeleton *::before,
+.board-token-card.skeleton *::after {
+  animation: none !important;
+}
+
+/* Ensure no shimmer effects are applied */
+.board-token-card.skeleton .board-token-image-container::before,
+.board-token-card.skeleton .board-token-image::before {
+  display: none !important;
+  content: none !important;
 }

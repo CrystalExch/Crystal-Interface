@@ -266,6 +266,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   setIsVaultDepositSigning,
   handleSetChain,
   handleSubwalletTransfer,
+  createSubWallet,
   signTypedDataAsync,
   keccak256,
   Wallet,
@@ -800,47 +801,6 @@ const Portfolio: React.FC<PortfolioProps> = ({
       alert('Distribution failed. Please try again.');
     } finally {
       setIsVaultDepositSigning(false);
-    }
-  };
-
-  const createPortfolioSubWallet = async () => {
-    try {
-      if (!signTypedDataAsync || !keccak256 || !Wallet) {
-        return;
-      }
-
-      const randomAccountNumber = Math.floor(Math.random() * 9000) + 1000;
-
-      const privateKey = keccak256(await signTypedDataAsync({
-        typedData: {
-          types: {
-            createCrystalOneCT: [
-              { name: 'version', type: 'string' },
-              { name: 'account', type: 'uint256' },
-            ],
-          },
-          primaryType: 'createCrystalOneCT',
-          message: {
-            version: 'Crystal Testnet',
-            account: BigInt(randomAccountNumber),
-          }
-        }
-      }));
-
-      const tempWallet = new Wallet(privateKey);
-      const walletAddress = tempWallet.address;
-
-      const newWallet = {
-        address: walletAddress,
-        privateKey: privateKey
-      };
-
-      const updatedWallets = [...subWallets, newWallet];
-      setSubWallets(updatedWallets);
-      saveSubWalletsToStorage(updatedWallets);
-
-      showWalletCreated();
-    } catch (error) {
     }
   };
 
@@ -2193,7 +2153,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                   </button>
                   <button
                     className="create-wallet-button"
-                    onClick={createPortfolioSubWallet}
+                    onClick={createSubWallet}
                   >
                     Create Subwallet
                   </button>
@@ -2208,7 +2168,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
                     <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '16px' }}>
                       <button
                         className="create-wallet-cta-button"
-                        onClick={createPortfolioSubWallet}
+                        onClick={createSubWallet}
                       >
                         Create Subwallet
                       </button>
@@ -2900,8 +2860,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('margin')}
+              className="portfolio-tab-title margin"
             >
               Margin
             </span>
@@ -2961,8 +2920,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('margin')}
+              className="portfolio-tab-title margin"
             >
               Margin
             </span>

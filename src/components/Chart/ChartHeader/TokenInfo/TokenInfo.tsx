@@ -44,7 +44,7 @@ const createColorGradient = (base: string) => {
 };
 
 const calculateBondingPercentage = (marketCap: number) => {
-  const bondingPercentage = Math.min((marketCap / 25000) * 100, 100);
+  const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
   return bondingPercentage;
 };
 
@@ -183,7 +183,7 @@ const handleTwitterOpen = (handle: string) => {
 
   const handleImageSearch = (imageUrl: string) => {
     window.open(
-      `https://www.google.com/searchbyimage?image_url=${encodeURIComponent(imageUrl)}`,
+      `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(imageUrl)}`,
       '_blank',
       'noopener,noreferrer'
     );
@@ -515,51 +515,55 @@ const handleTwitterOpen = (handle: string) => {
               </div>
 
               <div className="meme-interface-token-meta-row">
-                <span className="meme-interface-token-created">{formatTimeAgo(memeTokenData.created)}</span>
+                <span className="meme-interface-token-created">{formatTimeAgo(Number(memeTokenData.created))}</span>
 
                 <div className="meme-interface-token-social-links">
-                  {memeTokenData.website && (
-                    <button
-                      className="meme-interface-social-btn"
-                      onClick={() => handleWebsiteOpen(memeTokenData.website!)}
-                      title="Visit website"
-                    >
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
-                      </svg>
-                    </button>
-                  )}
 
                   {memeTokenData.twitterHandle && (
-                    <button
+                    <a
                       className="meme-interface-social-btn"
-                      onClick={() => handleTwitterOpen(memeTokenData.twitterHandle!)}
-                      title={`@${memeTokenData.twitterHandle}`}
+                      href={memeTokenData.twitterHandle}
+                      target="_blank"
+                      rel="noreferrer"
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
-                    </button>
+                    </a>
                   )}
 
+                  {memeTokenData.website && (
+                    <a
+                      className="meme-interface-social-btn"
+                      href={memeTokenData.website}
+                      target="_blank"
+                      rel="noreferrer"                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
+                      </svg>
+                    </a>
+                  )}
+                  
                   {memeTokenData.telegramHandle && (
-                    <button
-                      className="meme-interface-social-btn-png"
-                      onClick={() => handleTelegramOpen(memeTokenData.telegramHandle!)}
-                      title="Visit Telegram"
+                    <a
+                      className="explorer-telegram-btn"
+                      href={memeTokenData.telegramHandle}
+                      target="_blank"
+                      rel="noreferrer"  
                     >
-                      <img src={telegram} alt="telegram" width="14" height="14" />
-                    </button>
+                      <img src={telegram} alt="discord" />
+                    </a>
                   )}
 
                   {memeTokenData.discordHandle && (
-                    <button
-                      className="meme-interface-social-btn-png"
-                      onClick={() => handleDiscordOpen(memeTokenData.discordHandle!)}
-                      title="Visit Discord"
+                    <a
+                      className="explorer-discord-btn"
+                      href={memeTokenData.discordHandle}
+                      target="_blank"
+                      rel="noreferrer"  
                     >
-                      <img src={discord} alt="discord" width="14" height="14" />
-                    </button>
+                      <img src={discord} alt="discord" />
+                    </a>
                   )}
 
                   <button

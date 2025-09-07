@@ -392,7 +392,7 @@ function App() {
     signTransaction: async () => ''
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
-  const [userId, setUserId] = useState(BigInt(1))
+  const userId = useRef(BigInt(0));
   const connected = address != undefined
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
   useEffect(() => {
@@ -470,16 +470,15 @@ function App() {
   const [createVaultForm, setCreateVaultForm] = useState({
     name: '',
     description: '',
+    selectedMarket: '',
     quoteAsset: '',
     baseAsset: '',
     amountQuote: '',
     amountBase: '',
     social1: '',
     social2: '',
-    showQuoteDropdown: false,
-    showBaseDropdown: false,
-    quoteSearchTerm: '',
-    baseSearchTerm: ''
+    showMarketDropdown: false,
+    marketSearchTerm: ''
   });
   const createSubWallet = async () => {
     try {
@@ -575,7 +574,7 @@ function App() {
       }
       else {
         hash = (await rawSendUserOperationAsync(params))?.hash
-      }    
+      }
       await Promise.race([
         new Promise<void>((resolve) => {
           txReceiptResolvers.current.set(hash, resolve);
@@ -864,8 +863,6 @@ function App() {
     if (window.innerHeight > 840) return 282.18;
     if (window.innerHeight > 720) return 239.98;
     return 198.78;
-
-
   });
   const [showChartOutliers, setShowChartOutliers] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_show_chart_outliers') || 'false');
@@ -1856,7 +1853,7 @@ function App() {
   };
 
   const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
-  `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
+    `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
 
   const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
 
@@ -2424,11 +2421,10 @@ function App() {
 
       const refGroup: any = [
         {
-          disabled: !address,
           to: settings.chainConfig[activechain].referralManager,
           abi: CrystalReferralAbi as any,
           functionName: 'getRefInfo',
-          args: [address],
+          args: [address ?? '0x0000000000000000000000000000000000000000'],
         },
         ...Array.from(
           new Set(
@@ -2440,7 +2436,7 @@ function App() {
           to: router as `0x${string}`,
           abi: CrystalRouterAbi,
           functionName: 'claimableRewards',
-          args: [marketAddress, address],
+          args: [marketAddress, address ?? '0x0000000000000000000000000000000000000000'],
         })),
       ]
 
@@ -2461,7 +2457,7 @@ function App() {
         mainGroup
       };
 
-      if (address && Date.now() - lastRefGroupFetch.current >= 9500) {
+      if (Date.now() - lastRefGroupFetch.current >= 9500) {
         lastRefGroupFetch.current = Date.now();
         groups.refGroup = refGroup;
       }
@@ -3980,11 +3976,27 @@ function App() {
                 topics: [
                   '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
                   null,
-                  "0x" + userId.toString(16).padStart(64, "0"),
+                  "0x" + userId.current.toString(16).padStart(64, "0"),
                 ],
               },
             ],
-          }] : [])]),
+          }] : []),
+          ...(address?.slice(2) ? [JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub2',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: router,
+                topics: [
+                  '0x709c040a7a97a27418aae009ebc34838157419a987b146aae40b55eee540419a',
+                  null,
+                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                ],
+              },
+            ],
+          })] : [])]),
         });
         const result = await req.json();
         if (liveStreamCancelled) return;
@@ -3992,6 +4004,7 @@ function App() {
         endBlockNumber = '0x' + (parseInt(result[0].result, 16) + 10).toString(16);
         const tradelogs = result[1].result;
         const orderlogs = result?.[2]?.result;
+        const filllogs = result?.[3]?.result;
         let ordersChanged = false;
         let canceledOrdersChanged = false;
         let tradesByMarketChanged = false;
@@ -4019,187 +4032,6 @@ function App() {
         setProcessedLogs(prev => {
           let tempset = new Set(prev);
           let temptrades: any = {};
-          if (Array.isArray(orderlogs)) {
-            for (const log of orderlogs) {
-              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
-              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.toString(16).padStart(64, "0")) {
-                if (tempset.size >= 10000) {
-                  const first = tempset.values().next().value;
-                  if (first !== undefined) {
-                    tempset.delete(first);
-                  }
-                }
-                tempset.add(logIdentifier);
-                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
-                if (resolve) {
-                  resolve();
-                  txReceiptResolvers.current.delete(log['transactionHash']);
-                }
-                let _timestamp = parseInt(log['blockTimestamp'], 16);
-                let _orderdata = log['data'].slice(130);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
-                  if (_isplace) {
-                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let alreadyExist = tempcanceledorders.some(
-                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
-                    );
-                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
-                    if (!alreadyExist) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let order = [
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ];
-                      temporders.push(order)
-                      tempcanceledorders.push([
-                        price,
-                        id,
-                        size /
-                        price,
-                        buy,
-                        marketKey,
-                        log['transactionHash'],
-                        _timestamp,
-                        0,
-                        size,
-                        2,
-                      ])
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        size /
-                        (Number(
-                          markets[marketKey].scaleFactor,
-                        ) *
-                          10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        size /
-                        price /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'limit',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  } else {
-                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
-                    let price = parseInt(chunk.slice(2, 22), 16);
-                    let id = parseInt(chunk.slice(22, 36), 16);
-                    let size = parseInt(chunk.slice(36, 64), 16);
-                    let index = temporders.findIndex(
-                      (o: any) =>
-                        o[0] == price &&
-                        o[1] == id &&
-                        o[4] == marketKey,
-                    );
-                    if (index != -1) {
-                      ordersChanged = true;
-                      canceledOrdersChanged = true;
-                      let canceledOrderIndex: number;
-                      canceledOrderIndex = tempcanceledorders.findIndex(
-                        (canceledOrder: any) =>
-                          canceledOrder[0] ==
-                          price &&
-                          canceledOrder[1] ==
-                          id &&
-                          canceledOrder[4] ==
-                          marketKey,
-                      );
-                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
-                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                        tempcanceledorders[canceledOrderIndex][9] = 0;
-                        tempcanceledorders[canceledOrderIndex][8] =
-                          tempcanceledorders[canceledOrderIndex][8] -
-                          size;
-                        tempcanceledorders[canceledOrderIndex][6] =
-                          _timestamp;
-                      }
-                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
-                        temporders[index] = [...temporders[index]]
-                        try {
-                          temporders[index][10].remove();
-                        }
-                        catch { }
-                        temporders[index].splice(10, 1)
-                      }
-                      temporders.splice(index, 1);
-                      let quoteasset =
-                        markets[marketKey].quoteAddress;
-                      let baseasset =
-                        markets[marketKey].baseAddress;
-                      let amountquote = (
-                        (buy ? size : size * price / Number(
-                          markets[marketKey].scaleFactor
-                        )) /
-                        (10 **
-                          Number(
-                            markets[marketKey]
-                              .quoteDecimals,
-                          ))
-                      ).toFixed(2);
-                      let amountbase = customRound(
-                        (buy ? size * Number(
-                          markets[marketKey].scaleFactor
-                        ) / price : size) /
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .baseDecimals,
-                        ),
-                        3,
-                      );
-                      newTxPopup(
-                        log['transactionHash'],
-                        'cancel',
-                        buy ? quoteasset : baseasset,
-                        buy ? baseasset : quoteasset,
-                        buy ? amountquote : amountbase,
-                        buy ? amountbase : amountquote,
-                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                        '',
-                      );
-                    }
-                  }
-                }
-              }
-            }
-          }
           if (Array.isArray(tradelogs)) {
             for (const log of tradelogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
@@ -4543,312 +4375,12 @@ function App() {
               });
             }
           }
-          if (tradeHistoryChanged) {
-            settradehistory(temptradehistory)
-          }
-          if (tradesByMarketChanged) {
-            settradesByMarket(temptradesByMarket)
-          }
-          if (canceledOrdersChanged) {
-            setcanceledorders(tempcanceledorders)
-          }
-          if (ordersChanged) {
-            setorders(temporders)
-          }
-          return tempset;
-        })
-      } catch {
-      }
-    };
-
-    (async () => {
-      if (address) {
-        if (validOneCT) {
-          oneCTNonceRef.current = await getTransactionCount(config, {
-            address: (address as any),
-          })
-        }
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setrecipient('');
-        isAddressInfoFetching = true;
-        try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.5`;
-
-          const query = `
-            query {
-              account(id: "${address}") {
-                id
-                openOrderMap {
-                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    isBuy
-                    price
-                    originalSize
-                    remainingSize
-                    status
-                    placedAt
-                    updatedAt
-                  }}}
-                }
-                orderMap {
-                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    isBuy
-                    price
-                    originalSize
-                    remainingSize
-                    status
-                    placedAt
-                    updatedAt
-                  }}}
-                }
-                tradeMap {
-                  shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
-                    id
-                    market { id baseAsset quoteAsset }
-                    amountIn
-                    amountOut
-                    startPrice
-                    endPrice
-                    isBuy
-                    timestamp
-                    tx
-                  }}}
-                }
-              }
-            }
-          `;
-
-          const response = await fetch(endpoint, {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ query }),
-          });
-          if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
-
-          const result = await response.json();
-          console.log(result)
-          if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
-
-          if (!isAddressInfoFetching) return;
-
-          const flatten = (map: any, key: "orders" | "trades") =>
-            (map?.shards ?? [])
-              .flatMap((s: any) => s?.batches ?? [])
-              .flatMap((b: any) => b?.[key] ?? []);
-
-          const statusCode = (s: any) => {
-            if (typeof s === "number") return s;
-            const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
-            return m[(s ?? "").toString().toLowerCase()] ?? -1;
-          };
-
-          const getMarketKey = (m: any) => {
-            if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
-            if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
-            return "unknown";
-          };
-
-          const acct = result?.data?.account;
-          let temptradehistory: any[] = [];
-          let temporders: any[] = [];
-          let tempcanceledorders: any[] = [];
-
-          if (acct) {
-            const trades = flatten(acct.tradeMap, "trades") || [];
-            for (const t of trades) {
-              const marketKey = getMarketKey(t.market);
-              temptradehistory.push([
-                Number(t.amountIn ?? 0),
-                Number(t.amountOut ?? 0),
-                t.isBuy ? 1 : 0,
-                Number((t.endPrice ?? t.startPrice) ?? 0),
-                marketKey,
-                t.tx,
-                Number(t.timestamp ?? 0),
-                1,
-              ]);
-            }
-
-            const openOrders = flatten(acct.openOrderMap, "orders") || [];
-            for (const o of openOrders) {
-              const marketKey = getMarketKey(o.market);
-              const idParts = (o.id ?? "").split("-");
-              const price = Number(o.price);
-              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-              const original = Number(o.originalSize ?? 0);
-              const remaining = Number(o.remainingSize ?? 0);
-              const filled = Math.max(0, original - remaining);
-
-              temporders.push([
-                price,
-                tail,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                o.isBuy ? 1 : 0,
-                marketKey,
-                o.id,
-                Number(o.placedAt ?? o.updatedAt ?? 0),
-                filled,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                statusCode(o.status),
-              ]);
-            }
-
-            const allOrders = flatten(acct.orderMap, "orders") || [];
-            for (const o of allOrders) {
-              const marketKey = getMarketKey(o.market);
-              const idParts = (o.id ?? "").split("-");
-              const price = Number(o.price);
-              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
-              const original = Number(o.originalSize ?? 0);
-              const remaining = Number(o.remainingSize ?? 0);
-              const filled = Math.max(0, original - remaining);
-
-              tempcanceledorders.push([
-                price,
-                tail,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
-                o.isBuy ? 1 : 0,
-                marketKey,
-                o.id,
-                Number(o.updatedAt ?? o.placedAt ?? 0),
-                filled,
-                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
-                statusCode(o.status),
-              ]);
-            }
-          }
-
-          settradehistory(temptradehistory);
-          setorders(temporders);
-          setcanceledorders(tempcanceledorders);
-          setaddressinfoloading(false);
-          isAddressInfoFetching = false;
-        } catch (error) {
-          console.error("Error fetching logs:", error);
-          setaddressinfoloading(false);
-          isAddressInfoFetching = false;
-        }
-      }
-      else if (!user) {
-        setSliderPercent(0)
-        const slider = document.querySelector('.balance-amount-slider');
-        const popup = document.querySelector('.slider-percentage-popup');
-        if (slider && popup) {
-          (popup as HTMLElement).style.left = `${15 / 2}px`;
-        }
-        setTransactions([]);
-        settradehistory([]);
-        setorders([]);
-        setcanceledorders([]);
-        setaddressinfoloading(false);
-      }
-    })();
-
-    const connectWebSocket = () => {
-      if (liveStreamCancelled) return;
-      wsRef.current = new WebSocket(WS_URL);
-
-      wsRef.current.onopen = async () => {
-        const subscriptionMessages = [
-          JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub1',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
-                ],
-              },
-            ],
-          }), ...(address?.slice(2) ? [JSON.stringify({
-            jsonrpc: '2.0',
-            id: 'sub2',
-            method: 'eth_subscribe',
-            params: [
-              'monadLogs',
-              {
-                address: router,
-                topics: [
-                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
-                  null,
-                  "0x" + userId.toString(16).padStart(64, "0"),
-                ],
-              },
-            ],
-          })] : [])
-        ];
-
-        pingIntervalRef.current = setInterval(() => {
-          if (wsRef.current?.readyState === WebSocket.OPEN) {
-            wsRef.current.send(JSON.stringify({
-              jsonrpc: '2.0',
-              id: 'ping',
-              method: 'eth_syncing'
-            }));
-          }
-        }, 15000);
-
-        subscriptionMessages.forEach((message) => {
-          wsRef.current?.send(message);
-        });
-
-        if (blockNumber.current) {
-          startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
-          endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
-        }
-        else {
-          let firstBlockNumber = await getBlockNumber(config);
-          startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
-          endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
-        }
-        fetchData();
-      };
-
-      wsRef.current.onmessage = (event) => {
-        const message = JSON.parse(event.data);
-        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
-          const log = message?.params?.result;
-          let ordersChanged = false;
-          let canceledOrdersChanged = false;
-          let tradesByMarketChanged = false;
-          let tradeHistoryChanged = false;
-          let temporders: any;
-          let tempcanceledorders: any;
-          let temptradesByMarket: any;
-          let temptradehistory: any;
-          setorders((orders) => {
-            temporders = [...orders];
-            return orders;
-          })
-          setcanceledorders((canceledorders) => {
-            tempcanceledorders = [...canceledorders];
-            return canceledorders;
-          })
-          settradesByMarket((tradesByMarket: any) => {
-            temptradesByMarket = { ...tradesByMarket };
-            return tradesByMarket;
-          })
-          settradehistory((tradehistory: any) => {
-            temptradehistory = [...tradehistory];
-            return tradehistory;
-          })
-          setProcessedLogs(prev => {
-            let tempset = new Set(prev);
-            let temptrades: any = {};
-            if (log['topics']?.[0] == '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66') {
+          if (Array.isArray(orderlogs)) {
+            for (const log of orderlogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
               if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.toString(16).padStart(64, "0")) {
+                userId.current.toString(16).padStart(64, "0")) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -4861,7 +4393,7 @@ function App() {
                   resolve();
                   txReceiptResolvers.current.delete(log['transactionHash']);
                 }
-                let _timestamp = Math.floor(Date.now() / 1000);
+                let _timestamp = parseInt(log['blockTimestamp'], 16);
                 let _orderdata = log['data'].slice(130);
                 for (let i = 0; i < _orderdata.length; i += 64) {
                   let chunk = _orderdata.slice(i, i + 64);
@@ -5023,7 +4555,468 @@ function App() {
                 }
               }
             }
-            else {
+          }
+          if (Array.isArray(filllogs)) {
+            for (const log of filllogs) {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
+                userId.current.toString(16).padStart(64, "0")) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(2);
+                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
+                let price = parseInt(_orderdata.slice(1, 22), 16);
+                let id = parseInt(_orderdata.slice(22, 36), 16);
+                let size = parseInt(_orderdata.slice(36, 64), 16);
+                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
+                let orderIndex = temporders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                let canceledOrderIndex = tempcanceledorders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                if (orderIndex != -1 && canceledOrderIndex != -1) {
+                  ordersChanged = true;
+                  temporders[orderIndex] = [...temporders[orderIndex]]
+                  let order = [...temporders[orderIndex]];
+                  let buy = order[3];
+                  let quoteasset =
+                    markets[marketKey]
+                      .quoteAddress;
+                  let baseasset =
+                    markets[marketKey]
+                      .baseAddress;
+                  let amountquote = (
+                    ((order[2] - order[7] - size / order[0]) *
+                      order[0]) /
+                    (Number(
+                      markets[marketKey]
+                        .scaleFactor,
+                    ) *
+                      10 **
+                      Number(
+                        markets[marketKey]
+                          .quoteDecimals,
+                      ))
+                  ).toFixed(2);
+                  let amountbase = customRound(
+                    (order[2] - order[7] - size / order[0]) /
+                    10 **
+                    Number(
+                      markets[marketKey]
+                        .baseDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'fill',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    buy ? amountquote : amountbase,
+                    buy ? amountbase : amountquote,
+                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                    '',
+                  );
+                  if (size == 0) {
+                    tradeHistoryChanged = true;
+                    temptradehistory.push([
+                      order[3] == 1
+                        ? (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor)
+                        : order[2],
+                      order[3] == 1
+                        ? order[2]
+                        : (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor),
+                      order[3],
+                      order[0],
+                      order[4],
+                      order[5],
+                      _timestamp,
+                      0,
+                    ]);
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                      try {
+                        temporders[orderIndex][10].remove();
+                      }
+                      catch { }
+                      temporders[orderIndex].splice(10, 1)
+                    }
+                    temporders.splice(orderIndex, 1);
+                    tempcanceledorders[canceledOrderIndex][9] =
+                      1;
+                    tempcanceledorders[canceledOrderIndex][7] = order[2]
+                    tempcanceledorders[canceledOrderIndex][8] = order[8];
+                  } else {
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                      try {
+                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                      }
+                      catch { }
+                    }
+                    temporders[orderIndex][7] =
+                      order[2] - size / order[0];
+                  }
+                  if (canceledOrderIndex != -1) {
+                    canceledOrdersChanged = true;
+                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                    if (size == 0) {
+                      tempcanceledorders[canceledOrderIndex][9] =
+                      1;
+                      tempcanceledorders[canceledOrderIndex][7] = order[2]
+                      tempcanceledorders[canceledOrderIndex][8] = order[8];
+                    }
+                    else {
+                      tempcanceledorders[canceledOrderIndex][7] =
+                        order[2] - size / order[0];
+                    }
+                  }
+                }
+              }
+            }
+          }
+          if (tradeHistoryChanged) {
+            settradehistory(temptradehistory)
+          }
+          if (tradesByMarketChanged) {
+            settradesByMarket(temptradesByMarket)
+          }
+          if (canceledOrdersChanged) {
+            setcanceledorders(tempcanceledorders)
+          }
+          if (ordersChanged) {
+            setorders(temporders)
+          }
+          return tempset;
+        })
+      } catch {
+      }
+    };
+
+    (async () => {
+      if (address) {
+        if (validOneCT) {
+          oneCTNonceRef.current = await getTransactionCount(config, {
+            address: (address as any),
+          })
+        }
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+        setrecipient('');
+        isAddressInfoFetching = true;
+        try {
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
+
+          const query = `
+            query {
+              account(id: "${address}") {
+                id
+                userIds {
+                  id
+                }
+                openOrderMap {
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                    txHash
+                  }}}
+                }
+                orderMap {
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                    txHash
+                  }}}
+                }
+                tradeMap {
+                  shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    amountIn
+                    amountOut
+                    startPrice
+                    endPrice
+                    isBuy
+                    timestamp
+                    tx
+                  }}}
+                }
+              }
+            }
+          `;
+
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ query }),
+          });
+          if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
+
+          const result = await response.json();
+          console.log(result)
+          if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
+
+          if (!isAddressInfoFetching) return;
+
+          const flatten = (map: any, key: "orders" | "trades") =>
+            (map?.shards ?? [])
+              .flatMap((s: any) => s?.batches ?? [])
+              .flatMap((b: any) => b?.[key] ?? []);
+
+          const statusCode = (s: any) => {
+            if (typeof s === "number") return s;
+            const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
+            return m[(s ?? "").toString().toLowerCase()] ?? -1;
+          };
+
+          const getMarketKey = (m: any) => {
+            if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
+            if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
+            return "unknown";
+          };
+
+          const acct = result?.data?.account;
+          let temptradehistory: any[] = [];
+          let temporders: any[] = [];
+          let tempcanceledorders: any[] = [];
+
+          if (acct) {
+            userId.current = BigInt(result?.data?.account?.userIds?.[0]?.id)
+            const trades = flatten(acct.tradeMap, "trades") || [];
+            for (const t of trades) {
+              const marketKey = getMarketKey(t.market);
+              temptradehistory.push([
+                Number(t.amountIn ?? 0),
+                Number(t.amountOut ?? 0),
+                t.isBuy ? 1 : 0,
+                Number((t.endPrice ?? t.startPrice) ?? 0),
+                marketKey,
+                t.tx,
+                Number(t.timestamp ?? 0),
+                1,
+              ]);
+            }
+
+            const openOrders = flatten(acct.openOrderMap, "orders") || [];
+            for (const o of openOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split(":");
+              const price = Number(o.price);
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              temporders.push([
+                price,
+                tail,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.txHash,
+                Number(o.placedAt ?? o.updatedAt ?? 0),
+                o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
+            }
+
+            const allOrders = flatten(acct.orderMap, "orders") || [];
+            for (const o of allOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split(":");
+              const price = Number(o.price);
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              tempcanceledorders.push([
+                price,
+                tail,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.txHash,
+                Number(o.updatedAt ?? o.placedAt ?? 0),
+                o.isBuy ? filled * Number(markets[marketKey].scaleFactor) / price : filled,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
+            }
+          }
+
+          settradehistory(temptradehistory);
+          setorders(temporders);
+          setcanceledorders(tempcanceledorders);
+          setaddressinfoloading(false);
+          isAddressInfoFetching = false;
+        } catch (error) {
+          console.error("Error fetching logs:", error);
+          setaddressinfoloading(false);
+          isAddressInfoFetching = false;
+        }
+      }
+      else if (!user) {
+        setSliderPercent(0)
+        const slider = document.querySelector('.balance-amount-slider');
+        const popup = document.querySelector('.slider-percentage-popup');
+        if (slider && popup) {
+          (popup as HTMLElement).style.left = `${15 / 2}px`;
+        }
+        setTransactions([]);
+        settradehistory([]);
+        setorders([]);
+        setcanceledorders([]);
+        setaddressinfoloading(false);
+      }
+    })();
+
+    const connectWebSocket = () => {
+      if (liveStreamCancelled) return;
+      wsRef.current = new WebSocket(WS_URL);
+
+      wsRef.current.onopen = async () => {
+        const subscriptionMessages = [
+          JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub1',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: router,
+                topics: [
+                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
+                ],
+              },
+            ],
+          }), ...(address?.slice(2) ? [JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub2',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: router,
+                topics: [
+                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                  null,
+                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                ],
+              },
+            ],
+          })] : []),
+          ...(address?.slice(2) ? [JSON.stringify({
+            jsonrpc: '2.0',
+            id: 'sub2',
+            method: 'eth_subscribe',
+            params: [
+              'monadLogs',
+              {
+                address: router,
+                topics: [
+                  '0x709c040a7a97a27418aae009ebc34838157419a987b146aae40b55eee540419a',
+                  null,
+                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                ],
+              },
+            ],
+          })] : [])
+        ];
+
+        pingIntervalRef.current = setInterval(() => {
+          if (wsRef.current?.readyState === WebSocket.OPEN) {
+            wsRef.current.send(JSON.stringify({
+              jsonrpc: '2.0',
+              id: 'ping',
+              method: 'eth_syncing'
+            }));
+          }
+        }, 15000);
+
+        subscriptionMessages.forEach((message) => {
+          wsRef.current?.send(message);
+        });
+
+        if (blockNumber.current) {
+          startBlockNumber = '0x' + (blockNumber.current - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (blockNumber.current + BigInt(10)).toString(16)
+        }
+        else {
+          let firstBlockNumber = await getBlockNumber(config);
+          startBlockNumber = '0x' + (firstBlockNumber - BigInt(80)).toString(16)
+          endBlockNumber = '0x' + (firstBlockNumber + BigInt(10)).toString(16)
+        }
+        fetchData();
+      };
+
+      wsRef.current.onmessage = (event) => {
+        const message = JSON.parse(event.data);
+        if (message?.params?.result && message?.params?.result?.commitState == "Proposed") {
+          const log = message?.params?.result;
+          let ordersChanged = false;
+          let canceledOrdersChanged = false;
+          let tradesByMarketChanged = false;
+          let tradeHistoryChanged = false;
+          let temporders: any;
+          let tempcanceledorders: any;
+          let temptradesByMarket: any;
+          let temptradehistory: any;
+          setorders((orders) => {
+            temporders = [...orders];
+            return orders;
+          })
+          setcanceledorders((canceledorders) => {
+            tempcanceledorders = [...canceledorders];
+            return canceledorders;
+          })
+          settradesByMarket((tradesByMarket: any) => {
+            temptradesByMarket = { ...tradesByMarket };
+            return tradesByMarket;
+          })
+          settradehistory((tradehistory: any) => {
+            temptradehistory = [...tradehistory];
+            return tradehistory;
+          })
+          setProcessedLogs(prev => {
+            let tempset = new Set(prev);
+            let temptrades: any = {};
+            if (log['topics']?.[0] == '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6') {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
               if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
@@ -5043,117 +5036,6 @@ function App() {
                   txReceiptResolvers.current.delete(log['transactionHash']);
                 }
                 let _timestamp = Math.floor(Date.now() / 1000);
-                let _orderdata = log['data'].slice(258);
-                for (let i = 0; i < _orderdata.length; i += 64) {
-                  let chunk = _orderdata.slice(i, i + 64);
-                  let price = parseInt(chunk.slice(1, 20), 16);
-                  let id = parseInt(chunk.slice(20, 32), 16);
-                  let size = parseInt(chunk.slice(32, 64), 16);
-                  let orderIndex = temporders.findIndex(
-                    (sublist: any) =>
-                      sublist[0] ==
-                      price &&
-                      sublist[1] ==
-                      id &&
-                      sublist[4] == marketKey,
-                  );
-                  let canceledOrderIndex = tempcanceledorders.findIndex(
-                    (sublist: any) =>
-                      sublist[0] ==
-                      price &&
-                      sublist[1] ==
-                      id &&
-                      sublist[4] == marketKey,
-                  );
-                  if (orderIndex != -1 && canceledOrderIndex != -1) {
-                    ordersChanged = true;
-                    canceledOrdersChanged = true;
-                    temporders[orderIndex] = [...temporders[orderIndex]]
-                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
-                    let order = [...temporders[orderIndex]];
-                    let buy = order[3];
-                    let quoteasset =
-                      markets[marketKey]
-                        .quoteAddress;
-                    let baseasset =
-                      markets[marketKey]
-                        .baseAddress;
-                    let amountquote = (
-                      ((order[2] - order[7] - size / order[0]) *
-                        order[0]) /
-                      (Number(
-                        markets[marketKey]
-                          .scaleFactor,
-                      ) *
-                        10 **
-                        Number(
-                          markets[marketKey]
-                            .quoteDecimals,
-                        ))
-                    ).toFixed(2);
-                    let amountbase = customRound(
-                      (order[2] - order[7] - size / order[0]) /
-                      10 **
-                      Number(
-                        markets[marketKey]
-                          .baseDecimals,
-                      ),
-                      3,
-                    );
-                    newTxPopup(
-                      log['transactionHash'],
-                      'fill',
-                      buy ? quoteasset : baseasset,
-                      buy ? baseasset : quoteasset,
-                      buy ? amountquote : amountbase,
-                      buy ? amountbase : amountquote,
-                      `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
-                      '',
-                    );
-                    if (size == 0) {
-                      tradeHistoryChanged = true;
-                      temptradehistory.push([
-                        order[3] == 1
-                          ? (order[2] * order[0]) /
-                          Number(markets[order[4]].scaleFactor)
-                          : order[2],
-                        order[3] == 1
-                          ? order[2]
-                          : (order[2] * order[0]) /
-                          Number(markets[order[4]].scaleFactor),
-                        order[3],
-                        order[0],
-                        order[4],
-                        order[5],
-                        _timestamp,
-                        0,
-                      ]);
-                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
-                        try {
-                          temporders[orderIndex][10].remove();
-                        }
-                        catch { }
-                        temporders[orderIndex].splice(10, 1)
-                      }
-                      temporders.splice(orderIndex, 1);
-                      tempcanceledorders[canceledOrderIndex][9] =
-                        1;
-                      tempcanceledorders[canceledOrderIndex][7] = order[2]
-                      tempcanceledorders[canceledOrderIndex][8] = order[8];
-                    } else {
-                      if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
-                        try {
-                          temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
-                        }
-                        catch { }
-                      }
-                      temporders[orderIndex][7] =
-                        order[2] - size / order[0];
-                      tempcanceledorders[canceledOrderIndex][7] =
-                        order[2] - size / order[0];
-                    }
-                  }
-                }
                 tradesByMarketChanged = true;
                 if (!Array.isArray(temptradesByMarket[marketKey])) {
                   temptradesByMarket[marketKey] = [];
@@ -5364,6 +5246,320 @@ function App() {
                 });
               }
             }
+            else if (log['topics']?.[0] == '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66') {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
+                userId.current.toString(16).padStart(64, "0")) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                const resolve = txReceiptResolvers.current.get(log['transactionHash']);
+                if (resolve) {
+                  resolve();
+                  txReceiptResolvers.current.delete(log['transactionHash']);
+                }
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(130);
+                for (let i = 0; i < _orderdata.length; i += 64) {
+                  let chunk = _orderdata.slice(i, i + 64);
+                  let _isplace = parseInt(chunk.slice(0, 1), 16) >= 2;
+                  if (_isplace) {
+                    let buy = 3 - parseInt(chunk.slice(0, 1), 16);
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
+                    let alreadyExist = tempcanceledorders.some(
+                      (o: any) => o[0] == price && o[1] == id && o[4] == marketKey
+                    );
+                    buy ? size *= Number(markets[marketKey].scaleFactor) : size *= price
+                    if (!alreadyExist) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let order = [
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ];
+                      temporders.push(order)
+                      tempcanceledorders.push([
+                        price,
+                        id,
+                        size /
+                        price,
+                        buy,
+                        marketKey,
+                        log['transactionHash'],
+                        _timestamp,
+                        0,
+                        size,
+                        2,
+                      ])
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        size /
+                        (Number(
+                          markets[marketKey].scaleFactor,
+                        ) *
+                          10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        size /
+                        price /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'limit',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  } else {
+                    let buy = parseInt(chunk.slice(0, 1), 16) == 0;
+                    let price = parseInt(chunk.slice(2, 22), 16);
+                    let id = parseInt(chunk.slice(22, 36), 16);
+                    let size = parseInt(chunk.slice(36, 64), 16);
+                    let index = temporders.findIndex(
+                      (o: any) =>
+                        o[0] == price &&
+                        o[1] == id &&
+                        o[4] == marketKey,
+                    );
+                    if (index != -1) {
+                      ordersChanged = true;
+                      canceledOrdersChanged = true;
+                      let canceledOrderIndex: number;
+                      canceledOrderIndex = tempcanceledorders.findIndex(
+                        (canceledOrder: any) =>
+                          canceledOrder[0] ==
+                          price &&
+                          canceledOrder[1] ==
+                          id &&
+                          canceledOrder[4] ==
+                          marketKey,
+                      );
+                      if (canceledOrderIndex !== -1 && tempcanceledorders[canceledOrderIndex][9] != 0) {
+                        tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                        tempcanceledorders[canceledOrderIndex][9] = 0;
+                        tempcanceledorders[canceledOrderIndex][8] =
+                          tempcanceledorders[canceledOrderIndex][8] -
+                          size;
+                        tempcanceledorders[canceledOrderIndex][6] =
+                          _timestamp;
+                      }
+                      if (temporders[index]?.[10] && typeof temporders[index][10].remove === 'function') {
+                        temporders[index] = [...temporders[index]]
+                        try {
+                          temporders[index][10].remove();
+                        }
+                        catch { }
+                        temporders[index].splice(10, 1)
+                      }
+                      temporders.splice(index, 1);
+                      let quoteasset =
+                        markets[marketKey].quoteAddress;
+                      let baseasset =
+                        markets[marketKey].baseAddress;
+                      let amountquote = (
+                        (buy ? size : size * price / Number(
+                          markets[marketKey].scaleFactor
+                        )) /
+                        (10 **
+                          Number(
+                            markets[marketKey]
+                              .quoteDecimals,
+                          ))
+                      ).toFixed(2);
+                      let amountbase = customRound(
+                        (buy ? size * Number(
+                          markets[marketKey].scaleFactor
+                        ) / price : size) /
+                        10 **
+                        Number(
+                          markets[marketKey]
+                            .baseDecimals,
+                        ),
+                        3,
+                      );
+                      newTxPopup(
+                        log['transactionHash'],
+                        'cancel',
+                        buy ? quoteasset : baseasset,
+                        buy ? baseasset : quoteasset,
+                        buy ? amountquote : amountbase,
+                        buy ? amountbase : amountquote,
+                        `${price / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                        '',
+                      );
+                    }
+                  }
+                }
+              }
+            }
+            else {
+              const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
+              const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
+                userId.current.toString(16).padStart(64, "0")) {
+                if (tempset.size >= 10000) {
+                  const first = tempset.values().next().value;
+                  if (first !== undefined) {
+                    tempset.delete(first);
+                  }
+                }
+                tempset.add(logIdentifier);
+                let _timestamp = Math.floor(Date.now() / 1000);
+                let _orderdata = log['data'].slice(2);
+                let buy = 1 - parseInt(_orderdata.slice(0, 1), 16);
+                let price = parseInt(_orderdata.slice(1, 22), 16);
+                let id = parseInt(_orderdata.slice(22, 36), 16);
+                let size = parseInt(_orderdata.slice(36, 64), 16);
+                buy ? size *= price : size *= Number(markets[marketKey].scaleFactor)
+                let orderIndex = temporders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                let canceledOrderIndex = tempcanceledorders.findIndex(
+                  (sublist: any) =>
+                    sublist[0] ==
+                    price &&
+                    sublist[1] ==
+                    id &&
+                    sublist[4] == marketKey,
+                );
+                if (orderIndex != -1 && canceledOrderIndex != -1) {
+                  ordersChanged = true;
+                  temporders[orderIndex] = [...temporders[orderIndex]]
+                  let order = [...temporders[orderIndex]];
+                  let buy = order[3];
+                  let quoteasset =
+                    markets[marketKey]
+                      .quoteAddress;
+                  let baseasset =
+                    markets[marketKey]
+                      .baseAddress;
+                  let amountquote = (
+                    ((order[2] - order[7] - size / order[0]) *
+                      order[0]) /
+                    (Number(
+                      markets[marketKey]
+                        .scaleFactor,
+                    ) *
+                      10 **
+                      Number(
+                        markets[marketKey]
+                          .quoteDecimals,
+                      ))
+                  ).toFixed(2);
+                  let amountbase = customRound(
+                    (order[2] - order[7] - size / order[0]) /
+                    10 **
+                    Number(
+                      markets[marketKey]
+                        .baseDecimals,
+                    ),
+                    3,
+                  );
+                  newTxPopup(
+                    log['transactionHash'],
+                    'fill',
+                    buy ? quoteasset : baseasset,
+                    buy ? baseasset : quoteasset,
+                    buy ? amountquote : amountbase,
+                    buy ? amountbase : amountquote,
+                    `${order[0] / Number(markets[marketKey].priceFactor)} ${markets[marketKey].quoteAsset}`,
+                    '',
+                  );
+                  if (size == 0) {
+                    tradeHistoryChanged = true;
+                    temptradehistory.push([
+                      order[3] == 1
+                        ? (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor)
+                        : order[2],
+                      order[3] == 1
+                        ? order[2]
+                        : (order[2] * order[0]) /
+                        Number(markets[order[4]].scaleFactor),
+                      order[3],
+                      order[0],
+                      order[4],
+                      order[5],
+                      _timestamp,
+                      0,
+                    ]);
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].remove === 'function') {
+                      try {
+                        temporders[orderIndex][10].remove();
+                      }
+                      catch { }
+                      temporders[orderIndex].splice(10, 1)
+                    }
+                    temporders.splice(orderIndex, 1);
+                    tempcanceledorders[canceledOrderIndex][9] =
+                      1;
+                    tempcanceledorders[canceledOrderIndex][7] = order[2]
+                    tempcanceledorders[canceledOrderIndex][8] = order[8];
+                  } else {
+                    if (temporders[orderIndex]?.[10] && typeof temporders[orderIndex][10].setQuantity === 'function') {
+                      try {
+                        temporders[orderIndex][10].setQuantity(formatDisplay(customRound((size / order[0]) / 10 ** Number(markets[order[4]].baseDecimals), 3)))
+                      }
+                      catch { }
+                    }
+                    temporders[orderIndex][7] =
+                      order[2] - size / order[0];
+                  }
+                  if (canceledOrderIndex != -1) {
+                    canceledOrdersChanged = true;
+                    tempcanceledorders[canceledOrderIndex] = [...tempcanceledorders[canceledOrderIndex]]
+                    if (size == 0) {
+                      tempcanceledorders[canceledOrderIndex][9] =
+                      1;
+                      tempcanceledorders[canceledOrderIndex][7] = order[2]
+                      tempcanceledorders[canceledOrderIndex][8] = order[8];
+                    }
+                    else {
+                      tempcanceledorders[canceledOrderIndex][7] =
+                        order[2] - size / order[0];
+                    }
+                  }
+                }
+              }
+            }
             if (tradeHistoryChanged) {
               settradehistory(temptradehistory)
             }
@@ -5427,7 +5623,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.5`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
 
         const query = `
           query {
@@ -5453,6 +5649,7 @@ function App() {
                 isBuy
                 timestamp
                 tx
+                endPrice
               }
             }
           }
@@ -5492,7 +5689,7 @@ function App() {
 
           const cfg = markets[marketKey];
           if (!cfg) return null;
-
+          cfg.latestPrice = m.latestPrice / Number(cfg.priceFactor);
           const pf = Number(cfg.priceFactor);
           const decs = Math.max(0, Math.floor(Math.log10(pf)));
 
@@ -5512,7 +5709,7 @@ function App() {
           const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
           const deltaRaw = lastRaw - open24 * pf;
 
-          const volQ = Number(m.volume / 10 ** 6 ?? 0);
+          const volQ = Number(m.volume / 10 ** 6);
           const volumeDisplay = formatCommas(volQ.toFixed(2));
 
           const mk = marketKey;
@@ -5523,14 +5720,14 @@ function App() {
                 Number(t.amountIn ?? 0),
                 Number(t.amountOut ?? 0),
                 t.isBuy ? 1 : 0,
-                lastRaw,
+                t.endPrice,
                 mk,
                 t.tx,
                 Number(t.timestamp ?? 0),
               ]);
             }
           }
-          
+
           return {
             ...cfg,
             marketKey: mk,
@@ -6030,7 +6227,7 @@ function App() {
         setlimitPriceString(
           (
             Number(price) / Number(activeMarket.priceFactor)
-          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
         );
         if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
           setamountIn(
@@ -6507,12 +6704,8 @@ function App() {
     }
 
     try {
-      let hash;
-      setIsSigning(true);
-
       const topOrder = orders[0];
-
-      hash = await cancelOrder(
+      await cancelOrder(
         sendUserOperationAsync,
         router,
         topOrder[3] == 1
@@ -6528,10 +6721,7 @@ function App() {
 
       refetch();
 
-    } catch (error) {
-      console.error('Error canceling top order:', error);
-    } finally {
-      setIsSigning(false);
+    } catch {
     }
   }, [connected, userchain, activechain, orders, router, markets, sendUserOperationAsync, refetch, isSigning]);
 
@@ -6541,17 +6731,14 @@ function App() {
     }
 
     try {
-      let hash;
-      setIsSigning(true);
-
       const orderbatch: Record<string, any> = {}
 
       orders.forEach(order => {
         const k = markets[order[4]].address
         if (!orderbatch[k]) orderbatch[k] = []
         orderbatch[k].push({
-          isRequireSuccess: true,
-          action: BigInt(0),
+          isRequireSuccess: false,
+          action: 1n,
           param1: order[0], // price
           param2: order[1], // size/id
           param3: BigInt(0),  // cloid or extra id
@@ -6564,21 +6751,19 @@ function App() {
         options: BigInt(0)
       }))
 
-      hash = await sendUserOperationAsync({
+      await sendUserOperationAsync({
         uo: multiBatchOrders(
           router,
           BigInt(0),
           batches,
+          BigInt(Math.floor(Date.now() / 1000) + 900),
           '0x0000000000000000000000000000000000000000',
         )
       });
 
       refetch();
 
-    } catch (error) {
-      console.error('Error canceling all orders:', error);
-    } finally {
-      setIsSigning(false);
+    } catch {
     }
   }, [connected, userchain, activechain, orders, markets, router, address, sendUserOperationAsync, refetch, isSigning]);
 
@@ -7208,7 +7393,7 @@ function App() {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -7925,7 +8110,7 @@ function App() {
                           setlimitPriceString(
                             (
                               Number(price) / Number(activeMarket.priceFactor)
-                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                            ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                           );
                           setamountOutSwap(
                             price != BigInt(0) && amountIn != BigInt(0)
@@ -8371,368 +8556,6 @@ function App() {
   }, []);
 
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
-  
-  type CustomizationSettings = {
-    mainTextColor: string;
-    positivePNLColor: string;
-    negativePNLColor: string;
-    rectangleTextColor: string;
-    showPNLRectangle: boolean;
-  };
-
-  interface ColorInputProps {
-    color: string;
-    onChange: (color: string) => void;
-    label: string;
-    id: string;
-    defaultColor: string;
-  }
-
-  const tokenIconUrl = './monad.svg';
-  const tokenName = 'MON';
-  const leverage = 10;
-  const pnl = -55.05;
-  const entryPrice = 38.88;
-  const exitPrice = 38.88;
-  const referralCode = 138296;
-
-  const defaultCustomizationSettings: CustomizationSettings = {
-    mainTextColor: '#EAEDFF',
-    positivePNLColor: '#2FE3AC',
-    negativePNLColor: '#EC397A',
-    rectangleTextColor: '#020307',
-    showPNLRectangle: true,
-  };
-
-  const [uploadedBg, setUploadedBg] = useState<string | null>(null);
-  const [currency, setCurrency] = useState(tokenName);
-  const [selectedBg, setSelectedBg] = useState(PNLBG2);
-  const [customizationSettings, setCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
-  const [tempCustomizationSettings, setTempCustomizationSettings] = useState<CustomizationSettings>(defaultCustomizationSettings);
-  const [isCapturing, setIsCapturing] = useState(false);
-  const [showRightPanel, setShowRightPanel] = useState(false);
-  const [activePicker, setActivePicker] = useState<string | null>(null);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-
-  const captureRef = useRef<HTMLDivElement>(null);
-  const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
-
-  const ColorInput = React.memo<ColorInputProps>(({
-    color,
-    onChange,
-    label,
-    id,
-    defaultColor
-  }) => {
-    const [inputValue, setInputValue] = useState('');
-    const [isEditing, setIsEditing] = useState(false);
-
-    const displayValue = isEditing ? inputValue : color.replace('#', '').toUpperCase();
-
-    const validateAndApply = useCallback((value: string) => {
-      const cleaned = value.replace(/[^0-9A-Fa-f]/g, '');
-      if (cleaned.length === 6) {
-        onChange(`#${cleaned}`);
-        return true;
-      } else if (cleaned.length === 3) {
-        const expanded = cleaned.split('').map(c => c + c).join('');
-        onChange(`#${expanded}`);
-        return true;
-      }
-      return false;
-    }, [onChange]);
-
-    const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-      setInputValue(e.target.value.toUpperCase());
-    }, []);
-
-    const handleFocus = useCallback(() => {
-      setIsEditing(true);
-      setInputValue(color.replace('#', '').toUpperCase());
-    }, [color]);
-
-    const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement>) => {
-      if (e.relatedTarget?.classList.contains('refresh-button')) {
-        e.target.focus();
-        return;
-      }
-
-      setIsEditing(false);
-      if (inputValue && !validateAndApply(inputValue)) {
-        setInputValue('');
-      }
-    }, [inputValue, validateAndApply]);
-
-    const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        setIsEditing(false);
-        validateAndApply(inputValue);
-        (e.target as HTMLInputElement).blur();
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setIsEditing(false);
-        setInputValue('');
-        (e.target as HTMLInputElement).blur();
-      }
-    }, [inputValue, validateAndApply]);
-
-    const handleRefreshClick = useCallback(() => {
-      onChange(defaultColor);
-      setInputValue('');
-      setIsEditing(false);
-    }, [onChange, defaultColor]);
-
-    const handleColorPickerClick = useCallback((e: React.MouseEvent) => {
-      const event = new CustomEvent('colorPickerClick', {
-        detail: { id, event: e }
-      });
-      document.dispatchEvent(event);
-    }, [id]);
-
-    return (
-      <div className="color-input-row">
-        <label className="color-label-inline">{label}</label>
-        <div className="color-input-container">
-          <div
-            className="color-preview"
-            style={{ backgroundColor: color }}
-            onClick={handleColorPickerClick}
-            title="Click to pick color"
-          />
-          <input
-            type="text"
-            value={displayValue}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
-            className="hex-input"
-            placeholder="FFFFFF"
-            maxLength={6}
-          />
-          <button
-            className="refresh-button"
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={handleRefreshClick}
-            title="Reset to default"
-            type="button"
-          >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-            </svg>
-          </button>
-        </div>
-      </div>
-    );
-  });
-
-  const toggleRightPanel = useCallback(() => {
-    setShowRightPanel(!showRightPanel);
-    if (!showRightPanel) {
-      setTempCustomizationSettings(customizationSettings);
-    }
-  }, [showRightPanel, customizationSettings]);
-
-  const handleApplySettings = useCallback(() => {
-    setCustomizationSettings(tempCustomizationSettings);
-  }, [tempCustomizationSettings]);
-
-  const captureImage = async () => {
-    if (!captureRef.current) return null;
-
-    setIsCapturing(true);
-    try {
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return await html2canvas(captureRef.current, {
-        useCORS: true,
-        backgroundColor: '#000000',
-        scale: 2,
-        width: 600,
-        height: 360,
-      });
-    } catch (error) {
-      console.error('Error capturing image:', error);
-      return null;
-    } finally {
-      setIsCapturing(false);
-    }
-  };
-
-  const handleDownload = async () => {
-    const canvas = await captureImage();
-    if (!canvas) return;
-
-    const link = document.createElement('a');
-    link.download = 'pnl-snapshot.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-  };
-
-  const handleCopyImage = async () => {
-    const canvas = await captureImage();
-    if (!canvas) return;
-
-    canvas.toBlob(async blob => {
-      if (!blob) return;
-      try {
-        await navigator.clipboard.write([
-          new ClipboardItem({ 'image/png': blob }),
-        ]);
-        console.log('Image copied to clipboard!');
-      } catch (err) {
-        console.error('Clipboard write failed:', err);
-      }
-    }, 'image/png');
-  };
-
-  const handleTempColorChange = useCallback((key: keyof CustomizationSettings, color: string) => {
-    setTempCustomizationSettings(prev => ({ ...prev, [key]: color }));
-  }, []);
-
-  const handleTempToggle = useCallback((key: keyof CustomizationSettings) => {
-    setTempCustomizationSettings(prev => ({ ...prev, [key]: !prev[key] }));
-  }, []);
-
-  const handleColorPickerClickInternal = (id: string, event: React.MouseEvent) => {
-    if (activePicker === id) {
-      setActivePicker(null);
-      return;
-    }
-
-    const rect = (event.target as HTMLElement).getBoundingClientRect();
-    const viewportWidth = window.innerWidth;
-    const viewportHeight = window.innerHeight;
-    const pickerWidth = 200;
-    const pickerHeight = 250;
-
-    let left = rect.right + 10;
-    let top = rect.top;
-
-    if (left + pickerWidth > viewportWidth) {
-      left = rect.left - pickerWidth - 10;
-    }
-    if (top + pickerHeight > viewportHeight) {
-      top = viewportHeight - pickerHeight - 20;
-    }
-    if (top < 20) {
-      top = 20;
-    }
-
-    setPickerPosition({ top, left });
-    setActivePicker(id);
-  };
-
-  const handleBgSelect = (bg: string) => {
-    setSelectedBg(bg);
-    setCustomizationSettings(defaultCustomizationSettings);
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result;
-        if (typeof result === 'string') {
-          setUploadedBg(result);
-          setSelectedBg(result);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const colorChangeHandlers = useMemo(() => ({
-    mainText: (color: string) => handleTempColorChange('mainTextColor', color),
-    positivePNL: (color: string) => handleTempColorChange('positivePNLColor', color),
-    negativePNL: (color: string) => handleTempColorChange('negativePNLColor', color),
-    rectangleText: (color: string) => handleTempColorChange('rectangleTextColor', color),
-  }), [handleTempColorChange]);
-
-  const colorInputs = useMemo(() => ({
-    mainText: (
-      <ColorInput
-        color={tempCustomizationSettings.mainTextColor}
-        onChange={colorChangeHandlers.mainText}
-        label="Main Text"
-        id="mainText"
-        defaultColor="#EAEDFF"
-      />
-    ),
-    positivePNL: (
-      <ColorInput
-        color={tempCustomizationSettings.positivePNLColor}
-        onChange={colorChangeHandlers.positivePNL}
-        label="Positive PNL"
-        id="positivePNL"
-        defaultColor="#2FE3AC"
-      />
-    ),
-    negativePNL: (
-      <ColorInput
-        color={tempCustomizationSettings.negativePNLColor}
-        onChange={colorChangeHandlers.negativePNL}
-        label="Negative PNL"
-        id="negativePNL"
-        defaultColor="#EC397A"
-      />
-    ),
-    rectangleText: (
-      <ColorInput
-        color={tempCustomizationSettings.rectangleTextColor}
-        onChange={colorChangeHandlers.rectangleText}
-        label="Rectangle Text"
-        id="rectangleText"
-        defaultColor="#020307"
-      />
-    ),
-  }), [tempCustomizationSettings, colorChangeHandlers]);
-
-  const getCurrentColor = (pickerId: string) => {
-    const key = pickerId.includes('mainText') ? 'mainTextColor' :
-      pickerId.includes('positivePNL') ? 'positivePNLColor' :
-        pickerId.includes('negativePNL') ? 'negativePNLColor' :
-          'rectangleTextColor';
-    return tempCustomizationSettings[key];
-  };
-
-  const getSettingKey = (pickerId: string): keyof CustomizationSettings => {
-    return pickerId.includes('mainText') ? 'mainTextColor' :
-      pickerId.includes('positivePNL') ? 'positivePNLColor' :
-        pickerId.includes('negativePNL') ? 'negativePNLColor' :
-          'rectangleTextColor';
-  };
-
-  useEffect(() => {
-    setCurrency(tokenName);
-  }, []);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (activePicker && pickerRefs.current[activePicker] &&
-        !pickerRefs.current[activePicker]?.contains(event.target as Node)) {
-        setActivePicker(null);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [activePicker]);
-
-  useEffect(() => {
-    const handleColorPickerClick = (event: any) => {
-      const { id, event: clickEvent } = event.detail;
-      handleColorPickerClickInternal(id, clickEvent);
-    };
-
-    document.addEventListener('colorPickerClick', handleColorPickerClick);
-    return () => document.removeEventListener('colorPickerClick', handleColorPickerClick);
-  }, [activePicker]);
-
-  useEffect(() => {
-    setTempCustomizationSettings(customizationSettings);
-  }, [customizationSettings]);
 
   //popup modals
   const Modals = (
@@ -13583,248 +13406,7 @@ function App() {
           </div>
         ) : null}
         {popup === 27 ? ( // PNL popup
-          <div className="pnl-modal-overlay" onClick={() => setpopup(0)}>
-            <div
-              className={`pnl-modal-container ${showRightPanel ? 'with-right-panel' : ''} ${windowWidth <= 768 ? 'mobile' : ''}`}
-              onClick={e => e.stopPropagation()}
-              ref={popupref}
-            >
-              <div className="pnl-modal main-popup">
-                <div
-                  className={`pnl-card ${!isCapturing ? 'pnl-card-display' : ''}`}
-                  ref={captureRef}
-                  style={{
-                    backgroundImage: `url(${selectedBg})`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    backgroundRepeat: 'no-repeat',
-                  }}
-                >
-                  <div className="pnl-card-content">
-                    <div className="pnl-header-section">
-                      <div className="pnl-card-header">
-                        <img className="pnl-logo" src={LogoText} alt="Logo" crossOrigin="anonymous" />
-                      </div>
-
-                      <div className="pnl-token-row">
-                        <div className="pnl-token-info-leverage">
-                          <div className="pnl-token-info">
-                            <img src={tokenIconUrl} alt={tokenName} className="pnl-token-icon" crossOrigin="anonymous" />
-                            <span className="pnl-token-name" style={{ color: customizationSettings.mainTextColor }}>
-                              {tokenName}
-                            </span>
-                          </div>
-                          <div className="pnl-leverage-tag">SHORT {leverage}X</div>
-                        </div>
-                      </div>
-
-                      <div
-                        className="pnl-percentage"
-                        style={{
-                          color: customizationSettings.showPNLRectangle
-                            ? customizationSettings.rectangleTextColor
-                            : (pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor),
-                          backgroundColor: customizationSettings.showPNLRectangle
-                            ? (pnl > 0 ? customizationSettings.positivePNLColor : customizationSettings.negativePNLColor)
-                            : 'transparent',
-                        }}
-                      >
-                        {pnl > 0 ? '+' : ''}{pnl.toFixed(2)}%
-                      </div>
-                    </div>
-
-                    <div className="pnl-entry-exit-referral">
-                      <div className="pnl-entry-exit-group">
-                        <div className="pnl-entry">
-                          <div className="pnl-entry-label">Entry Price</div>
-                          <div className="pnl-entry-value" style={{ color: customizationSettings.mainTextColor }}>
-                            ${entryPrice.toFixed(2)}
-                          </div>
-                        </div>
-                        <div className="pnl-exit">
-                          <div className="pnl-exit-label">Exit Price</div>
-                          <div className="pnl-exit-value" style={{ color: customizationSettings.mainTextColor }}>
-                            ${exitPrice.toFixed(2)}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pnl-referral">
-                        <div className="pnl-referral-label">Referral Code</div>
-                        <div className="pnl-referral-value" style={{ color: customizationSettings.mainTextColor }}>
-                          {referralCode}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pnl-section pnl-layer-middle">
-                  <div className="pnl-middle-left">
-                    <button
-                      className="pnl-box"
-                      onClick={() => handleBgSelect(PNLBG)}
-                      style={{
-                        backgroundImage: `url(${PNLBG})`,
-                        border: selectedBg === PNLBG ? '2px solid white' : '1px solid gray',
-                      }}
-                    />
-                    <button
-                      className="pnl-box"
-                      onClick={() => handleBgSelect(PNLBG2)}
-                      style={{
-                        backgroundImage: `url(${PNLBG2})`,
-                        border: selectedBg === PNLBG2 ? '2px solid white' : '1px solid gray',
-                      }}
-                    />
-                    {uploadedBg && (
-                      <button
-                        className="pnl-box"
-                        onClick={() => setSelectedBg(uploadedBg)}
-                        style={{
-                          backgroundImage: `url(${uploadedBg})`,
-                          border: selectedBg === uploadedBg ? '2px solid white' : '1px solid gray',
-                        }}
-                      />
-                    )}
-                  </div>
-
-                  <div className="pnl-middle-right">
-                    <label className="pnl-upload-box">
-                      Upload File
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="pnl-file-input"
-                        onChange={handleFileUpload}
-                      />
-                    </label>
-                  </div>
-                </div>
-
-                <div className="pnl-footer pnl-layer-bottom">
-                  <div className="pnl-footer-left">
-                    <button
-                      className="pnl-footer-btn"
-                      onClick={() => setCurrency(prev => (prev === tokenName ? 'USD' : tokenName))}
-                    >
-                      ⬆⬇ {currency}
-                    </button>
-                    {['1D', '7D', '30D', 'MAX'].map(label => (
-                      <button key={label} className="pnl-footer-btn">{label}</button>
-                    ))}
-                    <button className="pnl-footer-btn" onClick={toggleRightPanel}>
-                      {showRightPanel ? 'Hide Panel' : 'Customize'}
-                    </button>
-                  </div>
-                  <div className="pnl-footer-right">
-                    <button className="pnl-footer-btn" onClick={handleDownload}>Download</button>
-                    <button className="pnl-footer-btn" onClick={handleCopyImage}>Copy</button>
-                  </div>
-                </div>
-              </div>
-
-              <div className={`pnl-modal right-popup ${showRightPanel ? 'show' : ''}`}>
-                <div className="right-panel-content">
-                  <div className="right-panel-header">
-                    <h3>Customize PNL Colors</h3>
-                    <button
-                      className="close-right-panel"
-                      onClick={() => setShowRightPanel(false)}
-                      aria-label="Close panel"
-                    >
-                      <img src={closebutton} className="close-button-icon" alt="Close" />
-                    </button>
-                  </div>
-
-                  <div className="customization-body">
-                    <div className="section">
-                      <h3 className="section-title">Text Colors</h3>
-                      {colorInputs.mainText}
-                    </div>
-
-                    <div className="section">
-                      <h3 className="section-title">PNL Colors</h3>
-                      {colorInputs.positivePNL}
-                      {colorInputs.negativePNL}
-                    </div>
-
-                    <div className="section">
-                      <h3 className="section-title">Layout Options</h3>
-                      <div className="layout-toggle-row">
-                        <span className="layout-toggle-sublabel">Show PNL Rectangle</span>
-                        <div className="toggle-switch-wrapper">
-                          <ToggleSwitch
-                            checked={tempCustomizationSettings.showPNLRectangle}
-                            onChange={() => handleTempToggle('showPNLRectangle')}
-                          />
-                        </div>
-                      </div>
-                      {colorInputs.rectangleText}
-                    </div>
-                  </div>
-
-                  <div className="customization-footer">
-                    <button className="apply-btn" onClick={handleApplySettings}>
-                      Apply Changes
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {activePicker && (
-              <div
-                className="color-picker-dropdown"
-                style={{
-                  top: `${pickerPosition.top}px`,
-                  left: `${pickerPosition.left}px`,
-                }}
-                ref={(el) => pickerRefs.current[activePicker] = el}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <HexColorPicker
-                  color={getCurrentColor(activePicker)}
-                  onChange={(color) => {
-                    const settingKey = getSettingKey(activePicker);
-                    handleTempColorChange(settingKey, color);
-                  }}
-                />
-                <div className="rgb-inputs">
-                  {['R', 'G', 'B'].map((channel, i) => {
-                    const currentColor = getCurrentColor(activePicker);
-                    const slice = currentColor.slice(1 + i * 2, 3 + i * 2);
-                    const value = parseInt(slice, 16) || 0;
-
-                    return (
-                      <div className="rgb-input-group" key={channel}>
-                        <label>{channel}</label>
-                        <input
-                          type="number"
-                          min="0"
-                          max="255"
-                          value={value}
-                          onChange={(e) => {
-                            const rgb = [0, 0, 0].map((_, idx) =>
-                              idx === i
-                                ? Math.max(0, Math.min(255, Number(e.target.value)))
-                                : parseInt(currentColor.slice(1 + idx * 2, 3 + idx * 2), 16)
-                            );
-                            const newColor = `#${rgb
-                              .map((c) => c.toString(16).padStart(2, '0'))
-                              .join('')}`;
-
-                            const settingKey = getSettingKey(activePicker);
-                            handleTempColorChange(settingKey, newColor);
-                          }}
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+          <></>
         ) : null}
         {popup === 28 ? (
           <div className="onect-trading-selection-bg">
@@ -13905,16 +13487,15 @@ function App() {
                     setCreateVaultForm({
                       name: '',
                       description: '',
+                      selectedMarket: '',
                       quoteAsset: '',
                       baseAsset: '',
                       amountQuote: '',
                       amountBase: '',
                       social1: '',
                       social2: '',
-                      showQuoteDropdown: false,
-                      showBaseDropdown: false,
-                      quoteSearchTerm: '',
-                      baseSearchTerm: ''
+                      showMarketDropdown: false,
+                      marketSearchTerm: ''
                     });
                     setpopup(0);
                   }}
@@ -13926,11 +13507,10 @@ function App() {
               <div
                 className="modal-body"
                 onClick={(e) => {
-                  if (!(e.target as Element)?.closest?.('.token-selector-container')) {
+                  if (!(e.target as Element)?.closest?.('.market-selector-container')) {
                     setCreateVaultForm(prev => ({
                       ...prev,
-                      showQuoteDropdown: false,
-                      showBaseDropdown: false
+                      showMarketDropdown: false
                     }));
                   }
                 }}
@@ -13957,192 +13537,85 @@ function App() {
                   />
                 </div>
 
-                <div className="form-row">
-                  <div className="form-group">
-                    <label className="token-selector-label">Quote Asset</label>
-                    <div className="token-selector-container">
-                      <div className="token-selector-input-wrapper">
-                        <input
-                          type="text"
-                          value={createVaultForm.quoteAsset}
-                          onChange={(e) => {
-                            setCreateVaultForm(prev => ({ ...prev, quoteAsset: e.target.value }));
-                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
-                              setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: false }));
-                            }
-                          }}
-                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: true }))}
-                          className="form-input token-selector-input"
-                          placeholder="Select quote token..."
-                        />
-                        {(() => {
-                          const selectedToken = Object.values(tokendict).find((t) =>
-                            t.address.toLowerCase() === createVaultForm.quoteAsset.toLowerCase()
-                          );
-                          return selectedToken ? (
-                            <div className="selected-token-indicator">
-                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
-                              <span className="token-symbol">{selectedToken.ticker}</span>
-                            </div>
-                          ) : null;
-                        })()}
-                        <button
-                          type="button"
-                          className="token-dropdown-button"
-                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showQuoteDropdown: !prev.showQuoteDropdown }))}
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                      </div>
-
-                      {createVaultForm.showQuoteDropdown && (
-                        <div className="token-dropdown">
-                          <div className="token-search">
-                            <input
-                              type="text"
-                              placeholder="Search tokens..."
-                              value={createVaultForm.quoteSearchTerm || ''}
-                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, quoteSearchTerm: e.target.value }))}
-                              className="token-search-input"
-                            />
+                <div className="form-group">
+                  <label className="market-selector-label">Trading Market</label>
+                  <div className="market-selector-container">
+                      {(() => {
+                        const selectedMarket = Object.values(markets).find((market) =>
+                          `${market.baseAsset}${market.quoteAsset}` === createVaultForm.selectedMarket
+                        );
+                        return selectedMarket ? (
+                          <div className="selected-token-indicator">
+                            <img src={selectedMarket.image || tokendict[selectedMarket.baseAddress]?.image} alt={selectedMarket.baseAsset} className="token-icon-small" />
+                            <span className="token-symbol">{selectedMarket.baseAsset}/{selectedMarket.quoteAsset}</span>
                           </div>
-
-                          <div className="token-list">
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.quoteSearchTerm || '';
-                              if (!searchTerm) return true;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map((token) => (
-                              <div
-                                key={token.address}
-                                className="token-option"
-                                onClick={() => {
-                                  setCreateVaultForm(prev => ({
-                                    ...prev,
-                                    quoteAsset: token.address,
-                                    showQuoteDropdown: false,
-                                    quoteSearchTerm: ''
-                                  }));
-                                }}
-                              >
-                                <img src={token.image} alt={token.ticker} className="token-icon" />
-                                <div className="token-info">
-                                  <div className="token-symbol">{token.ticker}</div>
-                                  <div className="token-name">{token.name}</div>
-                                </div>
-                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
-                              </div>
-                            ))}
-
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.quoteSearchTerm || '';
-                              if (!searchTerm) return false;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).length === 0 && createVaultForm.quoteSearchTerm && (
-                                <div className="no-tokens-found">No tokens found</div>
-                              )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
+                        ) : null;
+                      })()}
+                   <div className="market-selector-input-wrapper">
+                    <input
+                      type="text"
+                      value=""
+                      onFocus={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: true }))}
+                      className="form-input market-selector-input"
+                      placeholder={createVaultForm.selectedMarket ? "" : "Select trading market..."}
+                      readOnly
+                    />
+                    <button
+                      type="button"
+                      className="token-dropdown-button"
+                      onClick={() => setCreateVaultForm(prev => ({ ...prev, showMarketDropdown: !prev.showMarketDropdown }))}
+                    >
+                      <ChevronDown size={16} />
+                    </button>
                   </div>
-
-                  <div className="form-group">
-                    <label className="token-selector-label">Base Asset</label>
-                    <div className="token-selector-container">
-                      <div className="token-selector-input-wrapper">
-                        <input
-                          type="text"
-                          value={createVaultForm.baseAsset}
-                          onChange={(e) => {
-                            setCreateVaultForm(prev => ({ ...prev, baseAsset: e.target.value }));
-                            if (e.target.value.startsWith('0x') && e.target.value.length === 42) {
-                              setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: false }));
-                            }
-                          }}
-                          onFocus={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: true }))}
-                          className="form-input token-selector-input"
-                          placeholder="Select base token..."
-                        />
-                        {(() => {
-                          const selectedToken = Object.values(tokendict).find((t) =>
-                            t.address.toLowerCase() === createVaultForm.baseAsset.toLowerCase()
-                          );
-                          return selectedToken ? (
-                            <div className="selected-token-indicator">
-                              <img src={selectedToken.image} alt={selectedToken.ticker} className="token-icon-small" />
-                              <span className="token-symbol">{selectedToken.ticker}</span>
-                            </div>
-                          ) : null;
-                        })()}
-                        <button
-                          type="button"
-                          className="token-dropdown-button"
-                          onClick={() => setCreateVaultForm(prev => ({ ...prev, showBaseDropdown: !prev.showBaseDropdown }))}
-                        >
-                          <ChevronDown size={16} />
-                        </button>
-                      </div>
-
-                      {createVaultForm.showBaseDropdown && (
-                        <div className="token-dropdown">
-                          <div className="token-search">
-                            <Search size={14} />
-                            <input
-                              type="text"
-                              placeholder="Search tokens..."
-                              value={createVaultForm.baseSearchTerm || ''}
-                              onChange={(e) => setCreateVaultForm(prev => ({ ...prev, baseSearchTerm: e.target.value }))}
-                              className="token-search-input"
-                            />
-                          </div>
-
-                          <div className="token-list">
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.baseSearchTerm || '';
-                              if (!searchTerm) return true;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).slice(0, 10).map((token) => (
+                    {createVaultForm.showMarketDropdown && (
+                      <div className="create-vault-token-dropdown">
+                        <div className="create-vault-token-list">
+                          {Object.values(markets).filter((market) => {
+                            const searchTerm = createVaultForm.marketSearchTerm || '';
+                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                            if (!searchTerm) return true;
+                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                          }).slice(0, 10).map((market) => {
+                            const marketKey = `${market.baseAsset}${market.quoteAsset}`;
+                            return (
                               <div
-                                key={token.address}
-                                className="token-option"
+                                key={marketKey}
+                                className="create-vault-token-option"
                                 onClick={() => {
                                   setCreateVaultForm(prev => ({
                                     ...prev,
-                                    baseAsset: token.address,
-                                    showBaseDropdown: false,
-                                    baseSearchTerm: ''
+                                    selectedMarket: marketKey,
+                                    quoteAsset: market.quoteAddress,
+                                    baseAsset: market.baseAddress,
+                                    showMarketDropdown: false,
+                                    marketSearchTerm: ''
                                   }));
                                 }}
                               >
-                                <img src={token.image} alt={token.ticker} className="token-icon" />
-                                <div className="token-info">
-                                  <div className="token-symbol">{token.ticker}</div>
-                                  <div className="token-name">{token.name}</div>
+                                <img src={market.image || tokendict[market.baseAddress]?.image} alt={market.baseAsset} className="create-vault-token-icon" />
+                                <div className="create-vault-token-info">
+                                  <div className="token-symbol">{market.baseAsset}/{market.quoteAsset}</div>
                                 </div>
-                                <div className="token-address">{token.address.slice(0, 6)}...{token.address.slice(-4)}</div>
                               </div>
-                            ))}
+                            );
+                          })}
 
-                            {Object.values(tokendict).filter((token) => {
-                              const searchTerm = createVaultForm.baseSearchTerm || '';
-                              if (!searchTerm) return false;
-                              return token.ticker.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                                token.address.toLowerCase().includes(searchTerm.toLowerCase());
-                            }).length === 0 && createVaultForm.baseSearchTerm && (
-                                <div className="no-tokens-found">No tokens found</div>
-                              )}
-                          </div>
+                          {Object.values(markets).filter((market) => {
+                            const searchTerm = createVaultForm.marketSearchTerm || '';
+                            const marketPair = `${market.baseAsset}/${market.quoteAsset}`;
+                            if (!searchTerm) return false;
+                            return marketPair.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.baseAsset.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              market.quoteAsset.toLowerCase().includes(searchTerm.toLowerCase());
+                          }).length === 0 && createVaultForm.marketSearchTerm && (
+                              <div className="no-tokens-found">No markets found</div>
+                            )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -14156,6 +13629,11 @@ function App() {
                       className="form-input"
                       placeholder="0.0"
                     />
+                    {createVaultForm.quoteAsset && tokendict[createVaultForm.quoteAsset] && (
+                      <small className="token-label">
+                        {tokendict[createVaultForm.quoteAsset].ticker} ({tokendict[createVaultForm.quoteAsset].name})
+                      </small>
+                    )}
                   </div>
                   <div className="form-group">
                     <label>Initial Base Amount</label>
@@ -14166,6 +13644,11 @@ function App() {
                       className="form-input"
                       placeholder="0.0"
                     />
+                    {createVaultForm.baseAsset && tokendict[createVaultForm.baseAsset] && (
+                      <small className="token-label">
+                        {tokendict[createVaultForm.baseAsset].ticker} ({tokendict[createVaultForm.baseAsset].name})
+                      </small>
+                    )}
                   </div>
                 </div>
 
@@ -14195,10 +13678,10 @@ function App() {
 
               <div className="modal-footer">
                 <button
-                  className={`save-button ${(!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
-                  disabled={!createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
+                  className={`save-button ${(!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase) ? 'disabled' : ''}`}
+                  disabled={!createVaultForm.name || !createVaultForm.selectedMarket || !createVaultForm.amountQuote || !createVaultForm.amountBase || isVaultDepositSigning}
                   onClick={async () => {
-                    if (!connected || !createVaultForm.name || !createVaultForm.quoteAsset || !createVaultForm.baseAsset ||
+                    if (!connected || !createVaultForm.name || !createVaultForm.selectedMarket ||
                       !createVaultForm.amountQuote || !createVaultForm.amountBase) {
                       return;
                     }
@@ -14333,16 +13816,15 @@ function App() {
                       setCreateVaultForm({
                         name: '',
                         description: '',
+                        selectedMarket: '',
                         quoteAsset: '',
                         baseAsset: '',
                         amountQuote: '',
                         amountBase: '',
                         social1: '',
                         social2: '',
-                        showQuoteDropdown: false,
-                        showBaseDropdown: false,
-                        quoteSearchTerm: '',
-                        baseSearchTerm: ''
+                        showMarketDropdown: false,
+                        marketSearchTerm: ''
                       });
                       setpopup(0);
                       refetch?.();
@@ -16608,7 +16090,7 @@ function App() {
                 setlimitPriceString(
                   (
                     Number(price) / Number(activeMarket.priceFactor)
-                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
+                  ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) || 1)) - 1) : Number(activeMarket.priceFactor)))),
                 );
                 setamountOutSwap(
                   price != BigInt(0) && amountIn != BigInt(0)
@@ -20294,6 +19776,7 @@ function App() {
                       router,
                       BigInt(finalAmountIn),
                       batches,
+                      BigInt(Math.floor(Date.now() / 1000) + 900),
                       usedRefAddress
                     )
                   })
@@ -20310,6 +19793,7 @@ function App() {
                         router,
                         BigInt(0),
                         batches,
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       ))
                       hash = await sendUserOperationAsync({ uo: uo })
@@ -20358,6 +19842,7 @@ function App() {
                         router,
                         BigInt(0),
                         batches,
+                        BigInt(Math.floor(Date.now() / 1000) + 900),
                         usedRefAddress
                       )
                     })
@@ -20551,12 +20036,12 @@ function App() {
     usedRefAddress,
     advChartData,
     realtimeCallbackRef,
-      limitPrice,
-  setlimitPrice,
-  setlimitPriceString,
-  tokenIn,
-  amountIn,
-  location.pathname,
+    limitPrice,
+    setlimitPrice,
+    setlimitPriceString,
+    tokenIn,
+    amountIn,
+    location.pathname,
   ]);
 
   const TradeLayout = (swapComponent: JSX.Element) => (

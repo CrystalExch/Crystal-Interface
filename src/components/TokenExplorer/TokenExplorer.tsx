@@ -29,6 +29,10 @@ import './TokenExplorer.css';
 import { useNavigate } from 'react-router-dom';
 
 
+import stepaudio from '../../assets/step_audio.mp3';
+import kaching from '../../assets/ka-ching.mp3';
+
+
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -99,7 +103,6 @@ interface DisplaySettings {
     fundingTime: boolean;
     snipers: boolean;
     insiders: boolean;
-    bundlers: boolean;
     dexPaid: boolean;
   };
   metricColoring: boolean;
@@ -143,7 +146,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.5';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -177,7 +180,6 @@ const DISPLAY_DEFAULTS: DisplaySettings = {
     fundingTime: false,
     snipers: true,
     insiders: true,
-    bundlers: true,
     dexPaid: false,
   },
   metricColoring: false,
@@ -192,9 +194,9 @@ const ALERT_DEFAULTS: AlertSettings = {
   soundAlertsEnabled: true,
   volume: 100,
   sounds: {
-    newPairs: 'Default',
-    pairMigrating: 'Default',
-    migrated: 'Default',
+    newPairs: stepaudio,
+    pairMigrating: stepaudio,
+    migrated: stepaudio,
   },
 };
 
@@ -294,14 +296,17 @@ const Tooltip: React.FC<{
 }> = ({ content, children, position = 'top' }) => {
   const [shouldRender, setShouldRender] = useState(false);
   const [isVisible, setIsVisible] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
+  const tooltipRef = useRef<HTMLDivElement>(null);
   const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const updatePosition = useCallback(() => {
-    if (!containerRef.current) return;
+    if (!containerRef.current || !tooltipRef.current) return;
 
     const rect = containerRef.current.getBoundingClientRect();
+    const tooltipRect = tooltipRef.current.getBoundingClientRect();
     const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
     const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
@@ -310,62 +315,75 @@ const Tooltip: React.FC<{
 
     switch (position) {
       case 'top':
-        top = rect.top + scrollY - 25;
+        top = rect.top + scrollY - tooltipRect.height - 25;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'bottom':
-        top = rect.bottom + scrollY + 25;
+        top = rect.bottom + scrollY + 10;
         left = rect.left + scrollX + rect.width / 2;
         break;
       case 'left':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - 25;
+        left = rect.left + scrollX - tooltipRect.width - 10;
         break;
       case 'right':
         top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 25;
+        left = rect.right + scrollX + 10;
         break;
+    }
+
+    const margin = 10;
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    if (position === 'top' || position === 'bottom') {
+      left = Math.min(
+        Math.max(left, margin + tooltipRect.width / 2),
+        viewportWidth - margin - tooltipRect.width / 2,
+      );
+    } else {
+      top = Math.min(
+        Math.max(top, margin),
+        viewportHeight - margin - tooltipRect.height,
+      );
     }
 
     setTooltipPosition({ top, left });
   }, [position]);
 
   const handleMouseEnter = useCallback(() => {
-    // Clear any existing fade out timeout
     if (fadeTimeoutRef.current) {
       clearTimeout(fadeTimeoutRef.current);
       fadeTimeoutRef.current = null;
     }
 
-    // Mount the tooltip first
+    setIsLeaving(false);
     setShouldRender(true);
 
-    // Give browser time to render the element with opacity: 0, then fade in
     fadeTimeoutRef.current = setTimeout(() => {
       setIsVisible(true);
       fadeTimeoutRef.current = null;
-    }, 10); // Small delay to ensure initial state is applied
+    }, 10);
   }, []);
 
   const handleMouseLeave = useCallback(() => {
-    // Clear any pending fade in
     if (fadeTimeoutRef.current) {
       clearTimeout(fadeTimeoutRef.current);
       fadeTimeoutRef.current = null;
     }
 
-    // Start fade out immediately
+    setIsLeaving(true);
     setIsVisible(false);
 
-    // Unmount after fade out completes
     fadeTimeoutRef.current = setTimeout(() => {
       setShouldRender(false);
+      setIsLeaving(false);
       fadeTimeoutRef.current = null;
-    }, 300); // Match the CSS transition duration
+    }, 150);
   }, []);
 
   useEffect(() => {
-    if (shouldRender) {
+    if (shouldRender && !isLeaving) {
       updatePosition();
       window.addEventListener('scroll', updatePosition);
       window.addEventListener('resize', updatePosition);
@@ -374,9 +392,8 @@ const Tooltip: React.FC<{
         window.removeEventListener('resize', updatePosition);
       };
     }
-  }, [shouldRender, updatePosition]);
+  }, [shouldRender, updatePosition, isLeaving]);
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
       if (fadeTimeoutRef.current) {
@@ -395,18 +412,22 @@ const Tooltip: React.FC<{
       {children}
       {shouldRender && createPortal(
         <div
-          className={`tooltip tooltip-${position} fade-popup ${isVisible ? 'visible' : ''}`}
+          ref={tooltipRef}
+          className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
           style={{
             position: 'absolute',
             top: `${tooltipPosition.top}px`,
             left: `${tooltipPosition.left}px`,
-            transform: position === 'top' || position === 'bottom'
+            transform: `${position === 'top' || position === 'bottom'
               ? 'translateX(-50%)'
               : position === 'left' || position === 'right'
                 ? 'translateY(-50%)'
-                : 'none',
+                : 'none'} scale(${isVisible ? 1 : 0})`,
+            opacity: isVisible ? 1 : 0,
             zIndex: 9999,
-            pointerEvents: 'none'
+            pointerEvents: 'none',
+            transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+            willChange: 'transform, opacity'
           }}
         >
           <div className="tooltip-content">
@@ -595,7 +616,48 @@ const AlertsPopup: React.FC<{
   onSettingsChange: (settings: AlertSettings) => void;
 }> = ({ isOpen, onClose, settings, onSettingsChange }) => {
   const [isDragging, setIsDragging] = useState(false);
+  const [openDropdowns, setOpenDropdowns] = useState<Record<string, boolean>>({});
+
   const sliderRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastVolumeRef = useRef<number>(settings.volume);
+  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const toggleDropdown = (key: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+  const closeDropdown = (key: string) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [key]: false
+    }));
+  };
+  const getSoundDisplayName = (soundPath: string) => {
+    if (soundPath === stepaudio) return 'Step Audio';
+    if (soundPath === kaching) return 'Ka-ching';
+    if (soundPath.includes('blob:')) return 'Custom Audio';
+    return 'Step Audio';
+  };
+  useEffect(() => {
+    audioRef.current = new Audio(stepaudio);
+    audioRef.current.volume = settings.volume / 100;
+
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update audio volume when settings change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = settings.volume / 100;
+    }
+  }, [settings.volume]);
 
   const updateSetting = <K extends keyof AlertSettings>(
     key: K,
@@ -621,9 +683,25 @@ const AlertsPopup: React.FC<{
     handleVolumeChange(e.clientX);
   }, [handleVolumeChange]);
 
+  const handleVolumeSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseInt(e.target.value, 10);
+    updateSetting('volume', newVolume);
+  }, []);
+
+  const handleVolumeChangeEnd = useCallback(() => {
+    if (audioRef.current && Math.abs(settings.volume - lastVolumeRef.current) > 0) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    }
+    lastVolumeRef.current = settings.volume;
+    setIsDragging(false);
+  }, [settings.volume]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => { if (isDragging) handleVolumeChange(e.clientX); };
-    const handleMouseUp = () => setIsDragging(false);
+    const handleMouseUp = () => {
+      if (isDragging) handleVolumeChangeEnd();
+    };
 
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -633,20 +711,39 @@ const AlertsPopup: React.FC<{
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, handleVolumeChange]);
+  }, [isDragging, handleVolumeChange, handleVolumeChangeEnd]);
 
   const playSound = (soundType: keyof AlertSettings['sounds']) => {
-    console.log(`Playing ${soundType} sound`);
+    if (!audioRef.current) return;
+
+    const soundUrl = settings.sounds[soundType];
+
+    if (soundUrl === stepaudio || soundUrl === kaching || soundUrl === 'Default') {
+      const audio = new Audio(soundUrl === 'Default' ? stepaudio : soundUrl);
+      audio.volume = settings.volume / 100;
+      audio.currentTime = 0;
+      audio.play().catch(console.error);
+    } else {
+      const customAudio = new Audio(soundUrl);
+      customAudio.volume = settings.volume / 100;
+      customAudio.play().catch(console.error);
+    }
   };
 
   const handleFileUpload = (soundType: keyof AlertSettings['sounds'], event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log(`Uploaded file for ${soundType}:`, file.name);
-      updateSoundSetting(soundType, file.name);
+      const url = URL.createObjectURL(file);
+      updateSoundSetting(soundType, url);
+      setOpenDropdowns(prev => ({ ...prev, [soundType]: false }));
     }
+    event.target.value = '';
   };
 
+  const selectSound = (soundType: keyof AlertSettings['sounds'], soundValue: string) => {
+    updateSoundSetting(soundType, soundValue);
+    setOpenDropdowns(prev => ({ ...prev, [soundType]: false }));
+  };
   if (!isOpen) return null;
 
   return (
@@ -692,11 +789,11 @@ const AlertsPopup: React.FC<{
                     max="100"
                     step="1"
                     value={settings.volume}
-                    onChange={(e) => updateSetting('volume', parseInt(e.target.value, 10))}
+                    onChange={handleVolumeSliderChange}
                     onMouseDown={() => setIsDragging(true)}
-                    onMouseUp={() => setIsDragging(false)}
+                    onMouseUp={handleVolumeChangeEnd}
                     onTouchStart={() => setIsDragging(true)}
-                    onTouchEnd={() => setIsDragging(false)}
+                    onTouchEnd={handleVolumeChangeEnd}
                     style={{
                       background: `linear-gradient(to right, rgb(171,176,224) ${settings.volume}%, rgb(28,28,31) ${settings.volume}%)`,
                     }}
@@ -726,24 +823,74 @@ const AlertsPopup: React.FC<{
                         {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
                       </span>
                       <div className="sound-controls">
-                        <label className="sound-selector">
-                          <Volume2 size={14} />
-                          {settings.sounds[key] || 'Default'}
-                          <input
-                            type="file"
-                            accept="audio/*"
-                            style={{ display: 'none' }}
-                            onChange={(e) => handleFileUpload(key, e)}
-                          />
-                          <div className="sound-action-button-container">
-                            <button className="sound-action-btn" onClick={() => playSound(key)} title="Play sound">
-                              <Play size={14} />
-                            </button>
-                            <button className="sound-action-btn" onClick={() => updateSoundSetting(key, 'Default')} title="Reset to default">
-                              <RotateCcw size={14} />
-                            </button>
-                          </div>
-                        </label>
+                        <div className="sound-selector-dropdown">
+                          <button
+                            className="sound-selector"
+                            onClick={() => toggleDropdown(key)}
+                            onBlur={(e) => {
+                              if (!e.currentTarget.parentElement?.contains(e.relatedTarget as Node)) {
+                                closeDropdown(key);
+                              }
+                            }}
+                          >
+                            <Volume2 size={14} />
+                            <span>{getSoundDisplayName(settings.sounds[key])}</span>
+            <div className="sound-action-button-container">
+
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
+
+                              <Play size={14} />
+
+                            </button>
+
+                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
+
+                              <RotateCcw size={14} />
+
+                            </button>
+
+                          </div>
+                            {openDropdowns[key] && (
+                              <div className="sound-dropdown-content">
+                                <button
+                                  className={`sound-dropdown-item ${settings.sounds[key] === stepaudio ? 'active' : ''}`}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, stepaudio);
+                                    closeDropdown(key);
+                                  }}
+                                >
+                                  Step Audio
+                                </button>
+                                <button
+                                  className={`sound-dropdown-item ${settings.sounds[key] === kaching ? 'active' : ''}`}
+                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onClick={() => {
+                                    selectSound(key, kaching);
+                                    closeDropdown(key);
+                                  }}
+                                >
+                                  Ka-ching
+                                </button>
+                                <label className="sound-dropdown-item">
+                                  Upload Other
+                                  <input
+                                    type="file"
+                                    accept="audio/*"
+                                    style={{ display: 'none' }}
+                                    onChange={(e) => {
+                                      handleFileUpload(key, e);
+                                      closeDropdown(key);
+                                    }}
+                                  />
+                                </label>
+
+                              </div>
+                              
+                            )}
+                          </button>
+                        </div>
+
                       </div>
                     </div>
                   ))}
@@ -1205,7 +1352,6 @@ const DisplayDropdown: React.FC<{
                         ['devHolding', 'Dev Holding'],
                         ['snipers', 'Snipers'],
                         ['insiders', 'Insiders'],
-                        ['bundlers', 'Bundlers'],
                       ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                     ).map(([k, label]) => (
                       <div key={k} className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`} onClick={() => updateRowSetting(k, !settings.visibleRows[k])}>
@@ -1460,12 +1606,6 @@ const TokenRow = React.memo<{
   onTokenClick: (token: Token) => void;
   onQuickBuy: (token: Token, amount: string) => void;
   onCopyToClipboard: (text: string) => void;
-  onWebsiteOpen: (url: string) => void;
-  onTwitterOpen: (handle: string) => void;
-  onTwitterContractSearch: (address: string) => void;
-  onImageSearch: (image: string) => void;
-  onTelegramOpen: (handle: string) => void;
-  onDiscordOpen: (handle: string) => void;
   displaySettings: DisplaySettings;
   isHidden: boolean;
 }>((props) => {
@@ -1484,12 +1624,6 @@ const TokenRow = React.memo<{
     onTokenClick,
     onQuickBuy,
     onCopyToClipboard,
-    onWebsiteOpen,
-    onTwitterOpen,
-    onTwitterContractSearch,
-    onImageSearch,
-    onTelegramOpen,
-    onDiscordOpen,
     displaySettings,
     isHidden
   } = props;
@@ -1658,7 +1792,13 @@ const TokenRow = React.memo<{
         <div
           ref={imageContainerRef}
           className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
-          onClick={() => onImageSearch(token.image)}
+          onClick={(e) => {
+          e.stopPropagation();
+          window.open(
+            `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
+            '_blank',
+            'noopener,noreferrer'
+          )}}
           onMouseEnter={() => onImageHover(token.id)}
           onMouseLeave={onImageLeave}
           style={token.status === 'graduated' || !displaySettings.progressBar
@@ -1722,54 +1862,66 @@ const TokenRow = React.memo<{
               {displaySettings.visibleRows.socials && (
                 <>
                   {!!token.twitterHandle && (
-                    <button
+                    <a
                       className="explorer-twitter-btn"
-                      onClick={(e) => { e.stopPropagation(); onTwitterOpen(token.twitterHandle); }}
-                      title={`visit @${token.twitterHandle}`}
+                      href={token.twitterHandle}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
                       </svg>
-                    </button>
+                    </a>
                   )}
 
                   {!!token.website && (
-                    <button
-                      className="explorer-website-link"
-                      onClick={(e) => { e.stopPropagation(); onWebsiteOpen(token.website); }}
+                    <a
+                      className="explorer-twitter-btn"
+                      href={token.website}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
                       </svg>
-                    </button>
+                    </a>
                   )}
 
                   {!!token.telegramHandle && (
-                    <button
+                    <a
                       className="explorer-telegram-btn"
-                      onClick={(e) => { e.stopPropagation(); onTelegramOpen(token.telegramHandle); }}
-                      title="share on telegram"
+                      href={token.telegramHandle}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
-                      <img src={telegram} alt="telegram" />
-                    </button>
+                      <img src={telegram}/>
+                    </a>
                   )}
 
                   {!!token.discordHandle && (
-                    <button
+                    <a
                       className="explorer-discord-btn"
-                      onClick={(e) => { e.stopPropagation(); onDiscordOpen(token.discordHandle); }}
+                      href={token.discordHandle}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                     >
-                      <img src={discord} alt="discord" />
-                    </button>
+                      <img src={discord}/>
+                    </a>
                   )}
 
-                  <button
-                    className="explorer-twitter-btn"
-                    onClick={(e) => { e.stopPropagation(); onTwitterContractSearch(token.tokenAddress); }}
-                    title="search contract on twitter"
+                  <a
+                      className="explorer-telegram-btn"
+                      href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={e=>e.stopPropagation()}
                   >
                     <Search size={14} />
-                  </button>
+                  </a>
                 </>
               )}
             </div>
@@ -1868,24 +2020,6 @@ const TokenRow = React.memo<{
             </Tooltip>
           )}
 
-          {displaySettings.visibleRows.bundlers && (
-            <Tooltip content="Bundle Holding">
-              <div className="explorer-holding-item">
-                <svg
-                  className="holding-icon"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 128 128"
-                  fill={token.bundleHolding > 5 ? "#eb7070ff" : "rgb(67, 254, 154)"}
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path d="M117 68.26l-26-15a2 2 0 00-2 0l-26 15A2 2 0 0062 70v30a2 2 0 001 1.73l26 15a2 2 0 002 0l26-15a2 2 0 001-1.73V70A2 2 0 00117 68.26zm-27-11l22.46 13L90 82.7 68 70zM66 73.46L88 86.15v25.41L66 98.86zm26 38.1V86.18L114 74V98.85zM56 102.25l-16 8.82V86.72l17-10a2 2 0 10-2-3.44l-17 10L15.55 70.56 38 57.82l17 8.95a2 2 0 001.86-3.54l-18-9.46a2 2 0 00-1.92 0L11 68.53a2 2 0 00-1 1.74V99.73a2 2 0 001 1.74L37 116.2a2 2 0 002 0l19-10.46a2 2 0 10-1.92-3.5zm-42-28L36 86.74V111L14 98.56zM38 49a2 2 0 002-2V28.46L62 41.15V61a2 2 0 004 0V41.15L88 28.46V47a2 2 0 004 0V25a2 2 0 00-1-1.73l-26-15a2 2 0 00-2 0l-26 15A2 2 0 0036 25V47A2 2 0 0038 49zM64 12.31L86 25 64 37.69 42 25z" />
-                </svg>                <span className="explorer-holding-value" style={{ color: token.bundleHolding > 5 ? "#eb7070ff" : "rgb(67, 254, 154)" }}>
-                  {token.bundleHolding.toFixed(1)}%
-                </span>
-              </div>
-            </Tooltip>
-          )}
 
           {displaySettings.visibleRows.insiders && (
             <Tooltip content="Insider Holding">
@@ -2180,91 +2314,68 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   }, []);
 
-  const handleWebsiteOpen = useCallback((url: string) => {
-    if (!url) return;
-    const u = url.startsWith('http') ? url : `https://${url}`;
-    window.open(u, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTwitterOpen = useCallback((h: string) => {
-    const handle = h?.startsWith('http') ? h : `https://twitter.com/${h?.replace('@', '')}`;
-    window.open(handle, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTelegramOpen = useCallback((h: string) => {
-    const url = h?.startsWith('http') ? h : `https://t.me/${h?.replace('@', '')}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleDiscordOpen = useCallback((h: string) => {
-    const url = h?.startsWith('http') ? h : `https://${h}`;
-    window.open(url, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleTwitterContractSearch = useCallback((addr: string) => {
-    window.open(`https://twitter.com/search?q=${addr}`, '_blank', 'noopener,noreferrer');
-  }, []);
-  const handleImageSearch = useCallback((img: string) => {
-    window.open(`https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(img)}`, '_blank', 'noopener,noreferrer');
-  }, []);
 const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   const val = BigInt(amt || '0') * 10n ** 18n;
   if (val === 0n) return;
 
-  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
+    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
 
-  try {
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, { 
-        title: 'Sending transaction...', 
-        subtitle: `${amt} MON worth of ${token.symbol}`, 
-        amount: amt, 
-        amountUnit: 'MON',
-        tokenImage: token.image  
-      });
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          amount: amt,
+          amountUnit: 'MON',
+          tokenImage: token.image
+        });
+      }
+
+      const uo = {
+        target: routerAddress,
+        data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
+        value: val,
+      };
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `${amt} MON worth of ${token.symbol}`,
+          variant: 'info',
+          tokenImage: token.image
+        });
+      }
+
+      const op = await sendUserOperationAsync({ uo });
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Quick Buy Complete',
+          subtitle: `Successfully bought ${token.symbol} with ${amt} MON`,
+          variant: 'success',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } catch (e: any) {
+      console.error('Quick buy failed', e);
+      const msg = String(e?.message ?? '');
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+          subtitle: msg || 'Please try again.',
+          variant: 'error',
+          confirmed: true,
+          isLoading: false,
+          tokenImage: token.image
+        });
+      }
+    } finally {
+      dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
     }
-
-    const uo = {
-      target: routerAddress,
-      data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
-      value: val,
-    };
-
-    if (updatePopup) {
-      updatePopup(txId, { 
-        title: 'Confirming transaction...', 
-        subtitle: `${amt} MON worth of ${token.symbol}`, 
-        variant: 'info',
-        tokenImage: token.image 
-      });
-    }
-
-    const op = await sendUserOperationAsync({ uo });
-
-    if (updatePopup) {
-      updatePopup(txId, { 
-        title: 'Quick Buy Complete', 
-        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, 
-        variant: 'success', 
-        confirmed: true, 
-        isLoading: false,
-        tokenImage: token.image
-      });
-    }
-  } catch (e: any) {
-    console.error('Quick buy failed', e);
-    const msg = String(e?.message ?? '');
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-        subtitle: msg || 'Please try again.',
-        variant: 'error',
-        confirmed: true,
-        isLoading: false,
-        tokenImage: token.image 
-      });
-    }
-  } finally {
-    dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
-  }
-}, [routerAddress, sendUserOperationAsync]);
+  }, [routerAddress, sendUserOperationAsync]);
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
@@ -2343,14 +2454,24 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
       volumeDelta: 0,
       telegramHandle: meta?.telegram ?? '',
       discordHandle: meta?.discord ?? '',
+      creator: `0x${topics[3].slice(26)}`.toLowerCase(),
     };
 
     dispatch({ type: 'ADD_MARKET', token });
+    if (alertSettings.soundAlertsEnabled) {
+      try {
+        const audio = new Audio(alertSettings.sounds.newPairs);
+        audio.volume = alertSettings.volume / 100;
+        audio.play().catch(console.error);
+      } catch (error) {
+        console.error('Failed to play new pairs sound:', error);
+      }
+    }
 
     if (!marketSubs.current[market] && wsRef.current) {
       subscribe(wsRef.current, ['logs', { address: market }], (sub) => (marketSubs.current[market] = sub));
     }
-  }, [subscribe]);
+  }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume]);
 
   const updateMarket = useCallback((log: any) => {
     if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
@@ -2471,7 +2592,14 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
-
+            const socials = [m.social1,m.social2,m.social3].map(s=>s?(/^https?:\/\//.test(s)?s:`https://${s}`):s)
+            const twitter = socials.find(s=>s?.startsWith("https://x.com")||s?.startsWith("https://twitter.com"))
+            if(twitter){socials.splice(socials.indexOf(twitter),1)}
+            const telegram = socials.find(s=>s?.startsWith("https://t.me"))
+            if(telegram){socials.splice(socials.indexOf(telegram),1)}
+            const discord = socials.find(s=>s?.startsWith("https://discord.gg")||s?.startsWith("https://discord.com"))
+            if(discord){socials.splice(socials.indexOf(discord),1)}
+            const website = socials[0]
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
@@ -2481,8 +2609,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               symbol: m.symbol,
               image: meta.image ?? '/discord.svg',
               description: meta.description ?? '',
-              twitterHandle: m.twitter ?? '',
-              website: m.website ?? '',
+              twitterHandle: twitter ?? '',
+              website: website ?? '',
               status: 'new',
               created: createdTimestamp,
               price,
@@ -2491,8 +2619,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               sellTransactions: Number(m.sellTxs),
               volume24h: Number(m.volumeNative) / 1e18,
               volumeDelta: 0,
-              telegramHandle: m.telegram ?? '',
-              discordHandle: m.discord ?? '',
+              discordHandle: discord ?? '',
+              telegramHandle: telegram ?? '',
             } as Token;
           })
         );
@@ -2580,7 +2708,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               xmlns="http://www.w3.org/2000/svg"
             >
               <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
-            </svg>           
+            </svg>
           </button>
           <button className="launch-token-btn" onClick={() => navigate('/launchpad')}>
             Launch a Token
@@ -2685,12 +2813,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
-                          onTelegramOpen={handleTelegramOpen}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2797,12 +2919,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
-                          onTelegramOpen={handleTelegramOpen}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />
@@ -2911,12 +3027,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                           onTokenClick={handleTokenClick}
                           onQuickBuy={handleQuickBuy}
                           onCopyToClipboard={copyToClipboard}
-                          onWebsiteOpen={handleWebsiteOpen}
-                          onTwitterOpen={handleTwitterOpen}
-                          onTwitterContractSearch={handleTwitterContractSearch}
-                          onImageSearch={handleImageSearch}
-                          onTelegramOpen={handleTelegramOpen}
-                          onDiscordOpen={handleDiscordOpen}
                           displaySettings={displaySettings}
                           isHidden={hidden.has(t.id)}
                         />

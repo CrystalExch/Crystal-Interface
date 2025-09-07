@@ -5,6 +5,7 @@ const multiBatchOrders = (
   address: `0x${string}`,
   value: bigint,
   batches: any,
+  deadline: bigint,
   referrer: `0x${string}`,
 ) => {
   return {
@@ -12,7 +13,7 @@ const multiBatchOrders = (
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
         functionName: 'multiBatchOrders',
-        args: [batches, referrer],
+        args: [batches, deadline, referrer],
       }),
       value: value,
     }
