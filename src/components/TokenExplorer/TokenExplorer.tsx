@@ -638,7 +638,7 @@ const AlertsPopup: React.FC<{
     if (soundPath === stepaudio) return 'Step Audio';
     if (soundPath === kaching) return 'Ka-ching';
     if (soundPath.includes('blob:')) return 'Custom Audio';
-    return 'Custom Audio';
+    return 'Step Audio';
   };
   useEffect(() => {
     audioRef.current = new Audio(stepaudio);

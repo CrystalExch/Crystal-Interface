@@ -2860,8 +2860,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('margin')}
+              className="portfolio-tab-title margin"
             >
               Margin
             </span>
@@ -2921,8 +2920,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
               Spot
             </span>
             <span
-              className={`portfolio-tab-title ${activeTab === 'margin' ? 'active' : 'nonactive'}`}
-              onClick={() => setActiveTab('margin')}
+              className="portfolio-tab-title margin"
             >
               Margin
             </span>
