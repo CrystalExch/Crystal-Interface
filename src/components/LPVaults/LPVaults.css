@@ -1157,7 +1157,7 @@
     white-space:nowrap;
     flex-shrink:0
 }
-.add-liquidity-button:hover,.continue-button.enabled:hover,.create-vault-button:hover,.deposit-button:hover,.create-button.enabled:hover,.save-button:hover,.vault-deposit-btn:hover,.vault-confirm-button:hover,.vault-detail-deposit-btn:hover{
+.add-liquidity-button:hover,.create-vault-button:hover,.deposit-button:hover,.create-button.enabled:hover,.save-button:hover,.vault-deposit-btn:hover,.vault-confirm-button:hover,.vault-detail-deposit-btn:hover{
     filter:brightness(1.1)
 }
 .add-liquidity-container{
@@ -1319,22 +1319,8 @@
 .create-vault-token-option:hover{
     background-color:#161619
 }
-.continue-button{
-    width:100%;
-    background:linear-gradient(135deg,#aaaecf 0,#9a9ec7 25%,#8b8eb8 50%,#7f82ac 75%,#7f82a1 100%);
-    border:none;
-    border-radius:12px;
-    color:#000;
-    font-size:1rem;
-    font-weight:500;
-    padding:.6rem;
-    cursor:pointer;
-    transition:opacity.2s ease;
-    margin-top:.5rem;
-    box-shadow:inset 0 1px 1px rgb(255 255 255/35%),inset 0 -1px 1px rgb(0 0 0/55%),0 2px 8px rgb(170 174 207/10%);
-    letter-spacing:-.5px
-}
-.continue-button:disabled,.create-vault-button:disabled,.lp-button-balance-error,.create-button:disabled,.create-vault-button.disabled,.vault-deposit-btn.disabled,.vault-withdraw-btn.disabled,.vault-confirm-button.disabled,.vault-detail-deposit-btn.disabled,.vault-detail-withdraw-btn.disabled,.save-button.disabled{
+
+.c.create-vault-button:disabled,.lp-button-balance-error,.create-button:disabled,.create-vault-button.disabled,.vault-deposit-btn.disabled,.vault-withdraw-btn.disabled,.vault-confirm-button.disabled,.vault-detail-deposit-btn.disabled,.vault-detail-withdraw-btn.disabled,.save-button.disabled{
     opacity:.5;
     cursor:not-allowed
 }
@@ -1405,12 +1391,7 @@
     color:#aaaecf;
     margin-left:16px
 }
-.continue-button.enabled{
-    background:linear-gradient(135deg,#aaaecf 0,#9a9ec7 25%,#8b8eb8 50%,#7f82ac 75%,#7f82a1 100%);
-    border:none;
-    border-radius:8px;
-    box-shadow:inset 0 1px 1px rgb(255 255 255/35%),inset 0 -1px 1px rgb(0 0 0/55%),0 2px 8px rgb(170 174 207/10%)
-}
+
 .lp-token-icon-wrapper{
     display:flex;
     align-items:center;

@@ -29,6 +29,8 @@ import './TokenExplorer.css';
 import { useNavigate } from 'react-router-dom';
 
 
+import stepaudio from '../../assets/step_audio.mp3';
+
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -143,7 +145,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.11';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.12';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -192,9 +194,9 @@ const ALERT_DEFAULTS: AlertSettings = {
   soundAlertsEnabled: true,
   volume: 100,
   sounds: {
-    newPairs: 'Default',
-    pairMigrating: 'Default',
-    migrated: 'Default',
+    newPairs: stepaudio,
+    pairMigrating: stepaudio,
+    migrated: stepaudio,
   },
 };
 
@@ -615,6 +617,28 @@ const AlertsPopup: React.FC<{
 }> = ({ isOpen, onClose, settings, onSettingsChange }) => {
   const [isDragging, setIsDragging] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const lastVolumeRef = useRef<number>(settings.volume);
+
+  // Initialize audio object
+  useEffect(() => {
+    audioRef.current = new Audio(stepaudio);
+    audioRef.current.volume = settings.volume / 100;
+    
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
+    };
+  }, []);
+
+  // Update audio volume when settings change
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.volume = settings.volume / 100;
+    }
+  }, [settings.volume]);
 
   const updateSetting = <K extends keyof AlertSettings>(
     key: K,
@@ -640,9 +664,26 @@ const AlertsPopup: React.FC<{
     handleVolumeChange(e.clientX);
   }, [handleVolumeChange]);
 
+  const handleVolumeSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const newVolume = parseInt(e.target.value, 10);
+    updateSetting('volume', newVolume);
+  }, []);
+
+  const handleVolumeChangeEnd = useCallback(() => {
+    // Play audio when volume slider is released if volume changed
+    if (audioRef.current && Math.abs(settings.volume - lastVolumeRef.current) > 0) {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    }
+    lastVolumeRef.current = settings.volume;
+    setIsDragging(false);
+  }, [settings.volume]);
+
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => { if (isDragging) handleVolumeChange(e.clientX); };
-    const handleMouseUp = () => setIsDragging(false);
+    const handleMouseUp = () => {
+      if (isDragging) handleVolumeChangeEnd();
+    };
 
     if (isDragging) {
       document.addEventListener('mousemove', handleMouseMove);
@@ -652,102 +693,118 @@ const AlertsPopup: React.FC<{
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, handleVolumeChange]);
+  }, [isDragging, handleVolumeChange, handleVolumeChangeEnd]);
 
   const playSound = (soundType: keyof AlertSettings['sounds']) => {
-    console.log(`Playing ${soundType} sound`);
+    if (!audioRef.current) return;
+    
+    // For now, all sounds use the step audio, but this could be extended
+    const soundUrl = settings.sounds[soundType];
+    
+    if (soundUrl === stepaudio || soundUrl === 'Default') {
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(console.error);
+    } else {
+      // Handle custom uploaded sounds
+      const customAudio = new Audio(soundUrl);
+      customAudio.volume = settings.volume / 100;
+      customAudio.play().catch(console.error);
+    }
   };
 
   const handleFileUpload = (soundType: keyof AlertSettings['sounds'], event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      console.log(`Uploaded file for ${soundType}:`, file.name);
-      updateSoundSetting(soundType, file.name);
+      const url = URL.createObjectURL(file);
+      updateSoundSetting(soundType, url);
     }
   };
 
-  if (!isOpen) return null;
+    if (!isOpen) return null;
 
-  return (
-    <div className="alerts-popup-overlay" onClick={onClose}>
-      <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
-        <div className="alerts-popup-header">
-          <h3 className="alerts-popup-title">Alerts</h3>
-          <button className="alerts-close-button" onClick={onClose}>
-            <img src={closebutton} className="explorer-close-button" />
-          </button>
-        </div>
-
-        <div className="alerts-content">
-          <div className="alerts-section">
-            <div className="alerts-main-toggle">
-              <div>
-                <h4 className="alerts-main-label">Sound Alerts</h4>
-                <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
-              </div>
-              <div
-                className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
-                onClick={() => updateSetting('soundAlertsEnabled', !settings.soundAlertsEnabled)}
-              >
-                <div className="toggle-slider" />
-              </div>
-            </div>
-
+    return (
+      <div className="alerts-popup-overlay" onClick={onClose}>
+        <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
+          <div className="alerts-popup-header">
+            <h3 className="alerts-popup-title">Alerts</h3>
+            <button className="alerts-close-button" onClick={onClose}>
+              <img src={closebutton} className="explorer-close-button" />
+            </button>
           </div>
 
-          {settings.soundAlertsEnabled && (
-            <div>
-              <div className="alerts-volume-slider">
-                <div className="volume-label">
-                  <span className="volume-text">Volume</span>
-                  <span className="volume-value">{settings.volume}%</span>
+          <div className="alerts-content">
+            <div className="alerts-section">
+              <div className="alerts-main-toggle">
+                <div>
+                  <h4 className="alerts-main-label">Sound Alerts</h4>
+                  <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
                 </div>
+                <div
+                  className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
+                  onClick={() => updateSetting('soundAlertsEnabled', !settings.soundAlertsEnabled)}
+                >
+                  <div className="toggle-slider" />
+                </div>
+              </div>
 
-                <div className="meme-slider-container meme-slider-mode" style={{ position: 'relative' }}>
-                  <input
+            </div>
+
+            {settings.soundAlertsEnabled && (
+              <div>
+                <div className="alerts-volume-slider">
+                  <div className="volume-label">
+                    <span className="volume-text">Volume</span>
+                    <span className="volume-value">{settings.volume}%</span>
+                  </div>
+
+                  <div className="meme-slider-container meme-slider-mode" style={{ position: 'relative' }}>
+               <input
                     type="range"
                     className={`meme-balance-amount-slider ${isDragging ? 'dragging' : ''}`}
                     min="0"
                     max="100"
                     step="1"
                     value={settings.volume}
-                    onChange={(e) => updateSetting('volume', parseInt(e.target.value, 10))}
+                    onChange={handleVolumeSliderChange}
                     onMouseDown={() => setIsDragging(true)}
-                    onMouseUp={() => setIsDragging(false)}
+                    onMouseUp={handleVolumeChangeEnd}
                     onTouchStart={() => setIsDragging(true)}
-                    onTouchEnd={() => setIsDragging(false)}
+                    onTouchEnd={handleVolumeChangeEnd}
                     style={{
                       background: `linear-gradient(to right, rgb(171,176,224) ${settings.volume}%, rgb(28,28,31) ${settings.volume}%)`,
                     }}
                   />
 
 
-                  <div className="meme-volume-slider-marks">
-                    {[0, 25, 50, 75, 100].map((mark) => (
-                      <span
-                        key={mark}
-                        className="meme-volume-slider-mark"
-                        data-active={settings.volume >= mark}
-                        data-percentage={mark}
-                        onClick={() => updateSetting('volume', mark)}
-                      >
-                        {mark}%
-                      </span>
-                    ))}
+                    <div className="meme-volume-slider-marks">
+                      {[0, 25, 50, 75, 100].map((mark) => (
+                        <span
+                          key={mark}
+                          className="meme-volume-slider-mark"
+                          data-active={settings.volume >= mark}
+                          data-percentage={mark}
+                          onClick={() => updateSetting('volume', mark)}
+                        >
+                          {mark}%
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="alerts-section">
-                <div className="sound-options">
-                  {(['newPairs', 'pairMigrating', 'migrated'] as const).map((key) => (
-                    <div className="sound-option" key={key}>
-                      <span className="sound-option-label">
-                        {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
-                      </span>
-                      <div className="sound-controls">
-                        <label className="sound-selector">
+                <div className="alerts-section">
+                  <div className="sound-options">
+                    {(['newPairs', 'pairMigrating', 'migrated'] as const).map((key) => (
+                      <div className="sound-option" key={key}>
+                        <span className="sound-option-label">
+                          {key === 'newPairs' ? 'New Pairs' : key === 'pairMigrating' ? 'Pair Migrating' : 'Migrated Sound'}
+                        </span>
+                        <div className="sound-controls">
+                          <label className="sound-selector">
                           <Volume2 size={14} />
-                          {settings.sounds[key] || 'Default'}
+                          {settings.sounds[key] === stepaudio ? 'Step Audio' : 
+                           settings.sounds[key] === 'Default' ? 'Default' : 
+                           settings.sounds[key].includes('blob:') ? 'Custom Audio' : 
+                           settings.sounds[key]}
                           <input
                             type="file"
                             accept="audio/*"
@@ -758,27 +815,27 @@ const AlertsPopup: React.FC<{
                             <button className="sound-action-btn" onClick={() => playSound(key)} title="Play sound">
                               <Play size={14} />
                             </button>
-                            <button className="sound-action-btn" onClick={() => updateSoundSetting(key, 'Default')} title="Reset to default">
+                            <button className="sound-action-btn" onClick={() => updateSoundSetting(key, stepaudio)} title="Reset to default">
                               <RotateCcw size={14} />
                             </button>
                           </div>
                         </label>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+
+                  <p className="alerts-file-info">Maximum 5 seconds and 0.2MB file size</p>
                 </div>
-
-                <p className="alerts-file-info">Maximum 5 seconds and 0.2MB file size</p>
               </div>
-            </div>
-          )}
-          <button className="alerts-continue-btn" onClick={onClose}>Continue</button>
+            )}
+            <button className="alerts-continue-btn" onClick={onClose}>Continue</button>
 
+          </div>
         </div>
       </div>
-    </div>
-  );
-};
+    );
+  };
 
 
 const ColorPicker: React.FC<{

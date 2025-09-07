@@ -248,24 +248,20 @@
     transform: translateX(100%);
 }
 
-.lp-tab{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    flex:1;
-    background:0 0;
-    border:none;
-    color:#ffffff79;
-    font-size:.8rem;
-    font-weight:300;
-    cursor:pointer;
-    transition:all.2s ease;
-    padding:.25rem 1rem;
-    text-align:center;
-    white-space:nowrap;
-    margin:4px;
-    border-radius:10px;
-    height:25px
+.lp-tab {
+    position: relative;
+    z-index: 2;
+    background: transparent;
+    border: none;
+    color: #ffffff79;
+    font-size: .75rem;
+    font-weight: 300;
+    cursor: pointer;
+    transition: color .3s ease;
+    white-space: nowrap;
+    min-width: 120px;
+    text-align: center;
+    height: 30px;
 }
 
 .lp-tab:hover {
@@ -604,7 +600,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    margin-bottom: .5rem;
+    margin-bottom: .75rem;
 }
 
 .add-liquidity-button {
@@ -627,7 +623,8 @@
     white-space: nowrap;
     flex-shrink: 0;
     right:0;
-    top: -100px
+    top: -100px;
+    height: ;
 }
 
 .add-liquidity-button:hover {
@@ -836,11 +833,11 @@
     width: 100%;
     background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
     border: none;
-    border-radius: 12px;
+    border-radius: 20px;
     color: #000;
     font-size: 1rem;
     font-weight: 500;
-    padding: .6rem;
+    padding: .5rem;
     cursor: pointer;
     transition: opacity .2s ease;
     margin-top: .5rem;
@@ -856,7 +853,6 @@
 .continue-button.enabled {
     background: linear-gradient(135deg, #aaaecf 0, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
     border: none;
-    border-radius: 8px;
     box-shadow: inset 0 1px 1px rgb(255 255 255/35%), inset 0 -1px 1px rgb(0 0 0/55%), 0 2px 8px rgb(170 174 207/10%);
 }
 
@@ -1094,6 +1090,7 @@
 .lp-detail-header {
     display: flex;
     align-items: center;
+    border-bottom: 1px solid #ffffff0a;
 }
 
 .vault-detail-layout {
@@ -1112,7 +1109,7 @@
     padding: 1.5rem;
     height: fit-content;
     top: 2rem;
-    max-width: 400px;
+    min-width: 300px;
 }
 
 .lp-detail-summary {
@@ -1267,6 +1264,25 @@
     border-radius: 12px;
     overflow: hidden;
     text-wrap: nowrap;
+}
+
+.vault-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #ffffff79;
+    font-size: .8rem;
+    font-weight: 400;
+    cursor: pointer;
+    transition: all .2s ease;
+    padding: .25rem 1rem;
+    text-align: center;
+    margin: 4px;
+    border-radius: 10px;
+    height: 25px;
 }
 
 .vault-tab:hover {

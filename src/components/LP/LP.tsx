@@ -616,6 +616,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
         value: 0n,
       };
 
+      const withdrawOp = await sendUserOperationAsync({ uo: withdrawUo });
 
       setWithdrawAmount('');
       setWithdrawPercentage('');
@@ -1365,7 +1366,8 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                             <div className={`lp-deposit-usd-value ${vaultFirstTokenExceedsBalance ? 'lp-usd-value-balance-error' : ''}`}>
                               {calculateUSD(vaultInputStrings.base, selectedVaultData.baseAsset)}
                             </div>
-                            <div className="deposit-balance">
+                          <div className="deposit-balance">
+                            <div className="deposit-balance-value">
                               Balance: {formatDisplayValue(
                                 getTokenBalance(selectedVaultData.baseAsset),
                                 Number(
@@ -1373,6 +1375,21 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                                 )
                               )}
                             </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                const maxAmount = formatDisplayValue(
+                                  getTokenBalance(selectedVaultData.baseAsset),
+                                  Number(
+                                    (Object.values(tokendict).find(t => t.ticker === selectedVaultData.baseAsset)?.decimals) || 18
+                                  )
+                                ).replace(/,/g, '');
+                                handleVaultDepositAmountChange('base', maxAmount);
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
                           </div>
                         </div>
 
@@ -1395,6 +1412,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                               {calculateUSD(vaultInputStrings.quote, selectedVaultData.quoteAsset)}
                             </div>
                             <div className="deposit-balance">
+                            <div className="deposit-balance-value">
                               Balance: {formatDisplayValue(
                                 getTokenBalance(selectedVaultData.quoteAsset),
                                 Number(
@@ -1402,6 +1420,21 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                                 )
                               )}
                             </div>
+                            <button
+                              className="vault-max-button"
+                              onClick={() => {
+                                const maxAmount = formatDisplayValue(
+                                  getTokenBalance(selectedVaultData.quoteAsset),
+                                  Number(
+                                    (Object.values(tokendict).find(t => t.ticker === selectedVaultData.quoteAsset)?.decimals) || 18
+                                  )
+                                ).replace(/,/g, '');
+                                handleVaultDepositAmountChange('quote', maxAmount);
+                              }}
+                            >
+                              Max
+                            </button>
+                          </div>
                           </div>
                         </div>
                       </div>
