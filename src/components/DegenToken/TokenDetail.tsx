@@ -6,7 +6,7 @@ import { settings } from '../../settings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { defaultMetrics } from '../TokenExplorer/TokenData';
-import { CrystalLaunchpadRouter } from '../../abis/CrystalLaunchpadRouter';
+import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
 import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
 import { useSharedContext } from '../../contexts/SharedContext';
@@ -80,7 +80,7 @@ interface TokenDetailProps {
 }
 
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.0';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.5';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
 
 const formatPrice = (p: number) => {
@@ -423,7 +423,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         const uo = {
           target: routerAddress,
           data: encodeFunctionData({
-            abi: CrystalLaunchpadRouter,
+            abi: CrystalRouterAbi,
             functionName: 'buy',
             args: [token.tokenAddress as `0x${string}`],
           }),
@@ -493,7 +493,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         const sellUo = {
           target: routerAddress as `0x${string}`,
           data: encodeFunctionData({
-            abi: CrystalLaunchpadRouter,
+            abi: CrystalRouterAbi,
             functionName: 'sell',
             args: [tokenAddress as `0x${string}`, amountTokenWei],
           }),

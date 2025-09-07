@@ -15,6 +15,8 @@ import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { CrystalLaunchpadToken } from "../../abis/CrystalLaunchpadToken";
 import { useSharedContext } from "../../contexts/SharedContext";
+import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
+
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -27,6 +29,7 @@ import monadicon from "../../assets/monadlogo.svg";
 import trash from '../../assets/trash.svg';
 
 import "./MemeInterface.css";
+import { Tooltip } from "recharts";
 
 interface Token {
   id: string;
@@ -89,7 +92,7 @@ interface AdvancedOrder {
 
 interface MemeInterfaceProps {
   tradingMode: "spot" | "trenches";
-  sliderMode: "presets" | "increment" | "slider";
+  sliderMode: string;
   sliderPresets: number[];
   sliderIncrement: number;
   tokenList: any[];
@@ -119,7 +122,7 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.0';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.5';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
@@ -1669,10 +1672,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
-                <div
+           <div
                   className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
                   style={{
-                    left: `calc(${sliderPercent}% - 15px)`
+                    left: `${Math.max(0, Math.min(100, sliderPercent))}%`
                   }}
                 >
                   {sliderPercent}%
@@ -2175,22 +2178,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <img className="meme-contract-icon" src={contract} />
             <span className="meme-address-title">CA:</span>{" "}
             {token.id.slice(0, 24)}...{token.id.slice(-4)}
-            <svg
-              className="meme-address-link"
-              xmlns="http://www.w3.org/2000/svg"
-              width="13"
-              height="13"
+            <TooltipLabel label={  <svg
+                className="meme-address-link"
+                xmlns="http://www.w3.org/2000/svg"
+                width="13"
+                height="13"
               viewBox="0 0 24 24"
               fill="currentColor"
             >
               <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
               <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-            </svg>
+            </svg>} tooltipText="View on Monad Eplorer"
+             />
           </span>
         </div>
       </div>
 
-      {/* Mobile QuickBuy Panel */}
       <div className="meme-mobile-quickbuy mobile-only">
         <div className="meme-mobile-header">
           <div className="meme-mobile-trade-toggle">

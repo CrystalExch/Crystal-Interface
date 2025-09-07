@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 
 import LanguageSelector from './LanguageSelector/LanguageSelector';
@@ -8,6 +8,7 @@ import TransactionHistoryMenu from '../TransactionHistoryMenu/TransactionHistory
 import ChartHeader from '../Chart/ChartHeader/ChartHeader';
 
 import { formatCommas } from '../../utils/numberDisplayFormat';
+import { formatSig } from '../OrderCenter/utils';
 import { settings } from '../../settings';
 
 import settingsicon from '../../assets/settings.svg';
@@ -304,8 +305,8 @@ const Header: React.FC<HeaderProps> = ({
               marketHeader?.priceChange || 'n/a'
             }
             activeMarket={activeMarket}
-            high24h={marketHeader?.high24h || 'n/a'}
-            low24h={marketHeader?.low24h || 'n/a'}
+            high24h={formatSig(marketHeader?.high24h) || 'n/a'}
+            low24h={formatSig(marketHeader?.low24h) || 'n/a'}
             volume={isMemeTokenPage && memeTokenData ?
               memeTokenData.volume24h?.toString() || 'n/a' :
               marketHeader?.volume || 'n/a'

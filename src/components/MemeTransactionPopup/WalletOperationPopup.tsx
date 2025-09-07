@@ -10,6 +10,7 @@ interface WalletOperationPopupProps {
   type?: 'distribution' | 'deposit' | 'transfer' | 'send' | 'import' | 'create';
   title: string;
   subtitle?: string;
+  tokenImage?: string;
   amount?: string;
   amountUnit?: string;
   sourceWallet?: string;
@@ -25,6 +26,7 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
   isVisible,
   title,
   subtitle,
+  tokenImage,
   onClose,
   autoCloseDelay = 4000,
   variant = 'info',
@@ -94,12 +96,19 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
               </span>
             )}
 
-            <div className="wallet-popup-text-content">
+          <div className="wallet-popup-text-content">
               <h3 className="wallet-popup-title">
                 {isLoading ? 'Confirming transaction' : title}
               </h3>
               {subtitle && (
                 <p className="wallet-popup-subtitle">
+                  {tokenImage && (
+                    <img 
+                      src={tokenImage} 
+                      alt="Token" 
+                      className="wallet-popup-token-image"
+                    />
+                  )}
                   {subtitle}
                 </p>
               )}

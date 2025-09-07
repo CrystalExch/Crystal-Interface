@@ -76,12 +76,12 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
               <linearGradient id={`gradient-${vaultId}`} x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="0%"
-                  stopColor={isPositive ? "#aaaecf" : "#ff5757"}
+                  stopColor={isPositive ? "#00b894" : "#d63031"}
                   stopOpacity={0.3}
                 />
                 <stop
                   offset="100%"
-                  stopColor={isPositive ? "#aaaecf" : "#ff5757"}
+                  stopColor={isPositive ? "#00b894" : "#d63031"}
                   stopOpacity={0}
                 />
               </linearGradient>
@@ -89,7 +89,7 @@ const VaultSnapshot: React.FC<VaultSnapshotProps> = ({ vaultId, className = '' }
             <Area
               type="monotone"
               dataKey="value"
-              stroke={isPositive ? "#aaaecf" : "#ff5757"}
+              stroke={isPositive ? "#00b894" : "#d63031"}
               strokeWidth={1.5}
               fill={`url(#gradient-${vaultId})`}
               dot={false}
@@ -129,7 +129,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState({ address: '0x67813Ea7b7204928C660EAfD1CC3b04B387Cd8Dc' as `0x${string}`, quoteAsset: '0xf817257fed379853cDe0fa4F97AB987181B1E5Ea', baseAsset: '0x760AfE86e5de5fa0Ee542fc7B7B713e1c5425701' });
+  const [activeVault, _setActiveVault] = useState('0xBFBea851c18c262622A47aD558657171380Af652' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
@@ -156,10 +156,10 @@ const LPVaults: React.FC<LPVaultsProps> = ({
       try {
         const [vaultDetails, vaultUserBalance] = (await readContracts(config, {
           contracts: [
-            { abi: CrystalDataHelperAbi as any, address: settings.chainConfig[activechain].balancegetter, functionName: 'getVaultsInfo', args: [crystalVaultsAddress, [activeVault?.address]] },
+            { abi: CrystalDataHelperAbi as any, address: settings.chainConfig[activechain].balancegetter, functionName: 'getVaultsInfo', args: [crystalVaultsAddress, [activeVault]] },
             ...(address ? [{
               abi: TokenAbi,
-              address: activeVault.address,
+              address: activeVault,
               functionName: 'balanceOf',
               args: [address as `0x${string}`],
             }] : [])],
@@ -167,7 +167,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
         if (vaultDetails?.status === "success") {
           const vaultMetaData = vaultDetails.result[0].metadata;
           const vaultDict = {
-            address: activeVault?.address,
+            address: activeVault,
             quoteAsset: vaultDetails.result[0].quoteAsset,
             baseAsset: vaultDetails.result[0].baseAsset,
             owner: vaultDetails.result[0].owner,
@@ -258,7 +258,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
   };
 
   const calculateUserPositionValue = (vault: any) => {
-    return calculateTVL(vault) * Number(vault.userShares) / Number(vault.totalShares);
+    return vault.totalShares ? calculateTVL(vault) * Number(vault.userShares) / Number(vault.totalShares) : 0;
   };
 
   const filteredVaultStrategies = (vaultList || []).filter((vault: any) => {
@@ -835,9 +835,9 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       <AreaChart data={activeVaultPerformance}>
                         <defs>
                           <linearGradient id="vaultPerformanceGrad" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="0%" stopColor="#c0c5ed" stopOpacity={0.4} />
-                            <stop offset="50%" stopColor="#aaaecf" stopOpacity={0.1} />
-                            <stop offset="100%" stopColor="#9599bf" stopOpacity={0} />
+                            <stop offset="0%" stopColor="#00b894" stopOpacity={0.4} />
+                            <stop offset="50%" stopColor="#00b894" stopOpacity={0.1} />
+                            <stop offset="100%" stopColor="#00b894" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <XAxis
@@ -857,11 +857,11 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                         <Area
                           type="monotone"
                           dataKey="value"
-                          stroke="#aaaecf"
+                          stroke="#00b894"
                           strokeWidth={2}
                           fill="url(#vaultPerformanceGrad)"
                           dot={false}
-                          activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#aaaecf", strokeWidth: 2 }}
+                          activeDot={{ r: 4, fill: "rgb(6,6,6)", stroke: "#00b894", strokeWidth: 2 }}
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -903,7 +903,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVault.quoteAsset)}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.quoteBalance), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.quoteBalance * selectedVault.userShares / selectedVault.totalShares), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.totalShares ? selectedVault.quoteBalance * selectedVault.userShares / selectedVault.totalShares : 0n), Number(tokendict[selectedVault?.quoteAsset]?.decimals || 18))}</div>
                           </div>
                           <div className="vault-holdings-row">
                             <div className="vault-holding-asset">
@@ -912,7 +912,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                             </div>
                             <div className="vault-holdings-col">{getTokenTicker(selectedVault.baseAsset)}</div>
                             <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.baseBalance), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}</div>
-                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.baseBalance * selectedVault.userShares / selectedVault.totalShares), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}</div>
+                            <div className="vault-holdings-col">{formatDisplayValue(BigInt(selectedVault.totalShares ? selectedVault.baseBalance * selectedVault.userShares / selectedVault.totalShares : 0n), Number(tokendict[selectedVault?.baseAsset]?.decimals || 18))}</div>
                           </div>
                         </div>
 

@@ -66,7 +66,7 @@ import customRound from './utils/customRound';
 import { formatTime } from './utils/formatTime.ts';
 import { getTradeValue } from './utils/getTradeValue.ts';
 import { formatCommas, formatSubscript } from './utils/numberDisplayFormat';
-import { formatDisplay } from './components/OrderCenter/utils/formatDisplay.ts';
+import { formatDisplay, formatSig } from './components/OrderCenter/utils/formatDisplay.ts';
 
 // import abis
 import { CrystalDataHelperAbi } from './abis/CrystalDataHelperAbi';
@@ -609,32 +609,23 @@ function App() {
   const [refLink, setRefLink] = useState('');
   const [totalClaimableFees, setTotalClaimableFees] = useState(0);
   const [switched, setswitched] = useState(false);
-
   const [orderSizePercent, setOrderSizePercent] = useState(100);
   const [originalOrderSize, setOriginalOrderSize] = useState(0);
-  type SliderMode = 'slider' | 'presets' | 'increment';
-  const [spotSliderMode, setSpotSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
-  const [trenchesSliderMode, setTrenchesSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
-  const [spotSliderPresets, setSpotSliderPresets] = useState([25, 50, 75, 100]);
-  const [trenchesSliderPresets, setTrenchesSliderPresets] = useState([25, 50, 75, 100]);
-  const [spotSliderIncrement, setSpotSliderIncrement] = useState(5);
-  const [trenchesSliderIncrement, setTrenchesSliderIncrement] = useState(5);
-
-  const [sliderMode, setSliderMode] = useState<SliderMode>(() => {
-    const saved = localStorage.getItem('crystal_slider_mode');
-    return (saved as SliderMode) || 'slider';
+  const [spotSliderMode, setSpotSliderMode] = useState(() => {
+    const saved = localStorage.getItem('crystal_spot_slider_mode');
+    return saved || 'slider';
   });
-
-  const [sliderPresets, setSliderPresets] = useState<number[]>(() => {
-    const saved = localStorage.getItem('crystal_slider_presets');
+  const [trenchesSliderMode, setTrenchesSliderMode] = useState<'presets' | 'increment' | 'slider'>('presets');
+  const [trenchesSliderPresets, setTrenchesSliderPresets] = useState([25, 50, 75, 100]);
+  const [trenchesSliderIncrement, setTrenchesSliderIncrement] = useState(5);
+  const [spotSliderPresets, setSpotSliderPresets] = useState<number[]>(() => {
+    const saved = localStorage.getItem('crystal_spot_slider_presets');
     return saved ? JSON.parse(saved) : [25, 50, 75];
   });
-
-  const [sliderIncrement, setSliderIncrement] = useState<number>(() => {
-    const saved = localStorage.getItem('crystal_slider_increment');
+  const [spotSliderIncrement, setSpotSliderIncrement] = useState<number>(() => {
+    const saved = localStorage.getItem('crystal__spot_slider_increment');
     return saved ? parseFloat(saved) : 10;
   });
-
   const [claimableFees, setClaimableFees] = useState<{ [key: string]: number } | undefined>(
     undefined
   );
@@ -746,15 +737,12 @@ function App() {
     const saved = localStorage.getItem('crystal_notification_position');
     return saved || 'bottom-right';
   });
-
   const [showPreview, setShowPreview] = useState(false);
   const [previewPosition, setPreviewPosition] = useState<string | null>(null);
   const [previewTimer, setPreviewTimer] = useState<NodeJS.Timeout | null>(null);
   const [previewExiting, setPreviewExiting] = useState(false);
-
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [onSelectTokenCallback, setOnSelectTokenCallback] = useState<((token: any) => void) | null>(null);
-
   const [vaultDepositAmounts, setVaultDepositAmounts] = useState<any>({
     shares: 0n,
     quote: 0n,
@@ -818,11 +806,9 @@ function App() {
       setPreviewTimer(newTimer);
     }
   };
-
   const [hiddenPopupTypes, setHiddenPopupTypes] = useState(() => {
     return JSON.parse(localStorage.getItem('crystal_hidden_popup_types') || '{}');
   });
-
   const updateHiddenPopupType = (actionType: string, hide: boolean) => {
     const newHiddenTypes = { ...hiddenPopupTypes, [actionType]: hide };
     setHiddenPopupTypes(newHiddenTypes);
@@ -840,7 +826,6 @@ function App() {
     const saved = localStorage.getItem('crystal_active_settings_section');
     return saved || 'general';
   });
-
   const updateActiveSettingsSection = (section: string) => {
     setActiveSettingsSection(section);
     localStorage.setItem('crystal_active_settings_section', section);
@@ -1110,12 +1095,10 @@ function App() {
       setIsEditingSigning(false);
     }
   };
-
   const [editingOrderSize, setEditingOrderSize] = useState<any>(null);
   const [currentOrderSize, setCurrentOrderSize] = useState<number>(0);
   const [hasEditedSize, setHasEditedSize] = useState(false);
   const [isEditingSizeSigning, setIsEditingSizeSigning] = useState(false);
-
   const handleEditOrderSizeConfirm = async () => {
     if (isEditingSizeSigning || !editingOrderSize) return;
 
@@ -1175,7 +1158,6 @@ function App() {
       setIsEditingSizeSigning(false);
     }
   };
-
   const { chartData, portChartLoading } = usePortfolioData(
     address,
     Object.values(tokendict),
@@ -1246,16 +1228,8 @@ function App() {
   const [mobileDragY, setMobileDragY] = useState(0);
   const [mobileStartY, setMobileStartY] = useState(0);
   const [currentLimitPrice, setCurrentLimitPrice] = useState<number>(0);
-  const lastRefGroupFetch = useRef(0);
-  const blockNumber = useRef(0n);
-
-  const wsRef = useRef<WebSocket | null>(null);
-  const pingIntervalRef = useRef<any>(null);
-  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
   const [keybindError, setKeybindError] = useState<string | null>(null);
   const [duplicateKeybind, setDuplicateKeybind] = useState<string | null>(null);
-
   const [keybinds, setKeybinds] = useState(() => {
     const saved = localStorage.getItem('crystal_keybinds');
     return saved ? JSON.parse(saved) : {
@@ -1272,17 +1246,12 @@ function App() {
       toggleFavorite: 'KeyM',
       toggleSimpleView: 'KeyV',
       refreshQuote: 'KeyR',
-      switchToOrders: 'Digit1',
-      switchToTrades: 'Digit2',
-      switchToHistory: 'Digit3',
     };
   });
-
   const [editingKeybind, setEditingKeybind] = useState<string | null>(null);
   const [isListeningForKey, setIsListeningForKey] = useState(false);
   const [mainWalletBalances, setMainWalletBalances] = useState<any>({})
   const [selectedTokenIndex, setSelectedTokenIndex] = useState(0);
-
   const scrollToToken = (index: number) => {
     const tokenListContainer = document.querySelector('.tokenlist');
     if (!tokenListContainer) return;
@@ -1297,7 +1266,6 @@ function App() {
       });
     }
   };
-
   const handleTokenSelectKeyDown = (e: React.KeyboardEvent) => {
     const currentTokenList = Object.values(tokendict).filter(
       (token) =>
@@ -1341,15 +1309,11 @@ function App() {
         break;
     }
   };
-
   const [orderSizeString, setOrderSizeString] = useState('');
-
   const displayValue = hasEditedSize
     ? orderSizeString
     : (originalOrderSize === 0 ? '' : originalOrderSize.toString());
-
   const [hasEditedPrice, setHasEditedPrice] = useState(false);
-
   const displayLimitPrice = hasEditedPrice
     ? limitPriceString
     : (currentLimitPrice === 0 ? '' : currentLimitPrice.toString());
@@ -1413,6 +1377,11 @@ function App() {
   const initialMousePosRef = useRef(0);
   const initialHeightRef = useRef(0);
   const txPending = useRef(false);
+  const lastRefGroupFetch = useRef(0);
+  const blockNumber = useRef(0n);
+  const wsRef = useRef<WebSocket | null>(null);
+  const pingIntervalRef = useRef<any>(null);
+  const reconnectIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // more constants
   const languageOptions = [
@@ -1885,6 +1854,11 @@ function App() {
       setIsVaultWithdrawSigning(false);
     }
   };
+
+  const toKey = (base: string, quote: string, wethticker: string, ethticker: string) =>
+  `${base === wethticker ? ethticker : base}${quote === wethticker ? ethticker : quote}`;
+
+  const pfDecimals = (pf: number) => Math.max(0, Math.floor(Math.log10(pf)));
 
   const [walletTokenBalances, setWalletTokenBalances] = useState({});
   const [walletTotalValues, setWalletTotalValues] = useState({});
@@ -3393,9 +3367,11 @@ function App() {
         }).reduce(
           (acc, market, i) => {
             const prices = [
+              (data as any)[4].result?.[2][i],
+              (data as any)[4].result?.[3][i],
+              (data as any)[4].result?.[4][i],
               (data as any)[4].result?.[0][i],
               (data as any)[4].result?.[1][i],
-              (data as any)[4].result?.[2][i],
             ];
             acc[market] = prices;
             return acc;
@@ -3945,7 +3921,6 @@ function App() {
         const { price, tradeValue } = getTradeValue(trade, activeMarket);
         const time = formatTime(trade[6]);
         const hash = trade[5];
-
         return [
           isBuy,
           formatCommas(
@@ -4600,131 +4575,164 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
-          let temptradehistory: any[] = [];
-          let temporders: any[] = [];
-          let tempcanceledorders: any[] = [];
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.5`;
 
           const query = `
             query {
               account(id: "${address}") {
                 id
-                userIds {
-                  id
+                openOrderMap {
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                  }}}
                 }
                 orderMap {
-                  id
-                }
-                openOrderMap {
-                  id
-                }
-                fillMap {
-                  id
+                  shards(first: 1000) { batches(first: 1000) { orders(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    isBuy
+                    price
+                    originalSize
+                    remainingSize
+                    status
+                    placedAt
+                    updatedAt
+                  }}}
                 }
                 tradeMap {
-                  id
-                }
-                launchpadTradeMap {
-                  id
+                  shards(first: 1000) { batches(first: 1000) { trades(first: 1000) {
+                    id
+                    market { id baseAsset quoteAsset }
+                    amountIn
+                    amountOut
+                    startPrice
+                    endPrice
+                    isBuy
+                    timestamp
+                    tx
+                  }}}
                 }
               }
             }
-          `
+          `;
 
           const response = await fetch(endpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { "content-type": "application/json" },
             body: JSON.stringify({ query }),
           });
+          if (!response.ok) throw new Error(`http ${response.status} ${response.statusText}`);
 
           const result = await response.json();
           console.log(result)
+          if (result?.errors?.length) throw new Error(result.errors[0]?.message || "graphql error");
+
           if (!isAddressInfoFetching) return;
-          const map = result?.data?.marketFilledMaps || [];
-          for (const batch of map) {
-            for (const event of batch.orders) {
-              const marketKey = addresstoMarket[event.contractAddress];
-              if (marketKey) {
-                temptradehistory.push([
-                  event.amountIn,
-                  event.amountOut,
-                  event.buySell,
-                  event.price,
-                  marketKey,
-                  event.transactionHash,
-                  event.timeStamp,
-                  1,
-                ]);
-              }
+
+          const flatten = (map: any, key: "orders" | "trades") =>
+            (map?.shards ?? [])
+              .flatMap((s: any) => s?.batches ?? [])
+              .flatMap((b: any) => b?.[key] ?? []);
+
+          const statusCode = (s: any) => {
+            if (typeof s === "number") return s;
+            const m: Record<string, number> = { open: 0, filled: 1, cancelled: 2, canceled: 2, expired: 3 };
+            return m[(s ?? "").toString().toLowerCase()] ?? -1;
+          };
+
+          const getMarketKey = (m: any) => {
+            if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
+            if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
+            return "unknown";
+          };
+
+          const acct = result?.data?.account;
+          let temptradehistory: any[] = [];
+          let temporders: any[] = [];
+          let tempcanceledorders: any[] = [];
+
+          if (acct) {
+            const trades = flatten(acct.tradeMap, "trades") || [];
+            for (const t of trades) {
+              const marketKey = getMarketKey(t.market);
+              temptradehistory.push([
+                Number(t.amountIn ?? 0),
+                Number(t.amountOut ?? 0),
+                t.isBuy ? 1 : 0,
+                Number((t.endPrice ?? t.startPrice) ?? 0),
+                marketKey,
+                t.tx,
+                Number(t.timestamp ?? 0),
+                1,
+              ]);
+            }
+
+            const openOrders = flatten(acct.openOrderMap, "orders") || [];
+            for (const o of openOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split("-");
+              const price = Number(o.price);
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              temporders.push([
+                price,
+                tail,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.id,
+                Number(o.placedAt ?? o.updatedAt ?? 0),
+                filled,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
+            }
+
+            const allOrders = flatten(acct.orderMap, "orders") || [];
+            for (const o of allOrders) {
+              const marketKey = getMarketKey(o.market);
+              const idParts = (o.id ?? "").split("-");
+              const price = Number(o.price);
+              const tail = parseInt(idParts[idParts.length - 1] ?? "0", 10) || 0;
+              const original = Number(o.originalSize ?? 0);
+              const remaining = Number(o.remainingSize ?? 0);
+              const filled = Math.max(0, original - remaining);
+
+              tempcanceledorders.push([
+                price,
+                tail,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) / price : original,
+                o.isBuy ? 1 : 0,
+                marketKey,
+                o.id,
+                Number(o.updatedAt ?? o.placedAt ?? 0),
+                filled,
+                o.isBuy ? original * Number(markets[marketKey].scaleFactor) : Number(o.price ?? 0) * original,
+                statusCode(o.status),
+              ]);
             }
           }
 
-          const updatedMaps = (result?.data?.orders1 || []).concat(result?.data?.orders2 || []).concat(result?.data?.filledMaps || []);
-          for (const orderMap of updatedMaps) {
-            const batches = orderMap.batches || [];
-            for (const batch of batches) {
-              const orders = batch.orders || [];
-              for (const order of orders) {
-                const marketKey = addresstoMarket[order.contractAddress];
-                if (!marketKey) continue;
-                const row = [
-                  parseInt(order.id.split('-')[0], 10),
-                  parseInt(order.id.split('-')[2], 10),
-                  Number(order.originalSizeBase.toString()),
-                  order.buySell,
-                  marketKey,
-                  order.transactionHash,
-                  order.timestamp,
-                  Number(order.filledAmountBase.toString()),
-                  Number(order.originalSizeQuote.toString()),
-                  order.status,
-                ];
-
-                if (order.status === 2) {
-                  temporders.push(row);
-                  tempcanceledorders.push(row);
-                } else if (order.status === 1) {
-                  const tradeRow = [
-                    order.buySell === 1 ? Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor) : order.originalSizeBase,
-                    order.buySell === 1 ? order.originalSizeBase : Number(BigInt(order.originalSizeQuote) / markets[marketKey].scaleFactor),
-                    order.buySell,
-                    parseInt(order.id.split('-')[0], 10),
-                    marketKey,
-                    order.transactionHash,
-                    order?.filledTimestamp ? order.filledTimestamp : order.timestamp,
-                    0
-                  ];
-
-                  const row = [
-                    parseInt(order.id.split('-')[0], 10),
-                    parseInt(order.id.split('-')[2], 10),
-                    Number(order.originalSizeBase.toString()),
-                    order.buySell,
-                    marketKey,
-                    order.transactionHash,
-                    order.timestamp,
-                    Number(order.filledAmountBase.toString()),
-                    Number(order.originalSizeQuote.toString()),
-                    order.status,
-                  ];
-
-                  temptradehistory.push(tradeRow);
-                  tempcanceledorders.push(row);
-                } else {
-                  tempcanceledorders.push(row);
-                }
-              }
-            }
-          }
-
-          settradehistory([...temptradehistory]);
-          setorders([...temporders]);
-          setcanceledorders([...tempcanceledorders]);
+          settradehistory(temptradehistory);
+          setorders(temporders);
+          setcanceledorders(tempcanceledorders);
           setaddressinfoloading(false);
-          isAddressInfoFetching = false
+          isAddressInfoFetching = false;
         } catch (error) {
           console.error("Error fetching logs:", error);
           setaddressinfoloading(false);
+          isAddressInfoFetching = false;
         }
       }
       else if (!user) {
@@ -4740,7 +4748,7 @@ function App() {
         setcanceledorders([]);
         setaddressinfoloading(false);
       }
-    })()
+    })();
 
     const connectWebSocket = () => {
       if (liveStreamCancelled) return;
@@ -5415,327 +5423,152 @@ function App() {
     (async () => {
       try {
         settradesloading(true);
-        // amountin, amountout, buy/sell, price, market, hash, timestamp
-        let temptradesByMarket: any = {};
-        Object.keys(markets).forEach((market) => {
-          temptradesByMarket[market] = [];
-        });
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.0`;
-        let allLogs: any[] = [];
+
+        const temptradesByMarket: Record<string, any[]> = {};
+        Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
+
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.5`;
 
         const query = `
           query {
-            orders1: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xCd5455B24f3622A1CfEce944615AE5Bc8f36Ee18" }
-            ) {
+            markets(first: 100, orderBy: volume, orderDirection: desc, where: {isCanonical:true}) {
               id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders2: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x97fa0031E2C9a21F0727bcaB884E15c090eC3ee3" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders3: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x33C5Dc9091952870BD1fF47c89fA53D63f9729b6" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders4: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xcB5ec6D6d0E49478119525E4013ff333Fc46B742" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders5: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x93cBC4b52358c489665680182f0056f4F23C76CD" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders6: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xf00A3bd942DC0e32d07048ED6255E281667784f6" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders7: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x3051ec9feFaEc14F2bAB836FAb5A4c970A71874a" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders8: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x9fA48CFB43829A932A227E4d7996e310ccf40E9C" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders9: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x45f7db719367bbf9E508D3CeA401EBC62fc732A9" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders10: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0x5a6f296032AaAE6737ed5896bC09D01dc2d42507" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            orders11: orderFilleds(
-              first: 50,
-              orderBy: timeStamp,
-              orderDirection: desc,
-              where: { contractAddress: "0xCF16582dC82c4C17fA5b54966ee67b74FD715fB5" }
-            ) {
-              id
-              caller
-              amountIn
-              amountOut
-              buySell
-              price
-              timeStamp
-              transactionHash
-              blockNumber
-              contractAddress
-            }
-            series_collection(
-              where: {
-                id_gte: "series-1h-",
-                id_lte: "series-1h-ffffffffffffffffffffffffffffffffffffffff"
-              }
-            ) {
-              id
-              klines(first: 24, orderBy: time, orderDirection: desc) {
-                id
+              baseAsset
+              quoteAsset
+              marketType
+              scaleFactor
+              tickSize
+              takerFee
+              makerRebate
+              volume
+              latestPrice
+              miniPoints(first: 24, orderBy: time, orderDirection: desc) {
+                price
                 time
-                open
-                high
-                low
-                close
-                volume
+              }
+              trades(first: 100, orderBy: timestamp, orderDirection: desc) {
+                id
+                amountIn
+                amountOut
+                isBuy
+                timestamp
+                tx
               }
             }
           }
         `;
 
-        const response = await fetch(endpoint, {
+        const res = await fetch(endpoint, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ query }),
         });
-        const json = await response.json();
-        const orders = json.data.orders1
-          .concat(
-            json.data.orders2,
-            json.data.orders3,
-            json.data.orders4,
-            json.data.orders5,
-            json.data.orders6,
-            json.data.orders7,
-            json.data.orders8,
-            json.data.orders9,
-            json.data.orders10,
-            json.data.orders11,
-          );
+        const json = await res.json();
+        console.log(json);
+        const list = Array.isArray(json?.data?.markets) ? json.data.markets : [];
 
-        allLogs = allLogs.concat(orders);
+        const addrToKey: Record<string, string> = {};
+        Object.values(markets).forEach((m: any) => {
+          if (m?.address) addrToKey[m.address.toLowerCase()] = m.marketKey;
+        });
 
-        if (Array.isArray(allLogs)) {
-          for (const event of allLogs) {
-            if (addresstoMarket[event.contractAddress]) {
-              temptradesByMarket[addresstoMarket[event.contractAddress]].push([
-                parseInt(event.amountIn),
-                parseInt(event.amountOut),
-                event.buySell,
-                event.price,
-                addresstoMarket[event.contractAddress],
-                event.transactionHash,
-                event.timeStamp,
+        const wethticker = settings.chainConfig[activechain].wethticker;
+        const ethticker = settings.chainConfig[activechain].ethticker;
+
+        const tokenDict = settings.chainConfig[activechain].tokendict as Record<string, any>;
+        const tokenDictLC: Record<string, any> = {};
+        for (const [addr, meta] of Object.entries(tokenDict)) tokenDictLC[addr.toLowerCase()] = meta;
+
+        const addrToTicker = (addr?: string) => {
+          const hit = addr ? tokenDictLC[addr.toLowerCase()] : undefined;
+          return hit?.ticker ?? 'UNK';
+        };
+        const normTicker = (t: string) => (t === wethticker ? ethticker : t);
+        const keyFromAddrs = (baseAddr: string, quoteAddr: string) =>
+          `${normTicker(addrToTicker(baseAddr))}${normTicker(addrToTicker(quoteAddr))}`;
+
+        const rows = list.map((m: any) => {
+          const marketKey = keyFromAddrs(m.baseAsset, m.quoteAsset);
+
+          const cfg = markets[marketKey];
+          if (!cfg) return null;
+
+          const pf = Number(cfg.priceFactor);
+          const decs = Math.max(0, Math.floor(Math.log10(pf)));
+
+          const lastRaw = Number(m.latestPrice ?? 0);
+          const last = lastRaw / pf;
+
+          const miniDesc = Array.isArray(m.miniPoints) ? m.miniPoints : [];
+          const miniAsc = [...miniDesc].reverse().map((p: any) => ({
+            time: Number(p.time) * 1000,
+            value: Number(p.price) / pf,
+          }));
+          const open24 = miniAsc.length ? miniAsc[0].value : last;
+          const highs = miniAsc.length ? miniAsc.map(p => p.value) : [last];
+          const high24 = Math.max(...highs);
+          const low24 = Math.min(...highs);
+
+          const pct = open24 === 0 ? 0 : ((last - open24) / open24) * 100;
+          const deltaRaw = lastRaw - open24 * pf;
+
+          const volQ = Number(m.volume / 10 ** 6 ?? 0);
+          const volumeDisplay = formatCommas(volQ.toFixed(2));
+
+          const mk = marketKey;
+          const trades = Array.isArray(m.trades) ? m.trades : [];
+          if (trades.length) {
+            for (const t of trades) {
+              temptradesByMarket[mk].push([
+                Number(t.amountIn ?? 0),
+                Number(t.amountOut ?? 0),
+                t.isBuy ? 1 : 0,
+                lastRaw,
+                mk,
+                t.tx,
+                Number(t.timestamp ?? 0),
               ]);
             }
           }
-        }
+          
+          return {
+            ...cfg,
+            marketKey: mk,
+            pair: `${cfg.baseAsset}/${cfg.quoteAsset}`,
+            mini: miniAsc,
+            currentPrice: formatSig(last.toFixed(decs)),
+            high24h: formatSubscript(high24.toFixed(decs)),
+            low24h: formatSubscript(low24.toFixed(decs)),
+            volume: volumeDisplay,
+            priceChange: `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}`,
+            priceChangeAmount: deltaRaw,
+          };
+        }).filter(Boolean) as any[];
+
         settradesByMarket(temptradesByMarket);
+        setMarketsData(rows);
         settradesloading(false);
+
         if (
           sendInputString === '' &&
           location.pathname.slice(1) === 'send' &&
           amountIn &&
-          BigInt(amountIn) != BigInt(0)
+          BigInt(amountIn) !== BigInt(0)
         ) {
+          const mkObj = getMarket(activeMarket.path.at(0), activeMarket.path.at(1));
+          const mkKey = (({ baseAsset, quoteAsset }: any) =>
+            (baseAsset === wethticker ? ethticker : baseAsset) +
+            (quoteAsset === wethticker ? ethticker : quoteAsset)
+          )(mkObj);
           setsendInputString(
             `$${calculateUSDValue(
               BigInt(amountIn),
-              temptradesByMarket[
-              (({ baseAsset, quoteAsset }) =>
-                (baseAsset === wethticker ? ethticker : baseAsset) +
-                (quoteAsset === wethticker ? ethticker : quoteAsset)
-              )(getMarket(activeMarket.path.at(0), activeMarket.path.at(1)))
-              ],
+              temptradesByMarket[mkKey],
               tokenIn,
-              getMarket(activeMarket.path.at(0), activeMarket.path.at(1)),
-            ).toFixed(2)}`,
+              mkObj
+            ).toFixed(2)}`
           );
         }
-
-        try {
-          const data = json.data.series_collection;
-          const processedMarkets = data.map((series: any) => {
-            const idParts = series.id.split("-");
-            const address = idParts[2];
-
-            const match = Object.values(markets).find(
-              (m) => m.address.toLowerCase() === address.toLowerCase()
-            );
-            if (!match) return;
-            const candles: any = series.klines.reverse();
-            const highs = candles.map((c: any) => c.high);
-            const lows = candles.map((c: any) => c.low);
-            const high = Math.max(...highs);
-            const low = Math.min(...lows);
-            const firstPrice = candles[0].open;
-            const lastPrice = candles[candles.length - 1].close;
-            const percentageChange = firstPrice === 0 ? 0 : ((lastPrice - firstPrice) / firstPrice) * 100;
-            const quotePrice = match.quoteAsset == 'USDC' ? 1 : temptradesByMarket[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.[0]?.[3]
-              / Number(markets[(match.quoteAsset == settings.chainConfig[activechain].wethticker ? settings.chainConfig[activechain].ethticker : match.quoteAsset) + 'USDC']?.priceFactor)
-            const totalVolume = candles
-              .filter((c: any) => Math.floor(Date.now() / 1000) - parseInt(c.time) <= 86400)
-              .reduce((acc: number, c: any) => acc + parseFloat(c.volume.toString()), 0) * quotePrice;
-            const decimals = Math.floor(Math.log10(Number(match.priceFactor)));
-
-            return {
-              ...match,
-              pair: `${match.baseAsset}/${match.quoteAsset}`,
-              currentPrice: formatSubscript((lastPrice / Number(match.priceFactor)).toFixed(decimals)),
-              priceChange: `${percentageChange >= 0 ? '+' : ''}${percentageChange.toFixed(2)}`,
-              priceChangeAmount: lastPrice - firstPrice,
-              volume: formatCommas(totalVolume.toFixed(2)),
-              marketKey: `${match.baseAsset}${match.quoteAsset}`,
-              series: candles,
-              firstPrice: firstPrice,
-              high24h: formatSubscript((high / Number(match.priceFactor)).toFixed(decimals)),
-              low24h: formatSubscript((low / Number(match.priceFactor)).toFixed(decimals)),
-            };
-          });
-          setMarketsData(processedMarkets);
-        } catch (error) {
-          console.error("error fetching candles:", error);
-        }
-
       } catch (error) {
         console.error("Error fetching data:", error);
         settradesloading(false);
@@ -6192,111 +6025,113 @@ function App() {
   useEffect(() => {
     if (limitChase && mids?.[activeMarketKey]?.[0]) {
       const price = tokenIn === activeMarket?.baseAddress ? mids[activeMarketKey][0] == mids[activeMarketKey][1] ? mids[activeMarketKey][2] : mids[activeMarketKey][0] : mids[activeMarketKey][0] == mids[activeMarketKey][2] ? mids[activeMarketKey][1] : mids[activeMarketKey][0]
-      setlimitPrice(price);
-      setlimitPriceString(
-        (
-          Number(price) / Number(activeMarket.priceFactor)
-        ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
-      );
-      if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-        setamountIn(
-          price !== BigInt(0) && amountOutSwap !== BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? (amountOutSwap *
-                (activeMarket.scaleFactor || BigInt(1))) /
-              price
-              : (amountOutSwap * price) /
-              (activeMarket.scaleFactor || BigInt(1))
-            : BigInt(0),
+      if (price) {
+        setlimitPrice(price);
+        setlimitPriceString(
+          (
+            Number(price) / Number(activeMarket.priceFactor)
+          ).toFixed(Math.floor(Math.log10(activeMarket?.marketType != 0 ? 10 ** Math.max(0, 5 - Math.floor(Math.log10((Number(price) / Number(activeMarket.priceFactor)) ?? 1)) - 1) : Number(activeMarket.priceFactor)))),
         );
-        setInputString(
-          (price !== BigInt(0) && amountOutSwap !== BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? customRound(
-                Number(
-                  (amountOutSwap *
-                    (activeMarket.scaleFactor || BigInt(1))) /
-                  price,
-                ) /
-                10 ** Number(tokendict[tokenIn].decimals),
-                3,
-              )
-              : customRound(
-                Number(
-                  (amountOutSwap * price) /
-                  (activeMarket.scaleFactor || BigInt(1)),
-                ) /
-                10 ** Number(tokendict[tokenIn].decimals),
-                3,
-              )
-            : ''
-          ).toString(),
-        );
-        const percentage =
-          tokenBalances[tokenIn] === BigInt(0)
-            ? 0
-            : Math.min(
-              100,
-              Math.floor(
-                Number(
-                  (price !== BigInt(0) &&
-                    amountOutSwap !== BigInt(0)
-                    ? tokenIn === activeMarket?.baseAddress
-                      ? (amountOutSwap *
-                        (activeMarket.scaleFactor ||
-                          BigInt(1))) /
-                      price
-                      : (amountOutSwap * price) /
-                      (activeMarket.scaleFactor || BigInt(1))
-                    : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+        if (switched && location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+          setamountIn(
+            price !== BigInt(0) && amountOutSwap !== BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? (amountOutSwap *
+                  (activeMarket.scaleFactor || BigInt(1))) /
+                price
+                : (amountOutSwap * price) /
+                (activeMarket.scaleFactor || BigInt(1))
+              : BigInt(0),
+          );
+          setInputString(
+            (price !== BigInt(0) && amountOutSwap !== BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? customRound(
+                  Number(
+                    (amountOutSwap *
+                      (activeMarket.scaleFactor || BigInt(1))) /
+                    price,
+                  ) /
+                  10 ** Number(tokendict[tokenIn].decimals),
+                  3,
                 )
-              ),
-            );
-        setSliderPercent(percentage);
-        const slider = document.querySelector(
-          '.balance-amount-slider',
-        );
-        const popup = document.querySelector(
-          '.slider-percentage-popup',
-        );
-        if (slider && popup) {
-          const rect = slider.getBoundingClientRect();
-          (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
-            }px`;
+                : customRound(
+                  Number(
+                    (amountOutSwap * price) /
+                    (activeMarket.scaleFactor || BigInt(1)),
+                  ) /
+                  10 ** Number(tokendict[tokenIn].decimals),
+                  3,
+                )
+              : ''
+            ).toString(),
+          );
+          const percentage =
+            tokenBalances[tokenIn] === BigInt(0)
+              ? 0
+              : Math.min(
+                100,
+                Math.floor(
+                  Number(
+                    (price !== BigInt(0) &&
+                      amountOutSwap !== BigInt(0)
+                      ? tokenIn === activeMarket?.baseAddress
+                        ? (amountOutSwap *
+                          (activeMarket.scaleFactor ||
+                            BigInt(1))) /
+                        price
+                        : (amountOutSwap * price) /
+                        (activeMarket.scaleFactor || BigInt(1))
+                      : BigInt(0)) * BigInt(100) / tokenBalances[tokenIn]
+                  )
+                ),
+              );
+          setSliderPercent(percentage);
+          const slider = document.querySelector(
+            '.balance-amount-slider',
+          );
+          const popup = document.querySelector(
+            '.slider-percentage-popup',
+          );
+          if (slider && popup) {
+            const rect = slider.getBoundingClientRect();
+            (popup as HTMLElement).style.left = `${(rect.width - 15) * (percentage / 100) + 15 / 2
+              }px`;
+          }
         }
-      }
-      else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
-        setamountOutSwap(
-          price != BigInt(0) && amountIn != BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? (amountIn * price) /
-              (activeMarket.scaleFactor || BigInt(1))
-              : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-              price
-            : BigInt(0),
-        );
-        setoutputString(
-          (price != BigInt(0) && amountIn != BigInt(0)
-            ? tokenIn === activeMarket?.baseAddress
-              ? customRound(
-                Number(
-                  (amountIn * price) /
-                  (activeMarket.scaleFactor || BigInt(1)),
-                ) /
-                10 ** Number(tokendict[tokenOut].decimals),
-                3,
-              )
-              : customRound(
-                Number(
-                  (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
-                  price,
-                ) /
-                10 ** Number(tokendict[tokenOut].decimals),
-                3,
-              )
-            : ''
-          ).toString(),
-        );
+        else if (location.pathname.slice(1) == 'limit' && !multihop && !isWrap) {
+          setamountOutSwap(
+            price != BigInt(0) && amountIn != BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? (amountIn * price) /
+                (activeMarket.scaleFactor || BigInt(1))
+                : (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                price
+              : BigInt(0),
+          );
+          setoutputString(
+            (price != BigInt(0) && amountIn != BigInt(0)
+              ? tokenIn === activeMarket?.baseAddress
+                ? customRound(
+                  Number(
+                    (amountIn * price) /
+                    (activeMarket.scaleFactor || BigInt(1)),
+                  ) /
+                  10 ** Number(tokendict[tokenOut].decimals),
+                  3,
+                )
+                : customRound(
+                  Number(
+                    (amountIn * (activeMarket.scaleFactor || BigInt(1))) /
+                    price,
+                  ) /
+                  10 ** Number(tokendict[tokenOut].decimals),
+                  3,
+                )
+              : ''
+            ).toString(),
+          );
+        }
       }
     }
   }, [limitChase, activechain, mids?.[activeMarketKey]?.[0], activeMarketKey, tokenIn, location.pathname.slice(1)]);
@@ -9321,7 +9156,7 @@ function App() {
                     } catch (error) {
                       if (!(error instanceof TransactionExecutionError)) {
                         newTxPopup(
-                          hash.hash,
+                          hash,
                           "sendFailed",
                           sendTokenIn === eth ? eth : sendTokenIn,
                           "",
@@ -10466,29 +10301,11 @@ function App() {
                           {renderKeybindButton('refreshQuote', t('refreshQuote'), t('refreshCurrentPriceQuote'))}
                         </div>
                         <div className="settings-subsection">
-                          <div className="layout-section-title">{t('navigationShortcuts')}</div>
-                          <div className="settings-section-subtitle">
-                            {t('jumpToDifferentPagesQuickly')}
-                          </div>
-                          {renderKeybindButton('openPortfolio', t('openPortfolio'), t('navigateToPortfolioPage'))}
-                          {renderKeybindButton('openLeaderboard', t('openLeaderboard'), t('navigateToLeaderboardPage'))}
-                          {renderKeybindButton('openReferrals', t('openReferrals'), t('navigateToReferralsPage'))}
-                        </div>
-                        <div className="settings-subsection">
                           <div className="layout-section-title">{t('marketShortcuts')}</div>
                           <div className="settings-section-subtitle">
                             {t('interactWithMarketDataQuickly')}
                           </div>
                           {renderKeybindButton('toggleFavorite', t('toggleFavorite'), t('addRemoveCurrentMarketFavorites'))}
-                        </div>
-                        <div className="settings-subsection">
-                          <div className="layout-section-title">{t('orderCenterShortcuts')}</div>
-                          <div className="settings-section-subtitle">
-                            {t('navigateOrderCenterTabsQuickly')}
-                          </div>
-                          {renderKeybindButton('switchToOrders', t('switchToOrders'), t('viewActiveOrdersTab'))}
-                          {renderKeybindButton('switchToTrades', t('switchToTradeHistory'), t('viewTradeHistoryTab'))}
-                          {renderKeybindButton('switchToHistory', t('switchToOrderHistory'), t('viewOrderHistoryTab'))}
                         </div>
                       </div>
                     </div>
@@ -10504,12 +10321,12 @@ function App() {
                         localStorage.setItem('crystal_language', 'EN');
                         setTradingMode('spot');
                         localStorage.setItem('crystal_trading_mode', 'spot');
-                        setSliderMode('slider');
-                        localStorage.setItem('crystal_slider_mode', 'slider');
-                        setSliderPresets([25, 50, 75]);
-                        localStorage.setItem('crystal_slider_presets', JSON.stringify([25, 50, 75]));
-                        setSliderIncrement(10);
-                        localStorage.setItem('crystal_slider_increment', '10');
+                        setSpotSliderMode('slider');
+                        localStorage.setItem('crystal_spot_slider_mode', 'slider');
+                        setSpotSliderPresets([25, 50, 75]);
+                        localStorage.setItem('crystal_spot_slider_presets', JSON.stringify([25, 50, 75]));
+                        setSpotSliderIncrement(10);
+                        localStorage.setItem('crystal_spot_slider_increment', '10');
                         setRpcUrl('');
                         localStorage.setItem('crystal_rpc_url', '');
                         setGraphUrl('');
@@ -10566,9 +10383,6 @@ function App() {
                           toggleFavorite: 'KeyM',
                           toggleSimpleView: 'KeyV',
                           refreshQuote: 'KeyR',
-                          switchToOrders: 'Digit1',
-                          switchToTrades: 'Digit2',
-                          switchToHistory: 'Digit3',
                         };
                         setKeybinds(defaultKeybinds);
                         localStorage.setItem('crystal_keybinds', JSON.stringify(defaultKeybinds));
@@ -13668,7 +13482,7 @@ function App() {
                     } catch (error) {
                       if (!(error instanceof TransactionExecutionError)) {
                         newTxPopup(
-                          hash.hash,
+                          hash,
                           "sendFailed",
                           sendTokenIn === eth ? eth : sendTokenIn,
                           "",
@@ -15156,10 +14970,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -15240,13 +15054,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -15320,13 +15134,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -15761,7 +15575,7 @@ function App() {
                           }
                           hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
-                            hash.hash,
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -15955,7 +15769,7 @@ function App() {
                           }
                           hash = await sendUserOperationAsync({ uo: uo })
                           newTxPopup(
-                            hash.hash,
+                            hash,
                             'approve',
                             tokenIn,
                             '',
@@ -16055,7 +15869,6 @@ function App() {
                 }
                 if (!client) {
                   txPending.current = true
-                  console.log("done", Date.now())
                 }
                 setswitched(false);
                 setInputString('');
@@ -16076,7 +15889,7 @@ function App() {
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash.hash,
+                    hash,
                     "swapFailed",
                     tokenIn == eth ? eth : tokenIn,
                     tokenOut == eth ? eth : tokenOut,
@@ -17616,10 +17429,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -17700,13 +17513,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -17780,13 +17593,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -18978,7 +18791,7 @@ function App() {
               } catch (error) {
                 if (!(error instanceof TransactionExecutionError)) {
                   newTxPopup(
-                    hash.hash,
+                    hash,
                     "sendFailed",
                     tokenIn === eth ? eth : tokenIn,
                     "",
@@ -19988,10 +19801,10 @@ function App() {
           </div>
         </div>
         <div className="balance-slider-wrapper">
-          {sliderMode === 'presets' ? (
+          {spotSliderMode === 'presets' ? (
             <div className="slider-container presets-mode">
               <div className="preset-buttons">
-                {sliderPresets.map((preset: number, index: number) => (
+                {spotSliderPresets.map((preset: number, index: number) => (
                   <button
                     key={index}
                     className={`preset-button ${sliderPercent === preset ? 'active' : ''}`}
@@ -20072,13 +19885,13 @@ function App() {
                 ))}
               </div>
             </div>
-          ) : sliderMode === 'increment' ? (
+          ) : spotSliderMode === 'increment' ? (
             <div className="slider-container increment-mode">
               <button
                 className="increment-button minus"
                 onClick={() => {
                   if (connected && sliderPercent > 0) {
-                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
+                    const newPercent = Math.max(0, sliderPercent - spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -
@@ -20152,13 +19965,13 @@ function App() {
                 −
               </button>
               <div className="increment-display">
-                <div className="increment-amount">{sliderIncrement}%</div>
+                <div className="increment-amount">{spotSliderIncrement}%</div>
               </div>
               <button
                 className="increment-button plus"
                 onClick={() => {
                   if (connected && sliderPercent < 100) {
-                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
+                    const newPercent = Math.min(100, sliderPercent + spotSliderIncrement);
                     const newAmount =
                       (((tokenIn == eth && !client)
                         ? tokenBalances[tokenIn] -

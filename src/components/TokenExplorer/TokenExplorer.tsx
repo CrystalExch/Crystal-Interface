@@ -143,7 +143,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.0';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.5';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -703,11 +703,11 @@ const AlertsPopup: React.FC<{
                   />
 
 
-                  <div className="meme-balance-slider-marks">
+                  <div className="meme-volume-slider-marks">
                     {[0, 25, 50, 75, 100].map((mark) => (
                       <span
                         key={mark}
-                        className="meme-balance-slider-mark"
+                        className="meme-volume-slider-mark"
                         data-active={settings.volume >= mark}
                         data-percentage={mark}
                         onClick={() => updateSetting('volume', mark)}
@@ -1201,14 +1201,11 @@ const DisplayDropdown: React.FC<{
                         ['holders', 'Holders'],
                         ['proTraders', 'Pro Traders'],
                         ['kols', 'KOLs'],
-                        ['devMigrations', 'Dev Migrations'],
                         ['top10Holders', 'Top 10 Holders'],
                         ['devHolding', 'Dev Holding'],
-                        ['fundingTime', 'Funding Time'],
                         ['snipers', 'Snipers'],
                         ['insiders', 'Insiders'],
                         ['bundlers', 'Bundlers'],
-                        ['dexPaid', 'Dex Paid'],
                       ] as Array<[keyof DisplaySettings['visibleRows'], string]>
                     ).map(([k, label]) => (
                       <div key={k} className={`row-toggle ${settings.visibleRows[k] ? 'active' : ''}`} onClick={() => updateRowSetting(k, !settings.visibleRows[k])}>
@@ -2206,51 +2203,68 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const handleImageSearch = useCallback((img: string) => {
     window.open(`https://yandex.com/images/search?rpt=imageview&url=${encodeURIComponent(img)}`, '_blank', 'noopener,noreferrer');
   }, []);
+const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
+  const val = BigInt(amt || '0') * 10n ** 18n;
+  if (val === 0n) return;
 
-  const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
-    const val = BigInt(amt || '0') * 10n ** 18n;
-    if (val === 0n) return;
+  const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
 
-    const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
-
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, { title: 'Sending transaction...', subtitle: `Quick buying ${amt} MON worth of ${token.symbol}`, amount: amt, amountUnit: 'MON' });
-      }
-
-      const uo = {
-        target: routerAddress,
-        data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
-        value: val,
-      };
-
-      if (updatePopup) {
-        updatePopup(txId, { title: 'Confirming transaction...', subtitle: `Quick buying ${amt} MON worth of ${token.symbol}`, variant: 'info' });
-      }
-
-      const op = await sendUserOperationAsync({ uo });
-
-      if (updatePopup) {
-        updatePopup(txId, { title: 'Quick Buy Complete', subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, variant: 'success', confirmed: true, isLoading: false });
-      }
-    } catch (e: any) {
-      console.error('Quick buy failed', e);
-      const msg = String(e?.message ?? '');
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
-          subtitle: msg || 'Please try again.',
-          variant: 'error',
-          confirmed: true,
-          isLoading: false
-        });
-      }
-    } finally {
-      dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, { 
+        title: 'Sending transaction...', 
+        subtitle: `${amt} MON worth of ${token.symbol}`, 
+        amount: amt, 
+        amountUnit: 'MON',
+        tokenImage: token.image  
+      });
     }
-  }, [routerAddress, sendUserOperationAsync]);
 
+    const uo = {
+      target: routerAddress,
+      data: encodeFunctionData({ abi: CrystalRouterAbi, functionName: 'buy', args: [true, token.tokenAddress as `0x${string}`, val, 0n] }),
+      value: val,
+    };
+
+    if (updatePopup) {
+      updatePopup(txId, { 
+        title: 'Confirming transaction...', 
+        subtitle: `${amt} MON worth of ${token.symbol}`, 
+        variant: 'info',
+        tokenImage: token.image 
+      });
+    }
+
+    const op = await sendUserOperationAsync({ uo });
+
+    if (updatePopup) {
+      updatePopup(txId, { 
+        title: 'Quick Buy Complete', 
+        subtitle: `Successfully bought ${token.symbol} with ${amt} MON`, 
+        variant: 'success', 
+        confirmed: true, 
+        isLoading: false,
+        tokenImage: token.image
+      });
+    }
+  } catch (e: any) {
+    console.error('Quick buy failed', e);
+    const msg = String(e?.message ?? '');
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: msg.toLowerCase().includes('insufficient') ? 'Insufficient Balance' : 'Quick Buy Failed',
+        subtitle: msg || 'Please try again.',
+        variant: 'error',
+        confirmed: true,
+        isLoading: false,
+        tokenImage: token.image 
+      });
+    }
+  } finally {
+    dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
+  }
+}, [routerAddress, sendUserOperationAsync]);
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
@@ -2591,7 +2605,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.new}
                           onChange={(e) => setQuickAmount('new', e.target.value)}
                           onFocus={handleInputFocus}
@@ -2705,7 +2719,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.graduating}
                           onChange={(e) => setQuickAmount('graduating', e.target.value)}
                           onFocus={handleInputFocus}
@@ -2817,7 +2831,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
                           type="text"
-                          placeholder="0"
+                          placeholder="0.0"
                           value={quickAmounts.graduated}
                           onChange={(e) => setQuickAmount('graduated', e.target.value)}
                           onFocus={handleInputFocus}

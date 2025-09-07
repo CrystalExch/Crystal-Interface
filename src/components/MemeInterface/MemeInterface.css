@@ -4,17 +4,13 @@
     height: 100vh;
     max-height: 100vh;
     overflow: hidden;
-    min-height: 650px;
+    min-height: 550px;
 }
 .meme-trade-panel{
-    min-width:300px;
-    width: 380px;
-    border-left:1px solid rgba(179,184,249,.09)
-}
-@media (max-width: 1440px) {
-    .meme-trade-panel {
-        width: 320px;
-    }
+    min-width:330px;
+    width: 330px;
+    border-left:1px solid rgba(179,184,249,.09);
+    overflow-y: auto;
 }
 .memechartandtradesandordercenter {
     width: 100%;
@@ -151,7 +147,7 @@
 
 .meme-trading-stats-container {
   color: #fff;
-  border-top: 1px solid rgba(179, 184, 249, 0.12);
+  border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 
@@ -160,7 +156,7 @@
   gap: 6px;
   padding: 0 8px;
   padding-bottom: 8px;
-  border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-time-stat-item {
@@ -168,7 +164,7 @@
   text-align: center;
   padding: 8px;
   border-radius: 6px;
-  border: 1px solid rgba(179, 184, 249, 0.12);
+  border: 1px solid rgba(179, 184, 249, 0.1);
   width: 25%;
 }
 
@@ -209,7 +205,7 @@
   padding-right: 20px;
   padding-top: 5px;
   margin-right: 10px;
-  border-right: 1px solid rgba(179, 184, 249, 0.12);
+  border-right: 1px solid rgba(179, 184, 249, 0.1);
   min-width: 70px;
   height: 50px;
 }
@@ -371,7 +367,7 @@
 
 .meme-buy-button.inactive {
    background-color: #11111328;
-    border: 1.5px solid rgba(179, 184, 249, 0.12);
+    border: 1.5px solid rgba(179, 184, 249, 0.1);
     color: #666;
 }
 
@@ -383,7 +379,7 @@
 .meme-sell-button.inactive {
     background-color: #11111328;
     color: #666;
-    border: 1.5px solid rgba(179, 184, 249, 0.12);
+    border: 1.5px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-buy-button:hover{
@@ -401,7 +397,7 @@
 .meme-trade-input-container {
     padding: 12px;
     padding-top: 0;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-trade-input-wrapper {
@@ -552,7 +548,7 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    padding: 10px 0;
+    padding: 15px 0;
     font-size: 0.8rem;
     gap: 0.5rem;
 }
@@ -564,7 +560,7 @@
     font-size: 0.9rem;
     color: rgb(169, 169, 174);
     align-self: center;
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 5px;
     padding: 1px 6px;
     cursor: pointer;
@@ -640,7 +636,7 @@
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     padding: 12px 0;
-    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
     margin-top: 12px;
 }
 
@@ -705,7 +701,7 @@
 .meme-slider-mode-button {
     flex: 1;
     padding: 4px 8px;
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 4px;
     background: transparent;
     color: rgb(255,255,255,0.7);
@@ -739,7 +735,7 @@
 }
 
 .meme-preset-button {
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 8px;
     color: rgb(255, 255, 255, 0.7);
     cursor: pointer;
@@ -766,7 +762,7 @@
 }
 
 .meme-increment-button {
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 8px;
     color: rgb(255,255,255,0.7);
     cursor: pointer;
@@ -786,7 +782,7 @@
 }
 
 .meme-increment-display {
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 8px;
     color: rgb(255,255,255,0.7);
     font-size: 1rem;
@@ -1023,7 +1019,7 @@
     flex: 1;
     padding: 8px 12px;
     background: transparent;
-    border: 1px solid rgba(179, 184, 249, 0.12);
+    border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 6px;
     color: rgba(255, 255, 255, 0.7);
     cursor: pointer;
@@ -1374,7 +1370,7 @@ opacity: 1;
     left: 0;
     right: 0;
     background: rgb(6, 6, 6);
-    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
     padding: 12px;
     display: none;
     flex-direction: column;
@@ -1384,7 +1380,7 @@ opacity: 1;
 .meme-mobile-portfolio-section {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-mobile-portfolio-item {
@@ -1636,7 +1632,7 @@ opacity: 1;
     left: 0;
     right: 0;
     background: rgb(6, 6, 6);
-    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
     display: flex;
     flex-direction: column;
     animation: slideUpFromBottom 0.3s ease;
@@ -1659,7 +1655,7 @@ opacity: 1;
     align-items: center;
     justify-content: space-between;
     padding: 5px 16px;
-    border-bottom: 1px solid rgba(179, 184, 249, 0.12);
+    border-bottom: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-mobile-wallets-title {
@@ -1906,8 +1902,6 @@ opacity: 1;
     .meme-trade-panel {
         display: none !important;
     }
-
-    /* Fix for order center visibility */
     .meme-ordercenter {
         z-index: 10;
     }
@@ -1934,7 +1928,7 @@ opacity: 1;
     backdrop-filter: blur(10px);
     border-radius: 8px;
     overflow: hidden;
-    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-mobile-toggle-slider {
@@ -1978,7 +1972,7 @@ opacity: 1;
 .meme-advanced-trading-section {
     padding: 12px;
     margin-top: 8px;
-    border-top: 1px solid rgba(179, 184, 249, 0.12);
+    border-top: 1px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-advanced-trading-toggle {
@@ -2266,22 +2260,18 @@ opacity: 1;
     width: calc(100% - 15px);
 }
 
-/* Slider marks - Buy (Green) */
 .meme-balance-slider-mark.buy[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(67, 254, 154);
 }
 
-/* Slider marks - Sell (Red) */
 .meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(235, 112, 112);
 }
 
-/* Default slider marks (fallback for buy) */
 .meme-balance-slider-mark[data-active='true']:not(:first-child):not(:last-child)::before {
     background-color: rgb(67, 254, 154);
 }
 
-/* Fix slider percentage popup positioning */
 .meme-slider-percentage-popup {
     align-items: center;
     background-color: rgb(9, 9, 9);
@@ -2307,7 +2297,6 @@ opacity: 1;
     z-index: 13;
 }
 
-/* Settings presets - Buy (Green) */
 .meme-settings-preset.active.buy {
     background: rgba(67, 254, 154, 0.08);
     border-color: rgba(67, 254, 154, 0.4);
@@ -2315,10 +2304,10 @@ opacity: 1;
     color: rgb(67, 254, 154);
 }
 
-/* Settings presets - Sell (Red) */
 .meme-settings-preset.active.sell {
     background: rgba(235, 112, 112, 0.08);
     border-color: rgba(235, 112, 112, 0.4);
     box-shadow: 0 0 0 1px rgba(235, 112, 112, 0.6);
     color: rgb(235, 112, 112);
 }
+

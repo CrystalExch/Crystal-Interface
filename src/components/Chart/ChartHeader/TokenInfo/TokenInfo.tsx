@@ -61,7 +61,7 @@ interface TokenInfoProps {
   isTradeRoute?: boolean;
   simpleView?: boolean;
   isMemeToken?: boolean;
- memeTokenData?: {
+  memeTokenData?: {
     symbol: string;
     name: string;
     image: string;
@@ -80,6 +80,7 @@ interface TokenInfoProps {
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
   in_icon,
+  out_icon,
   price,
   activeMarket,
   onMarketSelect,
@@ -686,11 +687,11 @@ const handleTwitterOpen = (handle: string) => {
                 } as React.CSSProperties}
               >
                 <div className="token-icons-inner">
-                  <TokenIcons inIcon={in_icon} />
+                  <TokenIcons inIcon={in_icon} outIcon={out_icon}  />
                 </div>
               </div>
             ) : (
-              <TokenIcons inIcon={in_icon} />
+              <TokenIcons inIcon={in_icon} outIcon={out_icon} />
             )}
           </div>
         )}
@@ -884,7 +885,7 @@ const handleTwitterOpen = (handle: string) => {
                         <div className="minichart-section">
                           <MiniChart
                             market={market}
-                            series={market.series}
+                            series={market.mini}
                             priceChange={market.priceChange}
                             isVisible={true}
                           />

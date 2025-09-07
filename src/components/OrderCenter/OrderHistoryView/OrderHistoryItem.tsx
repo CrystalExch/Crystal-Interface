@@ -6,11 +6,8 @@ import SegmentedProgressBar from '../SegmentedProgressBar/SegmentedProgressBar.t
 
 import { useSharedContext } from '../../../contexts/SharedContext';
 import customRound from '../../../utils/customRound';
-import {
-  formatBalance,
-  formatSubscript,
-} from '../../../utils/numberDisplayFormat.ts';
-import { formatDateAndTime, formatDisplay } from '../utils';
+import { formatBalance } from '../../../utils/numberDisplayFormat.ts';
+import { formatDateAndTime, formatDisplay, formatSig } from '../utils';
 
 import './OrderHistoryItem.css';
 
@@ -30,6 +27,7 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
   const { favorites, toggleFavorite } = useSharedContext();
 
   const priceFactor = Number(market.priceFactor);
+  const quoteDecimals = Number(market.quoteDecimals);
   const baseDecimals = Number(market.baseDecimals);
 
   const amount = order[2] / 10 ** baseDecimals;
@@ -91,7 +89,7 @@ const OrderHistoryItem: React.FC<OrderHistoryItemProps> = ({
         </div>
       </div>
       <div className="oc-cell price">
-        {formatSubscript(
+        {formatSig(
           (order[0] / priceFactor).toFixed(Math.floor(Math.log10(priceFactor))),
         )}
       </div>

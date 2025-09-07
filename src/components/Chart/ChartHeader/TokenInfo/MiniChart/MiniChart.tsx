@@ -23,51 +23,58 @@ const MiniChart: React.FC<MiniChartProps> = ({
 }) => {
   const [chartData, setChartData] = useState<any[]>([]);
   const [yAxisDomain, setYAxisDomain] = useState<[number, number]>([0, 0]);
-  
-  useEffect(() => {
-    if (!isVisible || !market || !series || series.length === 0) return;
 
-    const rawData = series.map((dp) => ({
-      time: new Date(dp.time).getTime(),
-      price: dp.close,
-    }));
-    
-    let filteredData = rawData;
+  useEffect(() => {
+    if (!isVisible || !market || !Array.isArray(series) || series.length === 0) return;
+
+    const rawData = series
+      .map((dp) => {
+        const rawTime = typeof dp.time === 'number' ? dp.time : new Date(dp.time).getTime();
+        const t = rawTime < 1e12 ? rawTime * 1000 : rawTime;
+        const p = dp.value ?? dp.price ?? dp.close;
+        return (typeof p === 'number' && Number.isFinite(p)) ? { time: t, price: p } : null;
+      })
+      .filter((x): x is { time: number; price: number } => !!x)
+      .sort((a, b) => a.time - b.time);
+
+    if (rawData.length === 0) return;
+
+    let filtered = rawData;
     if (rawData.length > 30) {
-      const samplingRate = Math.max(1, Math.floor(rawData.length / 30));
-      filteredData = rawData.filter((_, index) => index % samplingRate === 0);
-      
-      if (filteredData.length > 0 && rawData.length > 0) {
-        if (filteredData[0].time !== rawData[0].time) {
-          filteredData.unshift(rawData[0]);
-        }
-        if (filteredData[filteredData.length - 1].time !== rawData[rawData.length - 1].time) {
-          filteredData.push(rawData[rawData.length - 1]);
-        }
+      const rate = Math.max(1, Math.floor(rawData.length / 30));
+      filtered = rawData.filter((_, i) => i % rate === 0);
+      if (filtered[0].time !== rawData[0].time) filtered.unshift(rawData[0]);
+      if (filtered[filtered.length - 1].time !== rawData[rawData.length - 1].time) {
+        filtered.push(rawData[rawData.length - 1]);
       }
     }
-    
-    setChartData(filteredData);
-    
-    if (filteredData.length > 0) {
-      const prices = filteredData.map(item => item.price);
-      const minPrice = Math.min(...prices);
-      const maxPrice = Math.max(...prices);
-      const topPadding = (maxPrice - minPrice) * 0.1;
-      const bottomPadding = (maxPrice - minPrice) * 0.25;
-      setYAxisDomain([minPrice - bottomPadding, maxPrice + topPadding]);
+
+    setChartData(filtered);
+
+    const prices = filtered.map((d) => d.price);
+    let minP = Math.min(...prices);
+    let maxP = Math.max(...prices);
+
+    if (minP === maxP) {
+      const eps = Math.max(1e-8, Math.abs(minP) * 0.005);
+      minP -= eps;
+      maxP += eps;
     }
+
+    const topPad = (maxP - minP) * 0.1;
+    const botPad = (maxP - minP) * 0.25;
+    setYAxisDomain([minP - botPad, maxP + topPad]);
   }, [market, series, isVisible]);
-  
+
   if (!isVisible || chartData.length === 0) {
     return null;
   }
-  
+
   const chartColor = priceChange[0] === '+' ? "#50f08d" : "#ef5151";
   const gradientId = `chart-gradient-${market?.marketKey || market.baseAsset + market.quoteAsset}`;
 
   return (
-    <div className="mini-chart" style={{ height, width }}>      
+    <div className="mini-chart" style={{ height, width }}>
       <ResponsiveContainer width="100%" height="100%">
         <ComposedChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }} style={{ cursor: 'pointer' }}>
           <defs>
@@ -76,9 +83,9 @@ const MiniChart: React.FC<MiniChartProps> = ({
               <stop offset="100%" stopColor={chartColor} stopOpacity={0} />
             </linearGradient>
           </defs>
-          
+
           <YAxis domain={yAxisDomain} hide />
-          
+
           <Area
             type="monotone"
             dataKey="price"
@@ -87,10 +94,10 @@ const MiniChart: React.FC<MiniChartProps> = ({
             fillOpacity={1}
             isAnimationActive={false}
           />
-          
-          <Line 
-            type="monotone" 
-            dataKey="price" 
+
+          <Line
+            type="monotone"
+            dataKey="price"
             stroke={chartColor}
             dot={false}
             strokeWidth={1.5}
