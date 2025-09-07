@@ -783,7 +783,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             query: `
-            query ($id: ID!, $seriesId: ID!) {
+            query ($id: ID!) {
               launchpadTokens: launchpadTokens(where: { id: $id }) {
                 lastPriceNativePerTokenWad
                 volumeNative
@@ -798,27 +798,19 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   amountIn
                   amountOut
                 }
-              }
-              candles: series(id: $seriesId) {
-                klines(first: 1000, orderBy: time, orderDirection: desc) {
-                  time open high low close baseVolume
+                ${'series300'} {
+                  klines(first: 1000, orderBy: time, orderDirection: desc) {
+                    time open high low close
+                  }
                 }
               }
             }`,
             variables: {
               id: token.id.toLowerCase(),
-              seriesId: `${token.id.toLowerCase()}-${(
-                selectedInterval === '1m' ? 60 :
-                selectedInterval === '5m' ? 300 :
-                selectedInterval === '15m' ? 900 :
-                selectedInterval === '1h' ? 3600 :
-                selectedInterval === '4h' ? 14400 :
-                86400
-              )}`
             }
           }),
         });
-    
+
         const data = (await response.json())?.data;
         console.log(data)
         if (isCancelled || !data) return;

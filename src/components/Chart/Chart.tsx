@@ -126,6 +126,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             body: JSON.stringify({ query }),
           });
           const json = await res1.json();
+          console.log(json);
           allCandles = allCandles
             .concat(json.data.series_collection?.[0]?.series1)
             .concat(json.data.series_collection?.[0]?.series2)
@@ -135,82 +136,36 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         }
         if (!isFetching) return;
 
-        const stepSec =
-          selectedInterval === '1m' ? 60 :
-            selectedInterval === '5m' ? 300 :
-              selectedInterval === '15m' ? 900 :
-                selectedInterval === '1h' ? 3600 :
-                  selectedInterval === '4h' ? 14400 : 86400;
-        const stepMs = stepSec * 1000;
-
-        const priceFactor = Number(activeMarket.priceFactor);
-        const baseDecs = Number(activeMarket.baseDecimals);
-
-        const byTime = new Map<number, any>();
-        (allCandles || []).forEach((c: any) => {
-          if (c && c.time != null) byTime.set(Number(c.time), c);
-        });
-        const sorted = Array.from(byTime.values()).sort((a, b) => a.time - b.time);
-
+       allCandles.reverse();
         let lastClose: number | null = null;
-        const outlierFactor =
-          selectedInterval === '1d' ? 0.5 :
-            selectedInterval === '4h' ? 0.25 :
-              selectedInterval === '1h' ? 0.1 :
-                selectedInterval === '15m' ? 0.05 : 0.01;
-
-        const filled: Array<{
-          time: number; open: number; high: number; low: number; close: number; volume: number;
-        }> = [];
-
-        for (let i = 0; i < sorted.length; i++) {
-          const cur = sorted[i];
-          const curTms = Number(cur.time) * 1000;
-
-          if (i > 0) {
-            const prev = sorted[i - 1];
-            let expected = Number(prev.time) * 1000 + stepMs;
-            const carry = lastClose ?? (Number(prev.close) / priceFactor);
-            while (expected < curTms) {
-              filled.push({ time: expected, open: carry, high: carry, low: carry, close: carry, volume: 0 });
-              expected += stepMs;
-              lastClose = carry;
-            }
-          }
-
-          const open = lastClose != null ? lastClose : Number(cur.open) / priceFactor;
-          const close = Number(cur.close) / priceFactor;
-          let high = Number(cur.high) / priceFactor;
-          let low = Number(cur.low) / priceFactor;
-
+        const outlierFactor = selectedInterval == '1d' ? 0.5 : selectedInterval == '4h' ? 0.25 : selectedInterval == '1h' ? 0.1 : selectedInterval == '15m' ? 0.05 : 0.01
+        const subgraphData = allCandles.map((candle: any) => {
+          const priceFactor = Number(activeMarket.priceFactor);
+          const open = lastClose !== null ? lastClose : candle.open / priceFactor;
+          const close = candle.close / priceFactor
+    
+          let high = candle.high / priceFactor;
+          let low = candle.low / priceFactor;
           if (!showChartOutliers) {
-            const hiCap = Math.max(open, close) * (1 + outlierFactor);
-            const loCap = Math.min(open, close) * (1 - outlierFactor);
-            high = Math.min(high, hiCap);
-            low = Math.max(low, loCap);
+            high = Math.min(high, Math.max(open, close) * (1 + outlierFactor));
+            low = Math.max(low, Math.min(open, close) * (1 - outlierFactor));
           }
+          
+          lastClose = close
 
-          filled.push({
-            time: curTms,
+          return {
+            time: candle.time * 1000,
             open,
             high,
             low,
             close,
-            volume: Number(cur.baseVolume ?? 0) / (10 ** baseDecs),
-          });
+            volume: Number(candle.baseVolume) / (10 ** Number(activeMarket.baseDecimals)),
+          };
+        });
 
-          lastClose = close;
-        }
-
-        if (filled.length === 1) {
-          const p = filled[0].close;
-          filled[0].high = Math.max(filled[0].high, p * 1.001);
-          filled[0].low = Math.min(filled[0].low, p * 0.999);
-        }
-
-        if (filled.length) {
+        if (subgraphData && subgraphData.length) {
           setData([
-            filled,
+            subgraphData,
             normalizeTicker(activeMarket.baseAsset, activechain) +
             normalizeTicker(activeMarket.quoteAsset, activechain) +
             (selectedInterval === '1d'
