@@ -81,27 +81,27 @@ const calculateBondingPercentage = (marketCap: number) => {
 };
 
 const SkeletonCard: React.FC = () => (
-  <div className="board-token-card token-board-skeleton">
-    <div className="board-token-image-container token-board-skeleton">
-      <div className="board-token-image token-board-skeleton" />
+  <div className="board-token-card skeleton">
+    <div className="board-token-image-container skeleton">
+      <div className="board-token-image skeleton" />
     </div>
     <div className="board-token-card-body">
       <div className="board-token-card-content">
         <div className="board-card-header">
           <div className="board-token-info">
-            <div className="board-token-name token-board-skeleton">Loading Token Name</div>
-            <div className="board-token-symbol token-board-skeleton">LOAD</div>
+            <div className="board-token-name skeleton">Loading Token Name</div>
+            <div className="board-token-symbol skeleton">LOAD</div>
           </div>
         </div>
 
         <div className="board-token-creator">
           <div className="board-creator-info">
-            <span className="board-creator-address token-board-skeleton">0x1234...5678</span>
-            <span className="board-time-ago token-board-skeleton">5m</span>
+            <span className="board-creator-address skeleton">0x1234...5678</span>
+            <span className="board-time-ago skeleton">5m</span>
           </div>
         </div>
       </div>
-      <div className="board-token-description token-board-skeleton">
+      <div className="board-token-description skeleton">
         Loading description text that would normally show the token description here with some sample content to fill the space...
       </div>
     </div>
@@ -426,7 +426,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       </div>
 
       <div className="board-tokens-grid">
-        {!loading ? (
+        {loading ? (
           Array.from({ length: 30 }).map((_, index) => (
             <SkeletonCard key={`skeleton-${index}`} />
           ))
