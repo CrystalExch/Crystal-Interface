@@ -1,26 +1,38 @@
 .board-container {
   min-height: 100vh;
   color: #ffffff;
-  padding: 20px;
   box-sizing: border-box;
 }
 
 .board-header {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  align-items: center;
   margin-bottom: 15px;
   padding: 0 16px;
+  gap: 10px
 }
 
 .board-title {
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   letter-spacing: -0.5px;
 }
 
 .board-controls {
   display: flex;
   gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.board-controls-left {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+
+.board-controls-right {
+  display: flex;
   align-items: center;
 }
 
@@ -70,6 +82,42 @@
   color: #ffffff;
 }
 
+.board-animation-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: #999;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 6px 12px;
+  border-radius: 16px;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  background: rgba(0, 0, 0, 0.2);
+  letter-spacing: -0.5px;
+}
+
+.board-animation-toggle:hover {
+  color: #fff;
+  border-color: rgba(179, 184, 249, 0.3);
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.board-animation-toggle.active {
+  color: #d8dcff;
+  border-color: #d8dcff;
+  background: rgba(216, 220, 255, 0.1);
+}
+
+.board-animation-toggle-icon {
+  font-size: 1rem;
+  transition: transform 0.2s ease;
+}
+
+.board-animation-toggle.active .board-animation-toggle-icon {
+  transform: rotate(360deg);
+}
+
 .board-loading {
   display: flex;
   flex-direction: column;
@@ -96,7 +144,7 @@
 .board-tokens-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 20px;
+  gap: 15px 0;
   padding: 0 16px;
 }
 
@@ -115,6 +163,12 @@
   .board-controls {
     flex-direction: column;
     gap: 12px;
+    align-items: stretch;
+  }
+
+  .board-controls-left,
+  .board-controls-right {
+    justify-content: center;
   }
   
   .board-search-input {
@@ -132,8 +186,94 @@
   background: none;
 }
 
-.board-token-card:hover {
-  transform: translateY(-2px);
+@keyframes tokenShake {
+  0%, 100% { transform: translateX(0) translateY(0); }
+  10% { transform: translateX(-2px) translateY(-1px); }
+  20% { transform: translateX(2px) translateY(1px); }
+  30% { transform: translateX(-3px) translateY(-2px); }
+  40% { transform: translateX(3px) translateY(2px); }
+  50% { transform: translateX(-2px) translateY(-1px); }
+  60% { transform: translateX(2px) translateY(1px); }
+  70% { transform: translateX(-1px) translateY(-2px); }
+  80% { transform: translateX(1px) translateY(2px); }
+  90% { transform: translateX(-1px) translateY(-1px); }
+}
+
+@keyframes tokenPulse {
+  0% { box-shadow: 0 0 0 0 rgba(170, 174, 207, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(170, 174, 207, 0.1); }
+  100% { box-shadow: 0 0 0 0 rgba(170, 174, 207, 0); }
+}
+
+@keyframes tokenBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  25% { transform: translateY(-8px) scale(1.02); }
+  50% { transform: translateY(-4px) scale(1.01); }
+  75% { transform: translateY(-2px) scale(1.005); }
+}
+
+@keyframes tokenGlow {
+  0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+  50% { filter: brightness(1.1) drop-shadow(0 0 8px rgba(255, 215, 0, 0.3)); }
+}
+
+@keyframes tokenWiggle {
+  0%, 100% { transform: rotate(0deg); }
+  25% { transform: rotate(-2deg); }
+  75% { transform: rotate(2deg); }
+}
+
+@keyframes progressShimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.board-token-card.animate-new {
+  animation: tokenShake 0.6s ease-in-out;
+}
+
+.board-token-card.animate-pulse {
+  animation: tokenPulse 2s infinite;
+}
+
+.board-token-card.animate-bounce:hover {
+  animation: tokenBounce 0.5s ease-in-out;
+}
+
+.board-token-card.animate-glow:hover {
+  animation: tokenGlow 1s ease-in-out;
+}
+
+.board-token-card.animate-wiggle:hover .board-token-image {
+  animation: tokenWiggle 0.3s ease-in-out;
+}
+
+.board-token-card.animations-enabled:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.board-token-card.animations-enabled:hover .board-token-image {
+  transform: scale(1.1) rotate(2deg);
+  transition: all 0.3s ease;
+}
+
+.board-token-card.animations-enabled:hover .board-progress-fill {
+  filter: brightness(1.2);
+  background: linear-gradient(90deg, 
+    var(--progress-color) 0%, 
+    rgba(255, 255, 255, 0.3) 50%, 
+    var(--progress-color) 100%);
+  background-size: 200% 100%;
+  animation: progressShimmer 1.5s infinite;
+}
+
+.board-token-card.animations-enabled.is-new {
+  animation: tokenShake 0.8s ease-in-out;
+}
+
+.board-token-card.animations-enabled.high-volume {
+  animation: tokenPulse 3s infinite;
 }
 
 .board-card-header {
@@ -201,7 +341,6 @@
 
 .board-market-info {
   display: flex;
-  justify-content: space-between;
   align-items: center;
   gap: 5px;
 }
@@ -261,9 +400,6 @@
   margin-top: auto;
 }
 
-.board-bonding-progress {
-  width: 100%;
-}
 
 .board-progress-label {
   font-size: 0.8rem;
@@ -349,6 +485,11 @@
   
   .board-token-description {
     margin-bottom: 12px;
+  }
+
+  .board-animation-toggle {
+    font-size: 0.8rem;
+    padding: 4px 8px;
   }
 }
 
@@ -526,11 +667,10 @@
 }
 
 .board-token-card.skeleton .board-token-image {
-  background: transparent !important; /* Remove background from inner image */
+  background: transparent !important;
   border-radius: 8px !important;
 }
 
-/* Remove any existing shimmer animations and prevent them */
 .board-token-card.skeleton,
 .board-token-card.skeleton *,
 .board-token-card.skeleton *::before,
@@ -538,9 +678,63 @@
   animation: none !important;
 }
 
-/* Ensure no shimmer effects are applied */
 .board-token-card.skeleton .board-token-image-container::before,
 .board-token-card.skeleton .board-token-image::before {
   display: none !important;
   content: none !important;
+}
+
+
+.launch-token-btn {
+  display: flex;
+  justify-self: center;
+  gap: 8px;
+  padding: .75rem 1.5rem;
+  border: none;
+  background: linear-gradient(135deg, #aaaecf 0%, #9a9ec7 25%, #8b8eb8 50%, #7f82ac 75%, #7f82a1 100%);
+  color: #0f0f12;
+  border-radius: 20px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 
+              inset 0 -1px 1px rgba(0, 0, 0, 0.45), 
+              0 2px 8px rgba(170, 174, 207, 0.1);
+  letter-spacing: -0.5px;
+  margin: 30px 0;
+}
+
+.launch-token-btn:hover {
+  filter: brightness(1.1);
+}
+
+
+
+
+.board-sort-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.board-sort-btn {
+  padding: 4px 16px;
+  background: transparent;
+  border: 1.5px solid rgba(179, 184, 249, 0.1);
+  border-radius: 20px;
+  color: #666;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s ease;
+  letter-spacing: -0.5px;
+}
+
+.board-sort-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+}
+
+.board-sort-btn.active {
+  border-color: #d8dcff;
+  color: #d8dcff;
 }

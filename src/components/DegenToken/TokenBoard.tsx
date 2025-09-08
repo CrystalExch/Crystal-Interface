@@ -108,14 +108,36 @@ const SkeletonCard: React.FC = () => (
   </div>
 );
 
-const TokenCard: React.FC<{ token: Token; onClick: () => void }> = ({ token, onClick }) => {
+const TokenCard: React.FC<{ 
+  token: Token; 
+  onClick: () => void; 
+  animationsEnabled: boolean;
+  isNew?: boolean;
+}> = ({ token, onClick, animationsEnabled, isNew = false }) => {
   const bondingPercentage = calculateBondingPercentage(token.marketCap);
   const bondingColor = getBondingColor(bondingPercentage);
   const changeColor = token.change24h >= 0 ? '#43e17dff' : '#ef4444';
   const changeSign = token.change24h >= 0 ? '+' : '';
+  
+  // Determine if token has high volume for pulse animation
+  const isHighVolume = token.volume24h > 10000; // Adjust threshold as needed
+
+  const getCardClasses = () => {
+    let classes = 'board-token-card';
+    
+    if (animationsEnabled) {
+      classes += ' animations-enabled';
+      if (isNew) classes += ' is-new';
+      if (isHighVolume) classes += ' high-volume';
+    }
+    
+    return classes;
+  };
 
   return (
-    <div className="board-token-card" onClick={onClick}>
+    <div className={getCardClasses()} onClick={onClick} style={{
+      '--progress-color': token.status === 'graduated' ? '#ffd700' : bondingColor
+    } as React.CSSProperties}>
       <div className="board-token-image-container">
         <img
           src={token.image || '/placeholder-token.png'}
@@ -192,6 +214,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'marketCap' | 'volume'>('newest');
+  const [animationsEnabled, setAnimationsEnabled] = useState(true);
+  const [newTokenIds, setNewTokenIds] = useState<Set<string>>(new Set());
   const wsRef = useRef<WebSocket | null>(null);
 
   const filteredAndSortedTokens = React.useMemo(() => {
@@ -312,18 +336,36 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
           sellTransactions: Number(market.sellTxs),
           volume24h: Number(market.volumeNative) / 1e18,
           volumeDelta: 0,
-          change24h: (Math.random() - 0.5) * 20, // Mock data for demonstration
+          change24h: 20, 
         } as Token;
       });
 
       const resolvedTokens = await Promise.all(tokenPromises);
+      
+      if (tokens.length > 0) {
+        const existingIds = new Set(tokens.map(t => t.id));
+        const newIds = new Set<string>();
+        
+        resolvedTokens.forEach(token => {
+          if (!existingIds.has(token.id)) {
+            newIds.add(token.id);
+          }
+        });
+        
+        if (newIds.size > 0) {
+          setNewTokenIds(newIds);
+          // Clear new token flags after animation duration
+          setTimeout(() => setNewTokenIds(new Set()), 1000);
+        }
+      }
+      
       setTokens(resolvedTokens);
     } catch (error) {
       console.error('Failed to fetch tokens:', error);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [tokens]);
 
   const setupWebSocket = useCallback(() => {
     if (wsRef.current) return;
@@ -397,30 +439,50 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
     setSortBy(newSort);
   };
 
+  const toggleAnimations = () => {
+    setAnimationsEnabled(!animationsEnabled);
+  };
+
   return (
     <div className="board-container">
+      <button className="launch-token-btn" onClick={() => navigate('/launchpad')}>
+        Launch a Token
+      </button>
+      
       <div className="board-header">
-        <h1 className="board-title">Trending Tokens</h1>
+        {/* <h1 className="board-title">Trending Tokens</h1> */}
+        
         <div className="board-controls">
-          <div className="board-search">
-            <input
-              type="text"
-              placeholder="Search tokens, symbols, creators..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="board-search-input"
-            />
+          <div className="board-controls-left">
+            <div className="board-sort-buttons">
+              <button
+                className={`board-sort-btn ${sortBy === 'newest' ? 'active' : ''}`}
+                onClick={() => handleSortChange('newest')}
+              >
+                Newest
+              </button>
+              <button
+                className={`board-sort-btn ${sortBy === 'marketCap' ? 'active' : ''}`}
+                onClick={() => handleSortChange('marketCap')}
+              >
+                Market Cap
+              </button>
+              <button
+                className={`board-sort-btn ${sortBy === 'volume' ? 'active' : ''}`}
+                onClick={() => handleSortChange('volume')}
+              >
+                Volume
+              </button>
+            </div>
           </div>
-          <div className="board-sort">
-            <select
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as 'newest' | 'marketCap' | 'volume')}
-              className="board-sort-select"
+          
+          <div className="board-controls-right">
+            <div 
+              className={`board-animation-toggle ${animationsEnabled ? 'active' : ''}`}
+              onClick={toggleAnimations}
             >
-              <option value="newest">Newest First</option>
-              <option value="marketCap">Market Cap</option>
-              <option value="volume">Volume</option>
-            </select>
+              <span>Animations</span>
+            </div>
           </div>
         </div>
       </div>
@@ -436,6 +498,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
               key={token.id}
               token={token}
               onClick={() => handleTokenClick(token)}
+              animationsEnabled={animationsEnabled}
+              isNew={newTokenIds.has(token.id)}
             />
           ))
         ) : (

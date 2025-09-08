@@ -1202,7 +1202,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                     <div className="lp-asset-info">
                       <h3 className="lp-listname">{vault.baseAsset + '/' + vault.quoteAsset}</h3>
                       <div className="lp-fee-amounts">
-                        <span className="lp-fee-amount">0.3%</span>
+                        <span className="lp-fee-amount">0.25%</span>
                       </div>
                       {vault?.verified && (
                         <img src={verified} alt="Verified" className="lp-verified-badge" />
@@ -1262,26 +1262,26 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                         <div>
                           <h2 className="lp-detail-name">{selectedVaultData.baseAsset + '/' + selectedVaultData.quoteAsset}</h2>
                           <div className="lp-fee-amounts-detail">
-                            <span className="lp-fee-amount">0.3%</span>
+                            <span className="lp-fee-amount">0.25%</span>
                           </div>
                         </div>
                       </div>
                       <div className="lp-detail-stats">
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">APY</span>
-                          <span className="lp-stat-value">{selectedVaultData.apy}%</span>
+                          <span className="lp-stat-value">{selectedVaultData.apy}12.3%</span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">TVL</span>
-                          <span className="lp-stat-value">{selectedVaultData.tvl}</span>
+                          <span className="lp-stat-value">{selectedVaultData.tvl}1.1M</span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Daily Yield</span>
-                          <span className="lp-stat-value">{selectedVaultData.dailyYield}</span>
+                          <span className="lp-stat-value">{selectedVaultData.dailyYield}0.05%</span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Your Balance</span>
-                          <span className="lp-stat-value">{selectedVaultData.userBalance} LP</span>
+                          <span className="lp-stat-value">${selectedVaultData.userBalance}231.23</span>
                         </div>
                       </div>
                     </div>

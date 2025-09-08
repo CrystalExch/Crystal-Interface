@@ -149,7 +149,8 @@
     align-items:center;
     margin-bottom:1.25rem;
     flex-wrap:wrap;
-    gap:1rem
+    gap:1rem;
+    padding-right: 1rem;
 }
 .lp-detail-asset,.header-controls,.filter-controls{
     display:flex;
@@ -289,11 +290,7 @@
 .lp-sliding-tab-indicator.deposited,.lp-tabs[data-active=deposited]::before,.page-toggle[data-active=vaults]::before{
     transform:translateX(100%)
 }
-.lp-detail-summary{
-    border-radius:8px;
-    padding:1.25rem;
-    margin-bottom:1.25rem
-}
+
 .lp-header{
     height:32px;
     padding:0 10px;
@@ -1517,10 +1514,7 @@
 .lp-input-balance-error,.lp-usd-value-balance-error,.vault-pnl-negative{
     color:#ff5757!important
 }
-.vault-detail-layout{
-    display:flex;
-    gap:2rem
-}
+
 .vault-info-section,.vault-tokens-col{
     flex:1
 }
