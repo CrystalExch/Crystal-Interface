@@ -1,5 +1,5 @@
 .board-container {
-  min-height: 100vh;
+  height: 100vh;
   color: #ffffff;
   box-sizing: border-box;
 }
@@ -146,6 +146,7 @@
   grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   gap: 15px 0;
   padding: 0 16px;
+
 }
 
 @media (max-width: 768px) {
@@ -429,8 +430,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
   text-align: center;
+  height: 100%;
 }
 
 .board-no-tokens-icon {
@@ -441,9 +442,8 @@
 
 .board-no-tokens-text {
   font-size: 1.2rem;
-  font-weight: 600;
   color: #ffffff;
-  margin-bottom: 8px;
+  letter-spacing: -0.5px;
 }
 
 .board-no-tokens-subtitle {

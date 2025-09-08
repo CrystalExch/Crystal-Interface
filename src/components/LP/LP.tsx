@@ -1277,7 +1277,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Daily Yield</span>
-                          <span className="lp-stat-value">{selectedVaultData.dailyYield}0.05%</span>
+                          <span className="lp-stat-value">{selectedVaultData.dailyYield}0.05% </span>
                         </div>
                         <div className="lp-detail-stat">
                           <span className="lp-stat-label">Your Balance</span>
