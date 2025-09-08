@@ -1,14 +1,12 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { encodeFunctionData, decodeFunctionResult } from 'viem';
-import { MaxUint256 } from 'ethers';
 import { settings } from '../../settings';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import { defaultMetrics } from '../TokenExplorer/TokenData';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
 import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
-import { CrystalLaunchpadToken } from '../../abis/CrystalLaunchpadToken';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
 
@@ -45,7 +43,7 @@ interface Token {
   volumeDelta: number;
   telegramHandle: string;
   discordHandle: string;
-  createdBy?: string;
+  creator?: string;
 }
 
 interface Trade {
@@ -119,17 +117,14 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [loading, setLoading] = useState(!location.state?.tokenData);
   const [isSigning, setIsSigning] = useState(false);
   const [tokenBalance, setTokenBalance] = useState(0);
-  const [allowance, setAllowance] = useState(0);
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
-  const wsRef = useRef<WebSocket | null>(null);
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
   const balancegetter = settings.chainConfig[activechain]?.balancegetter;
   const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
   const multicallAddress = settings.chainConfig[activechain]?.multicall3;
-  const queryClient = useQueryClient();
 
   const userAddr = (account?.address ?? '').toLowerCase();
   const tokAddr = (tokenAddress ?? '').toLowerCase();
@@ -138,18 +133,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const { data: rpcData } = useQuery({
     queryKey: BAL_KEY,
     queryFn: async () => {
-      if (!account?.address || !tokenAddress) return { rawBalance: 0n, rawAllowance: 0n };
+      if (!account?.address || !tokenAddress) return { rawBalance: 0n };
 
       const balanceCalldata = encodeFunctionData({
         abi: CrystalDataHelperAbi,
         functionName: 'batchBalanceOf',
         args: [account.address as `0x${string}`, [tokenAddress as `0x${string}`]],
-      });
-
-      const allowanceCalldata = encodeFunctionData({
-        abi: CrystalLaunchpadToken,
-        functionName: 'allowance',
-        args: [account.address as `0x${string}`, routerAddress as `0x${string}`],
       });
 
       const multiCalldata = encodeFunctionData({
@@ -183,8 +172,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         }],
         functionName: 'tryBlockAndAggregate',
         args: [false, [
-          { target: balancegetter, callData: balanceCalldata },
-          { target: tokenAddress as `0x${string}`, callData: allowanceCalldata },
+          { target: balancegetter, callData: balanceCalldata }
         ]],
       });
 
@@ -234,7 +222,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       });
 
       let rawBalance = 0n;
-      let rawAllowance = 0n;
 
       if (returnData[0].success) {
         [rawBalance] = decodeFunctionResult({
@@ -244,15 +231,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         });
       }
 
-      if (returnData[1].success) {
-        rawAllowance = decodeFunctionResult({
-          abi: CrystalLaunchpadToken,
-          functionName: 'allowance',
-          data: returnData[1].returnData,
-        });
-      }
 
-      return { rawBalance, rawAllowance };
+      return { rawBalance };
     },
     enabled: !!account?.address && !!tokenAddress,
     staleTime: 30_000,
@@ -260,9 +240,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
 
   useEffect(() => {
     if (!rpcData) return;
-    const { rawBalance, rawAllowance } = rpcData;
+    const { rawBalance } = rpcData;
     setTokenBalance(Number(rawBalance.toString()) / 1e18);
-    setAllowance(Number(rawAllowance.toString()) / 1e18);
   }, [rpcData]);
 
   const fetchTokenData = useCallback(async () => {
@@ -308,6 +287,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       });
 
       const data = await response.json();
+      console.log(data)
       if (!data.data) return;
 
       if (data.data.market?.length) {
@@ -349,7 +329,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           sellTransactions: Number(market.sellCount),
           volume24h: Number(market.volume24h) / 1e18,
           volumeDelta: 0,
-          createdBy: market.creator,
+          creator: market.creator,
           change24h: Math.random() * 200 - 100, // Mock data
         };
 
@@ -425,7 +405,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'buy',
-            args: [token.tokenAddress as `0x${string}`],
+            args: [true, token.tokenAddress as `0x${string}`, value, 0n],
           }),
           value,
         };
@@ -460,28 +440,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         }
 
         const amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-
-        if (allowance < parseFloat(tradeAmount)) {
-          if (updatePopup) {
-            updatePopup(txId, {
-              title: 'Approving tokens...',
-              subtitle: `Granting permission to sell ${token.symbol}`,
-              variant: 'info'
-            });
-          }
-
-          const approveUo = {
-            target: tokenAddress as `0x${string}`,
-            data: encodeFunctionData({
-              abi: CrystalLaunchpadToken,
-              functionName: 'approve',
-              args: [routerAddress as `0x${string}`, MaxUint256],
-            }),
-            value: 0n,
-          };
-          const approveOp = await sendUserOperationAsync({ uo: approveUo });
-        }
-
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming sell...',
@@ -495,7 +453,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'sell',
-            args: [tokenAddress as `0x${string}`, amountTokenWei],
+            args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
           }),
           value: 0n,
         };
@@ -578,11 +536,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             <h1 className="detail-token-name">{token.name}</h1>
             <div className="detail-token-symbol">{token.symbol}</div>
             <div className="detail-token-meta">
-              <span>Created by {token.createdBy ? `${token.createdBy.slice(0, 6)}...${token.createdBy.slice(-4)}` : 'Unknown'}</span>
+              <span>Created by {token.creator ? `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}` : 'Unknown'}</span>
               <span>•</span>
               <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
               <span>•</span>
-              <span>{bondingProgress.toFixed(1)}% bonded</span>
+              {token.status == 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
             </div>
           </div>
         </div>
@@ -726,7 +684,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               ) : !account.connected ? (
                 'Connect Wallet'
               ) : (
-                `${tradeType === 'buy' ? 'Log in to buy' : 'Sell'}`
+                `${tradeType === 'buy' ? 'Buy' : 'Sell'}`
               )}
             </button>
           </div>
@@ -753,13 +711,19 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                 style={{ width: `${bondingProgress}%` }}
               />
             </div>
-            <div className="detail-bonding-info">
+            {token.status == 'graduated' ? (<div className="detail-bonding-info">
+              <span>Coin has graduated!</span>
+            </div>) : (<div className="detail-bonding-info">
               <span>{formatNumber(bondingProgress * 100)} MON in bonding curve</span>
               <span>${formatNumber(72940)} to graduate</span>
-            </div>
+            </div>)}
           </div>
           </div>
-                    <div className="detail-info-section">
+          <span className="detail-meme-address">
+                  <span className="detail-meme-address-title">CA:</span>{" "}
+                  {token.id.slice(0, 24)}...{token.id.slice(-4)}
+                </span>
+            <div className="detail-info-section">
               <h3>Top holders</h3>
               <div className="detail-holders-list">
                 {holders.slice(0, 10).map((holder, index) => (

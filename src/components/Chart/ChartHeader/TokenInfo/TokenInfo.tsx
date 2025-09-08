@@ -609,7 +609,17 @@ const handleTwitterOpen = (handle: string) => {
                   1B
                 </span>
               </div>
-              {memeTokenData.status !== 'graduated' && (
+              {memeTokenData.status == 'graduated' ? (
+                <div className="meme-interface-token-metric">
+                  <span className="meme-interface-metric-label">Bonding</span>
+                  <span
+                    className="meme-interface-metric-value"
+                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+                  >
+                    Graduated
+                  </span>
+                </div>
+              ) : (
                 <div className="meme-interface-token-metric">
                   <span className="meme-interface-metric-label">Bonding</span>
                   <span

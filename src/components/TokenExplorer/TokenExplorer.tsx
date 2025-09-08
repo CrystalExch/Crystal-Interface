@@ -11,7 +11,7 @@ import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw,
 
 import { settings as appSettings } from '../../settings';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, decodeEventLog } from 'viem';
 import { defaultMetrics } from './TokenData';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
@@ -65,6 +65,7 @@ export interface Token {
   volumeDelta: number;
   telegramHandle: string;
   discordHandle: string;
+  migrated: boolean;
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -2409,52 +2410,43 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   }, []);
 
   const addMarket = useCallback(async (log: any) => {
-    const { topics, data } = log;
-    const market = `0x${topics[1].slice(26)}`.toLowerCase();
-    const tokenAddr = `0x${topics[2].slice(26)}`.toLowerCase();
-
-    const hex = data.replace(/^0x/, '');
-    const offs = [
-      parseInt(hex.slice(0, 64), 16),
-      parseInt(hex.slice(64, 128), 16),
-      parseInt(hex.slice(128, 192), 16),
-    ];
-    const read = (at: number): string => {
-      const start = at * 2;
-      const len = parseInt(hex.slice(start, start + 64), 16);
-      const strHex = hex.slice(start + 64, start + 64 + len * 2);
-      const bytes: string[] = strHex.match(/.{2}/g) ?? [];
-      return bytes.map((byteHex: string) => String.fromCharCode(parseInt(byteHex, 16))).join('');
-    };
-    const name = read(offs[0]);
-    const symbol = read(offs[1]);
-    const cid = read(offs[2]);
+    const { args } = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics }) as any
 
     let meta: any = {};
     try {
-      const res = await fetch(cid);
+      const res = await fetch(args.metadataCID);
       if (res.ok) meta = await res.json();
     } catch (e) {
-      console.warn('failed to load metadata for', cid, e);
+      console.warn('failed to load metadata', e);
     }
+
+    const socials = [args.social1,args.social2,args.social3].map(s=>s?(/^https?:\/\//.test(s)?s:`https://${s}`):s)
+    const twitter = socials.find(s=>s?.startsWith("https://x.com")||s?.startsWith("https://twitter.com"))
+    if(twitter){socials.splice(socials.indexOf(twitter),1)}
+    const telegram = socials.find(s=>s?.startsWith("https://t.me"))
+    if(telegram){socials.splice(socials.indexOf(telegram),1)}
+    const discord = socials.find(s=>s?.startsWith("https://discord.gg")||s?.startsWith("https://discord.com"))
+    if(discord){socials.splice(socials.indexOf(discord),1)}
+    const website = socials[0]
 
     const token: Token = {
       ...defaultMetrics,
-      id: market,
-      tokenAddress: tokenAddr,
-      name,
-      symbol,
+      id: args.token,
+      tokenAddress: args.token,
+      name: args.name,
+      symbol: args.symbol,
       image: meta?.image ?? '',
-      description: meta?.description ?? '',
-      twitterHandle: meta?.twitter ?? '',
+      description: args.description ?? '',
+      twitterHandle: twitter ?? '',
       website: meta?.website ?? '',
       status: 'new',
       marketCap: defaultMetrics.price * TOTAL_SUPPLY,
       created: Math.floor(Date.now() / 1000),
       volumeDelta: 0,
-      telegramHandle: meta?.telegram ?? '',
-      discordHandle: meta?.discord ?? '',
-      creator: `0x${topics[3].slice(26)}`.toLowerCase(),
+      telegramHandle: telegram ?? '',
+      discordHandle: discord ?? '',
+      creator: args.creator,
+      status: 'new',
     };
 
     dispatch({ type: 'ADD_MARKET', token });
@@ -2468,8 +2460,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
       }
     }
 
-    if (!marketSubs.current[market] && wsRef.current) {
-      subscribe(wsRef.current, ['logs', { address: market }], (sub) => (marketSubs.current[market] = sub));
+    if (!marketSubs.current[args.token] && wsRef.current) {
+      subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
     }
   }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume]);
 
@@ -2600,6 +2592,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
             const discord = socials.find(s=>s?.startsWith("https://discord.gg")||s?.startsWith("https://discord.com"))
             if(discord){socials.splice(socials.indexOf(discord),1)}
             const website = socials[0]
+
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
@@ -2611,7 +2604,7 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               description: meta.description ?? '',
               twitterHandle: twitter ?? '',
               website: website ?? '',
-              status: 'new',
+              status: m.migrated ? 'graduated' : price * TOTAL_SUPPLY > 12500 ? 'graduating' : 'new',
               created: createdTimestamp,
               price,
               marketCap: price * TOTAL_SUPPLY,
