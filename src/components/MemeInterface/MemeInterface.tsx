@@ -117,6 +117,9 @@ interface MemeInterfaceProps {
   refetch?: () => void;
   isBlurred?: boolean;
   forceRefreshAllWallets?: () => void;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
@@ -182,6 +185,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   refetch,
   isBlurred = false,
   forceRefreshAllWallets,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
 
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {

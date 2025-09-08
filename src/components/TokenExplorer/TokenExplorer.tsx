@@ -28,10 +28,8 @@ import closebutton from '../../assets/close_button.png';
 import './TokenExplorer.css';
 import { useNavigate } from 'react-router-dom';
 
-
 import stepaudio from '../../assets/step_audio.mp3';
 import kaching from '../../assets/ka-ching.mp3';
-
 
 export interface Token {
   id: string;
@@ -65,7 +63,6 @@ export interface Token {
   volumeDelta: number;
   telegramHandle: string;
   discordHandle: string;
-  migrated: boolean;
 }
 
 type ColumnKey = 'new' | 'graduating' | 'graduated';
@@ -83,12 +80,10 @@ interface DisplaySettings {
   progressBar: boolean;
   spacedTables: boolean;
   colorRows: boolean;
-
   columnOrder: Array<ColumnKey>;
   quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
   secondQuickBuyEnabled: boolean;
   secondQuickBuyColor: string;
-
   visibleRows: {
     marketCap: boolean;
     volume: boolean;
@@ -140,6 +135,9 @@ interface TokenExplorerProps {
   onOpenFiltersForColumn: (c: Token['status']) => void;
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const MAX_PER_COLUMN = 30;
@@ -288,7 +286,6 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
   return bondingPercentage;
 };
-
 
 const Tooltip: React.FC<{
   content: string;
@@ -440,7 +437,6 @@ const Tooltip: React.FC<{
     </div>
   );
 };
-
 
 const BlacklistPopup: React.FC<{
   isOpen: boolean;
@@ -908,7 +904,6 @@ const AlertsPopup: React.FC<{
     </div>
   );
 };
-
 
 const ColorPicker: React.FC<{
   color: string;
@@ -1591,7 +1586,6 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
@@ -2189,6 +2183,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2446,7 +2443,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
       telegramHandle: telegram ?? '',
       discordHandle: discord ?? '',
       creator: args.creator,
-      status: 'new',
     };
 
     dispatch({ type: 'ADD_MARKET', token });

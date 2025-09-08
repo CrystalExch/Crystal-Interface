@@ -43,6 +43,9 @@ interface TokenBoardProps {
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   setpopup?: (popup: number) => void;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const activechain = (settings as any).activechain ?? Object.keys(settings.chainConfig)[0];
@@ -206,7 +209,10 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   sendUserOperationAsync,
   account,
   setChain,
-  setpopup
+  setpopup,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
   const navigate = useNavigate();
   const [tokens, setTokens] = useState<Token[]>([]);

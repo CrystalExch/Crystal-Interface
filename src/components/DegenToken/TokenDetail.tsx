@@ -75,6 +75,9 @@ interface TokenDetailProps {
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   setpopup?: (popup: number) => void;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -100,7 +103,10 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   sendUserOperationAsync,
   account,
   setChain,
-  setpopup
+  setpopup,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
