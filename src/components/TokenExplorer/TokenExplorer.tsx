@@ -2641,18 +2641,57 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
     };
   }, [openWebsocket]);
 
-  const applyFilters = useCallback((list: Token[], fil: any) => {
+const applyFilters = useCallback((list: Token[], fil: any) => {
     if (!fil) return list;
     return list.filter((t) => {
-      if (fil.priceMin && t.price < +fil.priceMin) return false;
-      if (fil.priceMax && t.price > +fil.priceMax) return false;
-      if (fil.holdersMin && t.holders < +fil.holdersMin) return false;
-      if (fil.holdersMax && t.holders > +fil.holdersMax) return false;
-      if (fil.searchKeywords) {
-        const kw = fil.searchKeywords.toLowerCase().split(',').map((x: string) => x.trim());
-        const hay = `${t.name} ${t.symbol} ${t.description}`.toLowerCase();
-        if (!kw.some((k: string) => hay.includes(k))) return false;
+      // Price filtering
+      if (fil.priceMin !== undefined && fil.priceMin !== '' && t.price < +fil.priceMin) return false;
+      if (fil.priceMax !== undefined && fil.priceMax !== '' && t.price > +fil.priceMax) return false;
+      
+      // Market cap filtering
+      if (fil.marketCapMin !== undefined && fil.marketCapMin !== '' && t.marketCap < +fil.marketCapMin) return false;
+      if (fil.marketCapMax !== undefined && fil.marketCapMax !== '' && t.marketCap > +fil.marketCapMax) return false;
+      
+      // Volume filtering
+      if (fil.volumeMin !== undefined && fil.volumeMin !== '' && t.volume24h < +fil.volumeMin) return false;
+      if (fil.volumeMax !== undefined && fil.volumeMax !== '' && t.volume24h > +fil.volumeMax) return false;
+      
+      // Holders filtering
+      if (fil.holdersMin !== undefined && fil.holdersMin !== '' && t.holders < +fil.holdersMin) return false;
+      if (fil.holdersMax !== undefined && fil.holdersMax !== '' && t.holders > +fil.holdersMax) return false;
+      
+      // Age filtering (in hours)
+      if (fil.ageMin !== undefined && fil.ageMin !== '') {
+        const ageHours = (Date.now() / 1000 - t.created) / 3600;
+        if (ageHours < +fil.ageMin) return false;
       }
+      if (fil.ageMax !== undefined && fil.ageMax !== '') {
+        const ageHours = (Date.now() / 1000 - t.created) / 3600;
+        if (ageHours > +fil.ageMax) return false;
+      }
+      
+      // Keyword filtering
+      if (fil.searchKeywords && fil.searchKeywords.trim()) {
+        const keywords = fil.searchKeywords.toLowerCase().split(',').map((x: string) => x.trim()).filter(Boolean);
+        const searchText = `${t.name} ${t.symbol} ${t.description} ${t.tokenAddress}`.toLowerCase();
+        if (!keywords.some((keyword: string) => searchText.includes(keyword))) return false;
+      }
+      
+      // Social filtering
+      if (fil.hasTwitter && !t.twitterHandle) return false;
+      if (fil.hasWebsite && !t.website) return false;
+      if (fil.hasTelegram && !t.telegramHandle) return false;
+      if (fil.hasDiscord && !t.discordHandle) return false;
+      
+      // Risk metrics filtering
+      if (fil.sniperHoldingMax !== undefined && fil.sniperHoldingMax !== '' && t.sniperHolding > +fil.sniperHoldingMax) return false;
+      if (fil.devHoldingMax !== undefined && fil.devHoldingMax !== '' && t.devHolding > +fil.devHoldingMax) return false;
+      if (fil.insiderHoldingMax !== undefined && fil.insiderHoldingMax !== '' && t.insiderHolding > +fil.insiderHoldingMax) return false;
+      if (fil.top10HoldingMax !== undefined && fil.top10HoldingMax !== '' && t.top10Holding > +fil.top10HoldingMax) return false;
+      
+      if (fil.proTradersMin !== undefined && fil.proTradersMin !== '' && t.proTraders < +fil.proTradersMin) return false;
+      if (fil.kolTradersMin !== undefined && fil.kolTradersMin !== '' && t.kolTraders < +fil.kolTradersMin) return false;
+      
       return true;
     });
   }, []);

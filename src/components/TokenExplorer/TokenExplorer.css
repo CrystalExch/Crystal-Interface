@@ -1112,8 +1112,6 @@
 
 .keyword-input:focus {
   outline: none;
-  border-color: rgba(170, 174, 207, 0.6);
-  box-shadow: 0 0 0 2px rgba(170, 174, 207, 0.2);
 }
 
 .keyword-input::placeholder {

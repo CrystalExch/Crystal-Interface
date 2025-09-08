@@ -119,8 +119,7 @@ const TokenCard: React.FC<{
   const changeColor = token.change24h >= 0 ? '#43e17dff' : '#ef4444';
   const changeSign = token.change24h >= 0 ? '+' : '';
   
-  // Determine if token has high volume for pulse animation
-  const isHighVolume = token.volume24h > 10000; // Adjust threshold as needed
+  const isHighVolume = token.volume24h > 10000; 
 
   const getCardClasses = () => {
     let classes = 'board-token-card';
@@ -354,7 +353,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
         
         if (newIds.size > 0) {
           setNewTokenIds(newIds);
-          // Clear new token flags after animation duration
           setTimeout(() => setNewTokenIds(new Set()), 1000);
         }
       }
@@ -430,7 +428,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   }, [fetchTokens, setupWebSocket]);
 
   const handleTokenClick = (token: Token) => {
-    navigate(`/meme/${token.tokenAddress}`, {
+    navigate(`/board/${token.tokenAddress}`, {
       state: { tokenData: token }
     });
   };
@@ -451,7 +449,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       
       <div className="board-header">
         {/* <h1 className="board-title">Trending Tokens</h1> */}
-        
         <div className="board-controls">
           <div className="board-controls-left">
             <div className="board-sort-buttons">
