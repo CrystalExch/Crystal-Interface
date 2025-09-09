@@ -23,6 +23,8 @@ interface Position {
   tokenId: string;
   symbol?: string;
   name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
   boughtTokens: number;
   soldTokens: number;
   spentNative: number;
@@ -32,7 +34,6 @@ interface Position {
   pnlNative: number;
   lastPrice?: number;
 }
-
 interface MemeOrderCenterProps {
   orderCenterHeight?: number;
   isVertDragging?: boolean;
@@ -374,12 +375,26 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+            const tokenImageUrl = p.imageUrl || null;
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
                         <span className="meme-wallet-index">{index + 1}</span>
-                        <span className="meme-wallet-address">{tokenShort}</span>
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {tokenImageUrl && (
+                            <img 
+                              src={tokenImageUrl} 
+                              alt={p.symbol} 
+                              className="meme-token-icon"
+                      
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span className="meme-wallet-address">{tokenShort}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
@@ -419,7 +434,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
                     <div className="meme-oc-cell">
                       <button className="meme-action-btn">Sell</button>
-                      <button className="meme-action-btn">Sell All</button>
                     </div>
                   </div>
                 );
@@ -440,6 +454,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {mockOrders.map((order) => (
                 <div key={order.id} className="meme-oc-item">
+                  
                   <div className="meme-oc-cell">{order.token}</div>
                   <div className="meme-oc-cell">
                     <span className={`meme-order-type ${order.type.toLowerCase()}`}>{order.type}</span>

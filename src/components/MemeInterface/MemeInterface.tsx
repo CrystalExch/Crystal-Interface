@@ -161,7 +161,7 @@ const POSITIONS_QUERY = `
       skip: $skip
       first: $first
     ) {
-      token { id symbol name decimals lastPriceNativePerTokenWad }
+      token { id symbol name decimals lastPriceNativePerTokenWad metadataCID }
       account { id }
       tokenBought
       tokenSold
@@ -1117,93 +1117,109 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     })();
   }, [token.id, page]);
 
-  useEffect(() => {
-    if (!userAddr) return;
-    let cancelled = false;
 
-    (async () => {
-      const totals = {
-        balance: 0,
-        amountBought: 0,
-        amountSold: 0,
-        valueBought: 0,
-        valueSold: 0,
-      };
+useEffect(() => {
+  if (!userAddr) return;
+  let cancelled = false;
 
-      const all: any[] = [];
-      let skip = 0;
+  (async () => {
+    const totals = {
+      balance: 0,
+      amountBought: 0,
+      amountSold: 0,
+      valueBought: 0,
+      valueSold: 0,
+    };
 
-      while (true) {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: POSITIONS_QUERY,
-            variables: {
-              a: (userAddr || '').toLowerCase(),
-              skip,
-              first: PAGE_SIZE,
-            },
-          }),
-        });
+    const all: any[] = [];
+    let skip = 0;
 
-        const { data } = await response.json();
-        const rows: any[] = data?.launchpadPositions ?? [];
-        if (!rows.length) break;
+    while (true) {
+      const response = await fetch(SUBGRAPH_URL, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          query: POSITIONS_QUERY,
+          variables: {
+            a: (userAddr || '').toLowerCase(),
+            skip,
+            first: PAGE_SIZE,
+          },
+        }),
+      });
 
-        for (const p of rows) {
-          const boughtTokens = Number(p.tokenBought) / 1e18;
-          const soldTokens = Number(p.tokenSold) / 1e18;
-          const spentNative = Number(p.nativeSpent) / 1e18;
-          const receivedNative = Number(p.nativeReceived) / 1e18;
-          const remainingTokens = Number(p.remainingTokens) / 1e18;
-          const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
-          const realized = Number(p?.realizedPnlNative ?? 0) / 1e18;
-          const unrealized = Number(p?.unrealizedPnlNative ?? 0) / 1e18;
-          const pnlNative = realized + unrealized;
-          const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
+      const { data } = await response.json();
+      const rows: any[] = data?.launchpadPositions ?? [];
+      if (!rows.length) break;
 
-          totals.amountBought += boughtTokens;
-          totals.amountSold += soldTokens;
-          totals.valueBought += spentNative;
-          totals.valueSold += receivedNative;
-          totals.balance += remainingTokens;
+      for (const p of rows) {
+        const boughtTokens = Number(p.tokenBought) / 1e18;
+        const soldTokens = Number(p.tokenSold) / 1e18;
+        const spentNative = Number(p.nativeSpent) / 1e18;
+        const receivedNative = Number(p.nativeReceived) / 1e18;
+        const remainingTokens = Number(p.remainingTokens) / 1e18;
+        const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+        const realized = Number(p?.realizedPnlNative ?? 0) / 1e18;
+        const unrealized = Number(p?.unrealizedPnlNative ?? 0) / 1e18;
+        const pnlNative = realized + unrealized;
+        const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
 
-          all.push({
-            tokenId: p.token.id,
-            symbol: p.token.symbol,
-            name: p.token.name,
-            boughtTokens,
-            soldTokens,
-            spentNative,
-            receivedNative,
-            remainingTokens,
-            remainingPct,
-            pnlNative,
-            lastPrice,
-          });
-        }
+        totals.amountBought += boughtTokens;
+        totals.amountSold += soldTokens;
+        totals.valueBought += spentNative;
+        totals.valueSold += receivedNative;
+        totals.balance += remainingTokens;
 
-        if (rows.length < PAGE_SIZE) break;
-        skip += PAGE_SIZE;
-        if (cancelled) return;
+   let imageUrl = '';
+if (p.token.metadataCID) {
+  try {
+    const metaRes = await fetch(p.token.metadataCID);
+    if (metaRes.ok) {
+      const meta = await metaRes.json();
+      imageUrl = meta.image || '';
+    }
+  } catch (e) {
+    console.warn('Failed to load metadata for token', p.token.id, e);
+  }
+}
+
+all.push({
+  tokenId: p.token.id,
+  symbol: p.token.symbol,
+  name: p.token.name,
+  metadataCID: p.token.metadataCID,
+  imageUrl: imageUrl, 
+  boughtTokens,
+  soldTokens,
+  spentNative,
+  receivedNative,
+  remainingTokens,
+  remainingPct,
+  pnlNative,
+  lastPrice,
+});
       }
 
+      if (rows.length < PAGE_SIZE) break;
+      skip += PAGE_SIZE;
       if (cancelled) return;
+    }
 
-      setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
-      setUserStats({
-        balance: totals.balance,
-        amountBought: totals.amountBought,
-        amountSold: totals.amountSold,
-        valueBought: totals.valueBought,
-        valueSold: totals.valueSold,
-        valueNet: totals.valueSold - totals.valueBought,
-      });
-    })();
+    if (cancelled) return;
 
-    return () => { cancelled = true; };
-  }, [userAddr]);
+    setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
+    setUserStats({
+      balance: totals.balance,
+      amountBought: totals.amountBought,
+      amountSold: totals.amountSold,
+      valueBought: totals.valueBought,
+      valueSold: totals.valueSold,
+      valueNet: totals.valueSold - totals.valueBought,
+    });
+  })();
+
+  return () => { cancelled = true; };
+}, [userAddr]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
