@@ -7,7 +7,7 @@ import React, {
   useCallback,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw, Info, Ban, Eye, ChevronDown } from 'lucide-react';
+import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw, Eye, ChevronDown } from 'lucide-react';
 
 import { settings as appSettings } from '../../settings';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';

@@ -174,7 +174,7 @@ export default function MemeTradesComponent({
   holders = [],
   currentUserAddress
 }: Props) {
-  const [amountMode, setAmountMode] = useState<AmountMode>('USDC')
+  const [amountMode, setAmountMode] = useState<AmountMode>('MON')
   const [mcMode, setMcMode] = useState<MCMode>('MC')
   const [hover, setHover] = useState(false)
   const [popupAddr, setPopupAddr] = useState<string | null>(null)
@@ -297,7 +297,6 @@ export default function MemeTradesComponent({
       ? `$${Math.abs(v).toFixed(2)}`
       : `${Math.abs(v).toFixed(1)}`
 
-  // New function to format time ago
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000
     const secondsAgo = Math.max(0, Math.floor(now - ts))

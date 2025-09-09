@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
+import { mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
 
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
@@ -19,6 +19,20 @@ interface LiveHolder {
   tokenNet: number;
 }
 
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+}
+
 interface MemeOrderCenterProps {
   orderCenterHeight?: number;
   isVertDragging?: boolean;
@@ -29,6 +43,7 @@ interface MemeOrderCenterProps {
   isWidgetOpen?: boolean;
   onToggleWidget?: () => void;
   holders?: LiveHolder[];
+  positions?: Position[];
   page?: number;
   pageSize?: number;
   currentPrice?: number;
@@ -52,6 +67,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   isWidgetOpen = false,
   onToggleWidget,
   holders: liveHolders = [],
+  positions = [],
   page = 0,
   pageSize = 100,
   currentPrice = 0,
@@ -135,7 +151,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       valueBought: h.valueBought,
       valueSold: h.valueSold,
       pnl: h.valueNet + currentPrice * h.balance,
-      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.tokenNet, 1e-9)) * 100,
+      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
       tags: []
     }))
     : mockHolders.slice(0, 20).map((h, i) => ({
@@ -153,7 +169,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   );
 
   const availableTabs = [
-    { key: 'positions', label: 'Positions' },
+    { key: 'positions', label: `Positions (${positions.length})` },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: 'Top Traders' },
@@ -356,57 +372,58 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Actions</div>
             </div>
             <div className="meme-oc-items">
-              {mockPositions.map((position, index) => (
-                <div key={position.id} className="meme-oc-item">
-                  <div className="meme-oc-cell">
-                    <div className="meme-wallet-info">
-                      <span className="meme-wallet-index">{index + 1}</span>
-                      <span className="meme-wallet-address">{position.wallet}</span>
-                      <div className="meme-wallet-tags">
-                        {position.tags.map(tag => (
-                          <Tooltip key={tag} content={tag}>
-                            <span className={`meme-tag meme-tag-${tag.toLowerCase().replace(' ', '')}`}>
-                              {renderTagIcon(tag)}
-                            </span>
-                          </Tooltip>
-                        ))}
+              {(positions?.length ? positions : []).map((p, index) => {
+                const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                return (
+                  <div key={p.tokenId} className="meme-oc-item">
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <span className="meme-wallet-index">{index + 1}</span>
+                        <span className="meme-wallet-address">{tokenShort}</span>
                       </div>
                     </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-trade-info">
-                      <span className="meme-usd-amount buy">${position.bought.usd}</span>
-                      <span className="meme-token-amount">{position.bought.amount.toFixed(2)}M / {position.bought.percentage.toFixed(2)}%</span>
-                    </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-trade-info">
-                      <span className="meme-usd-amount sell">${position.sold.usd}</span>
-                      <span className="meme-token-amount">{position.sold.amount} / {position.sold.percentage}%</span>
-                    </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-remaining-info">
-                      <div>
-                        <span className="meme-remaining">${position.remaining.amount.toFixed(0)}</span>
-                        <span className="meme-remaining-percentage">{position.remaining.percentage.toFixed(0)}%</span>
-                      </div>
-                      <div className="meme-remaining-bar">
-                        <div className="meme-remaining-bar-fill" style={{ width: `${position.remaining.percentage.toFixed(0)}%` }} />
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                        <span className="meme-token-amount">{fmt(p.boughtTokens)}</span>
+                        <span className="meme-usd-amount buy">{fmt(p.spentNative)} MON</span>
                       </div>
                     </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                        <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
+                        <span className="meme-usd-amount sell">{fmt(p.receivedNative)} MON</span>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-remaining-info">
+                        <div>
+                          <span className="meme-remaining">
+                            {fmt(p.remainingTokens)} {p.symbol || ''}
+                          </span>
+                          <span className="meme-remaining-percentage">
+                            {p.remainingPct.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="meme-remaining-bar">
+                          <div
+                            className="meme-remaining-bar-fill"
+                            style={{ width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
+                        {p.pnlNative >= 0 ? '+' : ''}{fmt(p.pnlNative)} MON
+                      </span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <button className="meme-action-btn">Sell</button>
+                      <button className="meme-action-btn">Sell All</button>
+                    </div>
                   </div>
-                  <div className="meme-oc-cell">
-                    <span className={`meme-pnl ${position.pnl.amount >= 0 ? 'positive' : 'negative'}`}>
-                      {position.pnl.amount >= 0 ? '+' : ''}${position.pnl.amount}
-                    </span>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <button className="meme-action-btn">Sell</button>
-                    <button className="meme-action-btn">Sell All</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );

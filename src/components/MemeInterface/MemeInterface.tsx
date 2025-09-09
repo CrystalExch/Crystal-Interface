@@ -3,7 +3,6 @@ import { useLocation, useParams } from "react-router-dom";
 import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { settings } from "../../settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MaxUint256 } from "ethers";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
@@ -16,7 +15,6 @@ import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
 import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
 
-
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
 import slippage from "../../assets/slippage.svg";
@@ -28,7 +26,6 @@ import monadicon from "../../assets/monadlogo.svg";
 import trash from '../../assets/trash.svg';
 
 import "./MemeInterface.css";
-import { Tooltip } from "recharts";
 
 interface Token {
   id: string;
@@ -83,12 +80,6 @@ interface Holder {
   valueSold: number;
 }
 
-interface AdvancedOrder {
-  enabled: boolean;
-  percentage?: string;
-  amount?: string;
-}
-
 interface MemeInterfaceProps {
   tradingMode: "spot" | "trenches";
   sliderMode: string;
@@ -128,26 +119,60 @@ const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13'
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
-const HOLDER_FIELDS = `
-  address balance amountBought amountSold
-  valueBought valueSold valueNet tokenNet
-`;
-
 const HOLDERS_QUERY = `
   query ($m: Bytes!, $skip: Int!, $first: Int!) {
-    holders(where:{market:$m},
-    orderBy: balance,
-    orderDirection: desc,
-    skip:$skip,
-    first:$first) {
-      ${HOLDER_FIELDS}
+    launchpadPositions(
+      where: { token: $m }
+      orderBy: remainingTokens
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      account { id }
+      tokenBought
+      tokenSold
+      nativeSpent
+      nativeReceived
+      remainingTokens
+      remainingPctOfBuys
+      avgEntryNativePerTokenWad
+      realizedPnlNative
+      unrealizedPnlNative
+      lastUpdatedAt
+    }
+
+    top10: launchpadPositions(
+      where: { token: $m }
+      orderBy: remainingTokens
+      orderDirection: desc
+      first: 10
+    ) {
+      remainingTokens
     }
   }
 `;
 
-const USER_HOLDER_QUERY = `
-  query ($id: ID!){
-    holder(id:$id){ ${HOLDER_FIELDS} }
+const POSITIONS_QUERY = `
+  query ($a: Bytes!, $skip: Int!, $first: Int!) {
+    launchpadPositions(
+      where: { account: $a, remainingTokens_gt: "0" }
+      orderBy: remainingTokens
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      token { id symbol name decimals lastPriceNativePerTokenWad }
+      account { id }
+      tokenBought
+      tokenSold
+      nativeSpent
+      nativeReceived
+      remainingTokens
+      avgEntryNativePerTokenWad
+      realizedPnlNative
+      unrealizedPnlNative
+      lastUpdatedAt
+    }
   }
 `;
 
@@ -189,7 +214,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   terminalToken,
   setTerminalToken,
 }) => {
-
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
       case 'chart': return 0;
@@ -253,7 +277,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     balance: 0, amountBought: 0, amountSold: 0,
     valueBought: 0, valueSold: 0, valueNet: 0,
   });
-
+  const [positions, setPositions] = useState<any[]>([]);
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
   const [advancedOrders, setAdvancedOrders] = useState<Array<{
@@ -525,7 +549,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return getMobileWalletBalance(currentWallet.address);
   };
 
-  // Mobile QuickBuy Trading Functions
   const handleMobileBuyTrade = async (amount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       if (setpopup) setpopup(4);
@@ -760,7 +783,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
-  // Rest of your existing useEffect hooks and logic...
   useEffect(() => {
     if (!realtimeCallbackRef.current || !trades.length) return;
 
@@ -786,7 +808,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, [trades, selectedInterval, token.symbol]);
 
-  // Data fetching and WebSocket logic (keeping existing implementation)
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
@@ -914,7 +935,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return () => { isCancelled = true; };
   }, [token.id, selectedInterval]);
 
-  // WebSocket and other data loading logic (keeping existing)
   const lastInvalidateRef = useRef(0);
 
   const closeNotif = useCallback(() => {
@@ -922,7 +942,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTimeout(() => setNotif(null), 300);
   }, []);
 
-  // Continue with existing data fetching and trading logic...
   useEffect(() => {
     if (!token.id) return;
     const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
@@ -939,6 +958,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     ws.onopen = () => {
       sendSub(["logs", { address: token.id }]);
+      sendSub(["logs", { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] }]);
 
       if (tokenAddress) {
         sendSub(["logs", { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
@@ -952,24 +972,35 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       if (!log?.topics?.length) return;
 
       if (log.topics[0] === MARKET_UPDATE_EVENT) {
-        const caller = `0x${log.topics[1].slice(26)}`;
-        const hex = log.data.slice(2);
-        const word = (i: number) => BigInt("0x" + hex.slice(i * 64, i * 64 + 64));
-        const price = Number(word(2)) / 1e18;
-        const isBuy = word(1) > 0n;
-        const amounts = word(0);
-        const amountIn = Number(amounts >> 128n) / 1e18;
-        const amountOut = Number(amounts & ((1n << 128n) - 1n)) / 1e18;
-        const counts = word(3);
-        const buys = Number(counts >> 128n);
-        const sells = Number(counts & ((1n << 128n) - 1n));
+        const token = `0x${log.topics[1].slice(26)}`;
+        const caller = `0x${log.topics[2].slice(26)}`;
+
+        const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+        const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+        const isBuy = word(0) !== 0n;
+        const inputAmountWei = word(1);
+        const outputAmountWei = word(2);
+        const vNativeWei = word(3);
+        const vTokenWei = word(4);
+
+        const toNum = (x: bigint) => Number(x) / 1e18;
+
+        const amountIn = toNum(inputAmountWei);
+        const amountOut = toNum(outputAmountWei);
+
+        const vNative = toNum(vNativeWei);
+        const vToken = toNum(vTokenWei);
+
+        const price = vToken === 0 ? 0 : (vNative / vToken);
+        const tradePrice = isBuy ? amountIn / amountOut : amountOut / amountIn;
 
         setLive(p => ({
           ...p,
           price,
           marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: buys,
-          sellTransactions: sells,
+          buyTransactions: (p.buyTransactions || 0) + (isBuy ? 1 : 0),
+          sellTransactions: (p.sellTransactions || 0) + (isBuy ? 0 : 1),
           volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
         }));
 
@@ -978,10 +1009,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             id: `${log.transactionHash}-${log.logIndex}`,
             timestamp: Date.now() / 1000,
             isBuy,
-            price,
+            price: tradePrice,
             nativeAmount: isBuy ? amountIn : amountOut,
             tokenAmount: isBuy ? amountOut : amountIn,
             caller,
+            token,
           },
           ...prev.slice(0, 99),
         ]);
@@ -989,8 +1021,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         setHolders(prev => {
           const idx = prev.findIndex(r => r.address.toLowerCase() === caller.toLowerCase());
           if (idx === -1) return prev;
-          const row = { ...prev[idx] };
 
+          const row = { ...prev[idx] };
           if (isBuy) {
             row.amountBought += amountOut;
             row.valueBought += amountIn;
@@ -1038,95 +1070,140 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (!token.id) return;
 
     (async () => {
+      // one fetch is enough — it already takes skip/first
       const response = await fetch(SUBGRAPH_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           query: HOLDERS_QUERY,
+          variables: {
+            m: (token.id || '').toLowerCase(),
+            skip: page * PAGE_SIZE,
+            first: PAGE_SIZE,
+          },
         }),
       });
 
-      const data = await response.json();
-      console.log(data)
-      if (data?.holders) {
-        const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
-          return sum + (Number(holder.balance) / 1e18);
-        }, 0);
+      const { data } = await response.json();
 
+      if (data?.top10) {
+        const top10TotalBalance =
+          data.top10.reduce((sum: number, r: any) => sum + Number(r.remainingTokens) / 1e18, 0);
         const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
         setTop10HoldingPercentage(top10Percentage);
       }
 
-      if (page === 0) {
-        setHolders(
-          data.holders.map((h: any) => ({
-            address: h.address,
-            balance: Number(h.balance) / 1e18,
-            amountBought: Number(h.amountBought) / 1e18,
-            amountSold: Number(h.amountSold) / 1e18,
-            valueBought: Number(h.valueBought) / 1e18,
-            valueSold: Number(h.valueSold) / 1e18,
-            valueNet: Number(h.valueNet) / 1e18,
-            tokenNet: Number(h.tokenNet) / 1e18,
-          }))
-        );
-      } else {
-        const response = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            query: HOLDERS_QUERY,
-          }),
-        });
+      const positions: any[] = data?.launchpadPositions ?? [];
+      const mapped: Holder[] = positions.map((p: any) => {
+        const amountBought = Number(p.tokenBought) / 1e18;
+        const amountSold = Number(p.tokenSold) / 1e18;
+        const valueBought = Number(p.nativeSpent) / 1e18;
+        const valueSold = Number(p.nativeReceived) / 1e18;
+        const balance = Number(p.remainingTokens) / 1e18;
 
-        const data = await response.json();
+        return {
+          address: p.account.id,
+          balance,
+          amountBought,
+          amountSold,
+          valueBought,
+          valueSold,
+          tokenNet: amountBought - amountSold,
+          valueNet: valueSold - valueBought,
+        };
+      });
 
-        if (data?.holders) {
-          setHolders(
-            data.holders.map((h: any) => ({
-              address: h.address,
-              balance: Number(h.balance) / 1e18,
-              amountBought: Number(h.amountBought) / 1e18,
-              amountSold: Number(h.amountSold) / 1e18,
-              valueBought: Number(h.valueBought) / 1e18,
-              valueSold: Number(h.valueSold) / 1e18,
-              valueNet: Number(h.valueNet) / 1e18,
-              tokenNet: Number(h.tokenNet) / 1e18,
-            }))
-          );
-        }
-      }
+      setHolders(mapped);
     })();
   }, [token.id, page]);
 
   useEffect(() => {
-    if (!userAddr || !token.id) return;
+    if (!userAddr) return;
+    let cancelled = false;
 
     (async () => {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: USER_HOLDER_QUERY,
-        }),
-      });
+      const totals = {
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+      };
 
-      const data = await response.json();
-      if (!data?.holder) {
-        setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
-        return;
+      const all: any[] = [];
+      let skip = 0;
+
+      while (true) {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: POSITIONS_QUERY,
+            variables: {
+              a: (userAddr || '').toLowerCase(),
+              skip,
+              first: PAGE_SIZE,
+            },
+          }),
+        });
+
+        const { data } = await response.json();
+        const rows: any[] = data?.launchpadPositions ?? [];
+        if (!rows.length) break;
+
+        for (const p of rows) {
+          const boughtTokens = Number(p.tokenBought) / 1e18;
+          const soldTokens = Number(p.tokenSold) / 1e18;
+          const spentNative = Number(p.nativeSpent) / 1e18;
+          const receivedNative = Number(p.nativeReceived) / 1e18;
+          const remainingTokens = Number(p.remainingTokens) / 1e18;
+          const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+          const realized = Number(p?.realizedPnlNative ?? 0) / 1e18;
+          const unrealized = Number(p?.unrealizedPnlNative ?? 0) / 1e18;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
+
+          totals.amountBought += boughtTokens;
+          totals.amountSold += soldTokens;
+          totals.valueBought += spentNative;
+          totals.valueSold += receivedNative;
+          totals.balance += remainingTokens;
+
+          all.push({
+            tokenId: p.token.id,
+            symbol: p.token.symbol,
+            name: p.token.name,
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens,
+            remainingPct,
+            pnlNative,
+            lastPrice,
+          });
+        }
+
+        if (rows.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        if (cancelled) return;
       }
-      const h = data.holder;
+
+      if (cancelled) return;
+
+      setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
       setUserStats({
-        balance: Number(h.balance) / 1e18,
-        amountBought: Number(h.amountBought) / 1e18,
-        amountSold: Number(h.amountSold) / 1e18,
-        valueBought: Number(h.valueBought) / 1e18,
-        valueSold: Number(h.valueSold) / 1e18,
-        valueNet: Number(h.valueNet) / 1e18,
+        balance: totals.balance,
+        amountBought: totals.amountBought,
+        amountSold: totals.amountSold,
+        valueBought: totals.valueBought,
+        valueSold: totals.valueSold,
+        valueNet: totals.valueSold - totals.valueBought,
       });
     })();
-  }, [userAddr, token.id]);
+
+    return () => { cancelled = true; };
+  }, [userAddr]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
@@ -1454,7 +1531,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-            holders={holders}
+            holders={holders} 
+            positions={positions}
             page={page}
             pageSize={PAGE_SIZE}
             currentPrice={currentPrice}
@@ -2018,7 +2096,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             )}
           </button>
 
-          {/* Portfolio Stats Section */}
           <div className="meme-portfolio-stats">
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Bought</div>
@@ -2057,7 +2134,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
         <div className="meme-trading-stats-container">
           <div className="meme-trading-stats-row">
-                        <div className="meme-stat-group">
+            <div className="meme-stat-group">
               <div className="meme-stat-header">
                 <span className="meme-stat-label">TXNS</span>
                 <div className="meme-stat-value">
