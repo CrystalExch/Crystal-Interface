@@ -142,6 +142,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           const priceFactor = Number(activeMarket.priceFactor);
           const open = lastClose !== null ? lastClose : candle.open / priceFactor;
           const close = candle.close / priceFactor
+          console.log(candle);
     
           let high = candle.high / priceFactor;
           let low = candle.low / priceFactor;
