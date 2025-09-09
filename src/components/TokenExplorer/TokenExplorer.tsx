@@ -34,7 +34,7 @@ import kaching from '../../assets/ka-ching.mp3';
 export interface Token {
   id: string;
   tokenAddress: string;
-  creator: string;
+  dev: string;
   name: string;
   symbol: string;
   image: string;
@@ -2323,7 +2323,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       volumeDelta: 0,
       telegramHandle: telegram ?? '',
       discordHandle: discord ?? '',
-      creator: args.creator,
+      dev: args.creator,
     };
 
     dispatch({ type: 'ADD_MARKET', token });
@@ -2476,7 +2476,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 ...defaultMetrics,
                 id: m.id.toLowerCase(),
                 tokenAddress: m.id.toLowerCase(),
-                creator: m.creator.id,
+                dev: m.creator.id,
                 name: m.name,
                 symbol: m.symbol,
                 image: meta.image ?? '/discord.svg',
@@ -2618,9 +2618,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, [hidden]);
 
   const handleBlacklistToken = useCallback((token: Token) => {
-    const newItem = { id: Date.now().toString(), text: token.creator, type: 'dev' as const };
+    const newItem = { id: Date.now().toString(), text: token.dev, type: 'dev' as const };
     setBlacklistSettings(prev => ({ items: [...prev.items, newItem] }));
-    console.log(`Blacklisted dev: ${token.creator}`);
+    console.log(`Blacklisted dev: ${token.dev}`);
   }, []);
 
   useEffect(() => {
@@ -2677,7 +2677,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
               ...defaultMetrics,
               id: m.id.toLowerCase(),
               tokenAddress: m.id.toLowerCase(),
-              creator: m.creator.id,
+              dev: m.creator.id,
               name: m.name,
               symbol: m.symbol,
               image: meta.image ?? '/discord.svg',
