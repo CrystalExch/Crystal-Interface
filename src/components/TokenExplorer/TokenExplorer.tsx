@@ -618,7 +618,6 @@ const AlertsPopup: React.FC<{
   const sliderRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastVolumeRef = useRef<number>(settings.volume);
-  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const toggleDropdown = (key: string) => {
     setOpenDropdowns(prev => ({
       ...prev,
@@ -674,11 +673,6 @@ const AlertsPopup: React.FC<{
     const percentage = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     updateSetting('volume', Math.round(percentage));
   }, []);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDragging(true);
-    handleVolumeChange(e.clientX);
-  }, [handleVolumeChange]);
 
   const handleVolumeSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseInt(e.target.value, 10);
@@ -1624,9 +1618,6 @@ const TokenRow = React.memo<{
   } = props;
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom' | 'left' | 'right' });
-  const [showPreview, setShowPreview] = useState(false);
-  const [positionCalculated, setPositionCalculated] = useState(false);
   type CSSVars = React.CSSProperties & Record<string, string>;
 
   const bondingPercentage = useMemo(() => calculateBondingPercentage(token.marketCap), [token.marketCap]);
@@ -1700,32 +1691,20 @@ const TokenRow = React.memo<{
 
     if (top < scrollY + 10) top = scrollY + 10;
     else if (top + previewHeight > scrollY + viewportHeight - 10) top = scrollY + viewportHeight - previewHeight - 10;
-
-    setPreviewPosition({ top, left, placement });
   }, []);
 
   useEffect(() => {
     if (hoveredImage === token.id) {
-      setPositionCalculated(false);
       updatePreviewPosition();
-
-      const timer = setTimeout(() => {
-        setPositionCalculated(true);
-        setShowPreview(true);
-      }, 10);
 
       const handleResize = () => updatePreviewPosition();
       window.addEventListener('scroll', updatePreviewPosition);
       window.addEventListener('resize', handleResize);
 
       return () => {
-        clearTimeout(timer);
         window.removeEventListener('scroll', updatePreviewPosition);
         window.removeEventListener('resize', handleResize);
       };
-    } else {
-      setShowPreview(false);
-      setPositionCalculated(false);
     }
   }, [hoveredImage, token.id, updatePreviewPosition]);
 
@@ -2327,7 +2306,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
     const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
     if (discord) { socials.splice(socials.indexOf(discord), 1) }
-    const website = socials[0]
 
     const token: Token = {
       ...defaultMetrics,
@@ -2349,16 +2327,16 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     };
 
     dispatch({ type: 'ADD_MARKET', token });
-  
-  if (alertSettings.soundAlertsEnabled) {
-    try {
-      const audio = new Audio(alertSettings.sounds.newPairs);
-      audio.volume = alertSettings.volume / 100;
-      audio.play().catch(console.error);
-    } catch (error) {
-      console.error('Failed to play new pairs sound:', error);
+
+    if (alertSettings.soundAlertsEnabled) {
+      try {
+        const audio = new Audio(alertSettings.sounds.newPairs);
+        audio.volume = alertSettings.volume / 100;
+        audio.play().catch(console.error);
+      } catch (error) {
+        console.error('Failed to play new pairs sound:', error);
+      }
     }
-  }
 
     if (!marketSubs.current[args.token] && wsRef.current) {
       subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
@@ -2442,7 +2420,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     pauseTimeoutRef.current = setTimeout(() => {
       setPausedColumn(null);
 
-      // Refetch data and reopen WebSocket
       const refetchAndResume = async () => {
         try {
           const res = await fetch(SUBGRAPH_URL, {
@@ -2450,41 +2427,25 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify({
               query: `
-            {
-              launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
-                id
-                creator {
-                  id
+              {
+                active: launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+                  id creator { id } name symbol metadataCID description social1 social2 social3
+                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
+                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+                  trades { id amountIn amountOut }
                 }
-                name
-                symbol
-                metadataCID
-                description
-                social1
-                social2
-                social3
-                timestamp
-                migrated
-                migratedAt
-                volumeNative
-                volumeToken
-                buyTxs
-                sellTxs
-                distinctBuyers
-                distinctSellers
-                lastPriceNativePerTokenWad
-                lastUpdatedAt
-                trades {
-                  id
-                  amountIn
-                  amountOut
+                migrated: launchpadTokens(first: 30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
+                  id creator { id } name symbol metadataCID description social1 social2 social3
+                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
+                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+                  trades { id amountIn amountOut }
                 }
-              }
-            }`,
+              }`,
             }),
           });
           const json = await res.json();
-          const rawMarkets = json.data?.launchpadTokens ?? [];
+          const { active = [], migrated = [] } = json.data ?? {};
+          const rawMarkets = [...active, ...migrated];
 
           const tokens: Token[] = await Promise.all(
             rawMarkets.map(async (m: any) => {
@@ -2662,57 +2623,30 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     console.log(`Blacklisted dev: ${token.creator}`);
   }, []);
 
-
-
-
   useEffect(() => {
     let cancelled = false;
 
     async function bootstrap() {
       try {
         const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
             query: `
-            {
-              launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
-                id
-                creator {
-                  id
-                }
-                name
-                symbol
-                metadataCID
-                description
-                social1
-                social2
-                social3
-                timestamp
-                migrated
-                migratedAt
-                volumeNative
-                volumeToken
-                buyTxs
-                sellTxs
-                distinctBuyers
-                distinctSellers
-                lastPriceNativePerTokenWad
-                lastUpdatedAt
-                trades {
-                  id
-                  amountIn
-                  amountOut
-                }
-              }
-            }`,
-          }),
+          {
+            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+              id creator { id } name symbol metadataCID description social1 social2 social3 timestamp migrated migratedAt
+              volumeNative volumeToken buyTxs sellTxs distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+              trades { id amountIn amountOut }
+            }
+            migrated: launchpadTokens(first:30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
+              id creator { id } name symbol metadataCID description social1 social2 social3 timestamp migrated migratedAt
+              volumeNative volumeToken buyTxs sellTxs distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+              trades { id amountIn amountOut }
+            }
+          }`
+          })
         });
         const json = await res.json();
-        console.log(json)
-        if (cancelled) return;
-
-        const rawMarkets = json.data?.launchpadTokens ?? [];
+        const rawMarkets = [...(json.data?.active ?? []), ...(json.data?.migrated ?? [])];
 
         const tokens: Token[] = await Promise.all(
           rawMarkets.map(async (m: any) => {
@@ -2783,23 +2717,18 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const applyFilters = useCallback((list: Token[], fil: any) => {
     if (!fil) return list;
     return list.filter((t) => {
-      // Price filtering
       if (fil.priceMin !== undefined && fil.priceMin !== '' && t.price < +fil.priceMin) return false;
       if (fil.priceMax !== undefined && fil.priceMax !== '' && t.price > +fil.priceMax) return false;
 
-      // Market cap filtering
       if (fil.marketCapMin !== undefined && fil.marketCapMin !== '' && t.marketCap < +fil.marketCapMin) return false;
       if (fil.marketCapMax !== undefined && fil.marketCapMax !== '' && t.marketCap > +fil.marketCapMax) return false;
 
-      // Volume filtering
       if (fil.volumeMin !== undefined && fil.volumeMin !== '' && t.volume24h < +fil.volumeMin) return false;
       if (fil.volumeMax !== undefined && fil.volumeMax !== '' && t.volume24h > +fil.volumeMax) return false;
 
-      // Holders filtering
       if (fil.holdersMin !== undefined && fil.holdersMin !== '' && t.holders < +fil.holdersMin) return false;
       if (fil.holdersMax !== undefined && fil.holdersMax !== '' && t.holders > +fil.holdersMax) return false;
 
-      // Age filtering (in hours)
       if (fil.ageMin !== undefined && fil.ageMin !== '') {
         const ageHours = (Date.now() / 1000 - t.created) / 3600;
         if (ageHours < +fil.ageMin) return false;
@@ -2809,25 +2738,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         if (ageHours > +fil.ageMax) return false;
       }
 
-      // Keyword filtering
       if (fil.searchKeywords && fil.searchKeywords.trim()) {
         const keywords = fil.searchKeywords.toLowerCase().split(',').map((x: string) => x.trim()).filter(Boolean);
         const searchText = `${t.name} ${t.symbol} ${t.description} ${t.tokenAddress}`.toLowerCase();
         if (!keywords.some((keyword: string) => searchText.includes(keyword))) return false;
       }
 
-      // Social filtering
       if (fil.hasTwitter && !t.twitterHandle) return false;
       if (fil.hasWebsite && !t.website) return false;
       if (fil.hasTelegram && !t.telegramHandle) return false;
       if (fil.hasDiscord && !t.discordHandle) return false;
-
-      // Risk metrics filtering
       if (fil.sniperHoldingMax !== undefined && fil.sniperHoldingMax !== '' && t.sniperHolding > +fil.sniperHoldingMax) return false;
       if (fil.devHoldingMax !== undefined && fil.devHoldingMax !== '' && t.devHolding > +fil.devHoldingMax) return false;
       if (fil.insiderHoldingMax !== undefined && fil.insiderHoldingMax !== '' && t.insiderHolding > +fil.insiderHoldingMax) return false;
       if (fil.top10HoldingMax !== undefined && fil.top10HoldingMax !== '' && t.top10Holding > +fil.top10HoldingMax) return false;
-
       if (fil.proTradersMin !== undefined && fil.proTradersMin !== '' && t.proTraders < +fil.proTradersMin) return false;
       if (fil.kolTradersMin !== undefined && fil.kolTradersMin !== '' && t.kolTraders < +fil.kolTradersMin) return false;
 
@@ -2907,13 +2831,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                 <div className="explorer-column-header">
                   <div className="explorer-column-title-section">
                     <h2 className="explorer-column-title">New Pairs</h2>
-                   
+
                   </div>
                   <div className="explorer-column-title-right">
-                     <div className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-  </svg>
+                    <div className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                      </svg>
                     </div>
                     <div className="explorer-quickbuy-container">
                       <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
@@ -3023,10 +2947,10 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
                     </div>
                     <div className="explorer-column-title-right">
-                       <div className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}>
-                          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-  </svg>
+                      <div className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                        </svg>
                       </div>
                       <div className="explorer-quickbuy-container">
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
@@ -3131,13 +3055,13 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
                       <h2 className="explorer-column-title">
                         Graduated
                       </h2>
-                     
+
                     </div>
                     <div className="explorer-column-title-right">
-                       <div className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}>
+                      <div className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-    <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
-  </svg>
+                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                        </svg>
                       </div>
                       <div className="explorer-quickbuy-container">
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />

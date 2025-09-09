@@ -4,8 +4,8 @@ import PortfolioGraph from '../../../Portfolio/PortfolioGraph/PortfolioGraph';
 import BalancesContent from '../../../Portfolio/BalancesContent/BalancesContent';
 import { usePortfolioData } from '../../../Portfolio/PortfolioGraph/usePortfolioData';
 import { formatCommas } from '../../../../utils/numberDisplayFormat';
-import './TraderPortfolioPopup.css';
 import { useSharedContext } from '../../../../contexts/SharedContext';
+import './TraderPortfolioPopup.css';
 
 interface TraderPortfolioPopupProps {
     traderAddress: string;

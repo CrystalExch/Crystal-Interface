@@ -1499,8 +1499,6 @@ all.push({
 
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
-          {/* Desktop: Always show chart and trades side by side */}
-          {/* Mobile: Show only the selected view */}
           <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
             <MemeChart
               token={token}

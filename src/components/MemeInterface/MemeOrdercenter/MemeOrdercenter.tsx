@@ -58,6 +58,41 @@ const fmt = (v: number, d = 3) => {
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
 };
 
+interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  const showTooltip = useCallback(() => setIsVisible(true), []);
+  const hideTooltip = useCallback(() => setIsVisible(false), []);
+
+  return (
+    <div
+      className="meme-ordercenter-tooltip-container"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        alignItems: 'center',
+        cursor: 'pointer'
+      }}
+    >
+      {children}
+      <div className={`meme-ordercenter-tooltip meme-ordercenter-tooltip-${position} meme-ordercenter-fade-popup ${isVisible ? 'meme-ordercenter-visible' : ''}`}>
+        <div className="meme-ordercenter-tooltip-content">
+          {content}
+          <div className={`meme-ordercenter-tooltip-arrow meme-ordercenter-tooltip-arrow-${position}`}></div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   orderCenterHeight = 300,
   isVertDragging = false,
@@ -102,41 +137,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       window.removeEventListener('resize', handleResize);
     };
   }, [onHeightChange]);
-
-  interface TooltipProps {
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
-  }
-
-  const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    const showTooltip = useCallback(() => setIsVisible(true), []);
-    const hideTooltip = useCallback(() => setIsVisible(false), []);
-
-    return (
-      <div
-        className="meme-ordercenter-tooltip-container"
-        onMouseEnter={showTooltip}
-        onMouseLeave={hideTooltip}
-        style={{
-          position: 'relative',
-          display: 'inline-flex',
-          alignItems: 'center',
-          cursor: 'pointer'
-        }}
-      >
-        {children}
-        <div className={`meme-ordercenter-tooltip meme-ordercenter-tooltip-${position} meme-ordercenter-fade-popup ${isVisible ? 'meme-ordercenter-visible' : ''}`}>
-          <div className="meme-ordercenter-tooltip-content">
-            {content}
-            <div className={`meme-ordercenter-tooltip-arrow meme-ordercenter-tooltip-arrow-${position}`}></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   const indicatorRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -346,6 +346,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       if (resizeObserver) resizeObserver.disconnect();
     };
   }, [activeSection]);
+
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
@@ -359,6 +360,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       </span>
     );
   };
+
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -375,7 +377,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
-            const tokenImageUrl = p.imageUrl || null;
+                const tokenImageUrl = p.imageUrl || null;
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
                     <div className="meme-oc-cell">
@@ -383,11 +385,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <span className="meme-wallet-index">{index + 1}</span>
                         <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
                           {tokenImageUrl && (
-                            <img 
-                              src={tokenImageUrl} 
-                              alt={p.symbol} 
+                            <img
+                              src={tokenImageUrl}
+                              alt={p.symbol}
                               className="meme-token-icon"
-                      
+
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
@@ -454,7 +456,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {mockOrders.map((order) => (
                 <div key={order.id} className="meme-oc-item">
-                  
+
                   <div className="meme-oc-cell">{order.token}</div>
                   <div className="meme-oc-cell">
                     <span className={`meme-order-type ${order.type.toLowerCase()}`}>{order.type}</span>
@@ -499,7 +501,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-usd-amount buy">{fmt(row.valueBought)} MON</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))}/> MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))} /> MON
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -508,7 +510,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-usd-amount sell">{fmt(row.valueSold)} MON</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))}/> MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))} /> MON
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -528,8 +530,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
                   </div>
                   <div className="meme-oc-cell"><button className="meme-filter-action-btn">
-                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
-                    </button></div>
+                    <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                  </button></div>
                 </div>
               ))}
 
@@ -597,9 +599,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                   </div>
-  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
-                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
-                    </button></div>
+                  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
+                    <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                  </button></div>
                 </div>
               ))}
             </div>
@@ -638,21 +640,21 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
       <div className="meme-oc-top-bar">
         <div className="meme-oc-types">
-            <>
-              <div className="meme-oc-types-rectangle">
-                {availableTabs.map(({ key, label }, index) => (
-                  <div
-                    key={key}
-                    ref={(el) => (tabsRef.current[index] = el)}
-                    className={`meme-oc-type ${activeSection === key ? 'active' : ''}`}
-                    onClick={() => handleTabChange(key as typeof activeSection)}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-              <div ref={indicatorRef} className="meme-oc-sliding-indicator" />
-            </>
+          <>
+            <div className="meme-oc-types-rectangle">
+              {availableTabs.map(({ key, label }, index) => (
+                <div
+                  key={key}
+                  ref={(el) => (tabsRef.current[index] = el)}
+                  className={`meme-oc-type ${activeSection === key ? 'active' : ''}`}
+                  onClick={() => handleTabChange(key as typeof activeSection)}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+            <div ref={indicatorRef} className="meme-oc-sliding-indicator" />
+          </>
         </div>
 
         {onToggleWidget && (

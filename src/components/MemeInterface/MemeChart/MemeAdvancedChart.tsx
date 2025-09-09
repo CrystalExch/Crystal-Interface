@@ -33,13 +33,30 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
 
+  function enforceOpenEqualsPrevClose(bars: any[] = []) {
+    if (!Array.isArray(bars) || bars.length === 0) return bars;
+    const out = [...bars].sort((a, b) => a.time - b.time);
+    let prevClose: number | undefined = undefined;
+
+    for (let i = 0; i < out.length; i++) {
+      const b = { ...out[i] };
+      if (prevClose !== undefined) {
+        b.open = prevClose;
+        if (b.high < b.open) b.high = b.open;
+        if (b.low  > b.open) b.low = b.open;
+      }
+      prevClose = b.close;
+      out[i] = b;
+    }
+    return out;
+  }
+
   useEffect(() => {
     if (data && data[0] && data[1]) {
       dataRef.current[data[1]] = data[0];
     }
   }, [data]);
 
-  // Handle trade history changes and marks visibility
   useEffect(() => {
     try {
       const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
@@ -48,17 +65,16 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       tradeHistoryRef.current = [...tradehistory];
 
       if (tradehistory.length > 0 && becameVisible) {
-        // Show all marks when toggled on
         if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
           const marks = tradehistory.map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            time: trade.timestamp || trade[6], // Support both formats
+            time: trade.timestamp || trade[6],
             hoveredBorderWidth: 0,
             borderWidth: 0,
-            color: (trade.isBuy || trade[2] == 1) 
-              ? {background: 'rgb(131, 251, 155)', border: ''} 
-              : {background: 'rgb(210, 82, 82)', border: ''},
-            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+            color: (trade.isBuy || trade[2] == 1)
+              ? { background: 'rgb(131, 251, 155)', border: '' }
+              : { background: 'rgb(210, 82, 82)', border: '' },
+            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
               new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
                 month: '2-digit',
                 day: '2-digit',
@@ -74,17 +90,16 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           marksRef.current(marks);
         }
       } else if (tradehistory.length > 0 && isMarksVisible) {
-        // Add new marks for new trades
         if (chartReady && typeof marksRef.current === 'function' && widgetRef.current?.activeChart()?.symbol()) {
           const marks = diff.map((trade: any) => ({
             id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             time: trade.timestamp || trade[6],
             hoveredBorderWidth: 0,
             borderWidth: 0,
-            color: (trade.isBuy || trade[2] == 1) 
-              ? {background: 'rgb(131, 251, 155)', border: ''} 
-              : {background: 'rgb(210, 82, 82)', border: ''},
-            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+            color: (trade.isBuy || trade[2] == 1)
+              ? { background: 'rgb(131, 251, 155)', border: '' }
+              : { background: 'rgb(210, 82, 82)', border: '' },
+            text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
               new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
                 month: '2-digit',
                 day: '2-digit',
@@ -100,12 +115,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
           marksRef.current(marks);
         }
       } else {
-        // Clear marks when hidden
         if (chartReady) {
           widgetRef.current?.activeChart()?.clearMarks();
         }
       }
-    } catch(e) {
+    } catch (e) {
       console.error('Error updating trade marks:', e);
     }
   }, [tradehistory.length, isMarksVisible, token.symbol]);
@@ -167,7 +181,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
                   desc: 'Crystal Exchange',
                 },
               ],
-              supports_marks: true, // Enable marks support
+              supports_marks: true,
             });
           }, 0);
         },
@@ -183,7 +197,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               timezone: 'Etc/UTC',
               exchange: 'crystal.exchange',
               minmov: 1,
-              pricescale: 10 ** Math.max(0, 5 - Math.floor(Math.log10(0.000001 ?? 1)) - 1), 
+              pricescale: 10 ** Math.max(0, 5 - Math.floor(Math.log10(0.000001)) - 1),
               has_intraday: true,
               has_volume: true,
               supported_resolutions: ['1', '5', '15', '60', '240', '1D'],
@@ -226,8 +240,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               check();
             });
 
-            let bars = dataRef.current[key] || [];
-
+            let bars = enforceOpenEqualsPrevClose(dataRef.current[key]) || [];
             bars = bars.filter(
               (bar: any) => bar.time >= from * 1000 && bar.time <= to * 1000,
             );
@@ -261,10 +274,10 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               time: trade.timestamp || trade[6],
               hoveredBorderWidth: 0,
               borderWidth: 0,
-              color: (trade.isBuy || trade[2] == 1) 
-                ? {background: 'rgb(131, 251, 155)', border: ''} 
-                : {background: 'rgb(210, 82, 82)', border: ''},
-              text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` + 
+              color: (trade.isBuy || trade[2] == 1)
+                ? { background: 'rgb(131, 251, 155)', border: '' }
+                : { background: 'rgb(210, 82, 82)', border: '' },
+              text: `${(trade.isBuy || trade[2] == 1) ? 'Bought' : 'Sold'} ${formatDisplay(trade.amount || trade[0])} ${token.symbol} on ` +
                 new Date((trade.timestamp || trade[6]) * 1000).toLocaleString('en-US', {
                   month: '2-digit',
                   day: '2-digit',
@@ -277,7 +290,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               labelFontColor: 'black',
               minSize: 17,
             }));
-          
+
           marksRef.current = onDataCallback;
           setTimeout(() => {
             onDataCallback(marks);
@@ -366,7 +379,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
             : selectedInterval === '1h'
               ? '60'
               : selectedInterval.slice(0, -1));
-  
+
         widgetRef.current.setSymbol(
           `${token.symbol}/MON`,
           selectedInterval === '1d'
@@ -382,7 +395,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         );
       }
     }
-    catch(e) {
+    catch (e) {
     }
   }, [token.symbol, selectedInterval]);
 
@@ -393,7 +406,6 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   );
 };
 
-// Helper function for formatting display values
 function formatDisplay(value: number): string {
   if (Math.abs(value) >= 1000000) {
     return (value / 1000000).toFixed(2) + 'M';
