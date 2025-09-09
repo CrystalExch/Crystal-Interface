@@ -222,7 +222,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       default: return 0;
     }
   };
+const resolveNative = useCallback(
+  (symbol: string | undefined) => {
+    if (!symbol) return "";
+    if (symbol === wethticker) return ethticker ?? symbol;
+    return symbol;
+  },
+  [wethticker, ethticker],
+);
 
+const usdPer = useCallback(
+  (symbol?: string): number => {
+    if (!symbol || !tradesByMarket || !markets) return 0;
+    const sym = resolveNative(symbol);
+    if (usdc && sym === "USDC") return 1;
+    const pair = `${sym}USDC`;
+    const top = tradesByMarket[pair]?.[0]?.[3];
+    const pf = Number(markets[pair]?.priceFactor) || 1;
+    if (!top || !pf) return 0;
+    return Number(top) / pf;
+  },
+  [tradesByMarket, markets, resolveNative, usdc],
+);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -1422,7 +1443,7 @@ all.push({
     if (activeOrderType === "Limit" && !limitPrice) return true;
     return false;
   };
-
+const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
       change: token.change24h || 0,
@@ -1528,33 +1549,33 @@ all.push({
           </div>
         </div>
         <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
-          <MemeOrderCenter
-            orderCenterHeight={orderCenterHeight}
-            isVertDragging={isVertDragging}
-            isOrderCenterVisible={true}
-            onHeightChange={(h) => setOrderCenterHeight(h)}
-            onDragStart={() => {
-              setIsVertDragging(true);
-              document.body.style.cursor = "row-resize";
-              document.body.style.userSelect = "none";
-            }}
-            onDragEnd={() => {
-              setIsVertDragging(false);
-              document.body.style.cursor = "";
-              document.body.style.userSelect = "";
-            }}
-            isWidgetOpen={isWidgetOpen}
-            onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-            holders={holders} 
-            positions={positions}
-            page={page}
-            pageSize={PAGE_SIZE}
-            currentPrice={currentPrice}
-          />
+<MemeOrderCenter
+  orderCenterHeight={orderCenterHeight}
+  isVertDragging={isVertDragging}
+  isOrderCenterVisible={true}
+  onHeightChange={(h) => setOrderCenterHeight(h)}
+  onDragStart={() => {
+    setIsVertDragging(true);
+    document.body.style.cursor = "row-resize";
+    document.body.style.userSelect = "none";
+  }}
+  onDragEnd={() => {
+    setIsVertDragging(false);
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }}
+  isWidgetOpen={isWidgetOpen}
+  onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
+  holders={holders} 
+  positions={positions}
+  page={page}
+  pageSize={PAGE_SIZE}
+  currentPrice={currentPrice}
+  monUsdPrice={monUsdPrice}
+/>
         </div>
       </div>
 
-      {/* Desktop Trade Panel */}
       <div className="meme-trade-panel desktop-only">
         <div className="meme-buy-sell-container">
           <button
