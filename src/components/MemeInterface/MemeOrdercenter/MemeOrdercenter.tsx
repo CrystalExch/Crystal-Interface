@@ -64,7 +64,7 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   if (mode === 'USD' && monPrice > 0) {
     return `$${(v * monPrice).toFixed(2)}`;
   }
-  return `${v.toFixed(4)} MON`;
+  return `${v.toFixed(4)}`;
 };
 
 interface TooltipProps {
@@ -377,21 +377,21 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
-<div className="meme-oc-header">
-  <div className="meme-oc-header-cell">Token</div>
-  <div 
-    className="meme-oc-header-cell clickable" 
-    onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
-    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-  >
-    Bought
-    <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
-  </div>
-  <div className="meme-oc-header-cell">Sold</div>
-  <div className="meme-oc-header-cell">Remaining</div>
-  <div className="meme-oc-header-cell">PnL</div>
-  <div className="meme-oc-header-cell">Actions</div>
-</div>
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Token</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                Bought
+                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
+              </div>
+              <div className="meme-oc-header-cell">Sold</div>
+              <div className="meme-oc-header-cell">Remaining</div>
+              <div className="meme-oc-header-cell">PnL</div>
+              <div className="meme-oc-header-cell">Actions</div>
+            </div>
             <div className="meme-oc-items">
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
@@ -417,18 +417,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                       </div>
                     </div>
-<div className="meme-oc-cell">
-  <div className="meme-trade-info">
-    <span className="meme-token-amount">{fmt(p.boughtTokens)}</span>
-    <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)}</span>
-  </div>
-</div>
-<div className="meme-oc-cell">
-  <div className="meme-trade-info">
-    <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
-    <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
-  </div>
-</div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                        <div className="meme-ordercenter-info">
+                          <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+                        <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)} </span> 
+                        </div>
+                        <span className="meme-token-amount">{fmt(p.boughtTokens)} {p.symbol || ''}</span>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                          <div className="meme-ordercenter-info">
+                          <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+
+                        <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
+                        </div>
+                        <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
+                      </div>
+                    </div>
                     <div className="meme-oc-cell">
                       <div className="meme-remaining-info">
                         <div>
@@ -447,11 +454,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                       </div>
                     </div>
-<div className="meme-oc-cell">
-  <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
-    {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}
-  </span>
-</div>
+                    <div className="meme-oc-cell">
+                      <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
+                        {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}
+                      </span>
+                    </div>
                     <div className="meme-oc-cell">
                       <button className="meme-action-btn">Sell</button>
                     </div>
@@ -490,22 +497,22 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       case 'holders':
         return (
           <div className="meme-oc-section-content" data-section="holders">
-<div className="meme-oc-header">
-  <div className="meme-oc-header-cell">Wallet</div>
-  <div className="meme-oc-header-cell">Balance</div>
-  <div 
-    className="meme-oc-header-cell clickable" 
-    onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
-    style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-  >
-    Bought (Avg Buy)
-    <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
-  </div>
-  <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
-  <div className="meme-oc-header-cell">PnL</div>
-  <div className="meme-oc-header-cell">Remaining</div>
-  <div className="meme-oc-header-cell">Filter</div>
-</div>
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Wallet</div>
+              <div className="meme-oc-header-cell">Balance</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                Bought (Avg Buy)
+                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
+              </div>
+              <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
+              <div className="meme-oc-header-cell">PnL</div>
+              <div className="meme-oc-header-cell">Remaining</div>
+              <div className="meme-oc-header-cell">Filter</div>
+            </div>
             <div className="meme-oc-items">
               {holderRows.map(row => (
                 <div key={row.wallet} className="meme-oc-item">
@@ -520,29 +527,29 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   <div className="meme-oc-cell">
                     <span className="meme-mon-balance">{fmt(row.balance, 3)}</span>
                   </div>
-<div className="meme-oc-cell">
-  <div className="meme-trade-info">
-    <span className="meme-token-amount">{fmt(row.bought)}</span>
-    <span className="meme-usd-amount buy">{fmtAmount(row.valueBought, amountMode, monUsdPrice)}</span>
-  </div>
-  <span className="meme-avg-price">
-    <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
-  </span>
-</div>
-<div className="meme-oc-cell">
-  <div className="meme-trade-info">
-    <span className="meme-token-amount">{fmt(row.sold)}</span>
-    <span className="meme-usd-amount sell">{fmtAmount(row.valueSold, amountMode, monUsdPrice)}</span>
-  </div>
-  <span className="meme-avg-price">
-    <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
-  </span>
-</div>
-<div className="meme-oc-cell">
-  <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
-    {row.pnl >= 0 ? '+' : ''}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
-  </span>
-</div>
+                  <div className="meme-oc-cell">
+                    <div className="meme-trade-info">
+                      <span className="meme-token-amount">{fmt(row.bought)}</span>
+                      <span className="meme-usd-amount buy">{fmtAmount(row.valueBought, amountMode, monUsdPrice)}</span>
+                    </div>
+                    <span className="meme-avg-price">
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
+                    </span>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <div className="meme-trade-info">
+                      <span className="meme-token-amount">{fmt(row.sold)}</span>
+                      <span className="meme-usd-amount sell">{fmtAmount(row.valueSold, amountMode, monUsdPrice)}</span>
+                    </div>
+                    <span className="meme-avg-price">
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
+                    </span>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
+                      {row.pnl >= 0 ? '+' : ''}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
+                    </span>
+                  </div>
                   <div className="meme-oc-cell">
                     <div className="meme-remaining-info">
                       <div>
@@ -608,11 +615,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-token-amount">{trader.sold.amount.toFixed(0)}M / {trader.sold.percentage.toFixed(2)}%</span>
                     </div>
                   </div>
- <div className="meme-oc-cell">
-  <span className={`meme-pnl ${trader.pnl.amount >= 0 ? 'positive' : 'negative'}`}>
-    {trader.pnl.amount >= 0 ? '+' : ''}${trader.pnl.amount.toFixed(0)}
-  </span>
-</div>
+                  <div className="meme-oc-cell">
+                    <span className={`meme-pnl ${trader.pnl.amount >= 0 ? 'positive' : 'negative'}`}>
+                      {trader.pnl.amount >= 0 ? '+' : ''}${trader.pnl.amount.toFixed(0)}
+                    </span>
+                  </div>
                   <div className="meme-oc-cell">
                     <div className="meme-remaining-info">
                       <div>
