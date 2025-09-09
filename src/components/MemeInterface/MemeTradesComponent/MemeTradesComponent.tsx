@@ -5,6 +5,7 @@ import switchicon from '../../../assets/switch.svg'
 import monadlogo from '../../../assets/monadlogo.svg'
 import TraderPortfolioPopup from './TraderPortfolioPopup/TraderPortfolioPopup'
 import filtercup from "../../../assets/filtercup.svg";
+import filter from '../../../assets/filter.svg';
 
 import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript'
 
@@ -419,9 +420,7 @@ return (
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {/* New title header with separate filter containers */}
       <div className="meme-trades-title-header">
-        <span className="meme-trades-title">Trades</span>
         <div className="meme-trades-filters">
           <div className="meme-trade-filter-container">
             <img src={filtercup} alt="Filter"  className="filter-cup"/>
@@ -431,10 +430,14 @@ return (
             <img src={filtercup} alt="Filter" className="filter-cup" />
             <button className="meme-trade-filter-btn">TRACKED</button>
           </div>
+          <div className="meme-trade-filter-container">
+            <img src={filtercup} alt="Filter" className="filter-cup" />
+            <button className="meme-trade-filter-btn">YOU</button>
+          </div>
         </div>
+        <img className="filter-icon" src={filter} />
       </div>
 
-      {/* Keep the original header with MC and Amount toggles */}
       <div className="meme-trades-header">
         <div
           className="meme-trades-header-item meme-trades-header-amount"

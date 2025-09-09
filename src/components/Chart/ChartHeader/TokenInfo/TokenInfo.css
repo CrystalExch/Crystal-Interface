@@ -377,7 +377,7 @@
 }
 
 .market-change.negative {
-  color: #ef5151;
+  color: rgb(235, 112, 112);
   font-size: 0.75rem;
 }
 
@@ -870,7 +870,7 @@
 }
 
 .meme-interface-token-name {
-  font-size: 1rem;
+  font-size: .9rem;
   color: rgba(237, 236, 252, 0.4);
   white-space: nowrap;
   overflow: hidden;
@@ -973,11 +973,11 @@
 }
 
 .meme-interface-metric-value.positive {
-  color: #43e17d;
+  color: rgb(67, 254, 154);
 }
 
 .meme-interface-metric-value.negative {
-  color: #ef5151;
+  color: rgb(235, 112, 112);
 }
 .meme-interface-token-info-container-meme.loading {
   opacity: 0.7;

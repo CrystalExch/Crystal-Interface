@@ -283,14 +283,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const buyPresets = {
     1: { slippage: '20', priority: '0.01' },
-    2: { slippage: '15', priority: '0.02'},
-    3: { slippage: '10', priority: '0.05'}
+    2: { slippage: '15', priority: '0.02' },
+    3: { slippage: '10', priority: '0.05' }
   };
   const queryClient = useQueryClient();
   const sellPresets = {
-    1: { slippage: '15', priority: '0.005'},
+    1: { slippage: '15', priority: '0.005' },
     2: { slippage: '12', priority: '0.01' },
-    3: { slippage: '8', priority: '0.03'}
+    3: { slippage: '8', priority: '0.03' }
   };
 
   const userAddr = (address ?? account?.address ?? "").toLowerCase();
@@ -444,9 +444,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setSellSlippageValue(presetValues.slippage);
     setSellPriorityFee(presetValues.priority);
   }, []);
-  
+
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
-    if (advancedOrders.length >= 5) return; 
+    if (advancedOrders.length >= 5) return;
 
     const newOrder = {
       id: `${orderType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -813,12 +813,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   amountIn
                   amountOut
                 }
-                series: ${'series'+ (selectedInterval === '1m' ? '60' :
+                series: ${'series' + (selectedInterval === '1m' ? '60' :
                 selectedInterval === '5m' ? '300' :
-                selectedInterval === '15m' ? '900' :
-                selectedInterval === '1h' ? '3600' :
-                selectedInterval === '4h' ? '14400' :
-                '86400')} {
+                  selectedInterval === '15m' ? '900' :
+                    selectedInterval === '1h' ? '3600' :
+                      selectedInterval === '4h' ? '14400' :
+                        '86400')} {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close
                   }
@@ -1045,7 +1045,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           query: HOLDERS_QUERY,
         }),
       });
-  
+
       const data = await response.json();
       console.log(data)
       if (data?.holders) {
@@ -1078,7 +1078,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             query: HOLDERS_QUERY,
           }),
         });
-    
+
         const data = await response.json();
 
         if (data?.holders) {
@@ -1110,7 +1110,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           query: USER_HOLDER_QUERY,
         }),
       });
-  
+
       const data = await response.json();
       if (!data?.holder) {
         setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
@@ -1684,7 +1684,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
-           <div
+                <div
                   className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
                   style={{
                     left: `${Math.max(0, Math.min(100, sliderPercent))}%`
@@ -2057,6 +2057,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
         <div className="meme-trading-stats-container">
           <div className="meme-trading-stats-row">
+                        <div className="meme-stat-group">
+              <div className="meme-stat-header">
+                <span className="meme-stat-label">TXNS</span>
+                <div className="meme-stat-value">
+                  {formatNumberWithCommas(totalTraders)}
+                </div>
+              </div>
+              <div className="meme-stat-details">
+                <div className="meme-stat-subrow">
+                  <div className="stat-sublabel">BUYS</div>
+                  <div className="stat-sublabel">SELLS</div>
+                </div>
+                <div className="meme-stat-subrow">
+                  <div className="stat-subvalue buy">
+                    {formatNumberWithCommas(buyers)}
+                  </div>
+                  <div className="stat-subvalue sell">
+                    {formatNumberWithCommas(sellers)}
+                  </div>
+                </div>
+                <div className="meme-progress-bar">
+                  <div
+                    className="progress-buy"
+                    style={{ width: `${currentData.buyerPercentage}%` }}
+                  ></div>
+                  <div
+                    className="progress-sell"
+                    style={{ width: `${currentData.sellerPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
             <div className="meme-stat-group">
               <div className="meme-stat-header">
                 <span className="meme-stat-label">VOLUME</span>
@@ -2121,6 +2153,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </div>
               </div>
             </div>
+
           </div>
         </div>
         <div className="meme-token-info-container">
@@ -2188,12 +2221,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 <span className="meme-address">
                   <img className="meme-contract-icon" src={contract} />
                   <span className="meme-address-title">CA:</span>{" "}
-                  {token.id.slice(0, 24)}...{token.id.slice(-4)}
-                  <TooltipLabel label={  <svg
-                      className="meme-address-link"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="13"
-                      height="13"
+                  {token.id.slice(0, 21)}...{token.id.slice(-4)}
+                  <TooltipLabel label={<svg
+                    className="meme-address-link"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
                     viewBox="0 0 24 24"
                     fill="currentColor"
                   >

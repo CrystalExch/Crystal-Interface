@@ -2858,8 +2858,7 @@ const applyFilters = useCallback((list: Token[], fil: any) => {
                   <div className="explorer-column-header">
                     <div className="explorer-column-title-section">
                       <h2 className="explorer-column-title">
-                        Graduating Tokens
-                        {appliedFilters && activeFilterTab === 'graduating' && <span className="filtered-count">({graduatingTokens.length})</span>}
+                        Final Stretch
                       </h2>
                     </div>
                     <div className="explorer-column-title-right">
@@ -2965,7 +2964,6 @@ const applyFilters = useCallback((list: Token[], fil: any) => {
                     <div className="explorer-column-title-section">
                       <h2 className="explorer-column-title">
                         Graduated
-                        {appliedFilters && activeFilterTab === 'graduated' && <span className="filtered-count">({graduatedTokens.length})</span>}
                       </h2>
                     </div>
                     <div className="explorer-column-title-right">

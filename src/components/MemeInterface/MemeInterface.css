@@ -7,8 +7,8 @@
     min-height: 550px;
 }
 .meme-trade-panel{
-    min-width:330px;
-    width: 330px;
+    min-width:310px;
+    width: 310px;
     border-left:1px solid rgba(179,184,249,.09);
     overflow-y: auto;
 }
@@ -61,14 +61,18 @@
 .meme-buy-sell-container{
     display:flex;
     width:100%;
-    padding:12px 12px 0 12px;
-    gap:5px
+    margin:12px 12px 0 12px;
+    gap: 3px;
+    width: calc(100% - 24px);
+    padding: 3px;
+    border-radius: 6px;
+    border: 1px solid rgba(179,184,249,.1);
 }
 .meme-buy-button,.meme-sell-button{
     width:100%;
-    padding:6px;
+    padding:4px;
     border:none;
-    border-radius:5px;
+    border-radius:4px;
     cursor:pointer;
     font-size:.9rem;
     transition: 0.3s ease;
@@ -367,7 +371,6 @@
 
 .meme-buy-button.inactive {
    background-color: #11111328;
-    border: 1.5px solid rgba(179, 184, 249, 0.1);
     color: #666;
 }
 
@@ -379,7 +382,6 @@
 .meme-sell-button.inactive {
     background-color: #11111328;
     color: #666;
-    border: 1.5px solid rgba(179, 184, 249, 0.1);
 }
 
 .meme-buy-button:hover{
@@ -1354,15 +1356,6 @@ opacity: 1;
 }
 
 
-.meme-mobile-toggle-btn.active {
-    border-color: rgba(170, 174, 207, 0.3);
-    color: #d8dcff;
-}
-
-.meme-mobile-toggle-btn:hover:not(.active) {
-    background: rgba(179, 184, 249, 0.05);
-    color: rgba(255, 255, 255, 0.8);
-}
 
 .meme-mobile-quickbuy {
     position: relative;
@@ -1940,7 +1933,6 @@ opacity: 1;
     border-bottom: 1.5px solid #d8dcff;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 1;
-    box-shadow: 0 2px 8px rgba(170, 174, 207, 0.1);
 }
 
 .meme-mobile-toggle-btn {
