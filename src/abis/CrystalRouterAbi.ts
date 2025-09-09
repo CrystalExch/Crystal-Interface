@@ -231,9 +231,9 @@ export const CrystalRouterAbi = [
       },
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "userId",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
         "indexed": false,
@@ -546,9 +546,9 @@ export const CrystalRouterAbi = [
       },
       {
         "indexed": true,
-        "internalType": "uint256",
-        "name": "userId",
-        "type": "uint256"
+        "internalType": "address",
+        "name": "user",
+        "type": "address"
       },
       {
         "indexed": false,
@@ -666,6 +666,12 @@ export const CrystalRouterAbi = [
         "internalType": "string",
         "name": "social3",
         "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "social4",
+        "type": "string"
       }
     ],
     "name": "TokenCreated",
@@ -679,12 +685,6 @@ export const CrystalRouterAbi = [
         "internalType": "address",
         "name": "market",
         "type": "address"
-      },
-      {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "userId",
-        "type": "uint256"
       },
       {
         "indexed": true,
@@ -1234,6 +1234,29 @@ export const CrystalRouterAbi = [
         "type": "address"
       },
       {
+        "internalType": "address",
+        "name": "newCreator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "newCreatorFee",
+        "type": "uint256"
+      }
+    ],
+    "name": "changeMarketCreatorFee",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "market",
+        "type": "address"
+      },
+      {
         "internalType": "uint256",
         "name": "newMinSize",
         "type": "uint256"
@@ -1383,6 +1406,11 @@ export const CrystalRouterAbi = [
       {
         "internalType": "string",
         "name": "social3",
+        "type": "string"
+      },
+      {
+        "internalType": "string",
+        "name": "social4",
         "type": "string"
       }
     ],
