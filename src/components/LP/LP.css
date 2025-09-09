@@ -1082,7 +1082,6 @@
     }
 }
 
-/* Vault Detail Styles */
 .lp-detail-view {
     width: 100%;
 }
@@ -1090,12 +1089,11 @@
 .lp-detail-header {
     display: flex;
     align-items: center;
-    border-bottom: 1px solid #ffffff0a;
 }
 
 .vault-detail-layout {
     display: flex;
-    gap: 2rem;
+    gap: 1rem;
 }
 
 .vault-info-section {
@@ -1106,7 +1104,7 @@
     flex: 1;
     border: 1px solid rgba(179, 184, 249, .1);
     border-radius: 12px;
-    padding: 1.5rem;
+    padding: 1rem;
     height: fit-content;
     top: 2rem;
     min-width: 300px;
@@ -1114,8 +1112,8 @@
 
 .lp-detail-summary {
     border-radius: 8px;
-    padding: 1.25rem;
     margin-bottom: 1.25rem;
+    padding-top: 1rem;
 }
 
 .lp-detail-top {
@@ -1246,14 +1244,13 @@
 
 .lp-performance-chart-container {
     height: 200px;
-    margin: 1.5rem 0 4rem;
 }
 
 .lp-performance-chart-header {
     display: flex;
     align-items: center;
     gap: .5rem;
-    font-size: 1rem;
+    font-size: .8rem;
     margin-bottom: 1rem;
     color: #ffffff82;
 }
@@ -1316,7 +1313,7 @@
 }
 
 .withdraw-section {
-    margin-bottom: 1.5rem;
+    margin-bottom: .5rem;
 }
 
 .withdraw-preview {

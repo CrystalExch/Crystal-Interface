@@ -71,6 +71,12 @@ const Launchpad: React.FC<LaunchpadProps> = ({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Limit ticker to 10 characters
+    if (name === 'ticker' && value.length > 10) {
+      return;
+    }
+    
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
@@ -171,11 +177,20 @@ const Launchpad: React.FC<LaunchpadProps> = ({
             <div className="launchpad-token-info">
               <div className="launchpad-form-group">
                 <label className="launchpad-label">Name *</label>
-                <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Name your coin" disabled={isLaunching} />
+                <input name="name" value={formData.name} onChange={handleInputChange} className="launchpad-input" placeholder="Name your coin" disabled={isLaunching}   maxLength={32}
+/>
               </div>
               <div className="launchpad-form-group">
                 <label className="launchpad-label">Ticker *</label>
-                <input name="ticker" value={formData.ticker} onChange={handleInputChange} className="launchpad-input" placeholder="Add a coin ticker (e.g. BTC)" disabled={isLaunching} />
+                <input 
+                  name="ticker" 
+                  value={formData.ticker} 
+                  onChange={handleInputChange} 
+                  className="launchpad-input" 
+                  placeholder="Add a coin ticker (e.g. BTC)" 
+                  disabled={isLaunching}
+                  maxLength={10}
+                />
               </div>
             </div>
             <div className="launchpad-form-group">

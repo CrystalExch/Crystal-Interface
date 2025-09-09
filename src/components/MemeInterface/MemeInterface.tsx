@@ -3,20 +3,16 @@ import { useLocation, useParams } from "react-router-dom";
 import { encodeFunctionData, decodeFunctionResult } from "viem";
 import { settings } from "../../settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { MaxUint256 } from "ethers";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
 import MemeChart from "./MemeChart/MemeChart";
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
-import { defaultMetrics } from "../TokenExplorer/TokenData";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
-import { CrystalLaunchpadToken } from "../../abis/CrystalLaunchpadToken";
 import { useSharedContext } from "../../contexts/SharedContext";
 import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
-
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -29,7 +25,6 @@ import monadicon from "../../assets/monadlogo.svg";
 import trash from '../../assets/trash.svg';
 
 import "./MemeInterface.css";
-import { Tooltip } from "recharts";
 
 interface Token {
   id: string;
@@ -61,6 +56,7 @@ interface Token {
   bondingAmount: number;
   volumeDelta: number;
   quote?: number;
+  dev: string;
 }
 
 interface Trade {
@@ -82,12 +78,6 @@ interface Holder {
   amountSold: number;
   valueBought: number;
   valueSold: number;
-}
-
-interface AdvancedOrder {
-  enabled: boolean;
-  percentage?: string;
-  amount?: string;
 }
 
 interface MemeInterfaceProps {
@@ -118,34 +108,94 @@ interface MemeInterfaceProps {
   refetch?: () => void;
   isBlurred?: boolean;
   forceRefreshAllWallets?: () => void;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.15';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
-const HOLDER_FIELDS = `
-  address balance amountBought amountSold
-  valueBought valueSold valueNet tokenNet
-`;
-
 const HOLDERS_QUERY = `
   query ($m: Bytes!, $skip: Int!, $first: Int!) {
-    holders(where:{market:$m},
-    orderBy: balance,
-    orderDirection: desc,
-    skip:$skip,
-    first:$first) {
-      ${HOLDER_FIELDS}
+    launchpadPositions(
+      where: { token: $m }
+      orderBy: remainingTokens
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      account { id }
+      tokenBought
+      tokenSold
+      nativeSpent
+      nativeReceived
+      remainingTokens
+      remainingPctOfBuys
+      avgEntryNativePerTokenWad
+      realizedPnlNative
+      unrealizedPnlNative
+      lastUpdatedAt
+    }
+
+    launchpadTokens(where: { id: $m }) {
+      lastPriceNativePerTokenWad
+    }
+
+    top10: launchpadPositions(
+      where: { token: $m }
+      orderBy: remainingTokens
+      orderDirection: desc
+      first: 10
+    ) {
+      remainingTokens
     }
   }
 `;
 
-const USER_HOLDER_QUERY = `
-  query ($id: ID!){
-    holder(id:$id){ ${HOLDER_FIELDS} }
+const POSITIONS_QUERY = `
+  query ($a: Bytes!, $skip: Int!, $first: Int!) {
+    launchpadPositions(
+      where: { account: $a, remainingTokens_gt: "0" }
+      orderBy: remainingTokens
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      token { id symbol name decimals lastPriceNativePerTokenWad metadataCID }
+      account { id }
+      tokenBought
+      tokenSold
+      nativeSpent
+      nativeReceived
+      remainingTokens
+      avgEntryNativePerTokenWad
+      realizedPnlNative
+      unrealizedPnlNative
+      lastUpdatedAt
+    }
+  }
+`;
+
+const DEV_TOKENS_QUERY = `
+  query ($d: Bytes!, $skip: Int!, $first: Int!) {
+    launchpadTokens(
+      where: { creator: $d }
+      orderBy: timestamp
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      id
+      name
+      symbol
+      metadataCID
+      lastPriceNativePerTokenWad
+      timestamp
+    }
   }
 `;
 
@@ -183,8 +233,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   refetch,
   isBlurred = false,
   forceRefreshAllWallets,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
-
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
       case 'chart': return 0;
@@ -194,6 +246,28 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   };
 
+  const resolveNative = useCallback(
+    (symbol: string | undefined) => {
+      if (!symbol) return "";
+      if (symbol === wethticker) return ethticker ?? symbol;
+      return symbol;
+    },
+    [wethticker, ethticker],
+  );
+
+  const usdPer = useCallback(
+    (symbol?: string): number => {
+      if (!symbol || !tradesByMarket || !markets) return 0;
+      const sym = resolveNative(symbol);
+      if (usdc && sym === "USDC") return 1;
+      const pair = `${sym}USDC`;
+      const top = tradesByMarket[pair]?.[0]?.[3];
+      const pf = Number(markets[pair]?.priceFactor) || 1;
+      if (!top || !pf) return 0;
+      return Number(top) / pf;
+    },
+    [tradesByMarket, markets, resolveNative, usdc],
+  );
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -248,7 +322,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     balance: 0, amountBought: 0, amountSold: 0,
     valueBought: 0, valueSold: 0, valueNet: 0,
   });
-
+  const [positions, setPositions] = useState<any[]>([]);
+  const [devTokens, setDevTokens] = useState<any[]>([]);
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
   const [advancedOrders, setAdvancedOrders] = useState<Array<{
@@ -257,8 +332,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     percentage?: string;
     amount?: string;
   }>>([]);
-
-  // Mobile-specific states
   const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
   const [mobileBuyAmounts, _setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
   const [mobileSellPercents, _setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
@@ -278,14 +351,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const buyPresets = {
     1: { slippage: '20', priority: '0.01' },
-    2: { slippage: '15', priority: '0.02'},
-    3: { slippage: '10', priority: '0.05'}
+    2: { slippage: '15', priority: '0.02' },
+    3: { slippage: '10', priority: '0.05' }
   };
   const queryClient = useQueryClient();
   const sellPresets = {
-    1: { slippage: '15', priority: '0.005'},
+    1: { slippage: '15', priority: '0.005' },
     2: { slippage: '12', priority: '0.01' },
-    3: { slippage: '8', priority: '0.03'}
+    3: { slippage: '8', priority: '0.03' }
   };
 
   const userAddr = (address ?? account?.address ?? "").toLowerCase();
@@ -439,9 +512,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setSellSlippageValue(presetValues.slippage);
     setSellPriorityFee(presetValues.priority);
   }, []);
-  
+
   const handleAdvancedOrderAdd = (orderType: 'takeProfit' | 'stopLoss' | 'devSell' | 'migration') => {
-    if (advancedOrders.length >= 5) return; 
+    if (advancedOrders.length >= 5) return;
 
     const newOrder = {
       id: `${orderType}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
@@ -520,7 +593,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return getMobileWalletBalance(currentWallet.address);
   };
 
-  // Mobile QuickBuy Trading Functions
   const handleMobileBuyTrade = async (amount: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       if (setpopup) setpopup(4);
@@ -697,52 +769,56 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   };
 
+  const baseDefaults: Token = {
+    id: tokenAddress || "",
+    tokenAddress: tokenAddress || "",
+    name: "Unknown Token",
+    symbol: "UNKNOWN",
+    image: "",
+    price: 0,
+    marketCap: 0,
+    change24h: 0,
+    volume24h: 0,
+    holders: 0,
+    proTraders: 0,
+    kolTraders: 0,
+    sniperHolding: 0,
+    devHolding: 0,
+    bundleHolding: 0,
+    insiderHolding: 0,
+    top10Holding: 0,
+    buyTransactions: 0,
+    sellTransactions: 0,
+    globalFeesPaid: 0,
+    website: "",
+    twitterHandle: "",
+    progress: 0,
+    status: "new",
+    description: "",
+    created: "0h ago",
+    bondingAmount: 0,
+    volumeDelta: 0,
+    dev: "",
+  };
+
   const baseToken: Token = (() => {
-    if (location.state?.tokenData) return location.state.tokenData as Token;
+    const fromState = (location.state?.tokenData ?? {}) as Partial<Token>;
     const t = tokenList.find(
-      (x) =>
-        x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress,
+      x => x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress
     );
+
     if (t) {
       return {
-        id: t.id || t.contractAddress,
-        tokenAddress: t.contractAddress || t.tokenAddress,
+        ...baseDefaults,
+        id: (t.id || t.contractAddress) ?? baseDefaults.id,
+        tokenAddress: (t.contractAddress || t.tokenAddress) ?? baseDefaults.tokenAddress,
         name: t.name,
         symbol: t.symbol,
         image: t.image,
-        price: 0,
-        marketCap: 0,
-        change24h: 0,
-        volume24h: 0,
-        holders: 0,
-        proTraders: 0,
-        kolTraders: 0,
-        sniperHolding: 0,
-        devHolding: 0,
-        bundleHolding: 0,
-        insiderHolding: 0,
-        top10Holding: 0,
-        buyTransactions: 0,
-        sellTransactions: 0,
-        globalFeesPaid: 0,
-        website: "",
-        twitterHandle: "",
-        progress: 0,
-        status: "new",
-        description: "",
-        created: "0h ago",
-        bondingAmount: 0,
-        volumeDelta: 0,
       };
     }
-    return {
-      id: tokenAddress || "",
-      tokenAddress: tokenAddress || "",
-      name: "Unknown Token",
-      symbol: "UNKNOWN",
-      image: "",
-      ...defaultMetrics,
-    } as Token;
+
+    return { ...baseDefaults, ...fromState };
   })();
 
   const refetchBalances = useCallback(() => {
@@ -755,7 +831,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
-  // Rest of your existing useEffect hooks and logic...
   useEffect(() => {
     if (!realtimeCallbackRef.current || !trades.length) return;
 
@@ -781,7 +856,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, [trades, selectedInterval, token.symbol]);
 
-  // Data fetching and WebSocket logic (keeping existing implementation)
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
@@ -808,12 +882,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   amountIn
                   amountOut
                 }
-                series: ${'series'+ (selectedInterval === '1m' ? '60' :
+                series: ${'series' + (selectedInterval === '1m' ? '60' :
                 selectedInterval === '5m' ? '300' :
-                selectedInterval === '15m' ? '900' :
-                selectedInterval === '1h' ? '3600' :
-                selectedInterval === '4h' ? '14400' :
-                '86400')} {
+                  selectedInterval === '15m' ? '900' :
+                    selectedInterval === '1h' ? '3600' :
+                      selectedInterval === '4h' ? '14400' :
+                        '86400')} {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
                     time open high low close
                   }
@@ -827,7 +901,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         });
 
         const data = (await response.json())?.data;
-        console.log(data)
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
@@ -860,43 +933,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         if (data.launchpadTokens?.[0]?.series?.klines) {
           const bars = data.launchpadTokens?.[0]?.series?.klines
-            .slice().reverse()
+            .slice()
+            .reverse()
             .map((c: any) => ({
               time: Number(c.time) * 1000,
               open: Number(c.open) / 1e18,
               high: Number(c.high) / 1e18,
-              low: Number(c.low) / 1e18,
-              close: Number(c.close) / 1e18,
+              low:  Number(c.low)  / 1e18,
+              close:Number(c.close)/ 1e18,
               volume: Number(c.baseVolume) / 1e18,
             }));
 
-          const key = token.symbol + 'MON' + (
-            selectedInterval === '1d' ? '1D'
-              : selectedInterval === '4h' ? '240'
-                : selectedInterval === '1h' ? '60'
-                  : selectedInterval.slice(0, -1)
-          );
+          const key =
+            token.symbol +
+            "MON" +
+            (selectedInterval === "1d"
+              ? "1D"
+              : selectedInterval === "4h"
+              ? "240"
+              : selectedInterval === "1h"
+              ? "60"
+              : selectedInterval.slice(0, -1));
 
-          const intervalMs =
-            selectedInterval === '1d' ? 86400_000 :
-              selectedInterval === '4h' ? 14_400_000 :
-                selectedInterval === '1h' ? 3_600_000 :
-                  parseInt(selectedInterval, 10) * 60_000;
-
-          const filled: any[] = [];
-          for (let i = 0; i < bars.length; i++) {
-            const bar = bars[i]; filled.push(bar);
-            const next = bars[i + 1];
-            if (next) {
-              let t = bar.time + intervalMs;
-              while (t < next.time) {
-                filled.push({ time: t, open: bar.close, high: bar.close, low: bar.close, close: bar.close, volume: bar.baseVolume });
-                t += intervalMs;
-              }
-            }
-          }
-
-          setChartData([filled, key, false]);
+          setChartData([bars, key, false]);
         }
       } catch (e) {
         console.error(e);
@@ -909,7 +968,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return () => { isCancelled = true; };
   }, [token.id, selectedInterval]);
 
-  // WebSocket and other data loading logic (keeping existing)
   const lastInvalidateRef = useRef(0);
 
   const closeNotif = useCallback(() => {
@@ -917,7 +975,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTimeout(() => setNotif(null), 300);
   }, []);
 
-  // Continue with existing data fetching and trading logic...
   useEffect(() => {
     if (!token.id) return;
     const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
@@ -934,6 +991,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     ws.onopen = () => {
       sendSub(["logs", { address: token.id }]);
+      sendSub(["logs", { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] }]);
 
       if (tokenAddress) {
         sendSub(["logs", { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
@@ -947,24 +1005,35 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       if (!log?.topics?.length) return;
 
       if (log.topics[0] === MARKET_UPDATE_EVENT) {
-        const caller = `0x${log.topics[1].slice(26)}`;
-        const hex = log.data.slice(2);
-        const word = (i: number) => BigInt("0x" + hex.slice(i * 64, i * 64 + 64));
-        const price = Number(word(2)) / 1e18;
-        const isBuy = word(1) > 0n;
-        const amounts = word(0);
-        const amountIn = Number(amounts >> 128n) / 1e18;
-        const amountOut = Number(amounts & ((1n << 128n) - 1n)) / 1e18;
-        const counts = word(3);
-        const buys = Number(counts >> 128n);
-        const sells = Number(counts & ((1n << 128n) - 1n));
+        const token = `0x${log.topics[1].slice(26)}`;
+        const caller = `0x${log.topics[2].slice(26)}`;
+
+        const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
+        const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
+
+        const isBuy = word(0) !== 0n;
+        const inputAmountWei = word(1);
+        const outputAmountWei = word(2);
+        const vNativeWei = word(3);
+        const vTokenWei = word(4);
+
+        const toNum = (x: bigint) => Number(x) / 1e18;
+
+        const amountIn = toNum(inputAmountWei);
+        const amountOut = toNum(outputAmountWei);
+
+        const vNative = toNum(vNativeWei);
+        const vToken = toNum(vTokenWei);
+
+        const price = vToken === 0 ? 0 : (vNative / vToken);
+        const tradePrice = isBuy ? amountIn / amountOut : amountOut / amountIn;
 
         setLive(p => ({
           ...p,
           price,
           marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: buys,
-          sellTransactions: sells,
+          buyTransactions: (p.buyTransactions || 0) + (isBuy ? 1 : 0),
+          sellTransactions: (p.sellTransactions || 0) + (isBuy ? 0 : 1),
           volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
         }));
 
@@ -973,10 +1042,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             id: `${log.transactionHash}-${log.logIndex}`,
             timestamp: Date.now() / 1000,
             isBuy,
-            price,
+            price: tradePrice,
             nativeAmount: isBuy ? amountIn : amountOut,
             tokenAmount: isBuy ? amountOut : amountIn,
             caller,
+            token,
           },
           ...prev.slice(0, 99),
         ]);
@@ -984,8 +1054,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         setHolders(prev => {
           const idx = prev.findIndex(r => r.address.toLowerCase() === caller.toLowerCase());
           if (idx === -1) return prev;
-          const row = { ...prev[idx] };
 
+          const row = { ...prev[idx] };
           if (isBuy) {
             row.amountBought += amountOut;
             row.valueBought += amountIn;
@@ -1029,6 +1099,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     };
   }, [token.id, tokenAddress, address, refetchBalances]);
 
+  // holders
   useEffect(() => {
     if (!token.id) return;
 
@@ -1038,90 +1109,222 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           query: HOLDERS_QUERY,
+          variables: {
+            m: (token.id || '').toLowerCase(),
+            skip: page * PAGE_SIZE,
+            first: PAGE_SIZE,
+          },
         }),
       });
-  
-      const data = await response.json();
-      console.log(data)
-      if (data?.holders) {
-        const top10TotalBalance = data.holders.reduce((sum: number, holder: any) => {
-          return sum + (Number(holder.balance) / 1e18);
-        }, 0);
 
+      const { data } = await response.json();
+
+      if (data?.top10) {
+        const top10TotalBalance = data.top10.reduce((sum: number, r: any) => sum + Number(r.remainingTokens) / 1e18, 0);
         const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
         setTop10HoldingPercentage(top10Percentage);
       }
 
-      if (page === 0) {
-        setHolders(
-          data.holders.map((h: any) => ({
-            address: h.address,
-            balance: Number(h.balance) / 1e18,
-            amountBought: Number(h.amountBought) / 1e18,
-            amountSold: Number(h.amountSold) / 1e18,
-            valueBought: Number(h.valueBought) / 1e18,
-            valueSold: Number(h.valueSold) / 1e18,
-            valueNet: Number(h.valueNet) / 1e18,
-            tokenNet: Number(h.tokenNet) / 1e18,
-          }))
-        );
-      } else {
+      const positions: any[] = data?.launchpadPositions ?? [];
+      const lastNative = Number(data?.launchpadTokens?.[0]?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+
+      const mapped: Holder[] = positions.map((p: any) => {
+        const amountBought = Number(p.tokenBought) / 1e18;
+        const amountSold = Number(p.tokenSold) / 1e18;
+        const valueBought = Number(p.nativeSpent) / 1e18;
+        const valueSold = Number(p.nativeReceived) / 1e18;
+
+        const balance = amountBought - amountSold;
+        const realized = valueSold - valueBought;
+        const unrealized = balance * lastNative;
+        const totalPnl = realized + unrealized;
+
+        return {
+          address: p.account.id,
+          balance,
+          amountBought,
+          amountSold,
+          valueBought,
+          valueSold,
+          tokenNet: balance,
+          valueNet: totalPnl,
+        };
+      });
+
+      setHolders(mapped);
+    })();
+  }, [token.id, page]);
+
+  // dev tokens
+  useEffect(() => {
+    if (!token.dev) return;
+    let cancelled = false;
+
+    (async () => {
+      const out: any[] = [];
+      let skip = 0;
+
+      while (true) {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: DEV_TOKENS_QUERY,
+            variables: { d: token.dev.toLowerCase(), skip, first: PAGE_SIZE },
+          }),
+        });
+
+        const { data } = await res.json();
+        const rows: any[] = data?.launchpadTokens ?? [];
+        if (!rows.length) break;
+
+        for (const t of rows) {
+          let imageUrl = '';
+          if (t.metadataCID) {
+            try {
+              const metaRes = await fetch(t.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch {}
+          }
+
+          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+          out.push({
+            id: t.id,
+            symbol: t.symbol,
+            name: t.name,
+            imageUrl,
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            timestamp: Number(t.timestamp ?? 0),
+          });
+        }
+
+        if (rows.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        if (cancelled) return;
+      }
+
+      if (!cancelled) setDevTokens(out);
+    })();
+
+    return () => { cancelled = true; };
+  }, [token.dev, token.id]);
+
+  // positions
+  useEffect(() => {
+    if (!userAddr) return;
+    let cancelled = false;
+
+    (async () => {
+      const totals = {
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        lastPriceNative: 0,
+      };
+
+      const all: any[] = [];
+      let skip = 0;
+
+      while (true) {
         const response = await fetch(SUBGRAPH_URL, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
-            query: HOLDERS_QUERY,
+            query: POSITIONS_QUERY,
+            variables: {
+              a: (userAddr || '').toLowerCase(),
+              skip,
+              first: PAGE_SIZE,
+            },
           }),
         });
-    
-        const data = await response.json();
 
-        if (data?.holders) {
-          setHolders(
-            data.holders.map((h: any) => ({
-              address: h.address,
-              balance: Number(h.balance) / 1e18,
-              amountBought: Number(h.amountBought) / 1e18,
-              amountSold: Number(h.amountSold) / 1e18,
-              valueBought: Number(h.valueBought) / 1e18,
-              valueSold: Number(h.valueSold) / 1e18,
-              valueNet: Number(h.valueNet) / 1e18,
-              tokenNet: Number(h.tokenNet) / 1e18,
-            }))
-          );
+        const { data } = await response.json();
+        const rows: any[] = data?.launchpadPositions ?? [];
+        if (!rows.length) break;
+
+        for (const p of rows) {
+          const boughtTokens = Number(p.tokenBought) / 1e18;
+          const soldTokens = Number(p.tokenSold) / 1e18;
+          const spentNative = Number(p.nativeSpent) / 1e18;
+          const receivedNative = Number(p.nativeReceived) / 1e18;
+          const remainingTokens = boughtTokens - soldTokens;
+          const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+          const balance = boughtTokens - soldTokens
+          const realized = receivedNative - spentNative;
+          const lastNative = lastPrice;
+          const unrealized = balance * lastNative;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
+
+          if (p.token.id == tokenAddress) {
+            totals.amountBought += boughtTokens;
+            totals.amountSold += soldTokens;
+            totals.valueBought += spentNative;
+            totals.valueSold += receivedNative;
+            totals.balance += remainingTokens;
+            totals.lastPriceNative = lastPrice || totals.lastPriceNative;
+          }
+
+          let imageUrl = '';
+          if (p.token.metadataCID) {
+            try {
+              const metaRes = await fetch(p.token.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn('Failed to load metadata for token', p.token.id, e);
+            }
+          }
+
+          all.push({
+            tokenId: p.token.id,
+            symbol: p.token.symbol,
+            name: p.token.name,
+            metadataCID: p.token.metadataCID,
+            imageUrl: imageUrl,
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens,
+            remainingPct,
+            pnlNative,
+            lastPrice,
+          });
         }
-      }
-    })();
-  }, [token.id, page]);
 
-  useEffect(() => {
-    if (!userAddr || !token.id) return;
-
-    (async () => {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: USER_HOLDER_QUERY,
-        }),
-      });
-  
-      const data = await response.json();
-      if (!data?.holder) {
-        setUserStats({ balance: 0, amountBought: 0, amountSold: 0, valueBought: 0, valueSold: 0, valueNet: 0 });
-        return;
+        if (rows.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        if (cancelled) return;
       }
-      const h = data.holder;
+
+      if (cancelled) return;
+
+      const markToMarket = totals.balance * (totals.lastPriceNative || 0);
+      const totalPnL = (totals.valueSold + markToMarket) - totals.valueBought;
+
+      setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
       setUserStats({
-        balance: Number(h.balance) / 1e18,
-        amountBought: Number(h.amountBought) / 1e18,
-        amountSold: Number(h.amountSold) / 1e18,
-        valueBought: Number(h.valueBought) / 1e18,
-        valueSold: Number(h.valueSold) / 1e18,
-        valueNet: Number(h.valueNet) / 1e18,
+        balance: totals.balance,
+        amountBought: totals.amountBought,
+        amountSold: totals.amountSold,
+        valueBought: totals.valueBought,
+        valueSold: totals.valueSold,
+        valueNet: totalPnL,
       });
     })();
-  }, [userAddr, token.id]);
+
+    return () => { cancelled = true; };
+  }, [userAddr]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
@@ -1324,7 +1527,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (activeOrderType === "Limit" && !limitPrice) return true;
     return false;
   };
-
+  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
       change: token.change24h || 0,
@@ -1401,8 +1604,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
-          {/* Desktop: Always show chart and trades side by side */}
-          {/* Mobile: Show only the selected view */}
           <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
             <MemeChart
               token={token}
@@ -1449,15 +1650,17 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-            holders={holders}
+            holders={holders} 
+            positions={positions}
+            devTokens={devTokens}
             page={page}
             pageSize={PAGE_SIZE}
             currentPrice={currentPrice}
+            monUsdPrice={monUsdPrice}
           />
         </div>
       </div>
 
-      {/* Desktop Trade Panel */}
       <div className="meme-trade-panel desktop-only">
         <div className="meme-buy-sell-container">
           <button
@@ -1679,7 +1882,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       } ${sliderPercent}%, rgb(28, 28, 31) ${sliderPercent}%)`,
                   }}
                 />
-           <div
+                <div
                   className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
                   style={{
                     left: `${Math.max(0, Math.min(100, sliderPercent))}%`
@@ -1807,7 +2010,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             )}
           </div>
 
-          {/* Advanced Trading Strategy Section - Only show for buy orders */}
           {activeTradeType === "buy" && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
@@ -2013,7 +2215,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             )}
           </button>
 
-          {/* Portfolio Stats Section */}
           <div className="meme-portfolio-stats">
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Bought</div>
@@ -2052,6 +2253,38 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         </div>
         <div className="meme-trading-stats-container">
           <div className="meme-trading-stats-row">
+            <div className="meme-stat-group">
+              <div className="meme-stat-header">
+                <span className="meme-stat-label">TXNS</span>
+                <div className="meme-stat-value">
+                  {formatNumberWithCommas(totalTraders)}
+                </div>
+              </div>
+              <div className="meme-stat-details">
+                <div className="meme-stat-subrow">
+                  <div className="stat-sublabel">BUYS</div>
+                  <div className="stat-sublabel">SELLS</div>
+                </div>
+                <div className="meme-stat-subrow">
+                  <div className="stat-subvalue buy">
+                    {formatNumberWithCommas(buyers)}
+                  </div>
+                  <div className="stat-subvalue sell">
+                    {formatNumberWithCommas(sellers)}
+                  </div>
+                </div>
+                <div className="meme-progress-bar">
+                  <div
+                    className="progress-buy"
+                    style={{ width: `${currentData.buyerPercentage}%` }}
+                  ></div>
+                  <div
+                    className="progress-sell"
+                    style={{ width: `${currentData.sellerPercentage}%` }}
+                  ></div>
+                </div>
+              </div>
+            </div>
             <div className="meme-stat-group">
               <div className="meme-stat-header">
                 <span className="meme-stat-label">VOLUME</span>
@@ -2116,6 +2349,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </div>
               </div>
             </div>
+
           </div>
         </div>
         <div className="meme-token-info-container">
@@ -2142,62 +2376,81 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </button>
           </div>
           {tokenInfoExpanded && (
-            <div className="meme-token-info-grid">
-              <div className="meme-token-info-item">
-                <div className="meme-token-info-icon-container">
-                  <svg
-                    className="meme-token-info-icon"
-                    width="16"
-                    height="16"
-                    viewBox="0 0 32 32"
-                    fill={
-                      top10HoldingPercentage > 50
-                        ? "#eb7070ff"
-                        : top10HoldingPercentage > 30
-                          ? "#fbbf24"
-                          : "rgb(67 254 154)"
-                    }
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
-                  </svg>
-                  <span
-                    className="meme-token-info-value"
-                    style={{
-                      color:
+            <div>
+              <div className="meme-token-info-grid">
+                <div className="meme-token-info-item">
+                  <div className="meme-token-info-icon-container">
+                    <svg
+                      className="meme-token-info-icon"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 32 32"
+                      fill={
                         top10HoldingPercentage > 50
                           ? "#eb7070ff"
                           : top10HoldingPercentage > 30
                             ? "#fbbf24"
-                            : "rgb(67 254 154)",
-                    }}
-                  >
-                    {top10HoldingPercentage.toFixed(2)}%
-                  </span>
+                            : "rgb(67 254 154)"
+                      }
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path d="M 15 4 L 15 6 L 13 6 L 13 8 L 15 8 L 15 9.1875 C 14.011719 9.554688 13.25 10.433594 13.0625 11.5 C 12.277344 11.164063 11.40625 11 10.5 11 C 6.921875 11 4 13.921875 4 17.5 C 4 19.792969 5.199219 21.8125 7 22.96875 L 7 27 L 25 27 L 25 22.96875 C 26.800781 21.8125 28 19.792969 28 17.5 C 28 13.921875 25.078125 11 21.5 11 C 20.59375 11 19.722656 11.164063 18.9375 11.5 C 18.75 10.433594 17.988281 9.554688 17 9.1875 L 17 8 L 19 8 L 19 6 L 17 6 L 17 4 Z M 16 11 C 16.5625 11 17 11.4375 17 12 C 17 12.5625 16.5625 13 16 13 C 15.4375 13 15 12.5625 15 12 C 15 11.4375 15.4375 11 16 11 Z M 10.5 13 C 12.996094 13 15 15.003906 15 17.5 L 15 22 L 10.5 22 C 8.003906 22 6 19.996094 6 17.5 C 6 15.003906 8.003906 13 10.5 13 Z M 21.5 13 C 23.996094 13 26 15.003906 26 17.5 C 26 19.996094 23.996094 22 21.5 22 L 17 22 L 17 17.5 C 17 15.003906 19.003906 13 21.5 13 Z M 9 24 L 23 24 L 23 25 L 9 25 Z" />
+                    </svg>
+                    <span
+                      className="meme-token-info-value"
+                      style={{
+                        color:
+                          top10HoldingPercentage > 50
+                            ? "#eb7070ff"
+                            : top10HoldingPercentage > 30
+                              ? "#fbbf24"
+                              : "rgb(67 254 154)",
+                      }}
+                    >
+                      {top10HoldingPercentage.toFixed(2)}%
+                    </span>
+                  </div>
+                  <span className="meme-token-info-label">Top 10 H.</span>
                 </div>
-                <span className="meme-token-info-label">Top 10 H.</span>
+              </div>
+              <div className="meme-token-info-footer">
+                <span className="meme-address">
+                  <img className="meme-contract-icon" src={contract} />
+                  <span className="meme-address-title">CA:</span>{" "}
+                  {token.id.slice(0, 21)}...{token.id.slice(-4)}
+                  <TooltipLabel label={<svg
+                    className="meme-address-link"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                  </svg>} tooltipText="View on Monad Explorer"
+                  />
+                </span>
+                <span className="meme-address">
+                  <img className="meme-contract-icon" src={contract} />
+                  <span className="meme-address-title">Dev:</span>{" "}
+                  {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
+                  <TooltipLabel label={<svg
+                    className="meme-address-link"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                  </svg>} tooltipText="View on Monad Explorer"
+                  />
+                </span>
               </div>
             </div>
           )}
-        </div>
-        <div className="meme-token-info-footer">
-          <span className="meme-address">
-            <img className="meme-contract-icon" src={contract} />
-            <span className="meme-address-title">CA:</span>{" "}
-            {token.id.slice(0, 24)}...{token.id.slice(-4)}
-            <TooltipLabel label={  <svg
-                className="meme-address-link"
-                xmlns="http://www.w3.org/2000/svg"
-                width="13"
-                height="13"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-            >
-              <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-              <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-            </svg>} tooltipText="View on Monad Eplorer"
-             />
-          </span>
         </div>
       </div>
 

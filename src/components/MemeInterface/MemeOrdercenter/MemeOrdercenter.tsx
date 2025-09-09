@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-import { mockPositions, mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
+import { mockOrders, mockHolders, mockTopTraders } from './MemeTraderData';
+
+import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
 
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
+import switchicon from "../../../assets/switch.svg";
 
 import './MemeOrderCenter.css';
-import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
 
 interface LiveHolder {
   address: string;
@@ -19,6 +21,22 @@ interface LiveHolder {
   tokenNet: number;
 }
 
+interface Position {
+  tokenId: string;
+  symbol?: string;
+  name?: string;
+  metadataCID?: string;
+  imageUrl?: string;
+  boughtTokens: number;
+  soldTokens: number;
+  spentNative: number;
+  receivedNative: number;
+  remainingTokens: number;
+  remainingPct: number;
+  pnlNative: number;
+  lastPrice?: number;
+}
+
 interface MemeOrderCenterProps {
   orderCenterHeight?: number;
   isVertDragging?: boolean;
@@ -29,9 +47,12 @@ interface MemeOrderCenterProps {
   isWidgetOpen?: boolean;
   onToggleWidget?: () => void;
   holders?: LiveHolder[];
+  positions?: Position[];
+  devTokens: any[];
   page?: number;
   pageSize?: number;
   currentPrice?: number;
+  monUsdPrice?: number;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -40,6 +61,48 @@ const fmt = (v: number, d = 3) => {
   if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
   if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
+};
+
+const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
+  if (mode === 'USD' && monPrice > 0) {
+    return `$${(v * monPrice).toFixed(2)}`;
+  }
+  return `${v.toFixed(4)} MON`;
+};
+
+interface TooltipProps {
+  content: string;
+  children: React.ReactNode;
+  position?: 'top' | 'bottom' | 'left' | 'right';
+}
+
+const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  const showTooltip = useCallback(() => setIsVisible(true), []);
+  const hideTooltip = useCallback(() => setIsVisible(false), []);
+
+  return (
+    <div
+      className="meme-ordercenter-tooltip-container"
+      onMouseEnter={showTooltip}
+      onMouseLeave={hideTooltip}
+      style={{
+        position: 'relative',
+        display: 'inline-flex',
+        alignItems: 'center',
+        cursor: 'pointer'
+      }}
+    >
+      {children}
+      <div className={`meme-ordercenter-tooltip meme-ordercenter-tooltip-${position} meme-ordercenter-fade-popup ${isVisible ? 'meme-ordercenter-visible' : ''}`}>
+        <div className="meme-ordercenter-tooltip-content">
+          {content}
+          <div className={`meme-ordercenter-tooltip-arrow meme-ordercenter-tooltip-arrow-${position}`}></div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
@@ -52,11 +115,15 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   isWidgetOpen = false,
   onToggleWidget,
   holders: liveHolders = [],
+  positions = [],
+  devTokens = [],
   page = 0,
   pageSize = 100,
   currentPrice = 0,
+  monUsdPrice = 0,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
+  const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
   const [windowWidth, setWindowWidth] = useState<number>(
     typeof window !== 'undefined' ? window.innerWidth : 1200
   );
@@ -86,41 +153,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     };
   }, [onHeightChange]);
 
-  interface TooltipProps {
-    content: string;
-    children: React.ReactNode;
-    position?: 'top' | 'bottom' | 'left' | 'right';
-  }
-
-  const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
-    const [isVisible, setIsVisible] = useState(false);
-
-    const showTooltip = useCallback(() => setIsVisible(true), []);
-    const hideTooltip = useCallback(() => setIsVisible(false), []);
-
-    return (
-      <div
-        className="meme-ordercenter-tooltip-container"
-        onMouseEnter={showTooltip}
-        onMouseLeave={hideTooltip}
-        style={{
-          position: 'relative',
-          display: 'inline-flex',
-          alignItems: 'center',
-          cursor: 'pointer'
-        }}
-      >
-        {children}
-        <div className={`meme-ordercenter-tooltip meme-ordercenter-tooltip-${position} meme-ordercenter-fade-popup ${isVisible ? 'meme-ordercenter-visible' : ''}`}>
-          <div className="meme-ordercenter-tooltip-content">
-            {content}
-            <div className={`meme-ordercenter-tooltip-arrow meme-ordercenter-tooltip-arrow-${position}`}></div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   const indicatorRef = useRef<HTMLDivElement>(null);
   const tabsRef = useRef<(HTMLDivElement | null)[]>([]);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -134,8 +166,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       sold: h.amountSold,
       valueBought: h.valueBought,
       valueSold: h.valueSold,
-      pnl: h.valueNet + currentPrice * h.balance,
-      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.tokenNet, 1e-9)) * 100,
+      pnl: h.valueNet,
+      remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
       tags: []
     }))
     : mockHolders.slice(0, 20).map((h, i) => ({
@@ -153,11 +185,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   );
 
   const availableTabs = [
-    { key: 'positions', label: 'Positions' },
+    { key: 'positions', label: `Positions (${positions.length})` },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: 'Top Traders' },
-    { key: 'devTokens', label: `Dev Tokens (${mockDevTokens.length})` }
+    { key: 'devTokens', label: `Dev Tokens (${devTokens.length})` }
   ];
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -329,6 +361,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       if (resizeObserver) resizeObserver.disconnect();
     };
   }, [activeSection]);
+
   const FormattedNumberDisplay = ({ formatted }: { formatted: FormattedNumber }) => {
     if (formatted.type === 'simple') {
       return <span>{formatted.text}</span>;
@@ -342,6 +375,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       </span>
     );
   };
+
+  const fmtTs = (ts: number | string) => ts ? new Date(Number(ts) * 1000).toLocaleString() : '--';
+
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -349,64 +385,85 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <div className="meme-oc-section-content" data-section="positions">
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
-              <div className="meme-oc-header-cell">Bought</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                Bought
+                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
+              </div>
               <div className="meme-oc-header-cell">Sold</div>
               <div className="meme-oc-header-cell">Remaining</div>
               <div className="meme-oc-header-cell">PnL</div>
               <div className="meme-oc-header-cell">Actions</div>
             </div>
             <div className="meme-oc-items">
-              {mockPositions.map((position, index) => (
-                <div key={position.id} className="meme-oc-item">
-                  <div className="meme-oc-cell">
-                    <div className="meme-wallet-info">
-                      <span className="meme-wallet-index">{index + 1}</span>
-                      <span className="meme-wallet-address">{position.wallet}</span>
-                      <div className="meme-wallet-tags">
-                        {position.tags.map(tag => (
-                          <Tooltip key={tag} content={tag}>
-                            <span className={`meme-tag meme-tag-${tag.toLowerCase().replace(' ', '')}`}>
-                              {renderTagIcon(tag)}
-                            </span>
-                          </Tooltip>
-                        ))}
+              {(positions?.length ? positions : []).map((p, index) => {
+                const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
+                const tokenImageUrl = p.imageUrl || null;
+                return (
+                  <div key={p.tokenId} className="meme-oc-item">
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <span className="meme-wallet-index">{index + 1}</span>
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {tokenImageUrl && (
+                            <img
+                              src={tokenImageUrl}
+                              alt={p.symbol}
+                              className="meme-token-icon"
+
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span className="meme-wallet-address">{tokenShort}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-trade-info">
-                      <span className="meme-usd-amount buy">${position.bought.usd}</span>
-                      <span className="meme-token-amount">{position.bought.amount.toFixed(2)}M / {position.bought.percentage.toFixed(2)}%</span>
-                    </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-trade-info">
-                      <span className="meme-usd-amount sell">${position.sold.usd}</span>
-                      <span className="meme-token-amount">{position.sold.amount} / {position.sold.percentage}%</span>
-                    </div>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <div className="meme-remaining-info">
-                      <div>
-                        <span className="meme-remaining">${position.remaining.amount.toFixed(0)}</span>
-                        <span className="meme-remaining-percentage">{position.remaining.percentage.toFixed(0)}%</span>
-                      </div>
-                      <div className="meme-remaining-bar">
-                        <div className="meme-remaining-bar-fill" style={{ width: `${position.remaining.percentage.toFixed(0)}%` }} />
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                        <span className="meme-token-amount">{fmt(p.boughtTokens)}</span>
+                        <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)}</span>
                       </div>
                     </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-trade-info">
+                        <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
+                        <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-remaining-info">
+                        <div>
+                          <span className="meme-remaining">
+                            {fmt(p.remainingTokens)} {p.symbol || ''}
+                          </span>
+                          <span className="meme-remaining-percentage">
+                            {p.remainingPct.toFixed(0)}%
+                          </span>
+                        </div>
+                        <div className="meme-remaining-bar">
+                          <div
+                            className="meme-remaining-bar-fill"
+                            style={{ width: `${Math.max(0, Math.min(100, p.remainingPct)).toFixed(0)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
+                        {p.pnlNative >= 0 ? '+' : '-'}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}
+                      </span>
+                    </div>
+                    <div className="meme-oc-cell">
+                      <button className="meme-action-btn">Sell</button>
+                    </div>
                   </div>
-                  <div className="meme-oc-cell">
-                    <span className={`meme-pnl ${position.pnl.amount >= 0 ? 'positive' : 'negative'}`}>
-                      {position.pnl.amount >= 0 ? '+' : ''}${position.pnl.amount}
-                    </span>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <button className="meme-action-btn">Sell</button>
-                    <button className="meme-action-btn">Sell All</button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -423,6 +480,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {mockOrders.map((order) => (
                 <div key={order.id} className="meme-oc-item">
+
                   <div className="meme-oc-cell">{order.token}</div>
                   <div className="meme-oc-cell">
                     <span className={`meme-order-type ${order.type.toLowerCase()}`}>{order.type}</span>
@@ -441,7 +499,14 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Wallet</div>
               <div className="meme-oc-header-cell">Balance</div>
-              <div className="meme-oc-header-cell">Bought (Avg Buy)</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                Bought (Avg Buy)
+                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
+              </div>
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
               <div className="meme-oc-header-cell">Remaining</div>
@@ -464,24 +529,24 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
                       <span className="meme-token-amount">{fmt(row.bought)}</span>
-                      <span className="meme-usd-amount buy">{fmt(row.valueBought)} MON</span>
+                      <span className="meme-usd-amount buy">{fmtAmount(row.valueBought, amountMode, monUsdPrice)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))}/> MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
                     </span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
                       <span className="meme-token-amount">{fmt(row.sold)}</span>
-                      <span className="meme-usd-amount sell">{fmt(row.valueSold)} MON</span>
+                      <span className="meme-usd-amount sell">{fmtAmount(row.valueSold, amountMode, monUsdPrice)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))}/> MON
+                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
                     </span>
                   </div>
                   <div className="meme-oc-cell">
                     <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
-                      {row.pnl >= 0 ? '+' : ''}{fmt(row.pnl, 3)} MON
+                      {row.pnl >= 0 ? '+' : '-'}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -496,8 +561,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
                   </div>
                   <div className="meme-oc-cell"><button className="meme-filter-action-btn">
-                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
-                    </button></div>
+                    <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                  </button></div>
                 </div>
               ))}
 
@@ -565,9 +630,70 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                   </div>
-  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
-                      <img src={filtercup} alt="Filter" className="oc-filter-cup" />
-                    </button></div>
+                  <div className="meme-oc-cell"><button className="meme-filter-action-btn">
+                    <img src={filtercup} alt="Filter" className="oc-filter-cup" />
+                  </button></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      case 'devTokens':
+        const rows = (devTokens?.length ? devTokens : []).slice(0, 50);
+        const fmtPrice = (p: number) =>
+          amountMode === 'USD'
+            ? `$${(p * (monUsdPrice || 0)).toFixed(4)}`
+            : `${p.toFixed(8)} MON`;
+
+        return (
+          <div className="meme-oc-section-content" data-section="devTokens">
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Token</div>
+              <div
+                className="meme-oc-header-cell clickable"
+                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+              >
+                Price
+                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: 12, height: 12 }} />
+              </div>
+              <div className="meme-oc-header-cell">MCap</div>
+              <div className="meme-oc-header-cell">Timestamp</div>
+            </div>
+            <div className="meme-oc-items">
+              {rows.map((t: any, index: number) => (
+                <div key={t.id || index} className="meme-oc-item">
+                  <div className="meme-oc-cell">
+                    <div className="meme-wallet-info">
+                      <span className="meme-wallet-index">{index + 1}</span>
+                      <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                        {t.imageUrl && (
+                          <img
+                            src={t.imageUrl}
+                            alt={t.symbol}
+                            className="meme-token-icon"
+                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                          />
+                        )}
+                        <span className="meme-wallet-address">
+                          {t.symbol || `${t.id?.slice(0, 6)}…${t.id?.slice(-4)}`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <span className="meme-token-amount">{fmtPrice(Number(t.price || 0))}</span>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <span className="meme-mon-balance">
+                      {amountMode === 'USD'
+                        ? `$${((t.marketCap || 0) * (monUsdPrice || 0)).toLocaleString()}`
+                        : `${fmt(Number(t.marketCap || 0), 2)} MON`}
+                    </span>
+                  </div>
+                  <div className="meme-oc-cell">
+                    <span className="meme-timestamp">{fmtTs(t.timestamp)}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -606,21 +732,21 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
       <div className="meme-oc-top-bar">
         <div className="meme-oc-types">
-            <>
-              <div className="meme-oc-types-rectangle">
-                {availableTabs.map(({ key, label }, index) => (
-                  <div
-                    key={key}
-                    ref={(el) => (tabsRef.current[index] = el)}
-                    className={`meme-oc-type ${activeSection === key ? 'active' : ''}`}
-                    onClick={() => handleTabChange(key as typeof activeSection)}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-              <div ref={indicatorRef} className="meme-oc-sliding-indicator" />
-            </>
+          <>
+            <div className="meme-oc-types-rectangle">
+              {availableTabs.map(({ key, label }, index) => (
+                <div
+                  key={key}
+                  ref={(el) => (tabsRef.current[index] = el)}
+                  className={`meme-oc-type ${activeSection === key ? 'active' : ''}`}
+                  onClick={() => handleTabChange(key as typeof activeSection)}
+                >
+                  {label}
+                </div>
+              ))}
+            </div>
+            <div ref={indicatorRef} className="meme-oc-sliding-indicator" />
+          </>
         </div>
 
         {onToggleWidget && (

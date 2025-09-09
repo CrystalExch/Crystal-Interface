@@ -16,8 +16,8 @@
 
 .widget-explorer.widget-dragging {
   cursor: grabbing;
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 
-              0 0 0 1px rgba(255, 255, 255, 0.2);
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(255, 255, 255, 0.2);
   transform: scale(1.02);
   transition: none;
 }
@@ -43,7 +43,6 @@
   border-bottom: none;
 }
 
-/* Header - Same as TokenExplorer header */
 .widget-explorer-header {
   display: flex;
   align-items: center;
@@ -122,9 +121,9 @@
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 
-              inset 0 -1px 1px rgba(0, 0, 0, 0.45), 
-              0 2px 8px rgba(170, 174, 207, 0.1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(170, 174, 207, 0.1);
   letter-spacing: -0.5px;
 }
 
@@ -154,7 +153,6 @@
   filter: brightness(0.8);
 }
 
-/* Mobile Tab Selector - Same as TokenExplorer */
 .widget-explorer-mobile-tabs {
   display: flex;
   background: rgb(6, 6, 6);
@@ -199,7 +197,6 @@
   opacity: 0.7;
 }
 
-/* Container */
 .widget-explorer-container {
   width: 100%;
   box-sizing: border-box;
@@ -208,7 +205,6 @@
   flex-direction: column;
 }
 
-/* Column Headers */
 .widget-explorer-columns-header {
   display: flex;
   flex-direction: column;
@@ -252,7 +248,6 @@
   padding-right: .75rem;
 }
 
-/* QuickBuy Container - Same as TokenExplorer */
 .widget-explorer-quickbuy-container {
   position: relative;
   display: flex;
@@ -297,7 +292,6 @@
   height: 15px;
 }
 
-/* Filter Button */
 .widget-column-filter-icon {
   background: transparent;
   border: 1.5px solid rgba(179, 184, 249, 0.1);
@@ -340,7 +334,6 @@
   border: 1px solid rgb(6, 6, 6);
 }
 
-/* Columns Container */
 .widget-explorer-columns {
   display: flex;
   flex-direction: column;
@@ -361,7 +354,6 @@
   display: flex;
 }
 
-/* Token Lists - Same styling as TokenExplorer */
 .widget-explorer-tokens-list {
   border: none;
   width: 100%;
@@ -390,7 +382,6 @@
   scrollbar-color: rgba(203, 206, 238, 0.125) rgb(6, 6, 6);
 }
 
-/* Token Rows - EXACT same styling as TokenExplorer */
 .widget-explorer-token-row {
   background: transparent;
   border-bottom: 1px solid rgba(179, 184, 249, 0.1);
@@ -668,7 +659,6 @@
   color: #7f808d;
 }
 
-/* Holdings Section */
 .widget-explorer-holdings-section {
   display: flex;
   align-items: flex-end;
@@ -699,7 +689,6 @@
   height: 16px;
 }
 
-/* Third Row */
 .widget-explorer-third-row {
   position: absolute;
   right: 1rem;
@@ -715,8 +704,8 @@
   align-items: flex-end;
   gap: 4px;
   height: 20px;
-  background-color: rgb(6,6,6);
-  box-shadow: -3px 0 2px 2px rgb(6,6,6);
+  background-color: rgb(6, 6, 6);
+  box-shadow: -3px 0 2px 2px rgb(6, 6, 6);
 }
 
 .widget-mc-label {
@@ -848,7 +837,6 @@
   height: 15px;
 }
 
-/* Hide Button */
 .widget-explorer-hide-button {
   position: absolute;
   top: -6px;
@@ -876,7 +864,6 @@
   transform: scale(0.95);
 }
 
-/* Bonding Display */
 .widget-bonding-amount-display {
   position: absolute;
   top: -2rem;
@@ -901,7 +888,6 @@
   pointer-events: auto;
 }
 
-/* Tooltips */
 .widget-tooltip-container {
   position: relative;
   display: flex;
@@ -936,7 +922,6 @@
   pointer-events: auto;
 }
 
-/* Image Preview */
 .widget-explorer-image-preview {
   opacity: 0;
   transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -954,8 +939,8 @@
   background: rgba(6, 6, 6);
   border-radius: 12px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7), 
-             0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
   position: relative;
   max-width: 150px;
 }
@@ -992,7 +977,6 @@
   margin: 0;
 }
 
-/* Empty State */
 .widget-no-tokens-message {
   display: flex;
   flex-direction: column;
@@ -1013,7 +997,6 @@
   height: 50px;
 }
 
-/* Loading States */
 .widget-quickbuy-loading-spinner {
   width: 14px;
   height: 14px;
@@ -1025,14 +1008,18 @@
 }
 
 @keyframes widget-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
-/* Skeleton Loading - Same as TokenExplorer */
 :root {
-  --widget-skeleton-bg: rgba(189, 189, 235, 0.08);        
-  --widget-skeleton-meme-shimmer: rgba(226, 230, 247, 0.1);  
+  --widget-skeleton-bg: rgba(189, 189, 235, 0.08);
+  --widget-skeleton-meme-shimmer: rgba(226, 230, 247, 0.1);
 }
 
 .widget-explorer-token-row.widget-loading * {
@@ -1049,6 +1036,7 @@
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -1069,12 +1057,10 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent);
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
 }
 
@@ -1090,7 +1076,6 @@
   background: var(--widget-skeleton-bg) !important;
 }
 
-/* Token Image Skeleton */
 .widget-explorer-token-row.widget-loading .widget-explorer-token-image-container {
   position: relative !important;
   overflow: hidden !important;
@@ -1108,19 +1093,16 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  ) !important;
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent) !important;
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
   visibility: visible !important;
   z-index: 10;
   border-radius: 8px;
 }
 
-/* Other skeleton elements */
 .widget-explorer-token-row.widget-loading .widget-explorer-contract-address,
 .widget-explorer-token-row.widget-loading .widget-explorer-token-symbol,
 .widget-explorer-token-row.widget-loading .widget-explorer-token-name,
@@ -1177,16 +1159,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent);
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
 }
 
-/* Holdings skeleton */
 .widget-explorer-token-row.widget-loading .widget-explorer-holdings-section {
   position: relative;
   min-height: 32px;
@@ -1214,19 +1193,16 @@
   left: 0;
   width: 100%;
   height: 20px;
-  border-radius: 8px; 
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  );
+  border-radius: 8px;
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent);
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
   visibility: visible !important;
   clip-path: inset(0 0 0 0 round 8px);
 }
 
-/* Market cap and volume skeleton */
 .widget-explorer-token-row.widget-loading .widget-explorer-market-cap span,
 .widget-explorer-token-row.widget-loading .widget-explorer-volume span {
   width: 50px !important;
@@ -1242,16 +1218,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent);
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
 }
 
-/* Third row section skeleton */
 .widget-explorer-token-row.widget-loading .widget-explorer-third-row-section::before {
   content: '';
   position: absolute;
@@ -1273,19 +1246,16 @@
   left: 0;
   width: 80px;
   height: 25px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  );
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent);
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
   visibility: visible !important;
   z-index: 3;
   border-radius: 4px;
 }
 
-/* Quick buy button skeleton */
 .widget-explorer-token-row.widget-loading .widget-explorer-quick-buy-btn {
   width: 80px !important;
   height: 24px !important;
@@ -1298,16 +1268,13 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    var(--widget-skeleton-meme-shimmer),
-    transparent
-  ) !important;
+  background: linear-gradient(90deg,
+      transparent,
+      var(--widget-skeleton-meme-shimmer),
+      transparent) !important;
   animation: widget-meme-shimmer 1.5s ease-in-out infinite;
 }
 
-/* Hide elements during loading */
 .widget-explorer-token-row.widget-loading .widget-bonding-amount-display,
 .widget-explorer-token-row.widget-loading .widget-explorer-hide-button,
 .widget-explorer-token-row.widget-loading .widget-explorer-copy-btn,
@@ -1328,19 +1295,17 @@
   background: transparent;
 }
 
-/* Responsive adjustments for widget */
 @media (max-width: 768px) {
   .widget-explorer {
     width: 350px;
     max-height: 600px;
   }
-  
+
   .widget-explorer-token-row {
     height: 120px;
   }
 }
 
-/* Snapped Mode Adjustments */
 .widget-explorer.widget-snapped .widget-explorer-drag-handle {
   display: none;
 }
@@ -1349,7 +1314,6 @@
   cursor: default;
 }
 
-/* Focus styles for accessibility */
 .widget-explorer-quickbuy-input:focus,
 .widget-column-filter-icon:focus,
 .widget-explorer-quick-buy-btn:focus {
@@ -1357,54 +1321,49 @@
   outline-offset: 2px;
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   .widget-explorer {
     border-color: #ffffff;
     background: #000000;
   }
-  
+
   .widget-explorer-token-row:hover {
     background: rgba(255, 255, 255, 0.1);
   }
-  
+
   .widget-explorer-token-symbol {
     color: #ffffff;
   }
-  
+
   .widget-explorer-token-name {
     color: #cccccc;
   }
 }
 
-/* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
+
   .widget-explorer,
   .widget-explorer-token-row,
   .widget-explorer-token-image,
   .widget-explorer-quick-buy-btn {
     transition: none;
   }
-  
+
   .widget-quickbuy-loading-spinner {
     animation: none;
   }
-  
+
   .widget-meme-shimmer {
     animation: none;
   }
 }
 
-/* Resize Handles - Add these styles to your CSS */
-
-/* Base resize handle styles */
 .widget-resize-handle {
   position: absolute;
   background: transparent;
   z-index: 10;
 }
 
-/* Edge handles */
 .widget-resize-handle-top {
   top: -3px;
   left: 8px;
@@ -1437,7 +1396,6 @@
   cursor: ew-resize;
 }
 
-/* Corner handles */
 .widget-resize-handle-top-left {
   top: -3px;
   left: -3px;
@@ -1470,7 +1428,6 @@
   cursor: se-resize;
 }
 
-/* Snapped mode resize handle */
 .widget-resize-handle-snap {
   position: absolute;
   top: 0;
@@ -1489,7 +1446,6 @@
   left: -3px;
 }
 
-/* Visual feedback on hover (optional) */
 .widget-resize-handle:hover {
   background: rgba(170, 174, 207, 0.3);
 }
@@ -1505,12 +1461,10 @@
   background: linear-gradient(to right, transparent, rgba(170, 174, 207, 0.3), transparent);
 }
 
-/* Ensure widget container allows for resize handles */
 .widget-explorer {
-  position: relative; /* Make sure this is set for absolute positioning of handles */
+  position: relative;
 }
 
-/* Prevent content from interfering with resize handles */
 .widget-explorer-content {
   pointer-events: auto;
 }

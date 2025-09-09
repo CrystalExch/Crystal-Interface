@@ -2,6 +2,7 @@ import { settings } from "../../../../settings";
 
 export const getTradeValue = (trade: any, column: string, markets: any, trades: any) => {
   const market = markets[trade[4]];
+  if (!market) return;
   const priceFactor = Number(market.priceFactor);
   const baseDecimals = Number(market.baseDecimals);
   const quoteDecimals = Number(market.quoteDecimals);

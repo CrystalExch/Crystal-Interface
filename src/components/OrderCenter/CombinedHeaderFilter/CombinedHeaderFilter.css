@@ -18,9 +18,10 @@
 }
 
 .show-text {
-  color: #ffffff70;
+  color: #ffffff71;
   font-size: 0.75rem;
   margin-right: 6px;
+  font-weight: 300;
 }
 
 .per-page-text {

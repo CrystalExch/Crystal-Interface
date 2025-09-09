@@ -7,11 +7,11 @@ import React, {
   useCallback,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw, Info, Ban, Eye, ChevronDown } from 'lucide-react';
+import { Search, EyeOff, Hash, Image, BarChart3, Bell, Volume2, Play, RotateCcw, Eye, ChevronDown } from 'lucide-react';
 
 import { settings as appSettings } from '../../settings';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
-import { encodeFunctionData } from 'viem';
+import { encodeFunctionData, decodeEventLog } from 'viem';
 import { defaultMetrics } from './TokenData';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 
@@ -28,15 +28,13 @@ import closebutton from '../../assets/close_button.png';
 import './TokenExplorer.css';
 import { useNavigate } from 'react-router-dom';
 
-
 import stepaudio from '../../assets/step_audio.mp3';
 import kaching from '../../assets/ka-ching.mp3';
-
 
 export interface Token {
   id: string;
   tokenAddress: string;
-  creator: string;
+  dev: string;
   name: string;
   symbol: string;
   image: string;
@@ -82,12 +80,10 @@ interface DisplaySettings {
   progressBar: boolean;
   spacedTables: boolean;
   colorRows: boolean;
-
   columnOrder: Array<ColumnKey>;
   quickBuyClickBehavior: 'nothing' | 'openPage' | 'openNewTab';
   secondQuickBuyEnabled: boolean;
   secondQuickBuyColor: string;
-
   visibleRows: {
     marketCap: boolean;
     volume: boolean;
@@ -139,6 +135,9 @@ interface TokenExplorerProps {
   onOpenFiltersForColumn: (c: Token['status']) => void;
   activeFilterTab?: Token['status'];
   sendUserOperationAsync: any;
+  terminalQueryData: any;
+  terminalToken: any;
+  setTerminalToken: any;
 }
 
 const MAX_PER_COLUMN = 30;
@@ -146,7 +145,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.13';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.2.15';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -287,7 +286,6 @@ const calculateBondingPercentage = (marketCap: number) => {
   const bondingPercentage = Math.min((marketCap / 10000) * 100, 100);
   return bondingPercentage;
 };
-
 
 const Tooltip: React.FC<{
   content: string;
@@ -439,7 +437,6 @@ const Tooltip: React.FC<{
     </div>
   );
 };
-
 
 const BlacklistPopup: React.FC<{
   isOpen: boolean;
@@ -621,7 +618,6 @@ const AlertsPopup: React.FC<{
   const sliderRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastVolumeRef = useRef<number>(settings.volume);
-  const dropdownRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const toggleDropdown = (key: string) => {
     setOpenDropdowns(prev => ({
       ...prev,
@@ -677,11 +673,6 @@ const AlertsPopup: React.FC<{
     const percentage = Math.max(0, Math.min(100, ((clientX - rect.left) / rect.width) * 100));
     updateSetting('volume', Math.round(percentage));
   }, []);
-
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    setIsDragging(true);
-    handleVolumeChange(e.clientX);
-  }, [handleVolumeChange]);
 
   const handleVolumeSliderChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const newVolume = parseInt(e.target.value, 10);
@@ -835,26 +826,26 @@ const AlertsPopup: React.FC<{
                           >
                             <Volume2 size={14} />
                             <span>{getSoundDisplayName(settings.sounds[key])}</span>
-            <div className="sound-action-button-container">
+                            <div className="sound-action-button-container">
 
-                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
+                              <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); playSound(key); }} title="Play sound">
 
-                              <Play size={14} />
+                                <Play size={14} />
 
-                            </button>
+                              </button>
 
-                            <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
+                              <button className="sound-action-btn" onClick={(e) => { e.stopPropagation(); updateSoundSetting(key, stepaudio); }} title="Reset to default">
 
-                              <RotateCcw size={14} />
+                                <RotateCcw size={14} />
 
-                            </button>
+                              </button>
 
-                          </div>
+                            </div>
                             {openDropdowns[key] && (
                               <div className="sound-dropdown-content">
                                 <button
                                   className={`sound-dropdown-item ${settings.sounds[key] === stepaudio ? 'active' : ''}`}
-                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => {
                                     selectSound(key, stepaudio);
                                     closeDropdown(key);
@@ -864,7 +855,7 @@ const AlertsPopup: React.FC<{
                                 </button>
                                 <button
                                   className={`sound-dropdown-item ${settings.sounds[key] === kaching ? 'active' : ''}`}
-                                  onMouseDown={(e) => e.preventDefault()} 
+                                  onMouseDown={(e) => e.preventDefault()}
                                   onClick={() => {
                                     selectSound(key, kaching);
                                     closeDropdown(key);
@@ -886,7 +877,7 @@ const AlertsPopup: React.FC<{
                                 </label>
 
                               </div>
-                              
+
                             )}
                           </button>
                         </div>
@@ -907,7 +898,6 @@ const AlertsPopup: React.FC<{
     </div>
   );
 };
-
 
 const ColorPicker: React.FC<{
   color: string;
@@ -1590,7 +1580,6 @@ function reducer(state: State, action: Action): State {
   }
 }
 
-
 const TokenRow = React.memo<{
   token: Token;
   quickbuyAmount: string;
@@ -1629,9 +1618,6 @@ const TokenRow = React.memo<{
   } = props;
 
   const imageContainerRef = useRef<HTMLDivElement>(null);
-  const [previewPosition, setPreviewPosition] = useState({ top: 0, left: 0, placement: 'bottom' as 'top' | 'bottom' | 'left' | 'right' });
-  const [showPreview, setShowPreview] = useState(false);
-  const [positionCalculated, setPositionCalculated] = useState(false);
   type CSSVars = React.CSSProperties & Record<string, string>;
 
   const bondingPercentage = useMemo(() => calculateBondingPercentage(token.marketCap), [token.marketCap]);
@@ -1705,32 +1691,20 @@ const TokenRow = React.memo<{
 
     if (top < scrollY + 10) top = scrollY + 10;
     else if (top + previewHeight > scrollY + viewportHeight - 10) top = scrollY + viewportHeight - previewHeight - 10;
-
-    setPreviewPosition({ top, left, placement });
   }, []);
 
   useEffect(() => {
     if (hoveredImage === token.id) {
-      setPositionCalculated(false);
       updatePreviewPosition();
-
-      const timer = setTimeout(() => {
-        setPositionCalculated(true);
-        setShowPreview(true);
-      }, 10);
 
       const handleResize = () => updatePreviewPosition();
       window.addEventListener('scroll', updatePreviewPosition);
       window.addEventListener('resize', handleResize);
 
       return () => {
-        clearTimeout(timer);
         window.removeEventListener('scroll', updatePreviewPosition);
         window.removeEventListener('resize', handleResize);
       };
-    } else {
-      setShowPreview(false);
-      setPositionCalculated(false);
     }
   }, [hoveredImage, token.id, updatePreviewPosition]);
 
@@ -1793,12 +1767,13 @@ const TokenRow = React.memo<{
           ref={imageContainerRef}
           className={`explorer-token-image-container ${token.status === 'graduated' ? 'graduated' : ''} ${!displaySettings.squareImages ? 'circle-mode' : ''} ${!displaySettings.progressBar ? 'no-progress-ring' : ''}`}
           onClick={(e) => {
-          e.stopPropagation();
-          window.open(
-            `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
-            '_blank',
-            'noopener,noreferrer'
-          )}}
+            e.stopPropagation();
+            window.open(
+              `https://lens.google.com/uploadbyurl?url=${encodeURIComponent(token.image)}`,
+              '_blank',
+              'noopener,noreferrer'
+            )
+          }}
           onMouseEnter={() => onImageHover(token.id)}
           onMouseLeave={onImageLeave}
           style={token.status === 'graduated' || !displaySettings.progressBar
@@ -1867,7 +1842,7 @@ const TokenRow = React.memo<{
                       href={token.twitterHandle}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={e=>e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
@@ -1881,7 +1856,7 @@ const TokenRow = React.memo<{
                       href={token.website}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={e=>e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z" />
@@ -1895,9 +1870,9 @@ const TokenRow = React.memo<{
                       href={token.telegramHandle}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={e=>e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
-                      <img src={telegram}/>
+                      <img src={telegram} />
                     </a>
                   )}
 
@@ -1907,18 +1882,18 @@ const TokenRow = React.memo<{
                       href={token.discordHandle}
                       target="_blank"
                       rel="noreferrer"
-                      onClick={e=>e.stopPropagation()}
+                      onClick={e => e.stopPropagation()}
                     >
-                      <img src={discord}/>
+                      <img src={discord} />
                     </a>
                   )}
 
                   <a
-                      className="explorer-telegram-btn"
-                      href={`https://twitter.com/search?q=${token.tokenAddress}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      onClick={e=>e.stopPropagation()}
+                    className="explorer-telegram-btn"
+                    href={`https://twitter.com/search?q=${token.tokenAddress}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    onClick={e => e.stopPropagation()}
                   >
                     <Search size={14} />
                   </a>
@@ -2188,6 +2163,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
+  terminalQueryData,
+  terminalToken,
+  setTerminalToken,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2197,7 +2175,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const [{ tokensByStatus, hidden, loading }, dispatch] = useReducer(reducer, initialState);
   const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
-
+  const [pausedColumn, setPausedColumn] = useState<Token['status'] | null>(null);
   const [displaySettings, setDisplaySettings] = useState<DisplaySettings>(() => {
     const saved = localStorage.getItem('explorer-display-settings');
     if (!saved) return DISPLAY_DEFAULTS;
@@ -2286,13 +2264,264 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
   const marketSubs = useRef<Record<string, string>>({});
+  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
   const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
   const handleImageLeave = useCallback(() => setHoveredImage(null), []);
   const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => { if (e.target.value === '0') e.target.select(); }, []);
+  const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
+    const reqId = subIdRef.current++;
+    ws.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params }));
+    if (!onAck) return;
+    const handler = (evt: MessageEvent) => {
+      const msg = JSON.parse(evt.data);
+      if (msg.id === reqId && msg.result) {
+        onAck(msg.result);
+        ws.removeEventListener('message', handler);
+      }
+    };
+    ws.addEventListener('message', handler);
+  }, []);
 
+  const addMarket = useCallback(async (log: any) => {
+    if (pausedColumn !== null) {
+      return;
+    }
+    const { args } = decodeEventLog({ abi: CrystalRouterAbi, data: log.data, topics: log.topics }) as any
+
+    let meta: any = {};
+    try {
+      const res = await fetch(args.metadataCID);
+      if (res.ok) meta = await res.json();
+    } catch (e) {
+      console.warn('failed to load metadata', e);
+    }
+
+    const socials = [args.social1, args.social2, args.social3].map(s => s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s)
+    const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"))
+    if (twitter) { socials.splice(socials.indexOf(twitter), 1) }
+    const telegram = socials.find(s => s?.startsWith("https://t.me"))
+    if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
+    const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
+    if (discord) { socials.splice(socials.indexOf(discord), 1) }
+
+    const token: Token = {
+      ...defaultMetrics,
+      id: args.token,
+      tokenAddress: args.token,
+      name: args.name,
+      symbol: args.symbol,
+      image: meta?.image ?? '',
+      description: args.description ?? '',
+      twitterHandle: twitter ?? '',
+      website: meta?.website ?? '',
+      status: 'new',
+      marketCap: defaultMetrics.price * TOTAL_SUPPLY,
+      created: Math.floor(Date.now() / 1000),
+      volumeDelta: 0,
+      telegramHandle: telegram ?? '',
+      discordHandle: discord ?? '',
+      dev: args.creator,
+    };
+
+    dispatch({ type: 'ADD_MARKET', token });
+
+    if (alertSettings.soundAlertsEnabled) {
+      try {
+        const audio = new Audio(alertSettings.sounds.newPairs);
+        audio.volume = alertSettings.volume / 100;
+        audio.play().catch(console.error);
+      } catch (error) {
+        console.error('Failed to play new pairs sound:', error);
+      }
+    }
+
+    if (!marketSubs.current[args.token] && wsRef.current) {
+      subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
+    }
+  }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume, pausedColumn]);
+  const updateMarket = useCallback((log: any) => {
+    if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
+
+    if (pausedColumn !== null) {
+      return;
+    }
+    const market = log.address.toLowerCase();
+    const hex = log.data.replace(/^0x/, '');
+
+    const words: string[] = [];
+    for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
+
+    const amounts = BigInt('0x' + words[0]);
+    const isBuy = BigInt('0x' + words[1]);
+    const priceRaw = BigInt('0x' + words[2]);
+    const counts = BigInt('0x' + words[3]);
+    const priceEth = Number(priceRaw) / 1e18;
+    const buys = Number(counts >> 128n);
+    const sells = Number(counts & ((1n << 128n) - 1n));
+    const amountIn = Number(amounts >> 128n);
+    const amountOut = Number(amounts & ((1n << 128n) - 1n));
+
+    dispatch({
+      type: 'UPDATE_MARKET',
+      id: market,
+      updates: {
+        price: priceEth,
+        marketCap: priceEth * TOTAL_SUPPLY,
+        buyTransactions: buys,
+        sellTransactions: sells,
+        volumeDelta: isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18,
+      },
+    });
+  }, [pausedColumn]);
+
+  const handleColumnHover = useCallback((columnType: Token['status']) => {
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+      pauseTimeoutRef.current = null;
+    }
+    setPausedColumn(columnType);
+
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+  }, []);
+  const openWebsocket = useCallback((initialMarkets: string[]): void => {
+    const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
+      initialMarkets.forEach((addr) => {
+        subscribe(ws, ['logs', { address: addr }], (subId) => (marketSubs.current[addr] = subId));
+      });
+    };
+
+    ws.onmessage = ({ data }) => {
+      const msg = JSON.parse(data);
+      if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+      const log = msg.params.result;
+      if (log.topics[0] === ROUTER_EVENT) addMarket(log);
+      else if (log.topics[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+    };
+
+    ws.onerror = (e) => console.error('ws error', e);
+  }, [routerAddress, subscribe, addMarket, updateMarket]);
+
+  const handleColumnLeave = useCallback(() => {
+    // Debounce the resume to prevent rapid pause/resume cycles
+    if (pauseTimeoutRef.current) {
+      clearTimeout(pauseTimeoutRef.current);
+    }
+
+    pauseTimeoutRef.current = setTimeout(() => {
+      setPausedColumn(null);
+
+      const refetchAndResume = async () => {
+        try {
+          const res = await fetch(SUBGRAPH_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              query: `
+              {
+                active: launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+                  id creator { id } name symbol metadataCID description social1 social2 social3
+                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
+                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+                  trades { id amountIn amountOut }
+                }
+                migrated: launchpadTokens(first: 30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
+                  id creator { id } name symbol metadataCID description social1 social2 social3
+                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
+                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+                  trades { id amountIn amountOut }
+                }
+              }`,
+            }),
+          });
+          const json = await res.json();
+          const { active = [], migrated = [] } = json.data ?? {};
+          const rawMarkets = [...active, ...migrated];
+
+          const tokens: Token[] = await Promise.all(
+            rawMarkets.map(async (m: any) => {
+              const price = Number(m.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price;
+
+              let meta: any = {};
+              try {
+                const metaRes = await fetch(m.metadataCID);
+                if (metaRes.ok) meta = await metaRes.json();
+              } catch (e) {
+                console.warn('failed to load metadata for', m.metadataCID, e);
+              }
+
+              let createdTimestamp = Number(m.timestamp);
+              if (createdTimestamp > 1e10) {
+                createdTimestamp = Math.floor(createdTimestamp / 1000);
+              }
+              const socials = [m.social1, m.social2, m.social3].map(s => s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s)
+              const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"))
+              if (twitter) { socials.splice(socials.indexOf(twitter), 1) }
+              const telegram = socials.find(s => s?.startsWith("https://t.me"))
+              if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
+              const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
+              if (discord) { socials.splice(socials.indexOf(discord), 1) }
+              const website = socials[0]
+
+              return {
+                ...defaultMetrics,
+                id: m.id.toLowerCase(),
+                tokenAddress: m.id.toLowerCase(),
+                dev: m.creator.id,
+                name: m.name,
+                symbol: m.symbol,
+                image: meta.image ?? '/discord.svg',
+                description: meta.description ?? '',
+                twitterHandle: twitter ?? '',
+                website: website ?? '',
+                status: m.migrated ? 'graduated' : price * TOTAL_SUPPLY > 12500 ? 'graduating' : 'new',
+                created: createdTimestamp,
+                price,
+                marketCap: price * TOTAL_SUPPLY,
+                buyTransactions: Number(m.buyTxs),
+                sellTransactions: Number(m.sellTxs),
+                volume24h: Number(m.volumeNative) / 1e18,
+                volumeDelta: 0,
+                discordHandle: discord ?? '',
+                telegramHandle: telegram ?? '',
+              } as Token;
+            })
+          );
+
+          dispatch({ type: 'INIT', tokens });
+          openWebsocket(tokens.map((t) => t.id));
+        } catch (err) {
+          console.error('refetch failed', err);
+          // Fallback: just reopen WebSocket with existing tokens
+          const allTokens = [
+            ...tokensByStatus.new,
+            ...tokensByStatus.graduating,
+            ...tokensByStatus.graduated,
+          ];
+          openWebsocket(allTokens.map((t) => t.id));
+        }
+      };
+
+      refetchAndResume();
+    }, 300);
+  }, [tokensByStatus, openWebsocket]);
+
+  useEffect(() => {
+    return () => {
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+      }
+    };
+  }, []);
   const copyToClipboard = useCallback(async (text: string) => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -2314,9 +2543,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     }
   }, []);
 
-const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
-  const val = BigInt(amt || '0') * 10n ** 18n;
-  if (val === 0n) return;
+  const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
+    const val = BigInt(amt || '0') * 10n ** 18n;
+    if (val === 0n) return;
 
     const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
@@ -2389,143 +2618,10 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   }, [hidden]);
 
   const handleBlacklistToken = useCallback((token: Token) => {
-    const newItem = { id: Date.now().toString(), text: token.creator, type: 'dev' as const };
+    const newItem = { id: Date.now().toString(), text: token.dev, type: 'dev' as const };
     setBlacklistSettings(prev => ({ items: [...prev.items, newItem] }));
-    console.log(`Blacklisted dev: ${token.creator}`);
+    console.log(`Blacklisted dev: ${token.dev}`);
   }, []);
-
-  const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
-    const reqId = subIdRef.current++;
-    ws.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params }));
-    if (!onAck) return;
-    const handler = (evt: MessageEvent) => {
-      const msg = JSON.parse(evt.data);
-      if (msg.id === reqId && msg.result) {
-        onAck(msg.result);
-        ws.removeEventListener('message', handler);
-      }
-    };
-    ws.addEventListener('message', handler);
-  }, []);
-
-  const addMarket = useCallback(async (log: any) => {
-    const { topics, data } = log;
-    const market = `0x${topics[1].slice(26)}`.toLowerCase();
-    const tokenAddr = `0x${topics[2].slice(26)}`.toLowerCase();
-
-    const hex = data.replace(/^0x/, '');
-    const offs = [
-      parseInt(hex.slice(0, 64), 16),
-      parseInt(hex.slice(64, 128), 16),
-      parseInt(hex.slice(128, 192), 16),
-    ];
-    const read = (at: number): string => {
-      const start = at * 2;
-      const len = parseInt(hex.slice(start, start + 64), 16);
-      const strHex = hex.slice(start + 64, start + 64 + len * 2);
-      const bytes: string[] = strHex.match(/.{2}/g) ?? [];
-      return bytes.map((byteHex: string) => String.fromCharCode(parseInt(byteHex, 16))).join('');
-    };
-    const name = read(offs[0]);
-    const symbol = read(offs[1]);
-    const cid = read(offs[2]);
-
-    let meta: any = {};
-    try {
-      const res = await fetch(cid);
-      if (res.ok) meta = await res.json();
-    } catch (e) {
-      console.warn('failed to load metadata for', cid, e);
-    }
-
-    const token: Token = {
-      ...defaultMetrics,
-      id: market,
-      tokenAddress: tokenAddr,
-      name,
-      symbol,
-      image: meta?.image ?? '',
-      description: meta?.description ?? '',
-      twitterHandle: meta?.twitter ?? '',
-      website: meta?.website ?? '',
-      status: 'new',
-      marketCap: defaultMetrics.price * TOTAL_SUPPLY,
-      created: Math.floor(Date.now() / 1000),
-      volumeDelta: 0,
-      telegramHandle: meta?.telegram ?? '',
-      discordHandle: meta?.discord ?? '',
-      creator: `0x${topics[3].slice(26)}`.toLowerCase(),
-    };
-
-    dispatch({ type: 'ADD_MARKET', token });
-    if (alertSettings.soundAlertsEnabled) {
-      try {
-        const audio = new Audio(alertSettings.sounds.newPairs);
-        audio.volume = alertSettings.volume / 100;
-        audio.play().catch(console.error);
-      } catch (error) {
-        console.error('Failed to play new pairs sound:', error);
-      }
-    }
-
-    if (!marketSubs.current[market] && wsRef.current) {
-      subscribe(wsRef.current, ['logs', { address: market }], (sub) => (marketSubs.current[market] = sub));
-    }
-  }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume]);
-
-  const updateMarket = useCallback((log: any) => {
-    if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
-
-    const market = log.address.toLowerCase();
-    const hex = log.data.replace(/^0x/, '');
-
-    const words: string[] = [];
-    for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
-
-    const amounts = BigInt('0x' + words[0]);
-    const isBuy = BigInt('0x' + words[1]);
-    const priceRaw = BigInt('0x' + words[2]);
-    const counts = BigInt('0x' + words[3]);
-    const priceEth = Number(priceRaw) / 1e18;
-    const buys = Number(counts >> 128n);
-    const sells = Number(counts & ((1n << 128n) - 1n));
-    const amountIn = Number(amounts >> 128n);
-    const amountOut = Number(amounts & ((1n << 128n) - 1n));
-
-    dispatch({
-      type: 'UPDATE_MARKET',
-      id: market,
-      updates: {
-        price: priceEth,
-        marketCap: priceEth * TOTAL_SUPPLY,
-        buyTransactions: buys,
-        sellTransactions: sells,
-        volumeDelta: isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18,
-      },
-    });
-  }, []);
-
-  const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
-    wsRef.current = ws;
-
-    ws.onopen = () => {
-      subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
-      initialMarkets.forEach((addr) => {
-        subscribe(ws, ['logs', { address: addr }], (subId) => (marketSubs.current[addr] = subId));
-      });
-    };
-
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-      const log = msg.params.result;
-      if (log.topics[0] === ROUTER_EVENT) addMarket(log);
-      else if (log.topics[0] === MARKET_UPDATE_EVENT) updateMarket(log);
-    };
-
-    ws.onerror = (e) => console.error('ws error', e);
-  }, [routerAddress, subscribe, addMarket, updateMarket]);
 
   useEffect(() => {
     let cancelled = false;
@@ -2533,48 +2629,24 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
     async function bootstrap() {
       try {
         const res = await fetch(SUBGRAPH_URL, {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
+          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({
             query: `
-            {
-              launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc) {
-                id
-                creator {
-                  id
-                }
-                name
-                symbol
-                metadataCID
-                description
-                social1
-                social2
-                social3
-                timestamp
-                migrated
-                migratedAt
-                volumeNative
-                volumeToken
-                buyTxs
-                sellTxs
-                distinctBuyers
-                distinctSellers
-                lastPriceNativePerTokenWad
-                lastUpdatedAt
-                trades {
-                  id
-                  amountIn
-                  amountOut
-                }
-              }
-            }`,
-          }),
+          {
+            active: launchpadTokens(first:30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
+              id creator { id } name symbol metadataCID description social1 social2 social3 timestamp migrated migratedAt
+              volumeNative volumeToken buyTxs sellTxs distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+              trades { id amountIn amountOut }
+            }
+            migrated: launchpadTokens(first:30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
+              id creator { id } name symbol metadataCID description social1 social2 social3 timestamp migrated migratedAt
+              volumeNative volumeToken buyTxs sellTxs distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
+              trades { id amountIn amountOut }
+            }
+          }`
+          })
         });
         const json = await res.json();
-        console.log(json)
-        if (cancelled) return;
-
-        const rawMarkets = json.data?.launchpadTokens ?? [];
+        const rawMarkets = [...(json.data?.active ?? []), ...(json.data?.migrated ?? [])];
 
         const tokens: Token[] = await Promise.all(
           rawMarkets.map(async (m: any) => {
@@ -2592,26 +2664,27 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
             if (createdTimestamp > 1e10) {
               createdTimestamp = Math.floor(createdTimestamp / 1000);
             }
-            const socials = [m.social1,m.social2,m.social3].map(s=>s?(/^https?:\/\//.test(s)?s:`https://${s}`):s)
-            const twitter = socials.find(s=>s?.startsWith("https://x.com")||s?.startsWith("https://twitter.com"))
-            if(twitter){socials.splice(socials.indexOf(twitter),1)}
-            const telegram = socials.find(s=>s?.startsWith("https://t.me"))
-            if(telegram){socials.splice(socials.indexOf(telegram),1)}
-            const discord = socials.find(s=>s?.startsWith("https://discord.gg")||s?.startsWith("https://discord.com"))
-            if(discord){socials.splice(socials.indexOf(discord),1)}
+            const socials = [m.social1, m.social2, m.social3].map(s => s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s)
+            const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"))
+            if (twitter) { socials.splice(socials.indexOf(twitter), 1) }
+            const telegram = socials.find(s => s?.startsWith("https://t.me"))
+            if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
+            const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
+            if (discord) { socials.splice(socials.indexOf(discord), 1) }
             const website = socials[0]
+
             return {
               ...defaultMetrics,
               id: m.id.toLowerCase(),
               tokenAddress: m.id.toLowerCase(),
-              creator: m.creator.id,
+              dev: m.creator.id,
               name: m.name,
               symbol: m.symbol,
               image: meta.image ?? '/discord.svg',
               description: meta.description ?? '',
               twitterHandle: twitter ?? '',
               website: website ?? '',
-              status: 'new',
+              status: m.migrated ? 'graduated' : price * TOTAL_SUPPLY > 12500 ? 'graduating' : 'new',
               created: createdTimestamp,
               price,
               marketCap: price * TOTAL_SUPPLY,
@@ -2644,15 +2717,44 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
   const applyFilters = useCallback((list: Token[], fil: any) => {
     if (!fil) return list;
     return list.filter((t) => {
-      if (fil.priceMin && t.price < +fil.priceMin) return false;
-      if (fil.priceMax && t.price > +fil.priceMax) return false;
-      if (fil.holdersMin && t.holders < +fil.holdersMin) return false;
-      if (fil.holdersMax && t.holders > +fil.holdersMax) return false;
-      if (fil.searchKeywords) {
-        const kw = fil.searchKeywords.toLowerCase().split(',').map((x: string) => x.trim());
-        const hay = `${t.name} ${t.symbol} ${t.description}`.toLowerCase();
-        if (!kw.some((k: string) => hay.includes(k))) return false;
+      if (fil.priceMin !== undefined && fil.priceMin !== '' && t.price < +fil.priceMin) return false;
+      if (fil.priceMax !== undefined && fil.priceMax !== '' && t.price > +fil.priceMax) return false;
+
+      if (fil.marketCapMin !== undefined && fil.marketCapMin !== '' && t.marketCap < +fil.marketCapMin) return false;
+      if (fil.marketCapMax !== undefined && fil.marketCapMax !== '' && t.marketCap > +fil.marketCapMax) return false;
+
+      if (fil.volumeMin !== undefined && fil.volumeMin !== '' && t.volume24h < +fil.volumeMin) return false;
+      if (fil.volumeMax !== undefined && fil.volumeMax !== '' && t.volume24h > +fil.volumeMax) return false;
+
+      if (fil.holdersMin !== undefined && fil.holdersMin !== '' && t.holders < +fil.holdersMin) return false;
+      if (fil.holdersMax !== undefined && fil.holdersMax !== '' && t.holders > +fil.holdersMax) return false;
+
+      if (fil.ageMin !== undefined && fil.ageMin !== '') {
+        const ageHours = (Date.now() / 1000 - t.created) / 3600;
+        if (ageHours < +fil.ageMin) return false;
       }
+      if (fil.ageMax !== undefined && fil.ageMax !== '') {
+        const ageHours = (Date.now() / 1000 - t.created) / 3600;
+        if (ageHours > +fil.ageMax) return false;
+      }
+
+      if (fil.searchKeywords && fil.searchKeywords.trim()) {
+        const keywords = fil.searchKeywords.toLowerCase().split(',').map((x: string) => x.trim()).filter(Boolean);
+        const searchText = `${t.name} ${t.symbol} ${t.description} ${t.tokenAddress}`.toLowerCase();
+        if (!keywords.some((keyword: string) => searchText.includes(keyword))) return false;
+      }
+
+      if (fil.hasTwitter && !t.twitterHandle) return false;
+      if (fil.hasWebsite && !t.website) return false;
+      if (fil.hasTelegram && !t.telegramHandle) return false;
+      if (fil.hasDiscord && !t.discordHandle) return false;
+      if (fil.sniperHoldingMax !== undefined && fil.sniperHoldingMax !== '' && t.sniperHolding > +fil.sniperHoldingMax) return false;
+      if (fil.devHoldingMax !== undefined && fil.devHoldingMax !== '' && t.devHolding > +fil.devHoldingMax) return false;
+      if (fil.insiderHoldingMax !== undefined && fil.insiderHoldingMax !== '' && t.insiderHolding > +fil.insiderHoldingMax) return false;
+      if (fil.top10HoldingMax !== undefined && fil.top10HoldingMax !== '' && t.top10Holding > +fil.top10HoldingMax) return false;
+      if (fil.proTradersMin !== undefined && fil.proTradersMin !== '' && t.proTraders < +fil.proTradersMin) return false;
+      if (fil.kolTradersMin !== undefined && fil.kolTradersMin !== '' && t.kolTraders < +fil.kolTradersMin) return false;
+
       return true;
     });
   }, []);
@@ -2694,7 +2796,6 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
           <h1 className="explorer-app-title">Terminal</h1>
         </div>
         <div className="explorer-header-right">
-          <DisplayDropdown settings={displaySettings} onSettingsChange={setDisplaySettings} />
           <button className="alerts-popup-trigger" onClick={() => setShowAlertsPopup(true)}>
             <Bell size={18} />
           </button>
@@ -2710,9 +2811,8 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
               <path d="M 15 3 C 12.922572 3 11.153936 4.1031436 10.091797 5.7207031 A 1.0001 1.0001 0 0 0 9.7578125 6.0820312 C 9.7292571 6.1334113 9.7125605 6.1900515 9.6855469 6.2421875 C 9.296344 6.1397798 8.9219965 6 8.5 6 C 5.4744232 6 3 8.4744232 3 11.5 C 3 13.614307 4.2415721 15.393735 6 16.308594 L 6 21.832031 A 1.0001 1.0001 0 0 0 6 22.158203 L 6 26 A 1.0001 1.0001 0 0 0 7 27 L 23 27 A 1.0001 1.0001 0 0 0 24 26 L 24 22.167969 A 1.0001 1.0001 0 0 0 24 21.841797 L 24 16.396484 A 1.0001 1.0001 0 0 0 24.314453 16.119141 C 25.901001 15.162328 27 13.483121 27 11.5 C 27 8.4744232 24.525577 6 21.5 6 C 21.050286 6 20.655525 6.1608623 20.238281 6.2636719 C 19.238779 4.3510258 17.304452 3 15 3 z M 15 5 C 16.758645 5 18.218799 6.1321075 18.761719 7.703125 A 1.0001 1.0001 0 0 0 20.105469 8.2929688 C 20.537737 8.1051283 21.005156 8 21.5 8 C 23.444423 8 25 9.5555768 25 11.5 C 25 13.027915 24.025062 14.298882 22.666016 14.78125 A 1.0001 1.0001 0 0 0 22.537109 14.839844 C 22.083853 14.980889 21.600755 15.0333 21.113281 14.978516 A 1.0004637 1.0004637 0 0 0 20.888672 16.966797 C 21.262583 17.008819 21.633549 16.998485 22 16.964844 L 22 21 L 19 21 L 19 20 A 1.0001 1.0001 0 0 0 17.984375 18.986328 A 1.0001 1.0001 0 0 0 17 20 L 17 21 L 13 21 L 13 18 A 1.0001 1.0001 0 0 0 11.984375 16.986328 A 1.0001 1.0001 0 0 0 11 18 L 11 21 L 8 21 L 8 15.724609 A 1.0001 1.0001 0 0 0 7.3339844 14.78125 C 5.9749382 14.298882 5 13.027915 5 11.5 C 5 9.5555768 6.5555768 8 8.5 8 C 8.6977911 8 8.8876373 8.0283871 9.0761719 8.0605469 C 8.9619994 8.7749993 8.9739615 9.5132149 9.1289062 10.242188 A 1.0003803 1.0003803 0 1 0 11.085938 9.8261719 C 10.942494 9.151313 10.98902 8.4619936 11.1875 7.8203125 A 1.0001 1.0001 0 0 0 11.238281 7.703125 C 11.781201 6.1321075 13.241355 5 15 5 z M 8 23 L 11.832031 23 A 1.0001 1.0001 0 0 0 12.158203 23 L 17.832031 23 A 1.0001 1.0001 0 0 0 18.158203 23 L 22 23 L 22 25 L 8 25 L 8 23 z" />
             </svg>
           </button>
-          <button className="launch-token-btn" onClick={() => navigate('/launchpad')}>
-            Launch a Token
-          </button>
+          <DisplayDropdown settings={displaySettings} onSettingsChange={setDisplaySettings} />
+
         </div>
       </div>
 
@@ -2721,122 +2821,137 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
 
         <div className="explorer-columns">
           {renderOrder.map((columnType) => (
-            <div key={columnType} className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}>
-              {columnType === 'new' && (
-                <>
-                  <div className="explorer-column-header">
-                    <div className="explorer-column-title-section">
-                      <h2 className="explorer-column-title">New Pairs</h2>
-                    </div>
-                    <div className="explorer-column-title-right">
-                      <div className="explorer-quickbuy-container">
-                        <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
-                        <input
-                          type="text"
-                          placeholder="0.0"
-                          value={quickAmounts.new}
-                          onChange={(e) => setQuickAmount('new', e.target.value)}
-                          onFocus={handleInputFocus}
-                          className="explorer-quickbuy-input"
-                        />
-                        <img className="quickbuy-monad-icon" src={monadicon} />
-                        <div className="explorer-preset-controls">
-                          {[1, 2, 3].map(p => (
-                            <button key={p} className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`} onClick={() => setActivePreset('new', p)}>
-                              P{p}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <button
-                        className={`column-filter-icon ${appliedFilters && activeFilterTab === 'new' ? 'active' : ''}`}
-                        onClick={() => onOpenFiltersForColumn('new')}
-                        title="filter new pairs"
-                      >
-                        <img className="filter-icon" src={filter} />
-                        {appliedFilters && activeFilterTab === 'new' && <span className="filter-active-dot" />}
-                      </button>
-                    </div>
-                  </div>
+            <div
+              key={columnType}
+              className={`explorer-column ${activeMobileTab === columnType ? 'mobile-active' : ''}`}
+              onMouseEnter={() => handleColumnHover(columnType)}
+              onMouseLeave={handleColumnLeave}
+            >              {columnType === 'new' && (
+              <>
+                <div className="explorer-column-header">
+                  <div className="explorer-column-title-section">
+                    <h2 className="explorer-column-title">New Pairs</h2>
 
-                  <div className="explorer-tokens-list">
-                    {isLoading ? (
-                      Array.from({ length: 14 }).map((_, index) => (
-                        <div key={`skeleton-new-${index}`} className="explorer-token-row loading">
-                          <div className="explorer-token-left">
-                            <div className="explorer-token-image-container">
-                              <div className="explorer-progress-spacer">
-                                <div className="explorer-image-wrapper">
-                                  <img className="explorer-token-image" alt="loading" />
-                                </div>
-                              </div>
-                            </div>
-                            <span className="explorer-contract-address">Loading...</span>
-                          </div>
-                          <div className="explorer-token-details">
-                            <div className="explorer-detail-section">
-                              <div className="explorer-top-row">
-                                <div className="explorer-token-info">
-                                  <h3 className="explorer-token-symbol">LOAD</h3>
-                                  <p className="explorer-token-name">Loading Token</p>
-                                </div>
-                              </div>
-                              <div className="explorer-second-row">
-                                <div className="explorer-stat-item">
-                                  <span className="explorer-stat-value">0</span>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="explorer-holdings-section" />
-                          </div>
-                          <div className="explorer-third-row">
-                            <div className="explorer-market-cap"><span className="mc-label"></span><span className="mc-label"></span></div>
-                            <div className="explorer-actions-section"><button className="explorer-quick-buy-btn">Loading</button></div>
-                          </div>
-                        </div>
-                      ))
-                    ) : newTokens.length ? (
-                      newTokens.map((t) => (
-                        <TokenRow
-                          key={t.id}
-                          token={t}
-                          quickbuyAmount={quickAmounts.new}
-                          onHideToken={hideToken}
-                          onBlacklistToken={handleBlacklistToken}
-                          isLoading={loading.has(t.id)}
-                          hoveredToken={hoveredToken}
-                          hoveredImage={hoveredImage}
-                          onTokenHover={handleTokenHover}
-                          onTokenLeave={handleTokenLeave}
-                          onImageHover={handleImageHover}
-                          onImageLeave={handleImageLeave}
-                          onTokenClick={handleTokenClick}
-                          onQuickBuy={handleQuickBuy}
-                          onCopyToClipboard={copyToClipboard}
-                          displaySettings={displaySettings}
-                          isHidden={hidden.has(t.id)}
-                        />
-                      ))
-                    ) : (
-                      <div className="no-tokens-message">
-                        <img src={empty} className="empty-icon" />
-                        No tokens match the current filters
-                      </div>
-                    )}
                   </div>
-                </>
-              )}
+                  <div className="explorer-column-title-right">
+                    <div className={`column-pause-icon ${pausedColumn === 'new' ? 'visible' : ''}`}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                      </svg>
+                    </div>
+                    <div className="explorer-quickbuy-container">
+                      <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
+                      <input
+                        type="text"
+                        placeholder="0.0"
+                        value={quickAmounts.new}
+                        onChange={(e) => setQuickAmount('new', e.target.value)}
+                        onFocus={handleInputFocus}
+                        className="explorer-quickbuy-input"
+                      />
+                      <img className="quickbuy-monad-icon" src={monadicon} />
+                      <div className="explorer-preset-controls">
+                        {[1, 2, 3].map(p => (
+                          <button key={p} className={`explorer-preset-pill ${activePresets.new === p ? 'active' : ''}`} onClick={() => setActivePreset('new', p)}>
+                            P{p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      className={`column-filter-icon ${appliedFilters && activeFilterTab === 'new' ? 'active' : ''}`}
+                      onClick={() => onOpenFiltersForColumn('new')}
+                      title="filter new pairs"
+                    >
+                      <img className="filter-icon" src={filter} />
+                      {appliedFilters && activeFilterTab === 'new' && <span className="filter-active-dot" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="explorer-tokens-list">
+                  {isLoading ? (
+                    Array.from({ length: 14 }).map((_, index) => (
+                      <div key={`skeleton-new-${index}`} className="explorer-token-row loading">
+                        <div className="explorer-token-left">
+                          <div className="explorer-token-image-container">
+                            <div className="explorer-progress-spacer">
+                              <div className="explorer-image-wrapper">
+                                <img className="explorer-token-image" alt="loading" />
+                              </div>
+                            </div>
+                          </div>
+                          <span className="explorer-contract-address">Loading...</span>
+                        </div>
+                        <div className="explorer-token-details">
+                          <div className="explorer-detail-section">
+                            <div className="explorer-top-row">
+                              <div className="explorer-token-info">
+                                <h3 className="explorer-token-symbol">LOAD</h3>
+                                <p className="explorer-token-name">Loading Token</p>
+                              </div>
+                            </div>
+                            <div className="explorer-second-row">
+                              <div className="explorer-stat-item">
+                                <span className="explorer-stat-value">0</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="explorer-holdings-section" />
+                        </div>
+                        <div className="explorer-third-row">
+                          <div className="explorer-market-cap"><span className="mc-label"></span><span className="mc-label"></span></div>
+                          <div className="explorer-actions-section"><button className="explorer-quick-buy-btn">Loading</button></div>
+                        </div>
+                      </div>
+                    ))
+                  ) : newTokens.length ? (
+                    newTokens.map((t) => (
+                      <TokenRow
+                        key={t.id}
+                        token={t}
+                        quickbuyAmount={quickAmounts.new}
+                        onHideToken={hideToken}
+                        onBlacklistToken={handleBlacklistToken}
+                        isLoading={loading.has(t.id)}
+                        hoveredToken={hoveredToken}
+                        hoveredImage={hoveredImage}
+                        onTokenHover={handleTokenHover}
+                        onTokenLeave={handleTokenLeave}
+                        onImageHover={handleImageHover}
+                        onImageLeave={handleImageLeave}
+                        onTokenClick={handleTokenClick}
+                        onQuickBuy={handleQuickBuy}
+                        onCopyToClipboard={copyToClipboard}
+                        displaySettings={displaySettings}
+                        isHidden={hidden.has(t.id)}
+                      />
+                    ))
+                  ) : (
+                    <div className="no-tokens-message">
+                      <img src={empty} className="empty-icon" />
+                      No tokens match the current filters
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
               {columnType === 'graduating' && (
                 <>
                   <div className="explorer-column-header">
                     <div className="explorer-column-title-section">
                       <h2 className="explorer-column-title">
-                        Graduating Tokens
-                        {appliedFilters && activeFilterTab === 'graduating' && <span className="filtered-count">({graduatingTokens.length})</span>}
+                        Final Stretch
                       </h2>
+
                     </div>
                     <div className="explorer-column-title-right">
+                      <div className={`column-pause-icon ${pausedColumn === 'graduating' ? 'visible' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                        </svg>
+                      </div>
                       <div className="explorer-quickbuy-container">
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input
@@ -2939,10 +3054,15 @@ const handleQuickBuy = useCallback(async (token: Token, amt: string) => {
                     <div className="explorer-column-title-section">
                       <h2 className="explorer-column-title">
                         Graduated
-                        {appliedFilters && activeFilterTab === 'graduated' && <span className="filtered-count">({graduatedTokens.length})</span>}
                       </h2>
+
                     </div>
                     <div className="explorer-column-title-right">
+                      <div className={`column-pause-icon ${pausedColumn === 'graduated' ? 'visible' : ''}`}>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+                        </svg>
+                      </div>
                       <div className="explorer-quickbuy-container">
                         <img className="explorer-quick-buy-search-icon" src={lightning} alt="" />
                         <input

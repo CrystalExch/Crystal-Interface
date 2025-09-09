@@ -4725,8 +4725,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
-
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.15`;
           const query = `
             query {
               account(id: "${address}") {
@@ -5623,7 +5622,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.13`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.2.15`;
 
         const query = `
           query {
@@ -8556,6 +8555,265 @@ function App() {
   }, []);
 
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
+
+  const [terminalToken, setTerminalToken] = useState('0x35dDe8808fC79Aa2Ebb58e906E23A036783B5e99' as `0x${string}`);
+
+  // data loop, reuse to have every single rpc call method in this loop
+  const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
+    queryKey: [
+      'crystal_rpc_terminal_reads',
+      address,
+    ],
+    queryFn: async () => {
+      let gasEstimateCall: any = null;
+      let gasEstimate: bigint = 0n;
+
+      if (address && (amountIn || amountOutSwap)) {
+        try {
+          const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
+
+          const path = activeMarket.path[0] === tokenIn ? activeMarket.path : [...activeMarket.path].reverse();
+
+          let tx: any = null;
+
+          if (tokenIn === eth && tokenOut === weth) {
+            tx = wrapeth(amountIn, weth);
+          } else if (tokenIn === weth && tokenOut === eth) {
+            tx = unwrapeth(amountIn, weth);
+          } else if (tokenIn === eth && tokendict[tokenOut]?.lst && isStake) {
+            tx = stake(tokenOut, address, amountIn);
+          } else if (orderType === 1 || multihop) {
+            const slippageAmount = !switched
+              ? (amountOutSwap * slippage + 5000n) / 10000n
+              : (amountIn * 10000n + slippage / 2n) / slippage;
+
+            if (tokenIn === eth && tokenOut !== eth) {
+              tx = !switched
+                ? swapExactETHForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapETHForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else if (tokenIn !== eth && tokenOut === eth) {
+              tx = !switched
+                ? swapExactTokensForETH(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactETH(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            } else {
+              tx = !switched
+                ? swapExactTokensForTokens(router, amountIn, slippageAmount, path, address, deadline, usedRefAddress)
+                : swapTokensForExactTokens(router, amountOutSwap, slippageAmount, path, address, deadline, usedRefAddress);
+            }
+          } else {
+            const amount = !switched ? amountIn : amountOutSwap;
+            const limitPrice = tokenIn === activeMarket.quoteAddress
+              ? (lowestAsk * 10000n + slippage / 2n) / slippage
+              : (highestBid * slippage + 5000n) / 10000n;
+
+            tx = _swap(
+              router,
+              tokenIn === eth
+                ? (!switched ? amountIn : BigInt((amountIn * 10000n + slippage / 2n) / slippage))
+                : BigInt(0),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(0) : activeMarket.path.at(1),
+              activeMarket.path[0] === tokenIn ? activeMarket.path.at(1) : activeMarket.path.at(0),
+              !switched,
+              BigInt(0),
+              amount,
+              limitPrice,
+              deadline,
+              usedRefAddress
+            );
+          }
+
+          if (tx) {
+            gasEstimateCall = {
+              jsonrpc: '2.0',
+              id: 1,
+              method: 'eth_estimateGas',
+              params: [{
+                from: address as `0x${string}`,
+                to: tx.target,
+                data: tx.data,
+                value: tx.value ? `0x${tx.value.toString(16)}` : '0x'
+              }]
+            };
+          }
+        } catch (e) {
+          gasEstimateCall = null;
+        }
+      }
+
+      const mainGroup: any = [
+        {
+          disabled: !address,
+          to: router,
+          abi: CrystalRouterAbi,
+          functionName: 'getVirtualReserves',
+          args: [
+            terminalToken,
+          ]
+        },
+        {
+          disabled: !address,
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [
+            address as `0x${string}`,
+            [eth, terminalToken]
+          ]
+        },
+      ];
+
+      const groups: any = {
+        mainGroup
+      };
+
+      const callData: any = []
+      const callMapping: any = []
+
+      const groupResults: any = {};
+      Object.keys(groups).forEach(groupKey => {
+        groupResults[groupKey] = [];
+      });
+
+      Object.entries(groups).forEach(([groupKey, group]: [string, any]) => {
+        group.forEach((call: any, callIndex: number) => {
+          if (!call.disabled) {
+            try {
+              callData.push({
+                target: call.to || call.address,
+                callData: encodeFunctionData({
+                  abi: call.abi,
+                  functionName: call.functionName,
+                  args: call.args
+                })
+              });
+
+              callMapping.push({
+                groupKey,
+                callIndex
+              });
+            } catch (e: any) {
+              while (groupResults[groupKey].length < callIndex) {
+                groupResults[groupKey].push(null);
+              }
+              groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
+            }
+          }
+          else {
+            while (groupResults[groupKey].length < callIndex) {
+              groupResults[groupKey].push(null);
+            }
+            groupResults[groupKey][callIndex] = { error: "param missing", result: undefined, status: "failure" };
+          }
+        });
+      });
+
+      const multicallData: any = encodeFunctionData({
+        abi: [{
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'tryBlockAndAggregate',
+        args: [false, callData]
+      })
+
+      const response: any = await fetch(HTTP_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify([{
+          jsonrpc: '2.0',
+          id: 1,
+          method: 'eth_call',
+          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
+        }, ...(gasEstimateCall ? [gasEstimateCall] : [])])
+      })
+
+      const json: any = await response.json()
+
+
+      const returnData: any = decodeFunctionResult({
+        abi: [{
+          inputs: [
+            { name: 'requireSuccess', type: 'bool' },
+            {
+              components: [
+                { name: 'target', type: 'address' },
+                { name: 'callData', type: 'bytes' }
+              ], name: 'calls', type: 'tuple[]'
+            }
+          ],
+          name: 'tryBlockAndAggregate',
+          outputs: [
+            { name: 'blockNumber', type: 'uint256' },
+            { name: 'blockHash', type: 'bytes32' },
+            {
+              components: [
+                { name: 'success', type: 'bool' },
+                { name: 'returnData', type: 'bytes' }
+              ], name: 'returnData', type: 'tuple[]'
+            }
+          ],
+          stateMutability: 'view',
+          type: 'function'
+        }],
+        functionName: 'tryBlockAndAggregate',
+        data: json[0].result
+      })
+
+      blockNumber.current = returnData?.[0]
+      returnData?.[2]?.forEach((data: any, responseIndex: number) => {
+        const { groupKey, callIndex } = callMapping[responseIndex] || {};
+        if (groupKey === undefined) return;
+        const originalCall = groups[groupKey][callIndex];
+        while (groupResults[groupKey].length <= callIndex) {
+          groupResults[groupKey].push(null);
+        }
+        if (data?.success == true) {
+          try {
+            const decodedResult = decodeFunctionResult({
+              abi: originalCall.abi,
+              functionName: originalCall.functionName,
+              data: data?.returnData
+            });
+            groupResults[groupKey][callIndex] = { result: decodedResult, status: "success" };
+          } catch (e: any) {
+            groupResults[groupKey][callIndex] = { error: e.message, result: undefined, status: "failure" };
+          }
+        }
+        else {
+          groupResults[groupKey][callIndex] = { error: 'call reverted', result: undefined, status: "failure" };
+        }
+      });
+
+      if (json?.[1]?.result) {
+        gasEstimate = BigInt(json[1].result)
+      }
+
+      return { readContractData: groupResults, gasEstimate: gasEstimate }
+    },
+    enabled: !!activeMarket && !!tokendict && !!markets,
+    refetchInterval: ['board', 'explorer', 'meme'].includes(location.pathname.slice(1)) ? 800 : 5000,
+    gcTime: 0,
+  })
 
   //popup modals
   const Modals = (
@@ -20430,6 +20688,9 @@ function App() {
                 }}
                 setChain={handleSetChain}
                 setpopup={setpopup}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
               />
             }
           />
@@ -20445,45 +20706,12 @@ function App() {
                 }}
                 setChain={handleSetChain}
                 setpopup={setpopup}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
               />
             }
           />
-          <Route path="/earn/vaults/:vaultAddress" element={
-            <LPVaults
-              setpopup={setpopup}
-              onSelectToken={(token) => {
-                setSelectedToken(token);
-                setTimeout(() => setSelectedToken(null), 100);
-              }}
-              setOnSelectTokenCallback={setOnSelectTokenCallback}
-              tokendict={tokendict}
-              tradesByMarket={tradesByMarket}
-              tokenBalances={tokenBalances}
-              currentRoute={location.pathname}
-              onRouteChange={(route) => navigate(route)}
-              connected={connected}
-              account={{
-                connected: connected,
-                address: address,
-                chainId: userchain,
-              }}
-              setselectedVault={setselectedVault}
-              isVaultDepositSigning={isVaultDepositSigning}
-              setIsVaultDepositSigning={setIsVaultDepositSigning}
-              isVaultWithdrawSigning={isVaultWithdrawSigning}
-              setIsVaultWithdrawSigning={setIsVaultWithdrawSigning}
-              sendUserOperationAsync={sendUserOperationAsync}
-              setChain={handleSetChain}
-              address={address}
-              refetch={refetch}
-              activechain={activechain}
-              crystalVaultsAddress={crystalVaults}
-              router={router}
-              formatUSDDisplay={formatUSDDisplay}
-              calculateUSDValue={calculateUSDValue}
-              getMarket={getMarket}
-            />
-          } />
           <Route
             path="/launchpad"
             element={
@@ -20533,6 +20761,9 @@ function App() {
               usdc={usdc}
               wethticker={wethticker}
               ethticker={ethticker}
+              terminalQueryData={terminalQueryData}
+              terminalToken={terminalToken}
+              setTerminalToken={setTerminalToken}
             />
           } />
           <Route
@@ -20544,6 +20775,9 @@ function App() {
                 activeFilterTab={activeExplorerFilterTab}
                 onOpenFiltersForColumn={handleOpenFiltersForColumn}
                 sendUserOperationAsync={sendUserOperationAsync}
+                terminalQueryData={terminalQueryData}
+                terminalToken={terminalToken}
+                setTerminalToken={setTerminalToken}
               />
             }
           />

@@ -23,11 +23,9 @@ import camera from '../../assets/camera.svg';
 import filter from '../../assets/filter.svg';
 import empty from '../../assets/empty.svg';
 import discord from '../../assets/discord1.svg';
-import squares from '../../assets/squares.svg';
 import closebutton from '../../assets/close_button.png';
 import './WidgetExplorer.css';
 
-// Token interface (same as TokenExplorer)
 export interface Token {
   id: string;
   tokenAddress: string;
@@ -371,7 +369,7 @@ const TokenRow = React.memo<TokenRowProps>(({
   });
   const [showPreview, setShowPreview] = useState<boolean>(false);
   const [positionCalculated, setPositionCalculated] = useState<boolean>(false);
-  
+
   const bondingPercentage = useMemo(() => {
     return calculateBondingPercentage(token.marketCap);
   }, [token.marketCap]);
@@ -504,7 +502,7 @@ const TokenRow = React.memo<TokenRowProps>(({
           <EyeOff size={16} />
         </button>
       </Tooltip>
-      
+
       <div
         className={`widget-bonding-amount-display ${showBonding ? 'widget-visible' : ''}`}
         style={{ color: getBondingColor(bondingPercentage) }}
@@ -584,7 +582,7 @@ const TokenRow = React.memo<TokenRowProps>(({
             <div className="widget-explorer-token-info">
               <h3 className="widget-explorer-token-symbol">{token.symbol}</h3>
               <div className="widget-explorer-token-name-container">
-                <p 
+                <p
                   className="widget-explorer-token-name"
                   onClick={(e) => {
                     e.stopPropagation();
@@ -679,7 +677,7 @@ const TokenRow = React.memo<TokenRowProps>(({
                 <Search size={14} />
               </button>
             </div>
-            
+
             <div className="widget-explorer-additional-data">
               <Tooltip content="Holders">
                 <div className="widget-explorer-stat-item">
@@ -696,7 +694,7 @@ const TokenRow = React.memo<TokenRowProps>(({
                   <span className="widget-explorer-stat-value">{totalTraders.toLocaleString()}</span>
                 </div>
               </Tooltip>
-              
+
               <Tooltip content="Pro Traders">
                 <div className="widget-explorer-stat-item">
                   <svg
@@ -980,7 +978,7 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
   const [isResizing, setIsResizing] = useState<boolean>(false);
   const [resizeDirection, setResizeDirection] = useState<string>('');
   const [resizeStart, setResizeStart] = useState<ResizeStart>({ x: 0, y: 0, width: 0, height: 0 });
-  
+
   // TokenExplorer state
   const [{ tokensByStatus, hidden, loading }, dispatch] = useReducer(reducer, initialState);
   const [activeMobileTab, setActiveMobileTab] = useState<Token['status']>('new');
@@ -1017,16 +1015,16 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
   // Social handlers
   const copyToClipboard = useCallback(async (text: string) => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-    
+
     try {
       await navigator.clipboard.writeText(text);
-      
+
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: 'Address Copied',
           subtitle: `${text.slice(0, 6)}...${text.slice(-4)} copied to clipboard`
         });
-        
+
         setTimeout(() => {
           updatePopup(txId, {
             title: 'Address Copied',
@@ -1039,13 +1037,13 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
       }
     } catch (err) {
       console.error('Copy failed', err);
-      
+
       if (showLoadingPopup && updatePopup) {
         showLoadingPopup(txId, {
           title: 'Copy Failed',
           subtitle: 'Unable to copy address to clipboard'
         });
-        
+
         setTimeout(() => {
           updatePopup(txId, {
             title: 'Copy Failed',
@@ -1342,7 +1340,7 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
     if (isOpen) {
       bootstrap();
     }
-    
+
     return () => {
       cancelled = true;
       if (wsRef.current) wsRef.current.close();
@@ -1357,7 +1355,7 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
     const txId = `quickbuy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
     dispatch({ type: 'SET_LOADING', id: token.id, loading: true });
-    
+
     try {
       if (showLoadingPopup) {
         showLoadingPopup(txId, {
@@ -1430,11 +1428,11 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
 
     const target = e.target as HTMLElement;
     if (target.tagName === 'BUTTON' ||
-        target.tagName === 'IMG' ||
-        target.closest('button') ||
-        target.closest('.widget-close-btn') ||
-        target.closest('.widget-explorer-content') ||
-        target.closest('.widget-resize-handle')) {
+      target.tagName === 'IMG' ||
+      target.closest('button') ||
+      target.closest('.widget-close-btn') ||
+      target.closest('.widget-explorer-content') ||
+      target.closest('.widget-resize-handle')) {
       return;
     }
 
@@ -1490,9 +1488,9 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
   const handleResizeStart = useCallback((e: React.MouseEvent, direction: string) => {
     e.preventDefault();
     e.stopPropagation();
-    
+
     if (!widgetRef.current) return;
-    
+
     const rect = widgetRef.current.getBoundingClientRect();
     setResizeStart({
       x: e.clientX,
@@ -1504,73 +1502,73 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
     setIsResizing(true);
   }, []);
 
-const handleResizeMove = useCallback((e: MouseEvent) => {
-  if (!isResizing || !widgetRef.current) return;
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !widgetRef.current) return;
 
-  const deltaX = e.clientX - resizeStart.x;
-  const deltaY = e.clientY - resizeStart.y;
+    const deltaX = e.clientX - resizeStart.x;
+    const deltaY = e.clientY - resizeStart.y;
 
-  let newWidth = resizeStart.width;
-  let newHeight = resizeStart.height;
-  let newX = position.x;
-  let newY = position.y;
+    let newWidth = resizeStart.width;
+    let newHeight = resizeStart.height;
+    let newX = position.x;
+    let newY = position.y;
 
-  if (isSnapped) {
-    // Snapped mode - only allow width adjustment, no position changes
-    if (resizeDirection.includes('right')) {
-      newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width + deltaX));
-    } else if (resizeDirection.includes('left')) {
-      newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width - deltaX));
-      // Don't change position when snapped
-    }
-  } else {
-    // Free-flow mode - allow both width and height adjustment
-    if (resizeDirection.includes('right')) {
-      newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width + deltaX));
-    } else if (resizeDirection.includes('left')) {
-      const proposedWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width - deltaX));
-      const widthDiff = proposedWidth - resizeStart.width;
-      
-      // Only update if the new position would be valid
-      const proposedX = position.x - widthDiff;
-      if (proposedX >= 0) {
-        newWidth = proposedWidth;
-        newX = proposedX;
+    if (isSnapped) {
+      // Snapped mode - only allow width adjustment, no position changes
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width + deltaX));
+      } else if (resizeDirection.includes('left')) {
+        newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width - deltaX));
+        // Don't change position when snapped
+      }
+    } else {
+      // Free-flow mode - allow both width and height adjustment
+      if (resizeDirection.includes('right')) {
+        newWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width + deltaX));
+      } else if (resizeDirection.includes('left')) {
+        const proposedWidth = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, resizeStart.width - deltaX));
+        const widthDiff = proposedWidth - resizeStart.width;
+
+        // Only update if the new position would be valid
+        const proposedX = position.x - widthDiff;
+        if (proposedX >= 0) {
+          newWidth = proposedWidth;
+          newX = proposedX;
+        }
+      }
+
+      if (resizeDirection.includes('bottom')) {
+        newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, resizeStart.height + deltaY));
+      } else if (resizeDirection.includes('top')) {
+        const proposedHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, resizeStart.height - deltaY));
+        const heightDiff = proposedHeight - resizeStart.height;
+
+        // Only update if the new position would be valid
+        const proposedY = position.y - heightDiff;
+        if (proposedY >= 0) {
+          newHeight = proposedHeight;
+          newY = proposedY;
+        }
       }
     }
 
-    if (resizeDirection.includes('bottom')) {
-      newHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, resizeStart.height + deltaY));
-    } else if (resizeDirection.includes('top')) {
-      const proposedHeight = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, resizeStart.height - deltaY));
-      const heightDiff = proposedHeight - resizeStart.height;
-      
-      // Only update if the new position would be valid
-      const proposedY = position.y - heightDiff;
-      if (proposedY >= 0) {
-        newHeight = proposedHeight;
-        newY = proposedY;
-      }
+    // Ensure the widget doesn't go off-screen
+    const maxX = Math.max(0, window.innerWidth - newWidth);
+    const maxY = Math.max(0, window.innerHeight - newHeight);
+
+    newX = Math.max(0, Math.min(newX, maxX));
+    newY = Math.max(0, Math.min(newY, maxY));
+
+    setWidgetDimensions({ width: newWidth, height: newHeight });
+
+    if (!isSnapped) {
+      setPosition({ x: newX, y: newY });
     }
-  }
 
-  // Ensure the widget doesn't go off-screen
-  const maxX = Math.max(0, window.innerWidth - newWidth);
-  const maxY = Math.max(0, window.innerHeight - newHeight);
-  
-  newX = Math.max(0, Math.min(newX, maxX));
-  newY = Math.max(0, Math.min(newY, maxY));
-
-  setWidgetDimensions({ width: newWidth, height: newHeight });
-  
-  if (!isSnapped) {
-    setPosition({ x: newX, y: newY });
-  }
-
-  if (onWidgetResize) {
-    onWidgetResize(newWidth);
-  }
-}, [isResizing, resizeStart, resizeDirection, position, isSnapped, onWidgetResize]);
+    if (onWidgetResize) {
+      onWidgetResize(newWidth);
+    }
+  }, [isResizing, resizeStart, resizeDirection, position, isSnapped, onWidgetResize]);
   const handleResizeEnd = useCallback(() => {
     setIsResizing(false);
     setResizeDirection('');
@@ -1681,7 +1679,7 @@ const handleResizeMove = useCallback((e: MouseEvent) => {
     graduated: graduatedTokens.length,
   }), [newTokens.length, graduatingTokens.length, graduatedTokens.length]);
 
-const getWidgetStyle = () => {
+  const getWidgetStyle = () => {
     if (isSnapped && snapSide !== 'none') {
       return {
         position: 'fixed' as const,
@@ -1713,50 +1711,50 @@ const getWidgetStyle = () => {
       className={`widget-explorer ${isDragging ? 'dragging' : ''} ${isSnapped ? 'snapped' : ''} ${isSnapped ? `snapped-${currentSnapSide}` : ''}`}
       style={getWidgetStyle()}
     >
-        {!isSnapped && (
-    <>
-      <div 
-        className="resize-handle resize-handle-top"
-        onMouseDown={(e) => handleResizeStart(e, 'top')}
-      />
-      <div 
-        className="resize-handle resize-handle-right"
-        onMouseDown={(e) => handleResizeStart(e, 'right')}
-      />
-      <div 
-        className="resize-handle resize-handle-bottom"
-        onMouseDown={(e) => handleResizeStart(e, 'bottom')}
-      />
-      <div 
-        className="resize-handle resize-handle-left"
-        onMouseDown={(e) => handleResizeStart(e, 'left')}
-      />
-      <div 
-        className="resize-handle resize-handle-top-right"
-        onMouseDown={(e) => handleResizeStart(e, 'top-right')}
-      />
-      <div 
-        className="resize-handle resize-handle-bottom-right"
-        onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
-      />
-      <div 
-        className="resize-handle resize-handle-top-left"
-        onMouseDown={(e) => handleResizeStart(e, 'top-left')}
-      />
-      <div 
-        className="resize-handle resize-handle-bottom-left"
-        onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
-      />
-    </>
-  )}
+      {!isSnapped && (
+        <>
+          <div
+            className="resize-handle resize-handle-top"
+            onMouseDown={(e) => handleResizeStart(e, 'top')}
+          />
+          <div
+            className="resize-handle resize-handle-right"
+            onMouseDown={(e) => handleResizeStart(e, 'right')}
+          />
+          <div
+            className="resize-handle resize-handle-bottom"
+            onMouseDown={(e) => handleResizeStart(e, 'bottom')}
+          />
+          <div
+            className="resize-handle resize-handle-left"
+            onMouseDown={(e) => handleResizeStart(e, 'left')}
+          />
+          <div
+            className="resize-handle resize-handle-top-right"
+            onMouseDown={(e) => handleResizeStart(e, 'top-right')}
+          />
+          <div
+            className="resize-handle resize-handle-bottom-right"
+            onMouseDown={(e) => handleResizeStart(e, 'bottom-right')}
+          />
+          <div
+            className="resize-handle resize-handle-top-left"
+            onMouseDown={(e) => handleResizeStart(e, 'top-left')}
+          />
+          <div
+            className="resize-handle resize-handle-bottom-left"
+            onMouseDown={(e) => handleResizeStart(e, 'bottom-left')}
+          />
+        </>
+      )}
 
-  {/* Resize handle for snapped mode */}
-  {isSnapped && (
-    <div 
-      className={`resize-handle resize-handle-snap ${snapSide === 'left' ? 'snap-right' : 'snap-left'}`}
-      onMouseDown={(e) => handleResizeStart(e, snapSide === 'left' ? 'right' : 'left')}
-    />
-  )}
+      {/* Resize handle for snapped mode */}
+      {isSnapped && (
+        <div
+          className={`resize-handle resize-handle-snap ${snapSide === 'left' ? 'snap-right' : 'snap-left'}`}
+          onMouseDown={(e) => handleResizeStart(e, snapSide === 'left' ? 'right' : 'left')}
+        />
+      )}
       {/* Header */}
       <div className="widget-explorer-header" onMouseDown={handleMouseDown}>
         <div className="widget-explorer-header-left">
@@ -1766,7 +1764,7 @@ const getWidgetStyle = () => {
           </div> */}
           <h1 className="widget-explorer-title">Terminal</h1>
         </div>
-        
+
         <div className="widget-explorer-header-right">
           {isSnapped && (
             <button className="widget-explorer-unsnap-btn" onClick={handleUnsnap}>
