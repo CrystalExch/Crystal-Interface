@@ -691,7 +691,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
   };
-const handleSellPosition = async (position: any, amount: string) => {
+const handleSellPosition = async (position: any, monAmount: string) => {
   if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
     setpopup?.(4);
     return;
@@ -709,18 +709,19 @@ const handleSellPosition = async (position: any, amount: string) => {
     if (showLoadingPopup) {
       showLoadingPopup(txId, {
         title: 'Sending transaction...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
-        amount: amount,
-        amountUnit: position.symbol
+        subtitle: `Selling for ${monAmount} MON`,
+        amount: monAmount,
+        amountUnit: 'MON'
       });
     }
 
-    const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
+    const monAmountWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
+    const maxTokensWei = BigInt(Math.round(position.remainingTokens * 1e18));
 
     if (updatePopup) {
       updatePopup(txId, {
         title: 'Confirming sell...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
+        subtitle: `Selling for ${monAmount} MON`,
         variant: 'info'
       });
     }
@@ -730,19 +731,17 @@ const handleSellPosition = async (position: any, amount: string) => {
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
         functionName: "sell",
-        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+        args: [false, position.tokenId as `0x${string}`, maxTokensWei, monAmountWei],
       }),
       value: 0n,
     };
 
     const sellOp = await sendUserOperationAsync({ uo: sellUo });
 
-    const soldTokens = Number(amountTokenWei) / 1e18;
-    const expectedMON = soldTokens * (position.lastPrice || 0);
     if (updatePopup) {
       updatePopup(txId, {
-        title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-        subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+        title: `Received ${Number(monAmount).toFixed(4)} MON`,
+        subtitle: `Sold ${position.symbol} tokens`,
         variant: 'success',
         isLoading: false
       });
@@ -784,10 +783,10 @@ const handleSellPosition = async (position: any, amount: string) => {
         });
       }
 
-      const pct = BigInt(parseInt(value.replace('%', ''), 10));
-      const amountTokenWei = pct === 100n
-        ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
-        : ((rpcData?.rawBalance || 0n) * pct) / 100n;
+     const pct = BigInt(parseInt(value.replace('%', ''), 10));
+const amountTokenWei = pct === 100n
+  ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
+  : ((rpcData?.rawBalance || 0n) * pct) / 100n;
 
       if (amountTokenWei <= 0n) {
         throw new Error(`Invalid sell amount`);
@@ -801,16 +800,15 @@ const handleSellPosition = async (position: any, amount: string) => {
         });
       }
 
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "sell",
-          args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
-
+   const sellUo = {
+  target: routerAddress as `0x${string}`,
+  data: encodeFunctionData({
+    abi: CrystalRouterAbi,
+    functionName: "sell",
+    args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
+  }),
+  value: 0n,
+};
       const sellOp = await sendUserOperationAsync({ uo: sellUo });
 
       const soldTokens = Number(amountTokenWei) / 1e18;
@@ -1522,8 +1520,19 @@ const handleSellPosition = async (position: any, amount: string) => {
           });
         }
 
-        const amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+let amountTokenWei: bigint;
+let monAmountWei: bigint;
+let isExactInput: boolean;
 
+if (inputCurrency === "TOKEN") {
+  amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+  isExactInput = true;
+  monAmountWei = 0n;
+} else {
+  monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+  amountTokenWei = BigInt(Math.round(tokenBalance * 1e18)); 
+  isExactInput = false;
+}
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming sell...',
@@ -1532,15 +1541,15 @@ const handleSellPosition = async (position: any, amount: string) => {
           });
         }
 
-        const sellUo = {
-          target: routerAddress as `0x${string}`,
-          data: encodeFunctionData({
-            abi: CrystalRouterAbi,
-            functionName: "sell",
-            args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
-          }),
-          value: 0n,
-        };
+    const sellUo = {
+  target: routerAddress as `0x${string}`,
+  data: encodeFunctionData({
+    abi: CrystalRouterAbi,
+    functionName: "sell",
+    args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
+  }),
+  value: 0n,
+};
 
         const sellOp = await sendUserOperationAsync({ uo: sellUo });
 

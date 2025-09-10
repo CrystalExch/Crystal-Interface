@@ -52,7 +52,7 @@ interface MemeOrderCenterProps {
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
-  onSellPosition?: (position: Position, amount: string) => void;
+  onSellPosition?: (position: Position, monAmount: string) => void;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -116,6 +116,7 @@ interface SellPopupProps {
   onSellConfirm: () => void;
   onMaxClick: () => void;
   fmt: (v: number, d?: number) => string;
+   currentPrice: number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -128,7 +129,8 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellSliderChange,
   onSellConfirm,
   onMaxClick,
-  fmt
+  fmt,
+   currentPrice 
 }) => {
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -163,12 +165,12 @@ const SellPopup: React.FC<SellPopupProps> = ({
             </div>
 
             <div className="meme-trade-input-wrapper">
-             <input
-  type="number"
-  value={sellAmount || "0"}  
-  onChange={onSellAmountChange}
-  className="meme-trade-input"
-/>
+              <input
+                type="number"
+                value={sellAmount || "0"}
+                onChange={onSellAmountChange}
+                className="meme-trade-input"
+              />
               <div
                 className="meme-trade-currency"
                 style={{
@@ -220,25 +222,25 @@ const SellPopup: React.FC<SellPopupProps> = ({
           </div>
 
           <button
-  className="meme-trade-action-button sell"
-  onClick={async () => {
-    setIsLoading(true);
-    try {
-      await onSellConfirm();
-    } catch (error) {
-      console.error('Sell transaction failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }}
-  disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
->
-  {isLoading ? (
-    <div className="meme-button-spinner"></div>
-  ) : (
-    `Instantly Sell ${selectedPosition.symbol}`
-  )}
-</button>
+            className="meme-trade-action-button sell"
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                await onSellConfirm();
+              } catch (error) {
+                console.error('Sell transaction failed:', error);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
+          >
+            {isLoading ? (
+              <div className="meme-button-spinner"></div>
+            ) : (
+              `Instantly Sell $${selectedPosition.symbol}`
+            )}
+          </button>
         </div>
       </div>
     </div>
@@ -543,7 +545,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 const handleSellConfirm = async () => {
   if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
     try {
-      await onSellPosition(selectedPosition, sellAmount);
+      const monAmount = parseFloat(sellAmount);
+
+      await onSellPosition(selectedPosition, monAmount.toString());
+
       setShowSellPopup(false);
       setSelectedPosition(null);
       setSellAmount("");
@@ -553,7 +558,6 @@ const handleSellConfirm = async () => {
     }
   }
 };
-
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
@@ -579,6 +583,7 @@ const handleSellConfirm = async () => {
 
   const renderContent = () => {
     switch (activeSection) {
+      // Update the positions rendering section in your renderContent function
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
@@ -601,31 +606,35 @@ const handleSellConfirm = async () => {
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
+                // Add alternating row class based on index
+                const rowClass = index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd';
+
                 return (
-                  <div key={p.tokenId} className="meme-oc-item">
-                 <div className="meme-oc-cell">
-  <div className="meme-wallet-info">
-    <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
-      {tokenImageUrl && (
-        <img
-          src={tokenImageUrl}
-          alt={p.symbol}
-          className="meme-token-icon"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-      )}
-      <span 
-        className="meme-wallet-address meme-clickable-token"
-        onClick={() => window.location.href = `/meme/${p.tokenId}`}
-        style={{ cursor: 'pointer' }}
-      >
-        {tokenShort}
-      </span>
-    </div>
-  </div>
-</div>
+                  <div key={p.tokenId} className={`meme-oc-item ${rowClass}`}>
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {tokenImageUrl && (
+                            <img
+                              src={tokenImageUrl}
+                              alt={p.symbol}
+                              className="meme-token-icon"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span
+                            className="meme-wallet-address meme-clickable-token"
+                            onClick={() => window.location.href = `/meme/${p.tokenId}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {tokenShort}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {/* Rest of your existing cell content... */}
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
@@ -639,7 +648,6 @@ const handleSellConfirm = async () => {
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
                           {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
-
                           <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
                         </div>
                         <span className="meme-token-amount">{fmt(p.soldTokens)}  {p.symbol || ''}</span>
@@ -669,9 +677,7 @@ const handleSellConfirm = async () => {
                         <div className="meme-pnl-info">
                           <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
                             {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}         ({p.pnlNative >= 0 ? '+' : ''}{p.spentNative > 0 ? ((p.pnlNative / p.spentNative) * 100).toFixed(1) : '0.0'}%)
-
                           </span>
-
                         </div>
                       </div>
                     </div>
@@ -938,18 +944,19 @@ const handleSellConfirm = async () => {
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-      <SellPopup
-        showSellPopup={showSellPopup}
-        selectedPosition={selectedPosition}
-        sellAmount={sellAmount}
-        sellSliderPercent={sellSliderPercent}
-        onClose={handleSellClose}
-        onSellAmountChange={handleSellAmountChange}
-        onSellSliderChange={handleSellSliderChange}
-        onSellConfirm={handleSellConfirm}
-        onMaxClick={handleSellMaxClick}
-        fmt={fmt}
-      />    </div>
+    <SellPopup
+  showSellPopup={showSellPopup}
+  selectedPosition={selectedPosition}
+  sellAmount={sellAmount}
+  sellSliderPercent={sellSliderPercent}
+  onClose={handleSellClose}
+  onSellAmountChange={handleSellAmountChange}
+  onSellSliderChange={handleSellSliderChange}
+  onSellConfirm={handleSellConfirm}
+  onMaxClick={handleSellMaxClick}
+  fmt={fmt}
+  currentPrice={currentPrice} 
+/> </div>
   );
 };
 

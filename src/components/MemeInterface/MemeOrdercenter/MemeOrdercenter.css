@@ -171,9 +171,6 @@
   height: 40px;
 }
 
-.meme-oc-item:hover {
-  background-color: rgba(179, 184, 249, 0.02);
-}
 
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-oc-item {
@@ -1317,4 +1314,12 @@
 
 .meme-clickable-token:hover {
     text-decoration: underline;
+}
+
+.meme-oc-item-even {
+  background-color: rgba(6, 6, 6, 1); 
+}
+
+.meme-oc-item-odd {
+  background-color: rgba(12, 12, 14, 1); 
 }
