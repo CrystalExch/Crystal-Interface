@@ -2479,7 +2479,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               <div className="meme-portfolio-value holding">
                 <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
 
-                {formatNumberWithCommas(userStats.balance, 1)}
+                {formatNumberWithCommas(userStats.balance * currentPrice, 3)}
               </div>
             </div>
             <div className="meme-portfolio-stat pnl">
