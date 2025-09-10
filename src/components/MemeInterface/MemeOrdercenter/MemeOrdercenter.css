@@ -261,6 +261,16 @@
   gap: 8px;
 }
 
+.meme-wallet-address-span {
+  color: rgba(221, 221, 224, 0.533);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.3px;
+}
+
 .meme-wallet-tags,
 .meme-token-tags {
   display: flex;
@@ -1105,7 +1115,7 @@
 .alerts-popup .meme-trade-currency {
   position: absolute;
   top: 50%;
-  padding-left: 5px;
+  padding-left: 1px;
   transform: translateY(-50%);
   color: rgba(255, 255, 255, 0.5);
   font-size: .95rem;

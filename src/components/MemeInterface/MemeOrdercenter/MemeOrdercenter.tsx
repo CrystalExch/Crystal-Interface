@@ -824,11 +824,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Balance</div>
               <div
                 className="meme-oc-header-cell clickable"
-                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 Bought (Avg Buy)
-                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
               </div>
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
@@ -966,9 +964,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <div className="meme-oc-section-content" data-section="devTokens">
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
-              <div className="meme-oc-header-cell">Price (MON)</div>
               <div className="meme-oc-header-cell">Market Cap (MON)</div>
-              <div className="meme-oc-header-cell">Launched</div>
               <div className="meme-oc-header-cell">Migraton Status</div>
             </div>
 
@@ -992,7 +988,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                             />
                           )}
                           <span className="meme-wallet-address" title={t.name || t.symbol || t.id}>
-                            {(t.symbol || '').toUpperCase()} {t.name ? `· ${t.name}` : ''}
+                            {(t.symbol || '').toUpperCase()}
+                                                  <span className="meme-wallet-address-span">{timeAgo(t.timestamp)}</span>
+
                           </span>
                         </div>
                         <div className="meme-wallet-address-sub">
@@ -1001,22 +999,12 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
 
-                    <div className="meme-oc-cell">
-                      <div className="meme-ordercenter-info">
-                        <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
-                        <span className="meme-usd-amount">{price > 0 ? price.toFixed(6) : '—'}</span>
-                      </div>
-                    </div>
-
+ 
                     <div className="meme-oc-cell">
                       <div className="meme-ordercenter-info">
                         <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
                         <span className="meme-usd-amount">{mc > 0 ? fmt(mc, 2) : '—'}</span>
                       </div>
-                    </div>
-
-                    <div className="meme-oc-cell">
-                      <span>{timeAgo(t.timestamp)}</span>
                     </div>
 
                     <div className="meme-oc-cell">
