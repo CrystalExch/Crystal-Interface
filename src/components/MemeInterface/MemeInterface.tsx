@@ -290,6 +290,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [sliderPercent, setSliderPercent] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [settingsExpanded, setSettingsExpanded] = useState(false);
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
   const [slippageValue, _setSlippageValue] = useState("20");
   const [priorityFee, _setPriorityFee] = useState("0.01");
   const [orderCenterHeight, setOrderCenterHeight] = useState<number>(() => {
@@ -547,6 +549,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const handleAdvancedOrderRemove = (orderId: string) => {
     setAdvancedOrders(prev => prev.filter(order => order.id !== orderId));
   };
+
+  const positionPopup = useCallback((percent: number) => {
+    const input = sliderRef.current;
+    const popup = popupRef.current;
+    if (!input || !popup) return;
+
+    const container = input.parentElement as HTMLElement;
+    if (!container) return;
+
+    const containerRect = container.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    const inputLeft = inputRect.left - containerRect.left;
+
+    const thumbW = 10;
+    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+
+    popup.style.left = `${x}px`;
+    popup.style.transform = 'translateX(-50%)';
+  }, []);
 
   const handleAdvancedOrderUpdate = (orderId: string, field: string, value: string) => {
     setAdvancedOrders(prev => prev.map(order =>
@@ -955,10 +976,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           cur.open = prevClose;
           if (cur.high < cur.open) cur.high = cur.open;
-          if (cur.low  > cur.open) cur.low  = cur.open;
+          if (cur.low > cur.open) cur.low = cur.open;
 
           cur.high = Math.max(cur.high, lastPrice);
-          cur.low = Math.min(cur.low,  lastPrice);
+          cur.low = Math.min(cur.low, lastPrice);
           cur.close = lastPrice;
           cur.volume = (cur.volume || 0) + (volNative || 0);
 
@@ -1781,7 +1802,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     if (activeOrderType === "Limit" && !limitPrice) return true;
     return false;
   };
-  
+
   const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
@@ -2106,6 +2127,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             {sliderMode === "slider" && (
               <div className="meme-slider-container meme-slider-mode">
                 <input
+                  ref={sliderRef}
                   type="range"
                   className={`meme-balance-amount-slider ${isDragging ? "dragging" : ""}`}
                   min="0"
@@ -2117,8 +2139,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     setSliderPercent(percent);
                     const newAmount = (1000 * percent) / 100;
                     setTradeAmount(newAmount.toString());
+                    positionPopup(percent);
                   }}
-                  onMouseDown={() => setIsDragging(true)}
+                  onMouseDown={() => {
+                    setIsDragging(true);
+                    positionPopup(sliderPercent);
+                  }}
                   onMouseUp={() => setIsDragging(false)}
                   style={{
                     background: `linear-gradient(to right, ${activeTradeType === 'buy' ? 'rgb(67, 254, 154)' : 'rgb(235, 112, 112)'
@@ -2126,10 +2152,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   }}
                 />
                 <div
+                  ref={popupRef}
                   className={`meme-slider-percentage-popup ${isDragging ? "visible" : ""}`}
-                  style={{
-                    left: `${Math.max(0, Math.min(100, sliderPercent))}%`
-                  }}
                 >
                   {sliderPercent}%
                 </div>
@@ -2143,6 +2167,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         setSliderPercent(markPercent);
                         const newAmount = (1000 * markPercent) / 100;
                         setTradeAmount(newAmount.toString());
+                        positionPopup(markPercent);
                       }}
                     >
                       {markPercent}%
