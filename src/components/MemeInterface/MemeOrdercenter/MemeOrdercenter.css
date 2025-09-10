@@ -55,11 +55,11 @@
   outline: none;
   font-family: inherit;
   letter-spacing: -0.3px;
+  font-weight: 300;
 }
 
 .meme-oc-type:hover {
-  opacity: 0.7;
-  color: #aaaecf;
+  opacity: 0.9;
 }
 
 .meme-oc-type.active {
@@ -203,9 +203,10 @@
 }
 
 .meme-oc-header-cell {
-  color: #ffffff73;
+  color: #e0e3f473;
   font-size: 0.75rem;
   letter-spacing: -0.3px;
+  font-weight: 300;
   text-align: left;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -923,6 +924,7 @@
 .meme-avg-price {
   font-size: 11px;
   color: #9ca3af;
+  padding-left: 5px;
 }
 
 .meme-oc-section-content[data-section="holders"] .meme-oc-header-cell {
@@ -1353,6 +1355,15 @@
 }
 
 .meme-remaining-container{
+  display: flex;
+  align-items: center;
+}
+
+.meme-avg-buy-info{
+  display: flex;
+  align-items: center;
+}
+.meme-avg-sell-info{
   display: flex;
   align-items: center;
 }

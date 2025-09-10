@@ -188,23 +188,22 @@ const SellPopup: React.FC<SellPopupProps> = ({
     const popup = popupRef.current;
     if (!input || !popup) return;
 
-    const container = input.parentElement as HTMLElement; // .meme-slider-container
+    const container = input.parentElement as HTMLElement;
     const containerRect = container.getBoundingClientRect();
     const inputRect = input.getBoundingClientRect();
     const inputLeft = inputRect.left - containerRect.left;
 
-    const thumbW = 10; // matches your CSS
+    const thumbW = 10;
     const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
 
     popup.style.left = `${x}px`;
     popup.style.transform = 'translateX(-50%)';
   };
 
-  // renamed local handler to avoid collision with the prop
   const handleSliderChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
-    positionPopup(value);       // keep popup centered on the thumb
-    onSellSliderChange(e);      // delegate to parent logic you already have
+    positionPopup(value);
+    onSellSliderChange(e);
   };
 
   const handleMarkClick = (markPercent: number) => {
@@ -644,19 +643,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellSliderPercent(0);
   };
 
-    const handleSellConfirm = async () => {
-      if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
-        try {
-            await onSellPosition(selectedPosition, sellAmount);
-          setShowSellPopup(false);
-          setSelectedPosition(null);
-          setSellAmount("");
-          setSellSliderPercent(0);
-        } catch (error) {
-          console.error('Sell transaction failed:', error);
-        }
+  const handleSellConfirm = async () => {
+    if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+      try {
+        await onSellPosition(selectedPosition, sellAmount);
+        setShowSellPopup(false);
+        setSelectedPosition(null);
+        setSellAmount("");
+        setSellSliderPercent(0);
+      } catch (error) {
+        console.error('Sell transaction failed:', error);
       }
-    };
+    }
+  };
 
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
@@ -845,30 +844,40 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
                   </div>
                   <div className="meme-oc-cell">
-                    <span className="meme-mon-balance">{fmt(row.balance, 3)}</span>
+                    <img src={monadicon} className="meme-oc-monad-icon" alt="MONAD" />
+                    <span className="meme-mon-balance">{fmt(row.balance * currentPrice, 3)}</span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
+                      <div className="meme-avg-buy-info">
+                        {amountMode === 'MON' && <img src={monadicon} className="meme-oc-monad-icon" alt="MONAD" />}
+                        <span className="meme-usd-amount buy">{fmtAmount(row.valueBought, amountMode, monUsdPrice)}</span>
+                      </div>
                       <span className="meme-token-amount">{fmt(row.bought)}</span>
-                      <span className="meme-usd-amount buy">{fmtAmount(row.valueBought, amountMode, monUsdPrice)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueBought / (row.bought || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
+                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueBought * 1000000000 * monUsdPrice) / (row.bought || 1)).toFixed(2))} />)
                     </span>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-trade-info">
+                      <div className="meme-avg-sell-info">
+                        {amountMode === 'MON' && <img src={monadicon} className="meme-oc-monad-icon" alt="MONAD" />}
+                        <span className="meme-usd-amount sell">{fmtAmount(row.valueSold, amountMode, monUsdPrice)}</span>
+                      </div>
                       <span className="meme-token-amount">{fmt(row.sold)}</span>
-                      <span className="meme-usd-amount sell">{fmtAmount(row.valueSold, amountMode, monUsdPrice)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      <FormattedNumberDisplay formatted={formatSubscript((row.valueSold / (row.sold || 1)).toFixed(7))} /> {amountMode === 'USD' ? 'USD' : 'MON'}
+                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueSold * 1000000000 * monUsdPrice) / (row.sold || 1)).toFixed(2))} />)
                     </span>
                   </div>
                   <div className="meme-oc-cell">
-                    <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
-                      {row.pnl >= 0 ? '+' : ''}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
-                    </span>
+                    <div className="meme-ordercenter-info">
+                      {amountMode === 'MON' && <img src={monadicon} className="meme-ordercenter-monad-icon" alt="MONAD" />}
+                      <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
+                        {row.pnl >= 0 ? '+' : '-'}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
+                      </span>
+                    </div>
                   </div>
                   <div className="meme-oc-cell">
                     <div className="meme-remaining-info">
@@ -989,7 +998,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                           )}
                           <span className="meme-wallet-address" title={t.name || t.symbol || t.id}>
                             {(t.symbol || '').toUpperCase()}
-                                                  <span className="meme-wallet-address-span">{timeAgo(t.timestamp)}</span>
+                            <span className="meme-wallet-address-span">{timeAgo(t.timestamp)}</span>
 
                           </span>
                         </div>
@@ -998,8 +1007,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-address-sub">
-                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
-                        </div>
+                        {t.id.slice(0, 6)}…{t.id.slice(-4)}
+                      </div>
                     </div>
                     <div className="meme-oc-cell">
                       <div className="meme-ordercenter-info">
