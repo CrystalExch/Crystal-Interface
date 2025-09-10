@@ -116,7 +116,7 @@ interface SellPopupProps {
   onSellConfirm: () => void;
   onMaxClick: () => void;
   fmt: (v: number, d?: number) => string;
-   currentPrice: number;
+  currentPrice: number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -129,8 +129,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellSliderChange,
   onSellConfirm,
   onMaxClick,
-  fmt,
-   currentPrice 
+  currentPrice,
 }) => {
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -222,25 +221,25 @@ const SellPopup: React.FC<SellPopupProps> = ({
           </div>
 
           <button
-  className="meme-trade-action-button sell"
-  onClick={async () => {
-    setIsLoading(true);
-    try {
-      await onSellConfirm();
-    } catch (error) {
-      console.error('Sell transaction failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }}
-  disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
->
-  {isLoading ? (
-    <div className="meme-button-spinner"></div>
-  ) : (
-    `Instantly Sell ${selectedPosition.symbol}`
-  )}
-</button>
+            className="meme-trade-action-button sell"
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                await onSellConfirm();
+              } catch (error) {
+                console.error('Sell transaction failed:', error);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
+          >
+            {isLoading ? (
+              <div className="meme-button-spinner"></div>
+            ) : (
+              `Instantly Sell ${selectedPosition.symbol}`
+            )}
+          </button>
         </div>
       </div>
     </div>
@@ -544,19 +543,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellSliderPercent(0);
   };
 
-const handleSellConfirm = async () => {
-  if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
-    try {
-      await onSellPosition(selectedPosition, sellAmount);
-      setShowSellPopup(false);
-      setSelectedPosition(null);
-      setSellAmount("");
-      setSellSliderPercent(0);
-    } catch (error) {
-      console.error('Sell transaction failed:', error);
+  const handleSellConfirm = async () => {
+    if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+      try {
+        await onSellPosition(selectedPosition, sellAmount);
+        setShowSellPopup(false);
+        setSelectedPosition(null);
+        setSellAmount("");
+        setSellSliderPercent(0);
+      } catch (error) {
+        console.error('Sell transaction failed:', error);
+      }
     }
-  }
-};
+  };
 
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
@@ -602,37 +601,35 @@ const handleSellConfirm = async () => {
               <div className="meme-oc-header-cell">Actions</div>
             </div>
             <div className="meme-oc-items">
-              {(positions?.length ? positions : []).map((p, index) => {
+              {(positions?.length ? positions : []).map((p, _) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
-                // Add alternating row class based on index
-                const rowClass = index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd';
 
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
-                 <div className="meme-oc-cell">
-  <div className="meme-wallet-info">
-    <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
-      {tokenImageUrl && (
-        <img
-          src={tokenImageUrl}
-          alt={p.symbol}
-          className="meme-token-icon"
-          onError={(e) => {
-            e.currentTarget.style.display = 'none';
-          }}
-        />
-      )}
-      <span 
-        className="meme-wallet-address meme-clickable-token"
-        onClick={() => window.location.href = `/meme/${p.tokenId}`}
-        style={{ cursor: 'pointer' }}
-      >
-        {tokenShort}
-      </span>
-    </div>
-  </div>
-</div>
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {tokenImageUrl && (
+                            <img
+                              src={tokenImageUrl}
+                              alt={p.symbol}
+                              className="meme-token-icon"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                              }}
+                            />
+                          )}
+                          <span
+                            className="meme-wallet-address meme-clickable-token"
+                            onClick={() => window.location.href = `/meme/${p.tokenId}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {tokenShort}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
@@ -953,7 +950,9 @@ const handleSellConfirm = async () => {
         onSellConfirm={handleSellConfirm}
         onMaxClick={handleSellMaxClick}
         fmt={fmt}
-      />    </div>
+        currentPrice={currentPrice}
+      />
+    </div>
   );
 };
 
