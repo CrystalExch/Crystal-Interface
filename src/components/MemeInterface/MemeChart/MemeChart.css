@@ -145,3 +145,9 @@ body:has(.markets-dropdown-content.visible) .meme-chartwrapper .advanced-chart-c
   --tv-color-popup-element-text: #aaaecf;
   --tv-color-popup-element-background-active: #aaaecf;
 }
+
+.meme-marketmode-toggle { display:flex; gap:.5rem; align-items:center; }
+.meme-marketmode-toggle::after {
+  content: 'Units: thousands (K) when Mkt Cap';
+  font-size: 12px; opacity: .7; margin-left: .5rem;
+}

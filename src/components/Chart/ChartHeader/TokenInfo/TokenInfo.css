@@ -939,6 +939,20 @@
   height: 14px;
 }
 
+.meme-interface-share-btn svg {
+  width: 16px;
+  height: 16px;
+  color: rgba(237, 236, 252, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.meme-interface-share-btn svg:hover {
+  color: #d8dbf5;
+
+}
+
 .meme-interface-token-header-right {
   display: flex;
   flex-direction: column;
