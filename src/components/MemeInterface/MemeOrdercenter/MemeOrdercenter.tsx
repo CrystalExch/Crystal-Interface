@@ -116,7 +116,7 @@ interface SellPopupProps {
   onSellConfirm: () => void;
   onMaxClick: () => void;
   fmt: (v: number, d?: number) => string;
-   currentPrice: number;
+  currentPrice: number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -130,8 +130,54 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellConfirm,
   onMaxClick,
   fmt,
-   currentPrice 
+  currentPrice
 }) => {
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const setPopupRef = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      if (popupRef.current !== el) {
+        (popupRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+      }
+      if (sliderRef.current) {
+        requestAnimationFrame(() => positionPopup(sellSliderPercent));
+      }
+    }
+  }, [sellSliderPercent]);
+  const setSliderRef = useCallback((el: HTMLInputElement | null) => {
+    (sliderRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+    if (el && popupRef.current) requestAnimationFrame(() => positionPopup(sellSliderPercent));
+  }, [sellSliderPercent]);
+
+  const positionPopup = (percent: number) => {
+    const input = sliderRef.current;
+    const popup = popupRef.current;
+    if (!input || !popup) return;
+
+    const container = input.parentElement as HTMLElement; // .meme-slider-container
+    const containerRect = container.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    const inputLeft = inputRect.left - containerRect.left;
+
+    const thumbW = 10; // matches your CSS
+    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+
+    popup.style.left = `${x}px`;
+    popup.style.transform = 'translateX(-50%)';
+  };
+
+  // renamed local handler to avoid collision with the prop
+  const handleSliderChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    positionPopup(value);       // keep popup centered on the thumb
+    onSellSliderChange(e);      // delegate to parent logic you already have
+  };
+
+  const handleMarkClick = (markPercent: number) => {
+    positionPopup(markPercent);
+    onSellSliderChange({ target: { value: String(markPercent) } } as React.ChangeEvent<HTMLInputElement>);
+  };
+
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -183,27 +229,31 @@ const SellPopup: React.FC<SellPopupProps> = ({
             <div className="meme-balance-slider-wrapper">
               <div className="meme-slider-container meme-slider-mode">
                 <input
+                  ref={setSliderRef}
                   type="range"
                   className={`meme-balance-amount-slider ${sliderDragging ? "dragging" : ""}`}
                   min="0"
                   max="100"
                   step="1"
                   value={sellSliderPercent}
-                  onChange={onSellSliderChange}
-                  onMouseDown={() => setSliderDragging(true)}
+                  onChange={handleSliderChangeLocal}
+                  onMouseDown={() => {
+                    setSliderDragging(true);
+                    positionPopup(sellSliderPercent); // snap immediately when grabbing
+                  }}
                   onMouseUp={() => setSliderDragging(false)}
                   style={{
                     background: `linear-gradient(to right, rgb(235, 112, 112) ${sellSliderPercent}%, rgb(28, 28, 31) ${sellSliderPercent}%)`,
                   }}
                 />
+
                 <div
+                  ref={setPopupRef}
                   className={`meme-slider-percentage-popup ${sliderDragging ? "visible" : ""}`}
-                  style={{
-                    left: `calc(${Math.max(0, Math.min(100, sellSliderPercent))}% - 15px)`
-                  }}
                 >
                   {sellSliderPercent}%
                 </div>
+
                 <div className="meme-balance-slider-marks">
                   {[0, 25, 50, 75, 100].map((markPercent) => (
                     <span
@@ -211,7 +261,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                       className="meme-balance-slider-mark sell"
                       data-active={sellSliderPercent >= markPercent}
                       data-percentage={markPercent}
-                      onClick={() => onSellSliderChange({ target: { value: markPercent.toString() } } as React.ChangeEvent<HTMLInputElement>)}
+                      onClick={() => handleMarkClick(markPercent)}
                     >
                       {markPercent}%
                     </span>
@@ -219,6 +269,8 @@ const SellPopup: React.FC<SellPopupProps> = ({
                 </div>
               </div>
             </div>
+
+
           </div>
 
           <button
@@ -542,22 +594,22 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellSliderPercent(0);
   };
 
-const handleSellConfirm = async () => {
-  if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
-    try {
-      const monAmount = parseFloat(sellAmount);
+  const handleSellConfirm = async () => {
+    if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+      try {
+        const monAmount = parseFloat(sellAmount);
 
-      await onSellPosition(selectedPosition, monAmount.toString());
+        await onSellPosition(selectedPosition, monAmount.toString());
 
-      setShowSellPopup(false);
-      setSelectedPosition(null);
-      setSellAmount("");
-      setSellSliderPercent(0);
-    } catch (error) {
-      console.error('Sell transaction failed:', error);
+        setShowSellPopup(false);
+        setSelectedPosition(null);
+        setSellAmount("");
+        setSellSliderPercent(0);
+      } catch (error) {
+        console.error('Sell transaction failed:', error);
+      }
     }
-  }
-};
+  };
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
     setSellSliderPercent(percent);
@@ -913,9 +965,9 @@ const handleSellConfirm = async () => {
           </>
         </div>
 
-       {onToggleWidget && (
+        {onToggleWidget && (
           <div className="meme-oc-right-controls">
-           
+
             <button
               onClick={onToggleWidget}
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
@@ -923,7 +975,7 @@ const handleSellConfirm = async () => {
             >
               {windowWidth > 768 && <span>{isWidgetOpen ? 'Quick Buy' : 'Quick Buy'}</span>}
             </button>
-              <button
+            <button
               onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
               className="meme-oc-currency-toggle"
               title={`Switch to ${amountMode === 'MON' ? 'USD' : 'MON'} display`}
@@ -950,19 +1002,19 @@ const handleSellConfirm = async () => {
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-    <SellPopup
-  showSellPopup={showSellPopup}
-  selectedPosition={selectedPosition}
-  sellAmount={sellAmount}
-  sellSliderPercent={sellSliderPercent}
-  onClose={handleSellClose}
-  onSellAmountChange={handleSellAmountChange}
-  onSellSliderChange={handleSellSliderChange}
-  onSellConfirm={handleSellConfirm}
-  onMaxClick={handleSellMaxClick}
-  fmt={fmt}
-  currentPrice={currentPrice} 
-/> </div>
+      <SellPopup
+        showSellPopup={showSellPopup}
+        selectedPosition={selectedPosition}
+        sellAmount={sellAmount}
+        sellSliderPercent={sellSliderPercent}
+        onClose={handleSellClose}
+        onSellAmountChange={handleSellAmountChange}
+        onSellSliderChange={handleSellSliderChange}
+        onSellConfirm={handleSellConfirm}
+        onMaxClick={handleSellMaxClick}
+        fmt={fmt}
+        currentPrice={currentPrice}
+      /> </div>
   );
 };
 
