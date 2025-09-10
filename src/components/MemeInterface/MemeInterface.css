@@ -1309,10 +1309,8 @@
 }
 
 .meme-balance-max {
-    background-color: #6e324051;
     color: rgb(235, 112, 112);
-    font-size: 0.7rem;
-    padding: 0 .25rem;
+    font-size: 0.8rem;
     border-radius: 3px;
 }
 
