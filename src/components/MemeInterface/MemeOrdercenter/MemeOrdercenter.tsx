@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 
 import { mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
 
+import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
+
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
 import switchicon from "../../../assets/switch.svg";
@@ -9,7 +11,6 @@ import closebutton from "../../../assets/close_button.png";
 import walleticon from '../../../assets/wallet_icon.png';
 
 import './MemeOrderCenter.css';
-import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
 
 interface LiveHolder {
   address: string;
@@ -37,6 +38,7 @@ interface Position {
   pnlNative: number;
   lastPrice?: number;
 }
+
 interface MemeOrderCenterProps {
   orderCenterHeight?: number;
   isVertDragging?: boolean;
@@ -48,11 +50,22 @@ interface MemeOrderCenterProps {
   onToggleWidget?: () => void;
   holders?: LiveHolder[];
   positions?: Position[];
+  devTokens?: DevToken[];
   page?: number;
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
   onSellPosition?: (position: Position, monAmount: string) => void;
+}
+
+interface DevToken {
+  id: string;
+  symbol: string;
+  name: string;
+  imageUrl: string;
+  price: number;
+  marketCap: number;
+  timestamp: number;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -61,6 +74,26 @@ const fmt = (v: number, d = 3) => {
   if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
   if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
+};
+
+const timeAgo = (tsSec?: number) => {
+  if (!tsSec) return '—';
+  const diffMs = Date.now() - tsSec * 1000;
+  if (diffMs < 0) return 'just now';
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  const week = Math.floor(day / 7);
+  if (week < 5) return `${week}w ago`;
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  const yr = Math.floor(day / 365);
+  return `${yr}y ago`;
 };
 
 const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
@@ -257,6 +290,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   onToggleWidget,
   holders: liveHolders = [],
   positions = [],
+  devTokens = [],
   page = 0,
   pageSize = 100,
   currentPrice = 0,
@@ -344,12 +378,24 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     }))
   );
 
+  const devTokensToShow: DevToken[] = (devTokens && devTokens.length > 0)
+    ? devTokens
+    : mockDevTokens.map(mt => ({
+      id: mt.id,
+      symbol: mt.symbol,
+      name: mt.name,
+      imageUrl: mt.imageUrl,
+      price: mt.price,
+      marketCap: mt.marketCap,
+      timestamp: mt.timestamp
+    }));
+
   const availableTabs = [
     { key: 'positions', label: `Positions (${positions.length})` },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: 'Top Traders' },
-    { key: 'devTokens', label: `Dev Tokens (${mockDevTokens.length})` }
+    { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` }
   ];
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -581,7 +627,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const renderContent = () => {
     switch (activeSection) {
-      // Update the positions rendering section in your renderContent function
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
@@ -602,7 +647,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               {(positions?.length ? positions : []).map((p, _) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
-                const rowClass = index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd';
 
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
@@ -860,6 +904,79 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
           </div>
         );
+      case 'devTokens':
+        return (
+          <div className="meme-oc-section-content" data-section="devTokens">
+            <div className="meme-oc-header">
+              <div className="meme-oc-header-cell">Token</div>
+              <div className="meme-oc-header-cell">Price (MON)</div>
+              <div className="meme-oc-header-cell">Market Cap (MON)</div>
+              <div className="meme-oc-header-cell">Launched</div>
+              <div className="meme-oc-header-cell">Action</div>
+            </div>
+
+            <div className="meme-oc-items">
+              {devTokensToShow.length === 0 ? (
+                <div className="meme-oc-empty">No tokens</div>
+              ) : devTokensToShow.map((t) => {
+                const price = Number(t.price || 0);
+                const mc = Number(t.marketCap || 0);
+                return (
+                  <div key={t.id} className="meme-oc-item">
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {t.imageUrl && (
+                            <img
+                              src={t.imageUrl}
+                              alt={t.symbol || t.name || t.id}
+                              className="meme-token-icon"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="meme-wallet-address" title={t.name || t.symbol || t.id}>
+                            {(t.symbol || '').toUpperCase()} {t.name ? `· ${t.name}` : ''}
+                          </span>
+                        </div>
+                        <div className="meme-wallet-address-sub">
+                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="meme-oc-cell">
+                      <div className="meme-ordercenter-info">
+                        <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+                        <span className="meme-usd-amount">{price > 0 ? price.toFixed(6) : '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="meme-oc-cell">
+                      <div className="meme-ordercenter-info">
+                        <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+                        <span className="meme-usd-amount">{mc > 0 ? fmt(mc, 2) : '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="meme-oc-cell">
+                      <span>{timeAgo(t.timestamp)}</span>
+                    </div>
+
+                    <div className="meme-oc-cell">
+                      <button
+                        className="meme-action-btn"
+                        onClick={() => { window.location.href = `/meme/${t.id}`; }}
+                        title="Open token"
+                      >
+                        Open
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -910,9 +1027,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           </>
         </div>
 
-       {onToggleWidget && (
+        {onToggleWidget && (
           <div className="meme-oc-right-controls">
-           
+
             <button
               onClick={onToggleWidget}
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
@@ -920,7 +1037,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             >
               {windowWidth > 768 && <span>{isWidgetOpen ? 'Quick Buy' : 'Quick Buy'}</span>}
             </button>
-              <button
+            <button
               onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
               className="meme-oc-currency-toggle"
               title={`Switch to ${amountMode === 'MON' ? 'USD' : 'MON'} display`}
