@@ -52,7 +52,7 @@ interface MemeOrderCenterProps {
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
-  onSellPosition?: (position: Position, amount: string) => void;
+  onSellPosition?: (position: Position, monAmount: string) => void;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -116,6 +116,7 @@ interface SellPopupProps {
   onSellConfirm: () => void;
   onMaxClick: () => void;
   fmt: (v: number, d?: number) => string;
+   currentPrice: number;
 }
 
 const SellPopup: React.FC<SellPopupProps> = ({
@@ -128,7 +129,8 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellSliderChange,
   onSellConfirm,
   onMaxClick,
-  fmt
+  fmt,
+   currentPrice 
 }) => {
   const [sliderDragging, setSliderDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -220,25 +222,25 @@ const SellPopup: React.FC<SellPopupProps> = ({
           </div>
 
           <button
-            className="meme-trade-action-button sell"
-            onClick={async () => {
-              setIsLoading(true);
-              try {
-                await onSellConfirm();
-              } catch (error) {
-                console.error('Sell transaction failed:', error);
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
-          >
-            {isLoading ? (
-              <div className="meme-button-spinner"></div>
-            ) : (
-              `Instantly Sell ${selectedPosition.symbol}`
-            )}
-          </button>
+  className="meme-trade-action-button sell"
+  onClick={async () => {
+    setIsLoading(true);
+    try {
+      await onSellConfirm();
+    } catch (error) {
+      console.error('Sell transaction failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }}
+  disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
+>
+  {isLoading ? (
+    <div className="meme-button-spinner"></div>
+  ) : (
+    `Instantly Sell ${selectedPosition.symbol}`
+  )}
+</button>
         </div>
       </div>
     </div>
@@ -542,19 +544,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     setSellSliderPercent(0);
   };
 
-  const handleSellConfirm = async () => {
-    if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
-      try {
-        await onSellPosition(selectedPosition, sellAmount);
-        setShowSellPopup(false);
-        setSelectedPosition(null);
-        setSellAmount("");
-        setSellSliderPercent(0);
-      } catch (error) {
-        console.error('Sell transaction failed:', error);
-      }
+const handleSellConfirm = async () => {
+  if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+    try {
+      await onSellPosition(selectedPosition, sellAmount);
+      setShowSellPopup(false);
+      setSelectedPosition(null);
+      setSellAmount("");
+      setSellSliderPercent(0);
+    } catch (error) {
+      console.error('Sell transaction failed:', error);
     }
-  };
+  }
+};
 
   const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const percent = parseInt(e.target.value);
@@ -580,6 +582,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
   const renderContent = () => {
     switch (activeSection) {
+      // Update the positions rendering section in your renderContent function
       case 'positions':
         return (
           <div className="meme-oc-section-content" data-section="positions">
@@ -602,31 +605,34 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
+                // Add alternating row class based on index
+                const rowClass = index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd';
+
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
-                    <div className="meme-oc-cell">
-                      <div className="meme-wallet-info">
-                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
-                          {tokenImageUrl && (
-                            <img
-                              src={tokenImageUrl}
-                              alt={p.symbol}
-                              className="meme-token-icon"
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <span
-                            className="meme-wallet-address meme-clickable-token"
-                            onClick={() => window.location.href = `/meme/${p.tokenId}`}
-                            style={{ cursor: 'pointer' }}
-                          >
-                            {tokenShort}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
+                 <div className="meme-oc-cell">
+  <div className="meme-wallet-info">
+    <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+      {tokenImageUrl && (
+        <img
+          src={tokenImageUrl}
+          alt={p.symbol}
+          className="meme-token-icon"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      )}
+      <span 
+        className="meme-wallet-address meme-clickable-token"
+        onClick={() => window.location.href = `/meme/${p.tokenId}`}
+        style={{ cursor: 'pointer' }}
+      >
+        {tokenShort}
+      </span>
+    </div>
+  </div>
+</div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
@@ -640,7 +646,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
                           {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
-
                           <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
                         </div>
                         <span className="meme-token-amount">{fmt(p.soldTokens)}  {p.symbol || ''}</span>
@@ -670,9 +675,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         <div className="meme-pnl-info">
                           <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
                             {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}         ({p.pnlNative >= 0 ? '+' : ''}{p.spentNative > 0 ? ((p.pnlNative / p.spentNative) * 100).toFixed(1) : '0.0'}%)
-
                           </span>
-
                         </div>
                       </div>
                     </div>
@@ -950,8 +953,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
         onSellConfirm={handleSellConfirm}
         onMaxClick={handleSellMaxClick}
         fmt={fmt}
-      />    
-    </div>
+      />    </div>
   );
 };
 
