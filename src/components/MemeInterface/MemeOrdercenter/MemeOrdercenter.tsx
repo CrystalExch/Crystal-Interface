@@ -603,24 +603,29 @@ const handleSellConfirm = async () => {
                 const tokenImageUrl = p.imageUrl || null;
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
-                    <div className="meme-oc-cell">
-                      <div className="meme-wallet-info">
-                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
-                          {tokenImageUrl && (
-                            <img
-                              src={tokenImageUrl}
-                              alt={p.symbol}
-                              className="meme-token-icon"
-
-                              onError={(e) => {
-                                e.currentTarget.style.display = 'none';
-                              }}
-                            />
-                          )}
-                          <span className="meme-wallet-address">{tokenShort}</span>
-                        </div>
-                      </div>
-                    </div>
+                 <div className="meme-oc-cell">
+  <div className="meme-wallet-info">
+    <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+      {tokenImageUrl && (
+        <img
+          src={tokenImageUrl}
+          alt={p.symbol}
+          className="meme-token-icon"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+      )}
+      <span 
+        className="meme-wallet-address meme-clickable-token"
+        onClick={() => window.location.href = `/meme/${p.tokenId}`}
+        style={{ cursor: 'pointer' }}
+      >
+        {tokenShort}
+      </span>
+    </div>
+  </div>
+</div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">

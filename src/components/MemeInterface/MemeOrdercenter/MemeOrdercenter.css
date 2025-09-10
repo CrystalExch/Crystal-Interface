@@ -1310,3 +1310,11 @@
   cursor: not-allowed;
   transform: none;
 }
+
+.meme-clickable-token {
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.meme-clickable-token:hover {
+    text-decoration: underline;
+}
