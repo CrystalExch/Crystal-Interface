@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { encodeFunctionData } from 'viem';
 
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi.ts';
@@ -27,8 +27,6 @@ interface LaunchpadProps {
 }
 
 const ROUTER_ADDRESS = settings.chainConfig[10143].launchpadRouter.toLowerCase();
-const TOKEN_CREATED_TOPIC = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
-
 const UPLOADER_URL = 'https://launchpad-api.bhealthyfences.workers.dev/';
 
 async function uploadToR2(
@@ -153,7 +151,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'createToken',
-            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram],
+            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram, ""],
           }),
         },
       });

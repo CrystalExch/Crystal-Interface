@@ -115,7 +115,7 @@ interface MemeInterfaceProps {
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
 const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.0';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.1';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const PAGE_SIZE = 100;
 
@@ -199,6 +199,18 @@ const DEV_TOKENS_QUERY = `
     }
   }
 `;
+
+const RESOLUTION_SECS: Record<string, number> = {
+  "1m": 60,
+  "5m": 300,
+  "15m": 900,
+  "1h": 3600,
+  "4h": 14400,
+  "1d": 86400,
+};
+
+const toSeriesKey = (sym: string, interval: string) =>
+  sym + "MON" + (interval === "1d" ? "1D" : interval === "4h" ? "240" : interval === "1h" ? "60" : interval.slice(0, -1));
 
 const fmt = (v: number, d = 6) => {
   if (v === 0) return "0";
@@ -901,6 +913,60 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
+
+  const pushRealtimeTick = useCallback(
+    (lastPrice: number, volNative: number) => {
+      if (!lastPrice || lastPrice <= 0) return;
+
+      const resSecs = RESOLUTION_SECS[selectedInterval] ?? 60;
+      const now = Date.now();
+      const bucketMs = Math.floor(now / (resSecs * 1000)) * resSecs * 1000;
+
+      const seriesKey = toSeriesKey(token.symbol, selectedInterval);
+      const cb = realtimeCallbackRef.current?.[seriesKey];
+      if (typeof cb === "function") {
+        cb({
+          time: bucketMs,
+          open: lastPrice,
+          high: lastPrice,
+          low: lastPrice,
+          close: lastPrice,
+          volume: volNative,
+        });
+      }
+
+      setChartData((prev: any) => {
+        if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
+        const [bars, key, flag] = prev;
+
+        let updated = Array.isArray(bars) ? [...bars] : [];
+        const last = updated[updated.length - 1];
+
+        if (!last || typeof last.time !== "number" || last.time < bucketMs) {
+          updated.push({
+            time: bucketMs,
+            open: lastPrice,
+            high: lastPrice,
+            low: lastPrice,
+            close: lastPrice,
+            volume: volNative,
+          });
+        } else {
+          const cur = { ...last };
+          cur.high = Math.max(cur.high, lastPrice);
+          cur.low = Math.min(cur.low, lastPrice);
+          cur.close = lastPrice;
+          cur.volume = (cur.volume || 0) + (volNative || 0);
+          updated[updated.length - 1] = cur;
+        }
+
+        if (updated.length > 1200) updated = updated.slice(updated.length - 1200);
+
+        return [updated, key, flag];
+      });
+    },
+    [selectedInterval, token.symbol]
+  );
 
   useEffect(() => {
     if (!realtimeCallbackRef.current || !trades.length) return;
