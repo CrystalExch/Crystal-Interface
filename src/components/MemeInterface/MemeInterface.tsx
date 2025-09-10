@@ -233,9 +233,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   refetch,
   isBlurred = false,
   forceRefreshAllWallets,
-  terminalQueryData,
-  terminalToken,
-  setTerminalToken,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -697,31 +694,30 @@ const handleSellPosition = async (position: any, monAmount: string) => {
     return;
   }
 
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    setChain?.();
-    return;
-  }
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain?.();
+      return;
+    }
 
-  const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
   try {
     if (showLoadingPopup) {
       showLoadingPopup(txId, {
         title: 'Sending transaction...',
-        subtitle: `Selling for ${monAmount} MON`,
-        amount: monAmount,
-        amountUnit: 'MON'
+        subtitle: `Selling ${amount} ${position.symbol}`,
+        amount: amount,
+        amountUnit: position.symbol
       });
     }
 
-    const monAmountWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
-    const maxTokensWei = BigInt(Math.round(position.remainingTokens * 1e18));
+    const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
 
     if (updatePopup) {
       updatePopup(txId, {
         title: 'Confirming sell...',
-        subtitle: `Selling for ${monAmount} MON`,
+        subtitle: `Selling ${amount} ${position.symbol}`,
         variant: 'info'
       });
     }
@@ -731,34 +727,37 @@ const handleSellPosition = async (position: any, monAmount: string) => {
       data: encodeFunctionData({
         abi: CrystalRouterAbi,
         functionName: "sell",
-        args: [false, position.tokenId as `0x${string}`, maxTokensWei, monAmountWei],
+        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
       }),
       value: 0n,
     };
 
-    const sellOp = await sendUserOperationAsync({ uo: sellUo });
+      const sellOp = await sendUserOperationAsync({ uo: sellUo });
 
+    const soldTokens = Number(amountTokenWei) / 1e18;
+    const expectedMON = soldTokens * (position.lastPrice || 0);
     if (updatePopup) {
       updatePopup(txId, {
-        title: `Received ${Number(monAmount).toFixed(4)} MON`,
-        subtitle: `Sold ${position.symbol} tokens`,
+        title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
+        subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
         variant: 'success',
         isLoading: false
       });
     }
 
-  } catch (e: any) {
-    console.error(e);
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Sell failed',
-        subtitle: e?.message || 'Transaction was rejected',
-        variant: 'error',
-        isLoading: false
-      });
+    } catch (e: any) {
+      console.error(e);
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Sell failed',
+          subtitle: e?.message || 'Transaction was rejected',
+          variant: 'error',
+          isLoading: false
+        });
+      }
     }
-  }
-};
+  };
+
   const handleMobileSellTrade = async (value: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
@@ -1005,8 +1004,8 @@ const amountTokenWei = pct === 100n
               time: Number(c.time) * 1000,
               open: Number(c.open) / 1e18,
               high: Number(c.high) / 1e18,
-              low:  Number(c.low)  / 1e18,
-              close:Number(c.close)/ 1e18,
+              low: Number(c.low) / 1e18,
+              close: Number(c.close) / 1e18,
               volume: Number(c.baseVolume) / 1e18,
             }));
 
@@ -1016,10 +1015,10 @@ const amountTokenWei = pct === 100n
             (selectedInterval === "1d"
               ? "1D"
               : selectedInterval === "4h"
-              ? "240"
-              : selectedInterval === "1h"
-              ? "60"
-              : selectedInterval.slice(0, -1));
+                ? "240"
+                : selectedInterval === "1h"
+                  ? "60"
+                  : selectedInterval.slice(0, -1));
 
           setChartData([bars, key, false]);
         }
@@ -1253,7 +1252,7 @@ const amountTokenWei = pct === 100n
                 const meta = await metaRes.json();
                 imageUrl = meta.image || '';
               }
-            } catch {}
+            } catch { }
           }
 
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
@@ -1618,22 +1617,9 @@ if (inputCurrency === "TOKEN") {
     },
   };
   const currentData = timePeriodsData["24H"];
-  const totalTransactions =
-    currentData.buyTransactions + currentData.sellTransactions;
-  const totalTraders =
-    (token.holders || 0) + (token.proTraders || 0) + (token.kolTraders || 0);
-  const buyTxPercentage =
-    totalTransactions > 0
-      ? (currentData.buyTransactions / totalTransactions) * 100
-      : 0;
-  const sellTxPercentage =
-    totalTransactions > 0
-      ? (currentData.sellTransactions / totalTransactions) * 100
-      : 0;
-  const buyVolume =
-    (currentData.volume * currentData.buyVolumePercentage) / 100;
-  const sellVolume =
-    (currentData.volume * currentData.sellVolumePercentage) / 100;
+  const totalTraders = (token.holders || 0) + (token.proTraders || 0) + (token.kolTraders || 0);
+  const buyVolume = (currentData.volume * currentData.buyVolumePercentage) / 100;
+  const sellVolume = (currentData.volume * currentData.sellVolumePercentage) / 100;
   const buyers = Math.floor((totalTraders * currentData.buyerPercentage) / 100);
   const sellers = Math.floor(
     (totalTraders * currentData.sellerPercentage) / 100,
@@ -1710,7 +1696,7 @@ if (inputCurrency === "TOKEN") {
           </div>
         </div>
         <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
-      <MemeOrderCenter
+          <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -1727,7 +1713,7 @@ if (inputCurrency === "TOKEN") {
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-            holders={holders} 
+            holders={holders}
             positions={positions}
             devTokens={devTokens}
             page={page}
