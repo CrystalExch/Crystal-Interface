@@ -151,7 +151,7 @@ const Launchpad: React.FC<LaunchpadProps> = ({
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'createToken',
-            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram, ""],
+            args: [formData.name, formData.ticker, metadataUrl, formData.description, formData.twitter, formData.website, formData.telegram, formData.discord],
           }),
         },
       });
@@ -221,10 +221,10 @@ const Launchpad: React.FC<LaunchpadProps> = ({
             <div className="launchpad-form-group">
               <label className="launchpad-label">Socials <span className="optional-text">[Optional]</span></label>
               <div className="launchpad-socials-grid">
-                {(['twitter', 'website', 'telegram'] as const).map((field) => (
+                {(['twitter', 'website', 'telegram', 'discord'] as const).map((field) => (
                   <div key={field} className="launchpad-social-field">
-                    <label className="launchpad-label">{field == 'telegram' ? 'Discord/Telegram' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                    <input name={field} value={formData[field]} onChange={handleInputChange} className="launchpad-input" placeholder={field == 'telegram' ? 'https://t.me/...' : `https://${field}.com/...`} disabled={isLaunching} />
+                    <label className="launchpad-label">{field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                    <input name={field} value={formData[field]} onChange={handleInputChange} className="launchpad-input" placeholder={field == 'telegram' ? 'https://t.me/...' : field == 'discord' ? 'https://discord.gg/...' : `https://${field}.com/...`} disabled={isLaunching} />
                   </div>
                 ))}
               </div>

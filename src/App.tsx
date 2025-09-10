@@ -392,7 +392,6 @@ function App() {
     signTransaction: async () => ''
   };
   const address = validOneCT && scaAddress ? onectclient.address as `0x${string}` : scaAddress as `0x${string}`
-  const userId = useRef(BigInt(0));
   const connected = address != undefined
   const [subWallets, setSubWallets] = useState<Array<{ address: string, privateKey: string }>>([]);
   useEffect(() => {
@@ -3960,7 +3959,7 @@ function App() {
                 toBlock: endBlockNumber,
                 address: router,
                 topics: [
-                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
+                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
                 ],
               },
             ],
@@ -3974,9 +3973,9 @@ function App() {
                 toBlock: endBlockNumber,
                 address: router,
                 topics: [
-                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
                   null,
-                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                  '0x000000000000000000000000' + address?.slice(2),
                 ],
               },
             ],
@@ -3990,9 +3989,9 @@ function App() {
               {
                 address: router,
                 topics: [
-                  '0x709c040a7a97a27418aae009ebc34838157419a987b146aae40b55eee540419a',
+                  '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
                   null,
-                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                  '0x000000000000000000000000' + address?.slice(2),
                 ],
               },
             ],
@@ -4195,7 +4194,7 @@ function App() {
                   parseInt(log['data'].slice(194, 258), 16),
                 ])
                 if (
-                  log['topics'][3].slice(26) ==
+                  log['topics'][2].slice(26) ==
                   address?.slice(2).toLowerCase()
                 ) {
                   tradeHistoryChanged = true;
@@ -4379,8 +4378,8 @@ function App() {
             for (const log of orderlogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.current.toString(16).padStart(64, "0")) {
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -4560,8 +4559,8 @@ function App() {
             for (const log of filllogs) {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.current.toString(16).padStart(64, "0")) {
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -4814,7 +4813,6 @@ function App() {
           let tempcanceledorders: any[] = [];
 
           if (acct) {
-            userId.current = BigInt(result?.data?.account?.userIds?.[0]?.id)
             const trades = flatten(acct.tradeMap, "trades") || [];
             for (const t of trades) {
               const marketKey = getMarketKey(t.market);
@@ -4920,7 +4918,7 @@ function App() {
               {
                 address: router,
                 topics: [
-                  '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6',
+                  '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982',
                 ],
               },
             ],
@@ -4933,9 +4931,9 @@ function App() {
               {
                 address: router,
                 topics: [
-                  '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66',
+                  '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c',
                   null,
-                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                  '0x000000000000000000000000' + address?.slice(2),
                 ],
               },
             ],
@@ -4949,9 +4947,9 @@ function App() {
               {
                 address: router,
                 topics: [
-                  '0x709c040a7a97a27418aae009ebc34838157419a987b146aae40b55eee540419a',
+                  '0xa195980963150be5fcca4acd6a80bf5a9de7f9c862258501b7c705e7d2c2d2f4',
                   null,
-                  "0x" + userId.current.toString(16).padStart(64, "0"),
+                  '0x000000000000000000000000' + address?.slice(2),
                 ],
               },
             ],
@@ -5015,7 +5013,7 @@ function App() {
           setProcessedLogs(prev => {
             let tempset = new Set(prev);
             let temptrades: any = {};
-            if (log['topics']?.[0] == '0xd5225e3f222759c44bcad47b29b8825dc73bf2d9e1606f5fbcbdd091969c09f6') {
+            if (log['topics']?.[0] == '0x9adcf0ad0cda63c4d50f26a48925cf6405df27d422a39c456b5f03f661c82982') {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
               if (!tempset.has(logIdentifier) && marketKey && !temptradesByMarket[marketKey]?.some((trade: any) =>
@@ -5066,7 +5064,7 @@ function App() {
                   parseInt(log['data'].slice(194, 258), 16),
                 ])
                 if (
-                  log['topics'][3].slice(26) ==
+                  log['topics'][2].slice(26) ==
                   address?.slice(2).toLowerCase()
                 ) {
                   tradeHistoryChanged = true;
@@ -5245,11 +5243,11 @@ function App() {
                 });
               }
             }
-            else if (log['topics']?.[0] == '0xcd726e874e479599fa8abfd7a4ad443b08415d78fb36a088cd0e9c88b249ba66') {
+            else if (log['topics']?.[0] == '0x7ebb55d14fb18179d0ee498ab0f21c070fad7368e44487d51cdac53d6f74812c') {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.current.toString(16).padStart(64, "0")) {
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
@@ -5427,8 +5425,8 @@ function App() {
             else {
               const logIdentifier = `${log['transactionHash']}-${log['logIndex']}`;
               const marketKey = addresstoMarket['0x' + log['topics'][1].slice(26)];
-              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(2) ==
-                userId.current.toString(16).padStart(64, "0")) {
+              if (!tempset.has(logIdentifier) && marketKey && log['topics'][2].slice(26) ==
+                address?.slice(2).toLowerCase()) {
                 if (tempset.size >= 10000) {
                   const first = tempset.values().next().value;
                   if (first !== undefined) {
