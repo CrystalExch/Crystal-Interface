@@ -233,9 +233,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   refetch,
   isBlurred = false,
   forceRefreshAllWallets,
-  terminalQueryData,
-  terminalToken,
-  setTerminalToken,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -691,75 +688,77 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
   };
-const handleSellPosition = async (position: any, amount: string) => {
-  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
-    setpopup?.(4);
-    return;
-  }
 
-  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-  if (account.chainId !== targetChainId) {
-    setChain?.();
-    return;
-  }
-
-  const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-  try {
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Sending transaction...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
-        amount: amount,
-        amountUnit: position.symbol
-      });
+  const handleSellPosition = async (position: any, amount: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+      setpopup?.(4);
+      return;
     }
 
-    const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
-
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Confirming sell...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
-        variant: 'info'
-      });
+    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+    if (account.chainId !== targetChainId) {
+      setChain?.();
+      return;
     }
 
-    const sellUo = {
-      target: routerAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: "sell",
-        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-      }),
-      value: 0n,
-    };
+    const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    const sellOp = await sendUserOperationAsync({ uo: sellUo });
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Selling ${amount} ${position.symbol}`,
+          amount: amount,
+          amountUnit: position.symbol
+        });
+      }
 
-    const soldTokens = Number(amountTokenWei) / 1e18;
-    const expectedMON = soldTokens * (position.lastPrice || 0);
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-        subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
-        variant: 'success',
-        isLoading: false
-      });
+      const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
+
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming sell...',
+          subtitle: `Selling ${amount} ${position.symbol}`,
+          variant: 'info'
+        });
+      }
+
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "sell",
+          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+        }),
+        value: 0n,
+      };
+
+      const sellOp = await sendUserOperationAsync({ uo: sellUo });
+
+      const soldTokens = Number(amountTokenWei) / 1e18;
+      const expectedMON = soldTokens * (position.lastPrice || 0);
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
+          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+          variant: 'success',
+          isLoading: false
+        });
+      }
+
+    } catch (e: any) {
+      console.error(e);
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Sell failed',
+          subtitle: e?.message || 'Transaction was rejected',
+          variant: 'error',
+          isLoading: false
+        });
+      }
     }
+  };
 
-  } catch (e: any) {
-    console.error(e);
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Sell failed',
-        subtitle: e?.message || 'Transaction was rejected',
-        variant: 'error',
-        isLoading: false
-      });
-    }
-  }
-};
   const handleMobileSellTrade = async (value: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
@@ -1007,8 +1006,8 @@ const handleSellPosition = async (position: any, amount: string) => {
               time: Number(c.time) * 1000,
               open: Number(c.open) / 1e18,
               high: Number(c.high) / 1e18,
-              low:  Number(c.low)  / 1e18,
-              close:Number(c.close)/ 1e18,
+              low: Number(c.low) / 1e18,
+              close: Number(c.close) / 1e18,
               volume: Number(c.baseVolume) / 1e18,
             }));
 
@@ -1018,10 +1017,10 @@ const handleSellPosition = async (position: any, amount: string) => {
             (selectedInterval === "1d"
               ? "1D"
               : selectedInterval === "4h"
-              ? "240"
-              : selectedInterval === "1h"
-              ? "60"
-              : selectedInterval.slice(0, -1));
+                ? "240"
+                : selectedInterval === "1h"
+                  ? "60"
+                  : selectedInterval.slice(0, -1));
 
           setChartData([bars, key, false]);
         }
@@ -1255,7 +1254,7 @@ const handleSellPosition = async (position: any, amount: string) => {
                 const meta = await metaRes.json();
                 imageUrl = meta.image || '';
               }
-            } catch {}
+            } catch { }
           }
 
           const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
@@ -1609,22 +1608,9 @@ const handleSellPosition = async (position: any, amount: string) => {
     },
   };
   const currentData = timePeriodsData["24H"];
-  const totalTransactions =
-    currentData.buyTransactions + currentData.sellTransactions;
-  const totalTraders =
-    (token.holders || 0) + (token.proTraders || 0) + (token.kolTraders || 0);
-  const buyTxPercentage =
-    totalTransactions > 0
-      ? (currentData.buyTransactions / totalTransactions) * 100
-      : 0;
-  const sellTxPercentage =
-    totalTransactions > 0
-      ? (currentData.sellTransactions / totalTransactions) * 100
-      : 0;
-  const buyVolume =
-    (currentData.volume * currentData.buyVolumePercentage) / 100;
-  const sellVolume =
-    (currentData.volume * currentData.sellVolumePercentage) / 100;
+  const totalTraders = (token.holders || 0) + (token.proTraders || 0) + (token.kolTraders || 0);
+  const buyVolume = (currentData.volume * currentData.buyVolumePercentage) / 100;
+  const sellVolume = (currentData.volume * currentData.sellVolumePercentage) / 100;
   const buyers = Math.floor((totalTraders * currentData.buyerPercentage) / 100);
   const sellers = Math.floor(
     (totalTraders * currentData.sellerPercentage) / 100,
@@ -1701,7 +1687,7 @@ const handleSellPosition = async (position: any, amount: string) => {
           </div>
         </div>
         <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
-      <MemeOrderCenter
+          <MemeOrderCenter
             orderCenterHeight={orderCenterHeight}
             isVertDragging={isVertDragging}
             isOrderCenterVisible={true}
@@ -1718,7 +1704,7 @@ const handleSellPosition = async (position: any, amount: string) => {
             }}
             isWidgetOpen={isWidgetOpen}
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-            holders={holders} 
+            holders={holders}
             positions={positions}
             devTokens={devTokens}
             page={page}
