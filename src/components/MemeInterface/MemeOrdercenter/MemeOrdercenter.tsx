@@ -1,12 +1,14 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 
-import { mockOrders, mockHolders, mockTopTraders } from './MemeTraderData';
+import { mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTraderData';
 
 import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
 
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
 import switchicon from "../../../assets/switch.svg";
+import closebutton from "../../../assets/close_button.png";
+import walleticon from '../../../assets/wallet_icon.png';
 
 import './MemeOrderCenter.css';
 
@@ -48,11 +50,23 @@ interface MemeOrderCenterProps {
   onToggleWidget?: () => void;
   holders?: LiveHolder[];
   positions?: Position[];
-  devTokens: any[];
+  devTokens?: DevToken[];
   page?: number;
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
+  onSellPosition?: (position: Position, monAmount: string) => void;
+}
+
+interface DevToken {
+  id: string;
+  symbol: string;
+  name: string;
+  imageUrl: string;
+  price: number;
+  marketCap: number;
+  timestamp: number;
+  migrated: boolean;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -63,11 +77,31 @@ const fmt = (v: number, d = 3) => {
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
 };
 
+const timeAgo = (tsSec?: number) => {
+  if (!tsSec) return '—';
+  const diffMs = Date.now() - tsSec * 1000;
+  if (diffMs < 0) return 'just now';
+  const sec = Math.floor(diffMs / 1000);
+  if (sec < 60) return `${sec}s ago`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min}m ago`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr}h ago`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return `${day}d ago`;
+  const week = Math.floor(day / 7);
+  if (week < 5) return `${week}w ago`;
+  const mo = Math.floor(day / 30);
+  if (mo < 12) return `${mo}mo ago`;
+  const yr = Math.floor(day / 365);
+  return `${yr}y ago`;
+};
+
 const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   if (mode === 'USD' && monPrice > 0) {
     return `$${(v * monPrice).toFixed(2)}`;
   }
-  return `${v.toFixed(4)} MON`;
+  return `${v.toFixed(4)}`;
 };
 
 interface TooltipProps {
@@ -105,6 +139,199 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }
   );
 };
 
+interface SellPopupProps {
+  showSellPopup: boolean;
+  selectedPosition: Position | null;
+  sellAmount: string;
+  sellSliderPercent: number;
+  onClose: () => void;
+  onSellAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSellSliderChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSellConfirm: () => void;
+  onMaxClick: () => void;
+  fmt: (v: number, d?: number) => string;
+  currentPrice: number;
+}
+
+const SellPopup: React.FC<SellPopupProps> = ({
+  showSellPopup,
+  selectedPosition,
+  sellAmount,
+  sellSliderPercent,
+  onClose,
+  onSellAmountChange,
+  onSellSliderChange,
+  onSellConfirm,
+  onMaxClick,
+  currentPrice
+}) => {
+  const sliderRef = useRef<HTMLInputElement>(null);
+  const popupRef = useRef<HTMLDivElement>(null);
+  const setPopupRef = useCallback((el: HTMLDivElement | null) => {
+    if (el) {
+      if (popupRef.current !== el) {
+        (popupRef as React.MutableRefObject<HTMLDivElement | null>).current = el;
+      }
+      if (sliderRef.current) {
+        requestAnimationFrame(() => positionPopup(sellSliderPercent));
+      }
+    }
+  }, [sellSliderPercent]);
+  const setSliderRef = useCallback((el: HTMLInputElement | null) => {
+    (sliderRef as React.MutableRefObject<HTMLInputElement | null>).current = el;
+    if (el && popupRef.current) requestAnimationFrame(() => positionPopup(sellSliderPercent));
+  }, [sellSliderPercent]);
+
+  const positionPopup = (percent: number) => {
+    const input = sliderRef.current;
+    const popup = popupRef.current;
+    if (!input || !popup) return;
+
+    const container = input.parentElement as HTMLElement; // .meme-slider-container
+    const containerRect = container.getBoundingClientRect();
+    const inputRect = input.getBoundingClientRect();
+    const inputLeft = inputRect.left - containerRect.left;
+
+    const thumbW = 10; // matches your CSS
+    const x = inputLeft + (percent / 100) * (inputRect.width - thumbW) + thumbW / 2;
+
+    popup.style.left = `${x}px`;
+    popup.style.transform = 'translateX(-50%)';
+  };
+
+  // renamed local handler to avoid collision with the prop
+  const handleSliderChangeLocal = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = Number(e.target.value);
+    positionPopup(value);       // keep popup centered on the thumb
+    onSellSliderChange(e);      // delegate to parent logic you already have
+  };
+
+  const handleMarkClick = (markPercent: number) => {
+    positionPopup(markPercent);
+    onSellSliderChange({ target: { value: String(markPercent) } } as React.ChangeEvent<HTMLInputElement>);
+  };
+
+  const [sliderDragging, setSliderDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (!showSellPopup || !selectedPosition) return null;
+
+  return (
+    <div className="alerts-popup-overlay" onClick={onClose}>
+      <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
+        <div className="alerts-popup-header">
+          <h3 className="alerts-popup-title">Sell {selectedPosition.name} coin</h3>
+          <button className="alerts-close-button" onClick={onClose}>
+            <img src={closebutton} className="explorer-close-button" />
+          </button>
+        </div>
+
+        <div className="sell-popup-content">
+          <div className="alerts-section">
+            <div className="meme-amount-header">
+              <div className="meme-amount-header-left">
+                <span className="meme-amount-label">Amount</span>
+              </div>
+              <div className="meme-balance-right">
+                <div className="meme-balance-display">
+                  <img src={walleticon} className="meme-wallet-icon" />
+                  {(selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)).toFixed(4)} MON
+                </div>
+                <button className="meme-balance-max" onClick={onMaxClick}>
+                  MAX
+                </button>
+              </div>
+            </div>
+
+            <div className="meme-trade-input-wrapper">
+              <input
+                type="number"
+                value={sellAmount || "0"}
+                onChange={onSellAmountChange}
+                className="meme-trade-input"
+              />
+              <div
+                className="meme-trade-currency"
+                style={{
+                  left: `${Math.max(12 + (sellAmount.length || 1) * 10, 12)}px`,
+                }}
+              >
+                MON
+              </div>
+            </div>
+            <div className="meme-balance-slider-wrapper">
+              <div className="meme-slider-container meme-slider-mode">
+                <input
+                  ref={setSliderRef}
+                  type="range"
+                  className={`meme-balance-amount-slider ${sliderDragging ? "dragging" : ""}`}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sellSliderPercent}
+                  onChange={handleSliderChangeLocal}
+                  onMouseDown={() => {
+                    setSliderDragging(true);
+                    positionPopup(sellSliderPercent); // snap immediately when grabbing
+                  }}
+                  onMouseUp={() => setSliderDragging(false)}
+                  style={{
+                    background: `linear-gradient(to right, rgb(235, 112, 112) ${sellSliderPercent}%, rgb(28, 28, 31) ${sellSliderPercent}%)`,
+                  }}
+                />
+
+                <div
+                  ref={setPopupRef}
+                  className={`meme-slider-percentage-popup ${sliderDragging ? "visible" : ""}`}
+                >
+                  {sellSliderPercent}%
+                </div>
+
+                <div className="meme-balance-slider-marks">
+                  {[0, 25, 50, 75, 100].map((markPercent) => (
+                    <span
+                      key={markPercent}
+                      className="meme-balance-slider-mark sell"
+                      data-active={sellSliderPercent >= markPercent}
+                      data-percentage={markPercent}
+                      onClick={() => handleMarkClick(markPercent)}
+                    >
+                      {markPercent}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+
+          </div>
+
+          <button
+            className="meme-trade-action-button sell"
+            onClick={async () => {
+              setIsLoading(true);
+              try {
+                await onSellConfirm();
+              } catch (error) {
+                console.error('Sell transaction failed:', error);
+              } finally {
+                setIsLoading(false);
+              }
+            }}
+            disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
+          >
+            {isLoading ? (
+              <div className="meme-button-spinner"></div>
+            ) : (
+              `Instantly Sell ${selectedPosition.symbol}`
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   orderCenterHeight = 300,
   isVertDragging = false,
@@ -121,6 +348,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   pageSize = 100,
   currentPrice = 0,
   monUsdPrice = 0,
+  onSellPosition,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
@@ -130,6 +358,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [_dragStartY, setDragStartY] = useState(0);
   const [_dragStartHeight, setDragStartHeight] = useState(0);
+  const [showSellPopup, setShowSellPopup] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
+  const [sellSliderPercent, setSellSliderPercent] = useState(0);
+
+  const handleSellClose = useCallback(() => {
+    setShowSellPopup(false);
+    setSelectedPosition(null);
+    setSellAmount("");
+    setSellSliderPercent(0);
+  }, []);
+
+  const handleSellMaxClick = useCallback(() => {
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      setSellAmount(maxMonAmount.toFixed(4));
+      setSellSliderPercent(100);
+    }
+  }, [selectedPosition, currentPrice]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -166,7 +413,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       sold: h.amountSold,
       valueBought: h.valueBought,
       valueSold: h.valueSold,
-      pnl: h.valueNet,
+      pnl: h.valueNet + currentPrice * h.balance,
       remainingPct: h.tokenNet === 0 ? 0 : (h.balance / Math.max(h.amountBought, 1e-9)) * 100,
       tags: []
     }))
@@ -184,12 +431,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     }))
   );
 
+  const devTokensToShow: DevToken[] = (devTokens && devTokens.length > 0)
+    ? devTokens
+    : mockDevTokens.map(mt => ({
+      id: mt.id,
+      symbol: mt.symbol,
+      name: mt.name,
+      imageUrl: mt.imageUrl,
+      price: mt.price,
+      marketCap: mt.marketCap,
+      timestamp: mt.timestamp,
+      migrated: mt.migrated,
+    }));
+
   const availableTabs = [
     { key: 'positions', label: `Positions (${positions.length})` },
     { key: 'orders', label: `Orders (${mockOrders.length})` },
     { key: 'holders', label: `Holders (${holderRows.length})` },
     { key: 'topTraders', label: 'Top Traders' },
-    { key: 'devTokens', label: `Dev Tokens (${devTokens.length})` }
+    { key: 'devTokens', label: `Dev Tokens (${devTokensToShow.length})` }
   ];
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
@@ -376,7 +636,50 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     );
   };
 
-  const fmtTs = (ts: number | string) => ts ? new Date(Number(ts) * 1000).toLocaleString() : '--';
+  const handleSellClick = (position: Position) => {
+    setSelectedPosition(position);
+    setShowSellPopup(true);
+    setSellAmount("");
+    setSellSliderPercent(0);
+  };
+
+    const handleSellConfirm = async () => {
+      if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+        try {
+            await onSellPosition(selectedPosition, sellAmount);
+          setShowSellPopup(false);
+          setSelectedPosition(null);
+          setSellAmount("");
+          setSellSliderPercent(0);
+        } catch (error) {
+          console.error('Sell transaction failed:', error);
+        }
+      }
+    };
+
+  const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const percent = parseInt(e.target.value);
+    setSellSliderPercent(percent);
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      const newAmount = (maxMonAmount * percent) / 100;
+      setSellAmount(newAmount.toFixed(4));
+    }
+  };
+
+  const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSellAmount(value);
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      if (maxMonAmount > 0) {
+        const percent = (parseFloat(value) / maxMonAmount) * 100;
+        setSellSliderPercent(Math.min(100, Math.max(0, percent)));
+      }
+    }
+  };
+
+  console.log(devTokensToShow);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -387,11 +690,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Token</div>
               <div
                 className="meme-oc-header-cell clickable"
-                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 Bought
-                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
               </div>
               <div className="meme-oc-header-cell">Sold</div>
               <div className="meme-oc-header-cell">Remaining</div>
@@ -399,40 +700,51 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Actions</div>
             </div>
             <div className="meme-oc-items">
-              {(positions?.length ? positions : []).map((p, index) => {
+              {(positions?.length ? positions : []).map((p, _) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
+
                 return (
                   <div key={p.tokenId} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
-                        <span className="meme-wallet-index">{index + 1}</span>
                         <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
                           {tokenImageUrl && (
                             <img
                               src={tokenImageUrl}
                               alt={p.symbol}
                               className="meme-token-icon"
-
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none';
                               }}
                             />
                           )}
-                          <span className="meme-wallet-address">{tokenShort}</span>
+                          <span
+                            className="meme-wallet-address meme-clickable-token"
+                            onClick={() => window.location.href = `/meme/${p.tokenId}`}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            {tokenShort}
+                          </span>
                         </div>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
-                        <span className="meme-token-amount">{fmt(p.boughtTokens)}</span>
-                        <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)}</span>
+                        <div className="meme-ordercenter-info">
+                          {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
+                          <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)} </span>
+                        </div>
+                        <span className="meme-token-amount">{fmt(p.boughtTokens)} {p.symbol || ''}</span>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
-                        <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
-                        <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
+                        <div className="meme-ordercenter-info">
+                          {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
+                          <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
+                        </div>
+                        <span className="meme-token-amount">{fmt(p.soldTokens)}  {p.symbol || ''}</span>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
@@ -454,12 +766,22 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                     <div className="meme-oc-cell">
-                      <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
-                        {p.pnlNative >= 0 ? '+' : '-'}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}
-                      </span>
+                      <div className="meme-ordercenter-info">
+                        {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
+                        <div className="meme-pnl-info">
+                          <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
+                            {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}         ({p.pnlNative >= 0 ? '+' : ''}{p.spentNative > 0 ? ((p.pnlNative / p.spentNative) * 100).toFixed(1) : '0.0'}%)
+                          </span>
+                        </div>
+                      </div>
                     </div>
                     <div className="meme-oc-cell">
-                      <button className="meme-action-btn">Sell</button>
+                      <button
+                        className="meme-action-btn"
+                        onClick={() => handleSellClick(p)}
+                      >
+                        Sell
+                      </button>
                     </div>
                   </div>
                 );
@@ -501,11 +823,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Balance</div>
               <div
                 className="meme-oc-header-cell clickable"
-                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 Bought (Avg Buy)
-                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
               </div>
               <div className="meme-oc-header-cell">Sold (Avg Sell)</div>
               <div className="meme-oc-header-cell">PnL</div>
@@ -546,7 +866,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   </div>
                   <div className="meme-oc-cell">
                     <span className={`meme-pnl ${row.pnl >= 0 ? 'positive' : 'negative'}`}>
-                      {row.pnl >= 0 ? '+' : '-'}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
+                      {row.pnl >= 0 ? '+' : ''}{fmtAmount(Math.abs(row.pnl), amountMode, monUsdPrice)}
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -639,63 +959,59 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           </div>
         );
       case 'devTokens':
-        const rows = (devTokens?.length ? devTokens : []).slice(0, 50);
-        const fmtPrice = (p: number) =>
-          amountMode === 'USD'
-            ? `$${(p * (monUsdPrice || 0)).toFixed(4)}`
-            : `${p.toFixed(8)} MON`;
-
         return (
           <div className="meme-oc-section-content" data-section="devTokens">
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
-              <div
-                className="meme-oc-header-cell clickable"
-                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
-                style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
-              >
-                Price
-                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: 12, height: 12 }} />
-              </div>
-              <div className="meme-oc-header-cell">MCap</div>
-              <div className="meme-oc-header-cell">Timestamp</div>
+              <div className="meme-oc-header-cell">Market Cap (MON)</div>
+              <div className="meme-oc-header-cell">Migraton Status</div>
             </div>
+
             <div className="meme-oc-items">
-              {rows.map((t: any, index: number) => (
-                <div key={t.id || index} className="meme-oc-item">
-                  <div className="meme-oc-cell">
-                    <div className="meme-wallet-info">
-                      <span className="meme-wallet-index">{index + 1}</span>
-                      <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
-                        {t.imageUrl && (
-                          <img
-                            src={t.imageUrl}
-                            alt={t.symbol}
-                            className="meme-token-icon"
-                            onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                          />
-                        )}
-                        <span className="meme-wallet-address">
-                          {t.symbol || `${t.id?.slice(0, 6)}…${t.id?.slice(-4)}`}
-                        </span>
+              {devTokensToShow.length === 0 ? (
+                <div className="meme-oc-empty">No tokens</div>
+              ) : devTokensToShow.map((t) => {
+                const price = Number(t.price || 0);
+                const mc = Number(t.marketCap || 0);
+                return (
+                  <div key={t.id} className="meme-oc-item">
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-info">
+                        <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
+                          {t.imageUrl && (
+                            <img
+                              src={t.imageUrl}
+                              alt={t.symbol || t.name || t.id}
+                              className="meme-token-icon"
+                              onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                            />
+                          )}
+                          <span className="meme-wallet-address" title={t.name || t.symbol || t.id}>
+                            {(t.symbol || '').toUpperCase()}
+                                                  <span className="meme-wallet-address-span">{timeAgo(t.timestamp)}</span>
+
+                          </span>
+                        </div>
+                        <div className="meme-wallet-address-sub">
+                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
+                        </div>
                       </div>
                     </div>
+
+ 
+                    <div className="meme-oc-cell">
+                      <div className="meme-ordercenter-info">
+                        <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+                        <span className="meme-usd-amount">{mc > 0 ? fmt(mc, 2) : '—'}</span>
+                      </div>
+                    </div>
+
+                    <div className="meme-oc-cell">
+                      <span>{t.migrated ? 'Migrated' : 'Non-migrated'}</span>
+                    </div>
                   </div>
-                  <div className="meme-oc-cell">
-                    <span className="meme-token-amount">{fmtPrice(Number(t.price || 0))}</span>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <span className="meme-mon-balance">
-                      {amountMode === 'USD'
-                        ? `$${((t.marketCap || 0) * (monUsdPrice || 0)).toLocaleString()}`
-                        : `${fmt(Number(t.marketCap || 0), 2)} MON`}
-                    </span>
-                  </div>
-                  <div className="meme-oc-cell">
-                    <span className="meme-timestamp">{fmtTs(t.timestamp)}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         );
@@ -751,12 +1067,21 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
         {onToggleWidget && (
           <div className="meme-oc-right-controls">
+
             <button
               onClick={onToggleWidget}
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
               title={isWidgetOpen ? 'Close QuickBuy Widget' : 'Open QuickBuy Widget'}
             >
               {windowWidth > 768 && <span>{isWidgetOpen ? 'Quick Buy' : 'Quick Buy'}</span>}
+            </button>
+            <button
+              onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+              className="meme-oc-currency-toggle"
+              title={`Switch to ${amountMode === 'MON' ? 'USD' : 'MON'} display`}
+            >
+              <img src={switchicon} className="meme-currency-switch-icon" />
+              {amountMode}
             </button>
           </div>
         )}
@@ -777,6 +1102,19 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
+      <SellPopup
+        showSellPopup={showSellPopup}
+        selectedPosition={selectedPosition}
+        sellAmount={sellAmount}
+        sellSliderPercent={sellSliderPercent}
+        onClose={handleSellClose}
+        onSellAmountChange={handleSellAmountChange}
+        onSellSliderChange={handleSellSliderChange}
+        onSellConfirm={handleSellConfirm}
+        onMaxClick={handleSellMaxClick}
+        fmt={fmt}
+        currentPrice={currentPrice}
+      />
     </div>
   );
 };

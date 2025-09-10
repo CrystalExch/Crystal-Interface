@@ -171,9 +171,6 @@
   height: 40px;
 }
 
-.meme-oc-item:hover {
-  background-color: rgba(179, 184, 249, 0.02);
-}
 
 .meme-oc-section-content[data-section="positions"] .meme-oc-header,
 .meme-oc-section-content[data-section="positions"] .meme-oc-item {
@@ -264,6 +261,16 @@
   gap: 8px;
 }
 
+.meme-wallet-address-span {
+  color: rgba(221, 221, 224, 0.533);
+  font-size: 0.75rem;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: -0.3px;
+}
+
 .meme-wallet-tags,
 .meme-token-tags {
   display: flex;
@@ -327,14 +334,12 @@
 }
 
 .meme-token-amount {
-  color: #ffffff73;
+  color: #e3e5f39f;
   font-size: 0.7rem;
   margin-top: -3px;
 }
 
-/* PnL styling */
 .meme-pnl {
-
   font-size: 0.8rem;
   text-align: center;
 }
@@ -876,6 +881,11 @@
   letter-spacing: -0.5px;
 }
 
+.meme-oc-quickbuy-button.active {
+  background-color: #b6b3f41f;
+}
+
+
 @media(max-width: 1020px) {
   .meme-oc-quickbuy-button {
     display: none;
@@ -904,10 +914,6 @@
   line-height: 1.2;
 }
 
-.meme-token-amount {
-  font-size: 12px;
-  color: #e5e7eb;
-}
 
 .meme-avg-price {
   font-size: 11px;
@@ -947,4 +953,396 @@
   margin-right: 4px;
   object-fit: cover;
   flex-shrink: 0;
+}
+
+.meme-ordercenter-info{
+  display: flex;
+  align-items: center;
+}
+
+.meme-ordercenter-monad-icon{
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+}
+
+/* Sell popup styles */
+.alerts-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.alerts-popup {
+  width: 400px;
+  background: rgb(6, 6, 6);
+  border: 1px solid rgba(179, 184, 249, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: modalSlideIn 0.2s ease-out;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.alerts-popup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 15px;
+  border-bottom: 1px solid rgba(179, 184, 249, 0.1);
+}
+
+.alerts-popup-title {
+  font-size: 1rem;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.3px;
+}
+
+.alerts-close-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.alerts-content {
+  padding: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.alerts-section {
+  margin-bottom: 12px;
+}
+
+.explorer-close-button {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+}
+
+.alerts-popup .meme-amount-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+  padding: 0;
+}
+
+.alerts-popup .meme-amount-header-left {
+  display: flex;
+  align-items: center;
+}
+
+.alerts-popup .meme-amount-label {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.alerts-popup .meme-balance-right {
+  display: flex;
+  gap: 5px;
+}
+
+.alerts-popup .meme-balance-display {
+  display: flex;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.alerts-popup .meme-wallet-icon {
+  height: 15px;
+  width: 15px;
+  opacity: 0.5;
+  margin-right: 2px;
+}
+
+.alerts-popup .meme-balance-max {
+  background-color: #6e324051;
+  color: rgb(235, 112, 112);
+  font-size: 0.7rem;
+  padding: 0 .25rem;
+  border-radius: 3px;
+  border: none;
+  cursor: pointer;
+}
+
+.alerts-popup .meme-trade-input-wrapper {
+  position: relative;
+  margin-bottom: 12px;
+  padding: 0;
+}
+
+.alerts-popup .meme-trade-input {
+  width: 100%;
+  padding: 6px 80px 6px 12px;
+  background: transparent;
+  border: 1px solid rgba(179, 184, 249, 0.1);
+  border-radius: 6px;
+  color: #fff;
+  font-size: 1.1rem;
+  outline: none;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.alerts-popup .meme-trade-input::placeholder {
+  color: rgba(255, 255, 255, 1) !important;
+}
+
+.alerts-popup .meme-trade-currency {
+  position: absolute;
+  top: 50%;
+  padding-left: 1px;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.5);
+  font-size: .95rem;
+  pointer-events: none;
+}
+
+.alerts-popup .meme-balance-slider-wrapper {
+  margin: 0 0 20px;
+  position: relative;
+  padding: 0;
+}
+
+.alerts-popup .meme-slider-container {
+  position: relative;
+  width: 100%;
+}
+
+.alerts-popup .meme-balance-amount-slider {
+  appearance: none;
+  border-radius: 1px;
+  cursor: pointer;
+  height: 4px;
+  margin: 0 4px;
+  outline: 0;
+  position: relative;
+  width: calc(100% - 15px);
+}
+
+.alerts-popup .meme-balance-amount-slider::-webkit-slider-thumb {
+  appearance: none;
+  background: #d4d4d4;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  height: 10px;
+  position: relative;
+  top: 4.5px;
+  transform: translate(0%, -50%);
+  transition: all 0.2s ease;
+  width: 10px;
+  z-index: 2;
+}
+
+.alerts-popup .meme-balance-amount-slider::-moz-range-thumb {
+  background: #d4d4d4;
+  border: none;
+  border-radius: 3px;
+  box-shadow: 0 0 2px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  height: 10px;
+  margin-top: -5.5px;
+  position: relative;
+  top: 4px;
+  transition: all 0.2s ease;
+  width: 10px;
+  z-index: 13;
+}
+
+.alerts-popup .meme-slider-percentage-popup {
+  align-items: center;
+  background-color: rgb(9, 9, 9);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgb(0 0 0/20%);
+  color: #ffffffcf;
+  display: flex;
+  font-size: 0.7rem;
+  font-weight: 300;
+  justify-content: center;
+  max-width: 40px;
+  min-width: 30px;
+  opacity: 0;
+  padding: 2px 4px;
+  pointer-events: none;
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  visibility: hidden;
+  white-space: nowrap;
+  z-index: 13;
+}
+
+.alerts-popup .meme-slider-percentage-popup.visible {
+  opacity: 1;
+  visibility: visible;
+}
+
+.alerts-popup .meme-balance-slider-marks {
+  color: #ffffff7b;
+  display: flex;
+  font-size: 0.75rem;
+  justify-content: space-between;
+  padding: 0;
+  position: relative;
+  width: 101%;
+  z-index: 1;
+}
+
+.alerts-popup .meme-balance-slider-mark {
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 200;
+  margin: 0 -4px;
+  padding: 0 8px;
+  position: relative;
+  transition: color 0.2s ease;
+    background-color: black;
+
+}
+
+.alerts-popup .meme-balance-slider-mark::before {
+  content: '';
+  height: 4px;
+  left: 50%;
+  position: absolute;
+  top: -9px;
+  transform: translateX(-50%);
+  width: 5px;
+  background-color: black;
+}
+
+.alerts-popup .meme-balance-slider-mark[data-percentage='0']::before,
+.alerts-popup .meme-balance-slider-mark[data-percentage='100']::before {
+  display: none;
+}
+
+.alerts-popup .meme-balance-slider-mark:hover {
+  color: #ffffff93;
+}
+
+.meme-balance-slider-mark.sell[data-active='true']:not(:first-child):not(:last-child)::before {
+  background-color: rgb(235, 112, 112);
+}
+
+.meme-balance-slider-mark.sell[data-active='false']:not(:first-child):not(:last-child)::before {
+  background-color: rgb(6, 6, 6);
+}
+
+.alerts-popup .meme-trade-action-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 35px;
+  padding: 6px 12px;
+  border: none;
+  font-size: 0.9rem;
+  font-weight: 400;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: -0.3px;
+  border: none;
+  border-radius: 20px;
+  margin: 0;
+  margin-top: 10px;
+  width: 100%;
+}
+
+.alerts-popup .meme-trade-action-button.sell {
+  background-color: #6e324051;
+  color: rgb(235, 112, 112);
+}
+
+.alerts-popup .meme-trade-action-button.sell:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.alerts-popup .meme-trade-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.sell-popup-content{
+  padding: 15px
+}
+
+.alerts-popup .meme-trade-action-button.sell:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.alerts-popup .meme-trade-action-button.sell .meme-button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgb(235, 112, 112);
+  border-top: 2px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.alerts-popup .meme-trade-action-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.meme-clickable-token {
+    transition: color 0.2s ease, text-shadow 0.2s ease;
+}
+
+.meme-clickable-token:hover {
+    text-decoration: underline;
+}
+
+.meme-oc-item-even {
+  background-color: rgba(6, 6, 6, 1); 
+}
+
+.meme-oc-item-odd {
+  background-color: rgba(12, 12, 14, 1); 
+}
+
+
+.meme-oc-currency-toggle{
+  display: flex;
+  align-items: center;
+  font-size: .8rem;
+  color: rgb(255,255,255,0.7);
+  width: 65px;
+}
+
+.meme-currency-switch-icon{
+  margin-right: 5px;
 }

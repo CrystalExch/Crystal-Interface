@@ -174,7 +174,6 @@ export default function MemeTradesComponent({
   market,
   tradesByMarket,
   markets,
-  tokendict,
   usdc,
   wethticker,
   ethticker,

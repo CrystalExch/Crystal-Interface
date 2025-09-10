@@ -69,15 +69,16 @@ export interface TopTrader {
   tags: string[];
 }
 
-export interface DevToken {
+interface DevToken {
   id: string;
-  token: string;
-  supply: string;
-  holders: number;
+  symbol: string;
+  name: string;
+  imageUrl: string;
+  price: number;
   marketCap: number;
-  tags: string[];
+  timestamp: number;
+  migrated: boolean;
 }
-
 
 export const mockPositions: Position[] = [
 ];
