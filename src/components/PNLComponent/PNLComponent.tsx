@@ -79,6 +79,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [hasInteracted, setHasInteracted] = useState(false); // Track if user has interacted
 
   const captureRef = useRef<HTMLDivElement>(null);
   const pickerRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
@@ -163,9 +164,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         <div className="color-input-container">
           <div
             className="color-preview"
-            style={{ backgroundColor: color }}
+            style={{ backgroundColor: color,
+            }}
             onClick={handleColorPickerClick}
             title="Click to pick color"
+            
           />
           <input
             type="text"
@@ -215,8 +218,11 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
         useCORS: true,
         backgroundColor: '#000000',
         scale: 2,
-        width: 600,
-        height: 360,
+
+        ignoreElements: (element) => {
+          // Ignore the scroll hint element during capture
+          return element.classList?.contains('scroll-hint');
+        }
       });
     } catch (error) {
       console.error('Error capturing image:', error);
@@ -316,6 +322,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
     
     e.preventDefault();
     setIsDragging(true);
+    setHasInteracted(true); // Mark as interacted when dragging starts
     setDragStart({
       x: e.clientX,
       y: e.clientY
@@ -359,6 +366,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   const handleBgSelect = (bg: string) => {
     setSelectedBg(bg);
     setCustomizationSettings(defaultCustomizationSettings);
+    setHasInteracted(false); // Reset interaction state when changing background
     // Reset background position when selecting a different background
     if (bg !== uploadedBg) {
       setBackgroundPosition({ x: 50, y: 50 });
@@ -389,11 +397,13 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
             setUploadedBg(result);
             setSelectedBg(result);
             setBackgroundPosition({ x: 50, y: 50 }); // Reset to center
+            setHasInteracted(false); // Reset interaction state for new upload
           } catch (error) {
             console.error('Error getting image dimensions:', error);
             setUploadedBg(result);
             setSelectedBg(result);
             setUploadedImageDimensions(null);
+            setHasInteracted(false); // Reset interaction state for new upload
           }
         }
       };
@@ -554,7 +564,8 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
   if (!isVisible) return null;
 
   const { needsHorizontal, needsVertical } = checkImageNeedsScrolling();
-  const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical);
+  // Only show hint if user hasn't interacted yet, during capture, and when scrolling is possible
+  const showScrollHint = isUploadedImageSelected && (needsHorizontal || needsVertical) && !hasInteracted && !isCapturing;
 
   return (
     <div className="pnl-modal-overlay" onClick={onClose}>
