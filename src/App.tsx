@@ -4802,6 +4802,7 @@ function App() {
           };
 
           const getMarketKey = (m: any) => {
+            console.log(addresstoMarket, m);
             if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
             if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
             return "unknown";
@@ -4837,6 +4838,7 @@ function App() {
               const original = Number(o.originalSize ?? 0);
               const remaining = Number(o.remainingSize ?? 0);
               const filled = Math.max(0, original - remaining);
+              console.log(markets, o)
 
               temporders.push([
                 price,
