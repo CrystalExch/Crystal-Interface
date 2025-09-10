@@ -32,6 +32,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const isMarksVisibleRef = useRef<boolean>(isMarksVisible);
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
+  const subsRef = useRef<Record<string, string>>({});
+
+  const toResKey = (sym: string, res: string) => sym + 'MON' + (res === '1D' ? '1D' : res);
 
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
     if (!Array.isArray(bars) || bars.length === 0) return bars;
@@ -53,7 +56,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
   useEffect(() => {
     if (data && data[0] && data[1]) {
-      dataRef.current[data[1]] = data[0];
+      dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
     }
   }, [data]);
 
@@ -298,14 +301,22 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         },
 
         subscribeBars: (
-          resolution: any,
-          onRealtimeCallback: any,
+          symbolInfo: any,
+          resolution: string,
+          onRealtimeCallback: (bar: any) => void,
+          subscriberUID: string,
+          onResetCacheNeeded?: () => void,
         ) => {
-          const key = token.symbol + 'MON' + resolution;
+          const key = toResKey(token.symbol, resolution);
           realtimeCallbackRef.current[key] = onRealtimeCallback;
+          subsRef.current[subscriberUID] = key;
         },
 
-        unsubscribeBars: () => { },
+        unsubscribeBars: (subscriberUID: string) => {
+          const key = subsRef.current[subscriberUID];
+          if (key) delete realtimeCallbackRef.current[key];
+          delete subsRef.current[subscriberUID];
+        },
       },
     });
 

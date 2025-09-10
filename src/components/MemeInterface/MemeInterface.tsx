@@ -924,44 +924,49 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       const seriesKey = toSeriesKey(token.symbol, selectedInterval);
       const cb = realtimeCallbackRef.current?.[seriesKey];
-      if (typeof cb === "function") {
-        cb({
-          time: bucketMs,
-          open: lastPrice,
-          high: lastPrice,
-          low: lastPrice,
-          close: lastPrice,
-          volume: volNative,
-        });
-      }
 
       setChartData((prev: any) => {
         if (!prev || !Array.isArray(prev) || prev.length < 2) return prev;
         const [bars, key, flag] = prev;
 
-        let updated = Array.isArray(bars) ? [...bars] : [];
+        const updated = Array.isArray(bars) ? [...bars] : [];
         const last = updated[updated.length - 1];
+        const prevBar = updated[updated.length - 2];
+        const prevClose = prevBar?.close ?? last?.close ?? lastPrice;
 
         if (!last || typeof last.time !== "number" || last.time < bucketMs) {
-          updated.push({
+          const open = prevClose;
+          const high = Math.max(open, lastPrice);
+          const low = Math.min(open, lastPrice);
+
+          const newBar = {
             time: bucketMs,
-            open: lastPrice,
-            high: lastPrice,
-            low: lastPrice,
+            open,
+            high,
+            low,
             close: lastPrice,
-            volume: volNative,
-          });
+            volume: volNative || 0,
+          };
+
+          updated.push(newBar);
+          if (typeof cb === "function") cb(newBar);
         } else {
           const cur = { ...last };
+
+          cur.open = prevClose;
+          if (cur.high < cur.open) cur.high = cur.open;
+          if (cur.low  > cur.open) cur.low  = cur.open;
+
           cur.high = Math.max(cur.high, lastPrice);
-          cur.low = Math.min(cur.low, lastPrice);
+          cur.low = Math.min(cur.low,  lastPrice);
           cur.close = lastPrice;
           cur.volume = (cur.volume || 0) + (volNative || 0);
+
           updated[updated.length - 1] = cur;
+          if (typeof cb === "function") cb(cur);
         }
 
-        if (updated.length > 1200) updated = updated.slice(updated.length - 1200);
-
+        if (updated.length > 1200) updated.splice(0, updated.length - 1200);
         return [updated, key, flag];
       });
     },
@@ -969,29 +974,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
 
   useEffect(() => {
-    if (!realtimeCallbackRef.current || !trades.length) return;
-
-    const latestTrade = trades[0];
-    const key = token.symbol + 'MON' + (
-      selectedInterval === '1d' ? '1D' :
-        selectedInterval === '4h' ? '240' :
-          selectedInterval === '1h' ? '60' :
-            selectedInterval.slice(0, -1)
-    );
-
-    const callback = realtimeCallbackRef.current[key];
-    if (callback && latestTrade) {
-      const bar = {
-        time: Date.now(),
-        open: latestTrade.price,
-        high: latestTrade.price,
-        low: latestTrade.price,
-        close: latestTrade.price,
-        volume: latestTrade.nativeAmount,
-      };
-      callback(bar);
-    }
-  }, [trades, selectedInterval, token.symbol]);
+    if (!trades.length) return;
+    const t = trades[0];
+    pushRealtimeTick(t.price, t.nativeAmount);
+  }, [trades, pushRealtimeTick]);
 
   // metadata n klines
   useEffect(() => {
@@ -1189,6 +1175,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             ...prev.slice(0, 99),
           ]);
 
+          pushRealtimeTick(tradePrice, isBuy ? amountIn : amountOut);
+
           setHolders((prev) => {
             const copy = [...prev];
             let idx = holdersMapRef.current.get(callerAddr) ?? -1;
@@ -1236,12 +1224,36 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
-        if (callerAddr === userAddr && positionsMapRef.current.has(tokenAddr)) {
+        if (callerAddr === userAddr) {
           setPositions((prev) => {
-            const copy = [...prev];
-            const idx = positionsMapRef.current.get(tokenAddr)!;
-            const pos = { ...copy[idx] };
+            const copy = Array.isArray(prev) ? [...prev] : [];
+            let idx = positionsMapRef.current.get(tokenAddr);
 
+            if (idx === undefined) {
+              const isCurrent = tokenAddress && tokenAddr === tokenAddress.toLowerCase();
+
+              const newPos = {
+                tokenId: isCurrent ? token.id : tokenAddr,
+                symbol: isCurrent ? token.symbol : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.symbol || ''),
+                name: isCurrent ? token.name : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.name || ''),
+                imageUrl: isCurrent ? (token.image || '') : '',
+                metadataCID: '',
+                boughtTokens: 0,
+                soldTokens: 0,
+                spentNative: 0,
+                receivedNative: 0,
+                remainingTokens: 0,
+                remainingPct: 0,
+                pnlNative: 0,
+                lastPrice: price,
+              };
+
+              copy.push(newPos);
+              idx = copy.length - 1;
+              positionsMapRef.current.set(tokenAddr, idx);
+            }
+
+            const pos = { ...copy[idx!] };
             pos.lastPrice = price;
 
             if (isBuy) {
@@ -1254,12 +1266,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
             }
 
+            pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
             const balance = pos.remainingTokens;
             const realized = pos.receivedNative - pos.spentNative;
             const unrealized = balance * (pos.lastPrice || 0);
             pos.pnlNative = realized + unrealized;
 
-            copy[idx] = pos;
+            copy[idx!] = pos;
 
             if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
               const markToMarket = balance * (pos.lastPrice || 0);
