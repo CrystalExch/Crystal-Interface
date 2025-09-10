@@ -163,7 +163,6 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellSliderChange,
   onSellConfirm,
   onMaxClick,
-  fmt,
   currentPrice
 }) => {
   const sliderRef = useRef<HTMLInputElement>(null);

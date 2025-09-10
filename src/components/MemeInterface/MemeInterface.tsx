@@ -305,6 +305,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
   const wsRef = useRef<WebSocket | null>(null);
+  const holdersMapRef = useRef<Map<string, number>>(new Map());
+  const positionsMapRef = useRef<Map<string, number>>(new Map());
+  const devTokenIdsRef = useRef<Set<string>>(new Set());
   const [selectedBuyPreset, setSelectedBuyPreset] = useState(1);
   const [buySlippageValue, setBuySlippageValue] = useState('20');
   const [buyPriorityFee, setBuyPriorityFee] = useState('0.01');
@@ -924,6 +927,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   }, [trades, selectedInterval, token.symbol]);
 
+  // metadata n klines
   useEffect(() => {
     if (!token.id) return;
     let isCancelled = false;
@@ -1043,6 +1047,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTimeout(() => setNotif(null), 300);
   }, []);
 
+  // ws manager
   useEffect(() => {
     if (!token.id) return;
     const ws = new WebSocket(settings.chainConfig[activechain].wssurl);
@@ -1073,8 +1078,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       if (!log?.topics?.length) return;
 
       if (log.topics[0] === MARKET_UPDATE_EVENT) {
-        const token = `0x${log.topics[1].slice(26)}`;
-        const caller = `0x${log.topics[2].slice(26)}`;
+        const tokenAddr = `0x${log.topics[1].slice(26)}`.toLowerCase();
+        const callerAddr = `0x${log.topics[2].slice(26)}`.toLowerCase();
 
         const hex = log.data.startsWith('0x') ? log.data.slice(2) : log.data;
         const word = (i: number) => BigInt('0x' + hex.slice(i * 64, i * 64 + 64));
@@ -1089,57 +1094,139 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const amountIn = toNum(inputAmountWei);
         const amountOut = toNum(outputAmountWei);
-
         const vNative = toNum(vNativeWei);
         const vToken = toNum(vTokenWei);
 
         const price = vToken === 0 ? 0 : (vNative / vToken);
-        const tradePrice = isBuy ? amountIn / amountOut : amountOut / amountIn;
+        const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
 
-        setLive(p => ({
-          ...p,
-          price,
-          marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: (p.buyTransactions || 0) + (isBuy ? 1 : 0),
-          sellTransactions: (p.sellTransactions || 0) + (isBuy ? 0 : 1),
-          volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
-        }));
+        if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
+          setLive((p) => ({
+            ...p,
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            buyTransactions: (p.buyTransactions || 0) + (isBuy ? 1 : 0),
+            sellTransactions: (p.sellTransactions || 0) + (isBuy ? 0 : 1),
+            volume24h: (p.volume24h || 0) + (isBuy ? amountIn : amountOut),
+          }));
 
-        setTrades(prev => [
-          {
-            id: `${log.transactionHash}-${log.logIndex}`,
-            timestamp: Date.now() / 1000,
-            isBuy,
-            price: tradePrice,
-            nativeAmount: isBuy ? amountIn : amountOut,
-            tokenAmount: isBuy ? amountOut : amountIn,
-            caller,
-            token,
-          },
-          ...prev.slice(0, 99),
-        ]);
+          setTrades((prev) => [
+            {
+              id: `${log.transactionHash}-${log.logIndex}`,
+              timestamp: Date.now() / 1000,
+              isBuy,
+              price: tradePrice,
+              nativeAmount: isBuy ? amountIn : amountOut,
+              tokenAmount: isBuy ? amountOut : amountIn,
+              caller: `0x${log.topics[2].slice(26)}`,
+            },
+            ...prev.slice(0, 99),
+          ]);
 
-        setHolders(prev => {
-          const idx = prev.findIndex(r => r.address.toLowerCase() === caller.toLowerCase());
-          if (idx === -1) return prev;
+          setHolders((prev) => {
+            const copy = [...prev];
+            let idx = holdersMapRef.current.get(callerAddr) ?? -1;
 
-          const row = { ...prev[idx] };
-          if (isBuy) {
-            row.amountBought += amountOut;
-            row.valueBought += amountIn;
-            row.balance += amountOut;
-          } else {
-            row.amountSold += amountIn;
-            row.valueSold += amountOut;
-            row.balance -= amountIn;
-          }
-          row.tokenNet = row.amountBought - row.amountSold;
-          row.valueNet = row.valueSold - row.valueBought;
+            if (idx === -1) {
+              const newRow: Holder = {
+                address: `0x${log.topics[2].slice(26)}`,
+                balance: 0,
+                tokenNet: 0,
+                valueNet: 0,
+                amountBought: 0,
+                amountSold: 0,
+                valueBought: 0,
+                valueSold: 0,
+              };
+              copy.push(newRow);
+              idx = copy.length - 1;
+              holdersMapRef.current.set(callerAddr, idx);
+            }
 
-          const copy = [...prev];
-          copy[idx] = row;
-          return copy;
-        });
+            const row = { ...copy[idx] };
+            if (isBuy) {
+              row.amountBought += amountOut;
+              row.valueBought += amountIn;
+              row.balance += amountOut;
+            } else {
+              row.amountSold += amountIn;
+              row.valueSold += amountOut;
+              row.balance = Math.max(0, row.balance - amountIn);
+            }
+            row.tokenNet = row.amountBought - row.amountSold;
+            row.valueNet = (row.valueSold - row.valueBought) + (row.balance * price);
+
+            copy[idx] = row;
+
+            const topSum = copy
+              .map((h) => Math.max(0, h.balance))
+              .sort((a, b) => b - a)
+              .slice(0, 10)
+              .reduce((s, n) => s + n, 0);
+            const pct = (topSum / TOTAL_SUPPLY) * 100;
+            setTop10HoldingPercentage(pct);
+
+            return copy;
+          });
+        }
+
+        if (callerAddr === userAddr && positionsMapRef.current.has(tokenAddr)) {
+          setPositions((prev) => {
+            const copy = [...prev];
+            const idx = positionsMapRef.current.get(tokenAddr)!;
+            const pos = { ...copy[idx] };
+
+            pos.lastPrice = price;
+
+            if (isBuy) {
+              pos.boughtTokens += amountOut;
+              pos.spentNative += amountIn;
+              pos.remainingTokens += amountOut;
+            } else {
+              pos.soldTokens += amountIn;
+              pos.receivedNative += amountOut;
+              pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
+            }
+
+            const balance = pos.remainingTokens;
+            const realized = pos.receivedNative - pos.spentNative;
+            const unrealized = balance * (pos.lastPrice || 0);
+            pos.pnlNative = realized + unrealized;
+
+            copy[idx] = pos;
+
+            if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
+              const markToMarket = balance * (pos.lastPrice || 0);
+              const totalPnL = (pos.receivedNative + markToMarket) - pos.spentNative;
+
+              setUserStats({
+                balance,
+                amountBought: pos.boughtTokens,
+                amountSold: pos.soldTokens,
+                valueBought: pos.spentNative,
+                valueSold: pos.receivedNative,
+                valueNet: totalPnL,
+              });
+            }
+
+            return copy;
+          });
+        }
+
+        if (devTokenIdsRef.current.has(tokenAddr)) {
+          setDevTokens((prev) => {
+            const updated = prev.map((t) => {
+              if ((t.id || '').toLowerCase() !== tokenAddr) return t;
+              const next = { ...t };
+              next.price = price;
+              next.marketCap = price * TOTAL_SUPPLY;
+              next.timestamp = Date.now() / 1000;
+              return next;
+            });
+            devTokenIdsRef.current = new Set(updated.map((t) => (t.id || '').toLowerCase()));
+            return updated;
+          });
+        }
 
         return;
       }
@@ -1220,6 +1307,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       });
 
       setHolders(mapped);
+      holdersMapRef.current = new Map(mapped.map((h: Holder, i: number) => [h.address.toLowerCase(), i]));
     })();
   }, [token.id, page]);
 
@@ -1276,7 +1364,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         if (cancelled) return;
       }
 
-      if (!cancelled) setDevTokens(out);
+      if (!cancelled) {
+        setDevTokens(out);
+        devTokenIdsRef.current = new Set(out.map((t) => (t.id || '').toLowerCase()));
+      }
     })();
 
     return () => { cancelled = true; };
@@ -1381,7 +1472,10 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       const markToMarket = totals.balance * (totals.lastPriceNative || 0);
       const totalPnL = (totals.valueSold + markToMarket) - totals.valueBought;
 
-      setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
+      const sorted = all.sort((a, b) => b.remainingTokens - a.remainingTokens);
+      setPositions(sorted);
+      positionsMapRef.current = new Map(sorted.map((p, i) => [String(p.tokenId).toLowerCase(), i]));
+
       setUserStats({
         balance: totals.balance,
         amountBought: totals.amountBought,
