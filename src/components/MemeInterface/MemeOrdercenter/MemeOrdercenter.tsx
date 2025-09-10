@@ -591,11 +591,9 @@ const handleSellConfirm = async () => {
               <div className="meme-oc-header-cell">Token</div>
               <div
                 className="meme-oc-header-cell clickable"
-                onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
                 style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
               >
                 Bought
-                <img src={switchicon} className="meme-header-switch-icon" alt="" style={{ width: '12px', height: '12px' }} />
               </div>
               <div className="meme-oc-header-cell">Sold</div>
               <div className="meme-oc-header-cell">Remaining</div>
@@ -606,7 +604,6 @@ const handleSellConfirm = async () => {
               {(positions?.length ? positions : []).map((p, index) => {
                 const tokenShort = p.symbol || `${p.tokenId.slice(0, 6)}…${p.tokenId.slice(-4)}`;
                 const tokenImageUrl = p.imageUrl || null;
-                // Add alternating row class based on index
                 const rowClass = index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd';
 
                 return (
@@ -916,14 +913,23 @@ const handleSellConfirm = async () => {
           </>
         </div>
 
-        {onToggleWidget && (
+       {onToggleWidget && (
           <div className="meme-oc-right-controls">
+           
             <button
               onClick={onToggleWidget}
               className={`meme-oc-quickbuy-button ${isWidgetOpen ? 'active' : ''}`}
               title={isWidgetOpen ? 'Close QuickBuy Widget' : 'Open QuickBuy Widget'}
             >
               {windowWidth > 768 && <span>{isWidgetOpen ? 'Quick Buy' : 'Quick Buy'}</span>}
+            </button>
+              <button
+              onClick={() => setAmountMode(prev => prev === 'MON' ? 'USD' : 'MON')}
+              className="meme-oc-currency-toggle"
+              title={`Switch to ${amountMode === 'MON' ? 'USD' : 'MON'} display`}
+            >
+              <img src={switchicon} className="meme-currency-switch-icon" />
+              {amountMode}
             </button>
           </div>
         )}
