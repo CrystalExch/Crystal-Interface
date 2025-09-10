@@ -4802,7 +4802,6 @@ function App() {
           };
 
           const getMarketKey = (m: any) => {
-            console.log(addresstoMarket, m);
             if (m?.id && addresstoMarket?.[m.id]) return addresstoMarket[m.id];
             if (m?.baseAsset && m?.quoteAsset) return `${m.baseAsset}-${m.quoteAsset}`;
             return "unknown";
