@@ -83,7 +83,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 selectedInterval === '4h' ? 14400 :
                   86400
           }`.toLowerCase();
-        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.2.15';
+        const endpoint = 'https://api.studio.thegraph.com/query/104695/test/v0.3.0';
         let allCandles: any[] = [];
         const query = `
           query {
@@ -142,7 +142,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           const priceFactor = Number(activeMarket.priceFactor);
           const open = lastClose !== null ? lastClose : candle.open / priceFactor;
           const close = candle.close / priceFactor
-          console.log(candle);
     
           let high = candle.high / priceFactor;
           let low = candle.low / priceFactor;
