@@ -317,10 +317,10 @@ export default function MemeTradesComponent({
     );
   };
 
-  const fmtAmount = (v: number) =>
+const fmtAmount = (v: number) =>
     amountMode === "USDC"
-      ? `$${Math.abs(v).toFixed(2)}`
-      : `${Math.abs(v).toFixed(4)}`;
+      ? `$${Math.abs(v).toFixed(3)}`
+      : `${Math.abs(v).toFixed(3)}`;
 
   const fmtTimeAgo = (ts: number) => {
     const now = Date.now() / 1000;

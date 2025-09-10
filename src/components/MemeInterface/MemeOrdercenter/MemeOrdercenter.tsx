@@ -750,9 +750,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
                     <div className="meme-oc-cell">
                       <div className="meme-remaining-info">
-                        <div>
+                        <div className="meme-remaining-container">
                           <span className="meme-remaining">
-                            {fmt(p.remainingTokens)} {p.symbol || ''}
+                            <img src={monadicon} className="meme-ordercenter-monad-icon" />{fmt(p.remainingTokens * currentPrice)}
                           </span>
                           <span className="meme-remaining-percentage">
                             {p.remainingPct.toFixed(0)}%
@@ -964,8 +964,9 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <div className="meme-oc-section-content" data-section="devTokens">
             <div className="meme-oc-header">
               <div className="meme-oc-header-cell">Token</div>
+              <div className="meme-oc-header-cell">Token Address</div>
               <div className="meme-oc-header-cell">Market Cap (MON)</div>
-              <div className="meme-oc-header-cell">Migraton Status</div>
+              <div className="meme-oc-header-cell">Migration Status</div>
             </div>
 
             <div className="meme-oc-items">
@@ -992,13 +993,14 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
 
                           </span>
                         </div>
-                        <div className="meme-wallet-address-sub">
-                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
-                        </div>
                       </div>
                     </div>
 
- 
+                    <div className="meme-oc-cell">
+                      <div className="meme-wallet-address-sub">
+                          {t.id.slice(0, 6)}…{t.id.slice(-4)}
+                        </div>
+                    </div>
                     <div className="meme-oc-cell">
                       <div className="meme-ordercenter-info">
                         <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />

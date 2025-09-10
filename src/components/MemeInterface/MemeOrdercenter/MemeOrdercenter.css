@@ -198,7 +198,7 @@
 
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-header,
 .meme-oc-section-content[data-section="devTokens"] .meme-oc-item {
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
+  grid-template-columns: 1.2fr 1fr 1fr 1fr;
   gap: 15px;
 }
 
@@ -353,18 +353,23 @@
 }
 
 .meme-remaining {
+  display: flex;
+  align-items: center;
   color: #ffffffe8;
   font-size: 0.75rem;
   text-align: center;
 }
 
 .meme-remaining-percentage {
+  display: flex;
+  align-items: center;
   color: #ffffff73 !important;
   font-size: 0.75rem;
   margin-left: 4px;
   background-color: #3333376b;
   padding: 0px 4px;
   border-radius: 4px;
+  height: 15px;
 }
 
 
@@ -1345,4 +1350,9 @@
 
 .meme-currency-switch-icon{
   margin-right: 5px;
+}
+
+.meme-remaining-container{
+  display: flex;
+  align-items: center;
 }
