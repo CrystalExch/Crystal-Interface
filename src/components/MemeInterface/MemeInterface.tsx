@@ -1224,12 +1224,36 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
-        if (callerAddr === userAddr && positionsMapRef.current.has(tokenAddr)) {
+        if (callerAddr === userAddr) {
           setPositions((prev) => {
-            const copy = [...prev];
-            const idx = positionsMapRef.current.get(tokenAddr)!;
-            const pos = { ...copy[idx] };
+            const copy = Array.isArray(prev) ? [...prev] : [];
+            let idx = positionsMapRef.current.get(tokenAddr);
 
+            if (idx === undefined) {
+              const isCurrent = tokenAddress && tokenAddr === tokenAddress.toLowerCase();
+
+              const newPos = {
+                tokenId: isCurrent ? token.id : tokenAddr,
+                symbol: isCurrent ? token.symbol : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.symbol || ''),
+                name: isCurrent ? token.name : (copy.find(p => (p.tokenId || '').toLowerCase() === tokenAddr)?.name || ''),
+                imageUrl: isCurrent ? (token.image || '') : '',
+                metadataCID: '',
+                boughtTokens: 0,
+                soldTokens: 0,
+                spentNative: 0,
+                receivedNative: 0,
+                remainingTokens: 0,
+                remainingPct: 0,
+                pnlNative: 0,
+                lastPrice: price,
+              };
+
+              copy.push(newPos);
+              idx = copy.length - 1;
+              positionsMapRef.current.set(tokenAddr, idx);
+            }
+
+            const pos = { ...copy[idx!] };
             pos.lastPrice = price;
 
             if (isBuy) {
@@ -1242,12 +1266,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               pos.remainingTokens = Math.max(0, pos.remainingTokens - amountIn);
             }
 
+            pos.remainingPct = pos.boughtTokens > 0 ? (pos.remainingTokens / pos.boughtTokens) * 100 : 0;
+
             const balance = pos.remainingTokens;
             const realized = pos.receivedNative - pos.spentNative;
             const unrealized = balance * (pos.lastPrice || 0);
             pos.pnlNative = realized + unrealized;
 
-            copy[idx] = pos;
+            copy[idx!] = pos;
 
             if (tokenAddress && tokenAddr === tokenAddress.toLowerCase()) {
               const markToMarket = balance * (pos.lastPrice || 0);
