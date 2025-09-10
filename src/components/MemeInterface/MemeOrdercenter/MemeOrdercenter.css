@@ -1323,3 +1323,16 @@
 .meme-oc-item-odd {
   background-color: rgba(12, 12, 14, 1); 
 }
+
+
+.meme-oc-currency-toggle{
+  display: flex;
+  align-items: center;
+  font-size: .8rem;
+  color: rgb(255,255,255,0.7);
+  width: 65px;
+}
+
+.meme-currency-switch-icon{
+  margin-right: 5px;
+}
