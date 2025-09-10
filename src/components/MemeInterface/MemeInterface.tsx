@@ -9,7 +9,6 @@ import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
 import MemeChart from "./MemeChart/MemeChart";
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
-import { defaultMetrics } from "../TokenExplorer/TokenData";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
@@ -57,6 +56,7 @@ interface Token {
   bondingAmount: number;
   volumeDelta: number;
   quote?: number;
+  dev: string;
 }
 
 interface Trade {
@@ -141,6 +141,10 @@ const HOLDERS_QUERY = `
       lastUpdatedAt
     }
 
+    launchpadTokens(where: { id: $m }) {
+      lastPriceNativePerTokenWad
+    }
+
     top10: launchpadPositions(
       where: { token: $m }
       orderBy: remainingTokens
@@ -172,6 +176,25 @@ const POSITIONS_QUERY = `
       realizedPnlNative
       unrealizedPnlNative
       lastUpdatedAt
+    }
+  }
+`;
+
+const DEV_TOKENS_QUERY = `
+  query ($d: Bytes!, $skip: Int!, $first: Int!) {
+    launchpadTokens(
+      where: { creator: $d }
+      orderBy: timestamp
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      id
+      name
+      symbol
+      metadataCID
+      lastPriceNativePerTokenWad
+      timestamp
     }
   }
 `;
@@ -222,28 +245,29 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       default: return 0;
     }
   };
-const resolveNative = useCallback(
-  (symbol: string | undefined) => {
-    if (!symbol) return "";
-    if (symbol === wethticker) return ethticker ?? symbol;
-    return symbol;
-  },
-  [wethticker, ethticker],
-);
 
-const usdPer = useCallback(
-  (symbol?: string): number => {
-    if (!symbol || !tradesByMarket || !markets) return 0;
-    const sym = resolveNative(symbol);
-    if (usdc && sym === "USDC") return 1;
-    const pair = `${sym}USDC`;
-    const top = tradesByMarket[pair]?.[0]?.[3];
-    const pf = Number(markets[pair]?.priceFactor) || 1;
-    if (!top || !pf) return 0;
-    return Number(top) / pf;
-  },
-  [tradesByMarket, markets, resolveNative, usdc],
-);
+  const resolveNative = useCallback(
+    (symbol: string | undefined) => {
+      if (!symbol) return "";
+      if (symbol === wethticker) return ethticker ?? symbol;
+      return symbol;
+    },
+    [wethticker, ethticker],
+  );
+
+  const usdPer = useCallback(
+    (symbol?: string): number => {
+      if (!symbol || !tradesByMarket || !markets) return 0;
+      const sym = resolveNative(symbol);
+      if (usdc && sym === "USDC") return 1;
+      const pair = `${sym}USDC`;
+      const top = tradesByMarket[pair]?.[0]?.[3];
+      const pf = Number(markets[pair]?.priceFactor) || 1;
+      if (!top || !pf) return 0;
+      return Number(top) / pf;
+    },
+    [tradesByMarket, markets, resolveNative, usdc],
+  );
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
@@ -299,6 +323,7 @@ const usdPer = useCallback(
     valueBought: 0, valueSold: 0, valueNet: 0,
   });
   const [positions, setPositions] = useState<any[]>([]);
+  const [devTokens, setDevTokens] = useState<any[]>([]);
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
   const [advancedOrders, setAdvancedOrders] = useState<Array<{
@@ -307,8 +332,6 @@ const usdPer = useCallback(
     percentage?: string;
     amount?: string;
   }>>([]);
-
-  // Mobile-specific states
   const [mobileActiveView, setMobileActiveView] = useState<'chart' | 'trades' | 'ordercenter'>('chart');
   const [mobileBuyAmounts, _setMobileBuyAmounts] = useState(['1', '5', '10', '50']);
   const [mobileSellPercents, _setMobileSellPercents] = useState(['10%', '25%', '50%', '100%']);
@@ -668,7 +691,75 @@ const usdPer = useCallback(
       }
     }
   };
+const handleSellPosition = async (position: any, amount: string) => {
+  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+    setpopup?.(4);
+    return;
+  }
 
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    setChain?.();
+    return;
+  }
+
+  const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Sending transaction...',
+        subtitle: `Selling ${amount} ${position.symbol}`,
+        amount: amount,
+        amountUnit: position.symbol
+      });
+    }
+
+    const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
+
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Confirming sell...',
+        subtitle: `Selling ${amount} ${position.symbol}`,
+        variant: 'info'
+      });
+    }
+
+    const sellUo = {
+      target: routerAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: "sell",
+        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+      }),
+      value: 0n,
+    };
+
+    const sellOp = await sendUserOperationAsync({ uo: sellUo });
+
+    const soldTokens = Number(amountTokenWei) / 1e18;
+    const expectedMON = soldTokens * (position.lastPrice || 0);
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
+        subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+        variant: 'success',
+        isLoading: false
+      });
+    }
+
+  } catch (e: any) {
+    console.error(e);
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Sell failed',
+        subtitle: e?.message || 'Transaction was rejected',
+        variant: 'error',
+        isLoading: false
+      });
+    }
+  }
+};
   const handleMobileSellTrade = async (value: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
       setpopup?.(4);
@@ -746,52 +837,56 @@ const usdPer = useCallback(
     }
   };
 
+  const baseDefaults: Token = {
+    id: tokenAddress || "",
+    tokenAddress: tokenAddress || "",
+    name: "Unknown Token",
+    symbol: "UNKNOWN",
+    image: "",
+    price: 0,
+    marketCap: 0,
+    change24h: 0,
+    volume24h: 0,
+    holders: 0,
+    proTraders: 0,
+    kolTraders: 0,
+    sniperHolding: 0,
+    devHolding: 0,
+    bundleHolding: 0,
+    insiderHolding: 0,
+    top10Holding: 0,
+    buyTransactions: 0,
+    sellTransactions: 0,
+    globalFeesPaid: 0,
+    website: "",
+    twitterHandle: "",
+    progress: 0,
+    status: "new",
+    description: "",
+    created: "0h ago",
+    bondingAmount: 0,
+    volumeDelta: 0,
+    dev: "",
+  };
+
   const baseToken: Token = (() => {
-    if (location.state?.tokenData) return location.state.tokenData as Token;
+    const fromState = (location.state?.tokenData ?? {}) as Partial<Token>;
     const t = tokenList.find(
-      (x) =>
-        x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress,
+      x => x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress
     );
+
     if (t) {
       return {
-        id: t.id || t.contractAddress,
-        tokenAddress: t.contractAddress || t.tokenAddress,
+        ...baseDefaults,
+        id: (t.id || t.contractAddress) ?? baseDefaults.id,
+        tokenAddress: (t.contractAddress || t.tokenAddress) ?? baseDefaults.tokenAddress,
         name: t.name,
         symbol: t.symbol,
         image: t.image,
-        price: 0,
-        marketCap: 0,
-        change24h: 0,
-        volume24h: 0,
-        holders: 0,
-        proTraders: 0,
-        kolTraders: 0,
-        sniperHolding: 0,
-        devHolding: 0,
-        bundleHolding: 0,
-        insiderHolding: 0,
-        top10Holding: 0,
-        buyTransactions: 0,
-        sellTransactions: 0,
-        globalFeesPaid: 0,
-        website: "",
-        twitterHandle: "",
-        progress: 0,
-        status: "new",
-        description: "",
-        created: "0h ago",
-        bondingAmount: 0,
-        volumeDelta: 0,
       };
     }
-    return {
-      id: tokenAddress || "",
-      tokenAddress: tokenAddress || "",
-      name: "Unknown Token",
-      symbol: "UNKNOWN",
-      image: "",
-      ...defaultMetrics,
-    } as Token;
+
+    return { ...baseDefaults, ...fromState };
   })();
 
   const refetchBalances = useCallback(() => {
@@ -874,7 +969,6 @@ const usdPer = useCallback(
         });
 
         const data = (await response.json())?.data;
-        console.log(data)
         if (isCancelled || !data) return;
 
         if (data.launchpadTokens?.length) {
@@ -907,43 +1001,29 @@ const usdPer = useCallback(
 
         if (data.launchpadTokens?.[0]?.series?.klines) {
           const bars = data.launchpadTokens?.[0]?.series?.klines
-            .slice().reverse()
+            .slice()
+            .reverse()
             .map((c: any) => ({
               time: Number(c.time) * 1000,
               open: Number(c.open) / 1e18,
               high: Number(c.high) / 1e18,
-              low: Number(c.low) / 1e18,
-              close: Number(c.close) / 1e18,
+              low:  Number(c.low)  / 1e18,
+              close:Number(c.close)/ 1e18,
               volume: Number(c.baseVolume) / 1e18,
             }));
 
-          const key = token.symbol + 'MON' + (
-            selectedInterval === '1d' ? '1D'
-              : selectedInterval === '4h' ? '240'
-                : selectedInterval === '1h' ? '60'
-                  : selectedInterval.slice(0, -1)
-          );
+          const key =
+            token.symbol +
+            "MON" +
+            (selectedInterval === "1d"
+              ? "1D"
+              : selectedInterval === "4h"
+              ? "240"
+              : selectedInterval === "1h"
+              ? "60"
+              : selectedInterval.slice(0, -1));
 
-          const intervalMs =
-            selectedInterval === '1d' ? 86400_000 :
-              selectedInterval === '4h' ? 14_400_000 :
-                selectedInterval === '1h' ? 3_600_000 :
-                  parseInt(selectedInterval, 10) * 60_000;
-
-          const filled: any[] = [];
-          for (let i = 0; i < bars.length; i++) {
-            const bar = bars[i]; filled.push(bar);
-            const next = bars[i + 1];
-            if (next) {
-              let t = bar.time + intervalMs;
-              while (t < next.time) {
-                filled.push({ time: t, open: bar.close, high: bar.close, low: bar.close, close: bar.close, volume: bar.baseVolume });
-                t += intervalMs;
-              }
-            }
-          }
-
-          setChartData([filled, key, false]);
+          setChartData([bars, key, false]);
         }
       } catch (e) {
         console.error(e);
@@ -1087,11 +1167,11 @@ const usdPer = useCallback(
     };
   }, [token.id, tokenAddress, address, refetchBalances]);
 
+  // holders
   useEffect(() => {
     if (!token.id) return;
 
     (async () => {
-      // one fetch is enough — it already takes skip/first
       const response = await fetch(SUBGRAPH_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -1108,19 +1188,24 @@ const usdPer = useCallback(
       const { data } = await response.json();
 
       if (data?.top10) {
-        const top10TotalBalance =
-          data.top10.reduce((sum: number, r: any) => sum + Number(r.remainingTokens) / 1e18, 0);
+        const top10TotalBalance = data.top10.reduce((sum: number, r: any) => sum + Number(r.remainingTokens) / 1e18, 0);
         const top10Percentage = (top10TotalBalance / TOTAL_SUPPLY) * 100;
         setTop10HoldingPercentage(top10Percentage);
       }
 
       const positions: any[] = data?.launchpadPositions ?? [];
+      const lastNative = Number(data?.launchpadTokens?.[0]?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+
       const mapped: Holder[] = positions.map((p: any) => {
         const amountBought = Number(p.tokenBought) / 1e18;
         const amountSold = Number(p.tokenSold) / 1e18;
         const valueBought = Number(p.nativeSpent) / 1e18;
         const valueSold = Number(p.nativeReceived) / 1e18;
-        const balance = Number(p.remainingTokens) / 1e18;
+
+        const balance = amountBought - amountSold;
+        const realized = valueSold - valueBought;
+        const unrealized = balance * lastNative;
+        const totalPnl = realized + unrealized;
 
         return {
           address: p.account.id,
@@ -1129,8 +1214,8 @@ const usdPer = useCallback(
           amountSold,
           valueBought,
           valueSold,
-          tokenNet: amountBought - amountSold,
-          valueNet: valueSold - valueBought,
+          tokenNet: balance,
+          valueNet: totalPnl,
         };
       });
 
@@ -1138,109 +1223,176 @@ const usdPer = useCallback(
     })();
   }, [token.id, page]);
 
+  // dev tokens
+  useEffect(() => {
+    if (!token.dev) return;
+    let cancelled = false;
 
-useEffect(() => {
-  if (!userAddr) return;
-  let cancelled = false;
+    (async () => {
+      const out: any[] = [];
+      let skip = 0;
 
-  (async () => {
-    const totals = {
-      balance: 0,
-      amountBought: 0,
-      amountSold: 0,
-      valueBought: 0,
-      valueSold: 0,
-    };
+      while (true) {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: DEV_TOKENS_QUERY,
+            variables: { d: token.dev.toLowerCase(), skip, first: PAGE_SIZE },
+          }),
+        });
 
-    const all: any[] = [];
-    let skip = 0;
+        const { data } = await res.json();
+        const rows: any[] = data?.launchpadTokens ?? [];
+        if (!rows.length) break;
 
-    while (true) {
-      const response = await fetch(SUBGRAPH_URL, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          query: POSITIONS_QUERY,
-          variables: {
-            a: (userAddr || '').toLowerCase(),
-            skip,
-            first: PAGE_SIZE,
-          },
-        }),
-      });
+        for (const t of rows) {
+          let imageUrl = '';
+          if (t.metadataCID) {
+            try {
+              const metaRes = await fetch(t.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch {}
+          }
 
-      const { data } = await response.json();
-      const rows: any[] = data?.launchpadPositions ?? [];
-      if (!rows.length) break;
+          const price = Number(t.lastPriceNativePerTokenWad || 0) / 1e18;
+          out.push({
+            id: t.id,
+            symbol: t.symbol,
+            name: t.name,
+            imageUrl,
+            price,
+            marketCap: price * TOTAL_SUPPLY,
+            timestamp: Number(t.timestamp ?? 0),
+          });
+        }
 
-      for (const p of rows) {
-        const boughtTokens = Number(p.tokenBought) / 1e18;
-        const soldTokens = Number(p.tokenSold) / 1e18;
-        const spentNative = Number(p.nativeSpent) / 1e18;
-        const receivedNative = Number(p.nativeReceived) / 1e18;
-        const remainingTokens = Number(p.remainingTokens) / 1e18;
-        const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
-        const realized = Number(p?.realizedPnlNative ?? 0) / 1e18;
-        const unrealized = Number(p?.unrealizedPnlNative ?? 0) / 1e18;
-        const pnlNative = realized + unrealized;
-        const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
-
-        totals.amountBought += boughtTokens;
-        totals.amountSold += soldTokens;
-        totals.valueBought += spentNative;
-        totals.valueSold += receivedNative;
-        totals.balance += remainingTokens;
-
-   let imageUrl = '';
-if (p.token.metadataCID) {
-  try {
-    const metaRes = await fetch(p.token.metadataCID);
-    if (metaRes.ok) {
-      const meta = await metaRes.json();
-      imageUrl = meta.image || '';
-    }
-  } catch (e) {
-    console.warn('Failed to load metadata for token', p.token.id, e);
-  }
-}
-
-all.push({
-  tokenId: p.token.id,
-  symbol: p.token.symbol,
-  name: p.token.name,
-  metadataCID: p.token.metadataCID,
-  imageUrl: imageUrl, 
-  boughtTokens,
-  soldTokens,
-  spentNative,
-  receivedNative,
-  remainingTokens,
-  remainingPct,
-  pnlNative,
-  lastPrice,
-});
+        if (rows.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        if (cancelled) return;
       }
 
-      if (rows.length < PAGE_SIZE) break;
-      skip += PAGE_SIZE;
+      if (!cancelled) setDevTokens(out);
+    })();
+
+    return () => { cancelled = true; };
+  }, [token.dev, token.id]);
+
+  // positions
+  useEffect(() => {
+    if (!userAddr) return;
+    let cancelled = false;
+
+    (async () => {
+      const totals = {
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        lastPriceNative: 0,
+      };
+
+      const all: any[] = [];
+      let skip = 0;
+
+      while (true) {
+        const response = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: POSITIONS_QUERY,
+            variables: {
+              a: (userAddr || '').toLowerCase(),
+              skip,
+              first: PAGE_SIZE,
+            },
+          }),
+        });
+
+        const { data } = await response.json();
+        const rows: any[] = data?.launchpadPositions ?? [];
+        if (!rows.length) break;
+
+        for (const p of rows) {
+          const boughtTokens = Number(p.tokenBought) / 1e18;
+          const soldTokens = Number(p.tokenSold) / 1e18;
+          const spentNative = Number(p.nativeSpent) / 1e18;
+          const receivedNative = Number(p.nativeReceived) / 1e18;
+          const remainingTokens = boughtTokens - soldTokens;
+          const lastPrice = Number(p?.token?.lastPriceNativePerTokenWad ?? 0) / 1e18;
+          const balance = boughtTokens - soldTokens
+          const realized = receivedNative - spentNative;
+          const lastNative = lastPrice;
+          const unrealized = balance * lastNative;
+          const pnlNative = realized + unrealized;
+          const remainingPct = boughtTokens > 0 ? (remainingTokens / boughtTokens) * 100 : 0;
+
+          if (p.token.id == tokenAddress) {
+            totals.amountBought += boughtTokens;
+            totals.amountSold += soldTokens;
+            totals.valueBought += spentNative;
+            totals.valueSold += receivedNative;
+            totals.balance += remainingTokens;
+            totals.lastPriceNative = lastPrice || totals.lastPriceNative;
+          }
+
+          let imageUrl = '';
+          if (p.token.metadataCID) {
+            try {
+              const metaRes = await fetch(p.token.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn('Failed to load metadata for token', p.token.id, e);
+            }
+          }
+
+          all.push({
+            tokenId: p.token.id,
+            symbol: p.token.symbol,
+            name: p.token.name,
+            metadataCID: p.token.metadataCID,
+            imageUrl: imageUrl,
+            boughtTokens,
+            soldTokens,
+            spentNative,
+            receivedNative,
+            remainingTokens,
+            remainingPct,
+            pnlNative,
+            lastPrice,
+          });
+        }
+
+        if (rows.length < PAGE_SIZE) break;
+        skip += PAGE_SIZE;
+        if (cancelled) return;
+      }
+
       if (cancelled) return;
-    }
 
-    if (cancelled) return;
+      const markToMarket = totals.balance * (totals.lastPriceNative || 0);
+      const totalPnL = (totals.valueSold + markToMarket) - totals.valueBought;
 
-    setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
-    setUserStats({
-      balance: totals.balance,
-      amountBought: totals.amountBought,
-      amountSold: totals.amountSold,
-      valueBought: totals.valueBought,
-      valueSold: totals.valueSold,
-      valueNet: totals.valueSold - totals.valueBought,
-    });
-  })();
+      setPositions(all.sort((a, b) => b.remainingTokens - a.remainingTokens));
+      setUserStats({
+        balance: totals.balance,
+        amountBought: totals.amountBought,
+        amountSold: totals.amountSold,
+        valueBought: totals.valueBought,
+        valueSold: totals.valueSold,
+        valueNet: totalPnL,
+      });
+    })();
 
-  return () => { cancelled = true; };
-}, [userAddr]);
+    return () => { cancelled = true; };
+  }, [userAddr]);
 
   useEffect(() => {
     if (tradeAmount && tradeAmount !== "" && tradeAmount !== "0" && currentPrice && currentPrice > 0) {
@@ -1443,7 +1595,7 @@ all.push({
     if (activeOrderType === "Limit" && !limitPrice) return true;
     return false;
   };
-const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
+  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
       change: token.change24h || 0,
@@ -1549,30 +1701,32 @@ const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || etht
           </div>
         </div>
         <div className={`meme-ordercenter ${mobileActiveView !== 'ordercenter' ? 'mobile-hidden' : ''}`}>
-<MemeOrderCenter
-  orderCenterHeight={orderCenterHeight}
-  isVertDragging={isVertDragging}
-  isOrderCenterVisible={true}
-  onHeightChange={(h) => setOrderCenterHeight(h)}
-  onDragStart={() => {
-    setIsVertDragging(true);
-    document.body.style.cursor = "row-resize";
-    document.body.style.userSelect = "none";
-  }}
-  onDragEnd={() => {
-    setIsVertDragging(false);
-    document.body.style.cursor = "";
-    document.body.style.userSelect = "";
-  }}
-  isWidgetOpen={isWidgetOpen}
-  onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
-  holders={holders} 
-  positions={positions}
-  page={page}
-  pageSize={PAGE_SIZE}
-  currentPrice={currentPrice}
-  monUsdPrice={monUsdPrice}
-/>
+      <MemeOrderCenter
+            orderCenterHeight={orderCenterHeight}
+            isVertDragging={isVertDragging}
+            isOrderCenterVisible={true}
+            onHeightChange={(h) => setOrderCenterHeight(h)}
+            onDragStart={() => {
+              setIsVertDragging(true);
+              document.body.style.cursor = "row-resize";
+              document.body.style.userSelect = "none";
+            }}
+            onDragEnd={() => {
+              setIsVertDragging(false);
+              document.body.style.cursor = "";
+              document.body.style.userSelect = "";
+            }}
+            isWidgetOpen={isWidgetOpen}
+            onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
+            holders={holders} 
+            positions={positions}
+            devTokens={devTokens}
+            page={page}
+            pageSize={PAGE_SIZE}
+            currentPrice={currentPrice}
+            monUsdPrice={monUsdPrice}
+            onSellPosition={handleSellPosition}
+          />
         </div>
       </div>
 
@@ -1925,7 +2079,6 @@ const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || etht
             )}
           </div>
 
-          {/* Advanced Trading Strategy Section - Only show for buy orders */}
           {activeTradeType === "buy" && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
@@ -2334,6 +2487,23 @@ const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || etht
                   <img className="meme-contract-icon" src={contract} />
                   <span className="meme-address-title">CA:</span>{" "}
                   {token.id.slice(0, 21)}...{token.id.slice(-4)}
+                  <TooltipLabel label={<svg
+                    className="meme-address-link"
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                  >
+                    <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                    <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                  </svg>} tooltipText="View on Monad Explorer"
+                  />
+                </span>
+                <span className="meme-address">
+                  <img className="meme-contract-icon" src={contract} />
+                  <span className="meme-address-title">DA:</span>{" "}
+                  {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
                   <TooltipLabel label={<svg
                     className="meme-address-link"
                     xmlns="http://www.w3.org/2000/svg"

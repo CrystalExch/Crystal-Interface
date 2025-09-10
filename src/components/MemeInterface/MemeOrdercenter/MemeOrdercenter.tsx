@@ -5,6 +5,8 @@ import { mockOrders, mockHolders, mockTopTraders, mockDevTokens } from './MemeTr
 import monadicon from '../../../assets/monadlogo.svg';
 import filtercup from "../../../assets/filtercup.svg";
 import switchicon from "../../../assets/switch.svg";
+import closebutton from "../../../assets/close_button.png";
+import walleticon from '../../../assets/wallet_icon.png';
 
 import './MemeOrderCenter.css';
 import { formatSubscript, FormattedNumber } from '../../../utils/memeFormatSubscript';
@@ -50,6 +52,7 @@ interface MemeOrderCenterProps {
   pageSize?: number;
   currentPrice?: number;
   monUsdPrice?: number;
+  onSellPosition?: (position: Position, amount: string) => void;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -102,6 +105,145 @@ const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }
   );
 };
 
+interface SellPopupProps {
+  showSellPopup: boolean;
+  selectedPosition: Position | null;
+  sellAmount: string;
+  sellSliderPercent: number;
+  onClose: () => void;
+  onSellAmountChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSellSliderChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onSellConfirm: () => void;
+  onMaxClick: () => void;
+  fmt: (v: number, d?: number) => string;
+}
+
+const SellPopup: React.FC<SellPopupProps> = ({
+  showSellPopup,
+  selectedPosition,
+  sellAmount,
+  sellSliderPercent,
+  onClose,
+  onSellAmountChange,
+  onSellSliderChange,
+  onSellConfirm,
+  onMaxClick,
+  fmt
+}) => {
+  const [sliderDragging, setSliderDragging] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  if (!showSellPopup || !selectedPosition) return null;
+
+  return (
+    <div className="alerts-popup-overlay" onClick={onClose}>
+      <div className="alerts-popup" onClick={(e) => e.stopPropagation()}>
+        <div className="alerts-popup-header">
+          <h3 className="alerts-popup-title">Sell {selectedPosition.name} coin</h3>
+          <button className="alerts-close-button" onClick={onClose}>
+            <img src={closebutton} className="explorer-close-button" />
+          </button>
+        </div>
+
+        <div className="sell-popup-content">
+          <div className="alerts-section">
+            <div className="meme-amount-header">
+              <div className="meme-amount-header-left">
+                <span className="meme-amount-label">Amount</span>
+              </div>
+              <div className="meme-balance-right">
+                <div className="meme-balance-display">
+                  <img src={walleticon} className="meme-wallet-icon" />
+                  {(selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)).toFixed(4)} MON
+                </div>
+                <button className="meme-balance-max" onClick={onMaxClick}>
+                  MAX
+                </button>
+              </div>
+            </div>
+
+            <div className="meme-trade-input-wrapper">
+             <input
+  type="number"
+  value={sellAmount || "0"}  
+  onChange={onSellAmountChange}
+  className="meme-trade-input"
+/>
+              <div
+                className="meme-trade-currency"
+                style={{
+                  left: `${Math.max(12 + (sellAmount.length || 1) * 10, 12)}px`,
+                }}
+              >
+                MON
+              </div>
+            </div>
+            <div className="meme-balance-slider-wrapper">
+              <div className="meme-slider-container meme-slider-mode">
+                <input
+                  type="range"
+                  className={`meme-balance-amount-slider ${sliderDragging ? "dragging" : ""}`}
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={sellSliderPercent}
+                  onChange={onSellSliderChange}
+                  onMouseDown={() => setSliderDragging(true)}
+                  onMouseUp={() => setSliderDragging(false)}
+                  style={{
+                    background: `linear-gradient(to right, rgb(235, 112, 112) ${sellSliderPercent}%, rgb(28, 28, 31) ${sellSliderPercent}%)`,
+                  }}
+                />
+                <div
+                  className={`meme-slider-percentage-popup ${sliderDragging ? "visible" : ""}`}
+                  style={{
+                    left: `calc(${Math.max(0, Math.min(100, sellSliderPercent))}% - 15px)`
+                  }}
+                >
+                  {sellSliderPercent}%
+                </div>
+                <div className="meme-balance-slider-marks">
+                  {[0, 25, 50, 75, 100].map((markPercent) => (
+                    <span
+                      key={markPercent}
+                      className="meme-balance-slider-mark sell"
+                      data-active={sellSliderPercent >= markPercent}
+                      data-percentage={markPercent}
+                      onClick={() => onSellSliderChange({ target: { value: markPercent.toString() } } as React.ChangeEvent<HTMLInputElement>)}
+                    >
+                      {markPercent}%
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <button
+  className="meme-trade-action-button sell"
+  onClick={async () => {
+    setIsLoading(true);
+    try {
+      await onSellConfirm();
+    } catch (error) {
+      console.error('Sell transaction failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }}
+  disabled={!sellAmount || parseFloat(sellAmount) <= 0 || parseFloat(sellAmount) > (selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)) || isLoading}
+>
+  {isLoading ? (
+    <div className="meme-button-spinner"></div>
+  ) : (
+    `Instantly Sell ${selectedPosition.symbol}`
+  )}
+</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   orderCenterHeight = 300,
   isVertDragging = false,
@@ -117,6 +259,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   pageSize = 100,
   currentPrice = 0,
   monUsdPrice = 0,
+  onSellPosition,
 }) => {
   const [activeSection, setActiveSection] = useState<'positions' | 'orders' | 'holders' | 'topTraders' | 'devTokens'>('positions');
   const [amountMode, setAmountMode] = useState<'MON' | 'USD'>('MON');
@@ -126,7 +269,25 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [_dragStartY, setDragStartY] = useState(0);
   const [_dragStartHeight, setDragStartHeight] = useState(0);
+  const [showSellPopup, setShowSellPopup] = useState(false);
+  const [selectedPosition, setSelectedPosition] = useState<Position | null>(null);
+  const [sellAmount, setSellAmount] = useState("");
+  const [sellSliderPercent, setSellSliderPercent] = useState(0);
 
+  const handleSellClose = useCallback(() => {
+    setShowSellPopup(false);
+    setSelectedPosition(null);
+    setSellAmount("");
+    setSellSliderPercent(0);
+  }, []);
+
+  const handleSellMaxClick = useCallback(() => {
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      setSellAmount(maxMonAmount.toFixed(4));
+      setSellSliderPercent(100);
+    }
+  }, [selectedPosition, currentPrice]);
   useEffect(() => {
     const handleResize = () => {
       if (window.innerHeight > 1080) {
@@ -372,6 +533,50 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
     );
   };
 
+  const handleSellClick = (position: Position) => {
+    setSelectedPosition(position);
+    setShowSellPopup(true);
+    setSellAmount("");
+    setSellSliderPercent(0);
+  };
+
+const handleSellConfirm = async () => {
+  if (selectedPosition && sellAmount && parseFloat(sellAmount) > 0 && onSellPosition) {
+    try {
+      await onSellPosition(selectedPosition, sellAmount);
+      setShowSellPopup(false);
+      setSelectedPosition(null);
+      setSellAmount("");
+      setSellSliderPercent(0);
+    } catch (error) {
+      console.error('Sell transaction failed:', error);
+    }
+  }
+};
+
+  const handleSellSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const percent = parseInt(e.target.value);
+    setSellSliderPercent(percent);
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      const newAmount = (maxMonAmount * percent) / 100;
+      setSellAmount(newAmount.toFixed(4));
+    }
+  };
+
+  const handleSellAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSellAmount(value);
+    if (selectedPosition) {
+      const maxMonAmount = selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice);
+      if (maxMonAmount > 0) {
+        const percent = (parseFloat(value) / maxMonAmount) * 100;
+        setSellSliderPercent(Math.min(100, Math.max(0, percent)));
+      }
+    }
+  };
+
+
   const renderContent = () => {
     switch (activeSection) {
       case 'positions':
@@ -400,7 +605,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                   <div key={p.tokenId} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
-                        <span className="meme-wallet-index">{index + 1}</span>
                         <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
                           {tokenImageUrl && (
                             <img
@@ -420,20 +624,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
                         <div className="meme-ordercenter-info">
-                          <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
-                        <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)} </span> 
+                          {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
+                          <span className="meme-usd-amount buy">{fmtAmount(p.spentNative, amountMode, monUsdPrice)} </span>
                         </div>
                         <span className="meme-token-amount">{fmt(p.boughtTokens)} {p.symbol || ''}</span>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
-                          <div className="meme-ordercenter-info">
-                          <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />
+                        <div className="meme-ordercenter-info">
+                          {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
 
-                        <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
+                          <span className="meme-usd-amount sell">{fmtAmount(p.receivedNative, amountMode, monUsdPrice)}</span>
                         </div>
-                        <span className="meme-token-amount">{fmt(p.soldTokens)}</span>
+                        <span className="meme-token-amount">{fmt(p.soldTokens)}  {p.symbol || ''}</span>
                       </div>
                     </div>
                     <div className="meme-oc-cell">
@@ -455,12 +659,24 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                     </div>
                     <div className="meme-oc-cell">
-                      <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
-                        {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}
-                      </span>
+                      <div className="meme-ordercenter-info">
+                        {amountMode === 'MON' && <img className="meme-ordercenter-monad-icon" src={monadicon} alt="MONAD" />}
+                        <div className="meme-pnl-info">
+                          <span className={`meme-pnl ${p.pnlNative >= 0 ? 'positive' : 'negative'}`}>
+                            {p.pnlNative >= 0 ? '+' : ''}{fmtAmount(Math.abs(p.pnlNative), amountMode, monUsdPrice)}         ({p.pnlNative >= 0 ? '+' : ''}{p.spentNative > 0 ? ((p.pnlNative / p.spentNative) * 100).toFixed(1) : '0.0'}%)
+
+                          </span>
+
+                        </div>
+                      </div>
                     </div>
                     <div className="meme-oc-cell">
-                      <button className="meme-action-btn">Sell</button>
+                      <button
+                        className="meme-action-btn"
+                        onClick={() => handleSellClick(p)}
+                      >
+                        Sell
+                      </button>
                     </div>
                   </div>
                 );
@@ -717,7 +933,18 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
           <span className="meme-oc-no-data">{noDataMessage}</span>
         </div>
       )}
-    </div>
+      <SellPopup
+        showSellPopup={showSellPopup}
+        selectedPosition={selectedPosition}
+        sellAmount={sellAmount}
+        sellSliderPercent={sellSliderPercent}
+        onClose={handleSellClose}
+        onSellAmountChange={handleSellAmountChange}
+        onSellSliderChange={handleSellSliderChange}
+        onSellConfirm={handleSellConfirm}
+        onMaxClick={handleSellMaxClick}
+        fmt={fmt}
+      />    </div>
   );
 };
 
