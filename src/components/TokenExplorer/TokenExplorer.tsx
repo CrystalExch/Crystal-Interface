@@ -145,7 +145,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.0';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.1';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -2163,9 +2163,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
-  terminalQueryData,
-  terminalToken,
-  setTerminalToken,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2576,7 +2573,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         });
       }
 
-      const op = await sendUserOperationAsync({ uo });
+      await sendUserOperationAsync({ uo });
 
       if (updatePopup) {
         updatePopup(txId, {

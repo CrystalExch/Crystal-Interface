@@ -971,7 +971,6 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               {devTokensToShow.length === 0 ? (
                 <div className="meme-oc-empty">No tokens</div>
               ) : devTokensToShow.map((t) => {
-                const price = Number(t.price || 0);
                 const mc = Number(t.marketCap || 0);
                 return (
                   <div key={t.id} className="meme-oc-item">

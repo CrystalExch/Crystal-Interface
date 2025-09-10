@@ -4724,7 +4724,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.0`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.1`;
           const query = `
             query {
               account(id: "${address}") {
@@ -5620,7 +5620,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.0`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.1`;
 
         const query = `
           query {
