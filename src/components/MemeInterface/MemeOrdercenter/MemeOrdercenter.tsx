@@ -66,6 +66,7 @@ interface DevToken {
   price: number;
   marketCap: number;
   timestamp: number;
+  migrated: boolean;
 }
 
 const fmt = (v: number, d = 3) => {
@@ -387,7 +388,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       imageUrl: mt.imageUrl,
       price: mt.price,
       marketCap: mt.marketCap,
-      timestamp: mt.timestamp
+      timestamp: mt.timestamp,
+      migrated: mt.migrated,
     }));
 
   const availableTabs = [
@@ -624,6 +626,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       }
     }
   };
+
+  console.log(devTokensToShow);
 
   const renderContent = () => {
     switch (activeSection) {
@@ -912,7 +916,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Price (MON)</div>
               <div className="meme-oc-header-cell">Market Cap (MON)</div>
               <div className="meme-oc-header-cell">Launched</div>
-              <div className="meme-oc-header-cell">Action</div>
+              <div className="meme-oc-header-cell">Migraton Status</div>
             </div>
 
             <div className="meme-oc-items">
@@ -963,13 +967,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                     </div>
 
                     <div className="meme-oc-cell">
-                      <button
-                        className="meme-action-btn"
-                        onClick={() => { window.location.href = `/meme/${t.id}`; }}
-                        title="Open token"
-                      >
-                        Open
-                      </button>
+                      <span>{t.migrated ? 'Migrated' : 'Non-migrated'}</span>
                     </div>
                   </div>
                 );

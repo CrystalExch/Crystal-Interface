@@ -77,8 +77,8 @@ interface DevToken {
   price: number;
   marketCap: number;
   timestamp: number;
+  migrated: boolean;
 }
-
 
 export const mockPositions: Position[] = [
 ];

@@ -195,6 +195,7 @@ const DEV_TOKENS_QUERY = `
       metadataCID
       lastPriceNativePerTokenWad
       timestamp
+      migrated
     }
   }
 `;
@@ -662,7 +663,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         });
       }
 
-      const op = await sendUserOperationAsync({ uo });
+      await sendUserOperationAsync({ uo });
 
       const expectedTokens = currentPrice > 0 ? parseFloat(amount) / currentPrice : 0;
       if (updatePopup) {
@@ -688,11 +689,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       }
     }
   };
-const handleSellPosition = async (position: any, monAmount: string) => {
-  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
-    setpopup?.(4);
-    return;
-  }
+
+  const handleSellPosition = async (position: any, monAmount: string) => {
+    if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+      setpopup?.(4);
+      return;
+    }
 
     const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
     if (account.chainId !== targetChainId) {
@@ -702,48 +704,48 @@ const handleSellPosition = async (position: any, monAmount: string) => {
 
     const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-  try {
-    if (showLoadingPopup) {
-      showLoadingPopup(txId, {
-        title: 'Sending transaction...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
-        amount: amount,
-        amountUnit: position.symbol
-      });
-    }
+    try {
+      if (showLoadingPopup) {
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Selling ${monAmount} ${position.symbol}`,
+          amount: monAmount,
+          amountUnit: position.symbol
+        });
+      }
 
-    const amountTokenWei = BigInt(Math.round(parseFloat(amount) * 1e18));
+      const amountTokenWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
 
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: 'Confirming sell...',
-        subtitle: `Selling ${amount} ${position.symbol}`,
-        variant: 'info'
-      });
-    }
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: 'Confirming sell...',
+          subtitle: `Selling ${monAmount} ${position.symbol}`,
+          variant: 'info'
+        });
+      }
 
-    const sellUo = {
-      target: routerAddress as `0x${string}`,
-      data: encodeFunctionData({
-        abi: CrystalRouterAbi,
-        functionName: "sell",
-        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-      }),
-      value: 0n,
-    };
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "sell",
+          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+        }),
+        value: 0n,
+      };
 
-      const sellOp = await sendUserOperationAsync({ uo: sellUo });
+      await sendUserOperationAsync({ uo: sellUo });
 
-    const soldTokens = Number(amountTokenWei) / 1e18;
-    const expectedMON = soldTokens * (position.lastPrice || 0);
-    if (updatePopup) {
-      updatePopup(txId, {
-        title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-        subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
-        variant: 'success',
-        isLoading: false
-      });
-    }
+      const soldTokens = Number(amountTokenWei) / 1e18;
+      const expectedMON = soldTokens * (position.lastPrice || 0);
+      if (updatePopup) {
+        updatePopup(txId, {
+          title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
+          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
+          variant: 'success',
+          isLoading: false
+        });
+      }
 
     } catch (e: any) {
       console.error(e);
@@ -782,10 +784,10 @@ const handleSellPosition = async (position: any, monAmount: string) => {
         });
       }
 
-     const pct = BigInt(parseInt(value.replace('%', ''), 10));
-const amountTokenWei = pct === 100n
-  ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
-  : ((rpcData?.rawBalance || 0n) * pct) / 100n;
+      const pct = BigInt(parseInt(value.replace('%', ''), 10));
+      const amountTokenWei = pct === 100n
+        ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
+        : ((rpcData?.rawBalance || 0n) * pct) / 100n;
 
       if (amountTokenWei <= 0n) {
         throw new Error(`Invalid sell amount`);
@@ -799,16 +801,17 @@ const amountTokenWei = pct === 100n
         });
       }
 
-   const sellUo = {
-  target: routerAddress as `0x${string}`,
-  data: encodeFunctionData({
-    abi: CrystalRouterAbi,
-    functionName: "sell",
-    args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
-  }),
-  value: 0n,
-};
-      const sellOp = await sendUserOperationAsync({ uo: sellUo });
+      const sellUo = {
+        target: routerAddress as `0x${string}`,
+        data: encodeFunctionData({
+          abi: CrystalRouterAbi,
+          functionName: "sell",
+          args: [true, tokenAddress as `0x${string}`, amountTokenWei, 0n],
+        }),
+        value: 0n,
+      };
+
+      await sendUserOperationAsync({ uo: sellUo });
 
       const soldTokens = Number(amountTokenWei) / 1e18;
       const expectedMON = soldTokens * currentPrice;
@@ -1264,6 +1267,7 @@ const amountTokenWei = pct === 100n
             price,
             marketCap: price * TOTAL_SUPPLY,
             timestamp: Number(t.timestamp ?? 0),
+            status: t.migrated,
           });
         }
 
@@ -1497,7 +1501,7 @@ const amountTokenWei = pct === 100n
           });
         }
 
-        const op = await sendUserOperationAsync({ uo });
+        await sendUserOperationAsync({ uo });
 
         if (updatePopup) {
           updatePopup(txId, {
@@ -1519,19 +1523,19 @@ const amountTokenWei = pct === 100n
           });
         }
 
-let amountTokenWei: bigint;
-let monAmountWei: bigint;
-let isExactInput: boolean;
+        let amountTokenWei: bigint;
+        let monAmountWei: bigint;
+        let isExactInput: boolean;
 
-if (inputCurrency === "TOKEN") {
-  amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-  isExactInput = true;
-  monAmountWei = 0n;
-} else {
-  monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-  amountTokenWei = BigInt(Math.round(tokenBalance * 1e18)); 
-  isExactInput = false;
-}
+        if (inputCurrency === "TOKEN") {
+          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+          isExactInput = true;
+          monAmountWei = 0n;
+        } else {
+          monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+          amountTokenWei = BigInt(Math.round(tokenBalance * 1e18));
+          isExactInput = false;
+        }
         if (updatePopup) {
           updatePopup(txId, {
             title: 'Confirming sell...',
@@ -1540,17 +1544,17 @@ if (inputCurrency === "TOKEN") {
           });
         }
 
-    const sellUo = {
-  target: routerAddress as `0x${string}`,
-  data: encodeFunctionData({
-    abi: CrystalRouterAbi,
-    functionName: "sell",
-    args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
-  }),
-  value: 0n,
-};
+        const sellUo = {
+          target: routerAddress as `0x${string}`,
+          data: encodeFunctionData({
+            abi: CrystalRouterAbi,
+            functionName: "sell",
+            args: [isExactInput, tokenAddress as `0x${string}`, amountTokenWei, monAmountWei],
+          }),
+          value: 0n,
+        };
 
-        const sellOp = await sendUserOperationAsync({ uo: sellUo });
+        await sendUserOperationAsync({ uo: sellUo });
 
         if (updatePopup) {
           updatePopup(txId, {
@@ -1603,6 +1607,7 @@ if (inputCurrency === "TOKEN") {
     if (activeOrderType === "Limit" && !limitPrice) return true;
     return false;
   };
+  
   const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
