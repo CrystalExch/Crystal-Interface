@@ -323,7 +323,7 @@ const Header: React.FC<HeaderProps> = ({
           />
         </div>
         <div className={rightHeaderClass}>
-          <NetworkSelector
+          {/* <NetworkSelector
             isNetworkSelectorOpen={isNetworkSelectorOpen}
             setNetworkSelectorOpen={setNetworkSelectorOpen}
             setTokenIn={setTokenIn}
@@ -333,7 +333,7 @@ const Header: React.FC<HeaderProps> = ({
             settradesByMarket={settradesByMarket}
             setcanceledorders={setcanceledorders}
             setChain={setChain}
-          />
+          /> */}
           <button
             type="button"
             className="history-button"

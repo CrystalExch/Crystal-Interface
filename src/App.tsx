@@ -4529,7 +4529,7 @@ function App() {
         setrecipient('');
         isAddressInfoFetching = true;
         try {
-          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.2`;
+          const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.3`;
           const query = `
             query {
               account(id: "${address}") {
@@ -5426,7 +5426,7 @@ function App() {
         const temptradesByMarket: Record<string, any[]> = {};
         Object.keys(markets).forEach((k) => { temptradesByMarket[k] = []; });
 
-        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.2`;
+        const endpoint = `https://api.studio.thegraph.com/query/104695/test/v0.3.3`;
 
         const query = `
           query {
@@ -11891,7 +11891,7 @@ function App() {
                       if (popup) popup.classList.remove('visible')
                     }}
                     style={{
-                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgba(28, 28, 31, 1) ${(orderSizePercent / 200) * 100}%)`,
+                      background: `linear-gradient(to right, rgb(171, 176, 224) ${(orderSizePercent / 200) * 100}%, rgb(28, 28, 31) ${(orderSizePercent / 200) * 100}%)`,
                     }}
                   />
                   <div className="order-size-slider-percentage-popup">{orderSizePercent}%</div>

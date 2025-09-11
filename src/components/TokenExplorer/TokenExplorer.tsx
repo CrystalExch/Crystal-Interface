@@ -144,9 +144,10 @@ interface TokenExplorerProps {
 const MAX_PER_COLUMN = 30;
 const TOTAL_SUPPLY = 1e9;
 
-const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
+const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.2';
+// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.3';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e'
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -757,7 +758,7 @@ const AlertsPopup: React.FC<{
             <div className="alerts-main-toggle">
               <div>
                 <h4 className="alerts-main-label">Sound Alerts</h4>
-                <p className="alerts-description">Play sound alerts for Tokens in Pulse</p>
+                <p className="alerts-description">Play sound alerts for Tokens in Terminal</p>
               </div>
               <div
                 className={`toggle-switch ${settings.soundAlertsEnabled ? 'active' : ''}`}
@@ -2234,7 +2235,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   });
   const [showAlertsPopup, setShowAlertsPopup] = useState(false);
   const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
-    const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
+  const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
     new: localStorage.getItem('explorer-quickbuy-new') ?? '0',
     graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '0',
     graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '0',
@@ -2265,8 +2266,41 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
-  const marketSubs = useRef<Record<string, string>>({});
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trackedMarketsRef = useRef<Set<string>>(new Set());
+  const connectionStateRef = useRef<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>('disconnected');
+  const retryCountRef = useRef(0);
+  const reconnectTimerRef = useRef<number | null>(null);
+  const connectionAttemptsRef = useRef(0);
+  const lastConnectionAttemptRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0);
+
+  const scheduleReconnect = useCallback((initialMarkets: string[]) => {
+    if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') return;
+
+    const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
+    const attempt = Math.min(retryCountRef.current, 8);
+    const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
+    const jitter = Math.random() * 1000;
+    const delay = Math.round(exponentialDelay + jitter);
+
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+    const minInterval = 2000;
+
+    if (timeSinceLastAttempt < minInterval) {
+      const additionalDelay = minInterval - timeSinceLastAttempt;
+      setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
+      return;
+    }
+
+    if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+
+    connectionStateRef.current = 'reconnecting';
+    reconnectTimerRef.current = window.setTimeout(() => {
+      openWebsocket(initialMarkets);
+    }, delay);
+  }, []);
 
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
@@ -2340,21 +2374,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         console.error('Failed to play new pairs sound:', error);
       }
     }
-
-    if (!marketSubs.current[args.token] && wsRef.current) {
-      subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
-    }
   }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume, pausedColumn]);
 
   const updateMarket = useCallback((log: any) => {
-    if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
+    if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
+    if (pausedColumn !== null) return;
 
-    if (pausedColumn !== null) {
-      return;
-    }
-    const market = log.address.toLowerCase();
+    const tokenAddr = (`0x${log.topics[1].slice(26)}`).toLowerCase();
+
     const hex = log.data.replace(/^0x/, '');
-
     const words: string[] = [];
     for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
 
@@ -2362,6 +2390,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const isBuy = BigInt('0x' + words[1]);
     const priceRaw = BigInt('0x' + words[2]);
     const counts = BigInt('0x' + words[3]);
+
     const priceEth = Number(priceRaw) / 1e18;
     const buys = Number(counts >> 128n);
     const sells = Number(counts & ((1n << 128n) - 1n));
@@ -2370,7 +2399,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     dispatch({
       type: 'UPDATE_MARKET',
-      id: market,
+      id: tokenAddr,
       updates: {
         price: priceEth,
         marketCap: priceEth * TOTAL_SUPPLY,
@@ -2386,138 +2415,125 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
     }
-    setPausedColumn(columnType);
-
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
+    // setPausedColumn(columnType);
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
-    wsRef.current = ws;
+    if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') {
+      return;
+    }
 
-    ws.onopen = () => {
-      subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
-      initialMarkets.forEach((addr) => {
-        subscribe(ws, ['logs', { address: addr }], (subId) => (marketSubs.current[addr] = subId));
-      });
-    };
+    initialMarkets.forEach(addr => trackedMarketsRef.current.add(addr.toLowerCase()));
+    lastConnectionAttemptRef.current = Date.now();
+    connectionAttemptsRef.current += 1;
 
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-      const log = msg.params.result;
-      console.log(log, ROUTER_EVENT, MARKET_UPDATE_EVENT);
-      if (log.topics[0] === ROUTER_EVENT) addMarket(log);
-      else if (log.topics[0] === MARKET_UPDATE_EVENT) updateMarket(log);
-    };
+    if (wsRef.current) {
+      const oldWs = wsRef.current;
+      wsRef.current = null;
 
-    ws.onerror = (e) => console.error('ws error', e);
-  }, [routerAddress, subscribe, addMarket, updateMarket]);
+      oldWs.onopen = null;
+      oldWs.onmessage = null;
+      oldWs.onerror = null;
+      oldWs.onclose = null;
+
+      if (oldWs.readyState === WebSocket.OPEN || oldWs.readyState === WebSocket.CONNECTING) {
+        oldWs.close(1000, 'reconnecting');
+      }
+    }
+
+    connectionStateRef.current = 'connecting';
+
+    try {
+      const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
+      wsRef.current = ws;
+
+      const connectionTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          ws.close(1000, 'connection timeout');
+          handleConnectionError('timeout');
+        }
+      }, 10000);
+
+      ws.onopen = () => {
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'connected';
+        retryCountRef.current = 0;
+        consecutiveFailuresRef.current = 0;
+
+        subscribe(ws, ['logs', { address: routerAddress, topics: [[ROUTER_EVENT]] }]);
+        subscribe(ws, ['logs', { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] }]);
+      };
+
+      ws.onmessage = ({ data }) => {
+        try {
+          const msg = JSON.parse(data);
+          if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+          const log = msg.params.result;
+          if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
+          else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+        } catch (parseError) {
+          console.warn('Failed to parse WebSocket message:', parseError);
+        }
+      };
+
+      ws.onerror = (event) => {
+        clearTimeout(connectionTimeout);
+        console.warn('WebSocket error:', event);
+        handleConnectionError('error');
+      };
+
+      ws.onclose = (event) => {
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'disconnected';
+
+        const isNormalClose = event.code === 1000;
+        const isServerError = event.code >= 1011 && event.code <= 1014;
+        const isNetworkError = event.code === 1006;
+
+        if (!isNormalClose) {
+          consecutiveFailuresRef.current += 1;
+          retryCountRef.current += 1;
+
+          console.warn(`WebSocket closed (${event.code}): ${event.reason || 'No reason'}`);
+
+          if (isServerError && consecutiveFailuresRef.current > 3) {
+            retryCountRef.current += 2;
+          } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
+            retryCountRef.current += 1;
+          }
+
+          const markets = [
+            ...tokensByStatus.new,
+            ...tokensByStatus.graduating,
+            ...tokensByStatus.graduated,
+          ].map(t => t.id);
+
+          scheduleReconnect(markets.length ? markets : Array.from(trackedMarketsRef.current));
+        }
+      };
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      handleConnectionError('creation');
+    }
+  }, [routerAddress, subscribe, addMarket, updateMarket, scheduleReconnect]);
+
+  const handleConnectionError = useCallback((errorType: string) => {
+    connectionStateRef.current = 'disconnected';
+    consecutiveFailuresRef.current += 1;
+    retryCountRef.current += 1;
+
+    const markets = Array.from(trackedMarketsRef.current);
+    scheduleReconnect(markets);
+  }, [scheduleReconnect]);
 
   const handleColumnLeave = useCallback(() => {
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
     }
-
     pauseTimeoutRef.current = setTimeout(() => {
       setPausedColumn(null);
-
-      const refetchAndResume = async () => {
-        try {
-          const res = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: `
-              {
-                active: launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
-                  id creator { id } name symbol metadataCID description social1 social2 social3
-                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
-                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
-                  trades { id amountIn amountOut }
-                }
-                migrated: launchpadTokens(first: 30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
-                  id creator { id } name symbol metadataCID description social1 social2 social3
-                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
-                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
-                  trades { id amountIn amountOut }
-                }
-              }`,
-            }),
-          });
-          const json = await res.json();
-          const { active = [], migrated = [] } = json.data ?? {};
-          const rawMarkets = [...active, ...migrated];
-
-          const tokens: Token[] = await Promise.all(
-            rawMarkets.map(async (m: any) => {
-              const price = Number(m.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price;
-
-              let meta: any = {};
-              try {
-                const metaRes = await fetch(m.metadataCID);
-                if (metaRes.ok) meta = await metaRes.json();
-              } catch (e) {
-                console.warn('failed to load metadata for', m.metadataCID, e);
-              }
-
-              let createdTimestamp = Number(m.timestamp);
-              if (createdTimestamp > 1e10) {
-                createdTimestamp = Math.floor(createdTimestamp / 1000);
-              }
-              const socials = [m.social1, m.social2, m.social3].map(s => s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s)
-              const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"))
-              if (twitter) { socials.splice(socials.indexOf(twitter), 1) }
-              const telegram = socials.find(s => s?.startsWith("https://t.me"))
-              if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
-              const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
-              if (discord) { socials.splice(socials.indexOf(discord), 1) }
-              const website = socials[0]
-
-              return {
-                ...defaultMetrics,
-                id: m.id.toLowerCase(),
-                tokenAddress: m.id.toLowerCase(),
-                dev: m.creator.id,
-                name: m.name,
-                symbol: m.symbol,
-                image: meta.image ?? '/discord.svg',
-                description: meta.description ?? '',
-                twitterHandle: twitter ?? '',
-                website: website ?? '',
-                status: m.migrated ? 'graduated' : price * TOTAL_SUPPLY > 12500 ? 'graduating' : 'new',
-                created: createdTimestamp,
-                price,
-                marketCap: price * TOTAL_SUPPLY,
-                buyTransactions: Number(m.buyTxs),
-                sellTransactions: Number(m.sellTxs),
-                volume24h: Number(m.volumeNative) / 1e18,
-                volumeDelta: 0,
-                discordHandle: discord ?? '',
-                telegramHandle: telegram ?? '',
-              } as Token;
-            })
-          );
-
-          dispatch({ type: 'INIT', tokens });
-          openWebsocket(tokens.map((t) => t.id));
-        } catch (err) {
-          console.error('refetch failed', err);
-          const allTokens = [
-            ...tokensByStatus.new,
-            ...tokensByStatus.graduating,
-            ...tokensByStatus.graduated,
-          ];
-          openWebsocket(allTokens.map((t) => t.id));
-        }
-      };
-
-      refetchAndResume();
     }, 300);
-  }, [tokensByStatus, openWebsocket]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -2652,6 +2668,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           })
         });
         const json = await res.json();
+        console.log(json);
         const rawMarkets = [...(json.data?.active ?? []), ...(json.data?.migrated ?? [])];
 
         const tokens: Token[] = await Promise.all(
@@ -2705,7 +2722,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         );
 
         dispatch({ type: 'INIT', tokens });
-        openWebsocket(tokens.map((t) => t.id));
+        const all = tokens.map(t => t.id);
+        trackedMarketsRef.current = new Set(all.map(x => x.toLowerCase()));
+        openWebsocket(all);
       } catch (err) {
         console.error('initial subgraph fetch failed', err);
       } finally {
@@ -2716,7 +2735,40 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     bootstrap();
     return () => {
       cancelled = true;
-      if (wsRef.current) wsRef.current.close();
+      connectionStateRef.current = 'disconnected';
+
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
+      }
+
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
+
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        wsRef.current = null;
+
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          try {
+            ws.close(1000, 'component unmount');
+          } catch (error) {
+            console.warn('Error closing WebSocket on unmount:', error);
+          }
+        }
+      }
+
+      connectionAttemptsRef.current = 0;
+      retryCountRef.current = 0;
+      consecutiveFailuresRef.current = 0;
+      trackedMarketsRef.current.clear();
     };
   }, [openWebsocket]);
 
