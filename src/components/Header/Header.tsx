@@ -59,7 +59,7 @@ interface HeaderProps {
   setOneCTSigner: (privateKey: string) => void;
   refetch: () => void;
   isBlurred?: boolean;
-  forceRefreshAllWallets?: () => void;
+  terminalRefetch?: () => void;
   tokenList?: any[];
   logout: () => void;
   tokenBalances: { [address: string]: bigint };
@@ -94,7 +94,7 @@ const Header: React.FC<HeaderProps> = ({
   setOneCTSigner,
   refetch,
   isBlurred = false,
-  forceRefreshAllWallets,
+  terminalRefetch,
   tokenList = [],
   logout,
   lastRefGroupFetch,
@@ -216,8 +216,8 @@ const Header: React.FC<HeaderProps> = ({
       setOneCTSigner(privateKey);
       lastRefGroupFetch.current = 0;
       setTimeout(() => refetch(), 0);
-      if (forceRefreshAllWallets) {
-        setTimeout(() => forceRefreshAllWallets(), 200);
+      if (terminalRefetch) {
+        setTimeout(() => terminalRefetch(), 0);
       }
     }
     else {

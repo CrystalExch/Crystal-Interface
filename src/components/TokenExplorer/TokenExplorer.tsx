@@ -138,6 +138,7 @@ interface TokenExplorerProps {
   terminalQueryData: any;
   terminalToken: any;
   setTerminalToken: any;
+  terminalRefetch: any;
 }
 
 const MAX_PER_COLUMN = 30;
@@ -2168,6 +2169,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
+  terminalRefetch,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2580,7 +2582,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
 
       await sendUserOperationAsync({ uo });
-
+      terminalRefetch();
       if (updatePopup) {
         updatePopup(txId, {
           title: 'Quick Buy Complete',

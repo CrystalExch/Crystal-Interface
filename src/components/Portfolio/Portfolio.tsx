@@ -190,8 +190,7 @@ interface PortfolioProps {
   walletTotalValues: { [address: string]: number };
   walletsLoading: boolean;
   subwalletBalanceLoading: { [address: string]: boolean };
-  refreshWalletBalance: (address: string) => void;
-  forceRefreshAllWallets: () => void;
+  terminalRefetch: any;
   setOneCTSigner: (privateKey: string) => void;
   isVaultDepositSigning: boolean;
   setIsVaultDepositSigning: (signing: boolean) => void;
@@ -260,7 +259,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
   walletTokenBalances,
   walletTotalValues,
   walletsLoading,
-  refreshWalletBalance,
+  terminalRefetch,
   setOneCTSigner,
   isVaultDepositSigning,
   setIsVaultDepositSigning,
@@ -789,9 +788,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         }
       }
 
-      for (const wallet of [...sourceWallets, ...destinationWallets]) {
-        await refreshWalletBalance(wallet.address);
-      }
+      setTimeout(() => terminalRefetch(), 0);
 
       showDistributionSuccess(distributionAmount, sourceWallets.length, destinationWallets.length);
       clearAllZones();
@@ -984,7 +981,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         }
       }
       try {
-        await refreshWalletBalance(depositTargetWallet);
+        setTimeout(() => terminalRefetch(), 0);
       } catch (refreshError) {
       }
 
@@ -1077,9 +1074,7 @@ const Portfolio: React.FC<PortfolioProps> = ({
         }
       }
 
-      for (const wallet of destinationWallets) {
-        await refreshWalletBalance(wallet.address);
-      }
+      setTimeout(() => terminalRefetch(), 0);
       refetch();
 
       showSendBackSuccess(destinationWallets.length);

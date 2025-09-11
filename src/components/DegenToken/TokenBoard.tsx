@@ -46,6 +46,7 @@ interface TokenBoardProps {
   terminalQueryData: any;
   terminalToken: any;
   setTerminalToken: any;
+  terminalRefetch: any;
 }
 
 const activechain = (settings as any).activechain ?? Object.keys(settings.chainConfig)[0];
@@ -213,6 +214,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   terminalQueryData,
   terminalToken,
   setTerminalToken,
+  terminalRefetch,
 }) => {
   const navigate = useNavigate();
   const [tokens, setTokens] = useState<Token[]>([]);

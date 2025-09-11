@@ -1870,195 +1870,6 @@ function App() {
     return null;
   }, [markets, tradesByMarket]);
 
-  const refreshWalletBalance = useCallback(async (walletAddress: string) => {
-    if (!walletAddress || !tokendict || Object.keys(tokendict).length === 0) return;
-
-    setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: true }));
-
-    try {
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      const tokenAddresses = Object.values(tokendict).map((t) => t.address);
-
-      const callData = {
-        target: balancegetter,
-        callData: encodeFunctionData({
-          abi: CrystalDataHelperAbi,
-          functionName: 'batchBalanceOf',
-          args: [walletAddress as `0x${string}`, tokenAddresses]
-        })
-      };
-
-      const multicallData = encodeFunctionData({
-        abi: [{
-          inputs: [
-            { name: 'requireSuccess', type: 'bool' },
-            {
-              components: [
-                { name: 'target', type: 'address' },
-                { name: 'callData', type: 'bytes' }
-              ], name: 'calls', type: 'tuple[]'
-            }
-          ],
-          name: 'tryBlockAndAggregate',
-          outputs: [
-            { name: 'blockNumber', type: 'uint256' },
-            { name: 'blockHash', type: 'bytes32' },
-            {
-              components: [
-                { name: 'success', type: 'bool' },
-                { name: 'returnData', type: 'bytes' }
-              ], name: 'returnData', type: 'tuple[]'
-            }
-          ],
-          stateMutability: 'view',
-          type: 'function'
-        }],
-        functionName: 'tryBlockAndAggregate',
-        args: [false, [callData]]
-      });
-
-      const response = await fetch(HTTP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: Math.floor(Math.random() * 1e9) + 1,
-          method: 'eth_call',
-          params: [{ to: settings.chainConfig[activechain].multicall3, data: multicallData }, 'latest']
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-      }
-
-      const json = await response.json();
-
-      if (json.error) {
-        throw new Error(json.error.message || 'RPC Error');
-      }
-
-      if (json.result) {
-        const returnData = decodeFunctionResult({
-          abi: [{
-            inputs: [
-              { name: 'requireSuccess', type: 'bool' },
-              {
-                components: [
-                  { name: 'target', type: 'address' },
-                  { name: 'callData', type: 'bytes' }
-                ], name: 'calls', type: 'tuple[]'
-              }
-            ],
-            name: 'tryBlockAndAggregate',
-            outputs: [
-              { name: 'blockNumber', type: 'uint256' },
-              { name: 'blockHash', type: 'bytes32' },
-              {
-                components: [
-                  { name: 'success', type: 'bool' },
-                  { name: 'returnData', type: 'bytes' }
-                ], name: 'returnData', type: 'tuple[]'
-              }
-            ],
-            stateMutability: 'view',
-            type: 'function'
-          }],
-          functionName: 'tryBlockAndAggregate',
-          data: json.result
-        });
-
-        if (returnData[2] && returnData[2][0] && returnData[2][0].success) {
-          const balances = decodeFunctionResult({
-            abi: CrystalDataHelperAbi,
-            functionName: 'batchBalanceOf',
-            data: returnData[2][0].returnData
-          });
-
-          const balanceMap: { [key: string]: bigint } = {};
-          let totalValue = 0;
-
-          tokenAddresses.forEach((tokenAddress, index) => {
-            if (balances[index]) {
-              balanceMap[tokenAddress] = balances[index];
-
-              try {
-                const marketInfo = findMarketForToken(tokenAddress);
-                if (marketInfo && marketInfo.trades) {
-                  const usdValue = calculateUSDValue(
-                    balances[index],
-                    marketInfo.trades,
-                    tokenAddress,
-                    marketInfo.marketData
-                  );
-                  totalValue += usdValue;
-                }
-              } catch (error) {
-                console.warn('Error calculating USD value for', tokenAddress, error);
-              }
-            }
-          });
-
-          setWalletTokenBalances(prev => ({
-            ...prev,
-            [walletAddress]: balanceMap
-          }));
-
-          setWalletTotalValues(prev => ({
-            ...prev,
-            [walletAddress]: totalValue
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Error refreshing wallet balance:', error);
-      // Don't throw the error, just log it and continue
-    } finally {
-      setSubwalletBalanceLoading(prev => ({ ...prev, [walletAddress]: false }));
-    }
-  }, [tokendict, activechain, tradesByMarket, findMarketForToken, calculateUSDValue]);
-
-  const forceRefreshAllWallets = useCallback(async () => {
-    if (subWallets.length === 0) return;
-
-    setWalletsLoading(true);
-
-    try {
-      // Refresh wallets one by one with delays to avoid rate limiting
-      for (const wallet of subWallets) {
-        await refreshWalletBalance(wallet.address);
-        // Add delay between requests
-        await new Promise(resolve => setTimeout(resolve, 200));
-      }
-    } catch (error) {
-      console.error('Error refreshing all wallets:', error);
-    } finally {
-      setWalletsLoading(false);
-    }
-  }, [subWallets, refreshWalletBalance]);
-
-  const refreshDebounceRef = useRef<NodeJS.Timeout>();
-
-  useEffect(() => {
-    if (refreshDebounceRef.current) {
-      clearTimeout(refreshDebounceRef.current);
-    }
-
-    if (subWallets.length > 0 && tokendict && Object.keys(tokendict).length > 0 && markets && Object.keys(markets).length > 0) {
-      refreshDebounceRef.current = setTimeout(() => {
-        console.log('Refreshing wallet balances for', subWallets.length, 'wallets');
-        forceRefreshAllWallets();
-      }, 1000);
-    }
-
-    return () => {
-      if (refreshDebounceRef.current) {
-        clearTimeout(refreshDebounceRef.current);
-      }
-    };
-  }, [subWallets.length, Object.keys(tokendict).length, Object.keys(markets).length]);
-
   const handleSubwalletTransfer = useCallback(async (fromAddress: string, toAddress: string, amount: string, fromPrivateKey: string) => {
     try {
       setIsVaultDepositSigning(true);
@@ -2080,19 +1891,13 @@ function App() {
       // Restore original signer
       setOneCTSigner(originalSigner);
 
-      // Refresh both wallet balances after a delay
-      setTimeout(() => {
-        refreshWalletBalance(fromAddress);
-        refreshWalletBalance(toAddress);
-      }, 2000);
-
     } catch (error) {
       console.error('Subwallet transfer failed:', error);
       throw error;
     } finally {
       setIsVaultDepositSigning(false);
     }
-  }, [refreshWalletBalance, sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
+  }, [sendUserOperationAsync, oneCTSigner, setOneCTSigner]);
 
   const saveSubWallets = useCallback((wallets: { address: string; privateKey: string; }[] | ((prevState: { address: string; privateKey: string; }[]) => { address: string; privateKey: string; }[])) => {
     setSubWallets((prevWallets) => {
@@ -8555,17 +8360,19 @@ function App() {
 
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
 
-  const [terminalToken, setTerminalToken] = useState('0x35dDe8808fC79Aa2Ebb58e906E23A036783B5e99' as `0x${string}`);
+  const [terminalToken, setTerminalToken] = useState();
 
   // data loop, reuse to have every single rpc call method in this loop
   const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
     queryKey: [
       'crystal_rpc_terminal_reads',
       address,
+      terminalToken,
     ],
     queryFn: async () => {
       let gasEstimateCall: any = null;
       let gasEstimate: bigint = 0n;
+      const tokenAddresses = Object.values(tokendict).map((t) => t.address);
 
       if (address && (amountIn || amountOutSwap)) {
         try {
@@ -8639,16 +8446,12 @@ function App() {
         }
       }
 
+      setSubwalletBalanceLoading(prev => ({
+        ...prev,
+        [address]: true,
+        ...Object.fromEntries(subWallets.map(w => [w.address, true]))
+      }))
       const mainGroup: any = [
-        {
-          disabled: !address,
-          to: router,
-          abi: CrystalRouterAbi,
-          functionName: 'getVirtualReserves',
-          args: [
-            terminalToken,
-          ]
-        },
         {
           disabled: !address,
           to: balancegetter,
@@ -8656,7 +8459,26 @@ function App() {
           functionName: 'batchBalanceOf',
           args: [
             address as `0x${string}`,
-            [eth, terminalToken]
+            [...tokenAddresses, ...(terminalToken ? [terminalToken] : [])]
+          ]
+        },
+        ...subWallets.map(w => ({
+          disabled: !w.address,
+          to: balancegetter,
+          abi: CrystalDataHelperAbi,
+          functionName: 'batchBalanceOf',
+          args: [
+            w.address as `0x${string}`,
+            [...tokenAddresses, ...(terminalToken ? [terminalToken] : [])]
+          ]
+        })),
+        {
+          disabled: !address || !terminalToken,
+          to: router,
+          abi: CrystalRouterAbi,
+          functionName: 'getVirtualReserves',
+          args: [
+            terminalToken,
           ]
         },
       ];
@@ -8807,6 +8629,45 @@ function App() {
         gasEstimate = BigInt(json[1].result)
       }
 
+      [{address: address}].concat(subWallets as any).forEach((wallet, walletIndex) => {
+        const balanceMap: { [key: string]: bigint } = {};
+        let totalValue = 0;
+        tokenAddresses.forEach((tokenAddress, index) => {
+          if (groupResults?.mainGroup?.[walletIndex]?.result?.[index]) {
+            balanceMap[tokenAddress] = groupResults?.mainGroup?.[walletIndex]?.result?.[index];
+
+            try {
+              const marketInfo = findMarketForToken(tokenAddress);
+              if (marketInfo && marketInfo.trades) {
+                const usdValue = calculateUSDValue(
+                  groupResults?.mainGroup?.[walletIndex]?.result?.[index],
+                  marketInfo.trades,
+                  tokenAddress,
+                  marketInfo.marketData
+                );
+                totalValue += usdValue;
+              }
+            } catch (error) {
+              console.warn('Error calculating USD value for', tokenAddress, error);
+            }
+          }
+        });
+
+        setWalletTokenBalances(prev => ({
+          ...prev,
+          [wallet.address]: balanceMap
+        }));
+
+        setWalletTotalValues(prev => ({
+          ...prev,
+          [wallet.address]: totalValue
+        }));
+      })
+      setSubwalletBalanceLoading(prev => ({
+        ...prev,
+        [address]: false,
+        ...Object.fromEntries(subWallets.map(w => [w.address, false]))
+      }))
       return { readContractData: groupResults, gasEstimate: gasEstimate }
     },
     enabled: !!activeMarket && !!tokendict && !!markets,
@@ -20540,7 +20401,7 @@ function App() {
               setOneCTSigner={setOneCTSigner}
               refetch={refetch}
               isBlurred={isBlurred}
-              forceRefreshAllWallets={forceRefreshAllWallets}
+              terminalRefetch={terminalRefetch}
               tokenList={memoizedTokenList}
               logout={logout}
               tokenBalances={tokenBalances}
@@ -20690,6 +20551,7 @@ function App() {
                 terminalQueryData={terminalQueryData}
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
               />
             }
           />
@@ -20708,6 +20570,7 @@ function App() {
                 terminalQueryData={terminalQueryData}
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
               />
             }
           />
@@ -20753,7 +20616,6 @@ function App() {
               setOneCTSigner={setOneCTSigner}
               refetch={refetch}
               isBlurred={isBlurred}
-              forceRefreshAllWallets={forceRefreshAllWallets}
               tradesByMarket={tradesByMarket}
               markets={markets}
               tokendict={tokendict}
@@ -20763,6 +20625,7 @@ function App() {
               terminalQueryData={terminalQueryData}
               terminalToken={terminalToken}
               setTerminalToken={setTerminalToken}
+              terminalRefetch={terminalRefetch}
             />
           } />
           <Route
@@ -20777,6 +20640,7 @@ function App() {
                 terminalQueryData={terminalQueryData}
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
+                terminalRefetch={terminalRefetch}
               />
             }
           />
@@ -20850,7 +20714,7 @@ function App() {
                 walletTotalValues={walletTotalValues}
                 walletsLoading={walletsLoading}
                 subwalletBalanceLoading={subwalletBalanceLoading}
-                forceRefreshAllWallets={forceRefreshAllWallets}
+                terminalRefetch={terminalRefetch}
                 setOneCTSigner={setOneCTSigner}
                 isVaultDepositSigning={isVaultDepositSigning}
                 setIsVaultDepositSigning={setIsVaultDepositSigning}
@@ -20860,7 +20724,6 @@ function App() {
                 signTypedDataAsync={signTypedDataAsync}
                 keccak256={keccak256}
                 Wallet={Wallet}
-                refreshWalletBalance={refreshWalletBalance}
                 activeWalletPrivateKey={oneCTSigner}
                 setShowRefModal={undefined}
                 lastRefGroupFetch={lastRefGroupFetch}

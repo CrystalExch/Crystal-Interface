@@ -46,7 +46,6 @@ interface QuickBuyWidgetProps {
     activechain: number;
     routerAddress?: string;
     setpopup?: (value: number) => void;
-    tokenBalances?: { [key: string]: bigint };
     refetch?: () => void;
     subWallets?: Array<{ address: string, privateKey: string }>;
     walletTokenBalances?: { [address: string]: any };
@@ -54,7 +53,7 @@ interface QuickBuyWidgetProps {
     setOneCTSigner?: (privateKey: string) => void;
     tokenList?: any[];
     isBlurred?: boolean;
-    forceRefreshAllWallets?: () => void;
+    terminalRefetch: any;
     userStats?: UserStats;
     monUsdPrice?: number;
     showUSD?: boolean;
@@ -226,7 +225,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     activechain,
     routerAddress,
     setpopup,
-    tokenBalances = {},
     refetch,
     subWallets = [],
     walletTokenBalances = {},
@@ -234,7 +232,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     setOneCTSigner,
     tokenList = [],
     isBlurred = false,
-    forceRefreshAllWallets,
+    terminalRefetch,
     userStats = {
         balance: 0,
         amountBought: 0,
@@ -318,13 +316,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             if (refetch) {
                 setTimeout(() => refetch(), 100);
             }
-            if (forceRefreshAllWallets) {
-                setTimeout(() => forceRefreshAllWallets(), 200);
+            if (terminalRefetch) {
+                setTimeout(() => terminalRefetch(), 0);
             }
         }
     };
 
-    const currentTokenBalance = tokenBalances[tokenAddress || ''] ?? 0n;
+    const currentTokenBalance = walletTokenBalances?.[subWallets.find(w => w.privateKey === activeWalletPrivateKey)?.address || '']?.[tokenAddress || ''] ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
     const getCurrentWalletMONBalance = () => {
         if (!activeWalletPrivateKey) return 0;
@@ -340,10 +338,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             setLastRefreshTime(Date.now());
         }
 
-        if (forceRefreshAllWallets) {
-            forceRefreshAllWallets();
+        if (terminalRefetch) {
+            terminalRefetch();
         }
-    }, [refetch, forceRefreshAllWallets]);
+    }, [refetch, terminalRefetch]);
     useEffect(() => {
         if (isOpen && account?.connected) {
             forceRefresh();

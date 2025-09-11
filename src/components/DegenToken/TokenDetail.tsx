@@ -78,6 +78,7 @@ interface TokenDetailProps {
   terminalQueryData: any;
   terminalToken: any;
   setTerminalToken: any;
+  terminalRefetch: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -107,6 +108,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   terminalQueryData,
   terminalToken,
   setTerminalToken,
+  terminalRefetch
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
