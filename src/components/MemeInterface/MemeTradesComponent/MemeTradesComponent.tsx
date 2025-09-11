@@ -261,7 +261,7 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-      const short = isCurrentUser ? "YOU" : r.caller.slice(0, 6);
+      const short = isCurrentUser ? "YOU" : r.caller.slice(2, 6);
 
       return {
         id: r.id,
@@ -509,7 +509,7 @@ const fmtAmount = (v: number) =>
 
                 <div className="meme-trade-mc">
                   {mcMode === "MC" ? (
-                    <span>${(t.mcUSD / 1000).toFixed(1)}K</span>
+                    <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
                   ) : (
                     <span>
                       $

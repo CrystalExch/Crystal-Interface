@@ -508,9 +508,7 @@
     overflow-y: auto;
 }
 
-.quickbuy-settings-display {
-    animation: slideIn 0.2s ease-out;
-}
+
 
 @keyframes slideIn {
     from {
