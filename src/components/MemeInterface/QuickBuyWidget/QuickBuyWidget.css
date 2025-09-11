@@ -814,3 +814,15 @@
     border-right:none;
     font-weight: 500;
 }
+.quickbuy-token-balance {
+    display: flex;
+    gap: 5px;
+}
+
+
+.quickbuy-mon-value {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+

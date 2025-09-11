@@ -2950,6 +2950,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         isBlurred={isBlurred}
         forceRefreshAllWallets={forceRefreshAllWallets}
         userStats={userStats}
+        monUsdPrice={monUsdPrice}
       />
     </div>
   );

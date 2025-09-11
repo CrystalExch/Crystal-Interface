@@ -56,6 +56,7 @@ interface QuickBuyWidgetProps {
     isBlurred?: boolean;
     forceRefreshAllWallets?: () => void;
     userStats?: UserStats;
+    monUsdPrice?: number;
 
 }
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
@@ -90,7 +91,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         valueBought: 0,
         valueSold: 0,
         valueNet: 0,
-    }, }) => {
+    },
+    monUsdPrice = 0,
+}) => {
 
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
@@ -704,7 +707,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 onClick={handleKeybindToggle}
                                 title={`Keybinds ${keybindsEnabled ? 'ON' : 'OFF'} - Buy: QWER, Sell: ASDF`}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"  fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z" /></svg>
                             </button>
 
                             <div className="quickbuy-preset-controls">
@@ -727,7 +730,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                     P3
                                 </button>
                             </div>
-                                                        <img
+                            <img
                                 src={editicon}
                                 alt="Edit"
                                 className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
@@ -830,10 +833,22 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 {keybindsEnabled && <span className="quickbuy-keybind-hint">ASDF</span>}
                             </div>
                             <div className="quickbuy-order-indicator">
-                                <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
-                                                                {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
-
+                                <div className="quickbuy-token-balance">
+                                    <span className="quickbuy-token-amount">
+                                        {formatNumberWithCommas(userStats.balance, 2)} {tokenSymbol}
+                                    </span>
+                                    •
+                                    <span className="quickbuy-usd-value">
+                                        ${formatNumberWithCommas(userStats.balance * tokenPrice * monUsdPrice, 2)}
+                                    </span>
+                                    •
+                                    <span className="quickbuy-mon-value">
+                                        <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
+                                        {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+                                    </span>
+                                </div>
                             </div>
+
                         </div>
 
                         <div className="percent-buttons">
