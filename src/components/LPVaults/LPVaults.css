@@ -1512,7 +1512,7 @@
     animation:lp-pulse-error 2s infinite
 }
 .lp-input-balance-error,.lp-usd-value-balance-error,.vault-pnl-negative{
-    color:#ff5757!important
+    color:rgb(235, 112, 112);
 }
 
 .vault-info-section,.vault-tokens-col{
@@ -2332,7 +2332,7 @@
     color:#50f08d
 }
 .pnl.negative,.snapshot-change.negative,.vault-management-option.vault-close-option,.status-error{
-    color:#ff5757
+    color:rgb(235, 112, 112)
 }
 .margin-type{
     background:rgba(170,174,207,.1);
@@ -3948,7 +3948,7 @@
 }
 
 .status-error {
-  color: #ff5757;
+  color: rgb(235, 112, 112);
 }
 
 

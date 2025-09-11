@@ -21,6 +21,15 @@ interface PendingTransaction {
     status: 'pending' | 'confirming' | 'complete' | 'error';
 }
 
+interface UserStats {
+    balance: number;
+    amountBought: number;
+    amountSold: number;
+    valueBought: number;
+    valueSold: number;
+    valueNet: number;
+}
+
 interface QuickBuyWidgetProps {
     isOpen: boolean;
     onClose: () => void;
@@ -46,6 +55,8 @@ interface QuickBuyWidgetProps {
     tokenList?: any[];
     isBlurred?: boolean;
     forceRefreshAllWallets?: () => void;
+    userStats?: UserStats;
+
 }
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     isOpen,
@@ -72,7 +83,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     tokenList = [],
     isBlurred = false,
     forceRefreshAllWallets,
-}) => {
+    userStats = {
+        balance: 0,
+        amountBought: 0,
+        amountSold: 0,
+        valueBought: 0,
+        valueSold: 0,
+        valueNet: 0,
+    }, }) => {
 
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
@@ -459,7 +477,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }
 
             const key = e.key.toLowerCase();
-            
+
             // Buy keybinds: Q, W, E, R
             if (['q', 'w', 'e', 'r'].includes(key)) {
                 e.preventDefault();
@@ -470,7 +488,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                     handleBuyTrade(amount);
                 }
             }
-            
+
             // Sell keybinds: A, S, D, F
             if (['a', 's', 'd', 'f'].includes(key)) {
                 e.preventDefault();
@@ -620,7 +638,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     }, [handleInputSubmit]);
 
     const currentSellValues = sellMode === 'percent' ? sellPercents : sellMONAmounts;
-    const portfolioValue = tokenBalance * tokenPrice;
     const pendingBuyCount = pendingTransactions.filter(tx => tx.type === 'buy').length;
     const pendingSellCount = pendingTransactions.filter(tx => tx.type === 'sell').length;
 
@@ -660,7 +677,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const isPanelLeft = walletsPosition.x < position.x;
     const maxWalletsX = window.innerWidth - 280;
     if (walletsPosition.x > maxWalletsX) {
-        walletsPosition.x = position.x - 280 - 10; 
+        walletsPosition.x = position.x - 280 - 10;
     }
 
     if (!isOpen) return null;
@@ -682,19 +699,12 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 >
                     <div className="quickbuy-controls">
                         <div className="quickbuy-controls-left">
-                            <img
-                                src={editicon}
-                                alt="Edit"
-                                className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
-                                onClick={handleEditToggle}
-                            />
-
                             <button
-                                className={`quickbuy-keybind-toggle ${keybindsEnabled ? 'active' : ''}`}
+                                className={`quickbuy-edit-icon  ${keybindsEnabled ? 'active' : ''}`}
                                 onClick={handleKeybindToggle}
                                 title={`Keybinds ${keybindsEnabled ? 'ON' : 'OFF'} - Buy: QWER, Sell: ASDF`}
                             >
-                                KB
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960"  fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z"/></svg>
                             </button>
 
                             <div className="quickbuy-preset-controls">
@@ -717,6 +727,13 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                     P3
                                 </button>
                             </div>
+                                                        <img
+                                src={editicon}
+                                alt="Edit"
+                                className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
+                                onClick={handleEditToggle}
+                            />
+
                         </div>
 
                         <div className="quickbuy-controls-right-side">
@@ -814,11 +831,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             </div>
                             <div className="quickbuy-order-indicator">
                                 <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
-                                {pendingSellCount > 0 ? (
-                                    <div className="quickbuy-spinner" />
-                                ) : (
-                                    pendingSellCount
-                                )}
+                                                                {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+
                             </div>
                         </div>
 
@@ -864,33 +878,41 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             </div>
                         </div>
                     </div>
-
                     <div className="quickbuy-portfolio-section">
-                        <div className="quickbuy-portfolio-item">
-                            <span className="value green">
-                                {formatNumberWithCommas(portfolioValue)} MON
-                            </span>
+                        <div className="quickbuy-portfolio-stat">
+                            <div className="quickbuy-portfolio-value bought">
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                {formatNumberWithCommas(userStats.valueBought, 1)}
+                            </div>
                         </div>
-                        <div className="quickbuy-portfolio-item">
-                            <span className="value">
-                                {formatNumberWithCommas(tokenBalance, 3)}
-                            </span>
+                        <div className="quickbuy-portfolio-stat">
+                            <div className="quickbuy-portfolio-value sold">
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                {formatNumberWithCommas(userStats.valueSold, 1)}
+                            </div>
                         </div>
-                        <div className="quickbuy-portfolio-item">
-                            <span className="value">${formatNumberWithCommas(tokenPrice, 6)}</span>
+                        <div className="quickbuy-portfolio-stat">
+                            <div className="quickbuy-portfolio-value holding">
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+                            </div>
                         </div>
-                        <div className="quickbuy-portfolio-item">
-                            <span className="value">{pendingBuyCount + pendingSellCount}</span>
+                        <div className="quickbuy-portfolio-stat pnl">
+                            <div className={`quickbuy-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}>
+                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
+                                {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {isWalletsExpanded && (
-  <div
-    className={`quickbuy-wallets-panel ${isPanelLeft ? 'left' : 'right'}`}
-    style={{ left: `${walletsPosition.x}px`, top: `${walletsPosition.y}px` }}
-  >
+                <div
+                    className={`quickbuy-wallets-panel ${isPanelLeft ? 'left' : 'right'}`}
+                    style={{ left: `${walletsPosition.x}px`, top: `${walletsPosition.y}px` }}
+                >
                     <div className="quickbuy-wallets-header">
                         <span className="quickbuy-wallets-title">Wallets</span>
                     </div>

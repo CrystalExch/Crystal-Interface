@@ -2924,8 +2924,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
         )}
       </div>
-
-      <QuickBuyWidget
+    <QuickBuyWidget
         isOpen={isWidgetOpen}
         onClose={() => setIsWidgetOpen(false)}
         tokenSymbol={token.symbol}
@@ -2950,6 +2949,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         tokenList={tokenList}
         isBlurred={isBlurred}
         forceRefreshAllWallets={forceRefreshAllWallets}
+        userStats={userStats}
       />
     </div>
   );

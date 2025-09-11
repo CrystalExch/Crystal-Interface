@@ -1010,8 +1010,9 @@
 
 
 .meme-settings-value {
-    font-size: 0.7rem;
-    color: rgba(229, 229, 229, 0.8);
+    font-size: 0.75rem;
+    color: #a1a2ab;
+    transform: scaleX(1.05);
 }
 
 .meme-setting-label-icon {
