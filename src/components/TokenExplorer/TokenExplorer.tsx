@@ -2265,15 +2265,35 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const subIdRef = useRef(1);
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const trackedMarketsRef = useRef<Set<string>>(new Set());
-  const manualCloseRef = useRef(false);
-  const retryRef = useRef(0);
+  const connectionStateRef = useRef<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>('disconnected');
+  const retryCountRef = useRef(0);
   const reconnectTimerRef = useRef<number | null>(null);
+  const connectionAttemptsRef = useRef(0);
+  const lastConnectionAttemptRef = useRef(0);
+  const consecutiveFailuresRef = useRef(0);
 
   const scheduleReconnect = useCallback((initialMarkets: string[]) => {
-    if (manualCloseRef.current) return;
-    const attempt = Math.min(retryRef.current, 6);
-    const delay = Math.round(500 * Math.pow(2, attempt) + Math.random() * 300);
+    if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') return;
+    
+    const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
+    const attempt = Math.min(retryCountRef.current, 8);
+    const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
+    const jitter = Math.random() * 1000;
+    const delay = Math.round(exponentialDelay + jitter);
+    
+    const now = Date.now();
+    const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
+    const minInterval = 2000;
+    
+    if (timeSinceLastAttempt < minInterval) {
+      const additionalDelay = minInterval - timeSinceLastAttempt;
+      setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
+      return;
+    }
+    
     if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+    
+    connectionStateRef.current = 'reconnecting';
     reconnectTimerRef.current = window.setTimeout(() => {
       openWebsocket(initialMarkets);
     }, delay);
@@ -2396,53 +2416,113 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    initialMarkets.forEach(addr => trackedMarketsRef.current.add(addr.toLowerCase()));
-
-    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+    if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') {
       return;
     }
+    
+    initialMarkets.forEach(addr => trackedMarketsRef.current.add(addr.toLowerCase()));
+    lastConnectionAttemptRef.current = Date.now();
+    connectionAttemptsRef.current += 1;
+    
+    if (wsRef.current) {
+      const oldWs = wsRef.current;
+      wsRef.current = null;
+      
+      oldWs.onopen = null;
+      oldWs.onmessage = null;
+      oldWs.onerror = null;
+      oldWs.onclose = null;
+      
+      if (oldWs.readyState === WebSocket.OPEN || oldWs.readyState === WebSocket.CONNECTING) {
+        oldWs.close(1000, 'reconnecting');
+      }
+    }
+
+    connectionStateRef.current = 'connecting';
 
     try {
       const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
       wsRef.current = ws;
-      manualCloseRef.current = false;
+
+      const connectionTimeout = setTimeout(() => {
+        if (ws.readyState === WebSocket.CONNECTING) {
+          ws.close(1000, 'connection timeout');
+          handleConnectionError('timeout');
+        }
+      }, 10000);
 
       ws.onopen = () => {
-        retryRef.current = 0;
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'connected';
+        retryCountRef.current = 0;
+        consecutiveFailuresRef.current = 0;
 
         subscribe(ws, ['logs', { address: routerAddress, topics: [[ROUTER_EVENT]] }]);
         subscribe(ws, ['logs', { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] }]);
       };
 
       ws.onmessage = ({ data }) => {
-        const msg = JSON.parse(data);
-        if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-        const log = msg.params.result;
-        if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
-        else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+        try {
+          const msg = JSON.parse(data);
+          console.log(msg);
+          if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+          const log = msg.params.result;
+          if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
+          else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+        } catch (parseError) {
+          console.warn('Failed to parse WebSocket message:', parseError);
+        }
       };
 
-      ws.onerror = (e) => {
-        console.warn('ws error', e);
+      ws.onerror = (event) => {
+        clearTimeout(connectionTimeout);
+        console.warn('WebSocket error:', event);
+        handleConnectionError('error');
       };
 
-      ws.onclose = (ev) => {
-        if (manualCloseRef.current) return;
-        console.warn(`ws closed (${ev.code}) ${ev.reason || ''}`);
-        retryRef.current += 1;
-        const all = [
-          ...tokensByStatus.new,
-          ...tokensByStatus.graduating,
-          ...tokensByStatus.graduated,
-        ].map(t => t.id);
-        scheduleReconnect(all.length ? all : Array.from(trackedMarketsRef.current));
+      ws.onclose = (event) => {
+        clearTimeout(connectionTimeout);
+        connectionStateRef.current = 'disconnected';
+        
+        const isNormalClose = event.code === 1000;
+        const isServerError = event.code >= 1011 && event.code <= 1014;
+        const isNetworkError = event.code === 1006;
+        
+        if (!isNormalClose) {
+          consecutiveFailuresRef.current += 1;
+          retryCountRef.current += 1;
+          
+          console.warn(`WebSocket closed (${event.code}): ${event.reason || 'No reason'}`);
+          
+          if (isServerError && consecutiveFailuresRef.current > 3) {
+            retryCountRef.current += 2;
+          } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
+            retryCountRef.current += 1;
+          }
+          
+          const markets = [
+            ...tokensByStatus.new,
+            ...tokensByStatus.graduating,
+            ...tokensByStatus.graduated,
+          ].map(t => t.id);
+          
+          scheduleReconnect(markets.length ? markets : Array.from(trackedMarketsRef.current));
+        }
       };
-    } catch (e) {
-      console.error('ws open failed', e);
-      retryRef.current += 1;
-      scheduleReconnect(Array.from(trackedMarketsRef.current));
+    } catch (error) {
+      console.error('Failed to create WebSocket:', error);
+      handleConnectionError('creation');
     }
   }, [routerAddress, subscribe, addMarket, updateMarket, tokensByStatus, scheduleReconnect]);
+
+  const handleConnectionError = useCallback((errorType: string) => {
+    connectionStateRef.current = 'disconnected';
+    consecutiveFailuresRef.current += 1;
+    retryCountRef.current += 1;
+    
+    const markets = Array.from(trackedMarketsRef.current);
+    scheduleReconnect(markets);
+  }, [scheduleReconnect]);
 
   const handleColumnLeave = useCallback(() => {
     if (pauseTimeoutRef.current) {
@@ -2652,11 +2732,40 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     bootstrap();
     return () => {
       cancelled = true;
-      manualCloseRef.current = true;
-      if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
-      if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
-        try { wsRef.current.close(1000, 'unmount'); } catch {}
+      connectionStateRef.current = 'disconnected';
+      
+      if (reconnectTimerRef.current) {
+        window.clearTimeout(reconnectTimerRef.current);
+        reconnectTimerRef.current = null;
       }
+      
+      if (pauseTimeoutRef.current) {
+        clearTimeout(pauseTimeoutRef.current);
+        pauseTimeoutRef.current = null;
+      }
+      
+      if (wsRef.current) {
+        const ws = wsRef.current;
+        wsRef.current = null;
+        
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onerror = null;
+        ws.onclose = null;
+        
+        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+          try {
+            ws.close(1000, 'component unmount');
+          } catch (error) {
+            console.warn('Error closing WebSocket on unmount:', error);
+          }
+        }
+      }
+      
+      connectionAttemptsRef.current = 0;
+      retryCountRef.current = 0;
+      consecutiveFailuresRef.current = 0;
+      trackedMarketsRef.current.clear();
     };
   }, [openWebsocket]);
 
