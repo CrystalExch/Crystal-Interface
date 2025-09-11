@@ -31,6 +31,7 @@
   justify-content: space-between;
   padding-right: 5px;
   min-height: 35px;
+  overflow-x: scroll;
 }
 
 @media(max-width: 1020px) {
@@ -186,13 +187,13 @@
 
 .meme-oc-section-content[data-section="holders"] .meme-oc-header,
 .meme-oc-section-content[data-section="holders"] .meme-oc-item {
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 80px;
+  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
   gap: 15px;
 }
 
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-header,
 .meme-oc-section-content[data-section="topTraders"] .meme-oc-item {
-  grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 80px;
+  grid-template-columns: 1.4fr 1fr 1.2fr 1.2fr 1fr 1fr 80px;
   gap: 15px;
 }
 
@@ -367,7 +368,7 @@
   color: #ffffff73 !important;
   font-size: 0.75rem;
   margin-left: 4px;
-  background-color: #3333376b;
+  background-color: #3a3a4b2f;
   padding: 0px 4px;
   border-radius: 4px;
   height: 15px;
@@ -477,7 +478,6 @@
   background: rgba(170, 174, 207, 0.5);
 }
 
-/* Mobile adjustments */
 @media (max-width: 1200px) {
 
   .meme-oc-section-content[data-section="positions"] .meme-oc-header,
@@ -1366,4 +1366,16 @@
 .meme-avg-sell-info{
   display: flex;
   align-items: center;
+}
+
+
+.meme-oc-empty{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e1def473;
+  font-size: 0.9rem;
+  text-align: center;
+  height: 100%;
+  font-weight: 300;
 }
