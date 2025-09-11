@@ -105,41 +105,6 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   return `${v.toFixed(4)}`;
 };
 
-interface TooltipProps {
-  content: string;
-  children: React.ReactNode;
-  position?: 'top' | 'bottom' | 'left' | 'right';
-}
-
-const Tooltip: React.FC<TooltipProps> = ({ content, children, position = 'top' }) => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  const showTooltip = useCallback(() => setIsVisible(true), []);
-  const hideTooltip = useCallback(() => setIsVisible(false), []);
-
-  return (
-    <div
-      className="meme-ordercenter-tooltip-container"
-      onMouseEnter={showTooltip}
-      onMouseLeave={hideTooltip}
-      style={{
-        position: 'relative',
-        display: 'inline-flex',
-        alignItems: 'center',
-        cursor: 'pointer'
-      }}
-    >
-      {children}
-      <div className={`meme-ordercenter-tooltip meme-ordercenter-tooltip-${position} meme-ordercenter-fade-popup ${isVisible ? 'meme-ordercenter-visible' : ''}`}>
-        <div className="meme-ordercenter-tooltip-content">
-          {content}
-          <div className={`meme-ordercenter-tooltip-arrow meme-ordercenter-tooltip-arrow-${position}`}></div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 interface SellPopupProps {
   showSellPopup: boolean;
   selectedPosition: Position | null;
@@ -164,7 +129,6 @@ const SellPopup: React.FC<SellPopupProps> = ({
   onSellSliderChange,
   onSellConfirm,
   onMaxClick,
-  fmt,
   currentPrice
 }) => {
   const sliderRef = useRef<HTMLInputElement>(null);
