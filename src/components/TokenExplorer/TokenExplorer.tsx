@@ -2386,26 +2386,22 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const words: string[] = [];
     for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
 
-    const amounts = BigInt('0x' + words[0]);
-    const isBuy = BigInt('0x' + words[1]);
-    const priceRaw = BigInt('0x' + words[2]);
-    const counts = BigInt('0x' + words[3]);
-
-    const priceEth = Number(priceRaw) / 1e18;
-    const buys = Number(counts >> 128n);
-    const sells = Number(counts & ((1n << 128n) - 1n));
-    const amountIn = Number(amounts >> 128n);
-    const amountOut = Number(amounts & ((1n << 128n) - 1n));
+    const isBuy = BigInt('0x' + words[0]);
+    const amountIn = BigInt('0x' + words[1]);
+    const amountOut = BigInt('0x' + words[2]);
+    const virtualNativeReserve = BigInt('0x' + words[3]);
+    const virtualTokenReserve = BigInt('0x' + words[4]);
+    const price = virtualTokenReserve == 0n ? 0 : (Number(virtualNativeReserve) / Number(virtualTokenReserve));
 
     dispatch({
       type: 'UPDATE_MARKET',
       id: tokenAddr,
       updates: {
-        price: priceEth,
-        marketCap: priceEth * TOTAL_SUPPLY,
-        buyTransactions: buys,
-        sellTransactions: sells,
-        volumeDelta: isBuy > 0 ? amountIn / 1e18 : amountOut / 1e18,
+        price: price,
+        marketCap: price * TOTAL_SUPPLY,
+        buyTransactions: 0,
+        sellTransactions: 0,
+        volumeDelta: isBuy > 0 ? Number(amountIn) / 1e18 : Number(amountOut) / 1e18,
       },
     });
   }, [pausedColumn]);

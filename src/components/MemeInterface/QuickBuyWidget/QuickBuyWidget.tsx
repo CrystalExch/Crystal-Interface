@@ -49,7 +49,7 @@ interface QuickBuyWidgetProps {
     subWallets?: Array<{ address: string, privateKey: string }>;
     walletTokenBalances?: { [address: string]: any };
     activeWalletPrivateKey?: string;
-    setOneCTSigner?: (privateKey: string) => void;
+    setOneCTSigner: (privateKey: string) => void;
     tokenList?: any[];
     isBlurred?: boolean;
     terminalRefetch: any;
@@ -307,25 +307,24 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     };
 
     const handleSetActiveWallet = (privateKey: string) => {
-        if (!isWalletActive(privateKey) && setOneCTSigner) {
-            localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-            setOneCTSigner(privateKey);
-            if (terminalRefetch) {
-                setTimeout(() => terminalRefetch(), 0);
-            }
+        if (!isWalletActive(privateKey)) {
+          localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+          setOneCTSigner(privateKey);
+          if (terminalRefetch) {
+            setTimeout(() => terminalRefetch(), 0);
+          }
         }
-    };
+        else {
+          localStorage.removeItem('crystal_active_wallet_private_key');
+          setOneCTSigner('')
+          if (terminalRefetch) {
+            setTimeout(() => terminalRefetch(), 0);
+          }
+        }
+      };
 
     const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
-    const getCurrentWalletMONBalance = () => {
-        if (!activeWalletPrivateKey) return 0;
-
-        const currentWallet = account?.address || '';
-        if (!currentWallet) return 0;
-
-        return getWalletBalance(currentWallet);
-    };
     const forceRefresh = useCallback(() => {
         if (terminalRefetch) {
             terminalRefetch();
@@ -379,7 +378,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
 
         const requestedAmount = parseFloat(amount);
-        const currentMONBalance = getCurrentWalletMONBalance();
+        const currentMONBalance = getWalletBalance(account?.address);;
 
         if (requestedAmount > currentMONBalance) {
             const txId = `insufficient-${Date.now()}`;
@@ -496,7 +495,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
 
         const currentChainId = Number(account.chainId);
-
         if (currentChainId != activechain) {
             setChain?.();
             return;
@@ -791,7 +789,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
         if (sellMode === 'percent') {
             const percentage = parseFloat(value.replace('%', ''));
-            const requiredTokens = (tokenBalance * percentage) / 100;
+            const requiredTokens = (tokenBalance * percentage) / 100.1;
             return requiredTokens > tokenBalance;
         } else {
             const monAmount = parseFloat(value);
@@ -1140,14 +1138,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 const isActive = isWalletActive(wallet.privateKey);
 
                                 return (
-                                    <div key={wallet.address} className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`}>
+                                    <div key={wallet.address} className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`} onClick={(e) => {
+                                        handleSetActiveWallet(wallet.privateKey)
+                                        e.stopPropagation()
+                                      }}>
                                         <div className="quickbuy-wallet-checkbox-container">
                                             <input
                                                 type="checkbox"
                                                 className="quickbuy-wallet-checkbox"
                                                 checked={isActive}
-                                                onChange={() => handleSetActiveWallet(wallet.privateKey)}
-                                                onClick={(e) => e.stopPropagation()}
                                             />
                                         </div>
 

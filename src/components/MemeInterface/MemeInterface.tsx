@@ -101,7 +101,7 @@ interface MemeInterfaceProps {
   subWallets?: Array<{ address: string, privateKey: string }>;
   walletTokenBalances?: { [address: string]: any };
   activeWalletPrivateKey?: string;
-  setOneCTSigner?: (privateKey: string) => void;
+  setOneCTSigner: (privateKey: string) => void;
   refetch?: () => void;
   isBlurred?: boolean;
   terminalQueryData: any;
@@ -269,6 +269,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   setOneCTSigner,
   refetch,
   isBlurred = false,
+  setTerminalToken,
   terminalRefetch,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
@@ -397,7 +398,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     3: { slippage: '8', priority: '0.03' }
   };
 
-  const userAddr = (address ?? account?.address ?? "").toLowerCase();
+  const userAddr = (address ?? account?.address ?? "");
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -1115,8 +1116,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         const amountIn = toNum(inputAmountWei);
         const amountOut = toNum(outputAmountWei);
-        const vNative = toNum(vNativeWei);
-        const vToken = toNum(vTokenWei);
+        const vNative = Number(vNativeWei);
+        const vToken = Number(vTokenWei);
 
         const price = vToken === 0 ? 0 : (vNative / vToken);
         const tradePrice = (isBuy ? amountIn / amountOut : amountOut / amountIn) || 0;
@@ -1241,7 +1242,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
-        if (callerAddr === userAddr) {
+        if (callerAddr == userAddr.toLowerCase()) {
           setPositions((prev) => {
             const copy = Array.isArray(prev) ? [...prev] : [];
             let idx = positionsMapRef.current.get(tokenAddr);
@@ -1478,6 +1479,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   // top traders
   useEffect(() => {
     if (!token.id) return;
+    setTerminalToken(token.id);
     let cancelled = false;
 
     (async () => {
@@ -1798,7 +1800,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           monAmountWei = 0n;
         } else {
           monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          amountTokenWei = BigInt(Math.round(walletTokenBalances?.[userAddr]?.[token.id] * 1e18));
+          amountTokenWei = BigInt(Math.round(Number(walletTokenBalances?.[userAddr]?.[token.id])));
           isExactInput = false;
         }
         if (updatePopup) {
@@ -2047,13 +2049,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="meme-balance-right">
               {activeTradeType === 'sell' && (
                 <div className="meme-balance-display">
-                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(walletTokenBalances?.[userAddr]?.[token.id], 3)} {token.symbol}
+                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 ?? 0, 3)} {token.symbol}
                 </div>
               )}
               {activeTradeType === 'sell' && (
                 <button
                   className="meme-balance-max"
-                  onClick={() => setTradeAmount(walletTokenBalances?.[userAddr]?.[token.id].toString())}
+                  onClick={() => setTradeAmount((Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 ?? 0).toString())}
                 >
                   MAX
                 </button>
@@ -2145,7 +2147,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         if (activeTradeType == "buy") {
                         }
                         else {
-                          const newAmount = (walletTokenBalances?.[userAddr]?.[token.id] * preset) / 100;
+                          const newAmount = (Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 * preset) / 100;
                           setTradeAmount(newAmount.toString());
                         }
                       }}

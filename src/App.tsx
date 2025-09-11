@@ -8372,8 +8372,11 @@ function App() {
     queryFn: async () => {
       let gasEstimateCall: any = null;
       let gasEstimate: bigint = 0n;
-      const tokenAddresses = Object.values(tokendict).map((t) => t.address);
-
+      const tokenAddresses = [
+        ...Object.values(tokendict).map(t => t.address),
+        ...(terminalToken ? [terminalToken] : [])
+      ];
+      
       if (address && (amountIn || amountOutSwap)) {
         try {
           const deadline = BigInt(Math.floor(Date.now() / 1000) + 900);
@@ -8459,7 +8462,7 @@ function App() {
           functionName: 'batchBalanceOf',
           args: [
             address as `0x${string}`,
-            [...tokenAddresses, ...(terminalToken ? [terminalToken] : [])]
+            tokenAddresses
           ]
         },
         ...subWallets.map(w => ({
@@ -8469,7 +8472,7 @@ function App() {
           functionName: 'batchBalanceOf',
           args: [
             w.address as `0x${string}`,
-            [...tokenAddresses, ...(terminalToken ? [terminalToken] : [])]
+            tokenAddresses
           ]
         })),
         {
@@ -8674,7 +8677,6 @@ function App() {
     refetchInterval: ['board', 'explorer', 'meme'].includes(location.pathname.slice(1)) ? 800 : 5000,
     gcTime: 0,
   })
-
   //popup modals
   const Modals = (
     <>

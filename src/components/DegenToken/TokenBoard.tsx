@@ -177,22 +177,24 @@ const TokenCard: React.FC<{
               <span className="board-mc-label">MC</span>
               <span className="board-mc-value">{formatPrice(token.marketCap)}</span>
             </div>
+          </div>
+          <div className="board-market-info">
             <div className="board-bonding-progress">
-              <div className="board-progress-bar">
-                <div
-                  className="board-progress-fill"
-                  style={{
-                    width: `${token.status === 'graduated' ? 100 : bondingPercentage}%`,
-                    backgroundColor: token.status === 'graduated' ? '#ffd700' : bondingColor
-                  }}
-                />
+                <div className="board-progress-bar">
+                  <div
+                    className="board-progress-fill"
+                    style={{
+                      width: `${token.status === 'graduated' ? 100 : bondingPercentage}%`,
+                      backgroundColor: token.status === 'graduated' ? '#ffd700' : bondingColor
+                    }}
+                  />
+                </div>
+              </div>
+              <div className="board-price-change" style={{ color: changeColor }}>
+                {changeSign}{token.change24h.toFixed(2)}%
               </div>
             </div>
-            <div className="board-price-change" style={{ color: changeColor }}>
-              {changeSign}{token.change24h.toFixed(2)}%
-            </div>
           </div>
-        </div>
         {token.description && (
           <div className="board-token-description">
             {token.description.length > 120
