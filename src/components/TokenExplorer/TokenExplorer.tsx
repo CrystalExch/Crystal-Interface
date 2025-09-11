@@ -145,7 +145,7 @@ const TOTAL_SUPPLY = 1e9;
 
 const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.2';
+const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.3';
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -2263,8 +2263,21 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
-  const marketSubs = useRef<Record<string, string>>({});
   const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trackedMarketsRef = useRef<Set<string>>(new Set());
+  const manualCloseRef = useRef(false);
+  const retryRef = useRef(0);
+  const reconnectTimerRef = useRef<number | null>(null);
+
+  const scheduleReconnect = useCallback((initialMarkets: string[]) => {
+    if (manualCloseRef.current) return;
+    const attempt = Math.min(retryRef.current, 6);
+    const delay = Math.round(500 * Math.pow(2, attempt) + Math.random() * 300);
+    if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+    reconnectTimerRef.current = window.setTimeout(() => {
+      openWebsocket(initialMarkets);
+    }, delay);
+  }, []);
 
   const handleTokenHover = useCallback((id: string) => setHoveredToken(id), []);
   const handleTokenLeave = useCallback(() => setHoveredToken(null), []);
@@ -2338,21 +2351,15 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         console.error('Failed to play new pairs sound:', error);
       }
     }
-
-    if (!marketSubs.current[args.token] && wsRef.current) {
-      subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
-    }
   }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume, pausedColumn]);
 
   const updateMarket = useCallback((log: any) => {
-    if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
+    if (log.topics?.[0] !== MARKET_UPDATE_EVENT) return;
+    if (pausedColumn !== null) return;
 
-    if (pausedColumn !== null) {
-      return;
-    }
-    const market = log.address.toLowerCase();
+    const tokenAddr = (`0x${log.topics[1].slice(26)}`).toLowerCase();
+
     const hex = log.data.replace(/^0x/, '');
-
     const words: string[] = [];
     for (let i = 0; i < hex.length; i += 64) words.push(hex.slice(i, i + 64));
 
@@ -2360,6 +2367,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     const isBuy = BigInt('0x' + words[1]);
     const priceRaw = BigInt('0x' + words[2]);
     const counts = BigInt('0x' + words[3]);
+
     const priceEth = Number(priceRaw) / 1e18;
     const buys = Number(counts >> 128n);
     const sells = Number(counts & ((1n << 128n) - 1n));
@@ -2368,7 +2376,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     dispatch({
       type: 'UPDATE_MARKET',
-      id: market,
+      id: tokenAddr,
       updates: {
         price: priceEth,
         marketCap: priceEth * TOTAL_SUPPLY,
@@ -2385,137 +2393,65 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       pauseTimeoutRef.current = null;
     }
     setPausedColumn(columnType);
-
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
-    wsRef.current = ws;
+    initialMarkets.forEach(addr => trackedMarketsRef.current.add(addr.toLowerCase()));
 
-    ws.onopen = () => {
-      subscribe(ws, ['logs', { address: routerAddress, topics: [ROUTER_EVENT] }]);
-      initialMarkets.forEach((addr) => {
-        subscribe(ws, ['logs', { address: addr }], (subId) => (marketSubs.current[addr] = subId));
-      });
-    };
+    if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+      return;
+    }
 
-    ws.onmessage = ({ data }) => {
-      const msg = JSON.parse(data);
-      if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
-      const log = msg.params.result;
-      console.log(log, ROUTER_EVENT, MARKET_UPDATE_EVENT);
-      if (log.topics[0] === ROUTER_EVENT) addMarket(log);
-      else if (log.topics[0] === MARKET_UPDATE_EVENT) updateMarket(log);
-    };
+    try {
+      const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
+      wsRef.current = ws;
+      manualCloseRef.current = false;
 
-    ws.onerror = (e) => console.error('ws error', e);
-  }, [routerAddress, subscribe, addMarket, updateMarket]);
+      ws.onopen = () => {
+        retryRef.current = 0;
+
+        subscribe(ws, ['logs', { address: routerAddress, topics: [[ROUTER_EVENT]] }]);
+        subscribe(ws, ['logs', { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] }]);
+      };
+
+      ws.onmessage = ({ data }) => {
+        const msg = JSON.parse(data);
+        if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
+        const log = msg.params.result;
+        if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
+        else if (log.topics?.[0] === MARKET_UPDATE_EVENT) updateMarket(log);
+      };
+
+      ws.onerror = (e) => {
+        console.warn('ws error', e);
+      };
+
+      ws.onclose = (ev) => {
+        if (manualCloseRef.current) return;
+        console.warn(`ws closed (${ev.code}) ${ev.reason || ''}`);
+        retryRef.current += 1;
+        const all = [
+          ...tokensByStatus.new,
+          ...tokensByStatus.graduating,
+          ...tokensByStatus.graduated,
+        ].map(t => t.id);
+        scheduleReconnect(all.length ? all : Array.from(trackedMarketsRef.current));
+      };
+    } catch (e) {
+      console.error('ws open failed', e);
+      retryRef.current += 1;
+      scheduleReconnect(Array.from(trackedMarketsRef.current));
+    }
+  }, [routerAddress, subscribe, addMarket, updateMarket, tokensByStatus, scheduleReconnect]);
 
   const handleColumnLeave = useCallback(() => {
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
     }
-
     pauseTimeoutRef.current = setTimeout(() => {
       setPausedColumn(null);
-
-      const refetchAndResume = async () => {
-        try {
-          const res = await fetch(SUBGRAPH_URL, {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              query: `
-              {
-                active: launchpadTokens(first: 30, orderBy: timestamp, orderDirection: desc, where:{migrated:false}) {
-                  id creator { id } name symbol metadataCID description social1 social2 social3
-                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
-                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
-                  trades { id amountIn amountOut }
-                }
-                migrated: launchpadTokens(first: 30, orderBy: migratedAt, orderDirection: desc, where:{migrated:true}) {
-                  id creator { id } name symbol metadataCID description social1 social2 social3
-                  timestamp migrated migratedAt volumeNative volumeToken buyTxs sellTxs
-                  distinctBuyers distinctSellers lastPriceNativePerTokenWad lastUpdatedAt
-                  trades { id amountIn amountOut }
-                }
-              }`,
-            }),
-          });
-          const json = await res.json();
-          const { active = [], migrated = [] } = json.data ?? {};
-          const rawMarkets = [...active, ...migrated];
-
-          const tokens: Token[] = await Promise.all(
-            rawMarkets.map(async (m: any) => {
-              const price = Number(m.lastPriceNativePerTokenWad) / 1e18 || defaultMetrics.price;
-
-              let meta: any = {};
-              try {
-                const metaRes = await fetch(m.metadataCID);
-                if (metaRes.ok) meta = await metaRes.json();
-              } catch (e) {
-                console.warn('failed to load metadata for', m.metadataCID, e);
-              }
-
-              let createdTimestamp = Number(m.timestamp);
-              if (createdTimestamp > 1e10) {
-                createdTimestamp = Math.floor(createdTimestamp / 1000);
-              }
-              const socials = [m.social1, m.social2, m.social3].map(s => s ? (/^https?:\/\//.test(s) ? s : `https://${s}`) : s)
-              const twitter = socials.find(s => s?.startsWith("https://x.com") || s?.startsWith("https://twitter.com"))
-              if (twitter) { socials.splice(socials.indexOf(twitter), 1) }
-              const telegram = socials.find(s => s?.startsWith("https://t.me"))
-              if (telegram) { socials.splice(socials.indexOf(telegram), 1) }
-              const discord = socials.find(s => s?.startsWith("https://discord.gg") || s?.startsWith("https://discord.com"))
-              if (discord) { socials.splice(socials.indexOf(discord), 1) }
-              const website = socials[0]
-
-              return {
-                ...defaultMetrics,
-                id: m.id.toLowerCase(),
-                tokenAddress: m.id.toLowerCase(),
-                dev: m.creator.id,
-                name: m.name,
-                symbol: m.symbol,
-                image: meta.image ?? '/discord.svg',
-                description: meta.description ?? '',
-                twitterHandle: twitter ?? '',
-                website: website ?? '',
-                status: m.migrated ? 'graduated' : price * TOTAL_SUPPLY > 12500 ? 'graduating' : 'new',
-                created: createdTimestamp,
-                price,
-                marketCap: price * TOTAL_SUPPLY,
-                buyTransactions: Number(m.buyTxs),
-                sellTransactions: Number(m.sellTxs),
-                volume24h: Number(m.volumeNative) / 1e18,
-                volumeDelta: 0,
-                discordHandle: discord ?? '',
-                telegramHandle: telegram ?? '',
-              } as Token;
-            })
-          );
-
-          dispatch({ type: 'INIT', tokens });
-          openWebsocket(tokens.map((t) => t.id));
-        } catch (err) {
-          console.error('refetch failed', err);
-          const allTokens = [
-            ...tokensByStatus.new,
-            ...tokensByStatus.graduating,
-            ...tokensByStatus.graduated,
-          ];
-          openWebsocket(allTokens.map((t) => t.id));
-        }
-      };
-
-      refetchAndResume();
     }, 300);
-  }, [tokensByStatus, openWebsocket]);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -2703,7 +2639,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         );
 
         dispatch({ type: 'INIT', tokens });
-        openWebsocket(tokens.map((t) => t.id));
+        const all = tokens.map(t => t.id);
+        trackedMarketsRef.current = new Set(all.map(x => x.toLowerCase()));
+        openWebsocket(all);
       } catch (err) {
         console.error('initial subgraph fetch failed', err);
       } finally {
@@ -2714,7 +2652,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     bootstrap();
     return () => {
       cancelled = true;
-      if (wsRef.current) wsRef.current.close();
+      manualCloseRef.current = true;
+      if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
+      if (wsRef.current && (wsRef.current.readyState === WebSocket.OPEN || wsRef.current.readyState === WebSocket.CONNECTING)) {
+        try { wsRef.current.close(1000, 'unmount'); } catch {}
+      }
     };
   }, [openWebsocket]);
 
