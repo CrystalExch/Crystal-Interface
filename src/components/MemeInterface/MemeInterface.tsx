@@ -1181,7 +1181,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           imageUrl = meta?.image || "";
         }
       }
-    } catch {}
+    } catch { }
 
     const symbol = String(args.symbol || "").toUpperCase();
     const name = String(args.name || symbol || tokenId.slice(0, 6));
@@ -1650,7 +1650,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const valueSold = Number(p.nativeReceived) / 1e18;
 
           const balance = amountBought - amountSold;
-          const realized = Number(p.realizedPnlNative)   / 1e18;
+          const realized = Number(p.realizedPnlNative) / 1e18;
           const unrealized = Number(p.unrealizedPnlNative) / 1e18;
           const pnl = realized + unrealized;
 
@@ -2691,7 +2691,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               getButtonText()
             )}
           </button>
-<div className="meme-portfolio-stats" onClick={handleToggleCurrency} style={{ cursor: 'pointer' }}>
+          <div className="meme-portfolio-stats" onClick={handleToggleCurrency} style={{ cursor: 'pointer' }}>
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Bought</div>
               <div className="meme-portfolio-value bought">
@@ -3166,7 +3166,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
         )}
       </div>
-    <QuickBuyWidget
+      <QuickBuyWidget
         isOpen={isWidgetOpen}
         onClose={() => setIsWidgetOpen(false)}
         tokenSymbol={token.symbol}

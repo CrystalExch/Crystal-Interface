@@ -410,20 +410,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       timestamp: mt.timestamp,
       migrated: mt.migrated,
     }));
-  
+
   const topTraderRows = useMemo(() => {
     const rows: LiveHolder[] = (topTraders && topTraders.length
       ? topTraders
       : mockTopTraders.map(t => ({
-          address: t.wallet,
-          balance: t.balance,
-          amountBought: Math.random() * 10,
-          amountSold: Math.random() * 8,
-          valueBought: Math.random() * 1000,
-          valueSold: Math.random() * 800,
-          valueNet: (Math.random() - .5) * 20,
-          tokenNet: t.percentage,
-        }))
+        address: t.wallet,
+        balance: t.balance,
+        amountBought: Math.random() * 10,
+        amountSold: Math.random() * 8,
+        valueBought: Math.random() * 1000,
+        valueSold: Math.random() * 800,
+        valueNet: (Math.random() - .5) * 20,
+        tokenNet: t.percentage,
+      }))
     );
 
     const score = (x: LiveHolder) => x.valueNet + currentPrice * x.balance;
@@ -836,8 +836,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 const remainingPct =
                   row.amountBought === 0 ? 0 : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
                 const pnl = row.valueNet + currentPrice * row.balance;
-                const avgBuyUSD  = ((row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1)).toFixed(2);
-                const avgSellUSD = ((row.valueSold  * 1_000_000_000 * monUsdPrice) / (row.amountSold  || 1)).toFixed(2);
+                const avgBuyUSD = ((row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1)).toFixed(2);
+                const avgSellUSD = ((row.valueSold * 1_000_000_000 * monUsdPrice) / (row.amountSold || 1)).toFixed(2);
 
                 return (
                   <div key={row.address} className="meme-oc-item">

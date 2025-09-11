@@ -2233,7 +2233,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   });
   const [showAlertsPopup, setShowAlertsPopup] = useState(false);
   const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
-    const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
+  const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
     new: localStorage.getItem('explorer-quickbuy-new') ?? '0',
     graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '0',
     graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '0',
@@ -2275,25 +2275,25 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const scheduleReconnect = useCallback((initialMarkets: string[]) => {
     if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') return;
-    
+
     const baseDelay = consecutiveFailuresRef.current > 5 ? 10000 : 1000;
     const attempt = Math.min(retryCountRef.current, 8);
     const exponentialDelay = baseDelay * Math.pow(1.5, attempt);
     const jitter = Math.random() * 1000;
     const delay = Math.round(exponentialDelay + jitter);
-    
+
     const now = Date.now();
     const timeSinceLastAttempt = now - lastConnectionAttemptRef.current;
     const minInterval = 2000;
-    
+
     if (timeSinceLastAttempt < minInterval) {
       const additionalDelay = minInterval - timeSinceLastAttempt;
       setTimeout(() => scheduleReconnect(initialMarkets), additionalDelay);
       return;
     }
-    
+
     if (reconnectTimerRef.current) window.clearTimeout(reconnectTimerRef.current);
-    
+
     connectionStateRef.current = 'reconnecting';
     reconnectTimerRef.current = window.setTimeout(() => {
       openWebsocket(initialMarkets);
@@ -2420,20 +2420,20 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') {
       return;
     }
-    
+
     initialMarkets.forEach(addr => trackedMarketsRef.current.add(addr.toLowerCase()));
     lastConnectionAttemptRef.current = Date.now();
     connectionAttemptsRef.current += 1;
-    
+
     if (wsRef.current) {
       const oldWs = wsRef.current;
       wsRef.current = null;
-      
+
       oldWs.onopen = null;
       oldWs.onmessage = null;
       oldWs.onerror = null;
       oldWs.onclose = null;
-      
+
       if (oldWs.readyState === WebSocket.OPEN || oldWs.readyState === WebSocket.CONNECTING) {
         oldWs.close(1000, 'reconnecting');
       }
@@ -2483,29 +2483,29 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       ws.onclose = (event) => {
         clearTimeout(connectionTimeout);
         connectionStateRef.current = 'disconnected';
-        
+
         const isNormalClose = event.code === 1000;
         const isServerError = event.code >= 1011 && event.code <= 1014;
         const isNetworkError = event.code === 1006;
-        
+
         if (!isNormalClose) {
           consecutiveFailuresRef.current += 1;
           retryCountRef.current += 1;
-          
+
           console.warn(`WebSocket closed (${event.code}): ${event.reason || 'No reason'}`);
-          
+
           if (isServerError && consecutiveFailuresRef.current > 3) {
             retryCountRef.current += 2;
           } else if (isNetworkError && consecutiveFailuresRef.current > 2) {
             retryCountRef.current += 1;
           }
-          
+
           const markets = [
             ...tokensByStatus.new,
             ...tokensByStatus.graduating,
             ...tokensByStatus.graduated,
           ].map(t => t.id);
-          
+
           scheduleReconnect(markets.length ? markets : Array.from(trackedMarketsRef.current));
         }
       };
@@ -2519,7 +2519,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     connectionStateRef.current = 'disconnected';
     consecutiveFailuresRef.current += 1;
     retryCountRef.current += 1;
-    
+
     const markets = Array.from(trackedMarketsRef.current);
     scheduleReconnect(markets);
   }, [scheduleReconnect]);
@@ -2734,26 +2734,26 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     return () => {
       cancelled = true;
       connectionStateRef.current = 'disconnected';
-      
+
       if (reconnectTimerRef.current) {
         window.clearTimeout(reconnectTimerRef.current);
         reconnectTimerRef.current = null;
       }
-      
+
       if (pauseTimeoutRef.current) {
         clearTimeout(pauseTimeoutRef.current);
         pauseTimeoutRef.current = null;
       }
-      
+
       if (wsRef.current) {
         const ws = wsRef.current;
         wsRef.current = null;
-        
+
         ws.onopen = null;
         ws.onmessage = null;
         ws.onerror = null;
         ws.onclose = null;
-        
+
         if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
           try {
             ws.close(1000, 'component unmount');
@@ -2762,7 +2762,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           }
         }
       }
-      
+
       connectionAttemptsRef.current = 0;
       retryCountRef.current = 0;
       consecutiveFailuresRef.current = 0;
