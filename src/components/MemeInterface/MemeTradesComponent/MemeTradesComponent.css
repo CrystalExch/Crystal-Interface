@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap');
 .meme-trades-container {
   height: 100%;
   color: #fff;
@@ -122,6 +123,7 @@
   width: 85px;
   gap: 4px;
   text-align: left;
+  font-family: 'Geist Mono';
 }
 
 .meme-trade-amount.positive {
@@ -138,6 +140,8 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.75rem;
   font-weight: 300;
+  font-family: 'Geist Mono';
+
 }
 
 .meme-trade-trader {
@@ -146,12 +150,15 @@
   color: rgba(255, 255, 255, 0.8);
   font-size: 0.8rem;
   font-weight: 300;
+    font-family: 'Geist Mono';
+
 }
 
 .meme-trade-trader.current-user {
   color: rgb(209, 209, 250);
   font-weight: 500;
   cursor: default;
+  font-family: Funnel Display;
 }
 
 .meme-trade-trader.clickable {
@@ -179,6 +186,8 @@
   cursor: pointer;
   font-weight: 300;
   letter-spacing: -0.3px;
+      font-family: 'Geist Mono';
+
 }
 
 .meme-trade-age:hover {

@@ -509,7 +509,7 @@ const fmtAmount = (v: number) =>
 
                 <div className="meme-trade-mc">
                   {mcMode === "MC" ? (
-                    <span>${(t.mcUSD / 1000).toFixed(1)}K</span>
+                    <span className="meme-trade-mc">${(t.mcUSD / 1000).toFixed(1)}K</span>
                   ) : (
                     <span>
                       $
