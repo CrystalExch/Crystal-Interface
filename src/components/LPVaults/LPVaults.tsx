@@ -129,7 +129,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
 }) => {
   const [selectedVaultStrategy, setSelectedVaultStrategy] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeVault, _setActiveVault] = useState('0xBFBea851c18c262622A47aD558657171380Af652' as `0x${string}`);
+  const [activeVault, _setActiveVault] = useState('0x8Bb0965B7D5FCA8d02924b7910c32b041315A0d9' as `0x${string}`);
   const [vaultList, setVaultList] = useState<any>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [vaultFilter, setVaultFilter] = useState<'All' | 'Spot' | 'Margin'>('All');
@@ -509,7 +509,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                     <div className="col vault-age-col">
                       <div className="vault-skeleton vault-skeleton-status"></div>
                     </div>
-                    <div className="col vault-snapshot-col">
+                    <div className="col vault-actions-col">
                       <div className="vault-skeleton vault-skeleton-chart"></div>
                     </div>
                   </div>
@@ -568,7 +568,7 @@ const LPVaults: React.FC<LPVaultsProps> = ({
                       </span>
                     </div>
 
-                    <div className="col vault-snapshot-col">
+                    <div className="col vault-actions-col">
                       <VaultSnapshot vaultId={vault.id} />
                     </div>
                   </div>

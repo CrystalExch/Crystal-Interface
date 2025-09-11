@@ -1371,7 +1371,7 @@ const WidgetExplorer: React.FC<WidgetExplorerProps> = ({
         data: encodeFunctionData({
           abi: CrystalRouterAbi,
           functionName: 'buy',
-          args: [token.tokenAddress as `0x${string}`],
+          args: [true, token.tokenAddress as `0x${string}`, val, 0n],
         }),
         value: val,
       };

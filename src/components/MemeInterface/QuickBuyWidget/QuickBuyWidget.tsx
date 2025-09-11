@@ -46,7 +46,6 @@ interface QuickBuyWidgetProps {
     activechain: number;
     routerAddress?: string;
     setpopup?: (value: number) => void;
-    refetch?: () => void;
     subWallets?: Array<{ address: string, privateKey: string }>;
     walletTokenBalances?: { [address: string]: any };
     activeWalletPrivateKey?: string;
@@ -225,7 +224,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     activechain,
     routerAddress,
     setpopup,
-    refetch,
     subWallets = [],
     walletTokenBalances = {},
     activeWalletPrivateKey,
@@ -312,10 +310,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         if (!isWalletActive(privateKey) && setOneCTSigner) {
             localStorage.setItem('crystal_active_wallet_private_key', privateKey);
             setOneCTSigner(privateKey);
-
-            if (refetch) {
-                setTimeout(() => refetch(), 100);
-            }
             if (terminalRefetch) {
                 setTimeout(() => terminalRefetch(), 0);
             }
@@ -333,15 +327,11 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         return getWalletBalance(currentWallet);
     };
     const forceRefresh = useCallback(() => {
-        if (refetch) {
-            refetch();
-            setLastRefreshTime(Date.now());
-        }
-
         if (terminalRefetch) {
             terminalRefetch();
+            setLastRefreshTime(Date.now());
         }
-    }, [refetch, terminalRefetch]);
+    }, [terminalRefetch]);
     useEffect(() => {
         if (isOpen && account?.connected) {
             forceRefresh();

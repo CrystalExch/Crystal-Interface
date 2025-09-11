@@ -2,7 +2,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
 import { encodeFunctionData, decodeFunctionResult, decodeEventLog } from "viem";
 import { settings } from "../../settings";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
 import MemeTradesComponent from "./MemeTradesComponent/MemeTradesComponent";
@@ -10,7 +9,6 @@ import MemeChart from "./MemeChart/MemeChart";
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
 import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
-import { CrystalDataHelperAbi } from "../../abis/CrystalDataHelperAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
 import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
 
@@ -93,7 +91,6 @@ interface MemeInterfaceProps {
   sendUserOperationAsync: any;
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
-  tokenBalances?: { [key: string]: bigint };
   tokendict?: { [key: string]: any };
   tradesByMarket?: any;
   markets?: any;
@@ -356,7 +353,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [selectedSellPreset, setSelectedSellPreset] = useState(1);
   const [sellSlippageValue, setSellSlippageValue] = useState('15');
   const [sellPriorityFee, setSellPriorityFee] = useState('0.005');
-  const [tokenBalance, setTokenBalance] = useState(0);
   const [notif, setNotif] = useState<({ title: string; subtitle?: string; variant?: 'success' | 'error' | 'info'; visible?: boolean }) | null>(null);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [page, _setPage] = useState(0);
@@ -388,17 +384,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [showUSD, setShowUSD] = useState(false);
   const { activechain } = useSharedContext();
 
-  const balancegetter = settings.chainConfig[activechain].balancegetter;
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
-  const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
-  const multicallAddress = settings.chainConfig[activechain]?.multicall3;
 
   const buyPresets = {
     1: { slippage: '20', priority: '0.01' },
     2: { slippage: '15', priority: '0.02' },
     3: { slippage: '10', priority: '0.05' }
   };
-  const queryClient = useQueryClient();
   const sellPresets = {
     1: { slippage: '15', priority: '0.005' },
     2: { slippage: '12', priority: '0.01' },
@@ -406,128 +398,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   };
 
   const userAddr = (address ?? account?.address ?? "").toLowerCase();
-  const tokAddr = (tokenAddress ?? "").toLowerCase();
-  const BAL_KEY = ["balance-and-allowance", userAddr, tokAddr] as const;
-
-  const { data: rpcData } = useQuery({
-    queryKey: BAL_KEY,
-    queryFn: async () => {
-      const balanceCalldata = encodeFunctionData({
-        abi: CrystalDataHelperAbi,
-        functionName: "batchBalanceOf",
-        args: [
-          address as `0x${string}`,
-          [tokenAddress as `0x${string}`],
-        ],
-      });
-
-      const multiCalldata = encodeFunctionData({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        args: [false, [
-          { target: balancegetter, callData: balanceCalldata },
-        ]],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          id: 1,
-          method: "eth_call",
-          params: [
-            { to: multicallAddress, data: multiCalldata },
-            "latest",
-          ],
-        }),
-      });
-      const { result } = await res.json();
-
-      const [, , returnData] = decodeFunctionResult({
-        abi: [{
-          inputs: [
-            { name: "requireSuccess", type: "bool" },
-            {
-              components: [
-                { name: "target", type: "address" },
-                { name: "callData", type: "bytes" },
-              ],
-              name: "calls",
-              type: "tuple[]",
-            },
-          ],
-          name: "tryBlockAndAggregate",
-          outputs: [
-            { name: "blockNumber", type: "uint256" },
-            { name: "blockHash", type: "bytes32" },
-            {
-              components: [
-                { name: "success", type: "bool" },
-                { name: "returnData", type: "bytes" },
-              ],
-              name: "returnData",
-              type: "tuple[]",
-            },
-          ],
-          stateMutability: "view",
-          type: "function",
-        }],
-        functionName: "tryBlockAndAggregate",
-        data: result,
-      });
-
-      let rawBalance = 0n;
-
-      if (returnData[0].success) {
-        [rawBalance] = decodeFunctionResult({
-          abi: CrystalDataHelperAbi,
-          functionName: "batchBalanceOf",
-          data: returnData[0].returnData,
-        });
-      }
-
-      return { rawBalance };
-    },
-    enabled: !!address && !!tokenAddress,
-    staleTime: 30_000,
-  });
-
-  useEffect(() => {
-    if (!rpcData) return;
-    const { rawBalance } = rpcData;
-
-    const bal = Number(rawBalance.toString()) / 1e18;
-
-    setTokenBalance(bal);
-  }, [rpcData]);
 
   useEffect(() => {
     const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -620,9 +490,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     const balances = walletTokenBalances[address];
     if (!balances) return 0;
 
-    const ethToken = tokenList.find(t => t.address === settings.chainConfig[activechain || '']?.eth);
-    if (ethToken && balances[ethToken.address]) {
-      return Number(balances[ethToken.address]) / 10 ** Number(ethToken.decimals);
+    if (balances[settings.chainConfig[activechain || '']?.eth]) {
+      return Number(balances[settings.chainConfig[activechain || '']?.eth]) / 10 ** Number(18);
     }
     return 0;
   };
@@ -853,8 +722,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       const pct = BigInt(parseInt(value.replace('%', ''), 10));
       const amountTokenWei = pct === 100n
-        ? (rpcData?.rawBalance && rpcData.rawBalance > 0n ? rpcData.rawBalance - 1n : 0n)
-        : ((rpcData?.rawBalance || 0n) * pct) / 100n;
+        ? (walletTokenBalances?.[userAddr]?.[token.id] && walletTokenBalances?.[userAddr]?.[token.id] > 0n ? walletTokenBalances?.[userAddr]?.[token.id] - 1n : 0n)
+        : ((walletTokenBalances?.[userAddr]?.[token.id] || 0n) * pct) / 100n;
 
       if (amountTokenWei <= 0n) {
         throw new Error(`Invalid sell amount`);
@@ -955,13 +824,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return { ...baseDefaults, ...fromState };
   })();
-
-  const refetchBalances = useCallback(() => {
-    if (!userAddr || !tokAddr) return;
-    const key = ["balance-and-allowance", userAddr, tokAddr] as const;
-    queryClient.invalidateQueries({ queryKey: key });
-    queryClient.refetchQueries({ queryKey: key, type: "active" });
-  }, [queryClient, userAddr, tokAddr]);
 
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
@@ -1483,7 +1345,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           const now = Date.now();
           if (now - lastInvalidateRef.current > 800) {
             lastInvalidateRef.current = now;
-            refetchBalances();
+            terminalRefetch();
           }
         }
       }
@@ -1492,7 +1354,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return () => {
       try { ws.close(); } catch { }
     };
-  }, [token.id, tokenAddress, address, refetchBalances]);
+  }, [token.id, tokenAddress, address, terminalRefetch]);
 
   // holders
   useEffect(() => {
@@ -1936,7 +1798,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           monAmountWei = 0n;
         } else {
           monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          amountTokenWei = BigInt(Math.round(tokenBalance * 1e18));
+          amountTokenWei = BigInt(Math.round(walletTokenBalances?.[userAddr]?.[token.id] * 1e18));
           isExactInput = false;
         }
         if (updatePopup) {
@@ -2185,13 +2047,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             <div className="meme-balance-right">
               {activeTradeType === 'sell' && (
                 <div className="meme-balance-display">
-                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(tokenBalance, 3)} {token.symbol}
+                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(walletTokenBalances?.[userAddr]?.[token.id], 3)} {token.symbol}
                 </div>
               )}
               {activeTradeType === 'sell' && (
                 <button
                   className="meme-balance-max"
-                  onClick={() => setTradeAmount(tokenBalance.toString())}
+                  onClick={() => setTradeAmount(walletTokenBalances?.[userAddr]?.[token.id].toString())}
                 >
                   MAX
                 </button>
@@ -2283,7 +2145,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                         if (activeTradeType == "buy") {
                         }
                         else {
-                          const newAmount = (tokenBalance * preset) / 100;
+                          const newAmount = (walletTokenBalances?.[userAddr]?.[token.id] * preset) / 100;
                           setTradeAmount(newAmount.toString());
                         }
                       }}
@@ -3079,7 +2941,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                     setMobileSelectedSellPercent(percent);
                     handleMobileSellTrade(percent);
                   }}
-                  disabled={!account?.connected || tokenBalance <= 0}
+                  disabled={!account?.connected || walletTokenBalances?.[userAddr]?.[token.id] <= 0}
                 >
                   {percent}
                 </button>
@@ -3182,7 +3044,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         activechain={activechain}
         routerAddress={routerAddress}
         setpopup={setpopup}
-        refetch={refetchBalances}
         subWallets={subWallets}
         walletTokenBalances={walletTokenBalances}
         activeWalletPrivateKey={activeWalletPrivateKey}

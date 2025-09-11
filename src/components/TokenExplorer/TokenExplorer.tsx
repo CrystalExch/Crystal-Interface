@@ -2169,6 +2169,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   activeFilterTab,
   onOpenFiltersForColumn,
   sendUserOperationAsync,
+  setTerminalToken,
   terminalRefetch,
 }) => {
   const navigate = useNavigate();
@@ -2627,6 +2628,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, [routerAddress, sendUserOperationAsync]);
 
   const handleTokenClick = useCallback((t: Token) => {
+    setTerminalToken(t.tokenAddress);
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
 

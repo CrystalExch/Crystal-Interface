@@ -2699,7 +2699,7 @@
     align-items:center
 }
 .vault-name-col{
-    flex:2.5;
+    flex: 1.5;
     flex-direction:column;
     align-items:flex-start
 }
@@ -2713,20 +2713,20 @@
     flex:1.3
 }
 .vault-deposits-col{
-    flex:1
+    flex:1.4
 }
 .vault-leader-col{
     flex:1.2
 }
 .vault-your-deposits-col{
-    flex:1
+    flex:1.2
 }
 .vault-age-col{
-    flex:.8
+    flex:.7
 }
-.vault-snapshot-col{
-    flex:1.5;
-    justify-content:flex-end
+.vault-actions-col{
+    flex:1;
+    justify-content:center
 }
 .vault-action-buttons-col{
     flex:1.5;

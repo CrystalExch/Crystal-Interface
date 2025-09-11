@@ -1181,7 +1181,7 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
               <div className="lp-col lp-borrow-apy-col">24h APY</div>
             </div>
 
-            {filteredVaults.map((vault) => (
+            {filteredVaults.length > 0 ? (filteredVaults.map((vault) => (
               <div
                 key={vault.address + vault.quoteAddress + vault.baseAddress}
                 className="lp-card"
@@ -1212,24 +1212,27 @@ const percentageBigInt = BigInt(Math.round(percentageValue * 100));
 
                   <div className="lp-col lp-supply-col">
                     <div className="lp-supply-value lp-supply-tooltip-wrapper">
-                      <span className="lp-apy-value-text"> $2.8M </span>
+                      <span className="lp-apy-value-text"> $7.8M </span>
                     </div>
                   </div>
 
                   <div className="lp-col lp-supply-apy-col">
-                    <div className="lp-supply-apy-value"> {vault?.supplyApy}%</div>
+                    <div className="lp-supply-apy-value"> $147.2M</div>
                   </div>
 
                   <div className="lp-col lp-borrowed-col">
-                    <div className="lp-borrowed-value">{vault?.totalBorrowed}</div>
+                    <div className="lp-borrowed-value">$186.3K</div>
                   </div>
 
                   <div className="lp-col lp-borrow-apy-col">
-                    <div className="lp-borrow-apy-value">{vault?.borrowApy}%</div>
+                    <div className="lp-borrow-apy-value">{26.7}%</div>
                   </div>
                 </div>
               </div>
-            ))}
+            ))) : (
+            <div className="no-vaults-message">
+              <p>No vaults found matching your criteria.</p>
+            </div>)}
           </div>
         ) : (
           <div className="lp-detail-view">
