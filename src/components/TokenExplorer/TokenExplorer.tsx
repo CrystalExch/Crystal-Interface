@@ -2417,7 +2417,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
-    console.log("opened");
     if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') {
       return;
     }
@@ -2444,7 +2443,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     try {
       const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
-      console.log(ws);
       wsRef.current = ws;
 
       const connectionTimeout = setTimeout(() => {
@@ -2459,7 +2457,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         connectionStateRef.current = 'connected';
         retryCountRef.current = 0;
         consecutiveFailuresRef.current = 0;
-        console.log(routerAddress);
 
         subscribe(ws, ['logs', { address: routerAddress, topics: [[ROUTER_EVENT]] }]);
         subscribe(ws, ['logs', { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] }]);
@@ -2468,7 +2465,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       ws.onmessage = ({ data }) => {
         try {
           const msg = JSON.parse(data);
-          console.log(msg.params?.result);
           if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
           const log = msg.params.result;
           if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
