@@ -102,7 +102,7 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   if (mode === 'USD' && monPrice > 0) {
     return `$${(v * monPrice).toFixed(2)}`;
   }
-  return `${v.toFixed(2)}`;
+  return `${v.toFixed(4)}`;
 };
 
 interface SellPopupProps {
@@ -410,20 +410,20 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
       timestamp: mt.timestamp,
       migrated: mt.migrated,
     }));
-
+  
   const topTraderRows = useMemo(() => {
     const rows: LiveHolder[] = (topTraders && topTraders.length
       ? topTraders
       : mockTopTraders.map(t => ({
-        address: t.wallet,
-        balance: t.balance,
-        amountBought: Math.random() * 10,
-        amountSold: Math.random() * 8,
-        valueBought: Math.random() * 1000,
-        valueSold: Math.random() * 800,
-        valueNet: (Math.random() - .5) * 20,
-        tokenNet: t.percentage,
-      }))
+          address: t.wallet,
+          balance: t.balance,
+          amountBought: Math.random() * 10,
+          amountSold: Math.random() * 8,
+          valueBought: Math.random() * 1000,
+          valueSold: Math.random() * 800,
+          valueNet: (Math.random() - .5) * 20,
+          tokenNet: t.percentage,
+        }))
     );
 
     const score = (x: LiveHolder) => x.valueNet + currentPrice * x.balance;
@@ -624,7 +624,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 const tokenImageUrl = p.imageUrl || null;
 
                 return (
-    <div key={p.tokenId} className={`meme-oc-item ${_ % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd'}`}>
+                  <div key={p.tokenId} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
                         <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
@@ -720,7 +720,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             </div>
             <div className="meme-oc-items">
               {mockOrders.map((order) => (
-                <div key={order.id} className={`meme-oc-item ${_ % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd'}`}>
+                <div key={order.id} className="meme-oc-item">
 
                   <div className="meme-oc-cell">{order.token}</div>
                   <div className="meme-oc-cell">
@@ -752,8 +752,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
               <div className="meme-oc-header-cell">Filter</div>
             </div>
             <div className="meme-oc-items">
-              {holderRows.map((row, index) => (
-                <div key={row.wallet} className={`meme-oc-item ${index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd'}`}>
+              {holderRows.map(row => (
+                <div key={row.wallet} className="meme-oc-item">
                   <div className="meme-oc-cell">
                     <div className="meme-wallet-info">
                       <span className="meme-wallet-index">{row.rank}</span>
@@ -775,7 +775,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-token-amount">{fmt(row.bought)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      (${fmt((row.valueBought * 1000000000 * monUsdPrice) / (row.bought || 1), 2)})
+                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueBought * 1000000000 * monUsdPrice) / (row.bought || 1)).toFixed(2))} />)
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -787,7 +787,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       <span className="meme-token-amount">{fmt(row.sold)}</span>
                     </div>
                     <span className="meme-avg-price">
-                      (${fmt((row.valueSold * 1000000000 * monUsdPrice) / (row.sold || 1), 2)})
+                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueSold * 1000000000 * monUsdPrice) / (row.sold || 1)).toFixed(2))} />)
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -836,11 +836,11 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 const remainingPct =
                   row.amountBought === 0 ? 0 : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
                 const pnl = row.valueNet + currentPrice * row.balance;
-                const avgBuyUSD = (row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1);
-                const avgSellUSD = (row.valueSold * 1_000_000_000 * monUsdPrice) / (row.amountSold || 1);
+                const avgBuyUSD  = ((row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1)).toFixed(2);
+                const avgSellUSD = ((row.valueSold  * 1_000_000_000 * monUsdPrice) / (row.amountSold  || 1)).toFixed(2);
 
                 return (
-                  <div key={row.address} className={`meme-oc-item ${index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd'}`}>
+                  <div key={row.address} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
                         <span className="meme-wallet-index">{index + 1}</span>
@@ -863,7 +863,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                         <span className="meme-token-amount">{fmt(row.amountBought)}</span>
                       </div>
-                      <span className="meme-avg-price">(${fmt(avgBuyUSD, 2)})</span>
+                      <span className="meme-avg-price">($<FormattedNumberDisplay formatted={formatSubscript(avgBuyUSD)} />)</span>
                     </div>
 
                     <div className="meme-oc-cell">
@@ -874,7 +874,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                         <span className="meme-token-amount">{fmt(row.amountSold)}</span>
                       </div>
-                      <span className="meme-avg-price">(${fmt(avgSellUSD, 2)})</span>
+                      <span className="meme-avg-price">($<FormattedNumberDisplay formatted={formatSubscript(avgSellUSD)} />)</span>
                     </div>
 
                     <div className="meme-oc-cell">
@@ -921,10 +921,10 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
             <div className="meme-oc-items">
               {devTokensToShow.length === 0 ? (
                 <div className="meme-oc-empty">No tokens</div>
-              ) : devTokensToShow.map((t, index) => {
+              ) : devTokensToShow.map((t) => {
                 const mc = Number(t.marketCap || 0);
                 return (
-                  <div key={t.id} className={`meme-oc-item ${index % 2 === 0 ? 'meme-oc-item-even' : 'meme-oc-item-odd'}`}>
+                  <div key={t.id} className="meme-oc-item">
                     <div className="meme-oc-cell">
                       <div className="meme-wallet-info">
                         <div className="meme-token-info" style={{ display: 'flex', alignItems: 'center' }}>
