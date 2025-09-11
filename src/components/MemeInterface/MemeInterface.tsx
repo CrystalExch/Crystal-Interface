@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useParams } from "react-router-dom";
-import { encodeFunctionData, decodeFunctionResult } from "viem";
+import { encodeFunctionData, decodeFunctionResult, decodeEventLog } from "viem";
 import { settings } from "../../settings";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
@@ -114,6 +114,7 @@ interface MemeInterfaceProps {
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
+const MARKET_CREATED_EVENT = "0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540";
 const TOTAL_SUPPLY = 1e9;
 const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.3';
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -1150,6 +1151,61 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     setTimeout(() => setNotif(null), 300);
   }, []);
 
+  const addDevTokenFromEvent = useCallback(async (log: any) => {
+    let args: any;
+    try {
+      const decoded = decodeEventLog({
+        abi: CrystalRouterAbi,
+        data: log.data,
+        topics: log.topics,
+      }) as any;
+      args = decoded.args || {};
+    } catch (e) {
+      console.error("failed to decode MARKET_CREATED_EVENT", e);
+      return;
+    }
+
+    const tokenId = String(args.token || "").toLowerCase();
+    const creator = String(args.creator || "").toLowerCase();
+
+    if (!token.dev || creator !== String(token.dev).toLowerCase()) return;
+
+    if (devTokenIdsRef.current.has(tokenId)) return;
+
+    let imageUrl = "";
+    try {
+      if (args.metadataCID) {
+        const r = await fetch(args.metadataCID);
+        if (r.ok) {
+          const meta = await r.json();
+          imageUrl = meta?.image || "";
+        }
+      }
+    } catch {}
+
+    const symbol = String(args.symbol || "").toUpperCase();
+    const name = String(args.name || symbol || tokenId.slice(0, 6));
+
+    const initialPrice = 0;
+    const newDev: any = {
+      id: tokenId,
+      symbol,
+      name,
+      imageUrl,
+      price: initialPrice,
+      marketCap: initialPrice * TOTAL_SUPPLY,
+      timestamp: Math.floor(Date.now() / 1000),
+      migrated: false,
+    };
+
+    setDevTokens(prev => {
+      if (prev.some(t => String(t.id).toLowerCase() === tokenId)) return prev;
+      const updated = [newDev, ...prev];
+      devTokenIdsRef.current = new Set(updated.map(t => String(t.id || "").toLowerCase()));
+      return updated;
+    });
+  }, [setDevTokens, token.dev]);
+
   // ws manager
   useEffect(() => {
     if (!token.id) return;
@@ -1167,7 +1223,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     ws.onopen = () => {
       sendSub(["logs", { address: token.id }]);
-      sendSub(["logs", { address: settings.chainConfig[activechain].router, topics: [[MARKET_UPDATE_EVENT]] }]);
+      sendSub(["logs", { address: settings.chainConfig[activechain].router, topics: [[MARKET_CREATED_EVENT, MARKET_UPDATE_EVENT]] }]);
 
       if (tokenAddress) {
         sendSub(["logs", { address: tokenAddress, topics: [[TRANSFER_TOPIC]] }]);
@@ -1407,6 +1463,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
+        return;
+      }
+
+      if (log.topics[0] === MARKET_CREATED_EVENT) {
+        addDevTokenFromEvent(log);
         return;
       }
 
