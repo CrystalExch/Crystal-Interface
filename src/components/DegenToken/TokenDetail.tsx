@@ -79,6 +79,7 @@ interface TokenDetailProps {
   terminalToken: any;
   setTerminalToken: any;
   terminalRefetch: any;
+  walletTokenBalances: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -108,7 +109,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   terminalQueryData,
   terminalToken,
   setTerminalToken,
-  terminalRefetch
+  terminalRefetch,
+  walletTokenBalances
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
@@ -124,136 +126,15 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState(!location.state?.tokenData);
   const [isSigning, setIsSigning] = useState(false);
-  const [tokenBalance, setTokenBalance] = useState(0);
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
 
   const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
-  const balancegetter = settings.chainConfig[activechain]?.balancegetter;
-  const HTTP_URL = settings.chainConfig[activechain]?.httpurl;
-  const multicallAddress = settings.chainConfig[activechain]?.multicall3;
-
-  const userAddr = (account?.address ?? '').toLowerCase();
-  const tokAddr = (tokenAddress ?? '').toLowerCase();
-  const BAL_KEY = ['balance-and-allowance', userAddr, tokAddr] as const;
-
-  const { data: rpcData } = useQuery({
-    queryKey: BAL_KEY,
-    queryFn: async () => {
-      if (!account?.address || !tokenAddress) return { rawBalance: 0n };
-
-      const balanceCalldata = encodeFunctionData({
-        abi: CrystalDataHelperAbi,
-        functionName: 'batchBalanceOf',
-        args: [account.address as `0x${string}`, [tokenAddress as `0x${string}`]],
-      });
-
-      const multiCalldata = encodeFunctionData({
-        abi: [{
-          inputs: [
-            { name: 'requireSuccess', type: 'bool' },
-            {
-              components: [
-                { name: 'target', type: 'address' },
-                { name: 'callData', type: 'bytes' },
-              ],
-              name: 'calls',
-              type: 'tuple[]',
-            },
-          ],
-          name: 'tryBlockAndAggregate',
-          outputs: [
-            { name: 'blockNumber', type: 'uint256' },
-            { name: 'blockHash', type: 'bytes32' },
-            {
-              components: [
-                { name: 'success', type: 'bool' },
-                { name: 'returnData', type: 'bytes' },
-              ],
-              name: 'returnData',
-              type: 'tuple[]',
-            },
-          ],
-          stateMutability: 'view',
-          type: 'function',
-        }],
-        functionName: 'tryBlockAndAggregate',
-        args: [false, [
-          { target: balancegetter, callData: balanceCalldata }
-        ]],
-      });
-
-      const res = await fetch(HTTP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          jsonrpc: '2.0',
-          id: 1,
-          method: 'eth_call',
-          params: [{ to: multicallAddress, data: multiCalldata }, 'latest'],
-        }),
-      });
-      
-      const { result } = await res.json();
-      const [, , returnData] = decodeFunctionResult({
-        abi: [{
-          inputs: [
-            { name: 'requireSuccess', type: 'bool' },
-            {
-              components: [
-                { name: 'target', type: 'address' },
-                { name: 'callData', type: 'bytes' },
-              ],
-              name: 'calls',
-              type: 'tuple[]',
-            },
-          ],
-          name: 'tryBlockAndAggregate',
-          outputs: [
-            { name: 'blockNumber', type: 'uint256' },
-            { name: 'blockHash', type: 'bytes32' },
-            {
-              components: [
-                { name: 'success', type: 'bool' },
-                { name: 'returnData', type: 'bytes' },
-              ],
-              name: 'returnData',
-              type: 'tuple[]',
-            },
-          ],
-          stateMutability: 'view',
-          type: 'function',
-        }],
-        functionName: 'tryBlockAndAggregate',
-        data: result,
-      });
-
-      let rawBalance = 0n;
-
-      if (returnData[0].success) {
-        [rawBalance] = decodeFunctionResult({
-          abi: CrystalDataHelperAbi,
-          functionName: 'batchBalanceOf',
-          data: returnData[0].returnData,
-        });
-      }
-
-
-      return { rawBalance };
-    },
-    enabled: !!account?.address && !!tokenAddress,
-    staleTime: 30_000,
-  });
-
-  useEffect(() => {
-    if (!rpcData) return;
-    const { rawBalance } = rpcData;
-    setTokenBalance(Number(rawBalance.toString()) / 1e18);
-  }, [rpcData]);
 
   const fetchTokenData = useCallback(async () => {
-    if (!tokenAddress) return;
+    if (!token) return;
+    let isCancelled = false;
 
     try {
       const response = await fetch(SUBGRAPH_URL, {
@@ -261,111 +142,66 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           query: `
-            query ($id: ID!) {
-              market: markets(where: { tokenAddress: $id }) {
+          query ($id: ID!) {
+            launchpadTokens: launchpadTokens(where: { id: $id }) {
+              lastPriceNativePerTokenWad
+              volumeNative
+              buyTxs
+              sellTxs
+              trades(first: 50, orderBy: block, orderDirection: desc) {
                 id
-                tokenAddress
-                name
-                symbol
-                metadataCID
-                createdAt
-                latestPrice
-                buyCount
-                sellCount
-                volume24h
-                creator
-              }
-              trades(first: 50, orderBy: timestamp, orderDirection: desc, where: { tokenAddress: $id }) {
-                id
-                trader
-                timestamp
+                account {id}
+                block
                 isBuy
-                price
-                tokenAmount
-                nativeAmount
+                priceNativePerTokenWad
+                amountIn
+                amountOut
               }
-              holders(first: 20, orderBy: balance, orderDirection: desc, where: { tokenAddress: $id }) {
-                address
-                balance
+              series: ${'series' + (selectedInterval === '1m' ? '60' :
+              selectedInterval === '5m' ? '300' :
+                selectedInterval === '15m' ? '900' :
+                  selectedInterval === '1h' ? '3600' :
+                    selectedInterval === '4h' ? '14400' :
+                      '86400')} {
+                klines(first: 1000, orderBy: time, orderDirection: desc) {
+                  time open high low close
+                }
               }
             }
-          `,
-          variables: { id: tokenAddress.toLowerCase() }
+          }`,
+          variables: {
+            id: token.id.toLowerCase(),
+          }
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json())?.data;
+      if (isCancelled || !data) return;
       console.log(data)
-      if (!data.data) return;
-
-      if (data.data.market?.length) {
-        const market = data.data.market[0];
-        const price = Number(market.latestPrice) / 1e18;
-        
-        let metadata: any = {};
-        try {
-          const metaResponse = await fetch(market.metadataCID);
-          if (metaResponse.ok) {
-            metadata = await metaResponse.json();
-          }
-        } catch (e) {
-          console.warn('Failed to load metadata');
-        }
-
-        let createdTimestamp = Number(market.createdAt);
-        if (createdTimestamp > 1e10) {
-          createdTimestamp = Math.floor(createdTimestamp / 1000);
-        }
-
-        const tokenData: Token = {
-          ...defaultMetrics,
-          id: market.id.toLowerCase(),
-          tokenAddress: market.tokenAddress.toLowerCase(),
-          name: market.name,
-          symbol: market.symbol,
-          image: metadata.image || '',
-          description: metadata.description || '',
-          twitterHandle: metadata.twitter || '',
-          website: metadata.website || '',
-          telegramHandle: metadata.telegram || '',
-          discordHandle: metadata.discord || '',
-          status: 'new',
-          created: createdTimestamp,
-          price,
-          marketCap: price * TOTAL_SUPPLY,
-          buyTransactions: Number(market.buyCount),
-          sellTransactions: Number(market.sellCount),
-          volume24h: Number(market.volume24h) / 1e18,
-          volumeDelta: 0,
-          creator: market.creator,
-          change24h: Math.random() * 200 - 100, // Mock data
-        };
-
-        setToken(tokenData);
+      if (data.launchpadTokens?.[0]?.series?.klines) {
+        const bars = data.launchpadTokens?.[0]?.series?.klines
+          .slice()
+          .reverse()
+          .map((c: any) => ({
+            time: Number(c.time) * 1000,
+            open: Number(c.open) / 1e18,
+            high: Number(c.high) / 1e18,
+            low: Number(c.low) / 1e18,
+            close: Number(c.close) / 1e18,
+            volume: Number(c.baseVolume) / 1e18,
+          }));
+        const key =
+          token.symbol +
+          "MON" +
+          (selectedInterval === "1d"
+            ? "1D"
+            : selectedInterval === "4h"
+              ? "240"
+              : selectedInterval === "1h"
+                ? "60"
+                : selectedInterval.slice(0, -1));
+        setChartData([bars, key, false]);
       }
-
-      if (data.data.trades?.length) {
-        const mappedTrades = data.data.trades.map((t: any) => ({
-          id: t.id,
-          timestamp: Number(t.timestamp),
-          isBuy: t.isBuy,
-          price: Number(t.price) / 1e18,
-          tokenAmount: Number(t.tokenAmount) / 1e18,
-          nativeAmount: Number(t.nativeAmount) / 1e18,
-          caller: t.trader,
-        }));
-        setTrades(mappedTrades);
-      }
-
-      if (data.data.holders?.length) {
-        const mappedHolders = data.data.holders.map((h: any) => ({
-          address: h.address,
-          balance: Number(h.balance) / 1e18,
-          percentage: (Number(h.balance) / 1e18 / TOTAL_SUPPLY) * 100,
-        }));
-        setHolders(mappedHolders);
-      }
-
     } catch (error) {
       console.error('Failed to fetch token data:', error);
     } finally {
@@ -374,9 +210,8 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   }, [tokenAddress]);
 
   useEffect(() => {
-    if (!token) {
-      fetchTokenData();
-    }
+    setTerminalToken(tokenAddress)
+    fetchTokenData();
   }, [token, fetchTokenData]);
 
   const handleTrade = async () => {
@@ -670,11 +505,11 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
             </div>
 
 
-            {tradeType === 'sell' && tokenBalance > 0 && (
+            {tradeType === 'sell' && (Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0) > 0 && (
               <div className="detail-balance-info">
-                <span>Balance: {formatNumber(tokenBalance)} {token.symbol}</span>
+                <span>Balance: {formatNumber(Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0)} {token.symbol}</span>
                 <button
-                  onClick={() => setTradeAmount(tokenBalance.toString())}
+                  onClick={() => setTradeAmount((Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0).toString())}
                   className="detail-max-button"
                 >
                   MAX
@@ -701,7 +536,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           <div className="detail-trade-stats">
             <div className="detail-stat-row">
               <span>Position</span>
-              <span>{formatNumber(tokenBalance)} {token.symbol}</span>
+              <span>{formatNumber(Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0)} {token.symbol}</span>
             </div>
             <div className="detail-stat-row">
               <span>Profit indicator</span>

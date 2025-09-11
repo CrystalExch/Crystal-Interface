@@ -2,6 +2,8 @@
   height: 100vh;
   color: #ffffff;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
 }
 
 .board-header {
@@ -686,6 +688,7 @@
 
 .launch-token-btn {
   display: flex;
+  align-self: center;
   justify-self: center;
   gap: 8px;
   padding: .75rem 1.5rem;

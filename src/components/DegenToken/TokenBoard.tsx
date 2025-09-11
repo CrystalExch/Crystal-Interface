@@ -414,15 +414,6 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
       }
     };
 
-    ws.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    ws.onclose = () => {
-      console.log('WebSocket disconnected');
-      wsRef.current = null;
-      setTimeout(setupWebSocket, 5000);
-    };
   }, []);
 
   useEffect(() => {
@@ -435,7 +426,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
         wsRef.current = null;
       }
     };
-  }, [fetchTokens, setupWebSocket]);
+  }, [setupWebSocket]);
 
   const handleTokenClick = (token: Token) => {
     navigate(`/board/${token.tokenAddress}`, {

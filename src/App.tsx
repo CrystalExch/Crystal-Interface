@@ -20573,6 +20573,7 @@ function App() {
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
+                walletTokenBalances={walletTokenBalances}
               />
             }
           />
