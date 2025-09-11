@@ -143,9 +143,10 @@ interface TokenExplorerProps {
 const MAX_PER_COLUMN = 30;
 const TOTAL_SUPPLY = 1e9;
 
-const ROUTER_EVENT = '0x32a005ee3e18b7dd09cfff956d3a1e8906030b52ec1a9517f6da679db7ffe540';
+const ROUTER_EVENT = '0x24ad3570873d98f204dae563a92a783a01f6935a8965547ce8bf2cadd2c6ce3b';
 const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
-const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.3';
+// const SUBGRAPH_URL = 'https://api.studio.thegraph.com/query/104695/test/v0.3.3';
+const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e'
 
 const DISPLAY_DEFAULTS: DisplaySettings = {
   metricSize: 'small',
@@ -2412,10 +2413,11 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       clearTimeout(pauseTimeoutRef.current);
       pauseTimeoutRef.current = null;
     }
-    setPausedColumn(columnType);
+    // setPausedColumn(columnType);
   }, []);
 
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
+    console.log("opened");
     if (connectionStateRef.current === 'connecting' || connectionStateRef.current === 'connected') {
       return;
     }
@@ -2442,6 +2444,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     try {
       const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
+      console.log(ws);
       wsRef.current = ws;
 
       const connectionTimeout = setTimeout(() => {
@@ -2456,6 +2459,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
         connectionStateRef.current = 'connected';
         retryCountRef.current = 0;
         consecutiveFailuresRef.current = 0;
+        console.log(routerAddress);
 
         subscribe(ws, ['logs', { address: routerAddress, topics: [[ROUTER_EVENT]] }]);
         subscribe(ws, ['logs', { address: routerAddress, topics: [[MARKET_UPDATE_EVENT]] }]);
@@ -2464,7 +2468,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       ws.onmessage = ({ data }) => {
         try {
           const msg = JSON.parse(data);
-          console.log(msg);
+          console.log(msg.params?.result);
           if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
           const log = msg.params.result;
           if (log.topics?.[0] === ROUTER_EVENT) addMarket(log);
@@ -2513,7 +2517,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       console.error('Failed to create WebSocket:', error);
       handleConnectionError('creation');
     }
-  }, [routerAddress, subscribe, addMarket, updateMarket, tokensByStatus, scheduleReconnect]);
+  }, [routerAddress, subscribe, addMarket, updateMarket, scheduleReconnect]);
 
   const handleConnectionError = useCallback((errorType: string) => {
     connectionStateRef.current = 'disconnected';
@@ -2666,6 +2670,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           })
         });
         const json = await res.json();
+        console.log(json);
         const rawMarkets = [...(json.data?.active ?? []), ...(json.data?.migrated ?? [])];
 
         const tokens: Token[] = await Promise.all(
