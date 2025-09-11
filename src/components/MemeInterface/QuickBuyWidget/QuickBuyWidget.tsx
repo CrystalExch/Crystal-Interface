@@ -322,15 +322,15 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     };
 
-    const currentTokenBalance = walletTokenBalances?.[subWallets.find(w => w.privateKey === activeWalletPrivateKey)?.address || '']?.[tokenAddress || ''] ?? 0n;
+    const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
     const tokenBalance = Number(currentTokenBalance) / 1e18;
     const getCurrentWalletMONBalance = () => {
         if (!activeWalletPrivateKey) return 0;
 
-        const currentWallet = subWallets.find(w => w.privateKey === activeWalletPrivateKey);
+        const currentWallet = account?.address || '';
         if (!currentWallet) return 0;
 
-        return getWalletBalance(currentWallet.address);
+        return getWalletBalance(currentWallet);
     };
     const forceRefresh = useCallback(() => {
         if (refetch) {
