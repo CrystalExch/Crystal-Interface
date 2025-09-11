@@ -261,7 +261,7 @@ export default function MemeTradesComponent({
       }
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
-      const short = isCurrentUser ? "YOU" : r.caller.slice(0, 6);
+      const short = isCurrentUser ? "YOU" : r.caller.slice(2, 6);
 
       return {
         id: r.id,

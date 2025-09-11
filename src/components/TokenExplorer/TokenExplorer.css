@@ -1828,7 +1828,9 @@
   .mobile-tab-selector {
     display: flex;
   }
-
+  .explorer-quick-buy-btn{
+    display: flex !important;
+  }
   .explorer-columns {
     display: block;
     height: calc(100% - 60px);
@@ -1846,14 +1848,10 @@
   .explorer-token-row {
     height: 120px;
   }
-
-  .explorer-quick-buy-btn {
-    display: flex;
-  }
 }
 
 
-@media(max-width:425px) {
+@media(max-width:360px) {
   .explorer-token-row {
     height: 130px;
   }
@@ -3067,7 +3065,6 @@
 }
 
 @media(max-width: 1300px) {
-
   .explorer-quick-buy-btn.size-small,
   .explorer-quick-buy-btn.size-large,
   .explorer-quick-buy-btn.size-mega {
