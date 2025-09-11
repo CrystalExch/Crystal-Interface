@@ -90,6 +90,6 @@ export const mockOrders: Order[] = [
 export const mockHolders: Holder[] = [
 ];
 
-export const mockTopTraders: TopTrader[] = []
+export const mockTopTraders: Holder[] = []
 
 export const mockDevTokens: DevToken[] = []

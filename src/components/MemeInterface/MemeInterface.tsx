@@ -200,6 +200,32 @@ const DEV_TOKENS_QUERY = `
   }
 `;
 
+const TOP_TRADERS_QUERY = `
+  query ($m: Bytes!, $since: BigInt!, $skip: Int!, $first: Int!) {
+    launchpadPositions(
+      where: { token: $m, lastUpdatedAt_gte: $since }
+      orderBy: realizedPnlNative
+      orderDirection: desc
+      skip: $skip
+      first: $first
+    ) {
+      account { id }
+      tokenBought
+      tokenSold
+      nativeSpent
+      nativeReceived
+      remainingTokens
+      realizedPnlNative
+      unrealizedPnlNative
+      lastUpdatedAt
+    }
+
+    launchpadTokens(where: { id: $m }) {
+      lastPriceNativePerTokenWad
+    }
+  }
+`;
+
 const RESOLUTION_SECS: Record<string, number> = {
   "1m": 60,
   "5m": 300,
@@ -339,6 +365,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   });
   const [positions, setPositions] = useState<any[]>([]);
   const [devTokens, setDevTokens] = useState<any[]>([]);
+  const [topTraders, setTopTraders] = useState<Holder[]>([]);
+  const topTradersMapRef = useRef<Map<string, number>>(new Map());
   const [advancedTradingEnabled, setAdvancedTradingEnabled] = useState(false);
   const [showAdvancedDropdown, setShowAdvancedDropdown] = useState(false);
   const [advancedOrders, setAdvancedOrders] = useState<Array<{
@@ -1245,6 +1273,54 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
             return copy;
           });
+
+          setTopTraders((prev) => {
+            const copy = Array.isArray(prev) ? [...prev] : [];
+            const key = callerAddr;
+            let idx = topTradersMapRef.current.get(key) ?? -1;
+
+            if (idx === -1) {
+              const row: Holder = {
+                address: `0x${log.topics[2].slice(26)}`,
+                balance: 0,
+                tokenNet: 0,
+                valueNet: 0,
+                amountBought: 0,
+                amountSold: 0,
+                valueBought: 0,
+                valueSold: 0,
+              };
+              copy.push(row);
+              idx = copy.length - 1;
+              topTradersMapRef.current.set(key, idx);
+            }
+
+            const row = { ...copy[idx] };
+
+            if (isBuy) {
+              row.amountBought += amountOut;
+              row.valueBought += amountIn;
+              row.balance += amountOut;
+            } else {
+              row.amountSold += amountIn;
+              row.valueSold += amountOut;
+              row.balance = Math.max(0, row.balance - amountIn);
+            }
+
+            row.tokenNet = row.amountBought - row.amountSold;
+            row.valueNet = (row.valueSold - row.valueBought) + (row.balance * (price || 0));
+
+            copy[idx] = row;
+
+            copy.sort((a, b) => (b.valueNet - a.valueNet));
+            if (copy.length > 300) {
+              const removed = copy.splice(300);
+              for (const r of removed) topTradersMapRef.current.delete((r.address || '').toLowerCase());
+            }
+            copy.forEach((r, i) => topTradersMapRef.current.set((r.address || '').toLowerCase(), i));
+
+            return copy;
+          });
         }
 
         if (callerAddr === userAddr) {
@@ -1475,6 +1551,75 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
+
+  // top traders
+  useEffect(() => {
+    if (!token.id) return;
+    let cancelled = false;
+
+    (async () => {
+      const out: Holder[] = [];
+      let skip = 0;
+      const first = PAGE_SIZE;
+      const since = Math.floor(Date.now() / 1000) - 24 * 60 * 60;
+
+      while (true) {
+        const res = await fetch(SUBGRAPH_URL, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            query: TOP_TRADERS_QUERY,
+            variables: {
+              m: (token.id || '').toLowerCase(),
+              since: String(since),
+              skip,
+              first,
+            },
+          }),
+        });
+
+        const { data } = await res.json();
+        const rows: any[] = data?.launchpadPositions ?? [];
+        if (!rows.length) break;
+
+        for (const p of rows) {
+          const amountBought = Number(p.tokenBought) / 1e18;
+          const amountSold = Number(p.tokenSold) / 1e18;
+          const valueBought = Number(p.nativeSpent) / 1e18;
+          const valueSold = Number(p.nativeReceived) / 1e18;
+
+          const balance = amountBought - amountSold;
+          const realized = Number(p.realizedPnlNative)   / 1e18;
+          const unrealized = Number(p.unrealizedPnlNative) / 1e18;
+          const pnl = realized + unrealized;
+
+          out.push({
+            address: p.account.id,
+            balance,
+            tokenNet: amountBought - amountSold,
+            valueNet: pnl,
+            amountBought,
+            amountSold,
+            valueBought,
+            valueSold,
+          });
+        }
+
+        if (rows.length < first) break;
+        skip += first;
+        if (cancelled) return;
+      }
+
+      if (!cancelled) {
+        out.sort((a, b) => (b.valueNet - a.valueNet));
+        const trimmed = out.slice(0, 100);
+        setTopTraders(trimmed);
+        topTradersMapRef.current = new Map(trimmed.map((t, i) => [t.address.toLowerCase(), i]));
+      }
+    })();
+
+    return () => { cancelled = true; };
+  }, [token.id]);
 
   // positions
   useEffect(() => {
@@ -1917,6 +2062,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             onToggleWidget={() => setIsWidgetOpen(!isWidgetOpen)}
             holders={holders}
             positions={positions}
+            topTraders={topTraders}
             devTokens={devTokens}
             page={page}
             pageSize={PAGE_SIZE}

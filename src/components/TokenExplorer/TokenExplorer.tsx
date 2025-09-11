@@ -618,24 +618,28 @@ const AlertsPopup: React.FC<{
   const sliderRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const lastVolumeRef = useRef<number>(settings.volume);
+
   const toggleDropdown = (key: string) => {
     setOpenDropdowns(prev => ({
       ...prev,
       [key]: !prev[key]
     }));
   };
+
   const closeDropdown = (key: string) => {
     setOpenDropdowns(prev => ({
       ...prev,
       [key]: false
     }));
   };
+
   const getSoundDisplayName = (soundPath: string) => {
     if (soundPath === stepaudio) return 'Step Audio';
     if (soundPath === kaching) return 'Ka-ching';
     if (soundPath.includes('blob:')) return 'Custom Audio';
     return 'Step Audio';
   };
+
   useEffect(() => {
     audioRef.current = new Audio(stepaudio);
     audioRef.current.volume = settings.volume / 100;
@@ -648,7 +652,6 @@ const AlertsPopup: React.FC<{
     };
   }, []);
 
-  // Update audio volume when settings change
   useEffect(() => {
     if (audioRef.current) {
       audioRef.current.volume = settings.volume / 100;
@@ -735,6 +738,7 @@ const AlertsPopup: React.FC<{
     updateSoundSetting(soundType, soundValue);
     setOpenDropdowns(prev => ({ ...prev, [soundType]: false }));
   };
+
   if (!isOpen) return null;
 
   return (
@@ -1492,6 +1496,7 @@ const DisplayDropdown: React.FC<{
     </div>
   );
 };
+
 const MobileTabSelector: React.FC<{
   activeTab: Token['status'];
   onTabChange: (tab: Token['status']) => void;
@@ -1637,7 +1642,6 @@ const TokenRow = React.memo<{
     '--progress-color': getBondingColor(bondingPercentage),
   };
 
-
   const updatePreviewPosition = useCallback(() => {
     if (!imageContainerRef.current) return;
 
@@ -1720,6 +1724,7 @@ const TokenRow = React.memo<{
   const cssVariables: CSSVars = metricInfo
     ? { [`--metric-${metricInfo.class}`]: metricInfo.color }
     : {};
+
   return (
     <div
       className={`explorer-token-row ${isHidden ? 'hidden-token' : ''} ${displaySettings.colorRows && token.status !== 'graduated'
@@ -2204,6 +2209,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
     return () => clearInterval(interval);
   }, []);
+
   const [alertSettings, setAlertSettings] = useState<AlertSettings>(() => {
     const saved = localStorage.getItem('explorer-alert-settings');
     if (!saved) return ALERT_DEFAULTS;
@@ -2214,7 +2220,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return ALERT_DEFAULTS;
     }
   });
-
   const [blacklistSettings, setBlacklistSettings] = useState<BlacklistSettings>(() => {
     const saved = localStorage.getItem('explorer-blacklist-settings');
     if (!saved) return BLACKLIST_DEFAULTS;
@@ -2225,15 +2230,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       return BLACKLIST_DEFAULTS;
     }
   });
-
   const [showAlertsPopup, setShowAlertsPopup] = useState(false);
   const [showBlacklistPopup, setShowBlacklistPopup] = useState(false);
-
-  useEffect(() => { localStorage.setItem('explorer-display-settings', JSON.stringify(displaySettings)); }, [displaySettings]);
-  useEffect(() => { localStorage.setItem('explorer-alert-settings', JSON.stringify(alertSettings)); }, [alertSettings]);
-  useEffect(() => { localStorage.setItem('explorer-blacklist-settings', JSON.stringify(blacklistSettings)); }, [blacklistSettings]);
-
-  const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
+    const [quickAmounts, setQuickAmounts] = useState<Record<Token['status'], string>>(() => ({
     new: localStorage.getItem('explorer-quickbuy-new') ?? '0',
     graduating: localStorage.getItem('explorer-quickbuy-graduating') ?? '0',
     graduated: localStorage.getItem('explorer-quickbuy-graduated') ?? '0',
@@ -2243,20 +2242,24 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
     graduating: parseInt(localStorage.getItem('explorer-preset-graduating') ?? '1'),
     graduated: parseInt(localStorage.getItem('explorer-preset-graduated') ?? '1'),
   }));
+  const [isLoading, setIsLoading] = useState(true);
+  const [hoveredToken, setHoveredToken] = useState<string | null>(null);
+  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
+
+  useEffect(() => { localStorage.setItem('explorer-display-settings', JSON.stringify(displaySettings)); }, [displaySettings]);
+  useEffect(() => { localStorage.setItem('explorer-alert-settings', JSON.stringify(alertSettings)); }, [alertSettings]);
+  useEffect(() => { localStorage.setItem('explorer-blacklist-settings', JSON.stringify(blacklistSettings)); }, [blacklistSettings]);
 
   const setQuickAmount = useCallback((s: Token['status'], v: string) => {
     const clean = v.replace(/[^0-9.]/g, '');
     setQuickAmounts((p) => ({ ...p, [s]: clean }));
     localStorage.setItem(`explorer-quickbuy-${s}`, clean);
   }, []);
+
   const setActivePreset = useCallback((status: Token['status'], preset: number) => {
     setActivePresets((p) => ({ ...p, [status]: preset }));
     localStorage.setItem(`explorer-preset-${status}`, preset.toString());
   }, []);
-
-  const [isLoading, setIsLoading] = useState(true);
-  const [hoveredToken, setHoveredToken] = useState<string | null>(null);
-  const [hoveredImage, setHoveredImage] = useState<string | null>(null);
 
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
@@ -2268,6 +2271,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   const handleImageHover = useCallback((id: string) => setHoveredImage(id), []);
   const handleImageLeave = useCallback(() => setHoveredImage(null), []);
   const handleInputFocus = useCallback((e: React.FocusEvent<HTMLInputElement>) => { if (e.target.value === '0') e.target.select(); }, []);
+
   const subscribe = useCallback((ws: WebSocket, params: any, onAck?: (subId: string) => void) => {
     const reqId = subIdRef.current++;
     ws.send(JSON.stringify({ id: reqId, jsonrpc: '2.0', method: 'eth_subscribe', params }));
@@ -2339,6 +2343,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       subscribe(wsRef.current, ['logs', { address: args.token }], (sub) => (marketSubs.current[args.token] = sub));
     }
   }, [subscribe, alertSettings.soundAlertsEnabled, alertSettings.sounds.newPairs, alertSettings.volume, pausedColumn]);
+
   const updateMarket = useCallback((log: any) => {
     if (log.topics[0] !== MARKET_UPDATE_EVENT) return;
 
@@ -2386,6 +2391,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       wsRef.current = null;
     }
   }, []);
+
   const openWebsocket = useCallback((initialMarkets: string[]): void => {
     const ws = new WebSocket(appSettings.chainConfig[activechain].wssurl);
     wsRef.current = ws;
@@ -2401,6 +2407,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       const msg = JSON.parse(data);
       if (msg.method !== 'eth_subscription' || !msg.params?.result) return;
       const log = msg.params.result;
+      console.log(log, ROUTER_EVENT, MARKET_UPDATE_EVENT);
       if (log.topics[0] === ROUTER_EVENT) addMarket(log);
       else if (log.topics[0] === MARKET_UPDATE_EVENT) updateMarket(log);
     };
@@ -2409,7 +2416,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   }, [routerAddress, subscribe, addMarket, updateMarket]);
 
   const handleColumnLeave = useCallback(() => {
-    // Debounce the resume to prevent rapid pause/resume cycles
     if (pauseTimeoutRef.current) {
       clearTimeout(pauseTimeoutRef.current);
     }
@@ -2498,7 +2504,6 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
           openWebsocket(tokens.map((t) => t.id));
         } catch (err) {
           console.error('refetch failed', err);
-          // Fallback: just reopen WebSocket with existing tokens
           const allTokens = [
             ...tokensByStatus.new,
             ...tokensByStatus.graduating,
@@ -2519,6 +2524,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       }
     };
   }, []);
+
   const copyToClipboard = useCallback(async (text: string) => {
     const txId = `copy-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     try {
@@ -2602,6 +2608,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
       dispatch({ type: 'SET_LOADING', id: token.id, loading: false });
     }
   }, [routerAddress, sendUserOperationAsync]);
+
   const handleTokenClick = useCallback((t: Token) => {
     navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
   }, [navigate]);
