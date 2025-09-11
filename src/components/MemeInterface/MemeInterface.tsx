@@ -356,7 +356,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [mobileTradeType, setMobileTradeType] = useState<'buy' | 'sell'>('buy');
   const [mobileWalletsExpanded, setMobileWalletsExpanded] = useState(false);
   const [mobileWalletNames, setMobileWalletNames] = useState<{ [address: string]: string }>({});
-
+  const [showUSD, setShowUSD] = useState(false);
   const { activechain } = useSharedContext();
 
   const balancegetter = settings.chainConfig[activechain].balancegetter;
@@ -549,7 +549,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const handleAdvancedOrderRemove = (orderId: string) => {
     setAdvancedOrders(prev => prev.filter(order => order.id !== orderId));
   };
-
+  const handleToggleCurrency = () => {
+    setShowUSD(!showUSD);
+  };
   const positionPopup = useCallback((percent: number) => {
     const input = sliderRef.current;
     const popup = popupRef.current;
@@ -2482,38 +2484,71 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               getButtonText()
             )}
           </button>
-
-          <div className="meme-portfolio-stats">
+<div className="meme-portfolio-stats" onClick={handleToggleCurrency} style={{ cursor: 'pointer' }}>
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Bought</div>
               <div className="meme-portfolio-value bought">
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-                {formatNumberWithCommas(userStats.valueBought, 1)}
+                {showUSD ? (
+                  <>
+                    <span>$</span>
+                    {formatNumberWithCommas(userStats.valueBought * monUsdPrice, 1)}
+                  </>
+                ) : (
+                  <>
+                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    {formatNumberWithCommas(userStats.valueBought, 1)}
+                  </>
+                )}
               </div>
             </div>
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Sold</div>
               <div className="meme-portfolio-value sold">
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-
-                {formatNumberWithCommas(userStats.valueSold, 1)}
+                {showUSD ? (
+                  <>
+                    <span>$</span>
+                    {formatNumberWithCommas(userStats.valueSold * monUsdPrice, 1)}
+                  </>
+                ) : (
+                  <>
+                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    {formatNumberWithCommas(userStats.valueSold, 1)}
+                  </>
+                )}
               </div>
             </div>
             <div className="meme-portfolio-stat">
               <div className="meme-portfolio-label">Holding</div>
               <div className="meme-portfolio-value holding">
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-
-                {formatNumberWithCommas(userStats.balance * currentPrice, 3)}
+                {showUSD ? (
+                  <>
+                    <span >$</span>
+                    {formatNumberWithCommas(userStats.balance * currentPrice * monUsdPrice, 3)}
+                  </>
+                ) : (
+                  <>
+                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    {formatNumberWithCommas(userStats.balance * currentPrice, 3)}
+                  </>
+                )}
               </div>
             </div>
             <div className="meme-portfolio-stat pnl">
               <div className="meme-portfolio-label">PnL</div>
               <div className={`meme-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}>
-                <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
-
-                {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
-                {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                {showUSD ? (
+                  <>
+                    <span>$</span>
+                    {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet * monUsdPrice, 1)}
+                    {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                  </>
+                ) : (
+                  <>
+                    <img className="meme-mobile-monad-icon" src={monadicon} alt="MON" />
+                    {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
+                    {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -2951,6 +2986,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         forceRefreshAllWallets={forceRefreshAllWallets}
         userStats={userStats}
         monUsdPrice={monUsdPrice}
+        showUSD={showUSD}
+        onToggleCurrency={handleToggleCurrency}
       />
     </div>
   );

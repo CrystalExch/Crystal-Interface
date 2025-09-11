@@ -12,6 +12,7 @@ import slippage from '../../../assets/slippage.svg';
 import gas from '../../../assets/gas.svg';
 import { CrystalRouterAbi } from '../../../abis/CrystalRouterAbi';
 import { encodeFunctionData } from 'viem';
+import { createPortal } from 'react-dom';
 
 interface PendingTransaction {
     id: string;
@@ -29,7 +30,6 @@ interface UserStats {
     valueSold: number;
     valueNet: number;
 }
-
 interface QuickBuyWidgetProps {
     isOpen: boolean;
     onClose: () => void;
@@ -57,8 +57,159 @@ interface QuickBuyWidgetProps {
     forceRefreshAllWallets?: () => void;
     userStats?: UserStats;
     monUsdPrice?: number;
-
+    showUSD?: boolean;
+    onToggleCurrency?: () => void;
 }
+const Tooltip: React.FC<{
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    const updatePosition = useCallback(() => {
+        if (!containerRef.current || !tooltipRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        let top = 0;
+        let left = 0;
+
+        switch (position) {
+            case 'top':
+                top = rect.top + scrollY - tooltipRect.height - 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollY + 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.left + scrollX - tooltipRect.width - 10;
+                break;
+            case 'right':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.right + scrollX + 10;
+                break;
+        }
+
+        const margin = 10;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        if (position === 'top' || position === 'bottom') {
+            left = Math.min(
+                Math.max(left, margin + tooltipRect.width / 2),
+                viewportWidth - margin - tooltipRect.width / 2,
+            );
+        } else {
+            top = Math.min(
+                Math.max(top, margin),
+                viewportHeight - margin - tooltipRect.height,
+            );
+        }
+
+        setTooltipPosition({ top, left });
+    }, [position]);
+
+    const handleMouseEnter = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(false);
+        setShouldRender(true);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setIsVisible(true);
+            fadeTimeoutRef.current = null;
+        }, 10);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(true);
+        setIsVisible(false);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setShouldRender(false);
+            setIsLeaving(false);
+            fadeTimeoutRef.current = null;
+        }, 150);
+    }, []);
+
+    useEffect(() => {
+        if (shouldRender && !isLeaving) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition);
+            window.addEventListener('resize', updatePosition);
+            return () => {
+                window.removeEventListener('scroll', updatePosition);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [shouldRender, updatePosition, isLeaving]);
+
+    useEffect(() => {
+        return () => {
+            if (fadeTimeoutRef.current) {
+                clearTimeout(fadeTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            className="tooltip-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {children}
+            {shouldRender && createPortal(
+                <div
+                    ref={tooltipRef}
+                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+                    style={{
+                        position: 'absolute',
+                        top: `${tooltipPosition.top - 20}px`,
+                        left: `${tooltipPosition.left}px`,
+                        transform: `${position === 'top' || position === 'bottom'
+                            ? 'translateX(-50%)'
+                            : position === 'left' || position === 'right'
+                                ? 'translateY(-50%)'
+                                : 'none'} scale(${isVisible ? 1 : 0})`,
+                        opacity: isVisible ? 1 : 0,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                        willChange: 'transform, opacity'
+                    }}
+                >
+                    <div className="tooltip-content">
+                        {content}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+};
 const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     isOpen,
     onClose,
@@ -93,7 +244,10 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         valueNet: 0,
     },
     monUsdPrice = 0,
+    showUSD = false,
+    onToggleCurrency,
 }) => {
+
 
     const [position, setPosition] = useState({ x: 100, y: 100 });
     const [isDragging, setIsDragging] = useState(false);
@@ -687,7 +841,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     return (
         <>
-            {/* Main QuickBuy Widget */}
             <div
                 ref={widgetRef}
                 className={`quickbuy-widget ${isDragging ? 'dragging' : ''}`}
@@ -702,54 +855,64 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 >
                     <div className="quickbuy-controls">
                         <div className="quickbuy-controls-left">
-                            <button
-                                className={`quickbuy-edit-icon  ${keybindsEnabled ? 'active' : ''}`}
-                                onClick={handleKeybindToggle}
-                                title={`Keybinds ${keybindsEnabled ? 'ON' : 'OFF'} - Buy: QWER, Sell: ASDF`}
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z" /></svg>
-                            </button>
-
+                            <Tooltip content={`${keybindsEnabled ? 'Disable Keybinds' : 'Enable Keybinds'}`}>
+                                <button
+                                    className={`quickbuy-edit-icon  ${keybindsEnabled ? 'active' : ''}`}
+                                    onClick={handleKeybindToggle}
+                                    title={`${keybindsEnabled ? 'Disable Keybinds' : 'Enable Keybinds'}`}
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z" /></svg>
+                                </button>
+                            </Tooltip>
                             <div className="quickbuy-preset-controls">
-                                <button
-                                    className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
-                                    onClick={() => setQuickBuyPreset(1)}
-                                >
-                                    P1
-                                </button>
-                                <button
-                                    className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
-                                    onClick={() => setQuickBuyPreset(2)}
-                                >
-                                    P2
-                                </button>
-                                <button
-                                    className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
-                                    onClick={() => setQuickBuyPreset(3)}
-                                >
-                                    P3
-                                </button>
+                                <Tooltip content="Preset 1">
+                                    <button
+                                        className={`quickbuy-preset-pill ${quickBuyPreset === 1 ? 'active' : ''}`}
+                                        onClick={() => setQuickBuyPreset(1)}
+                                    >
+                                        P1
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content="Preset 2">
+                                    <button
+                                        className={`quickbuy-preset-pill ${quickBuyPreset === 2 ? 'active' : ''}`}
+                                        onClick={() => setQuickBuyPreset(2)}
+                                    >
+                                        P2
+                                    </button>
+                                </Tooltip>
+                                <Tooltip content="Preset 3">
+                                    <button
+                                        className={`quickbuy-preset-pill ${quickBuyPreset === 3 ? 'active' : ''}`}
+                                        onClick={() => setQuickBuyPreset(3)}
+                                    >
+                                        P3
+                                    </button>
+                                </Tooltip>
                             </div>
-                            <img
-                                src={editicon}
-                                alt="Edit"
-                                className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
-                                onClick={handleEditToggle}
-                            />
+                            <Tooltip content="Edit Mode">
+                                <img
+                                    src={editicon}
+                                    alt="Edit"
+                                    className={`quickbuy-edit-icon ${isEditMode ? 'active' : ''}`}
+                                    onClick={handleEditToggle}
+                                />
+                            </Tooltip>
 
                         </div>
 
                         <div className="quickbuy-controls-right-side">
                             {subWallets.length > 0 && (
-                                <button
-                                    className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
-                                    onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
-                                    title="Toggle Wallets"
-                                >
-                                    <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
-                                    <span className="quickbuy-wallets-count">{subWallets.length}</span>
-
-                                </button>
+                                <Tooltip content="Toggle Wallets">
+                                    <button
+                                        className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
+                                        onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
+                                        title="Toggle Wallets"
+                                    >
+                                        <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
+                                        <span className="quickbuy-wallets-count">{subWallets.length}</span>
+                                    </button>
+                                </Tooltip>
                             )}
 
                             <button className="close-btn" onClick={onClose}>
@@ -805,14 +968,18 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         </div>
 
                         <div className="quickbuy-settings-display">
+                                <Tooltip content="Slippage">
                             <div className="quickbuy-settings-item">
                                 <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
                                 <span className="quickbuy-settings-value">{buySlippageValue}%</span>
                             </div>
+                            </Tooltip>
+                        <Tooltip content="Priority Fee">
                             <div className="quickbuy-settings-item">
                                 <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
                                 <span className="quickbuy-settings-value">{buyPriorityFee}</span>
                             </div>
+                        </Tooltip>
                         </div>
                     </div>
 
@@ -883,40 +1050,81 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         </div>
 
                         <div className="quickbuy-settings-display">
-                            <div className="quickbuy-settings-item">
-                                <img src={slippage} alt="Slippage" className="quickbuy-settings-icon" />
-                                <span className="quickbuy-settings-value">{sellSlippageValue}%</span>
-                            </div>
-                            <div className="quickbuy-settings-item">
-                                <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
-                                <span className="quickbuy-settings-value">{sellPriorityFee}</span>
-                            </div>
+                            <Tooltip content="Slippage">
+                                <div className="quickbuy-settings-item">
+                                    <img src={slippage} alt="Slippage" className="quickbuy-settings-icon" />
+                                    <span className="quickbuy-settings-value">{sellSlippageValue}%</span>
+                                </div>
+                            </Tooltip>
+                            <Tooltip content="Priority Fee">
+                                <div className="quickbuy-settings-item">
+                                    <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon" />
+                                    <span className="quickbuy-settings-value">{sellPriorityFee}</span>
+                                </div>
+                            </Tooltip>
                         </div>
                     </div>
-                    <div className="quickbuy-portfolio-section">
+                <div className="quickbuy-portfolio-section" onClick={onToggleCurrency} style={{ cursor: 'pointer' }}>
                         <div className="quickbuy-portfolio-stat">
                             <div className="quickbuy-portfolio-value bought">
-                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
-                                {formatNumberWithCommas(userStats.valueBought, 1)}
+                                {showUSD ? (
+                                    <>
+                                        <span >$</span>
+                                        {formatNumberWithCommas(userStats.valueBought * monUsdPrice, 1)}
+                                    </>
+                                ) : (
+                                    <>
+                                        <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                        {formatNumberWithCommas(userStats.valueBought, 1)}
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="quickbuy-portfolio-stat">
                             <div className="quickbuy-portfolio-value sold">
-                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
-                                {formatNumberWithCommas(userStats.valueSold, 1)}
+                                {showUSD ? (
+                                    <>
+                                        <span>$</span>
+                                        {formatNumberWithCommas(userStats.valueSold * monUsdPrice, 1)}
+                                    </>
+                                ) : (
+                                    <>
+                                        <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                        {formatNumberWithCommas(userStats.valueSold, 1)}
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="quickbuy-portfolio-stat">
                             <div className="quickbuy-portfolio-value holding">
-                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
-                                {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+                                {showUSD ? (
+                                    <>
+                                        <span>$</span>
+                                        {formatNumberWithCommas(userStats.balance * tokenPrice * monUsdPrice, 2)}
+                                    </>
+                                ) : (
+                                    <>
+                                        <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                        {formatNumberWithCommas(userStats.balance * tokenPrice, 2)}
+                                    </>
+                                )}
                             </div>
                         </div>
                         <div className="quickbuy-portfolio-stat pnl">
                             <div className={`quickbuy-portfolio-value pnl ${userStats.valueNet >= 0 ? 'positive' : 'negative'}`}>
-                                <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
-                                {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
-                                {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                                {showUSD ? (
+                                    <>
+                                        <span>$</span>
+                                        {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet * monUsdPrice, 1)}
+                                        {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                                    </>
+                                ) : (
+                                    <>
+                                        <img className="quickbuy-monad-icon" src={monadicon} alt="MON" />
+                                        {userStats.valueNet >= 0 ? '+' : ''}{formatNumberWithCommas(userStats.valueNet, 1)}
+                                        {userStats.valueBought > 0 ? ` (${userStats.valueNet >= 0 ? '+' : ''}${((userStats.valueNet / userStats.valueBought) * 100).toFixed(1)}%)` : ' (0%)'}
+                                    </>
+                                )}
                             </div>
                         </div>
                     </div>
