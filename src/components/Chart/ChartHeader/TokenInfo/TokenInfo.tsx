@@ -593,12 +593,17 @@ const handleTwitterOpen = (handle: string) => {
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>
                 <span className="meme-interface-metric-value meme-price-large">
-                  <FormattedNumberDisplay formatted={formatSubscript(Number(price).toFixed(6))} /> MON
+                  $<FormattedNumberDisplay formatted={formatSubscript(Number(price).toFixed(6))} /> MON
                 </span>
               </div>
 
 
-
+              <div className="meme-interface-token-metric">
+                <span className="meme-interface-metric-label">Liquidity</span>
+                <span className="meme-interface-metric-value meme-price-large">
+                  $6.23K
+                </span>
+              </div>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">24h Change</span>
                 <span

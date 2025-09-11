@@ -913,7 +913,8 @@
   letter-spacing: -0.5px;
 }
 
-.meme-oc-section-content[data-section="holders"] .meme-trade-info {
+.meme-oc-section-content[data-section="holders"] .meme-trade-info,
+.meme-oc-section-content[data-section="topTraders"] .meme-trade-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -1378,4 +1379,12 @@
   text-align: center;
   height: 100%;
   font-weight: 300;
+}
+
+.meme-avg-price.buy {
+  color: rgb(67 254 154);
+}
+
+.meme-avg-price.sell {
+  color: rgb(240, 103, 103); 
 }

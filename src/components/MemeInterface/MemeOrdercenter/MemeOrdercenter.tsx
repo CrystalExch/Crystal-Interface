@@ -77,7 +77,13 @@ const fmt = (v: number, d = 3) => {
   if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
   return v.toLocaleString('en-US', { maximumFractionDigits: d });
 };
-
+const fmtAvgPrice = (v: number) => {
+  if (v === 0) return '0.00';
+  if (v >= 1e9) return (v / 1e9).toFixed(2) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(2) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(2) + 'K';
+  return v.toFixed(2);
+};
 const timeAgo = (tsSec?: number) => {
   if (!tsSec) return '—';
   const diffMs = Date.now() - tsSec * 1000;
@@ -102,7 +108,7 @@ const fmtAmount = (v: number, mode: 'MON' | 'USD', monPrice: number) => {
   if (mode === 'USD' && monPrice > 0) {
     return `$${(v * monPrice).toFixed(2)}`;
   }
-  return `${v.toFixed(4)}`;
+  return `${v.toFixed(2)}`;
 };
 
 interface SellPopupProps {
@@ -774,8 +780,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                       <span className="meme-token-amount">{fmt(row.bought)}</span>
                     </div>
-                    <span className="meme-avg-price">
-                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueBought * 1000000000 * monUsdPrice) / (row.bought || 1)).toFixed(2))} />)
+                    <span className="meme-avg-price buy">
+                      (${fmtAvgPrice((row.valueBought * 1000000000 * monUsdPrice) / (row.bought || 1))})
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -786,8 +792,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                       </div>
                       <span className="meme-token-amount">{fmt(row.sold)}</span>
                     </div>
-                    <span className="meme-avg-price">
-                      ($<FormattedNumberDisplay formatted={formatSubscript(((row.valueSold * 1000000000 * monUsdPrice) / (row.sold || 1)).toFixed(2))} />)
+                    <span className="meme-avg-price sell">
+                      (${fmtAvgPrice((row.valueSold * 1000000000 * monUsdPrice) / (row.sold || 1))})
                     </span>
                   </div>
                   <div className="meme-oc-cell">
@@ -836,8 +842,8 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                 const remainingPct =
                   row.amountBought === 0 ? 0 : (row.balance / Math.max(row.amountBought, 1e-9)) * 100;
                 const pnl = row.valueNet + currentPrice * row.balance;
-                const avgBuyUSD = ((row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1)).toFixed(2);
-                const avgSellUSD = ((row.valueSold * 1_000_000_000 * monUsdPrice) / (row.amountSold || 1)).toFixed(2);
+                const avgBuyUSD = (row.valueBought * 1_000_000_000 * monUsdPrice) / (row.amountBought || 1);
+                const avgSellUSD = (row.valueSold * 1_000_000_000 * monUsdPrice) / (row.amountSold || 1);
 
                 return (
                   <div key={row.address} className="meme-oc-item">
@@ -863,8 +869,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                         <span className="meme-token-amount">{fmt(row.amountBought)}</span>
                       </div>
-                      <span className="meme-avg-price">($<FormattedNumberDisplay formatted={formatSubscript(avgBuyUSD)} />)</span>
-                    </div>
+                      <span className="meme-avg-price buy">(${fmtAvgPrice(avgBuyUSD)})</span>                    </div>
 
                     <div className="meme-oc-cell">
                       <div className="meme-trade-info">
@@ -874,7 +879,7 @@ const MemeOrderCenter: React.FC<MemeOrderCenterProps> = ({
                         </div>
                         <span className="meme-token-amount">{fmt(row.amountSold)}</span>
                       </div>
-                      <span className="meme-avg-price">($<FormattedNumberDisplay formatted={formatSubscript(avgSellUSD)} />)</span>
+                      <span className="meme-avg-price sell">(${fmtAvgPrice(avgSellUSD)})</span>
                     </div>
 
                     <div className="meme-oc-cell">

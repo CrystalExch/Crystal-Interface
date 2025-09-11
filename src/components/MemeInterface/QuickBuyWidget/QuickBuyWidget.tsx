@@ -845,7 +845,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 <button
                                     className={`quickbuy-edit-icon  ${keybindsEnabled ? 'active' : ''}`}
                                     onClick={handleKeybindToggle}
-                                    title={`${keybindsEnabled ? 'Disable Keybinds' : 'Enable Keybinds'}`}
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" fill="#a6a9b6ff"><path d="M260-120q-58 0-99-41t-41-99q0-58 41-99t99-41h60v-160h-60q-58 0-99-41t-41-99q0-58 41-99t99-41q58 0 99 41t41 99v60h160v-60q0-58 41-99t99-41q58 0 99 41t41 99q0 58-41 99t-99 41h-60v160h60q58 0 99 41t41 99q0 58-41 99t-99 41q-58 0-99-41t-41-99v-60H400v60q0 58-41 99t-99 41Zm0-80q25 0 42.5-17.5T320-260v-60h-60q-25 0-42.5 17.5T200-260q0 25 17.5 42.5T260-200Zm440 0q25 0 42.5-17.5T760-260q0-25-17.5-42.5T700-320h-60v60q0 25 17.5 42.5T700-200ZM400-400h160v-160H400v160ZM260-640h60v-60q0-25-17.5-42.5T260-760q-25 0-42.5 17.5T200-700q0 25 17.5 42.5T260-640Zm380 0h60q25 0 42.5-17.5T760-700q0-25-17.5-42.5T700-760q-25 0-42.5 17.5T640-700v60Z" /></svg>
                                 </button>
@@ -893,7 +892,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                     <button
                                         className={`quickbuy-wallets-button ${isWalletsExpanded ? 'active' : ''}`}
                                         onClick={() => setIsWalletsExpanded(!isWalletsExpanded)}
-                                        title="Toggle Wallets"
                                     >
                                         <img src={walleticon} alt="Wallet" className="quickbuy-wallets-icon" />
                                         <span className="quickbuy-wallets-count">{subWallets.length}</span>
@@ -915,7 +913,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 <div className="quickbuy-content">
                     <div className="buy-section">
                         <div className="section-header">
-                            <span>Buy {keybindsEnabled && <span className="quickbuy-keybind-hint">QWER</span>}</span>
+                            <span>Buy</span>
                             <div className="quickbuy-order-indicator">
                                 <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
                                 {pendingBuyCount > 0 ? (
@@ -946,7 +944,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                             disabled={!account?.connected}
                                         >
                                             {amount}
-                                            {keybindsEnabled && <span className="quickbuy-keybind-key">{'QWER'[index]}</span>}
                                         </button>
                                     )}
                                 </div>
@@ -983,7 +980,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                 >
                                     <img className="quickbuy-switch-icon" src={switchicon} alt="Switch" />
                                 </button>
-                                {keybindsEnabled && <span className="quickbuy-keybind-hint">ASDF</span>}
                             </div>
                             <div className="quickbuy-order-indicator">
                                 <div className="quickbuy-token-balance">
@@ -1027,7 +1023,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                                 title={isDisabled ? `Insufficient balance for ${value}` : ''}
                                             >
                                                 {value}
-                                                {keybindsEnabled && <span className="quickbuy-keybind-key">{'ASDF'[index]}</span>}
                                             </button>
                                         )}
                                     </div>
