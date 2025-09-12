@@ -833,6 +833,24 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const token: Token = { ...baseToken, ...live } as Token;
   const currentPrice = token.price || 0;
 
+const getCurrentMONBalance = useCallback(() => {
+    if (!account?.address) return 0;
+    
+    const balances = walletTokenBalances[account.address];
+    if (!balances) return 0;
+
+    const ethToken = settings.chainConfig[activechain]?.eth;
+    if (ethToken && balances[ethToken]) {
+      return Number(balances[ethToken]) / 1e18;
+    }
+    return 0;
+  }, [account?.address, walletTokenBalances, activechain]);
+
+  const getCurrentTokenBalance = useCallback(() => {
+    if (!account?.address || !token.id) return 0;
+    const balance = walletTokenBalances[account.address]?.[token.id];
+    return balance ? Number(balance) / 1e18 : 0;
+  }, [account?.address, walletTokenBalances, token.id]);
   const pushRealtimeTick = useCallback(
     (lastPrice: number, volNative: number) => {
       if (!lastPrice || lastPrice <= 0) return;
@@ -2106,19 +2124,34 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 />
               </button>
             </div>
-            <div className="meme-balance-right">
-              {activeTradeType === 'sell' && (
-                <div className="meme-balance-display">
-                  <img src={walleticon} className="meme-wallet-icon" /> {formatNumberWithCommas(Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 ?? 0, 3)} {token.symbol}
-                </div>
+           <div className="meme-balance-right">
+              {activeTradeType === 'buy' && (
+                <>
+                  <div className="meme-balance-display">
+                    <img src={walleticon} className="meme-wallet-icon" /> 
+                    {formatNumberWithCommas(getCurrentMONBalance(), 3)} MON
+                  </div>
+                  <button
+                    className="meme-balance-max"
+                    onClick={() => setTradeAmount(getCurrentMONBalance().toString())}
+                  >
+                    MAX
+                  </button>
+                </>
               )}
               {activeTradeType === 'sell' && (
-                <button
-                  className="meme-balance-max"
-                  onClick={() => setTradeAmount((Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 ?? 0).toString())}
-                >
-                  MAX
-                </button>
+                <>
+                  <div className="meme-balance-display">
+                    <img src={walleticon} className="meme-wallet-icon" /> 
+                    {formatNumberWithCommas(getCurrentTokenBalance(), 3)} {token.symbol}
+                  </div>
+                  <button
+                    className="meme-balance-max"
+                    onClick={() => setTradeAmount(getCurrentTokenBalance().toString())}
+                  >
+                    MAX
+                  </button>
+                </>
               )}
             </div>
 
@@ -2196,18 +2229,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
           )}
           <div className="meme-balance-slider-wrapper">
-            {sliderMode === "presets" && (
+         {sliderMode === "presets" && (
               <div className="meme-slider-container meme-presets-mode">
                 <div className="meme-preset-buttons">
                   {sliderPresets.map((preset: number) => (
                     <button
+                      key={preset}
                       className={`meme-preset-button ${sliderPercent === preset ? `active ${activeTradeType}` : ""}`}
                       onClick={() => {
                         setSliderPercent(preset);
-                        if (activeTradeType == "buy") {
-                        }
-                        else {
-                          const newAmount = (Number(walletTokenBalances?.[userAddr]?.[token.id]) / 1e18 * preset) / 100;
+                        if (activeTradeType === "buy") {
+                          const currentBalance = getCurrentMONBalance();
+                          const newAmount = (currentBalance * preset) / 100;
+                          setTradeAmount(newAmount.toString());
+                        } else {
+                          const currentBalance = getCurrentTokenBalance();
+                          const newAmount = (currentBalance * preset) / 100;
                           setTradeAmount(newAmount.toString());
                         }
                       }}
@@ -2218,38 +2255,44 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </div>
               </div>
             )}
-            {sliderMode === "increment" && (
+{sliderMode === "increment" && (
               <div className="meme-slider-container meme-increment-mode">
                 <button
                   className="meme-increment-button meme-minus"
                   onClick={() => {
-                    const newPercent = Math.max(
-                      0,
-                      sliderPercent - sliderIncrement,
-                    );
+                    const newPercent = Math.max(0, sliderPercent - sliderIncrement);
                     setSliderPercent(newPercent);
-                    const newAmount = (1000 * newPercent) / 100;
-                    setTradeAmount(newAmount.toString());
+                    if (activeTradeType === "buy") {
+                      const currentBalance = getCurrentMONBalance();
+                      const newAmount = (currentBalance * newPercent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    } else {
+                      const currentBalance = getCurrentTokenBalance();
+                      const newAmount = (currentBalance * newPercent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    }
                   }}
                   disabled={sliderPercent === 0}
                 >
                   −
                 </button>
                 <div className="meme-increment-display">
-                  <div className="meme-increment-amount">
-                    {sliderIncrement}%
-                  </div>
+                  <div className="meme-increment-amount">{sliderIncrement}%</div>
                 </div>
                 <button
                   className="meme-increment-button meme-plus"
                   onClick={() => {
-                    const newPercent = Math.min(
-                      100,
-                      sliderPercent + sliderIncrement,
-                    );
+                    const newPercent = Math.min(100, sliderPercent + sliderIncrement);
                     setSliderPercent(newPercent);
-                    const newAmount = (1000 * newPercent) / 100;
-                    setTradeAmount(newAmount.toString());
+                    if (activeTradeType === "buy") {
+                      const currentBalance = getCurrentMONBalance();
+                      const newAmount = (currentBalance * newPercent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    } else {
+                      const currentBalance = getCurrentTokenBalance();
+                      const newAmount = (currentBalance * newPercent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    }
                   }}
                   disabled={sliderPercent === 100}
                 >
@@ -2257,7 +2300,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 </button>
               </div>
             )}
-            {sliderMode === "slider" && (
+         {sliderMode === "slider" && (
               <div className="meme-slider-container meme-slider-mode">
                 <input
                   ref={sliderRef}
@@ -2270,8 +2313,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   onChange={(e) => {
                     const percent = parseInt(e.target.value);
                     setSliderPercent(percent);
-                    const newAmount = (1000 * percent) / 100;
-                    setTradeAmount(newAmount.toString());
+                    if (activeTradeType === "buy") {
+                      const currentBalance = getCurrentMONBalance();
+                      const newAmount = (currentBalance * percent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    } else {
+                      const currentBalance = getCurrentTokenBalance();
+                      const newAmount = (currentBalance * percent) / 100;
+                      setTradeAmount(newAmount.toString());
+                    }
                     positionPopup(percent);
                   }}
                   onMouseDown={() => {
@@ -2290,16 +2340,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 >
                   {sliderPercent}%
                 </div>
-                <div className="meme-balance-slider-marks">
+                
+<div className="meme-balance-slider-marks">
                   {[0, 25, 50, 75, 100].map((markPercent) => (
                     <span
+                      key={markPercent}
                       className={`meme-balance-slider-mark ${activeTradeType}`}
                       data-active={sliderPercent >= markPercent}
                       data-percentage={markPercent}
                       onClick={() => {
                         setSliderPercent(markPercent);
-                        const newAmount = (1000 * markPercent) / 100;
-                        setTradeAmount(newAmount.toString());
+                        if (activeTradeType === "buy") {
+                          const currentBalance = getCurrentMONBalance();
+                          const newAmount = (currentBalance * markPercent) / 100;
+                          setTradeAmount(newAmount.toString());
+                        } else {
+                          const currentBalance = getCurrentTokenBalance();
+                          const newAmount = (currentBalance * markPercent) / 100;
+                          setTradeAmount(newAmount.toString());
+                        }
                         positionPopup(markPercent);
                       }}
                     >
