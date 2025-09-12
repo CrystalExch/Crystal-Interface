@@ -1308,8 +1308,14 @@
     align-items: center;
 }
 
-.meme-balance-max {
+.meme-balance-max-sell {
     color: rgb(235, 112, 112);
+    font-size: 0.8rem;
+    border-radius: 3px;
+}
+
+.meme-balance-max-buy {
+    color: rgb(67 254 154);
     font-size: 0.8rem;
     border-radius: 3px;
 }

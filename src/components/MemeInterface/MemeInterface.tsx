@@ -2132,7 +2132,7 @@ const getCurrentMONBalance = useCallback(() => {
                     {formatNumberWithCommas(getCurrentMONBalance(), 3)} MON
                   </div>
                   <button
-                    className="meme-balance-max"
+                    className="meme-balance-max-buy"
                     onClick={() => setTradeAmount(getCurrentMONBalance().toString())}
                   >
                     MAX
@@ -2146,7 +2146,7 @@ const getCurrentMONBalance = useCallback(() => {
                     {formatNumberWithCommas(getCurrentTokenBalance(), 3)} {token.symbol}
                   </div>
                   <button
-                    className="meme-balance-max"
+                    className="meme-balance-max-sell"
                     onClick={() => setTradeAmount(getCurrentTokenBalance().toString())}
                   >
                     MAX
