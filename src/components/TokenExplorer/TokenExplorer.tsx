@@ -139,6 +139,7 @@ interface TokenExplorerProps {
   terminalToken: any;
   setTerminalToken: any;
   terminalRefetch: any;
+  setTokenData: any;
 }
 
 const MAX_PER_COLUMN = 30;
@@ -2171,6 +2172,7 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
   sendUserOperationAsync,
   setTerminalToken,
   terminalRefetch,
+  setTokenData,
 }) => {
   const navigate = useNavigate();
   const activechain =
@@ -2625,7 +2627,8 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const handleTokenClick = useCallback((t: Token) => {
     setTerminalToken(t.tokenAddress);
-    navigate(`/meme/${t.tokenAddress}`, { state: { tokenData: t } });
+    setTokenData(t);
+    navigate(`/meme/${t.tokenAddress}`);
   }, [navigate]);
 
   const hideToken = useCallback((id: string) => {

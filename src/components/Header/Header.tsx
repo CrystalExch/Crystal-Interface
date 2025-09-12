@@ -64,6 +64,7 @@ interface HeaderProps {
   logout: () => void;
   tokenBalances: { [address: string]: bigint };
   lastRefGroupFetch: any;
+  tokenData?: any;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -98,6 +99,7 @@ const Header: React.FC<HeaderProps> = ({
   tokenList = [],
   logout,
   lastRefGroupFetch,
+  tokenData,
 }) => {
   const location = useLocation();
   const [isNetworkSelectorOpen, setNetworkSelectorOpen] = useState(false);
@@ -153,8 +155,8 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, [isWalletDropdownOpen]);
 
-  const memeTokenData = isMemeTokenPage && location.state?.tokenData ? (() => {
-    const token = location.state.tokenData;
+  const memeTokenData = isMemeTokenPage && tokenData ? (() => {
+    const token = tokenData;
     const mergedData = { ...token, ...liveTokenData };
     const currentMarketCap = liveTokenData.marketCap || token.marketCap;
     const bondingPercentage = Math.min((currentMarketCap / 10000) * 100, 100);

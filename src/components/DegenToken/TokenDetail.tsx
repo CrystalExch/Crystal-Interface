@@ -80,6 +80,7 @@ interface TokenDetailProps {
   setTerminalToken: any;
   terminalRefetch: any;
   walletTokenBalances: any;
+  tokenData?: any;
 }
 
 const TOTAL_SUPPLY = 1e9;
@@ -110,21 +111,22 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   terminalToken,
   setTerminalToken,
   terminalRefetch,
-  walletTokenBalances
+  walletTokenBalances,
+  tokenData
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const location = useLocation();
   const navigate = useNavigate();
   const { activechain } = useSharedContext();
   
-  const [token, setToken] = useState<Token | null>(location.state?.tokenData || null);
+  const [token, setToken] = useState<Token | null>(tokenData || null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [holders, setHolders] = useState<Holder[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState('');
   const [tradeAmount, setTradeAmount] = useState('');
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [loading, setLoading] = useState(!location.state?.tokenData);
+  const [loading, setLoading] = useState(!tokenData);
   const [isSigning, setIsSigning] = useState(false);
   const [selectedInterval, setSelectedInterval] = useState('5m');
   const [chartData, setChartData] = useState<any>(null);

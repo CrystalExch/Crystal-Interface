@@ -258,7 +258,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const [sellPercents, setSellPercents] = useState(['10%', '25%', '50%', '100%']);
     const [sellMONAmounts, setSellMONAmounts] = useState(['1', '5', '10', '25']);
     const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
-    const [_lastRefreshTime, setLastRefreshTime] = useState(0);
     const [quickBuyPreset, setQuickBuyPreset] = useState(1);
     const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
     const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
@@ -324,16 +323,9 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
       };
 
     const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
-    const tokenBalance = Number(currentTokenBalance) / 1e18;
-    const forceRefresh = useCallback(() => {
-        if (terminalRefetch) {
-            terminalRefetch();
-            setLastRefreshTime(Date.now());
-        }
-    }, [terminalRefetch]);
     useEffect(() => {
         if (isOpen && account?.connected) {
-            forceRefresh();
+            terminalRefetch();
         }
     }, [isOpen, account?.connected]);
     const [widgetDimensions, setWidgetDimensions] = useState({ width: 330, height: 480 });
@@ -467,9 +459,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 return updated;
             });
 
-            setTimeout(() => {
-                forceRefresh();
-            }, 1500);
+            terminalRefetch()
 
         } catch (error: any) {
             if (updatePopup) {
@@ -530,7 +520,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             if (sellMode === 'percent') {
                 const pct = BigInt(parseInt(value.replace('%', ''), 10));
                 amountTokenWei = pct === 100n
-                    ? (currentTokenBalance > 0n ? currentTokenBalance - 1n : 0n)
+                    ? (currentTokenBalance > 0n ? currentTokenBalance : 0n)
                     : (currentTokenBalance * pct) / 100n;
             } else {
                 const mon = parseFloat(value);
@@ -578,9 +568,8 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 return updated;
             });
 
-            setTimeout(() => {
-                forceRefresh();
-            }, 500);
+            terminalRefetch()
+
 
         } catch (e: any) {
             if (updatePopup) {
@@ -785,16 +774,14 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
     const pendingSellCount = pendingTransactions.filter(tx => tx.type === 'sell').length;
 
     const getSellButtonStatus = (value: string) => {
-        if (!account?.connected || tokenBalance <= 0) return true;
+        if (!account?.connected || currentTokenBalance <= 0n) return true;
 
         if (sellMode === 'percent') {
-            const percentage = parseFloat(value.replace('%', ''));
-            const requiredTokens = (tokenBalance * percentage) / 100.1;
-            return requiredTokens > tokenBalance;
+            return currentTokenBalance == 0n;
         } else {
             const monAmount = parseFloat(value);
             const requiredTokens = tokenPrice > 0 ? monAmount / tokenPrice : 0;
-            return requiredTokens > tokenBalance;
+            return requiredTokens > currentTokenBalance / 1e18;
         }
     };
 
@@ -916,11 +903,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             <span>Buy</span>
                             <div className="quickbuy-order-indicator">
                                 <img className="quickbuy-monad-icon" src={monadicon} alt="Order Indicator" />
-                                {pendingBuyCount > 0 ? (
-                                    <div className="quickbuy-spinner" />
-                                ) : (
-                                    pendingBuyCount
-                                )}
+                                {formatNumberWithCommas(getWalletBalance(account?.address || ''), 2)}
                             </div>
                         </div>
 

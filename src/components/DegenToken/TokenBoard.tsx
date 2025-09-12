@@ -47,6 +47,7 @@ interface TokenBoardProps {
   terminalToken: any;
   setTerminalToken: any;
   terminalRefetch: any;
+  setTokenData: any;
 }
 
 const activechain = (settings as any).activechain ?? Object.keys(settings.chainConfig)[0];
@@ -217,6 +218,7 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   terminalToken,
   setTerminalToken,
   terminalRefetch,
+  setTokenData
 }) => {
   const navigate = useNavigate();
   const [tokens, setTokens] = useState<Token[]>([]);
@@ -429,9 +431,8 @@ const TokenBoard: React.FC<TokenBoardProps> = ({
   }, [setupWebSocket]);
 
   const handleTokenClick = (token: Token) => {
-    navigate(`/board/${token.tokenAddress}`, {
-      state: { tokenData: token }
-    });
+    setTokenData(token)
+    navigate(`/board/${token.tokenAddress}`);
   };
 
   const handleSortChange = (newSort: 'newest' | 'marketCap' | 'volume') => {

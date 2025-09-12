@@ -50,7 +50,7 @@ interface Token {
   progress: number;
   status: "new" | "graduating" | "graduated";
   description: string;
-  created: string;
+  created: number;
   bondingAmount: number;
   volumeDelta: number;
   quote?: number;
@@ -108,6 +108,8 @@ interface MemeInterfaceProps {
   terminalToken: any;
   setTerminalToken: any;
   terminalRefetch: any;
+  tokenData?: any;
+  setTokenData: any;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
@@ -271,6 +273,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   isBlurred = false,
   setTerminalToken,
   terminalRefetch,
+  tokenData,
+  setTokenData,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -800,14 +804,14 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     progress: 0,
     status: "new",
     description: "",
-    created: "0h ago",
+    created: Math.floor(Date.now() / 1000),
     bondingAmount: 0,
     volumeDelta: 0,
     dev: "",
   };
 
   const baseToken: Token = (() => {
-    const fromState = (location.state?.tokenData ?? {}) as Partial<Token>;
+    const fromState = (tokenData ?? {}) as Partial<Token>;
     const t = tokenList.find(
       x => x.contractAddress === tokenAddress || x.tokenAddress === tokenAddress
     );
@@ -912,6 +916,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 volumeNative
                 buyTxs
                 sellTxs
+                name
+                symbol
+                metadataCID
+                creator {
+                  id
+                }
+                timestamp
                 trades(first: 50, orderBy: block, orderDirection: desc) {
                   id
                   account {id}
@@ -928,7 +939,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                       selectedInterval === '4h' ? '14400' :
                         '86400')} {
                   klines(first: 1000, orderBy: time, orderDirection: desc) {
-                    time open high low close
+                    time open high low close baseVolume
                   }
                 }
               }
@@ -944,18 +955,52 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
         if (data.launchpadTokens?.length) {
           const m = data.launchpadTokens[0];
+
+          let imageUrl = token.image || '';
+          if (m.metadataCID && !imageUrl) {
+            try {
+              const metaRes = await fetch(m.metadataCID);
+              if (metaRes.ok) {
+                const meta = await metaRes.json();
+                imageUrl = meta.image || '';
+              }
+            } catch (e) {
+              console.warn('Failed to load metadata for token:', token.id, e);
+            }
+          }
+
+          const updatedTokenData = {
+            ...token,
+            name: m.name || token.name || "Unknown Token",
+            symbol: m.symbol || token.symbol || "UNKNOWN",
+            image: imageUrl,
+            dev: m.creator.id || "",
+            price: Number(m.lastPriceNativePerTokenWad || 0) / 1e18,
+            marketCap: (Number(m.lastPriceNativePerTokenWad || 0) / 1e18) * TOTAL_SUPPLY,
+            volume24h: Number(m.volumeNative || 0) / 1e18,
+            buyTransactions: Number(m.buyTxs || 0),
+            sellTransactions: Number(m.sellTxs || 0),
+            created: m.timestamp,
+          };
+
           setLive(p => ({
             ...p,
-            price: Number(m.latestPrice) / 1e18,
-            marketCap: (Number(m.latestPrice) / 1e18) * TOTAL_SUPPLY,
-            volume24h: Number(m.volume24h) / 1e18,
-            buyTransactions: Number(m.buyCount),
-            sellTransactions: Number(m.sellCount),
+            name: updatedTokenData.name,
+            symbol: updatedTokenData.symbol,
+            image: updatedTokenData.image,
+            dev: updatedTokenData.dev,
+            price: updatedTokenData.price,
+            marketCap: updatedTokenData.marketCap,
+            volume24h: updatedTokenData.volume24h,
+            buyTransactions: updatedTokenData.buyTransactions,
+            sellTransactions: updatedTokenData.sellTransactions,
           }));
+
+          setTokenData(updatedTokenData);
         }
 
         if (data.launchpadTokens?.[0]?.trades?.length) {
-          const mapped = data.launchpadTokens?.[0]?.trades.map((t: any) => ({
+          const mapped = data.launchpadTokens[0].trades.map((t: any) => ({
             id: t.id,
             timestamp: Number(t.block),
             isBuy: t.isBuy,
@@ -971,7 +1016,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         }
 
         if (data.launchpadTokens?.[0]?.series?.klines) {
-          const bars = data.launchpadTokens?.[0]?.series?.klines
+          const bars = data.launchpadTokens[0].series.klines
             .slice()
             .reverse()
             .map((c: any) => ({
@@ -984,7 +1029,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             }));
 
           const key =
-            token.symbol +
+            (data.launchpadTokens[0].symbol || token.symbol) +
             "MON" +
             (selectedInterval === "1d"
               ? "1D"
@@ -996,16 +1041,25 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           setChartData([bars, key, false]);
         }
+
       } catch (e) {
-        console.error(e);
-        setLive(p => ({ ...p, price: 0, marketCap: 0, volume24h: 0, buyTransactions: 0, sellTransactions: 0 }));
+        console.error('Error fetching token data:', e);
+        setLive(p => ({
+          ...p,
+          price: 0,
+          marketCap: 0,
+          volume24h: 0,
+          buyTransactions: 0,
+          sellTransactions: 0
+        }));
         setTrades([]);
+        setChartData(null);
       }
     };
 
     fetchMemeTokenData();
     return () => { isCancelled = true; };
-  }, [token.id, selectedInterval]);
+  }, [token.id, selectedInterval, setTokenData, token.name, token.symbol, token.image, token.dev]);
 
   const lastInvalidateRef = useRef(0);
 
@@ -1144,7 +1198,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             },
             ...prev.slice(0, 99),
           ]);
-
+          setTokenData((prev: any) => ({
+            ...prev,
+            price: price,
+            marketCap: price * TOTAL_SUPPLY,
+          }));
           pushRealtimeTick(tradePrice, isBuy ? amountIn : amountOut);
 
           setHolders((prev) => {
@@ -1503,6 +1561,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           }),
         });
 
+
         const { data } = await res.json();
         const rows: any[] = data?.launchpadPositions ?? [];
         if (!rows.length) break;
@@ -1779,7 +1838,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
           });
         }
-
+        terminalRefetch()
       } else {
         if (showLoadingPopup) {
           showLoadingPopup(txId, {
@@ -1831,6 +1890,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             isLoading: false
           });
         }
+        terminalRefetch()
       }
 
       setTradeAmount("");

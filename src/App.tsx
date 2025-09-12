@@ -1616,9 +1616,9 @@ function App() {
 
   const handleVaultDepositAmountChange = (type: 'quote' | 'base', value: string) => {
     if (/^\d*\.?\d{0,18}$/.test(value) && selectedVault) {
-      const tokenData = type == 'quote' ? tokendict[selectedVault?.quoteAsset] : tokendict[selectedVault?.baseAsset];
-      if (tokenData) {
-        const tokenDecimals = Number(tokenData.decimals) || 18;
+      const vaultTokenData = type == 'quote' ? tokendict[selectedVault?.quoteAsset] : tokendict[selectedVault?.baseAsset];
+      if (vaultTokenData) {
+        const tokenDecimals = Number(vaultTokenData.decimals) || 18;
         const enteredAmount = parseFloat(value) || 0;
 
         if (type === 'quote') {
@@ -1639,7 +1639,7 @@ function App() {
             [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
             'base': amountBase,
           });
-          setVaultQuoteExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          setVaultQuoteExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[vaultTokenData.address]);
           setVaultBaseExceedsBalance(amountBase > tokenBalances[selectedVault?.baseAsset]);
         } else {
           const amountQuote = BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) * selectedVault?.quoteBalance / selectedVault?.baseBalance
@@ -1659,7 +1659,7 @@ function App() {
             [type]: BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)),
             'quote': amountQuote,
           });
-          setVaultBaseExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[tokenData.address]);
+          setVaultBaseExceedsBalance(BigInt(Math.round(enteredAmount * 10 ** tokenDecimals)) > tokenBalances[vaultTokenData.address]);
           setVaultQuoteExceedsBalance(amountQuote > tokenBalances[selectedVault?.quoteAsset]);
         }
       }
@@ -8361,7 +8361,7 @@ function App() {
   const [tradingMode, setTradingMode] = useState<'spot' | 'trenches'>('spot');
 
   const [terminalToken, setTerminalToken] = useState();
-
+  const [tokenData, setTokenData] = useState();
   // data loop, reuse to have every single rpc call method in this loop
   const { data: terminalQueryData, isLoading: isTerminalDataLoading, dataUpdatedAt: terminalDataUpdatedAt, refetch: terminalRefetch } = useQuery({
     queryKey: [
@@ -20408,6 +20408,7 @@ function App() {
               logout={logout}
               tokenBalances={tokenBalances}
               lastRefGroupFetch={lastRefGroupFetch}
+              tokenData={tokenData}
             />
           </div>
           <div className="headerfiller"></div>
@@ -20554,6 +20555,7 @@ function App() {
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
+                setTokenData={setTokenData}
               />
             }
           />
@@ -20574,6 +20576,7 @@ function App() {
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
                 walletTokenBalances={walletTokenBalances}
+                tokenData={tokenData}
               />
             }
           />
@@ -20629,6 +20632,8 @@ function App() {
               terminalToken={terminalToken}
               setTerminalToken={setTerminalToken}
               terminalRefetch={terminalRefetch}
+              tokenData={tokenData}
+              setTokenData={setTokenData}
             />
           } />
           <Route
@@ -20644,6 +20649,7 @@ function App() {
                 terminalToken={terminalToken}
                 setTerminalToken={setTerminalToken}
                 terminalRefetch={terminalRefetch}
+                setTokenData={setTokenData}
               />
             }
           />

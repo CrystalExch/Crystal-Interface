@@ -48,6 +48,68 @@ const calculateBondingPercentage = (marketCap: number) => {
   return bondingPercentage;
 };
 
+const MemeTokenSkeleton = () => {
+  return (
+    <div className="meme-interface-token-info-container-meme">
+      <div className="meme-interface-token-header-info">
+        <div className="meme-interface-token-header-left">
+          <div className="meme-interface-token-icon-container">
+            <div className="meme-interface-token-icon-wrapper loading-skeleton">
+              <div className="meme-interface-token-icon skeleton-circle"></div>
+            </div>
+          </div>
+
+          <div className="meme-interface-token-identity">
+            <div className="meme-interface-token-name-row">
+              <div className="skeleton-text skeleton-symbol"></div>
+              <div className="meme-interface-token-name-container">
+              </div>
+            </div>
+
+            <div className="meme-interface-token-meta-row">
+              <div className="skeleton-text skeleton-time"></div>
+              <div className="meme-interface-token-social-links">
+                <div className="skeleton-button skeleton-social"></div>
+                <div className="skeleton-button skeleton-social"></div>
+                <div className="skeleton-button skeleton-social"></div>
+                <div className="skeleton-button skeleton-social"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="meme-interface-token-header-right">
+          <div className="meme-interface-token-metrics">
+            <div className="skeleton-text skeleton-market-cap"></div>
+            
+            <div className="meme-interface-token-metric">
+              <div className="skeleton-text skeleton-label"></div>
+              <div className="skeleton-text skeleton-value"></div>
+            </div>
+
+            <div className="meme-interface-token-metric">
+              <div className="skeleton-text skeleton-label"></div>
+              <div className="skeleton-text skeleton-value"></div>
+            </div>
+
+            <div className="meme-interface-token-metric">
+              <div className="skeleton-text skeleton-label"></div>
+              <div className="skeleton-text skeleton-value"></div>
+            </div>
+
+            <div className="meme-interface-token-metric">
+              <div className="skeleton-text skeleton-label"></div>
+              <div className="skeleton-text skeleton-value"></div>
+            </div>
+
+
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 interface TokenInfoProps {
   in_icon: string;
   out_icon: string;
@@ -474,6 +536,10 @@ const handleTwitterOpen = (handle: string) => {
     setSelectedIndex(0);
   }, [searchQuery, activeFilter]);
 
+  if (isMemeToken && !memeTokenData) {
+    return <MemeTokenSkeleton />;
+  }
+
   if (isMemeToken && memeTokenData) {
     return (
       <div className="meme-interface-token-info-container-meme">
@@ -619,27 +685,27 @@ const handleTwitterOpen = (handle: string) => {
                   1B
                 </span>
               </div>
-              {memeTokenData.status == 'graduated' ? (
-                <div className="meme-interface-token-metric">
-                  <span className="meme-interface-metric-label">Bonding</span>
-                  <span
-                    className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
-                  >
-                    Graduated
-                  </span>
-                </div>
-              ) : (
-                <div className="meme-interface-token-metric">
-                  <span className="meme-interface-metric-label">Bonding</span>
-                  <span
-                    className="meme-interface-metric-value"
-                    style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
-                  >
-                    {memeTokenData.bondingPercentage.toFixed(1)}%
-                  </span>
-                </div>
-              )}
+            {memeTokenData.status == 'graduated' ? (
+  <div className="meme-interface-token-metric">
+    <span className="meme-interface-metric-label">Bonding</span>
+    <span
+      className="meme-interface-metric-value"
+      style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+    >
+      Graduated
+    </span>
+  </div>
+) : (
+  <div className="meme-interface-token-metric">
+    <span className="meme-interface-metric-label">Bonding</span>
+    <span
+      className="meme-interface-metric-value"
+      style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}
+    >
+      {memeTokenData.bondingPercentage.toFixed(1)}%
+    </span>
+  </div>
+)}
             </div>
           </div>
         </div>
