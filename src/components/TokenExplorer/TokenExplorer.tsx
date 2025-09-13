@@ -2314,8 +2314,9 @@ const TokenExplorer: React.FC<TokenExplorerProps> = ({
 
   const wsRef = useRef<WebSocket | null>(null);
   const subIdRef = useRef(1);
-  const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const trackedMarketsRef = useRef<Set<string>>(new Set());
+const pauseTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+const trackedMarketsRef = useRef<Set<string>>(new Set());
+const backlogRef = useRef<Array<{type: 'ADD_MARKET' | 'UPDATE_MARKET', payload: any}>>([]);
   const connectionStateRef = useRef<'disconnected' | 'connecting' | 'connected' | 'reconnecting'>('disconnected');
   const retryCountRef = useRef(0);
   const reconnectTimerRef = useRef<number | null>(null);
