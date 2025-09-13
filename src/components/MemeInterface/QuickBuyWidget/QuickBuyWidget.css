@@ -581,6 +581,8 @@
     flex: 1;
     overflow-y: auto;
     max-height: 400px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
 }
 
 .quickbuy-wallets-list::-webkit-scrollbar {
