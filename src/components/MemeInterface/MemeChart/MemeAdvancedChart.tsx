@@ -8,10 +8,48 @@ interface MemeAdvancedChartProps {
   selectedInterval: string;
   setSelectedInterval: (interval: string) => void;
   setOverlayVisible: (visible: boolean) => void;
-  tradehistory?: any[]; // Array of user trades
-  isMarksVisible?: boolean; // Toggle for showing/hiding marks
+  tradehistory?: any[];
+  isMarksVisible?: boolean;
   realtimeCallbackRef: any;
 }
+const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
+const toSub = (n: number) => String(n).split('').map(d => SUB[+d]).join('');
+
+function formatMemePrice(price: number): string {
+  if (!isFinite(price)) return '';
+  if (Math.abs(price) < 1e-18) return '0';
+
+  const neg = price < 0 ? '-' : '';
+  const abs = Math.abs(price);
+
+  // Compact K/M/B
+  if (abs >= 1_000_000_000) return neg + (abs / 1_000_000_000).toFixed(1).replace(/\.0$/, '') + 'B';
+  if (abs >= 1_000_000)     return neg + (abs / 1_000_000).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (abs >= 1_000)         return neg + (abs / 1_000).toFixed(1).replace(/\.0$/, '') + 'K';
+
+  if (abs >= 1e-3) return neg + abs.toFixed(2).replace(/\.00$/, '');
+
+  const exp = Math.floor(Math.log10(abs)); 
+  let zeros = -exp - 1;
+  if (zeros < 0) zeros = 0;
+
+  const tailDigits = 2;                        
+  const factor = Math.pow(10, tailDigits);
+  let scaled = abs * Math.pow(10, zeros + 1);  
+  let t = Math.round(scaled * factor);        
+
+  if (t >= Math.pow(10, 1 + tailDigits)) {
+    zeros = Math.max(0, zeros - 1);
+    scaled = abs * Math.pow(10, zeros + 1);
+    t = Math.round(scaled * factor);
+  }
+
+  const s = t.toString().padStart(1 + tailDigits, '0'); 
+  const tail2 = s.slice(0, 2);                          
+
+  return `${neg}0.0${toSub(zeros)}${tail2}`;
+}
+
 
 const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   data,
@@ -33,7 +71,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const widgetRef = useRef<any>();
   const localAdapterRef = useRef<LocalStorageSaveLoadAdapter>();
   const subsRef = useRef<Record<string, string>>({});
-
+  const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('meme_chart_showMarketCap');
+      return raw ? JSON.parse(raw) === true : false;
+    } catch {
+      return false;
+    }
+  });
   const toResKey = (sym: string, res: string) => sym + 'MON' + (res === '1D' ? '1D' : res);
 
   function enforceOpenEqualsPrevClose(bars: any[] = []) {
@@ -46,7 +91,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       if (prevClose !== undefined) {
         b.open = prevClose;
         if (b.high < b.open) b.high = b.open;
-        if (b.low  > b.open) b.low = b.open;
+        if (b.low > b.open) b.low = b.open;
       }
       prevClose = b.close;
       out[i] = b;
@@ -59,7 +104,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
     }
   }, [data]);
-
+  useEffect(() => {
+    try {
+      localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(showMarketCap));
+    } catch { }
+  }, [showMarketCap]);
   useEffect(() => {
     try {
       const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
@@ -129,7 +178,9 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
   useEffect(() => {
     localAdapterRef.current = new LocalStorageSaveLoadAdapter();
-
+    if (data && data[0] && data[1]) {
+      dataRef.current[data[1]] = enforceOpenEqualsPrevClose(data[0]);
+    }
     widgetRef.current = new (window as any).TradingView.widget({
       container: chartRef.current,
       library_path: '/charting_library/',
@@ -154,6 +205,17 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         'use_localstorage_for_settings',
         'symbol_info',
       ],
+      custom_formatters: {
+        priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
+          return {
+            format: (price: number) => {
+              const adjusted = showMarketCap ? price * 1_000_000_000 : price;
+              return formatMemePrice(adjusted);
+            },
+          };
+        },
+      },
+
       custom_css_url: '/AdvancedTradingChart.css',
       custom_font_family: 'Funnel Display',
       loading_screen: {
@@ -371,12 +433,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
 
     return () => {
       setChartReady(false);
-      dataRef.current = {};
       if (widgetRef.current) {
         widgetRef.current.remove();
       }
     };
-  }, [token.symbol]);
+  }, [token.symbol, showMarketCap]);
 
   useEffect(() => {
     try {
@@ -413,6 +474,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   return (
     <div className="advanced-chart-container">
       <div ref={chartRef} />
+      <div className="price-marketcap-toggle" onClick={() => setShowMarketCap(v => !v)}>
+        <span className={!showMarketCap ? 'active' : ''}>Price</span>
+        <span className="separator">/</span>
+        <span className={showMarketCap ? 'active' : ''}>MarketCap</span>
+      </div>
     </div>
   );
 };

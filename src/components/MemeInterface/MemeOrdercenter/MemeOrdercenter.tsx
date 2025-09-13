@@ -209,7 +209,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
                   <img src={walleticon} className="meme-wallet-icon" />
                   {(selectedPosition.remainingTokens * (selectedPosition.lastPrice || currentPrice)).toFixed(4)} MON
                 </div>
-                <button className="meme-balance-max" onClick={onMaxClick}>
+                <button className="meme-balance-max-sell" onClick={onMaxClick}>
                   MAX
                 </button>
               </div>

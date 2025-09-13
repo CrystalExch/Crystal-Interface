@@ -104,15 +104,6 @@
   flex-shrink: 0;
 }
 
-.explorer-token-image {
-  width: 68px;
-  height: 68px;
-  border-radius: 5px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-}
-
 .explorer-token-info {
   display: flex;
   align-items: center;
@@ -800,16 +791,7 @@
 }
 
 
-.explorer-token-image {
-  width: 68px;
-  height: 68px;
-  border-radius: 5px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-  display: block;
-}
+
 
 .explorer-token-image-container {
   position: relative;
@@ -861,26 +843,8 @@
   justify-content: center;
 }
 
-.explorer-image-wrapper {
-  width: 68px;
-  height: 68px;
-  border-radius: 5px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-.explorer-token-image {
-  width: 68px;
-  height: 68px;
-  border-radius: 5px;
-  object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  flex-shrink: 0;
-  transition: all 0.3s ease;
-  display: block;
-}
+
 
 .explorer-image-overlay {
   position: absolute;
@@ -892,7 +856,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
-  border-radius: 5px;
+  border-radius: 3px;
   opacity: 0;
   transition: opacity 0.3s ease;
 }
@@ -3446,7 +3410,7 @@
   cursor: pointer;
   width: 73px;
   height: 73px;
-  border-radius: 8px;
+  border-radius: 5px;
   background: conic-gradient(from 0deg,
       var(--progress-color-start) 0deg,
       var(--progress-color-mid) calc(var(--progress-angle) / 2),
@@ -3480,7 +3444,7 @@
 .explorer-image-wrapper {
   width: 68px;
   height: 68px;
-  border-radius: 5px;
+  border-radius: 3px;
   position: relative;
   display: flex;
   align-items: center;
@@ -3494,7 +3458,7 @@
 .explorer-token-image {
   width: 68px;
   height: 68px;
-  border-radius: 5px;
+  border-radius: 3px;
   object-fit: cover;
   border: 1px solid rgb(6,6,6);
   flex-shrink: 0;
@@ -3518,7 +3482,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(0, 0, 0, 0.7);
-  border-radius: 5px;
+  border-radius: 3px;
   /* ← Square by default */
   opacity: 0;
   transition: opacity 0.3s ease;
