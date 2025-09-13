@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { useLocation, useParams } from "react-router-dom";
-import { encodeFunctionData, decodeFunctionResult, decodeEventLog } from "viem";
+import { useParams } from "react-router-dom";
+import { encodeFunctionData, decodeEventLog } from "viem";
 import { settings } from "../../settings";
 import QuickBuyWidget from "./QuickBuyWidget/QuickBuyWidget";
 import MemeOrderCenter from "./MemeOrderCenter/MemeOrderCenter";
@@ -308,7 +308,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     [tradesByMarket, markets, resolveNative, usdc],
   );
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
-  const location = useLocation();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
   const [isWidgetOpen, setIsWidgetOpen] = useState(false);
   const [tradeAmount, setTradeAmount] = useState("");
