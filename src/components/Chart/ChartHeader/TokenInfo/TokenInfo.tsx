@@ -68,7 +68,7 @@ const MemeTokenSkeleton = () => {
 
             <div className="meme-interface-token-meta-row">
               <div className="skeleton-text skeleton-time"></div>
-              <div className="meme-interface-token-social-links">
+              <div className="mseme-interface-token-social-links">
                 <div className="skeleton-button skeleton-social"></div>
                 <div className="skeleton-button skeleton-social"></div>
                 <div className="skeleton-button skeleton-social"></div>
@@ -583,6 +583,24 @@ const handleTwitterOpen = (handle: string) => {
                   >
                     <svg fill="currentColor" xmlns="http://www.w3.org/2000/svg"  viewBox="0 0 48 48" ><path d="M 36.5 5 A 6.5 6.5 0 0 0 30.236328 13.207031 L 30.121094 13.263672 L 16.738281 19.953125 L 16.623047 20.009766 A 6.5 6.5 0 0 0 11.5 17.5 A 6.5 6.5 0 0 0 11.5 30.5 A 6.5 6.5 0 0 0 16.626953 27.990234 L 16.738281 28.046875 L 30.121094 34.736328 L 30.230469 34.791016 A 6.5 6.5 0 0 0 36.5 43 A 6.5 6.5 0 0 0 36.5 30 A 6.5 6.5 0 0 0 31.671875 32.158203 L 31.460938 32.052734 L 18.080078 25.363281 L 17.871094 25.259766 A 6.5 6.5 0 0 0 17.869141 22.742188 L 18.080078 22.636719 L 31.460938 15.947266 L 31.666016 15.84375 A 6.5 6.5 0 0 0 36.5 18 A 6.5 6.5 0 0 0 36.5 5 z"/></svg>
                   </button>
+                  
+               <button
+                    className="meme-interface-share-btn"
+                    onClick={() => copyToClipboard(memeTokenData.tokenAddress)}
+                    title="Copy contract address"
+                  >
+<svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill={favorites.includes(tokenAddress) ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z" />
+              </svg>                  </button>
 
 
               </div>
@@ -687,7 +705,7 @@ const handleTwitterOpen = (handle: string) => {
               </div>
             {memeTokenData.status == 'graduated' ? (
   <div className="meme-interface-token-metric">
-    <span className="meme-interface-metric-label">Bonding</span>
+    <span className="meme-interface-metric-label">B. Curve</span>
     <span
       className="meme-interface-metric-value"
       style={{ color: getBondingColorMeme(memeTokenData.bondingPercentage) }}

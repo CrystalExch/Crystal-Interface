@@ -3470,7 +3470,6 @@
   width: 70px;
   height: 70px;
   border-radius: 6px;
-  /* ← Square by default */
   background: rgb(6, 6, 6);
   display: flex;
   align-items: center;
@@ -3479,7 +3478,6 @@
 
 .explorer-progress-spacer.circle-mode {
   border-radius: 50%;
-  /* ← Make circular when circle-mode is active */
 }
 
 .explorer-image-wrapper {
@@ -3495,19 +3493,18 @@
 
 .explorer-image-wrapper.circle-mode {
   border-radius: 50%;
-  /* ← Make circular when circle-mode is active */
 }
 
 .explorer-token-image {
   width: 68px;
   height: 68px;
   border-radius: 5px;
-  /* ← Square by default */
   object-fit: cover;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgb(6,6,6);
   flex-shrink: 0;
   transition: all 0.3s ease;
   display: block;
+  box-shadow: 0 0 0 1.5px rgb(6,6,6);
 }
 
 .explorer-token-image.circle-mode {
