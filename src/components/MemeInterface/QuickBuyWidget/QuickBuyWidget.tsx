@@ -271,23 +271,129 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
         }
     }, [position]); const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+    const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
+
     const [selectedBuyAmount, setSelectedBuyAmount] = useState('1');
     const [selectedSellPercent, setSelectedSellPercent] = useState('25%');
     const [isEditMode, setIsEditMode] = useState(false);
-    const [sellMode, setSellMode] = useState<'percent' | 'mon'>('percent');
     const [editingIndex, setEditingIndex] = useState<number | null>(null);
     const [tempValue, setTempValue] = useState('');
-    const [buyAmounts, setBuyAmounts] = useState(['1', '5', '10', '50']);
-    const [sellPercents, setSellPercents] = useState(['10%', '25%', '50%', '100%']);
-    const [sellMONAmounts, setSellMONAmounts] = useState(['1', '5', '10', '25']);
     const [pendingTransactions, setPendingTransactions] = useState<PendingTransaction[]>([]);
-    const [quickBuyPreset, setQuickBuyPreset] = useState(1);
-    const [isWalletsExpanded, setIsWalletsExpanded] = useState(false);
-    const [walletNames, setWalletNames] = useState<{ [address: string]: string }>({});
-    const [keybindsEnabled, setKeybindsEnabled] = useState(false);
+    const [quickBuyPreset, setQuickBuyPreset] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.quickBuyPreset ?? 1;
+            }
+            return 1;
+        } catch (error) {
+            console.error('Error loading QuickBuy preset:', error);
+            return 1;
+        }
+    });
 
+    const [keybindsEnabled, setKeybindsEnabled] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.keybindsEnabled ?? false;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error loading QuickBuy keybinds setting:', error);
+            return false;
+        }
+    });
+
+    const [buyAmounts, setBuyAmounts] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.buyAmounts ?? ['1', '5', '10', '50'];
+            }
+            return ['1', '5', '10', '50'];
+        } catch (error) {
+            console.error('Error loading QuickBuy buy amounts:', error);
+            return ['1', '5', '10', '50'];
+        }
+    });
+
+    const [sellPercents, setSellPercents] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.sellPercents ?? ['10%', '25%', '50%', '100%'];
+            }
+            return ['10%', '25%', '50%', '100%'];
+        } catch (error) {
+            console.error('Error loading QuickBuy sell percents:', error);
+            return ['10%', '25%', '50%', '100%'];
+        }
+    });
+
+    const [sellMONAmounts, setSellMONAmounts] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.sellMONAmounts ?? ['1', '5', '10', '25'];
+            }
+            return ['1', '5', '10', '25'];
+        } catch (error) {
+            console.error('Error loading QuickBuy sell MON amounts:', error);
+            return ['1', '5', '10', '25'];
+        }
+    });
+
+    const [sellMode, setSellMode] = useState<'percent' | 'mon'>(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.sellMode ?? 'percent';
+            }
+            return 'percent';
+        } catch (error) {
+            console.error('Error loading QuickBuy sell mode:', error);
+            return 'percent';
+        }
+    });
+
+    const [isWalletsExpanded, setIsWalletsExpanded] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_settings');
+            if (saved) {
+                const settings = JSON.parse(saved);
+                return settings.isWalletsExpanded ?? false;
+            }
+            return false;
+        } catch (error) {
+            console.error('Error loading QuickBuy wallets expanded state:', error);
+            return false;
+        }
+    });
     const widgetRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
+    useEffect(() => {
+        try {
+            const settings = {
+                quickBuyPreset,
+                keybindsEnabled,
+                buyAmounts,
+                sellPercents,
+                sellMONAmounts,
+                sellMode,
+                isWalletsExpanded
+            };
+            localStorage.setItem('crystal_quickbuy_settings', JSON.stringify(settings));
+        } catch (error) {
+            console.error('Error saving QuickBuy settings:', error);
+        }
+    }, [quickBuyPreset, keybindsEnabled, buyAmounts, sellPercents, sellMONAmounts, sellMode, isWalletsExpanded]);
 
     useEffect(() => {
         const storedWalletNames = localStorage.getItem('crystal_wallet_names');
@@ -934,7 +1040,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         </div>
 
                         <div className="amount-buttons">
-                            {buyAmounts.map((amount, index) => (
+                            {buyAmounts.map((amount:any, index: any) => (
                                 <div key={index} className="button-container">
                                     {editingIndex === index ? (
                                         <input
@@ -948,17 +1054,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                         />
                                     ) : (
                                         <button
-    className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-    onClick={() => handleBuyButtonClick(amount, index)}
-    disabled={!account?.connected}
->
-    <span className="button-amount">{amount}</span>
-    {keybindsEnabled && (
-        <span className="keybind-indicator">
-            {['q', 'w', 'e', 'r'][index]}
-        </span>
-    )}
-</button>
+                                            className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+                                            onClick={() => handleBuyButtonClick(amount, index)}
+                                            disabled={!account?.connected}
+                                        >
+                                            <span className="button-amount">{amount}</span>
+                                            {keybindsEnabled && (
+                                                <span className="keybind-indicator">
+                                                    {['q', 'w', 'e', 'r'][index]}
+                                                </span>
+                                            )}
+                                        </button>
                                     )}
                                 </div>
                             ))}
@@ -1015,7 +1121,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                         </div>
 
                         <div className="percent-buttons">
-                            {currentSellValues.map((value, index) => {
+                            {currentSellValues.map((value: any, index: any) => {
                                 const isDisabled = getSellButtonStatus(value);
                                 return (
                                     <div key={index} className="button-container">
@@ -1030,19 +1136,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                                 className="edit-input"
                                             />
                                         ) : (
-                                           <button
-    className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-    onClick={() => handleSellButtonClick(value, index)}
-    disabled={!account?.connected || isDisabled}
-    title={isDisabled ? `Insufficient balance for ${value}` : ''}
->
-    <span className="button-amount">{value}</span>
-    {keybindsEnabled && (
-        <span className="keybind-indicator">
-            {['a', 's', 'd', 'f'][index]}
-        </span>
-    )}
-</button>
+                                            <button
+                                                className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+                                                onClick={() => handleSellButtonClick(value, index)}
+                                                disabled={!account?.connected || (!isEditMode && isDisabled)}
+                                                title={isDisabled && !isEditMode ? `Insufficient balance for ${value}` : ''}
+                                            >
+                                                <span className="button-amount">{value}</span>
+                                                {keybindsEnabled && (
+                                                    <span className="keybind-indicator">
+                                                        {['a', 's', 'd', 'f'][index]}
+                                                    </span>
+                                                )}
+                                            </button>
                                         )}
                                     </div>
                                 );
