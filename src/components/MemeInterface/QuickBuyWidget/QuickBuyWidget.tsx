@@ -245,8 +245,31 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 }) => {
 
 
-    const [position, setPosition] = useState({ x: 100, y: 100 });
-    const [isDragging, setIsDragging] = useState(false);
+    const [position, setPosition] = useState(() => {
+        try {
+            const saved = localStorage.getItem('crystal_quickbuy_widget_position');
+            if (saved) {
+                const savedPosition = JSON.parse(saved);
+                const maxX = Math.max(0, window.innerWidth - 330);
+                const maxY = Math.max(0, window.innerHeight - 480);
+                return {
+                    x: Math.max(0, Math.min(savedPosition.x || 100, maxX)),
+                    y: Math.max(0, Math.min(savedPosition.y || 100, maxY))
+                };
+            }
+            return { x: 100, y: 100 };
+        } catch (error) {
+            console.error('Error loading QuickBuy widget position:', error);
+            return { x: 100, y: 100 };
+        }
+    });
+    useEffect(() => {
+        try {
+            localStorage.setItem('crystal_quickbuy_widget_position', JSON.stringify(position));
+        } catch (error) {
+            console.error('Error saving QuickBuy widget position:', error);
+        }
+    }, [position]); const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
     const [selectedBuyAmount, setSelectedBuyAmount] = useState('1');
     const [selectedSellPercent, setSelectedSellPercent] = useState('25%');
@@ -307,20 +330,20 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
 
     const handleSetActiveWallet = (privateKey: string) => {
         if (!isWalletActive(privateKey)) {
-          localStorage.setItem('crystal_active_wallet_private_key', privateKey);
-          setOneCTSigner(privateKey);
-          if (terminalRefetch) {
-            setTimeout(() => terminalRefetch(), 0);
-          }
+            localStorage.setItem('crystal_active_wallet_private_key', privateKey);
+            setOneCTSigner(privateKey);
+            if (terminalRefetch) {
+                setTimeout(() => terminalRefetch(), 0);
+            }
         }
         else {
-          localStorage.removeItem('crystal_active_wallet_private_key');
-          setOneCTSigner('')
-          if (terminalRefetch) {
-            setTimeout(() => terminalRefetch(), 0);
-          }
+            localStorage.removeItem('crystal_active_wallet_private_key');
+            setOneCTSigner('')
+            if (terminalRefetch) {
+                setTimeout(() => terminalRefetch(), 0);
+            }
         }
-      };
+    };
 
     const currentTokenBalance = walletTokenBalances?.[account?.address || '']?.[tokenAddress || ''] ?? 0n;
     useEffect(() => {
@@ -343,10 +366,17 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 const maxX = Math.max(0, window.innerWidth - actualWidth);
                 const maxY = Math.max(0, window.innerHeight - actualHeight);
 
-                return {
-                    x: Math.max(0, Math.min(prevPosition.x, maxX)),
-                    y: Math.max(0, Math.min(prevPosition.y, maxY))
-                };
+                const needsXAdjust = prevPosition.x > maxX;
+                const needsYAdjust = prevPosition.y > maxY;
+
+                if (needsXAdjust || needsYAdjust) {
+                    return {
+                        x: needsXAdjust ? maxX : prevPosition.x,
+                        y: needsYAdjust ? maxY : prevPosition.y
+                    };
+                }
+
+                return prevPosition;
             });
         };
 
@@ -598,19 +628,16 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
             }
         }
     };
-    // Keybind functionality
     useEffect(() => {
         if (!keybindsEnabled || !isOpen || isEditMode) return;
 
         const handleKeyPress = (e: KeyboardEvent) => {
-            // Prevent if user is typing in an input field
             if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
                 return;
             }
 
             const key = e.key.toLowerCase();
 
-            // Buy keybinds: Q, W, E, R
             if (['q', 'w', 'e', 'r'].includes(key)) {
                 e.preventDefault();
                 const buyIndex = ['q', 'w', 'e', 'r'].indexOf(key);
@@ -621,7 +648,6 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                 }
             }
 
-            // Sell keybinds: A, S, D, F
             if (['a', 's', 'd', 'f'].includes(key)) {
                 e.preventDefault();
                 const sellIndex = ['a', 's', 'd', 'f'].indexOf(key);
@@ -922,30 +948,35 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                         />
                                     ) : (
                                         <button
-                                            className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-                                            onClick={() => handleBuyButtonClick(amount, index)}
-                                            disabled={!account?.connected}
-                                        >
-                                            {amount}
-                                        </button>
+    className={`amount-btn ${isEditMode ? 'edit-mode' : ''} ${selectedBuyAmount === amount ? 'active' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+    onClick={() => handleBuyButtonClick(amount, index)}
+    disabled={!account?.connected}
+>
+    <span className="button-amount">{amount}</span>
+    {keybindsEnabled && (
+        <span className="keybind-indicator">
+            {['q', 'w', 'e', 'r'][index]}
+        </span>
+    )}
+</button>
                                     )}
                                 </div>
                             ))}
                         </div>
 
                         <div className="quickbuy-settings-display">
-                                <Tooltip content="Slippage">
-                            <div className="quickbuy-settings-item">
-                                <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
-                                <span className="quickbuy-settings-value">{buySlippageValue}%</span>
-                            </div>
+                            <Tooltip content="Slippage">
+                                <div className="quickbuy-settings-item">
+                                    <img src={slippage} alt="Slippage" className="quickbuy-settings-icon-slippage" />
+                                    <span className="quickbuy-settings-value">{buySlippageValue}%</span>
+                                </div>
                             </Tooltip>
-                        <Tooltip content="Priority Fee">
-                            <div className="quickbuy-settings-item">
-                                <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
-                                <span className="quickbuy-settings-value">{buyPriorityFee}</span>
-                            </div>
-                        </Tooltip>
+                            <Tooltip content="Priority Fee">
+                                <div className="quickbuy-settings-item">
+                                    <img src={gas} alt="Priority Fee" className="quickbuy-settings-icon-priority" />
+                                    <span className="quickbuy-settings-value">{buyPriorityFee}</span>
+                                </div>
+                            </Tooltip>
                         </div>
                     </div>
 
@@ -999,14 +1030,19 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                                 className="edit-input"
                                             />
                                         ) : (
-                                            <button
-                                                className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
-                                                onClick={() => handleSellButtonClick(value, index)}
-                                                disabled={!account?.connected || isDisabled}
-                                                title={isDisabled ? `Insufficient balance for ${value}` : ''}
-                                            >
-                                                {value}
-                                            </button>
+                                           <button
+    className={`percent-btn ${isEditMode ? 'edit-mode' : ''} ${selectedSellPercent === value ? 'active' : ''} ${isDisabled ? 'insufficient' : ''} ${keybindsEnabled ? 'keybind-enabled' : ''}`}
+    onClick={() => handleSellButtonClick(value, index)}
+    disabled={!account?.connected || isDisabled}
+    title={isDisabled ? `Insufficient balance for ${value}` : ''}
+>
+    <span className="button-amount">{value}</span>
+    {keybindsEnabled && (
+        <span className="keybind-indicator">
+            {['a', 's', 'd', 'f'][index]}
+        </span>
+    )}
+</button>
                                         )}
                                     </div>
                                 );
@@ -1028,7 +1064,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                             </Tooltip>
                         </div>
                     </div>
-                <div className="quickbuy-portfolio-section" onClick={onToggleCurrency} style={{ cursor: 'pointer' }}>
+                    <div className="quickbuy-portfolio-section" onClick={onToggleCurrency} style={{ cursor: 'pointer' }}>
                         <div className="quickbuy-portfolio-stat">
                             <div className="quickbuy-portfolio-value bought">
                                 {showUSD ? (
@@ -1119,7 +1155,7 @@ const QuickBuyWidget: React.FC<QuickBuyWidgetProps> = ({
                                     <div key={wallet.address} className={`quickbuy-wallet-item ${isActive ? 'active' : ''}`} onClick={(e) => {
                                         handleSetActiveWallet(wallet.privateKey)
                                         e.stopPropagation()
-                                      }}>
+                                    }}>
                                         <div className="quickbuy-wallet-checkbox-container">
                                             <input
                                                 type="checkbox"

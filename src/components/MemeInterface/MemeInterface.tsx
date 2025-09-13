@@ -246,6 +246,14 @@ const fmt = (v: number, d = 6) => {
   if (v >= 1) return v.toLocaleString("en-US", { maximumFractionDigits: d });
   return v.toFixed(Math.min(d, 8));
 };
+const formatTradeAmount = (value: number): string => {
+  if (value === 0) return "0";
+  if (value > 0 && value < 0.01) {
+    return value.toFixed(6);
+  }
+  return value.toFixed(2); 
+};
+
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sliderMode,
@@ -309,7 +317,21 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   );
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-  const [isWidgetOpen, setIsWidgetOpen] = useState(false);
+const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
+  try {
+    const saved = localStorage.getItem('crystal_quickbuy_widget_open');
+    return saved ? JSON.parse(saved) : false;
+  } catch (error) {
+    return false;
+  }
+});
+useEffect(() => {
+  try {
+    localStorage.setItem('crystal_quickbuy_widget_open', JSON.stringify(isWidgetOpen));
+  } catch (error) {
+  }
+}, [isWidgetOpen]);
+
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
   const [isQuoteLoading, setIsQuoteLoading] = useState(false);
@@ -2130,12 +2152,12 @@ const getCurrentMONBalance = useCallback(() => {
                     <img src={walleticon} className="meme-wallet-icon" /> 
                     {formatNumberWithCommas(getCurrentMONBalance(), 3)} MON
                   </div>
-                  <button
-                    className="meme-balance-max-buy"
-                    onClick={() => setTradeAmount(getCurrentMONBalance().toString())}
-                  >
-                    MAX
-                  </button>
+                 <button
+  className="meme-balance-max-buy"
+  onClick={() => setTradeAmount(formatTradeAmount(getCurrentMONBalance()))}
+>
+  MAX
+</button>
                 </>
               )}
               {activeTradeType === 'sell' && (
@@ -2144,12 +2166,12 @@ const getCurrentMONBalance = useCallback(() => {
                     <img src={walleticon} className="meme-wallet-icon" /> 
                     {formatNumberWithCommas(getCurrentTokenBalance(), 3)} {token.symbol}
                   </div>
-                  <button
-                    className="meme-balance-max-sell"
-                    onClick={() => setTradeAmount(getCurrentTokenBalance().toString())}
-                  >
-                    MAX
-                  </button>
+                <button
+  className="meme-balance-max-sell"
+  onClick={() => setTradeAmount(formatTradeAmount(getCurrentTokenBalance()))}
+>
+  MAX
+</button>
                 </>
               )}
             </div>
@@ -2309,20 +2331,20 @@ const getCurrentMONBalance = useCallback(() => {
                   max="100"
                   step="1"
                   value={sliderPercent}
-                  onChange={(e) => {
-                    const percent = parseInt(e.target.value);
-                    setSliderPercent(percent);
-                    if (activeTradeType === "buy") {
-                      const currentBalance = getCurrentMONBalance();
-                      const newAmount = (currentBalance * percent) / 100;
-                      setTradeAmount(newAmount.toString());
-                    } else {
-                      const currentBalance = getCurrentTokenBalance();
-                      const newAmount = (currentBalance * percent) / 100;
-                      setTradeAmount(newAmount.toString());
-                    }
-                    positionPopup(percent);
-                  }}
+                 onChange={(e) => {
+  const percent = parseInt(e.target.value);
+  setSliderPercent(percent);
+  if (activeTradeType === "buy") {
+    const currentBalance = getCurrentMONBalance();
+    const newAmount = (currentBalance * percent) / 100;
+    setTradeAmount(formatTradeAmount(newAmount));
+  } else {
+    const currentBalance = getCurrentTokenBalance();
+    const newAmount = (currentBalance * percent) / 100;
+    setTradeAmount(formatTradeAmount(newAmount));
+  }
+  positionPopup(percent);
+}}
                   onMouseDown={() => {
                     setIsDragging(true);
                     positionPopup(sliderPercent);

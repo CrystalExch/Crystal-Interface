@@ -6,7 +6,7 @@
     border-radius: 4px;
     font-size: 14px;
     color: #fff;
-    z-index: 100;
+    z-index: 10;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(10px);
     user-select: none;
@@ -824,3 +824,13 @@
     justify-content: center;
 }
 
+
+
+
+
+.keybind-indicator{
+    position: absolute;
+    right: 10px;
+    bottom: 1px;
+    font-size: 0.7rem;
+}

@@ -141,6 +141,29 @@ const Header: React.FC<HeaderProps> = ({
     }
   }, []);
 
+  // Load and restore active wallet from localStorage
+  useEffect(() => {
+    const storedActiveWalletPrivateKey = localStorage.getItem('crystal_active_wallet_private_key');
+    
+    // Only restore if we have subWallets loaded and a stored active wallet
+    if (storedActiveWalletPrivateKey && subWallets.length > 0) {
+      // Check if the stored private key is still valid (exists in current subWallets)
+      const isValidWallet = subWallets.some(wallet => wallet.privateKey === storedActiveWalletPrivateKey);
+      
+      if (isValidWallet) {
+        // Only set if it's different from current active wallet to avoid unnecessary calls
+        if (activeWalletPrivateKey !== storedActiveWalletPrivateKey) {
+          setOneCTSigner(storedActiveWalletPrivateKey);
+          // Don't refetch here as it might cause issues on initial load
+          // The parent component should handle the refetch when activeWalletPrivateKey changes
+        }
+      } else {
+        // Clean up invalid stored wallet
+        localStorage.removeItem('crystal_active_wallet_private_key');
+      }
+    }
+  }, [subWallets, setOneCTSigner, activeWalletPrivateKey]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
