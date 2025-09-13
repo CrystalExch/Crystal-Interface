@@ -142,9 +142,8 @@
 }
 
 .meme-token-info-label {
-    color: rgba(255, 255, 255, .6);
+    color: rgba(218, 222, 246, 0.6);
     font-size: .7rem;
-    font-weight: 400;
     text-align: center;
     line-height: 1.2
 }
