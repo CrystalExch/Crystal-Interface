@@ -3447,8 +3447,8 @@
 
 .explorer-token-image-container {
   cursor: pointer;
-  width: 74px;
-  height: 74px;
+  width: 73px;
+  height: 73px;
   border-radius: 8px;
   background: conic-gradient(from 0deg,
       var(--progress-color-start) 0deg,
@@ -3484,7 +3484,6 @@
   width: 68px;
   height: 68px;
   border-radius: 5px;
-  /* ← Square by default */
   position: relative;
   display: flex;
   align-items: center;
