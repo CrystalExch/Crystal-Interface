@@ -72,6 +72,7 @@ interface MemeChartProps {
   selectedInterval: string;
   setSelectedInterval: (interval: string) => void;
   realtimeCallbackRef: any;
+  monUsdPrice?: number;
 }
 
 const MemeChart: React.FC<MemeChartProps> = ({
@@ -80,6 +81,7 @@ const MemeChart: React.FC<MemeChartProps> = ({
   selectedInterval,
   setSelectedInterval,
   realtimeCallbackRef,
+  monUsdPrice,
 }) => {
   const [overlayVisible, setLocalOverlayVisible] = useState(true);
 
@@ -92,13 +94,14 @@ const MemeChart: React.FC<MemeChartProps> = ({
   return (
     <div className="meme-chartwrapper">
       {useAdvancedChart ? (
-        <MemeAdvancedChart
+               <MemeAdvancedChart
           data={data}
           token={token}
           selectedInterval={selectedInterval}
           setSelectedInterval={setSelectedInterval}
           setOverlayVisible={handleOverlayChange}
           realtimeCallbackRef={realtimeCallbackRef}
+          monUsdPrice={monUsdPrice}
         />
       ) : (
         <>

@@ -11,6 +11,7 @@ interface MemeAdvancedChartProps {
   tradehistory?: any[];
   isMarksVisible?: boolean;
   realtimeCallbackRef: any;
+  monUsdPrice?: number;
 }
 const SUB = ['₀', '₁', '₂', '₃', '₄', '₅', '₆', '₇', '₈', '₉'];
 const toSub = (n: number) => String(n).split('').map(d => SUB[+d]).join('');
@@ -50,7 +51,6 @@ function formatMemePrice(price: number): string {
   return `${neg}0.0${toSub(zeros)}${tail2}`;
 }
 
-
 const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   data,
   token,
@@ -60,6 +60,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   tradehistory = [],
   isMarksVisible = true,
   realtimeCallbackRef,
+  monUsdPrice = 0,
 }) => {
   const chartRef = useRef<HTMLDivElement>(null);
   const [chartReady, setChartReady] = useState(false);
@@ -74,6 +75,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
   const [showMarketCap, setShowMarketCap] = useState<boolean>(() => {
     try {
       const raw = localStorage.getItem('meme_chart_showMarketCap');
+      return raw ? JSON.parse(raw) === true : false;
+    } catch {
+      return false;
+    }
+  });
+  const [showUSD, setShowUSD] = useState<boolean>(() => {
+    try {
+      const raw = localStorage.getItem('meme_chart_showUSD');
       return raw ? JSON.parse(raw) === true : false;
     } catch {
       return false;
@@ -109,6 +118,11 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       localStorage.setItem('meme_chart_showMarketCap', JSON.stringify(showMarketCap));
     } catch { }
   }, [showMarketCap]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('meme_chart_showUSD', JSON.stringify(showUSD));
+    } catch { }
+  }, [showUSD]);
   useEffect(() => {
     try {
       const diff = tradehistory.slice((tradeHistoryRef.current || []).length);
@@ -185,7 +199,7 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       container: chartRef.current,
       library_path: '/charting_library/',
       autosize: true,
-      symbol: `${token.symbol}/MON`,
+      symbol: `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
       interval: localStorage.getItem('meme_chart_timeframe') || '5',
       timezone: 'Etc/UTC',
       locale: 'en',
@@ -205,11 +219,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
         'use_localstorage_for_settings',
         'symbol_info',
       ],
-      custom_formatters: {
+       custom_formatters: {
         priceFormatterFactory: (_symbolInfo: any, _minTick: number) => {
           return {
             format: (price: number) => {
-              const adjusted = showMarketCap ? price * 1_000_000_000 : price;
+              let adjusted = showMarketCap ? price * 1_000_000_000 : price;
+              if (showUSD && monUsdPrice > 0) {
+                adjusted = adjusted * monUsdPrice;
+              }
               return formatMemePrice(adjusted);
             },
           };
@@ -430,14 +447,13 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
       });
       setOverlayVisible(false);
     });
-
-    return () => {
+  return () => {
       setChartReady(false);
       if (widgetRef.current) {
         widgetRef.current.remove();
       }
     };
-  }, [token.symbol, showMarketCap]);
+  }, [token.symbol, showMarketCap, showUSD]);
 
   useEffect(() => {
     try {
@@ -452,8 +468,8 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
               ? '60'
               : selectedInterval.slice(0, -1));
 
-        widgetRef.current.setSymbol(
-          `${token.symbol}/MON`,
+           widgetRef.current.setSymbol(
+          `${token.symbol}/${showUSD ? 'USD' : 'MON'}`,
           selectedInterval === '1d'
             ? '1D'
             : selectedInterval === '4h'
@@ -470,10 +486,14 @@ const MemeAdvancedChart: React.FC<MemeAdvancedChartProps> = ({
     catch (e) {
     }
   }, [token.symbol, selectedInterval]);
-
   return (
     <div className="advanced-chart-container">
       <div ref={chartRef} />
+      <div className="usd-mon-toggle" onClick={() => setShowUSD(v => !v)}>
+        <span className={!showUSD ? 'active' : ''}>MON</span>
+        <span className="separator">/</span>
+        <span className={showUSD ? 'active' : ''}>USD</span>
+      </div>
       <div className="price-marketcap-toggle" onClick={() => setShowMarketCap(v => !v)}>
         <span className={!showMarketCap ? 'active' : ''}>Price</span>
         <span className="separator">/</span>

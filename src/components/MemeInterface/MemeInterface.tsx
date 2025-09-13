@@ -2190,12 +2190,13 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       <div className="memechartandtradesandordercenter">
         <div className="memecharttradespanel">
           <div className={`meme-chart-container ${mobileActiveView !== 'chart' ? 'mobile-hidden' : ''}`}>
-            <MemeChart
+               <MemeChart
               token={token}
               data={chartData}
               selectedInterval={selectedInterval}
               setSelectedInterval={setSelectedInterval}
               realtimeCallbackRef={realtimeCallbackRef}
+              monUsdPrice={monUsdPrice}
             />
           </div>
           <div className={`meme-trades-container ${mobileActiveView !== 'trades' ? 'mobile-hidden' : ''}`}>
