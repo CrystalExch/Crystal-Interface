@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import './WalletOperationPopup.css';
 import closebutton from '../../assets/close_button.png';
@@ -56,6 +55,74 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
     }, 300);
   };
 
+  // Function to render subtitle with inline token image
+  const renderSubtitleWithImage = () => {
+    if (!subtitle) return null;
+    
+    if (!tokenImage) {
+      return <span>{subtitle}</span>;
+    }
+
+    // Look for common patterns where we want to insert the token image
+    // Priority: token being traded gets the image, not the currency
+    const patterns = [
+      // Trading patterns - token before "for" gets priority
+      /(\bSold\s+[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+for)/i, // "Sold 123M CRYSTAL for" - CRYSTAL gets image
+      /(\bBought\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+(?:for|with))/i, // "Bought ~ 123 CRYSTAL for/with" 
+      /(\bReceived\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(\s+(?:for|from))/i, // "Received ~ 123 CRYSTAL for"
+      
+      // "worth of" patterns - token after "of" gets image
+      /(\b(?:worth of|of)\s+)([A-Z][A-Z0-9]*\b)/i, // "worth of TOKEN" or "of TOKEN"
+      /(\bBuying\s+[\d.,]+\s+[A-Z]+\s+worth\s+of\s+)([A-Z][A-Z0-9]*\b)/i, // "Buying 5 MON worth of TOKEN"
+      /(\bSelling\s+[\d.,]+\s+(?:[A-Z]+\s+worth\s+)?(?:of\s+)?)([A-Z][A-Z0-9]*\b)/i, // "Selling 25% of TOKEN"
+      
+      // Confirmation patterns - look for token in transaction context
+      /(\bConfirming\s+(?:transaction|buy|sell)[\w\s]*?worth\s+of\s+)([A-Z][A-Z0-9]*\b)/i, // "Confirming transaction... worth of TOKEN"
+      /(\bConfirming\s+(?:sell)[\w\s]*?)([A-Z][A-Z0-9]*\b)(\s+(?:for|to))/i, // "Confirming sell... TOKEN for"
+      
+      // Simple patterns when no "for" present
+      /(\bBought\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Bought ~ 123 TOKEN" (not followed by "for")
+      /(\bSold\s+[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Sold 123 TOKEN" (not followed by "for")
+      /(\bReceived\s+[≈~]?\s*[\d.,]+[A-Z]*\s+)([A-Z][A-Z0-9]*\b)(?!\s+for)/i, // "Received ~ 123 TOKEN" (not followed by "for")
+      
+      // Error patterns
+      /(\bNot\s+enough\s+)([A-Z][A-Z0-9]*\b)/i, // "Not enough TOKEN"
+      /(\bInsufficient\s+)([A-Z][A-Z0-9]*\b)/i, // "Insufficient TOKEN"
+    ];
+
+    for (const pattern of patterns) {
+      const match = subtitle.match(pattern);
+      if (match) {
+        const beforeToken = subtitle.substring(0, match.index! + match[1].length);
+        const tokenSymbol = match[2];
+        const afterToken = subtitle.substring(match.index! + match[0].length);
+        
+        return (
+          <span>
+            {beforeToken}
+            <img
+              src={tokenImage}
+              alt="Token"
+              className="wallet-popup-token-image"
+              style={{ 
+                display: 'inline', 
+                width: '16px', 
+                height: '16px', 
+                marginRight: '4px',
+                verticalAlign: 'text-bottom'
+              }}
+            />
+            {tokenSymbol}
+            {afterToken}
+          </span>
+        );
+      }
+    }
+
+    // If no pattern matches, just show the subtitle normally
+    return <span>{subtitle}</span>;
+  };
+
   if (!shouldRender) return null;
 
   return (
@@ -96,20 +163,13 @@ const WalletOperationPopup: React.FC<WalletOperationPopupProps> = ({
               </span>
             )}
 
-          <div className="wallet-popup-text-content">
+            <div className="wallet-popup-text-content">
               <h3 className="wallet-popup-title">
                 {isLoading ? 'Confirming transaction' : title}
               </h3>
               {subtitle && (
                 <p className="wallet-popup-subtitle">
-                  {tokenImage && (
-                    <img 
-                      src={tokenImage} 
-                      alt="Token" 
-                      className="wallet-popup-token-image"
-                    />
-                  )}
-                  {subtitle}
+                  {renderSubtitleWithImage()}
                 </p>
               )}
             </div>

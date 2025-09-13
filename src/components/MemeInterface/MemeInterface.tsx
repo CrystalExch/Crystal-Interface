@@ -803,75 +803,83 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   };
 
-  const handleSellPosition = async (position: any, monAmount: string) => {
-    if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
-      setpopup?.(4);
-      return;
+const handleSellPosition = async (position: any, monAmount: string) => {
+  if (!account?.connected || !sendUserOperationAsync || !routerAddress) {
+    setpopup?.(4);
+    return;
+  }
+
+  const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
+  if (account.chainId !== targetChainId) {
+    setChain?.();
+    return;
+  }
+
+  const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+  try {
+    if (showLoadingPopup) {
+      showLoadingPopup(txId, {
+        title: 'Sending transaction...',
+        subtitle: `Selling ${monAmount} MON worth of ${position.symbol}`,
+        amount: monAmount,
+        amountUnit: 'MON'
+      });
     }
 
-    const targetChainId = settings.chainConfig[activechain]?.chainId || activechain;
-    if (account.chainId !== targetChainId) {
-      setChain?.();
-      return;
+    // Convert MON amount to token amount
+    const monAmountNum = parseFloat(monAmount);
+    const tokenPrice = position.lastPrice || currentPrice;
+    
+    if (tokenPrice <= 0) {
+      throw new Error('Invalid token price');
+    }
+    
+    // Calculate how many tokens to sell to get the desired MON amount
+    const tokenAmountToSell = monAmountNum / tokenPrice;
+    const amountTokenWei = BigInt(Math.round(tokenAmountToSell * 1e18));
+
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Confirming sell...',
+        subtitle: `Selling ${tokenAmountToSell.toFixed(4)} ${position.symbol} for ~${monAmount} MON`,
+        variant: 'info'
+      });
     }
 
-    const txId = `sell-position-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const sellUo = {
+      target: routerAddress as `0x${string}`,
+      data: encodeFunctionData({
+        abi: CrystalRouterAbi,
+        functionName: "sell",
+        args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
+      }),
+      value: 0n,
+    };
 
-    try {
-      if (showLoadingPopup) {
-        showLoadingPopup(txId, {
-          title: 'Sending transaction...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
-          amount: monAmount,
-          amountUnit: position.symbol
-        });
-      }
+    await sendUserOperationAsync({ uo: sellUo });
 
-      const amountTokenWei = BigInt(Math.round(parseFloat(monAmount) * 1e18));
-
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Confirming sell...',
-          subtitle: `Selling ${monAmount} ${position.symbol}`,
-          variant: 'info'
-        });
-      }
-
-      const sellUo = {
-        target: routerAddress as `0x${string}`,
-        data: encodeFunctionData({
-          abi: CrystalRouterAbi,
-          functionName: "sell",
-          args: [true, position.tokenId as `0x${string}`, amountTokenWei, 0n],
-        }),
-        value: 0n,
-      };
-
-      await sendUserOperationAsync({ uo: sellUo });
-
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * (position.lastPrice || 0);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: `Sold ${Number(soldTokens).toFixed(4)} ${position.symbol}`,
-          subtitle: `Received ≈ ${Number(expectedMON).toFixed(4)} MON`,
-          variant: 'success',
-          isLoading: false
-        });
-      }
-
-    } catch (e: any) {
-      console.error(e);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Sell failed',
-          subtitle: e?.message || 'Transaction was rejected',
-          variant: 'error',
-          isLoading: false
-        });
-      }
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: `Sold ${Number(tokenAmountToSell).toFixed(4)} ${position.symbol}`,
+        subtitle: `Received ≈ ${Number(monAmountNum).toFixed(4)} MON`,
+        variant: 'success',
+        isLoading: false
+      });
     }
-  };
+
+  } catch (e: any) {
+    console.error(e);
+    if (updatePopup) {
+      updatePopup(txId, {
+        title: 'Sell failed',
+        subtitle: e?.message || 'Transaction was rejected',
+        variant: 'error',
+        isLoading: false
+      });
+    }
+  }
+};
 
   const handleMobileSellTrade = async (value: string) => {
     if (!account?.connected || !sendUserOperationAsync || !tokenAddress || !routerAddress) {
@@ -1984,14 +1992,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       setIsSigning(true);
 
       if (activeTradeType === "buy") {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Buying ${tradeAmount} ${inputCurrency} worth of ${token.symbol}`,
-            amount: tradeAmount,
-            amountUnit: inputCurrency
-          });
-        }
+if (showLoadingPopup) {
+  showLoadingPopup(txId, {
+    title: 'Sending transaction...',
+    subtitle: `Buying ${tradeAmount} ${inputCurrency} worth of ${token.symbol}`,
+    amount: tradeAmount,
+    amountUnit: inputCurrency,
+    tokenImage: token.image
+  });
+}
 
         const valNum =
           inputCurrency === "MON"
@@ -3527,6 +3536,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         monUsdPrice={monUsdPrice}
         showUSD={showUSD}
         onToggleCurrency={handleToggleCurrency}
+          showLoadingPopup={showLoadingPopup} 
+  updatePopup={updatePopup}   
+   tokenImage={token.image} 
       />
     </div>
   );
