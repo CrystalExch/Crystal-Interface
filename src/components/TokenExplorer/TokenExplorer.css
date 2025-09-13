@@ -719,16 +719,13 @@
   border-radius: 0.5rem;
   padding: 0.25rem 0.5rem;
   white-space: nowrap;
-  opacity: 0;
   transition: opacity 0.3s ease-in-out;
   pointer-events: none;
   letter-spacing: -0.3px;
+  opacity: 1;
 }
 
-.explorer-token-row:hover .bonding-amount-display {
-  opacity: 1;
-  pointer-events: auto;
-}
+
 
 .holding-icon {
   width: 16px;
@@ -4357,3 +4354,4 @@
   background: rgba(170, 174, 207, 0.15);
   color: #ffffff;
 }
+

@@ -166,6 +166,8 @@ interface Props {
   setpopup?: (v: number) => void;
   holders?: Holder[];
   currentUserAddress?: string;
+  isPaused?: boolean;
+  backlogCount?: number;
 }
 
 export default function MemeTradesComponent({
@@ -188,12 +190,40 @@ export default function MemeTradesComponent({
   const [hover, setHover] = useState(false);
   const [popupAddr, setPopupAddr] = useState<string | null>(null);
   const [_currentTime, setCurrentTime] = useState(() => Date.now() / 1000);
-
+  const [displayTrades, setDisplayTrades] = useState<RawTrade[]>([]);
+  const tradesBacklogRef = useRef<RawTrade[]>([]);
+  const lastProcessedTradesRef = useRef<RawTrade[]>([]);
   useEffect(() => {
     const interval = setInterval(() => setCurrentTime(Date.now() / 1000), 1000);
     return () => clearInterval(interval);
   }, []);
+  useEffect(() => {
+    const newTrades = trades.slice(0, 40);
 
+    if (hover) {
+      const previousTrades = lastProcessedTradesRef.current;
+      const reallyNewTrades = newTrades.filter(
+        newTrade => !previousTrades.some(oldTrade => oldTrade.id === newTrade.id)
+      );
+
+      if (reallyNewTrades.length > 0) {
+        tradesBacklogRef.current = [...reallyNewTrades, ...tradesBacklogRef.current].slice(0, 50);
+      }
+    } else {
+      if (tradesBacklogRef.current.length > 0) {
+        const combined = [...tradesBacklogRef.current, ...newTrades];
+        const uniqueTrades = combined.filter((trade, index, arr) =>
+          arr.findIndex(t => t.id === trade.id) === index
+        ).slice(0, 40);
+
+        setDisplayTrades(uniqueTrades);
+        tradesBacklogRef.current = [];
+      } else {
+        setDisplayTrades(newTrades);
+      }
+      lastProcessedTradesRef.current = newTrades;
+    }
+  }, [trades, hover]);
   const top10HolderAddresses = useMemo(() => {
     return new Set(
       holders.slice(0, 10).map((holder) => holder.address.toLowerCase()),
@@ -230,14 +260,14 @@ export default function MemeTradesComponent({
   };
 
   const viewTrades: ViewTrade[] = useMemo(() => {
-    if (!trades?.length) return [];
+    if (!displayTrades?.length) return [];
 
     const latestQuotePerBase = fetchLatestPriceInQuote(trades) ?? 0;
     const quoteUsd = usdPer(market?.quoteAsset);
     const monUsd = (usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker));
     const baseUsdPerToken = latestQuotePerBase * (quoteUsd || 0);
 
-    return trades.slice(0, 40).map((r) => {
+    return displayTrades.map((r) => {
       const callerLower = r.caller.toLowerCase();
       const currentUserLower = currentUserAddress?.toLowerCase();
       const isCurrentUser = callerLower === currentUserLower;
@@ -278,7 +308,7 @@ export default function MemeTradesComponent({
       };
     });
   }, [
-    trades,
+    displayTrades,
     market?.quoteAsset,
     usdPer,
     ethticker,
@@ -317,7 +347,7 @@ export default function MemeTradesComponent({
     );
   };
 
-const fmtAmount = (v: number) =>
+  const fmtAmount = (v: number) =>
     amountMode === "USDC"
       ? `$${Math.abs(v).toFixed(3)}`
       : `${Math.abs(v).toFixed(3)}`;
@@ -549,7 +579,14 @@ const fmtAmount = (v: number) =>
 
         <div className={`pause-indicator ${hover ? "visible" : ""}`}>
           <div className="pause-content">
-            <span className="pause-text">Paused</span>
+            <div className="pause-icon">
+              <svg className="pause-icon-svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7 19h2V5H7v14zm8-14v14h2V5h-2z" />
+              </svg>
+            </div>
+            <span className="pause-text">
+              Paused
+            </span>
           </div>
         </div>
       </div>
