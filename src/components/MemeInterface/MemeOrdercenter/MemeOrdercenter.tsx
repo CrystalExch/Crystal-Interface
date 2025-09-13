@@ -295,7 +295,7 @@ const SellPopup: React.FC<SellPopupProps> = ({
             {isLoading ? (
               <div className="meme-button-spinner"></div>
             ) : (
-              `Instantly Sell ${selectedPosition.symbol}`
+              `Instantly Sell $${selectedPosition.symbol}`
             )}
           </button>
         </div>

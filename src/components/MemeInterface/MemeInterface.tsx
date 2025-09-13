@@ -23,6 +23,7 @@ import monadicon from "../../assets/monadlogo.svg";
 import trash from '../../assets/trash.svg';
 
 import "./MemeInterface.css";
+import { createPortal } from "react-dom";
 
 interface Token {
   id: string;
@@ -253,7 +254,156 @@ const formatTradeAmount = (value: number): string => {
   }
   return value.toFixed(2);
 };
+const Tooltip: React.FC<{
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+    const updatePosition = useCallback(() => {
+        if (!containerRef.current || !tooltipRef.current) return;
+
+        const rect = containerRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+
+        let top = 0;
+        let left = 0;
+
+        switch (position) {
+            case 'top':
+                top = rect.top + scrollY - tooltipRect.height - 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollY + 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.left + scrollX - tooltipRect.width - 10;
+                break;
+            case 'right':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.right + scrollX + 10;
+                break;
+        }
+
+        const margin = 10;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+
+        if (position === 'top' || position === 'bottom') {
+            left = Math.min(
+                Math.max(left, margin + tooltipRect.width / 2),
+                viewportWidth - margin - tooltipRect.width / 2,
+            );
+        } else {
+            top = Math.min(
+                Math.max(top, margin),
+                viewportHeight - margin - tooltipRect.height,
+            );
+        }
+
+        setTooltipPosition({ top, left });
+    }, [position]);
+
+    const handleMouseEnter = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(false);
+        setShouldRender(true);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setIsVisible(true);
+            fadeTimeoutRef.current = null;
+        }, 10);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(true);
+        setIsVisible(false);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setShouldRender(false);
+            setIsLeaving(false);
+            fadeTimeoutRef.current = null;
+        }, 150);
+    }, []);
+
+    useEffect(() => {
+        if (shouldRender && !isLeaving) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition);
+            window.addEventListener('resize', updatePosition);
+            return () => {
+                window.removeEventListener('scroll', updatePosition);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [shouldRender, updatePosition, isLeaving]);
+
+    useEffect(() => {
+        return () => {
+            if (fadeTimeoutRef.current) {
+                clearTimeout(fadeTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            className="tooltip-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {children}
+            {shouldRender && createPortal(
+                <div
+                    ref={tooltipRef}
+                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+                    style={{
+                        position: 'absolute',
+                        top: `${tooltipPosition.top - 20}px`,
+                        left: `${tooltipPosition.left}px`,
+                        transform: `${position === 'top' || position === 'bottom'
+                            ? 'translateX(-50%)'
+                            : position === 'left' || position === 'right'
+                                ? 'translateY(-50%)'
+                                : 'none'} scale(${isVisible ? 1 : 0})`,
+                        opacity: isVisible ? 1 : 0,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                        willChange: 'transform, opacity'
+                    }}
+                >
+                    <div className="tooltip-content">
+                        {content}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </div>
+    );
+};
 
 const MemeInterface: React.FC<MemeInterfaceProps> = ({
   sliderMode,
@@ -2394,14 +2544,18 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-trade-settings">
             <div className="meme-settings-toggle">
               <div className="meme-settings-collapsed">
+              <Tooltip content="Slippage">
                 <div className="meme-settings-item">
                   <img src={slippage} className="meme-settings-icon1" />
                   <span className="meme-settings-value">{slippageValue}%</span>
                 </div>
+                </Tooltip>
+                <Tooltip content="Priority Fee">
                 <div className="meme-settings-item">
                   <img src={gas} className="meme-settings-icon2" />
                   <span className="meme-settings-value">{priorityFee}</span>
                 </div>
+                </Tooltip>
               </div>
               <button
                 className="meme-settings-edit-button"
@@ -3077,7 +3231,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   <img className="meme-contract-icon" src={contract} />
                   <span className="meme-address-title">CA:</span>{" "}
                   {token.id.slice(0, 21)}...{token.id.slice(-4)}
-                  <TooltipLabel label={<svg
+                  <Tooltip content="View on Monad Explorer">
+                  <svg
                     className="meme-address-link"
                     xmlns="http://www.w3.org/2000/svg"
                     width="13"
@@ -3087,14 +3242,15 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   >
                     <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
                     <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>} tooltipText="View on Monad Explorer"
-                  />
+                  </svg>        
+                  </Tooltip>          
                 </span>
                 <span className="meme-address">
                   <img className="meme-contract-icon" src={contract} />
                   <span className="meme-address-title">DA:</span>{" "}
                   {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
-                  <TooltipLabel label={<svg
+                   <Tooltip content="View on Monad Explorer">
+                  <svg
                     className="meme-address-link"
                     xmlns="http://www.w3.org/2000/svg"
                     width="13"
@@ -3104,8 +3260,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   >
                     <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
                     <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                  </svg>} tooltipText="View on Monad Explorer"
-                  />
+                  </svg>        
+                  </Tooltip>     
                 </span>
               </div>
             </div>
