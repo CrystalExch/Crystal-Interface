@@ -74,11 +74,11 @@ function v2ToOrderbook(
       const tLow = tHere - intervalTicks;
       if (tLow <= 0) break;
 
-      const pLow  = fromTicks(tLow);
+      const pLow = fromTicks(tLow);
       const pHere = fromTicks(tHere);
 
       const xLow = xFromP(pLow);
-      const xHi  = xFromP(pHere);
+      const xHi = xFromP(pHere);
       const dxEff = Math.max(0, xLow - xHi);
 
       const baseIn = dxEff / oneMinusFee;
@@ -137,9 +137,12 @@ export function scaleOrders(
   }
 
   const { bids, asks } = v2ToOrderbook(DEFAULT_RESERVE1_RAW, DEFAULT_RESERVE2_RAW, interval);
-  const sideOrders = isBuyOrder ? bids : asks;
+  const ammSide = isBuyOrder ? bids : asks;
 
-  const groupedOrders = groupOrders(sideOrders, interval, isBuyOrder);
+  const live = Array.isArray(_orders) ? _orders : [];
+  const merged = live.concat(ammSide);
+
+  const groupedOrders = groupOrders(merged, interval, isBuyOrder);
   const adjustedHeight = Math.max(
     containerHeight - HEADER_HEIGHT - SPREAD_DISPLAY_HEIGHT / 2,
     100,
@@ -214,8 +217,8 @@ const groupOrders = (
 
   return Object.entries(grouped)
     .map(([price, { size, shouldFlash, userPrice }]) => ({
-      price: preciseRound(Number(price), 8),
-      size: preciseRound(size, 8),
+      price: preciseRound(Number(price), 12),
+      size: preciseRound(size, 12),
       totalSize: 0,
       shouldFlash,
       userPrice,
