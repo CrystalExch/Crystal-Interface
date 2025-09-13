@@ -923,7 +923,7 @@
 
 
 .meme-avg-price {
-  font-size: 11px;
+  font-size: 0.7rem;
   color: #9ca3af;
   padding-left: 5px;
 }
@@ -1382,9 +1382,13 @@
 }
 
 .meme-avg-price.buy {
-  color: rgb(67 254 154);
+  color: rgb(86, 242, 158);
 }
 
 .meme-avg-price.sell {
-  color: rgb(240, 103, 103); 
+  color: rgb(236, 117, 117); 
+}
+
+.wallet-address-link{
+  cursor:pointer;
 }
