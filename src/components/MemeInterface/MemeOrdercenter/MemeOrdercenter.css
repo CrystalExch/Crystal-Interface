@@ -1129,13 +1129,14 @@
 }
 
 .alerts-popup .meme-trade-currency {
-  position: absolute;
-  top: 50%;
-  padding-left: 1px;
-  transform: translateY(-50%);
-  color: rgba(255, 255, 255, 0.5);
-  font-size: .95rem;
-  pointer-events: none;
+  position: relative;
+    margin-top: -19.5px;
+    margin-left: 4px;
+    right: 20px;
+    transform: translateY(-50%);
+    color: rgba(255, 255, 255, 0.5);
+    font-size: .95rem;
+    pointer-events: none;
 }
 
 .alerts-popup .meme-balance-slider-wrapper {
