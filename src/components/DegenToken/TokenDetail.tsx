@@ -1,15 +1,11 @@
-import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { encodeFunctionData, decodeFunctionResult } from 'viem';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { encodeFunctionData } from 'viem';
 import { settings } from '../../settings';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { showLoadingPopup, updatePopup } from '../MemeTransactionPopup/MemeTransactionPopupManager';
-import { defaultMetrics } from '../TokenExplorer/TokenData';
 import { CrystalRouterAbi } from '../../abis/CrystalRouterAbi';
-import { CrystalDataHelperAbi } from '../../abis/CrystalDataHelperAbi';
 import { useSharedContext } from '../../contexts/SharedContext';
 import MemeChart from '../MemeInterface/MemeChart/MemeChart';
-
 import './TokenDetail.css';
 
 interface Token {
@@ -70,22 +66,23 @@ interface Comment {
   likes: number;
 }
 
+type SendUserOperation = (args: { uo: { target: `0x${string}`; data: `0x${string}`; value?: bigint } }) => Promise<unknown>;
+
 interface TokenDetailProps {
-  sendUserOperationAsync: any;
+  sendUserOperationAsync: SendUserOperation;
   account: { connected: boolean; address: string; chainId: number };
   setChain: () => void;
   setpopup?: (popup: number) => void;
   terminalQueryData: any;
   terminalToken: any;
-  setTerminalToken: any;
+  setTerminalToken: (x: any) => void;
   terminalRefetch: any;
   walletTokenBalances: any;
-  tokenData?: any;
+  tokenData?: Token;
 }
 
-const TOTAL_SUPPLY = 1e9;
-const SUBGRAPH_URL = 'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
-const MARKET_UPDATE_EVENT = '0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e';
+const SUBGRAPH_URL =
+  'https://gateway.thegraph.com/api/b9cc5f58f8ad5399b2c4dd27fa52d881/subgraphs/id/BJKD3ViFyTeyamKBzC1wS7a3XMuQijvBehgNaSBb197e';
 
 const formatPrice = (p: number) => {
   if (p >= 1e12) return `$${(p / 1e12).toFixed(2)}T`;
@@ -102,6 +99,49 @@ const formatNumber = (n: number) => {
   return n.toFixed(2);
 };
 
+const CopyableAddress: React.FC<{
+  address?: string | null;
+  className?: string;
+  truncate?: { start: number; end: number };
+  labelPrefix?: string;
+}> = ({ address, className, truncate = { start: 6, end: 4 }, labelPrefix }) => {
+  const [copied, setCopied] = useState(false);
+
+  if (!address) return <span className={className}>{labelPrefix ?? ''}Unknown</span>;
+
+  const short = `${address.slice(0, truncate.start)}...${address.slice(-truncate.end)}`;
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch {
+      const ta = document.createElement('textarea');
+      ta.value = address;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    } finally {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1200);
+    }
+  };
+
+  return (
+    <button
+      type="button"
+      onClick={copy}
+      className={className ? `${className} copyable-address` : 'copyable-address'}
+      title={copied ? 'Copied!' : 'Click to copy full address'}
+      aria-label="Copy address to clipboard"
+    >
+      {labelPrefix}
+      {short}
+      <span className="copy-hint">{copied ? ' ✓' : ''}</span>
+    </button>
+  );
+};
+
 const TokenDetail: React.FC<TokenDetailProps> = ({
   sendUserOperationAsync,
   account,
@@ -112,13 +152,12 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   setTerminalToken,
   terminalRefetch,
   walletTokenBalances,
-  tokenData
+  tokenData,
 }) => {
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
-  const location = useLocation();
   const navigate = useNavigate();
   const { activechain } = useSharedContext();
-  
+
   const [token, setToken] = useState<Token | null>(tokenData || null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [holders, setHolders] = useState<Holder[]>([]);
@@ -128,96 +167,112 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [loading, setLoading] = useState(!tokenData);
   const [isSigning, setIsSigning] = useState(false);
-  const [selectedInterval, setSelectedInterval] = useState('5m');
+  const [selectedInterval, setSelectedInterval] = useState<'1m' | '5m' | '15m' | '1h' | '4h' | '1d'>('5m');
   const [chartData, setChartData] = useState<any>(null);
   const realtimeCallbackRef = useRef<any>({});
+  const [isChatModalOpen, setIsChatModalOpen] = useState(false);
 
-  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter;
+  const routerAddress = settings.chainConfig[activechain]?.launchpadRouter as `0x${string}` | undefined;
+
+  const walletTokenBalance = useMemo(() => {
+    const raw = walletTokenBalances?.[account?.address]?.[token?.id ?? ''];
+    return (Number(raw) || 0) / 1e18;
+  }, [walletTokenBalances, account?.address, token?.id]);
 
   const fetchTokenData = useCallback(async () => {
     if (!token) return;
-    let isCancelled = false;
 
     try {
+      const seriesKey =
+        'series' +
+        (selectedInterval === '1m'
+          ? '60'
+          : selectedInterval === '5m'
+          ? '300'
+          : selectedInterval === '15m'
+          ? '900'
+          : selectedInterval === '1h'
+          ? '3600'
+          : selectedInterval === '4h'
+          ? '14400'
+          : '86400');
+
       const response = await fetch(SUBGRAPH_URL, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           query: `
-          query ($id: ID!) {
-            launchpadTokens: launchpadTokens(where: { id: $id }) {
-              lastPriceNativePerTokenWad
-              volumeNative
-              buyTxs
-              sellTxs
-              trades(first: 50, orderBy: block, orderDirection: desc) {
-                id
-                account {id}
-                block
-                isBuy
-                priceNativePerTokenWad
-                amountIn
-                amountOut
-              }
-              series: ${'series' + (selectedInterval === '1m' ? '60' :
-              selectedInterval === '5m' ? '300' :
-                selectedInterval === '15m' ? '900' :
-                  selectedInterval === '1h' ? '3600' :
-                    selectedInterval === '4h' ? '14400' :
-                      '86400')} {
-                klines(first: 1000, orderBy: time, orderDirection: desc) {
-                  time open high low close
+            query ($id: ID!) {
+              launchpadTokens(where: { id: $id }) {
+                lastPriceNativePerTokenWad
+                volumeNative
+                buyTxs
+                sellTxs
+                trades(first: 50, orderBy: block, orderDirection: desc) {
+                  id
+                  account { id }
+                  block
+                  isBuy
+                  priceNativePerTokenWad
+                  amountIn
+                  amountOut
+                }
+                series: ${seriesKey} {
+                  klines(first: 1000, orderBy: time, orderDirection: desc) {
+                    time open high low close
+                  }
                 }
               }
-            }
-          }`,
-          variables: {
-            id: token.id.toLowerCase(),
-          }
+            }`,
+          variables: { id: token.id.toLowerCase() },
         }),
       });
 
       const data = (await response.json())?.data;
-      if (isCancelled || !data) return;
-      console.log(data)
-      if (data.launchpadTokens?.[0]?.series?.klines) {
-        const bars = data.launchpadTokens?.[0]?.series?.klines
-          .slice()
-          .reverse()
-          .map((c: any) => ({
-            time: Number(c.time) * 1000,
-            open: Number(c.open) / 1e18,
-            high: Number(c.high) / 1e18,
-            low: Number(c.low) / 1e18,
-            close: Number(c.close) / 1e18,
-            volume: Number(c.baseVolume) / 1e18,
-          }));
-        const key =
-          token.symbol +
-          "MON" +
-          (selectedInterval === "1d"
-            ? "1D"
-            : selectedInterval === "4h"
-              ? "240"
-              : selectedInterval === "1h"
-                ? "60"
-                : selectedInterval.slice(0, -1));
-        setChartData([bars, key, false]);
-      }
+      const klines = data?.launchpadTokens?.[0]?.series?.klines;
+      if (!klines) return;
+
+      const bars = klines
+        .slice()
+        .reverse()
+        .map((c: any) => ({
+          time: Number(c.time) * 1000,
+          open: Number(c.open) / 1e18,
+          high: Number(c.high) / 1e18,
+          low: Number(c.low) / 1e18,
+          close: Number(c.close) / 1e18,
+          volume: Number(c.baseVolume) / 1e18,
+        }));
+
+      const key =
+        token.symbol +
+        'MON' +
+        (selectedInterval === '1d'
+          ? '1D'
+          : selectedInterval === '4h'
+          ? '240'
+          : selectedInterval === '1h'
+          ? '60'
+          : selectedInterval.slice(0, -1));
+
+      setChartData([bars, key, false]);
     } catch (error) {
       console.error('Failed to fetch token data:', error);
     } finally {
       setLoading(false);
     }
-  }, [tokenAddress]);
+  }, [token, selectedInterval]);
 
   useEffect(() => {
-    setTerminalToken(tokenAddress)
+    if (tokenAddress) setTerminalToken(tokenAddress);
+  }, [tokenAddress, setTerminalToken]);
+
+  useEffect(() => {
     fetchTokenData();
-  }, [token, fetchTokenData]);
+  }, [fetchTokenData]);
 
   const handleTrade = async () => {
-    if (!tradeAmount || !account.connected || !token || !sendUserOperationAsync) {
+    if (!tradeAmount || !account.connected || !token || !sendUserOperationAsync || !routerAddress) {
       setpopup?.(4);
       return;
     }
@@ -228,25 +283,26 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
       return;
     }
 
-    const txId = `detail-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const parsedAmount = parseFloat(tradeAmount);
+    if (!Number.isFinite(parsedAmount) || parsedAmount <= 0) return;
+
+    const txId = `detail-${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
 
     try {
       setIsSigning(true);
 
       if (tradeType === 'buy') {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
-            amount: tradeAmount,
-            amountUnit: 'MON'
-          });
-        }
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
+          amount: tradeAmount,
+          amountUnit: 'MON',
+        });
 
-        const value = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+        const value = BigInt(Math.round(parsedAmount * 1e18));
 
         const uo = {
-          target: routerAddress,
+          target: routerAddress as `0x${string}`,
           data: encodeFunctionData({
             abi: CrystalRouterAbi,
             functionName: 'buy',
@@ -255,43 +311,35 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           value,
         };
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming transaction...',
-            subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
-            variant: 'info'
-          });
-        }
+        updatePopup(txId, {
+          title: 'Confirming transaction...',
+          subtitle: `Buying ${tradeAmount} MON worth of ${token.symbol}`,
+          variant: 'info',
+        });
 
-        const op = await sendUserOperationAsync({ uo });
+        await sendUserOperationAsync({ uo });
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: `Bought ${token.symbol}`,
-            subtitle: `Spent ${tradeAmount} MON`,
-            variant: 'success',
-            isLoading: false
-          });
-        }
-
+        updatePopup(txId, {
+          title: `Bought ${token.symbol}`,
+          subtitle: `Spent ${tradeAmount} MON`,
+          variant: 'success',
+          isLoading: false,
+        });
       } else {
-        if (showLoadingPopup) {
-          showLoadingPopup(txId, {
-            title: 'Sending transaction...',
-            subtitle: `Selling ${tradeAmount} ${token.symbol}`,
-            amount: tradeAmount,
-            amountUnit: token.symbol
-          });
-        }
+        showLoadingPopup(txId, {
+          title: 'Sending transaction...',
+          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          amount: tradeAmount,
+          amountUnit: token.symbol,
+        });
 
-        const amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: 'Confirming sell...',
-            subtitle: `Selling ${tradeAmount} ${token.symbol}`,
-            variant: 'info'
-          });
-        }
+        const amountTokenWei = BigInt(Math.round(parsedAmount * 1e18));
+
+        updatePopup(txId, {
+          title: 'Confirming sell...',
+          subtitle: `Selling ${tradeAmount} ${token.symbol}`,
+          variant: 'info',
+        });
 
         const sellUo = {
           target: routerAddress as `0x${string}`,
@@ -303,53 +351,50 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           value: 0n,
         };
 
-        const sellOp = await sendUserOperationAsync({ uo: sellUo });
+        await sendUserOperationAsync({ uo: sellUo });
 
-        if (updatePopup) {
-          updatePopup(txId, {
-            title: `Sold ${token.symbol}`,
-            subtitle: `Received MON`,
-            variant: 'success',
-            isLoading: false
-          });
-        }
+        updatePopup(txId, {
+          title: `Sold ${token.symbol}`,
+          subtitle: 'Received MON',
+          variant: 'success',
+          isLoading: false,
+        });
       }
 
       setTradeAmount('');
     } catch (e: any) {
       console.error(e);
-      if (updatePopup) {
-        updatePopup(txId, {
-          title: 'Transaction failed',
-          subtitle: e?.message || 'Please try again.',
-          variant: 'error',
-          isLoading: false
-        });
-      }
+      updatePopup(txId, {
+        title: 'Transaction failed',
+        subtitle: e?.message || 'Please try again.',
+        variant: 'error',
+        isLoading: false,
+      });
     } finally {
       setIsSigning(false);
     }
   };
 
   const handleAddComment = () => {
-    if (!newComment.trim()) return;
-    
+    const msg = newComment.trim();
+    if (!msg) return;
+
     const comment: Comment = {
       id: Date.now().toString(),
       user: account.address ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}` : 'Anonymous',
-      message: newComment.trim(),
+      message: msg,
       timestamp: Date.now(),
       likes: 0,
     };
-    
-    setComments(prev => [comment, ...prev]);
+
+    setComments((prev) => [comment, ...prev]);
     setNewComment('');
   };
 
   if (loading) {
     return (
       <div className="detail-loading">
-        <div className="detail-loading-spinner"></div>
+        <div className="detail-loading-spinner" />
         <span>Loading token...</span>
       </div>
     );
@@ -371,35 +416,37 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
   return (
     <div className="detail-container">
       <div className="detail-main">
-                        <button onClick={() => navigate('/board')} className="detail-back-button">
-          ← Back
+        <button onClick={() => navigate('/board')} className="detail-back-button">
+          ←
         </button>
+
         <div className="detail-header">
-        <div className="detail-token-header">
-          <img src={token.image} alt={token.name} className="detail-token-image" />
-          <div className="detail-token-info">
-            <h1 className="detail-token-name">{token.name}</h1>
-            <div className="detail-token-symbol">{token.symbol}</div>
-            <div className="detail-token-meta">
-              <span>Created by {token.creator ? `${token.creator.slice(0, 6)}...${token.creator.slice(-4)}` : 'Unknown'}</span>
-              <span>•</span>
-              <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
-              <span>•</span>
-              {token.status == 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
+          <div className="detail-token-header">
+            <img src={token.image} alt={token.name} className="detail-token-image" />
+            <div className="detail-token-info">
+              <h1 className="detail-token-name">{token.name}</h1>
+              <div className="detail-token-symbol">{token.symbol}</div>
+              <div className="detail-token-meta">
+                <CopyableAddress address={token.creator ?? null} className="detail-meta-address" labelPrefix="Created by " />
+                <span>•</span>
+                <span>{Math.floor((Date.now() / 1000 - token.created) / 3600)}h ago</span>
+                <span>•</span>
+                {token.status === 'graduated' ? <span>Coin has graduated!</span> : <span>{bondingProgress.toFixed(1)}% bonded</span>}
+              </div>
+            </div>
+          </div>
+
+          <div className="detail-quick-stats">
+            <div className="detail-stat">
+              <div className="detail-stat-label">Market Cap</div>
+              <div className="detail-stat-value">{formatPrice(token.marketCap)}</div>
+            </div>
+            <div className="detail-stat">
+              <div className="detail-stat-label">ATH</div>
+              <div className="detail-stat-value">$45.1K</div>
             </div>
           </div>
         </div>
-        <div className="detail-quick-stats">
-          <div className="detail-stat">
-            <div className="detail-stat-label">Market Cap</div>
-            <div className="detail-stat-value">{formatPrice(token.marketCap)}</div>
-          </div>
-          <div className="detail-stat">
-            <div className="detail-stat-label">ATH</div>
-            <div className="detail-stat-value">$45.1K</div>
-          </div>
-        </div>
-      </div>
 
         <div className="detail-content">
           <div className="detail-chart-section">
@@ -413,7 +460,6 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
           </div>
 
           <div className="detail-info-grid">
-
             <div className="detail-info-section">
               <h3>Comments</h3>
               <div className="detail-comments-section">
@@ -423,7 +469,7 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     placeholder="Add a comment..."
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleAddComment()}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAddComment()}
                     className="detail-comment-field"
                   />
                   <button onClick={handleAddComment} className="detail-comment-submit">
@@ -435,44 +481,33 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                     <div key={comment.id} className="detail-comment">
                       <div className="detail-comment-header">
                         <span className="detail-comment-user">{comment.user}</span>
-                        <span className="detail-comment-time">
-                          {Math.floor((Date.now() - comment.timestamp) / 60000)}m ago
-                        </span>
+                        <span className="detail-comment-time">{Math.floor((Date.now() - comment.timestamp) / 60000)}m ago</span>
                       </div>
                       <div className="detail-comment-message">{comment.message}</div>
                     </div>
                   ))}
-                  {comments.length === 0 && (
-                    <div className="detail-no-comments">No comments yet. Be the first!</div>
-                  )}
+                  {comments.length === 0 && <div className="detail-no-comments">No comments yet. Be the first!</div>}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-                          <div className="detail-trading-panel-container">
+
+      <div className="detail-trading-panel-container">
         <div className="detail-trading-panel">
           <div className="detail-trade-header">
-            <button
-              className={`detail-trade-tab ${tradeType === 'buy' ? 'active' : ''}`}
-              onClick={() => setTradeType('buy')}
-            >
+            <button className={`detail-trade-tab ${tradeType === 'buy' ? 'active' : ''}`} onClick={() => setTradeType('buy')}>
               Buy
             </button>
-            <button
-              className={`detail-trade-tab ${tradeType === 'sell' ? 'active' : ''}`}
-              onClick={() => setTradeType('sell')}
-            >
+            <button className={`detail-trade-tab ${tradeType === 'sell' ? 'active' : ''}`} onClick={() => setTradeType('sell')}>
               Sell
             </button>
           </div>
 
           <div className="detail-trade-form">
             <div className="detail-trade-input-group">
-              <label className="detail-trade-label">
-                {tradeType === 'buy' ? 'Switch to' : 'Set max slippage'} {token.symbol}
-              </label>
+              <label className="detail-trade-label">{tradeType === 'buy' ? 'Switch to' : 'Set max slippage'} {token.symbol}</label>
               <div className="detail-trade-input-wrapper">
                 <input
                   type="number"
@@ -481,39 +516,29 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
                   onChange={(e) => setTradeAmount(e.target.value)}
                   className="detail-trade-input"
                 />
-                <span className="detail-trade-unit">
-                  {tradeType === 'buy' ? 'MON' : token.symbol}
-                </span>
+                <span className="detail-trade-unit">{tradeType === 'buy' ? 'MON' : token.symbol}</span>
               </div>
-                          {tradeType === 'buy' && (
-              <div className="detail-preset-buttons">
-                {['1', '5', '10', '50'].map((amount) => (
-                  <button
-                    key={amount}
-                    onClick={() => setTradeAmount(amount)}
-                    className="detail-preset-button"
-                  >
-                    {amount} MON
+
+              {tradeType === 'buy' && (
+                <div className="detail-preset-buttons">
+                  {['1', '5', '10', '50'].map((amount) => (
+                    <button key={amount} onClick={() => setTradeAmount(amount)} className="detail-preset-button">
+                      {amount} MON
+                    </button>
+                  ))}
+                  <button onClick={() => setTradeAmount('100')} className="detail-preset-button detail-preset-max">
+                    Max
                   </button>
-                ))}
-                <button
-                  onClick={() => setTradeAmount('100')}
-                  className="detail-preset-button detail-preset-max"
-                >
-                  Max
-                </button>
-              </div>
-            )}
+                </div>
+              )}
             </div>
 
-
-            {tradeType === 'sell' && (Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0) > 0 && (
+            {tradeType === 'sell' && walletTokenBalance > 0 && (
               <div className="detail-balance-info">
-                <span>Balance: {formatNumber(Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0)} {token.symbol}</span>
-                <button
-                  onClick={() => setTradeAmount((Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0).toString())}
-                  className="detail-max-button"
-                >
+                <span>
+                  Balance: {formatNumber(walletTokenBalance)} {token.symbol}
+                </span>
+                <button onClick={() => setTradeAmount(walletTokenBalance.toString())} className="detail-max-button">
                   MAX
                 </button>
               </div>
@@ -524,68 +549,124 @@ const TokenDetail: React.FC<TokenDetailProps> = ({
               disabled={!tradeAmount || isSigning || !account.connected}
               className={`detail-trade-button ${tradeType === 'buy' ? 'buy' : 'sell'}`}
             >
-              {isSigning ? (
-                <div className="detail-button-spinner"></div>
-              ) : !account.connected ? (
-                'Connect Wallet'
-              ) : (
-                `${tradeType === 'buy' ? 'Buy' : 'Sell'}`
-              )}
+              {isSigning ? <div className="detail-button-spinner" /> : !account.connected ? 'Connect Wallet' : tradeType === 'buy' ? 'Buy' : 'Sell'}
             </button>
           </div>
         </div>
+
         <div className="detail-trading-panel">
           <div className="detail-trade-stats">
             <div className="detail-stat-row">
               <span>Position</span>
-              <span>{formatNumber(Number(walletTokenBalances?.[account?.address]?.[token.id]) / 1e18 ?? 0)} {token.symbol}</span>
+              <span>
+                {formatNumber(walletTokenBalance)} {token.symbol}
+              </span>
             </div>
+
+            <div className="progress-bar-container">
+              <div className="progress-bar">
+                <div className="progress-indicator" style={{ left: '50%' }} />
+              </div>
+            </div>
+
             <div className="detail-stat-row">
               <span>Profit indicator</span>
               <span className="detail-profit">Profit/Loss</span>
             </div>
           </div>
         </div>
+
         <div className="detail-trading-panel">
-          
           <div className="detail-bonding-section">
             <h4>Bonding Curve Progress</h4>
             <div className="detail-bonding-bar">
-              <div 
-                className="detail-bonding-fill" 
-                style={{ width: `${bondingProgress}%` }}
-              />
+              <div className="detail-bonding-fill" style={{ width: `${bondingProgress}%` }} />
             </div>
-            {token.status == 'graduated' ? (<div className="detail-bonding-info">
-              <span>Coin has graduated!</span>
-            </div>) : (<div className="detail-bonding-info">
-              <span>{formatNumber(bondingProgress * 100)} MON in bonding curve</span>
-              <span>${formatNumber(72940)} to graduate</span>
-            </div>)}
-          </div>
-          </div>
-          <span className="detail-meme-address">
-                  <span className="detail-meme-address-title">CA:</span>{" "}
-                  {token.id.slice(0, 24)}...{token.id.slice(-4)}
-                </span>
-            <div className="detail-info-section">
-              <h3>Top holders</h3>
-              <div className="detail-holders-list">
-                {holders.slice(0, 10).map((holder, index) => (
-                  <div key={holder.address} className="detail-holder-item">
-                    <span className="detail-holder-rank">{index + 1}.</span>
-                    <span className="detail-holder-address">
-                      {holder.address === 'bonding curve' 
-                        ? 'bonding curve' 
-                        : `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}`
-                      }
-                    </span>
-                    <span className="detail-holder-percentage">{holder.percentage.toFixed(2)}%</span>
-                  </div>
-                ))}
+            {token.status === 'graduated' ? (
+              <div className="detail-bonding-info">
+                <span>Coin has graduated!</span>
               </div>
-            </div>
+            ) : (
+              <div className="detail-bonding-info">
+                <span>{formatNumber(bondingProgress * 100)} MON in bonding curve</span>
+                <span>${formatNumber(72940)} to graduate</span>
+              </div>
+            )}
+          </div>
         </div>
+
+        <div className="detail-trading-panel">
+          <div className="detail-chat-section">
+            <div className="detail-chat-header">
+              <div className="detail-chat-info">
+                <div className="detail-chat-avatar">
+                  <img src={token.image} alt={token.symbol} className="detail-chat-avatar-image" />
+                </div>
+                <div className="detail-chat-text">
+                  <h4 className="detail-chat-title">{token.name} chat</h4>
+                  <span className="detail-chat-members">1 member</span>
+                </div>
+              </div>
+              <button className="detail-chat-join-button" onClick={() => setIsChatModalOpen(true)}>
+                <span className="detail-chat-icon">💬</span>
+                Join chat
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="detail-meme-address">
+          <span className="detail-meme-address-title">CA:</span>{' '}
+          <CopyableAddress address={token.id} className="detail-meme-address-value" truncate={{ start: 24, end: 4 }} />
+        </div>
+
+        <div className="detail-info-section">
+          <h3>Top holders</h3>
+          <div className="detail-holders-list">
+            {holders.length > 0 ? (
+              holders.slice(0, 10).map((holder, index) => (
+                <div key={holder.address} className="detail-holder-item">
+                  <span className="detail-holder-rank">{index + 1}.</span>
+                  <span className="detail-holder-address">
+                    {holder.address === 'bonding curve' ? 'bonding curve' : `${holder.address.slice(0, 6)}...${holder.address.slice(-4)}`}
+                  </span>
+                  <span className="detail-holder-percentage">{holder.percentage.toFixed(2)}%</span>
+                </div>
+              ))
+            ) : (
+              <div className="detail-no-holders">No holder data available</div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {isChatModalOpen && (
+        <div className="detail-chat-modal-overlay" onClick={() => setIsChatModalOpen(false)}>
+          <div className="detail-chat-modal" onClick={(e) => e.stopPropagation()}>
+            <button className="detail-chat-modal-close" onClick={() => setIsChatModalOpen(false)}>
+              ×
+            </button>
+
+            <div className="detail-chat-modal-content">
+              <h3>token groupchat now available</h3>
+              <p>chat with friends, share coins, and discover alpha all in one place.</p>
+
+              <div className="detail-chat-qr-section">
+                <span className="detail-chat-app-label">pump app</span>
+                <div className="detail-chat-qr-code">
+                  <div className="detail-qr-placeholder">
+                    <div className="detail-qr-pattern" />
+                    <div className="detail-qr-center">📱</div>
+                  </div>
+                </div>
+                <span className="detail-chat-scan-text">scan to download</span>
+              </div>
+
+              <button className="detail-chat-learn-more">learn more</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

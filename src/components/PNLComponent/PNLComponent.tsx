@@ -165,6 +165,7 @@ const PNLComponent: React.FC<PNLComponentProps> = ({
           <div
             className="color-preview"
             style={{ backgroundColor: color,
+
             }}
             onClick={handleColorPickerClick}
             title="Click to pick color"
