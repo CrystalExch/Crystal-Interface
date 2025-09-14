@@ -229,6 +229,7 @@ interface Props {
   isPaused?: boolean;
   backlogCount?: number;
   devAddress?: string;
+  monUsdPrice: number;
 }
 
 export default function MemeTradesComponent({
@@ -245,7 +246,8 @@ export default function MemeTradesComponent({
   setpopup,
   holders = [],
   currentUserAddress,
-  devAddress
+  devAddress,
+  monUsdPrice
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>("MON");
   const [mcMode, setMcMode] = useState<MCMode>("MC");
@@ -369,7 +371,7 @@ export default function MemeTradesComponent({
         timestamp: r.timestamp,
         amountUSD,
         amountMON,
-        mcUSD: r.price * quoteUsd * 1_000_000_000,
+        mcUSD: r.price * monUsdPrice * 1_000_000_000,
         priceUSD: r.price * quoteUsd,
         trader: short,
         fullAddress: r.caller,

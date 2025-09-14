@@ -11,6 +11,7 @@ import ToggleSwitch from "../ToggleSwitch/ToggleSwitch";
 import { CrystalRouterAbi } from "../../abis/CrystalRouterAbi";
 import { useSharedContext } from "../../contexts/SharedContext";
 import TooltipLabel from '../../components/TooltipLabel/TooltipLabel.tsx';
+import customRound from '../../utils/customRound';
 
 import contract from "../../assets/contract.svg";
 import gas from "../../assets/gas.svg";
@@ -451,6 +452,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [showStatsAgeDropdown, setShowStatsAgeDropdown] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
+const [monPresets, setMonPresets] = useState(() => {
+  try {
+    const saved = localStorage.getItem('crystal_mon_presets');
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [5, 20, 100, 500];
+  } catch (error) {
+    console.error('Error loading MON presets:', error);
+    return [5, 20, 100, 500];
+  }
+});
+const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+const [isPresetEditMode, setIsPresetEditMode] = useState(false);
+const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
+const [tempPresetValue, setTempPresetValue] = useState('');
+const presetInputRef = useRef<HTMLInputElement>(null);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
@@ -465,6 +483,20 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     } catch (error) {
     }
   }, [isWidgetOpen]);
+useEffect(() => {
+  try {
+    localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
+  } catch (error) {
+    console.error('Error saving MON presets:', error);
+  }
+}, [monPresets]);
+
+useEffect(() => {
+  if (editingPresetIndex !== null && presetInputRef.current) {
+    presetInputRef.current.focus();
+    presetInputRef.current.select();
+  }
+}, [editingPresetIndex]);
 
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
@@ -819,10 +851,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         throw new Error('Invalid token price');
       }
 
-      // Calculate how many tokens to sell to get the desired MON amount
       const tokenAmountToSell = monAmountNum / tokenPrice;
-      const amountTokenWei = BigInt(Math.round(tokenAmountToSell * 1e18));
-
+      const decimals = tokendict?.[position.tokenId]?.decimals || 18;
+      const amountTokenWei = BigInt(Math.round(tokenAmountToSell * (10 ** Number(decimals))));
       if (updatePopup) {
         updatePopup(txId, {
           title: 'Confirming sell...',
@@ -918,8 +949,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
       await sendUserOperationAsync({ uo: sellUo });
 
-      const soldTokens = Number(amountTokenWei) / 1e18;
-      const expectedMON = soldTokens * currentPrice;
+      const decimals = tokendict?.[token.id]?.decimals || 18;
+      const soldTokens = Number(amountTokenWei) / (10 ** Number(decimals)); const expectedMON = soldTokens * currentPrice;
       if (updatePopup) {
         updatePopup(txId, {
           title: `Sold ${Number(soldTokens).toFixed(4)} ${token.symbol}`,
@@ -1013,8 +1044,12 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const getCurrentTokenBalance = useCallback(() => {
     if (!account?.address || !token.id) return 0;
     const balance = walletTokenBalances[account.address]?.[token.id];
-    return balance ? Number(balance) / 1e18 : 0;
-  }, [account?.address, walletTokenBalances, token.id]);
+    if (!balance || balance <= 0n) return 0;
+
+    const decimals = tokendict?.[token.id]?.decimals || 18;
+    return Number(balance) / (10 ** Number(decimals));
+  }, [account?.address, walletTokenBalances, token.id, tokendict]);
+
   const pushRealtimeTick = useCallback(
     (lastPrice: number, volNative: number) => {
       if (!lastPrice || lastPrice <= 0) return;
@@ -1715,7 +1750,57 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
+const handlePresetEditToggle = useCallback(() => {
+  setIsPresetEditMode(!isPresetEditMode);
+  setEditingPresetIndex(null);
+  setTempPresetValue('');
+}, [isPresetEditMode]);
 
+const handlePresetButtonClick = useCallback((preset: number, index: number) => {
+  if (isPresetEditMode) {
+    setEditingPresetIndex(index);
+    setTempPresetValue(preset.toString());
+  } else {
+    setSelectedMonPreset(preset);
+    if (activeTradeType === "buy") {
+      setTradeAmount(preset.toString());
+      const currentBalance = getCurrentMONBalance();
+      const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
+      setSliderPercent(Math.min(100, percentage));
+    } else {
+      if (currentPrice > 0) {
+        const tokenAmount = preset / currentPrice;
+        setTradeAmount(tokenAmount.toString());
+        const currentTokenBalance = getCurrentTokenBalance();
+        const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
+        setSliderPercent(Math.min(100, percentage));
+      }
+    }
+  }
+}, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
+const handlePresetInputSubmit = useCallback(() => {
+  if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
+
+  const newValue = parseFloat(tempPresetValue);
+  if (isNaN(newValue) || newValue <= 0) return;
+
+  const newPresets = [...monPresets];
+  newPresets[editingPresetIndex] = newValue;
+  setMonPresets(newPresets);
+
+  setEditingPresetIndex(null);
+  setTempPresetValue('');
+}, [editingPresetIndex, tempPresetValue, monPresets]);
+
+const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    handlePresetInputSubmit();
+  } else if (e.key === 'Escape') {
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }
+}, [handlePresetInputSubmit]);
   // top traders
   useEffect(() => {
     if (!token.id) return;
@@ -1926,11 +2011,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       let converted = 0;
 
       if (activeTradeType === "buy") {
-        if (inputCurrency === "MON") {
-          converted = amt / currentPrice;
-        } else {
-          converted = amt * currentPrice;
-        }
+        converted = amt / currentPrice;
       } else {
         if (inputCurrency === "TOKEN") {
           converted = amt * currentPrice;
@@ -1949,6 +2030,8 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   useEffect(() => {
     if (activeTradeType === 'sell') {
       setInputCurrency('TOKEN')
+    } else if (activeTradeType === 'buy') {
+      setInputCurrency('MON')
     }
   }, [activeTradeType])
 
@@ -1986,10 +2069,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           });
         }
 
-        const valNum =
-          inputCurrency === "MON"
-            ? parseFloat(tradeAmount)
-            : parseFloat(tradeAmount) * currentPrice;
+        const valNum = parseFloat(tradeAmount);
         const value = BigInt(Math.round(valNum * 1e18));
 
         const uo = {
@@ -2036,14 +2116,27 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
         let monAmountWei: bigint;
         let isExactInput: boolean;
 
+        const decimals = tokendict?.[token.id]?.decimals || 18;
+
         if (inputCurrency === "TOKEN") {
-          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
+          amountTokenWei = BigInt(Math.round(parseFloat(tradeAmount) * (10 ** Number(decimals))));
           isExactInput = true;
           monAmountWei = 0n;
         } else {
           monAmountWei = BigInt(Math.round(parseFloat(tradeAmount) * 1e18));
-          amountTokenWei = BigInt(Math.round(Number(walletTokenBalances?.[userAddr]?.[token.id])));
+          const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+          const tokensToSell = parseFloat(tradeAmount) / currentPrice;
+          amountTokenWei = BigInt(Math.round(tokensToSell * (10 ** Number(decimals))));
           isExactInput = false;
+        }
+
+        const currentBalance = walletTokenBalances?.[userAddr]?.[token.id] || 0n;
+        if (amountTokenWei > currentBalance) {
+          amountTokenWei = currentBalance > 1n ? currentBalance - 1n : 0n;
+        }
+
+        if (amountTokenWei <= 0n) {
+          throw new Error('Insufficient token balance');
         }
         if (updatePopup) {
           updatePopup(txId, {
@@ -2208,6 +2301,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               holders={holders}
               currentUserAddress={userAddr}
               devAddress={token.dev}
+              monUsdPrice={monUsdPrice}
             />
           </div>
         </div>
@@ -2243,7 +2337,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
       </div>
 
       <div className="meme-trade-panel desktop-only">
-                <div
+        <div
           className="meme-trading-stats-enhanced"
           onMouseEnter={() => setHoveredStatsContainer(true)}
           onMouseLeave={() => setHoveredStatsContainer(false)}
@@ -2297,9 +2391,9 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
           </div>
           <div className="indicator-legend">
-                        <div className="indicator-line green-line" />
-              <div className="indicator-line red-line" />
-              </div>
+            <div className="indicator-line green-line" />
+            <div className="indicator-line red-line" />
+          </div>
         </div>
         <div className="meme-buy-sell-container">
           <button
@@ -2332,21 +2426,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           </div>
           <div className="meme-amount-header">
             <div className="meme-amount-header-left">
-              <span className="meme-amount-label">
-                {inputCurrency === "TOKEN" ? "Qty" : "Amount"}
-              </span>
-              <button
-                className="meme-currency-switch-button"
-                onClick={() =>
-                  setInputCurrency((p) => (p === "MON" ? "TOKEN" : "MON"))
-                }
-              >
-                <img
-                  src={switchicon}
-                  alt=""
-                  className="meme-currency-switch-icon"
-                />
-              </button>
+              <span className="meme-amount-label">Amount</span>
             </div>
             <div className="meme-balance-right">
               {activeTradeType === 'buy' && (
@@ -2371,7 +2451,26 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   </div>
                   <button
                     className="meme-balance-max-sell"
-                    onClick={() => setTradeAmount(formatTradeAmount(getCurrentTokenBalance()))}
+                    onClick={() => {
+                      if (!account?.address || !token.id) return;
+
+                      const balance = walletTokenBalances[account.address]?.[token.id];
+                      if (!balance || balance <= 0n) return;
+
+                      const decimals = tokendict?.[token.id]?.decimals || 18;
+                      let maxAmount = balance;
+
+                      if (maxAmount > 1n) {
+                        maxAmount = maxAmount - 1n;
+                      }
+
+                      const maxAmountFormatted = customRound(
+                        Number(maxAmount) / (10 ** Number(decimals)),
+                        3
+                      );
+                      setTradeAmount(maxAmountFormatted);
+                      setSliderPercent(100);
+                    }}
                   >
                     MAX
                   </button>
@@ -2389,16 +2488,11 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               className="meme-trade-input"
             />
 
-            <div
-              className="meme-trade-currency"
-              style={{
-                left: `${Math.max(12 + (tradeAmount.length || 1) * 10, 12)}px`,
-              }}
-            >
-              {inputCurrency === "TOKEN" ? token.symbol : "MON"}
+            <div className="meme-trade-currency">
+              <img className="meme-currency-monad-icon" src={monadicon} alt="MON" />
             </div>
 
-            {isQuoteLoading ? (
+            {/* {isQuoteLoading ? (
               <div className="meme-trade-spinner"></div>
             ) : (
               <div className="meme-trade-conversion">
@@ -2439,7 +2533,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                   ""
                 )}
               </div>
-            )}
+            )} */}
           </div>
           {activeOrderType === "Limit" && (
             <div className="meme-trade-input-wrapper">
@@ -2455,28 +2549,45 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
           <div className="meme-balance-slider-wrapper">
             {sliderMode === "presets" && (
               <div className="meme-slider-container meme-presets-mode">
-                <div className="meme-preset-buttons">
-                  {sliderPresets.map((preset: number) => (
-                    <button
-                      key={preset}
-                      className={`meme-preset-button ${sliderPercent === preset ? `active ${activeTradeType}` : ""}`}
-                      onClick={() => {
-                        setSliderPercent(preset);
-                        if (activeTradeType === "buy") {
-                          const currentBalance = getCurrentMONBalance();
-                          const newAmount = (currentBalance * preset) / 100;
-                          setTradeAmount(newAmount.toString());
-                        } else {
-                          const currentBalance = getCurrentTokenBalance();
-                          const newAmount = (currentBalance * preset) / 100;
-                          setTradeAmount(newAmount.toString());
-                        }
-                      }}
-                    >
-                      {preset}%
-                    </button>
-                  ))}
-                </div>
+<div className="meme-preset-buttons">
+  {monPresets.map((preset: number, index: number) => (
+    <div key={index} className="meme-preset-button-container">
+      {editingPresetIndex === index ? (
+        <input
+          ref={presetInputRef}
+          type="number"
+          value={tempPresetValue}
+          onChange={(e) => setTempPresetValue(e.target.value)}
+          onKeyDown={handlePresetInputKeyDown}
+          onBlur={handlePresetInputSubmit}
+          className="meme-preset-edit-input"
+          min="0"
+          step="0.1"
+        />
+      ) : (
+        <button
+          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ""}`}
+          onClick={() => handlePresetButtonClick(preset, index)}
+        >
+          {preset}
+        </button>
+      )}
+    </div>
+  ))}
+  <div className="meme-preset-edit-container">
+    <button
+      className={`meme-preset-edit-button ${isPresetEditMode ? 'active' : ''}`}
+      onClick={handlePresetEditToggle}
+      title={isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'}
+    >
+      <img
+        src={editicon}
+        alt="Edit"
+        className={`meme-preset-edit-icon ${isPresetEditMode ? 'active' : ''}`}
+      />
+    </button>
+  </div>
+</div>
               </div>
             )}
             {sliderMode === "increment" && (
@@ -2593,111 +2704,22 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               </div>
             )}
           </div>
-          <div className="meme-trade-settings">
-            <div className="meme-settings-toggle">
-              <div className="meme-settings-collapsed">
-                <Tooltip content="Slippage">
-                  <div className="meme-settings-item">
-                    <img src={slippage} className="meme-settings-icon1" />
-                    <span className="meme-settings-value">{slippageValue}%</span>
-                  </div>
-                </Tooltip>
-                <Tooltip content="Priority Fee">
-                  <div className="meme-settings-item">
-                    <img src={gas} className="meme-settings-icon2" />
-                    <span className="meme-settings-value">{priorityFee}</span>
-                  </div>
-                </Tooltip>
-              </div>
-              <button
-                className="meme-settings-edit-button"
-                onClick={() => setSettingsExpanded(!settingsExpanded)}
-              >
-                <img
-                  src={editicon}
-                  className={`meme-settings-edit-icon ${settingsExpanded ? "expanded" : ""}`}
-                />
-              </button>
-            </div>
-            {settingsExpanded && (
-              <div className="meme-settings-content">
-                <div className="meme-settings-presets">
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(1)}
-                  >
-                    Preset 1
-                  </button>
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(2)}
-                  >
-                    Preset 2
-                  </button>
-                  <button
-                    className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
-                    onClick={() => handlePresetSelect(3)}
-                  >
-                    Preset 3
-                  </button>
-                </div>
-
-                <div className="meme-settings-mode-toggle">
-                  <button
-                    className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
-                    onClick={() => setSettingsMode('buy')}
-                  >
-                    Buy settings
-                  </button>
-                  <button
-                    className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
-                    onClick={() => setSettingsMode('sell')}
-                  >
-                    Sell settings
-                  </button>
-                </div>
-                <div className="meme-settings-grid">
-                  <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img src={slippage} alt="Slippage" className="meme-setting-label-icon" />
-                      Slippage
-                    </label>
-                    <div className="meme-setting-input-wrapper">
-                      <input
-                        type="number"
-                        className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
-                        onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
-                        step="0.1"
-                        min="0"
-                        max="100"
-                      />
-                      <span className="meme-setting-unit">%</span>
-                    </div>
-                  </div>
-
-                  <div className="meme-setting-item">
-                    <label className="meme-setting-label">
-                      <img src={gas} alt="Priority Fee" className="meme-setting-label-icon" />
-                      Priority
-                    </label>
-                    <div className="meme-setting-input-wrapper">
-                      <input
-                        type="number"
-                        className="meme-setting-input"
-                        value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
-                        onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
-                        step="0.001"
-                        min="0"
-                      />
-                      <span className="meme-setting-unit">MON</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
+  <div className="meme-settings-toggle">
+    <div className="meme-settings-collapsed">
+      <Tooltip content="Slippage">
+        <div className="meme-settings-item">
+          <img src={slippage} className="meme-settings-icon1" />
+          <span className="meme-settings-value">{slippageValue}%</span>
+        </div>
+      </Tooltip>
+      <Tooltip content="Priority Fee">
+        <div className="meme-settings-item">
+          <img src={gas} className="meme-settings-icon2" />
+          <span className="meme-settings-value">{priorityFee}</span>
+        </div>
+      </Tooltip>
+    </div>
+  </div>
           {activeTradeType === "buy" && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
@@ -2969,6 +2991,108 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
                 )}
               </div>
             </div>
+          </div>
+<div className="meme-trade-settings">
+
+  
+  <div className="meme-settings-presets">
+    <button
+      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
+      onClick={() => {
+        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1) {
+          setSettingsExpanded(false);
+        } else {
+          handlePresetSelect(1);
+          setSettingsExpanded(true);
+        }
+      }}
+    >
+      PRESET 1
+    </button>
+    <button
+      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
+      onClick={() => {
+        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2) {
+          setSettingsExpanded(false);
+        } else {
+          handlePresetSelect(2);
+          setSettingsExpanded(true);
+        }
+      }}
+    >
+      PRESET 2
+    </button>
+    <button
+      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
+      onClick={() => {
+        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3) {
+          setSettingsExpanded(false);
+        } else {
+          handlePresetSelect(3);
+          setSettingsExpanded(true);
+        }
+      }}
+    >
+      PRESET 3
+    </button>
+  </div>
+
+  {settingsExpanded && (
+    <div className="meme-settings-content">
+      <div className="meme-settings-mode-toggle">
+        <button
+          className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+          onClick={() => setSettingsMode('buy')}
+        >
+          Buy settings
+        </button>
+        <button
+          className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+          onClick={() => setSettingsMode('sell')}
+        >
+          Sell settings
+        </button>
+      </div>
+                <div className="meme-settings-grid">
+                  <div className="meme-setting-item">
+                    <label className="meme-setting-label">
+                      <img src={slippage} alt="Slippage" className="meme-setting-label-icon-slippage" />
+                      Slippage
+                    </label>
+                    <div className="meme-setting-input-wrapper">
+                      <input
+                        type="number"
+                        className="meme-setting-input"
+                        value={settingsMode === 'buy' ? buySlippageValue : sellSlippageValue}
+                        onChange={(e) => settingsMode === 'buy' ? setBuySlippageValue(e.target.value) : setSellSlippageValue(e.target.value)}
+                        step="0.1"
+                        min="0"
+                        max="100"
+                      />
+                      <span className="meme-setting-unit">%</span>
+                    </div>
+                  </div>
+
+                  <div className="meme-setting-item">
+                    <label className="meme-setting-label">
+                      <img src={gas} alt="Priority Fee" className="meme-setting-label-icon" />
+                      Priority
+                    </label>
+                    <div className="meme-setting-input-wrapper">
+                      <input
+                        type="number"
+                        className="meme-setting-input"
+                        value={settingsMode === 'buy' ? buyPriorityFee : sellPriorityFee}
+                        onChange={(e) => settingsMode === 'buy' ? setBuyPriorityFee(e.target.value) : setSellPriorityFee(e.target.value)}
+                        step="0.001"
+                        min="0"
+                      />
+                      <span className="meme-setting-unit">MON</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
