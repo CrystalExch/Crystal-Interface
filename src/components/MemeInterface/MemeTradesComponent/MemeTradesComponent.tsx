@@ -15,95 +15,154 @@ import {
 import "./MemeTradesComponent.css";
 
 const Tooltip: React.FC<{
-  content: string;
-  children: React.ReactNode;
-  position?: "top" | "bottom" | "left" | "right";
-}> = ({ content, children, position = "top" }) => {
-  const [vis, setVis] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
+    content: string;
+    children: React.ReactNode;
+    position?: 'top' | 'bottom' | 'left' | 'right';
+}> = ({ content, children, position = 'top' }) => {
+    const [shouldRender, setShouldRender] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
+    const [isLeaving, setIsLeaving] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState({ top: 0, left: 0 });
+    const containerRef = useRef<HTMLDivElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const fadeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const updatePosition = useCallback(() => {
-    if (!containerRef.current) return;
+    const updatePosition = useCallback(() => {
+        if (!containerRef.current || !tooltipRef.current) return;
 
-    const rect = containerRef.current.getBoundingClientRect();
-    const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
-    const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+        const rect = containerRef.current.getBoundingClientRect();
+        const tooltipRect = tooltipRef.current.getBoundingClientRect();
+        const scrollX = window.pageXOffset || document.documentElement.scrollLeft;
+        const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
-    let top = 0;
-    let left = 0;
+        let top = 0;
+        let left = 0;
 
-    switch (position) {
-      case "top":
-        top = rect.top + scrollY - 25;
-        left = rect.left + scrollX + rect.width / 2;
-        break;
-      case "bottom":
-        top = rect.bottom + scrollY + 25;
-        left = rect.left + scrollX + rect.width / 2;
-        break;
-      case "left":
-        top = rect.top + scrollY + rect.height / 2;
-        left = rect.left + scrollX - 25;
-        break;
-      case "right":
-        top = rect.top + scrollY + rect.height / 2;
-        left = rect.right + scrollX + 25;
-        break;
-    }
+        switch (position) {
+            case 'top':
+                top = rect.top + scrollY - tooltipRect.height - 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'bottom':
+                top = rect.bottom + scrollY + 10;
+                left = rect.left + scrollX + rect.width / 2;
+                break;
+            case 'left':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.left + scrollX - tooltipRect.width - 10;
+                break;
+            case 'right':
+                top = rect.top + scrollY + rect.height / 2;
+                left = rect.right + scrollX + 10;
+                break;
+        }
 
-    setTooltipPosition({ top, left });
-  }, [position]);
+        const margin = 10;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
 
-  useEffect(() => {
-    if (vis) {
-      updatePosition();
-      window.addEventListener("scroll", updatePosition);
-      window.addEventListener("resize", updatePosition);
-      return () => {
-        window.removeEventListener("scroll", updatePosition);
-        window.removeEventListener("resize", updatePosition);
-      };
-    }
-  }, [vis, updatePosition]);
+        if (position === 'top' || position === 'bottom') {
+            left = Math.min(
+                Math.max(left, margin + tooltipRect.width / 2),
+                viewportWidth - margin - tooltipRect.width / 2,
+            );
+        } else {
+            top = Math.min(
+                Math.max(top, margin),
+                viewportHeight - margin - tooltipRect.height,
+            );
+        }
 
-  return (
-    <div
-      ref={containerRef}
-      className="tooltip-container"
-      onMouseEnter={() => setVis(true)}
-      onMouseLeave={() => setVis(false)}
-      style={{ display: "inline-block" }}
-    >
-      {children}
-      {vis &&
-        createPortal(
-          <div
-            className={`tooltip tooltip-${position} fade-popup visible`}
-            style={{
-              position: "absolute",
-              top: `${tooltipPosition.top}px`,
-              left: `${tooltipPosition.left}px`,
-              transform:
-                position === "top" || position === "bottom"
-                  ? "translateX(-50%)"
-                  : position === "left" || position === "right"
-                    ? "translateY(-50%)"
-                    : "none",
-              zIndex: 9999,
-              pointerEvents: "none",
-              color: "#fff",
-              padding: "8px 12px",
-              borderRadius: "6px",
-              fontSize: "12px",
-            }}
-          >
-            <div className="tooltip-content">{content}</div>
-          </div>,
-          document.body,
-        )}
-    </div>
-  );
+        setTooltipPosition({ top, left });
+    }, [position]);
+
+    const handleMouseEnter = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(false);
+        setShouldRender(true);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setIsVisible(true);
+            fadeTimeoutRef.current = null;
+        }, 10);
+    }, []);
+
+    const handleMouseLeave = useCallback(() => {
+        if (fadeTimeoutRef.current) {
+            clearTimeout(fadeTimeoutRef.current);
+            fadeTimeoutRef.current = null;
+        }
+
+        setIsLeaving(true);
+        setIsVisible(false);
+
+        fadeTimeoutRef.current = setTimeout(() => {
+            setShouldRender(false);
+            setIsLeaving(false);
+            fadeTimeoutRef.current = null;
+        }, 150);
+    }, []);
+
+    useEffect(() => {
+        if (shouldRender && !isLeaving) {
+            updatePosition();
+            window.addEventListener('scroll', updatePosition);
+            window.addEventListener('resize', updatePosition);
+            return () => {
+                window.removeEventListener('scroll', updatePosition);
+                window.removeEventListener('resize', updatePosition);
+            };
+        }
+    }, [shouldRender, updatePosition, isLeaving]);
+
+    useEffect(() => {
+        return () => {
+            if (fadeTimeoutRef.current) {
+                clearTimeout(fadeTimeoutRef.current);
+            }
+        };
+    }, []);
+
+    return (
+        <div
+            ref={containerRef}
+            className="tooltip-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+        >
+            {children}
+            {shouldRender && createPortal(
+                <div
+                    ref={tooltipRef}
+                    className={`tooltip tooltip-${position} ${isVisible ? 'tooltip-entering' : isLeaving ? 'tooltip-leaving' : ''}`}
+                    style={{
+                        position: 'absolute',
+                        top: `${tooltipPosition.top - 20}px`,
+                        left: `${tooltipPosition.left}px`,
+                        transform: `${position === 'top' || position === 'bottom'
+                            ? 'translateX(-50%)'
+                            : position === 'left' || position === 'right'
+                                ? 'translateY(-50%)'
+                                : 'none'} scale(${isVisible ? 1 : 0})`,
+                        opacity: isVisible ? 1 : 0,
+                        zIndex: 9999,
+                        pointerEvents: 'none',
+                        transition: 'opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1), transform 0.15s cubic-bezier(0.4, 0, 0.2, 1)',
+                        willChange: 'transform, opacity'
+                    }}
+                >
+                    <div className="tooltip-content">
+                        {content}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </div>
+    );
 };
 
 export interface RawTrade {
@@ -126,9 +185,10 @@ interface ViewTrade {
   priceUSD: number;
   trader: string;
   fullAddress: string;
-  tags: ("sniper" | "dev" | "kol" | "bundler" | "insider")[];
+  tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[];
   isTopHolder: boolean;
   isCurrentUser: boolean;
+  isDev: boolean;
 }
 
 interface Holder {
@@ -168,6 +228,7 @@ interface Props {
   currentUserAddress?: string;
   isPaused?: boolean;
   backlogCount?: number;
+  devAddress?: string;
 }
 
 export default function MemeTradesComponent({
@@ -184,6 +245,7 @@ export default function MemeTradesComponent({
   setpopup,
   holders = [],
   currentUserAddress,
+  devAddress
 }: Props) {
   const [amountMode, setAmountMode] = useState<AmountMode>("MON");
   const [mcMode, setMcMode] = useState<MCMode>("MC");
@@ -270,8 +332,10 @@ export default function MemeTradesComponent({
     return displayTrades.map((r) => {
       const callerLower = r.caller.toLowerCase();
       const currentUserLower = currentUserAddress?.toLowerCase();
+      const devAddressLower = devAddress?.toLowerCase();
       const isCurrentUser = callerLower === currentUserLower;
       const isTopHolder = top10HolderAddresses.has(callerLower);
+      const isDev = Boolean(devAddressLower && callerLower === devAddressLower);
       const sign = r.isBuy ? 1 : -1;
 
       let amountMON = sign * (r.nativeAmount ?? 0);
@@ -292,6 +356,13 @@ export default function MemeTradesComponent({
 
       const amountUSD = monUsd > 0 ? amountMON * monUsd : 0;
       const short = isCurrentUser ? "YOU" : r.caller.slice(2, 6);
+      const tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[] = [];
+      if (isDev) {
+        tags.push("dev");
+      }
+      if (isTopHolder) {
+        tags.push("topHolder");
+      }
 
       return {
         id: r.id,
@@ -302,9 +373,10 @@ export default function MemeTradesComponent({
         priceUSD: r.price * quoteUsd,
         trader: short,
         fullAddress: r.caller,
-        tags: [],
+        tags,
         isTopHolder,
         isCurrentUser,
+        isDev,
       };
     });
   }, [
@@ -315,6 +387,7 @@ export default function MemeTradesComponent({
     wethticker,
     currentUserAddress,
     top10HolderAddresses,
+    devAddress,
   ]);
 
   const maxForMode = useMemo(() => {
@@ -346,6 +419,7 @@ export default function MemeTradesComponent({
       </span>
     );
   };
+
 
   const fmtAmount = (v: number) =>
     amountMode === "USDC"
@@ -441,7 +515,7 @@ export default function MemeTradesComponent({
   );
 
   const renderTraderTags = (
-    tags: ("sniper" | "dev" | "kol" | "bundler" | "insider")[],
+    tags: ("sniper" | "dev" | "kol" | "bundler" | "insider" | "topHolder")[],
   ) => {
     const tagComponents = {
       sniper: { icon: SniperIcon, tooltip: "Sniper Trader" },
@@ -449,6 +523,7 @@ export default function MemeTradesComponent({
       kol: { icon: KolIcon, tooltip: "Key Opinion Leader" },
       bundler: { icon: BundlerIcon, tooltip: "Bundler" },
       insider: { icon: InsiderIcon, tooltip: "Insider" },
+      topHolder: { icon: TopHolderIcon, tooltip: "Top 10 Holder" },
     };
 
     return tags.map((tag) => {
@@ -562,11 +637,6 @@ export default function MemeTradesComponent({
                 <div className="meme-trade-age-container">
                   <div className="meme-trade-tags">
                     {t.tags.length > 0 && renderTraderTags(t.tags)}
-                    {t.isTopHolder && (
-                      <Tooltip content="Top 10 Holder" position="top">
-                        <TopHolderIcon />
-                      </Tooltip>
-                    )}
                   </div>
                   <span className="meme-trade-age">
                     {fmtTimeAgo(t.timestamp)}

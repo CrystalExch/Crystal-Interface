@@ -8678,6 +8678,32 @@ function App() {
     refetchInterval: ['board', 'explorer', 'meme'].includes(location.pathname.slice(1)) ? 800 : 5000,
     gcTime: 0,
   })
+
+    const resolveNative = useCallback(
+      (symbol: string | undefined) => {
+        if (!symbol) return "";
+        if (symbol === wethticker) return ethticker ?? symbol;
+        return symbol;
+      },
+      [wethticker, ethticker],
+    );
+  
+  
+    const usdPer = useCallback(
+      (symbol?: string): number => {
+        if (!symbol || !tradesByMarket || !markets) return 0;
+        const sym = resolveNative(symbol);
+        if (usdc && sym === "USDC") return 1;
+        const pair = `${sym}USDC`;
+        const top = tradesByMarket[pair]?.[0]?.[3];
+        const pf = Number(markets[pair]?.priceFactor) || 1;
+        if (!top || !pf) return 0;
+        return Number(top) / pf;
+      },
+      [tradesByMarket, markets, resolveNative, usdc],
+    );
+    const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
+
   //popup modals
   const Modals = (
     <>
@@ -20413,6 +20439,7 @@ function App() {
               tokenBalances={tokenBalances}
               lastRefGroupFetch={lastRefGroupFetch}
               tokenData={tokenData}
+              monUsdPrice={monUsdPrice}
             />
           </div>
           <div className="headerfiller"></div>
@@ -20638,6 +20665,7 @@ function App() {
               terminalRefetch={terminalRefetch}
               tokenData={tokenData}
               setTokenData={setTokenData}
+              monUsdPrice={monUsdPrice}
             />
           } />
           <Route

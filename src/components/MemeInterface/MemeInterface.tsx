@@ -111,6 +111,7 @@ interface MemeInterfaceProps {
   terminalRefetch: any;
   tokenData?: any;
   setTokenData: any;
+  monUsdPrice: number;
 }
 
 const MARKET_UPDATE_EVENT = "0xc367a2f5396f96d105baaaa90fe29b1bb18ef54c712964410d02451e67c19d3e";
@@ -433,6 +434,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   terminalRefetch,
   tokenData,
   setTokenData,
+  monUsdPrice,
 }) => {
   const getSliderPosition = (activeView: 'chart' | 'trades' | 'ordercenter') => {
     switch (activeView) {
@@ -443,28 +445,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     }
   };
 
-  const resolveNative = useCallback(
-    (symbol: string | undefined) => {
-      if (!symbol) return "";
-      if (symbol === wethticker) return ethticker ?? symbol;
-      return symbol;
-    },
-    [wethticker, ethticker],
-  );
-
-  const usdPer = useCallback(
-    (symbol?: string): number => {
-      if (!symbol || !tradesByMarket || !markets) return 0;
-      const sym = resolveNative(symbol);
-      if (usdc && sym === "USDC") return 1;
-      const pair = `${sym}USDC`;
-      const top = tradesByMarket[pair]?.[0]?.[3];
-      const pf = Number(markets[pair]?.priceFactor) || 1;
-      if (!top || !pf) return 0;
-      return Number(top) / pf;
-    },
-    [tradesByMarket, markets, resolveNative, usdc],
-  );
   const [selectedStatsTimeframe, setSelectedStatsTimeframe] = useState('24h');
   const [hoveredStatsContainer, setHoveredStatsContainer] = useState(false);
   const [selectedStatsAge, setSelectedStatsAge] = useState('Age');
@@ -2138,7 +2118,6 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
     return false;
   };
 
-  const monUsdPrice = usdPer(ethticker || wethticker) || usdPer(wethticker || ethticker) || 0;
   const timePeriodsData = {
     "24H": {
       change: token.change24h || 0,
@@ -2228,6 +2207,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
               setpopup={setpopup}
               holders={holders}
               currentUserAddress={userAddr}
+              devAddress={token.dev}
             />
           </div>
         </div>
@@ -3240,7 +3220,7 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
             </div>
           )}
         </div>
-        <div className="meme-token-info-container">
+        <div className="meme-similar-tokens-container">
           <div className="meme-token-info-header">
             <h3 className="meme-token-info-title">Similar Tokens</h3>
             <button

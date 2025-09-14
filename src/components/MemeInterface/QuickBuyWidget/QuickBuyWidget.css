@@ -2,7 +2,7 @@
     position: fixed;
     width: 340px;
     background: rgba(9, 9, 9, 0.5);
-    border: 1.5px solid rgba(207, 210, 252, 0.075);
+    border: 1.5px solid rgba(207, 210, 252, 0.05);
     border-radius: 4px;
     font-size: 14px;
     color: #fff;
@@ -582,7 +582,7 @@
     overflow-y: auto;
     max-height: 400px;
     scrollbar-width: thin;
-    scrollbar-color: rgba(179, 184, 249, 0.2) transparent;
+    scrollbar-color: rgba(179, 184, 249, 0.1) transparent;
 }
 
 .quickbuy-wallets-list::-webkit-scrollbar {

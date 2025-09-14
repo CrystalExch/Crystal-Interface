@@ -138,6 +138,7 @@ interface TokenInfoProps {
     telegramHandle?: string;
     discordHandle?: string;
   };
+  monUsdPrice: number;
 }
 
 const TokenInfo: React.FC<TokenInfoProps> = ({
@@ -154,6 +155,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
   simpleView = false,
   isMemeToken = false,
   memeTokenData,
+  monUsdPrice,
 }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [isDropdownVisible, setIsDropdownVisible] = useState(false);
@@ -672,7 +674,7 @@ const TokenInfo: React.FC<TokenInfoProps> = ({
           <div className="meme-interface-token-header-right">
             <div className="meme-interface-token-metrics">
               <span className="meme-interface-market-cap">
-                {formatPrice(memeTokenData.marketCap)}
+                {formatPrice(memeTokenData.marketCap * monUsdPrice)}
               </span>
               <div className="meme-interface-token-metric">
                 <span className="meme-interface-metric-label">Price</span>

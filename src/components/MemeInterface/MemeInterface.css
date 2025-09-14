@@ -112,6 +112,10 @@
     border-bottom: 1px solid rgba(179, 184, 249, .09);
 }
 
+.meme-similar-tokens-container {
+    padding: 10px 12px;
+}
+
 .meme-token-info-title {
     color: #f4f5f9f4;
     font-size: .9rem;
