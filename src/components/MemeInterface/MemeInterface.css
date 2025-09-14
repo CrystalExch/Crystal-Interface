@@ -588,14 +588,16 @@
 
 .meme-address {
     display: flex;
+    flex-direction: column;
     align-items: center;
+    justify-content: space-between;
     font-size: 0.9rem;
     color: rgb(169, 169, 174);
-    align-self: center;
     border: 1px solid rgba(179, 184, 249, 0.1);
     border-radius: 5px;
-    padding: 1px 6px;
+    padding: 4px 8px;
     cursor: pointer;
+    width: 100%;
 }
 
 .meme-address-title {
@@ -616,7 +618,6 @@
 }
 
 .meme-address-link {
-    margin-left: 4px;
     cursor: pointer;
 }
 
@@ -2719,4 +2720,69 @@
     gap: 6px;
     margin: 8px 0;
 
+}
+
+.meme-address-content{
+    display: flex;
+    align-items: center;
+}
+
+.address-top{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+}
+
+.funding-amount{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: rgb(184, 187, 193);
+    font-size: 0.9rem;
+}
+
+.funding-location{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8rem;
+    background-color: rgba(28, 28, 35, 0.4);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: -0.3px;
+}
+
+
+.funding-by-wallet-icon{
+    width: 14px;
+    height: 14px;
+}
+
+.funding-time-ago{
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.8rem;
+    background-color: rgba(28, 28, 35, 0.4);
+    padding: 2px 8px;
+    border-radius: 20px;
+    letter-spacing: -0.5px;
+}
+
+.dev-address-bottom-left{
+    display: flex;
+    gap: 7px;
+}
+
+.dev-address-bottom{
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    padding: 4px 0;
+}
+
+.funding-time-ago-icon{
+    width: 14px;
+    height: 14px;
 }

@@ -452,23 +452,23 @@ const MemeInterface: React.FC<MemeInterfaceProps> = ({
   const [showStatsAgeDropdown, setShowStatsAgeDropdown] = useState(false);
   const { tokenAddress } = useParams<{ tokenAddress: string }>();
   const [tokenInfoExpanded, setTokenInfoExpanded] = useState(true);
-const [monPresets, setMonPresets] = useState(() => {
-  try {
-    const saved = localStorage.getItem('crystal_mon_presets');
-    if (saved) {
-      return JSON.parse(saved);
+  const [monPresets, setMonPresets] = useState(() => {
+    try {
+      const saved = localStorage.getItem('crystal_mon_presets');
+      if (saved) {
+        return JSON.parse(saved);
+      }
+      return [5, 20, 100, 500];
+    } catch (error) {
+      console.error('Error loading MON presets:', error);
+      return [5, 20, 100, 500];
     }
-    return [5, 20, 100, 500];
-  } catch (error) {
-    console.error('Error loading MON presets:', error);
-    return [5, 20, 100, 500];
-  }
-});
-const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
-const [isPresetEditMode, setIsPresetEditMode] = useState(false);
-const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
-const [tempPresetValue, setTempPresetValue] = useState('');
-const presetInputRef = useRef<HTMLInputElement>(null);
+  });
+  const [selectedMonPreset, setSelectedMonPreset] = useState<number | null>(null);
+  const [isPresetEditMode, setIsPresetEditMode] = useState(false);
+  const [editingPresetIndex, setEditingPresetIndex] = useState<number | null>(null);
+  const [tempPresetValue, setTempPresetValue] = useState('');
+  const presetInputRef = useRef<HTMLInputElement>(null);
   const [isWidgetOpen, setIsWidgetOpen] = useState(() => {
     try {
       const saved = localStorage.getItem('crystal_quickbuy_widget_open');
@@ -483,20 +483,20 @@ const presetInputRef = useRef<HTMLInputElement>(null);
     } catch (error) {
     }
   }, [isWidgetOpen]);
-useEffect(() => {
-  try {
-    localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
-  } catch (error) {
-    console.error('Error saving MON presets:', error);
-  }
-}, [monPresets]);
+  useEffect(() => {
+    try {
+      localStorage.setItem('crystal_mon_presets', JSON.stringify(monPresets));
+    } catch (error) {
+      console.error('Error saving MON presets:', error);
+    }
+  }, [monPresets]);
 
-useEffect(() => {
-  if (editingPresetIndex !== null && presetInputRef.current) {
-    presetInputRef.current.focus();
-    presetInputRef.current.select();
-  }
-}, [editingPresetIndex]);
+  useEffect(() => {
+    if (editingPresetIndex !== null && presetInputRef.current) {
+      presetInputRef.current.focus();
+      presetInputRef.current.select();
+    }
+  }, [editingPresetIndex]);
 
   const [tradeAmount, setTradeAmount] = useState("");
   const [limitPrice, setLimitPrice] = useState("");
@@ -1750,57 +1750,57 @@ useEffect(() => {
 
     return () => { cancelled = true; };
   }, [token.dev, token.id]);
-const handlePresetEditToggle = useCallback(() => {
-  setIsPresetEditMode(!isPresetEditMode);
-  setEditingPresetIndex(null);
-  setTempPresetValue('');
-}, [isPresetEditMode]);
-
-const handlePresetButtonClick = useCallback((preset: number, index: number) => {
-  if (isPresetEditMode) {
-    setEditingPresetIndex(index);
-    setTempPresetValue(preset.toString());
-  } else {
-    setSelectedMonPreset(preset);
-    if (activeTradeType === "buy") {
-      setTradeAmount(preset.toString());
-      const currentBalance = getCurrentMONBalance();
-      const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
-      setSliderPercent(Math.min(100, percentage));
-    } else {
-      if (currentPrice > 0) {
-        const tokenAmount = preset / currentPrice;
-        setTradeAmount(tokenAmount.toString());
-        const currentTokenBalance = getCurrentTokenBalance();
-        const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
-        setSliderPercent(Math.min(100, percentage));
-      }
-    }
-  }
-}, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
-
-const handlePresetInputSubmit = useCallback(() => {
-  if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
-
-  const newValue = parseFloat(tempPresetValue);
-  if (isNaN(newValue) || newValue <= 0) return;
-
-  const newPresets = [...monPresets];
-  newPresets[editingPresetIndex] = newValue;
-  setMonPresets(newPresets);
-
-  setEditingPresetIndex(null);
-  setTempPresetValue('');
-}, [editingPresetIndex, tempPresetValue, monPresets]);
-
-const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
-  if (e.key === 'Enter') {
-    handlePresetInputSubmit();
-  } else if (e.key === 'Escape') {
+  const handlePresetEditToggle = useCallback(() => {
+    setIsPresetEditMode(!isPresetEditMode);
     setEditingPresetIndex(null);
     setTempPresetValue('');
-  }
-}, [handlePresetInputSubmit]);
+  }, [isPresetEditMode]);
+
+  const handlePresetButtonClick = useCallback((preset: number, index: number) => {
+    if (isPresetEditMode) {
+      setEditingPresetIndex(index);
+      setTempPresetValue(preset.toString());
+    } else {
+      setSelectedMonPreset(preset);
+      if (activeTradeType === "buy") {
+        setTradeAmount(preset.toString());
+        const currentBalance = getCurrentMONBalance();
+        const percentage = currentBalance > 0 ? (preset / currentBalance) * 100 : 0;
+        setSliderPercent(Math.min(100, percentage));
+      } else {
+        if (currentPrice > 0) {
+          const tokenAmount = preset / currentPrice;
+          setTradeAmount(tokenAmount.toString());
+          const currentTokenBalance = getCurrentTokenBalance();
+          const percentage = currentTokenBalance > 0 ? (tokenAmount / currentTokenBalance) * 100 : 0;
+          setSliderPercent(Math.min(100, percentage));
+        }
+      }
+    }
+  }, [isPresetEditMode, activeTradeType, currentPrice, getCurrentMONBalance, getCurrentTokenBalance]);
+
+  const handlePresetInputSubmit = useCallback(() => {
+    if (editingPresetIndex === null || tempPresetValue.trim() === '') return;
+
+    const newValue = parseFloat(tempPresetValue);
+    if (isNaN(newValue) || newValue <= 0) return;
+
+    const newPresets = [...monPresets];
+    newPresets[editingPresetIndex] = newValue;
+    setMonPresets(newPresets);
+
+    setEditingPresetIndex(null);
+    setTempPresetValue('');
+  }, [editingPresetIndex, tempPresetValue, monPresets]);
+
+  const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handlePresetInputSubmit();
+    } else if (e.key === 'Escape') {
+      setEditingPresetIndex(null);
+      setTempPresetValue('');
+    }
+  }, [handlePresetInputSubmit]);
   // top traders
   useEffect(() => {
     if (!token.id) return;
@@ -2549,45 +2549,45 @@ const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
           <div className="meme-balance-slider-wrapper">
             {sliderMode === "presets" && (
               <div className="meme-slider-container meme-presets-mode">
-<div className="meme-preset-buttons">
-  {monPresets.map((preset: number, index: number) => (
-    <div key={index} className="meme-preset-button-container">
-      {editingPresetIndex === index ? (
-        <input
-          ref={presetInputRef}
-          type="number"
-          value={tempPresetValue}
-          onChange={(e) => setTempPresetValue(e.target.value)}
-          onKeyDown={handlePresetInputKeyDown}
-          onBlur={handlePresetInputSubmit}
-          className="meme-preset-edit-input"
-          min="0"
-          step="0.1"
-        />
-      ) : (
-        <button
-          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ""}`}
-          onClick={() => handlePresetButtonClick(preset, index)}
-        >
-          {preset}
-        </button>
-      )}
-    </div>
-  ))}
-  <div className="meme-preset-edit-container">
-    <button
-      className={`meme-preset-edit-button ${isPresetEditMode ? 'active' : ''}`}
-      onClick={handlePresetEditToggle}
-      title={isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'}
-    >
-      <img
-        src={editicon}
-        alt="Edit"
-        className={`meme-preset-edit-icon ${isPresetEditMode ? 'active' : ''}`}
-      />
-    </button>
-  </div>
-</div>
+                <div className="meme-preset-buttons">
+                  {monPresets.map((preset: number, index: number) => (
+                    <div key={index} className="meme-preset-button-container">
+                      {editingPresetIndex === index ? (
+                        <input
+                          ref={presetInputRef}
+                          type="number"
+                          value={tempPresetValue}
+                          onChange={(e) => setTempPresetValue(e.target.value)}
+                          onKeyDown={handlePresetInputKeyDown}
+                          onBlur={handlePresetInputSubmit}
+                          className="meme-preset-edit-input"
+                          min="0"
+                          step="0.1"
+                        />
+                      ) : (
+                        <button
+                          className={`meme-preset-button ${isPresetEditMode ? 'edit-mode' : ''} ${selectedMonPreset === preset ? `active ${activeTradeType}` : ""}`}
+                          onClick={() => handlePresetButtonClick(preset, index)}
+                        >
+                          {preset}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  <div className="meme-preset-edit-container">
+                    <button
+                      className={`meme-preset-edit-button ${isPresetEditMode ? 'active' : ''}`}
+                      onClick={handlePresetEditToggle}
+                      title={isPresetEditMode ? 'Exit Edit Mode' : 'Edit Presets'}
+                    >
+                      <img
+                        src={editicon}
+                        alt="Edit"
+                        className={`meme-preset-edit-icon ${isPresetEditMode ? 'active' : ''}`}
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             {sliderMode === "increment" && (
@@ -2704,22 +2704,22 @@ const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
               </div>
             )}
           </div>
-  <div className="meme-settings-toggle">
-    <div className="meme-settings-collapsed">
-      <Tooltip content="Slippage">
-        <div className="meme-settings-item">
-          <img src={slippage} className="meme-settings-icon1" />
-          <span className="meme-settings-value">{slippageValue}%</span>
-        </div>
-      </Tooltip>
-      <Tooltip content="Priority Fee">
-        <div className="meme-settings-item">
-          <img src={gas} className="meme-settings-icon2" />
-          <span className="meme-settings-value">{priorityFee}</span>
-        </div>
-      </Tooltip>
-    </div>
-  </div>
+          <div className="meme-settings-toggle">
+            <div className="meme-settings-collapsed">
+              <Tooltip content="Slippage">
+                <div className="meme-settings-item">
+                  <img src={slippage} className="meme-settings-icon1" />
+                  <span className="meme-settings-value">{slippageValue}%</span>
+                </div>
+              </Tooltip>
+              <Tooltip content="Priority Fee">
+                <div className="meme-settings-item">
+                  <img src={gas} className="meme-settings-icon2" />
+                  <span className="meme-settings-value">{priorityFee}</span>
+                </div>
+              </Tooltip>
+            </div>
+          </div>
           {activeTradeType === "buy" && (
             <div className="meme-advanced-trading-section">
               <div className="meme-advanced-trading-toggle">
@@ -2992,67 +2992,67 @@ const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
               </div>
             </div>
           </div>
-<div className="meme-trade-settings">
+          <div className="meme-trade-settings">
 
-  
-  <div className="meme-settings-presets">
-    <button
-      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
-      onClick={() => {
-        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1) {
-          setSettingsExpanded(false);
-        } else {
-          handlePresetSelect(1);
-          setSettingsExpanded(true);
-        }
-      }}
-    >
-      PRESET 1
-    </button>
-    <button
-      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
-      onClick={() => {
-        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2) {
-          setSettingsExpanded(false);
-        } else {
-          handlePresetSelect(2);
-          setSettingsExpanded(true);
-        }
-      }}
-    >
-      PRESET 2
-    </button>
-    <button
-      className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
-      onClick={() => {
-        if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3) {
-          setSettingsExpanded(false);
-        } else {
-          handlePresetSelect(3);
-          setSettingsExpanded(true);
-        }
-      }}
-    >
-      PRESET 3
-    </button>
-  </div>
 
-  {settingsExpanded && (
-    <div className="meme-settings-content">
-      <div className="meme-settings-mode-toggle">
-        <button
-          className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
-          onClick={() => setSettingsMode('buy')}
-        >
-          Buy settings
-        </button>
-        <button
-          className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
-          onClick={() => setSettingsMode('sell')}
-        >
-          Sell settings
-        </button>
-      </div>
+            <div className="meme-settings-presets">
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 1) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(1);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 1
+              </button>
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 2) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(2);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 2
+              </button>
+              <button
+                className={`meme-settings-preset ${(settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3 ? 'active' : ''}`}
+                onClick={() => {
+                  if (settingsExpanded && (settingsMode === 'buy' ? selectedBuyPreset : selectedSellPreset) === 3) {
+                    setSettingsExpanded(false);
+                  } else {
+                    handlePresetSelect(3);
+                    setSettingsExpanded(true);
+                  }
+                }}
+              >
+                PRESET 3
+              </button>
+            </div>
+
+            {settingsExpanded && (
+              <div className="meme-settings-content">
+                <div className="meme-settings-mode-toggle">
+                  <button
+                    className={`meme-settings-mode-btn ${settingsMode === 'buy' ? 'active' : ''}`}
+                    onClick={() => setSettingsMode('buy')}
+                  >
+                    Buy settings
+                  </button>
+                  <button
+                    className={`meme-settings-mode-btn ${settingsMode === 'sell' ? 'active' : ''}`}
+                    onClick={() => setSettingsMode('sell')}
+                  >
+                    Sell settings
+                  </button>
+                </div>
                 <div className="meme-settings-grid">
                   <div className="meme-setting-item">
                     <label className="meme-setting-label">
@@ -3305,40 +3305,78 @@ const handlePresetInputKeyDown = useCallback((e: React.KeyboardEvent) => {
               </div>
               <div className="meme-token-info-footer">
                 <span className="meme-address">
-                  <img className="meme-contract-icon" src={contract} />
-                  <span className="meme-address-title">CA:</span>{" "}
-                  {token.id.slice(0, 21)}...{token.id.slice(-4)}
-                  <Tooltip content="View on Monad Explorer">
-                    <svg
-                      className="meme-address-link"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                    </svg>
-                  </Tooltip>
+                  <div className="address-top">
+                    <div className="meme-address-content">
+                      <img className="meme-contract-icon" src={contract} />
+                      <span className="meme-address-title">CA:</span>{" "}
+                      <Tooltip content="Copy contract address">
+                        {token.id.slice(0, 15)}...{token.id.slice(-4)}
+                      </Tooltip>
+                    </div>
+                    <Tooltip content="View on Monad Explorer">
+                      <svg
+                        className="meme-address-link"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                      </svg>
+                    </Tooltip>
+                  </div>
                 </span>
                 <span className="meme-address">
-                  <img className="meme-contract-icon" src={contract} />
-                  <span className="meme-address-title">DA:</span>{" "}
-                  {token.dev.slice(0, 21)}...{token.dev.slice(-4)}
-                  <Tooltip content="View on Monad Explorer">
-                    <svg
-                      className="meme-address-link"
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="13"
-                      height="13"
-                      viewBox="0 0 24 24"
-                      fill="currentColor"
-                    >
-                      <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
-                      <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
-                    </svg>
-                  </Tooltip>
+                  <div className="address-top">
+                    <div className="meme-address-content">
+                      <img className="meme-contract-icon" src={contract} />
+                      <span className="meme-address-title">DA:</span>{" "}
+                      <Tooltip content="Copy developer address">
+                        {token.dev.slice(0, 15)}...{token.dev.slice(-4)}
+                      </Tooltip>
+                    </div>
+                    <Tooltip content="View on Monad Explorer">
+                      <svg
+                        className="meme-address-link"
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="15"
+                        height="15"
+                        viewBox="0 0 24 24"
+                        fill="currentColor"
+                      >
+                        <path d="M19 19H5V5h7V3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7h-2v7z" />
+                        <path d="M14 3h7v7h-2V6.41l-9.41 9.41-1.41-1.41L17.59 5H14V3z" />
+                      </svg>
+                    </Tooltip>
+                  </div>
+                  <div className="dev-address-bottom">
+                    <div className="dev-address-bottom-left">
+                 <Tooltip content="View funding on Monadscan">
+  <div 
+    className="funding-location"
+    onClick={() => window.open(`https://testnet.monadscan.com/address/${token.id}`, '_blank')}
+    style={{ cursor: 'pointer' }}
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-by-wallet-icon">
+      <path d="m5 12 7-7 7 7" />
+      <path d="M12 19V5" />
+    </svg>
+    {token.id.slice(0, 6)}...{token.id.slice(-4)}
+  </div>
+</Tooltip>
+                      <Tooltip content={`$${(4.0 * monUsdPrice).toFixed(2)}`}>
+                        <div className="funding-amount">
+                          <img src={monadicon} className="meme-mobile-monad-icon" /> 4.00
+                        </div>
+                      </Tooltip>
+                    </div>
+                    <div className="funding-time-ago">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" className="funding-time-ago-icon"><path d="M12 6v6l4 2" /><circle cx="12" cy="12" r="10" /></svg>
+                      <span>3 mo</span>
+                    </div>
+                  </div>
                 </span>
               </div>
             </div>
